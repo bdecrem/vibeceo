@@ -62,8 +62,8 @@ export default function ChatArea() {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full">
-      <div className="flex items-center border-b p-4">
+    <div className="flex flex-col flex-1 h-full w-full">
+      <div className="flex items-center border-b p-4 bg-background sticky top-0 z-10">
         <SidebarTrigger className="mr-2" />
         <Avatar className="h-10 w-10">
           <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Sarah Johnson" />
@@ -78,14 +78,14 @@ export default function ChatArea() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.isMine ? "justify-end" : "justify-start"}`}>
-            <div className={`flex ${message.isMine ? "flex-row-reverse" : "flex-row"} items-end gap-2 max-w-[80%]`}>
+            <div className={`flex ${message.isMine ? "flex-row-reverse" : "flex-row"} items-end gap-2 max-w-[85%] md:max-w-[80%]`}>
               {!message.isMine && (
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src="/placeholder.svg?height=32&width=32" alt={message.sender} />
                   <AvatarFallback>{message.sender[0]}</AvatarFallback>
                 </Avatar>
               )}
-              <div className={`rounded-lg p-3 ${message.isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+              <div className={`rounded-lg p-3 break-words ${message.isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 <p>{message.content}</p>
                 <span
                   className={`text-xs ${message.isMine ? "text-primary-foreground/70" : "text-muted-foreground"} block mt-1`}
@@ -98,9 +98,9 @@ export default function ChatArea() {
         ))}
       </div>
 
-      <div className="border-t p-4">
+      <div className="border-t p-4 bg-background sticky bottom-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <Button variant="outline" size="icon" type="button">
+          <Button variant="outline" size="icon" type="button" className="shrink-0">
             <Paperclip className="h-4 w-4" />
           </Button>
           <Input
@@ -109,10 +109,10 @@ export default function ChatArea() {
             onChange={(e) => setNewMessage(e.target.value)}
             className="flex-1"
           />
-          <Button variant="outline" size="icon" type="button">
+          <Button variant="outline" size="icon" type="button" className="shrink-0">
             <Smile className="h-4 w-4" />
           </Button>
-          <Button type="submit" size="icon">
+          <Button type="submit" size="icon" className="shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </form>
