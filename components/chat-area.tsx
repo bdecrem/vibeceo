@@ -83,7 +83,7 @@ export default function ChatArea() {
   return (
     <div className="flex flex-col h-full w-full bg-[hsl(var(--background-outer))]">
       <div className="flex flex-col h-full max-w-2xl mx-auto w-full px-4 md:px-8 bg-[hsl(var(--background))]">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
           {messages.map((message) => (
             <div key={message.id} className="flex justify-start">
               <div className="flex flex-row items-end max-w-[95%]">
@@ -103,26 +103,28 @@ export default function ChatArea() {
             </div>
           ))}
         </div>
-
-        <div className="border-t p-4 bg-background sticky bottom-0">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Button variant="outline" size="icon" type="button" className="shrink-0">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1"
-            />
-            <Button variant="outline" size="icon" type="button" className="shrink-0">
-              <Smile className="h-4 w-4" />
-            </Button>
-            <Button type="submit" size="icon" className="shrink-0">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
+        <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 bg-background border-t">
+          <div className="max-w-2xl mx-auto w-full px-4 md:px-8 py-4">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Input
+                type="text"
+                placeholder="Type your message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-1"
+              />
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Smile className="h-4 w-4" />
+              </Button>
+              <Button type="submit" size="icon" className="shrink-0">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   )
