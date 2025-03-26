@@ -27,23 +27,40 @@ describe('Chat Layout Tests', () => {
     await page.close();
   });
 
+  test('Puppeteer is working correctly', async () => {
+    // Check if we can get the page title
+    const title = await page.title();
+    expect(title).toBeTruthy();
+
+    // Check if we can interact with the page
+    const input = await page.waitForSelector('input[type="text"]');
+    expect(input).toBeTruthy();
+
+    // Try to type something
+    await input?.type('Test message');
+    const inputValue = await input?.evaluate(el => (el as HTMLInputElement).value);
+    expect(inputValue).toBe('Test message');
+  });
+
   test('Input box should be fixed to bottom on desktop', async () => {
     // Wait for the form to be present
     const form = await page.waitForSelector('form');
     const formPosition = await form?.evaluate((el: Element) => {
       const rect = el.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(el);
       return {
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-        width: rect.width
+        position: computedStyle.position,
+        bottom: computedStyle.bottom,
+        left: computedStyle.left,
+        right: computedStyle.right
       };
     });
 
-    // Check if form is fixed to bottom
-    expect(formPosition?.bottom).toBe(0);
-    expect(formPosition?.left).toBe(0);
-    expect(formPosition?.right).toBe(1024);
+    // Check if form has fixed positioning
+    expect(formPosition?.position).toBe('fixed');
+    expect(formPosition?.bottom).toBe('0px');
+    expect(formPosition?.left).toBe('0px');
+    expect(formPosition?.right).toBe('0px');
   });
 
   test('Input box should be fixed to bottom on mobile', async () => {
@@ -54,18 +71,20 @@ describe('Chat Layout Tests', () => {
     const form = await page.waitForSelector('form');
     const formPosition = await form?.evaluate((el: Element) => {
       const rect = el.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(el);
       return {
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-        width: rect.width
+        position: computedStyle.position,
+        bottom: computedStyle.bottom,
+        left: computedStyle.left,
+        right: computedStyle.right
       };
     });
 
-    // Check if form is fixed to bottom
-    expect(formPosition?.bottom).toBe(0);
-    expect(formPosition?.left).toBe(0);
-    expect(formPosition?.right).toBe(375);
+    // Check if form has fixed positioning
+    expect(formPosition?.position).toBe('fixed');
+    expect(formPosition?.bottom).toBe('0px');
+    expect(formPosition?.left).toBe('0px');
+    expect(formPosition?.right).toBe('0px');
   });
 
   test('Input box should maintain position when scrolling', async () => {
