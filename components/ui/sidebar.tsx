@@ -35,7 +35,7 @@ export const Sidebar = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "group/sidebar flex h-full flex-col bg-background transition-all duration-300",
+        "group/sidebar flex h-full flex-col bg-background transition-all duration-300 border-0",
         "fixed md:relative z-40 md:z-0",
         "w-[240px] md:w-60",
         isOpen 
@@ -154,7 +154,7 @@ export const SidebarGroupLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("mb-2 px-4 text-xs font-semibold text-foreground/60", className)}
+    className={cn("mb-2 text-xs font-semibold text-foreground/60", className)}
     {...props}
   />
 ))
@@ -180,7 +180,7 @@ export const SidebarMenuItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("px-3", className)} {...props} />
+  <div ref={ref} className={cn("", className)} {...props} />
 ))
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
@@ -196,26 +196,32 @@ export const SidebarMenuButton = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "group relative flex w-full items-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         isActive && "bg-accent",
         !isOpen && "justify-center",
         className
       )}
       {...props}
     >
-      <div className="flex items-center gap-3">
-        <div className="flex h-4 w-4 items-center justify-center">
-          {children[0]}
+      {children[0] ? (
+        <div className="flex items-center gap-3">
+          <div className="flex h-4 w-4 items-center justify-center">
+            {children[0]}
+          </div>
+          <span
+            className={cn(
+              "transition-opacity",
+              isOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}
+          >
+            {children[1]}
+          </span>
         </div>
-        <span
-          className={cn(
-            "transition-opacity",
-            isOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-          )}
-        >
+      ) : (
+        <span className="w-full text-left">
           {children[1]}
         </span>
-      </div>
+      )}
     </button>
   )
 })

@@ -3,17 +3,25 @@ import { SidebarProvider, useSidebar } from "@/components/ui/sidebar"
 import ChatSidebar from "@/components/chat-sidebar"
 import ChatArea from "@/components/chat-area"
 import { cn } from "@/lib/utils"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function ChatLayout() {
   const { isOpen } = useSidebar()
   
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <ChatSidebar />
+      <div className="absolute top-4 left-4 z-50">
+        <SidebarTrigger />
+      </div>
       <div className={cn(
-        "flex-1 transition-all duration-300",
-        isOpen ? "md:ml-0" : "ml-12 md:ml-0" // Add margin on mobile when sidebar is closed
+        "transition-all duration-300",
+        isOpen 
+          ? "relative w-[240px] md:w-60" 
+          : "absolute -left-[240px] md:-left-60 w-[240px] md:w-60"
       )}>
+        <ChatSidebar />
+      </div>
+      <div className="w-full">
         <ChatArea />
       </div>
     </div>

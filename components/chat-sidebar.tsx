@@ -11,7 +11,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -25,70 +24,55 @@ const contacts = [
 
 export default function ChatSidebar() {
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="p-4">
+    <Sidebar>
+      <SidebarHeader className="p-4 pb-8">
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <h2 className="text-lg font-semibold">Chat App</h2>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-6">Recent</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-0.5">
               <SidebarMenuItem>
-                <SidebarMenuButton isActive>
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Messages</span>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "How to handle difficult customers?"]}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Users className="h-4 w-4" />
-                  <span>Contacts</span>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "Best practices for team meetings"]}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "Strategic planning tips"]}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Contacts</SidebarGroupLabel>
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="px-6">Setup</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {contacts.map((contact) => (
-                <SidebarMenuItem key={contact.id}>
-                  <SidebarMenuButton>
-                    <div className="relative">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={contact.avatar} alt={contact.name} />
-                        <AvatarFallback>{contact.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <span
-                        className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ${
-                          contact.status === "online"
-                            ? "bg-green-500"
-                            : contact.status === "away"
-                              ? "bg-yellow-500"
-                              : "bg-gray-300"
-                        }`}
-                      />
-                    </div>
-                    <span>{contact.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-2">
+              <SidebarMenuItem>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "CEO Personality"]}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "Company Profile"]}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="py-1.5 px-6">
+                  {[null, "Core Values"]}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -110,8 +94,6 @@ export default function ChatSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   )
 }
