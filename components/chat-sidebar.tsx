@@ -86,7 +86,7 @@ export default function ChatSidebar() {
               <span>Profile</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          <SidebarMenuItem className="mt-4">
             <SidebarMenuButton>
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
