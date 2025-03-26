@@ -1,14 +1,18 @@
 import puppeteer, { Browser, Page, ElementHandle } from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
+
+// Load Cursor settings
+const cursorSettings = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), '.cursor', 'settings.json'), 'utf-8')
+);
 
 describe('Chat Layout Tests', () => {
   let browser: Browser;
   let page: Page;
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    browser = await puppeteer.launch(cursorSettings.puppeteer);
   });
 
   afterAll(async () => {
@@ -17,6 +21,7 @@ describe('Chat Layout Tests', () => {
 
   beforeEach(async () => {
     page = await browser.newPage();
+    await page.setViewport(cursorSettings.puppeteer.defaultViewport);
     await page.goto('http://localhost:3000/chat');
   });
 
@@ -25,9 +30,6 @@ describe('Chat Layout Tests', () => {
   });
 
   test('Input box should be fixed to bottom on desktop', async () => {
-    // Set desktop viewport
-    await page.setViewport({ width: 1024, height: 768 });
-
     // Wait for the form to be present
     const form = await page.waitForSelector('form');
     const formPosition = await form?.evaluate((el: Element) => {
@@ -43,7 +45,7 @@ describe('Chat Layout Tests', () => {
     // Check if form is fixed to bottom
     expect(formPosition?.bottom).toBe(0);
     expect(formPosition?.left).toBe(0);
-    expect(formPosition?.right).toBe(1024);
+    expect(formPosition?.right).toBe(cursorSettings.puppeteer.defaultViewport.width);
   });
 
   test('Input box should be fixed to bottom on mobile', async () => {
@@ -69,9 +71,6 @@ describe('Chat Layout Tests', () => {
   });
 
   test('Input box should maintain position when scrolling', async () => {
-    // Set viewport
-    await page.setViewport({ width: 1024, height: 768 });
-
     // Wait for the form to be present
     const form = await page.waitForSelector('form');
     
