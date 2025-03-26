@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest tests/chat-layout.test.ts"
+    "test": "jest tests/*.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",

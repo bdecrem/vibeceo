@@ -103,7 +103,7 @@ export default function ChatArea() {
             </div>
           ))}
         </div>
-        <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 bg-background border-t">
+        <form onSubmit={handleSendMessage} className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
           <div className="max-w-2xl mx-auto w-full px-4 md:px-8 py-4">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="shrink-0">
