@@ -1,18 +1,16 @@
 import puppeteer, { Browser, Page, ElementHandle } from 'puppeteer';
-import fs from 'fs';
-import path from 'path';
-
-// Load Cursor settings
-const cursorSettings = JSON.parse(
-  fs.readFileSync(path.join(process.cwd(), '.cursor', 'settings.json'), 'utf-8')
-);
 
 describe('Chat Layout Tests', () => {
   let browser: Browser;
   let page: Page;
 
   beforeAll(async () => {
-    browser = await puppeteer.launch(cursorSettings.puppeteer);
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--disable-gpu'],
+      defaultViewport: { width: 1024, height: 768 },
+      timeout: 30000
+    });
   });
 
   afterAll(async () => {
@@ -21,7 +19,7 @@ describe('Chat Layout Tests', () => {
 
   beforeEach(async () => {
     page = await browser.newPage();
-    await page.setViewport(cursorSettings.puppeteer.defaultViewport);
+    await page.setViewport({ width: 1024, height: 768 });
     await page.goto('http://localhost:3000/chat');
   });
 
@@ -45,7 +43,7 @@ describe('Chat Layout Tests', () => {
     // Check if form is fixed to bottom
     expect(formPosition?.bottom).toBe(0);
     expect(formPosition?.left).toBe(0);
-    expect(formPosition?.right).toBe(cursorSettings.puppeteer.defaultViewport.width);
+    expect(formPosition?.right).toBe(1024);
   });
 
   test('Input box should be fixed to bottom on mobile', async () => {
