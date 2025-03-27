@@ -3,8 +3,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Ensure we're using the correct output for Netlify
-  output: 'standalone',
+  // Use export for Netlify
+  output: 'export',
 }
 
 module.exports = nextConfig 
