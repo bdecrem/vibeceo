@@ -80,7 +80,7 @@ test.describe('Layout Tests', () => {
     }
     
     // Verify sidebar starts closed on mobile
-    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[240px\]/);
     
     // Test sidebar toggle
     await hamburger.click();
@@ -101,7 +101,7 @@ test.describe('Layout Tests', () => {
     }
     
     await hamburger.click();
-    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[240px\]/);
 
     // Verify input box is visible and fixed at bottom
     const inputBox = await page.locator('input[placeholder="Type a message..."]');

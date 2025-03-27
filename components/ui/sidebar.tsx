@@ -13,7 +13,27 @@ const SidebarContext = React.createContext<SidebarContextValue>({
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = React.useState(true)
+  const [isMobile, setIsMobile] = React.useState(false)
   const toggle = React.useCallback(() => setIsOpen((prev) => !prev), [])
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) {
+        setIsOpen(false)
+      }
+    }
+
+    // Initial check
+    checkMobile()
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkMobile)
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   return (
     <SidebarContext.Provider value={{ isOpen, toggle }}>
@@ -40,7 +60,7 @@ export const Sidebar = React.forwardRef<
         "w-[240px] md:w-60",
         isOpen 
           ? "translate-x-0" 
-          : "-translate-x-[calc(100%-3rem)] md:-translate-x-48",
+          : "-translate-x-[240px] md:-translate-x-[240px]",
         className
       )}
       {...props}
