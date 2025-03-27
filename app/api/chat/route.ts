@@ -14,9 +14,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const completion = await createChatCompletion(messages, {
-      model: 'gpt-3.5-turbo'
-    })
+    const completion = await createChatCompletion(messages)
     return NextResponse.json(completion)
   } catch (error: any) {
     console.error('Chat completion error details:', {
