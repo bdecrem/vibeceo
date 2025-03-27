@@ -8,7 +8,10 @@
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   NODE_VERSION = "18"
+  # Force OpenAI model
+  OPENAI_MODEL = "gpt-3.5-turbo"
 
+# Make sure API routes work correctly
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
