@@ -3,8 +3,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Use export for Netlify
-  output: 'export',
+  // Use serverless for Netlify with API routes
+  output: 'serverless',
 }
 
 module.exports = nextConfig 
