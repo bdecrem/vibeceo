@@ -22,9 +22,9 @@ const anthropic = new Anthropic({
 // Helper function to convert our Message type to Claude's format
 function convertMessagesToClaudeFormat(messages: Message[]): { role: 'user' | 'assistant'; content: string }[] {
   return messages
-    .filter(msg => msg.role !== 'system')
+    .filter(msg => msg.role !== 'system') // Filter out system messages as they're handled separately
     .map(msg => ({
-      role: msg.role as 'user' | 'assistant',
+      role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
     }))
 }
@@ -49,31 +49,40 @@ export async function createChatCompletion(
   const systemMessage = messages.find(msg => msg.role === 'system')?.content || ''
   const claudeMessages = convertMessagesToClaudeFormat(messages)
   
-  const completion = await anthropic.messages.create({
-    model: modelToUse,
-    messages: claudeMessages,
-    system: systemMessage,
-    max_tokens: options.maxTokens || config.anthropic.maxTokens,
-    temperature: options.temperature || 0.7,
-  })
+  try {
+    const completion = await anthropic.messages.create({
+      model: modelToUse,
+      messages: claudeMessages,
+      system: systemMessage,
+      max_tokens: options.maxTokens || config.anthropic.maxTokens,
+      temperature: options.temperature || 0.7,
+    })
 
-  const content = completion.content[0].type === 'text' 
-    ? completion.content[0].text 
-    : ''
+    const content = completion.content[0].type === 'text' 
+      ? completion.content[0].text 
+      : ''
 
-  if (!content) {
-    throw new Error('No message in completion')
-  }
+    if (!content) {
+      throw new Error('No message in completion')
+    }
 
-  return {
-    message: {
-      role: 'assistant',
-      content: content,
-    },
-    usage: {
-      promptTokens: completion.usage?.input_tokens || 0,
-      completionTokens: completion.usage?.output_tokens || 0,
-      totalTokens: (completion.usage?.input_tokens || 0) + (completion.usage?.output_tokens || 0),
-    },
+    return {
+      message: {
+        role: 'assistant',
+        content: content,
+      },
+      usage: {
+        promptTokens: completion.usage?.input_tokens || 0,
+        completionTokens: completion.usage?.output_tokens || 0,
+        totalTokens: (completion.usage?.input_tokens || 0) + (completion.usage?.output_tokens || 0),
+      },
+    }
+  } catch (error: any) {
+    console.error('Claude API error:', {
+      error: error.message,
+      type: error.type,
+      status: error.status
+    })
+    throw error
   }
 } 
