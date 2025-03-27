@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useChatStore } from '@/lib/store/chat-store'
 import { type Message } from '@/lib/openai'
 
@@ -25,7 +25,6 @@ Always maintain a positive, constructive tone while being direct and honest.`
 
 export function useChat() {
   const { messages, isLoading, error, addMessage, setLoading, setError } = useChatStore()
-  const [apiMethod, setApiMethod] = useState<'app-router' | 'pages-router' | 'netlify-function'>('app-router')
 
   const sendMessage = useCallback(async (content: string) => {
     try {
@@ -41,99 +40,30 @@ export function useChat() {
         ? [SYSTEM_MESSAGE, userMessage]
         : [...messages, userMessage]
 
-      // Try different API methods if needed
-      let response = null
-      let data = null
-      let error = null
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: messagesToSend }),
+      })
 
-      // First attempt: App Router API
-      if (apiMethod === 'app-router') {
-        try {
-          console.log('Trying App Router API route...')
-          response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: messagesToSend }),
-          })
-          
-          if (response.ok) {
-            data = await response.json()
-          } else {
-            const errorData = await response.json()
-            error = errorData.details || 'App Router API failed'
-            console.log('App Router API failed, trying Pages Router...')
-            setApiMethod('pages-router')
-          }
-        } catch (err) {
-          error = err instanceof Error ? err.message : 'App Router API error'
-          console.log('App Router API error, trying Pages Router...', error)
-          setApiMethod('pages-router')
-        }
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.details || 'Failed to send message')
       }
 
-      // Second attempt: Pages Router API
-      if (apiMethod === 'pages-router' && !data) {
-        try {
-          console.log('Trying Pages Router API route...')
-          response = await fetch('/api/direct-chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: messagesToSend }),
-          })
-          
-          if (response.ok) {
-            data = await response.json()
-          } else {
-            const errorData = await response.json()
-            error = errorData.details || 'Pages Router API failed'
-            console.log('Pages Router API failed, trying Netlify function...')
-            setApiMethod('netlify-function')
-          }
-        } catch (err) {
-          error = err instanceof Error ? err.message : 'Pages Router API error'
-          console.log('Pages Router API error, trying Netlify function...', error)
-          setApiMethod('netlify-function')
-        }
-      }
-
-      // Last attempt: Netlify Function
-      if (apiMethod === 'netlify-function' && !data) {
-        try {
-          console.log('Trying Netlify function...')
-          response = await fetch('/.netlify/functions/openai-chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: messagesToSend }),
-          })
-          
-          if (response.ok) {
-            data = await response.json()
-          } else {
-            const errorData = await response.json()
-            error = errorData.details || 'Netlify function failed'
-          }
-        } catch (err) {
-          error = err instanceof Error ? err.message : 'Netlify function error'
-        }
-      }
-
-      if (data) {
-        addMessage(data.message)
-      } else {
-        throw new Error(error || 'All API methods failed')
-      }
+      const data = await response.json()
+      addMessage(data.message)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
-  }, [messages, addMessage, setLoading, setError, apiMethod])
+  }, [messages, addMessage, setLoading, setError])
 
   return {
     messages,
     isLoading,
     error,
     sendMessage,
-    apiMethod
   }
 } 

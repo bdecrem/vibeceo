@@ -14,9 +14,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Log the model being used before sending to OpenAI
-    console.log('API chat route - Using model:', 'gpt-3.5-turbo (hardcoded)')
-
     const completion = await createChatCompletion(messages)
     return NextResponse.json(completion)
   } catch (error: any) {
