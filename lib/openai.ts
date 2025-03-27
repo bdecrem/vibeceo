@@ -15,6 +15,20 @@ export type ChatCompletionResponse = {
   }
 }
 
+export interface StreamingChatResponse {
+  id: string
+  model: string
+  created: number
+  choices: {
+    delta: {
+      content?: string
+      role?: string
+    }
+    finish_reason: string | null
+    index: number
+  }[]
+}
+
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,
 })
@@ -25,8 +39,9 @@ export async function createChatCompletion(
     model?: string
     maxTokens?: number
     temperature?: number
+    stream?: boolean
   } = {}
-): Promise<ChatCompletionResponse> {
+): Promise<ChatCompletionResponse | ReadableStream<Uint8Array>> {
   // Log what model is being used
   const modelToUse = options.model || config.openai.model
   console.log('Using OpenAI model:', {
@@ -36,11 +51,42 @@ export async function createChatCompletion(
   })
 
   try {
+    if (options.stream) {
+      const stream = await openai.chat.completions.create({
+        model: modelToUse,
+        messages: messages,
+        max_tokens: options.maxTokens || config.openai.maxTokens,
+        temperature: options.temperature || 0.7,
+        stream: true,
+      })
+
+      // Return a ReadableStream that emits chunks of the response
+      return new ReadableStream<Uint8Array>({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              if (chunk.choices[0]?.delta?.content) {
+                const content = chunk.choices[0].delta.content
+                controller.enqueue(new TextEncoder().encode(`data: ${content}\n\n`))
+              }
+            }
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+            controller.close()
+          } catch (error) {
+            console.error('Streaming error:', error)
+            controller.error(error)
+          }
+        },
+      })
+    }
+
+    // Non-streaming response
     const completion = await openai.chat.completions.create({
       model: modelToUse,
       messages: messages,
       max_tokens: options.maxTokens || config.openai.maxTokens,
       temperature: options.temperature || 0.7,
+      stream: false,
     })
 
     const content = completion.choices[0]?.message?.content || ''

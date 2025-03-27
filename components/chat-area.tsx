@@ -14,6 +14,7 @@ export default function ChatArea() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+  const lastMessageRef = useRef<string>("")
 
   // Auto focus input and show keyboard on mobile
   useEffect(() => {
@@ -39,12 +40,20 @@ export default function ChatArea() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // Auto scroll when new messages arrive
+  // Auto scroll when new messages arrive or during streaming
   useEffect(() => {
-    if (shouldAutoScroll) {
+    const lastMessage = messages[messages.length - 1]
+    if (!lastMessage) return
+
+    // If it's a new message or the content has changed and we should auto-scroll
+    if (shouldAutoScroll && (
+      lastMessage.content !== lastMessageRef.current || 
+      lastMessage.role === 'user'
+    )) {
       scrollToBottom()
+      lastMessageRef.current = lastMessage.content
     }
-  }, [messages, isLoading, shouldAutoScroll])
+  }, [messages, shouldAutoScroll])
 
   // Handle scroll events to determine if we should auto-scroll
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -58,6 +67,7 @@ export default function ChatArea() {
     if (newMessage.trim() && !isLoading) {
       await sendMessage(newMessage.trim())
       setNewMessage("")
+      setShouldAutoScroll(true) // Enable auto-scroll when sending a new message
     }
   }
 
