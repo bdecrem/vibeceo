@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useChatStore } from '@/lib/store/chat-store'
-import { type Message } from '@/lib/openai'
+import { type Message } from '@/lib/claude'
 
 const SYSTEM_MESSAGE: Message = {
   role: 'system',

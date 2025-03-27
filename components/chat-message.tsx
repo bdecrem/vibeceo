@@ -1,4 +1,4 @@
-import { type Message } from '@/lib/openai'
+import { type Message } from '@/lib/claude'
 
 interface ChatMessageProps {
   message: Message
