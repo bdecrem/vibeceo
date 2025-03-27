@@ -9,26 +9,27 @@ function ChatLayout() {
   const { isOpen } = useSidebar()
   
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <div className="fixed top-0 left-0 right-0 h-14 bg-background border-b z-50">
-        <div className="flex items-center justify-between h-full max-w-2xl mx-auto px-4 md:px-8">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      <div className="bg-muted/50 border-b flex items-center px-4 py-1 shadow-sm shrink-0">
+        <div className="flex items-center w-full">
           <SidebarTrigger />
-          <h1 className="absolute left-1/2 -translate-x-1/2 font-semibold">
+          <div className="absolute left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
             myVEO.ai
-          </h1>
-          <div className="w-9"></div>
+          </div>
         </div>
       </div>
-      <div className={cn(
-        "transition-all duration-300",
-        isOpen 
-          ? "relative w-[240px] md:w-60" 
-          : "absolute -left-[240px] md:-left-60 w-[240px] md:w-60"
-      )}>
-        <ChatSidebar />
-      </div>
-      <div className="w-full pt-14">
-        <ChatArea />
+      <div className="flex flex-1 relative min-h-0">
+        <div className={cn(
+          "transition-all duration-300",
+          isOpen 
+            ? "relative w-[240px] md:w-60" 
+            : "absolute -left-[240px] md:-left-60 w-[240px] md:w-60"
+        )}>
+          <ChatSidebar />
+        </div>
+        <div className="w-full min-h-0">
+          <ChatArea />
+        </div>
       </div>
     </div>
   )
