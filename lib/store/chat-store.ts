@@ -1,5 +1,5 @@
+import { type Message } from '@/lib/openai'
 import { create } from 'zustand'
-import { type Message } from '@/lib/claude'
 
 interface ChatState {
   messages: Message[]
