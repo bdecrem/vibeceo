@@ -12,25 +12,15 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
-const contacts = [
-  { id: 1, name: "Sarah Johnson", status: "online", avatar: "/placeholder.svg?height=40&width=40" },
-  { id: 2, name: "Michael Chen", status: "offline", avatar: "/placeholder.svg?height=40&width=40" },
-  { id: 3, name: "Emma Wilson", status: "online", avatar: "/placeholder.svg?height=40&width=40" },
-  { id: 4, name: "James Rodriguez", status: "away", avatar: "/placeholder.svg?height=40&width=40" },
-  { id: 5, name: "Olivia Smith", status: "online", avatar: "/placeholder.svg?height=40&width=40" },
-]
 
 export default function ChatSidebar() {
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4 pb-8">
-        <div className="flex items-center gap-2">
-        </div>
+    <Sidebar className="h-screen flex flex-col">
+      <SidebarHeader className="shrink-0 p-4">
+        <div className="flex items-center gap-2" />
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="flex-1 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel className="px-6">Recent</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -54,7 +44,7 @@ export default function ChatSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-6">
+        <SidebarGroup className="mt-12">
           <SidebarGroupLabel className="px-6">Setup</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
@@ -78,7 +68,7 @@ export default function ChatSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 mt-auto">
+      <SidebarFooter className="shrink-0 p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton>
