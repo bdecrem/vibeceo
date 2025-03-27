@@ -1,13 +1,33 @@
 "use client"
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar"
+
+import { useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
 import ChatSidebar from "@/components/chat-sidebar"
 import ChatArea from "@/components/chat-area"
-import { cn } from "@/lib/utils"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/sidebar-trigger"
 
-function ChatLayout() {
-  const { isOpen } = useSidebar()
-  
+export default function ChatPage() {
+  const [isOpen, setIsOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth < 768) {
+        setIsOpen(false)
+      }
+    }
+
+    // Initial check
+    checkMobile()
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkMobile)
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <div className="bg-muted/50 border-b flex items-center px-4 py-1 shadow-sm shrink-0">
@@ -32,14 +52,6 @@ function ChatLayout() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function ChatPage() {
-  return (
-    <SidebarProvider>
-      <ChatLayout />
-    </SidebarProvider>
   )
 }
 

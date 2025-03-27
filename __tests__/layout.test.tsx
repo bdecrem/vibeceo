@@ -79,9 +79,12 @@ test.describe('Layout Tests', () => {
       expect(companyNameBox.height).toBeLessThanOrEqual(20); // Compact text height
     }
     
+    // Verify sidebar starts closed on mobile
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
+    
     // Test sidebar toggle
     await hamburger.click();
-    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/translate-x-0/);
     
     // Verify sidebar width on mobile
     const sidebar = await page.locator('.group\\/sidebar');
@@ -98,7 +101,7 @@ test.describe('Layout Tests', () => {
     }
     
     await hamburger.click();
-    await expect(page.locator('.group\\/sidebar')).toHaveClass(/translate-x-0/);
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
 
     // Verify input box is visible and fixed at bottom
     const inputBox = await page.locator('input[placeholder="Type a message..."]');
