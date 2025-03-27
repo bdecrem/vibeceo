@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, ElementHandle } from '@playwright/test';
 
 test.describe('Layout Tests', () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
@@ -102,9 +102,9 @@ test.describe('Layout Tests', () => {
 
     // Verify input box is visible and fixed at bottom
     const inputBox = await page.locator('input[placeholder="Type a message..."]');
-    const inputBoxContainer = await inputBox.evaluateHandle((el) => el.closest('div'));
+    const inputBoxContainer = await inputBox.evaluateHandle((el: Element) => el.closest('div'));
     if (inputBoxContainer) {
-      const inputBoxStyle = await inputBoxContainer.evaluate((el) => window.getComputedStyle(el));
+      const inputBoxStyle = await inputBoxContainer.evaluate((el: HTMLDivElement) => window.getComputedStyle(el));
       expect(inputBoxStyle.position).toBe('fixed');
       expect(inputBoxStyle.bottom).toBe('0px');
     }
