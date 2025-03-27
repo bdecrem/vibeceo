@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
   images: {
     unoptimized: true,
   },
+  // Ensure we're using the correct output for Netlify
+  output: 'standalone',
 }
 
 module.exports = nextConfig 
