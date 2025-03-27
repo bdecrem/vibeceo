@@ -6,9 +6,7 @@ const nextConfig = {
   // Add output configuration for Netlify
   output: 'standalone',
   // Ensure trailing slashes are handled correctly
-  trailingSlash: true,
-  // Add custom domain configuration
-  assetPrefix: 'https://myveo.ai'
+  trailingSlash: true
 }
 
 module.exports = nextConfig 
