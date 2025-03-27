@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Send, Paperclip, Smile, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,26 @@ import { ChatMessage } from "@/components/chat-message"
 export default function ChatArea() {
   const { messages, isLoading, error, sendMessage } = useChat()
   const [newMessage, setNewMessage] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  // Auto scroll when new messages arrive
+  useEffect(() => {
+    if (shouldAutoScroll) {
+      scrollToBottom()
+    }
+  }, [messages, isLoading, shouldAutoScroll])
+
+  // Handle scroll events to determine if we should auto-scroll
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+    const isAtBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 50
+    setShouldAutoScroll(isAtBottom)
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,7 +43,10 @@ export default function ChatArea() {
   return (
     <div className="flex flex-col h-full w-full bg-[hsl(var(--background-outer))]">
       <div className="flex flex-col h-full max-w-2xl mx-auto w-full px-2 md:px-8 bg-[hsl(var(--background))]">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-32 md:pb-24">
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-32 md:pb-24"
+          onScroll={handleScroll}
+        >
           {messages.map((message, index) => (
             <ChatMessage
               key={index}
@@ -31,6 +54,7 @@ export default function ChatArea() {
               time={new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             />
           ))}
+          <div ref={messagesEndRef} />
           {error && (
             <div className="flex justify-center">
               <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-lg">
