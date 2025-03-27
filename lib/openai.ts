@@ -67,10 +67,12 @@ export async function createChatCompletion(
             for await (const chunk of stream) {
               if (chunk.choices[0]?.delta?.content) {
                 const content = chunk.choices[0].delta.content
-                controller.enqueue(new TextEncoder().encode(`data: ${content}\n\n`))
+                const encoded = new TextEncoder().encode(`data: ${content}\n\n`)
+                controller.enqueue(encoded)
               }
             }
-            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+            const done = new TextEncoder().encode('data: [DONE]\n\n')
+            controller.enqueue(done)
             controller.close()
           } catch (error) {
             console.error('Streaming error:', error)
