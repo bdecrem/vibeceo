@@ -8,6 +8,7 @@ test.describe('Layout Tests', () => {
   test('Desktop layout - header styling and company name', async ({ page }: { page: Page }) => {
     // Set desktop viewport
     await page.setViewportSize({ width: 1280, height: 800 });
+    await page.waitForTimeout(100); // Wait for mobile detection
     
     // Check header styling
     const header = await page.locator('div[class*="bg-muted"]');
@@ -35,7 +36,7 @@ test.describe('Layout Tests', () => {
     
     // Test sidebar toggle
     await hamburger.click();
-    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[calc\(100\%-3rem\)\]/);
+    await expect(page.locator('.group\\/sidebar')).toHaveClass(/-translate-x-\[240px\]/);
     
     await hamburger.click();
     await expect(page.locator('.group\\/sidebar')).toHaveClass(/translate-x-0/);
@@ -44,6 +45,7 @@ test.describe('Layout Tests', () => {
   test('Mobile layout - header styling and company name', async ({ page }: { page: Page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
+    await page.waitForTimeout(100); // Wait for mobile detection
     
     // Check header styling
     const header = await page.locator('div[class*="bg-muted"]');
