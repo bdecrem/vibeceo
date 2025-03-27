@@ -89,8 +89,24 @@ test.describe('Layout Tests', () => {
     if (sidebarBox) {
       expect(sidebarBox.width).toBe(240); // Mobile sidebar width
     }
+
+    // Verify logout button is visible in sidebar
+    const logoutButton = await page.locator('text=Logout');
+    const logoutBox = await logoutButton.boundingBox();
+    if (logoutBox) {
+      expect(logoutBox.y + logoutBox.height).toBeLessThanOrEqual(sidebarBox!.y + sidebarBox!.height);
+    }
     
     await hamburger.click();
     await expect(page.locator('.group\\/sidebar')).toHaveClass(/translate-x-0/);
+
+    // Verify input box is visible and fixed at bottom
+    const inputBox = await page.locator('input[placeholder="Type a message..."]');
+    const inputBoxContainer = await inputBox.evaluateHandle((el) => el.closest('div'));
+    if (inputBoxContainer) {
+      const inputBoxStyle = await inputBoxContainer.evaluate((el) => window.getComputedStyle(el));
+      expect(inputBoxStyle.position).toBe('fixed');
+      expect(inputBoxStyle.bottom).toBe('0px');
+    }
   });
 }); 
