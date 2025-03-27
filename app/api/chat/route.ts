@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createChatCompletion, type Message } from '@/lib/openai'
+import { createChatCompletion, type Message } from '@/lib/claude'
 
 export const dynamic = 'force-dynamic'
 
