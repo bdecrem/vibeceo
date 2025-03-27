@@ -3,7 +3,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove output configuration to use default
+  // Add output configuration for Netlify
+  output: 'standalone',
+  // Ensure trailing slashes are handled correctly
+  trailingSlash: true
 }
 
 module.exports = nextConfig 
