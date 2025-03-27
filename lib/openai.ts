@@ -27,12 +27,14 @@ export async function createChatCompletion(
     temperature?: number
   } = {}
 ): Promise<ChatCompletionResponse> {
-  // Log what model is being used
-  const modelToUse = options.model || config.openai.model
+  // Force model to always be gpt-3.5-turbo
+  const modelToUse = 'gpt-3.5-turbo'
+  
   console.log('Using OpenAI model:', {
     modelFromOptions: options.model || 'not provided',
     modelFromConfig: config.openai.model,
-    modelBeingUsed: modelToUse
+    modelBeingUsed: modelToUse,
+    forcedModel: true
   })
   
   const completion = await openai.chat.completions.create({

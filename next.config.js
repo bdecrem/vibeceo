@@ -3,7 +3,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove output configuration to use default
+  // Environment variable enforcement
+  env: {
+    OPENAI_MODEL: 'gpt-3.5-turbo',
+  },
 }
 
 module.exports = nextConfig 
