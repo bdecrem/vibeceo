@@ -3,7 +3,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove output configuration to use default
+  // Use standalone for Netlify with API routes
+  output: 'standalone',
 }
 
 module.exports = nextConfig 
