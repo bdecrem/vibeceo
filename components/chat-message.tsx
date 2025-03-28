@@ -20,19 +20,19 @@ export function ChatMessage({ message, time }: ChatMessageProps) {
       <div className={cn(`
         max-w-[85%] rounded-lg px-4 py-2 
         ${message.role === 'assistant' 
-          ? 'bg-muted text-muted-foreground' 
-          : 'bg-primary text-primary-foreground'
+          ? 'bg-[#E67E22]/10 text-[#8B3A1D] border border-[#8B3A1D]/10' 
+          : 'bg-[#8B3A1D]/10 text-[#8B3A1D] border border-[#8B3A1D]/10'
         }`,
         isStreaming && 'animate-pulse'
       )}>
-        <div className="prose dark:prose-invert whitespace-pre-wrap">
+        <div className="prose dark:prose-invert prose-p:my-0 prose-pre:my-0 whitespace-pre-wrap">
           {displayContent}
           {isStreaming && (
             <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 bg-current animate-blink" />
           )}
         </div>
         {time && (
-          <div className="text-xs mt-1 opacity-50">
+          <div className="text-xs mt-1 text-[#8B3A1D]/50">
             {time}
           </div>
         )}
