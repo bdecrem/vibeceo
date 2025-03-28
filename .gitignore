@@ -38,3 +38,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dropbox ignore patterns
+*.conflicted copy*
+*'s conflicted copy*
+*.dropbox*
+.dropbox.attr
+.dropbox.cache
