@@ -20,10 +20,10 @@ export default function Home() {
       </div>
 
       {/* Main Grid Container */}
-      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-8 pt-24 sm:pt-32 pb-8 sm:pb-16">
+      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-8 pt-16 sm:pt-32 pb-8 sm:pb-16">
         {/* Left Column - Text Content */}
-        <div className="flex flex-col justify-center z-10">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-8 sm:mb-16">
+        <div className="flex flex-col justify-start lg:justify-center z-10 pt-8 lg:pt-0">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 sm:mb-16">
             Leadership that<br />
             inspires,<br />
             automated.
@@ -37,7 +37,7 @@ export default function Home() {
         </div>
 
         {/* Right Column - Image */}
-        <div className="relative flex items-center justify-center lg:justify-end">
+        <div className="relative flex items-start lg:items-center justify-center lg:justify-end -mt-8 lg:mt-0">
           <div className="relative w-full max-w-2xl aspect-[4/3]">
             <Image
               src="/executives.png"
