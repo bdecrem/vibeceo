@@ -25,21 +25,33 @@ export default function Onboarding() {
             Pick your VEO:
           </h1>
           
-          <div className="flex flex-col items-center">
-            <div className="relative w-full max-w-xl sm:max-w-2xl aspect-[4/3] mb-4 sm:mb-8">
-              <Image
-                src="/executives.png"
-                alt="VEO Executives"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div className="flex justify-center gap-16 sm:gap-32 text-white text-xl sm:text-2xl font-bold">
-              <Link href="/dashboard" className="hover:text-white/90 transition-colors">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+            <div className="flex flex-col items-center">
+              <div className="relative w-48 sm:w-64 aspect-square mb-4">
+                <Image
+                  src="/donte.png"
+                  alt="Donte"
+                  fill
+                  className="object-cover rounded-lg"
+                  priority
+                />
+              </div>
+              <Link href="/dashboard" className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors">
                 Donte
               </Link>
-              <Link href="/dashboard" className="hover:text-white/90 transition-colors">
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="relative w-48 sm:w-64 aspect-square mb-4">
+                <Image
+                  src="/kailey.png"
+                  alt="Kailey"
+                  fill
+                  className="object-cover rounded-lg"
+                  priority
+                />
+              </div>
+              <Link href="/dashboard" className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors">
                 Kailey
               </Link>
             </div>
