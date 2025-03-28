@@ -1,2 +1,5 @@
-## Latest Update
-Last deployment: March 19, 2024 
+# VibeCEO
+
+Your AI CEO advisor. Built with Next.js and OpenAI.
+
+Last updated: March 28, 2024 16:55 
