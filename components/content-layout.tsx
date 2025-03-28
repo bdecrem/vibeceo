@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { ChatSidebar } from "@/components/chat-sidebar"
+import ChatSidebar from "@/components/chat-sidebar"
 import { SidebarTrigger } from "@/components/sidebar-trigger"
 import { useSidebar } from "@/components/ui/sidebar"
 
@@ -10,7 +10,7 @@ interface ContentLayoutProps {
 }
 
 export default function ContentLayout({ children }: ContentLayoutProps) {
-  const { isOpen, toggle } = useSidebar()
+  const { isOpen } = useSidebar()
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -23,7 +23,14 @@ export default function ContentLayout({ children }: ContentLayoutProps) {
         </div>
       </div>
       <div className="flex flex-1 relative min-h-0 pt-[52px]">
-        <ChatSidebar isOpen={isOpen} onClose={toggle} />
+        <div className={cn(
+          "transition-all duration-300",
+          isOpen 
+            ? "relative w-[240px] md:w-60" 
+            : "absolute -left-[240px] md:-left-60 w-[240px] md:w-60"
+        )}>
+          <ChatSidebar />
+        </div>
         <div className="w-full min-h-0">
           {children}
         </div>
