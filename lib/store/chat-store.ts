@@ -7,7 +7,7 @@ interface ChatState {
   error: string | null
   addMessage: (message: Message) => void
   updateLastMessage: (content: string) => void
-  setLoading: (isLoading: boolean) => void
+  setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   clearMessages: () => void
 }
@@ -16,23 +16,15 @@ export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
   error: null,
-  addMessage: (message) => 
-    set((state) => ({ 
-      messages: [...state.messages, message],
-      error: null 
-    })),
-  updateLastMessage: (content) =>
-    set((state) => {
-      const messages = [...state.messages]
-      if (messages.length > 0) {
-        messages[messages.length - 1] = {
-          ...messages[messages.length - 1],
-          content
-        }
-      }
-      return { messages }
-    }),
-  setLoading: (isLoading) => set({ isLoading }),
+  addMessage: (message) => set((state) => ({ 
+    messages: [...state.messages, message] 
+  })),
+  updateLastMessage: (content) => set((state) => ({
+    messages: state.messages.map((msg, i) => 
+      i === state.messages.length - 1 ? { ...msg, content } : msg
+    )
+  })),
+  setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
-  clearMessages: () => set({ messages: [], error: null }),
+  clearMessages: () => set({ messages: [], error: null })
 })) 

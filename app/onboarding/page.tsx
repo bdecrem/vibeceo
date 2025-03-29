@@ -1,7 +1,20 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useCEO } from '@/lib/contexts/ceo-context';
+import { ceos } from '@/data/ceos';
 
 export default function Onboarding() {
+  const { setSelectedCEO } = useCEO();
+  const router = useRouter();
+
+  const handleCEOSelect = (ceo: typeof ceos[0]) => {
+    setSelectedCEO(ceo);
+    router.push('/dashboard');
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#8B3A1D] via-[#B84C24] to-[#E67E22]">
       {/* Logo Section */}
@@ -26,39 +39,27 @@ export default function Onboarding() {
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
-            <div className="flex flex-col items-center">
-              <Link href="/dashboard" className="block">
-                <div className="relative w-48 sm:w-64 aspect-square mb-4">
-                  <Image
-                    src="/donte.png"
-                    alt="Donte"
-                    fill
-                    className="object-cover object-[center_40%] rounded-lg"
-                    priority
-                  />
-                </div>
-                <div className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors text-center">
-                  Donte
-                </div>
-              </Link>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              <Link href="/dashboard" className="block">
-                <div className="relative w-48 sm:w-64 aspect-square mb-4">
-                  <Image
-                    src="/kailey.png"
-                    alt="Kailey"
-                    fill
-                    className="object-cover object-[center_40%] rounded-lg"
-                    priority
-                  />
-                </div>
-                <div className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors text-center">
-                  Kailey
-                </div>
-              </Link>
-            </div>
+            {ceos.map((ceo) => (
+              <div key={ceo.id} className="flex flex-col items-center">
+                <button 
+                  onClick={() => handleCEOSelect(ceo)}
+                  className="block hover:opacity-90 transition-opacity"
+                >
+                  <div className="relative w-48 sm:w-64 aspect-square mb-4">
+                    <Image
+                      src={ceo.image}
+                      alt={ceo.name}
+                      fill
+                      className="object-cover object-[center_40%] rounded-lg"
+                      priority
+                    />
+                  </div>
+                  <div className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors text-center">
+                    {ceo.name}
+                  </div>
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </div>
