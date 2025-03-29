@@ -20,23 +20,27 @@ export default function Home() {
   );
 
   const HeroContent = (
-    <div className="flex flex-col justify-between h-[calc(100vh-4rem)]">
-      <div className="flex flex-col px-4 flex-1 justify-center -mt-12">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
-          Leadership that<br />
-          inspires,<br />
-          automated.
-        </h1>
-        <Link 
-          href="/onboarding"
-          className="bg-white text-[#8B3A1D] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
-        >
-          Get Started
-        </Link>
-      </div>
+    <div className="flex flex-col h-[100dvh]">
+      {/* Header space compensation */}
+      <div className="h-[4rem] shrink-0" />
+      
+      {/* Main content area with image */}
+      <div className="flex-1 flex flex-col px-4">
+        <div className="flex-1 flex flex-col justify-center -mt-12">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+            Leadership that<br />
+            inspires,<br />
+            automated.
+          </h1>
+          <Link 
+            href="/onboarding"
+            className="bg-white text-[#8B3A1D] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
+          >
+            Get Started
+          </Link>
+        </div>
 
-      <div className="w-full">
-        <div className="relative w-full aspect-[4/3]">
+        <div className="relative w-full h-[35vh] shrink-0">
           <Image
             src="/executives.png"
             alt="Business Executives"
@@ -45,6 +49,15 @@ export default function Home() {
             priority
           />
         </div>
+      </div>
+
+      {/* Fixed input at bottom */}
+      <div className="w-full px-4 py-4 bg-white/10 backdrop-blur-sm">
+        <input
+          type="text"
+          placeholder="Type your message..."
+          className="w-full px-4 py-3 rounded-lg bg-white/90 text-[#8B3A1D] placeholder-[#8B3A1D]/50"
+        />
       </div>
     </div>
   );
