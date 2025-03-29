@@ -50,15 +50,6 @@ export default function Home() {
           />
         </div>
       </div>
-
-      {/* Fixed input at bottom */}
-      <div className="w-full px-4 py-4 bg-white/10 backdrop-blur-sm">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          className="w-full px-4 py-3 rounded-lg bg-white/90 text-[#8B3A1D] placeholder-[#8B3A1D]/50"
-        />
-      </div>
     </div>
   );
 
