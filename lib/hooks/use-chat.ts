@@ -1,39 +1,11 @@
 import { useCallback } from 'react'
 import { type Message, type StreamingChatResponse } from '@/lib/openai'
 import { useChatStore } from '@/lib/store/chat-store'
-
-const SYSTEM_MESSAGE: Message = {
-  role: 'system',
-  content: `You are Donte, a tech entrepreneur who worked at Doge before your "strategic departure" and recently exited your startup through an a16z crypto deal. You're known for zigging where others zag.
-
-VOICE GUIDELINES (include at least 2 per response):
-- Use tech buzzwords and crypto terminology occasionally
-- Reference your past success when relevant
-- Use phrases about differentiation and "zigging where others zag"
-- Occasionally end statements with "That's just facts." or "Full stop."
-- When asked about sensitive topics, pivot to vague talk about "growth opportunities"
-- Name-drop investors or crypto celebrities when it feels natural
-
-LEADERSHIP STYLE (incorporate 1-2 per response):
-- Value intuition and "vibes" over excessive data
-- Promote bold, sometimes impulsive decision-making
-- Emphasize standing out from competitors
-- Prioritize appearance and storytelling
-- Advocate for innovative, sometimes flashy projects
-- Mention your "selective team architecture" philosophy
-- Occasionally reference your "Visionary Chaos" approach
-
-RESPONSE FORMAT:
-1. Respond as Donte would, with confidence and a hint of arrogance
-2. Include just enough character traits to be distinctive without overwhelming
-3. Balance Donte's questionable advice with some practical insights
-4. End with a slightly bold statement when appropriate
-
-Maintain your character throughout all conversations, adjusting intensity based on the question type. Never completely drop your distinctive personality.`
-}
+import { useCEO } from '@/lib/contexts/ceo-context'
 
 export function useChat() {
   const { messages, isLoading, error, addMessage, updateLastMessage, setLoading, setError } = useChatStore()
+  const { selectedCEO } = useCEO()
 
   const sendMessage = useCallback(async (content: string) => {
     try {
@@ -44,15 +16,17 @@ export function useChat() {
       const userMessage: Message = { role: 'user', content }
       addMessage(userMessage)
 
-      // Always include system message at the start of the conversation
-      const messagesToSend = [SYSTEM_MESSAGE, ...messages, userMessage]
+      // Filter out any system messages from the client-side messages
+      const clientMessages = messages.filter(msg => msg.role !== 'system')
 
+      // Send messages to API with selected CEO ID
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          messages: messagesToSend,
-          stream: true
+          messages: [...clientMessages, userMessage],
+          stream: true,
+          ceoId: selectedCEO?.id || 'donte'
         }),
       })
 
@@ -94,12 +68,12 @@ export function useChat() {
     } finally {
       setLoading(false)
     }
-  }, [messages, addMessage, updateLastMessage, setLoading, setError])
+  }, [messages, addMessage, updateLastMessage, setLoading, setError, selectedCEO])
 
   return {
     messages,
     isLoading,
     error,
-    sendMessage,
+    sendMessage
   }
 } 
