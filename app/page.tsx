@@ -1,57 +1,68 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { MobileViewport } from '@/components/layouts/mobile-viewport';
+import { ViewportContent } from '@/components/layouts/viewport-content';
+import { MobileGrid } from '@/components/layouts/mobile-grid';
 
 export default function Home() {
-  return (
-    <div className="min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-[#6B2916] via-[#8B3A1D] to-[#B84C24] flex flex-col">
-      {/* Logo Section */}
-      <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10">
-        <div className="flex items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="myVEO Logo"
-            width={40}
-            height={40}
-            priority
-            className="object-contain sm:w-12 sm:h-12"
-          />
-          <span className="text-white text-xl sm:text-2xl font-bold">myVEO</span>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-8 pt-32 sm:pt-32">
-        {/* Left Column - Text Content */}
-        <div className="flex flex-col justify-start lg:justify-center z-10 pt-16 lg:pt-0">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 sm:mb-16">
-            Leadership that<br />
-            inspires,<br />
-            automated.
-          </h1>
-          <Link 
-            href="/onboarding"
-            className="bg-white text-[#8B3A1D] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
-          >
-            Get Started
-          </Link>
-        </div>
-
-        {/* Right Column - Image */}
-        <div className="relative flex items-end lg:items-center justify-center lg:justify-end mt-auto">
-          <div className="relative w-full max-w-3xl aspect-[4/3] mb-8 lg:mb-0">
-            <Image
-              src="/executives.png"
-              alt="Business Executives"
-              fill
-              className="object-contain object-bottom lg:object-center scale-110"
-              priority
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent"></div>
+  const Header = (
+    <div className="flex items-center gap-3 px-4 py-2">
+      <Image
+        src="/logo.png"
+        alt="myVEO Logo"
+        width={40}
+        height={40}
+        priority
+        className="object-contain sm:w-12 sm:h-12"
+      />
+      <span className="text-white text-xl sm:text-2xl font-bold">myVEO</span>
     </div>
+  );
+
+  const HeroContent = (
+    <>
+      <div className="flex flex-col px-4">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+          Leadership that<br />
+          inspires,<br />
+          automated.
+        </h1>
+        <Link 
+          href="/onboarding"
+          className="bg-white text-[#8B3A1D] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
+        >
+          Get Started
+        </Link>
+      </div>
+
+      <div className="relative flex-1 flex items-end justify-center w-full overflow-hidden">
+        <div className="relative w-full aspect-[4/3] max-h-[50vh]">
+          <Image
+            src="/executives.png"
+            alt="Business Executives"
+            fill
+            className="object-contain object-bottom"
+            priority
+          />
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <MobileViewport
+      header={Header}
+      className="bg-gradient-to-br from-[#6B2916] via-[#8B3A1D] to-[#B84C24]"
+      alignment="top"
+    >
+      <ViewportContent>
+        <MobileGrid
+          template="stacked"
+          mainContent={HeroContent}
+          spacing="none"
+          className="h-[calc(100vh-4rem)]"
+        />
+      </ViewportContent>
+    </MobileViewport>
   );
 } 
