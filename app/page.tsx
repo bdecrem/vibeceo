@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function Home() {
   return (
-    <div className="min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-[#8B3A1D] via-[#B84C24] to-[#E67E22] flex flex-col">
+    <div className="min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-[#6B2916] via-[#8B3A1D] to-[#B84C24] flex flex-col">
       {/* Logo Section */}
       <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10">
         <div className="flex items-center gap-3">
@@ -37,13 +37,13 @@ export default function Home() {
         </div>
 
         {/* Right Column - Image */}
-        <div className="relative flex items-end lg:items-center justify-center lg:justify-end h-full">
-          <div className="relative w-full max-w-2xl aspect-[4/3]">
+        <div className="relative flex items-end lg:items-center justify-center lg:justify-end mt-auto">
+          <div className="relative w-full max-w-3xl aspect-[4/3] mb-8 lg:mb-0">
             <Image
               src="/executives.png"
               alt="Business Executives"
               fill
-              className="object-contain"
+              className="object-contain object-bottom lg:object-center scale-110"
               priority
             />
           </div>
