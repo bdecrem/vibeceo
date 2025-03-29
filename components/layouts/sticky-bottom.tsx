@@ -1,3 +1,5 @@
+'use client';
+
 import { useViewport } from '@/lib/contexts/viewport-context';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
