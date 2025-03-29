@@ -1,6 +1,20 @@
-# VibeCEO
+# myVEO.ai
 
-Your AI CEO advisor. Built with Next.js and OpenAI.
+An AI-powered executive leadership platform that provides personalized CEO mentorship and guidance.
+
+## Features
+
+- Choose between two AI executive mentors: Donte and Kailey
+- Get real-time leadership advice and guidance
+- Mobile-first design with responsive desktop support
+- Modern, clean user interface
+
+## Tech Stack
+
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Radix UI primitives
 
 ## Latest Update
 Last deployment: March 28, 2025 - 9:52 AM

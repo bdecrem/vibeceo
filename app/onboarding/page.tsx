@@ -33,7 +33,7 @@ export default function Onboarding() {
                     src="/donte.png"
                     alt="Donte"
                     fill
-                    className="object-cover object-[center_40%] rounded-lg"
+                    className="object-cover object-top rounded-lg"
                     priority
                   />
                 </div>
@@ -50,7 +50,7 @@ export default function Onboarding() {
                     src="/kailey.png"
                     alt="Kailey"
                     fill
-                    className="object-cover object-[center_40%] rounded-lg"
+                    className="object-cover object-top rounded-lg"
                     priority
                   />
                 </div>
