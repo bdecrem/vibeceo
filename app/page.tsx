@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function Home() {
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#8B3A1D] via-[#B84C24] to-[#E67E22]">
+    <div className="min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-[#8B3A1D] via-[#B84C24] to-[#E67E22] flex flex-col">
       {/* Logo Section */}
       <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10">
         <div className="flex items-center gap-3">
@@ -19,8 +19,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Grid Container */}
-      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-8 pt-32 sm:pt-32 pb-8 sm:pb-16">
+      {/* Main Content */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 px-4 sm:px-8 pt-32 sm:pt-32">
         {/* Left Column - Text Content */}
         <div className="flex flex-col justify-start lg:justify-center z-10 pt-16 lg:pt-0">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 sm:mb-16">
@@ -37,7 +37,7 @@ export default function Home() {
         </div>
 
         {/* Right Column - Image */}
-        <div className="relative flex items-start lg:items-center justify-center lg:justify-end mt-8 lg:mt-0">
+        <div className="relative flex items-end lg:items-center justify-center lg:justify-end h-full">
           <div className="relative w-full max-w-2xl aspect-[4/3]">
             <Image
               src="/executives.png"
