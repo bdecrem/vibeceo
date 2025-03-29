@@ -6,7 +6,7 @@ import { MobileGrid } from '@/components/layouts/mobile-grid';
 
 export default function Home() {
   const Header = (
-    <div className="flex items-center gap-3 px-4 py-2">
+    <div className="flex items-center gap-3 px-4 py-4">
       <Image
         src="/logo.png"
         alt="myVEO Logo"
@@ -20,8 +20,8 @@ export default function Home() {
   );
 
   const HeroContent = (
-    <>
-      <div className="flex flex-col px-4">
+    <div className="flex flex-col justify-between h-[calc(100vh-4rem)]">
+      <div className="flex flex-col px-4 flex-1 justify-center -mt-12">
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
           Leadership that<br />
           inspires,<br />
@@ -35,8 +35,8 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="relative flex-1 flex items-end justify-center w-full overflow-hidden">
-        <div className="relative w-full aspect-[4/3] max-h-[50vh]">
+      <div className="w-full">
+        <div className="relative w-full aspect-[4/3]">
           <Image
             src="/executives.png"
             alt="Business Executives"
@@ -46,7 +46,7 @@ export default function Home() {
           />
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -60,7 +60,6 @@ export default function Home() {
           template="stacked"
           mainContent={HeroContent}
           spacing="none"
-          className="h-[calc(100vh-4rem)]"
         />
       </ViewportContent>
     </MobileViewport>
