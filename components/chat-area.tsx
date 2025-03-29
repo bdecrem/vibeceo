@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useChat } from "@/lib/hooks/use-chat"
 import { ChatMessage } from "@/components/chat-message"
+import { StickyBottom } from "@/components/layouts/sticky-bottom"
 
 export default function ChatArea() {
   const { messages, isLoading, error, sendMessage } = useChat()
@@ -75,7 +76,7 @@ export default function ChatArea() {
     <div className="flex flex-col h-full w-full bg-[hsl(var(--background-outer))]">
       <div className="flex flex-col h-full max-w-2xl mx-auto w-full px-2 md:px-8 bg-[hsl(var(--background))]">
         <div 
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-20 md:pb-24 pt-16 md:pt-4"
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-32 md:pb-24 pt-16 md:pt-4"
           onScroll={handleScroll}
         >
           {messages.map((message, index) => (
@@ -95,7 +96,7 @@ export default function ChatArea() {
           )}
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 md:relative bg-background border-t pb-safe">
+        <StickyBottom alwaysVisible withSafeArea className="border-t">
           <div className="max-w-2xl mx-auto w-full">
             <form onSubmit={handleSendMessage} className="flex items-center gap-2 p-2 md:p-4">
               <Button variant="outline" size="icon" type="button" className="shrink-0 hidden md:inline-flex">
@@ -116,7 +117,7 @@ export default function ChatArea() {
               <Button 
                 type="submit" 
                 size="icon" 
-                className="shrink-0 h-10 w-10 md:h-9 md:w-9 bg-[#8B3A1D] hover:bg-[#B84C24] text-white transition-colors" 
+                className="shrink-0 h-10 w-10 md:h-9 md:w-9" 
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -127,7 +128,7 @@ export default function ChatArea() {
               </Button>
             </form>
           </div>
-        </div>
+        </StickyBottom>
       </div>
     </div>
   )
