@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useCEO } from '@/lib/contexts/ceo-context';
 import { ceos } from '@/data/ceos';
+import { MarketingLayout } from '@/components/layouts/marketing-layout';
 
 export default function Onboarding() {
   const { setSelectedCEO } = useCEO();
@@ -16,56 +16,36 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-tr from-[#3B0A64] to-[#D1A6CB]">
-      {/* Logo Section */}
-      <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <Image
-            src="/logo.png"
-            alt="Advisors Foundry Logo"
-            width={40}
-            height={40}
-            priority
-            className="object-contain sm:w-12 sm:h-12"
-          />
-          <span className="text-white text-xl sm:text-2xl font-bold">Advisors Foundry</span>
-        </Link>
-      </div>
-
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-8">
-        <div className="text-center space-y-8 sm:space-y-12 max-w-4xl z-10 mt-16 sm:mt-0">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 sm:mb-16">
-            Pick your advisor:
-          </h1>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
-            {ceos.map((ceo) => (
-              <div key={ceo.id} className="flex flex-col items-center">
-                <button 
-                  onClick={() => handleCEOSelect(ceo)}
-                  className="block hover:opacity-90 transition-opacity"
-                >
-                  <div className="relative w-48 sm:w-64 aspect-square mb-4">
-                    <Image
-                      src={ceo.image}
-                      alt={ceo.name}
-                      fill
-                      className="object-cover object-[center_40%] rounded-lg"
-                      priority
-                    />
-                  </div>
-                  <div className="text-white text-xl sm:text-2xl font-bold hover:text-white/90 transition-colors text-center">
-                    {ceo.name}
-                  </div>
-                </button>
-              </div>
-            ))}
-          </div>
+    <MarketingLayout>
+      <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+        <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-white text-center mb-12 sm:mb-16">
+          Pick your advisor:
+        </h1>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 max-w-4xl mx-auto w-full">
+          {ceos.map((ceo) => (
+            <div key={ceo.id} className="flex flex-col items-center">
+              <button 
+                onClick={() => handleCEOSelect(ceo)}
+                className="group w-full max-w-sm transition-transform hover:scale-[1.02] duration-200"
+              >
+                <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden">
+                  <Image
+                    src={ceo.image}
+                    alt={ceo.name}
+                    fill
+                    className="object-cover object-[center_40%]"
+                    priority
+                  />
+                </div>
+                <div className="text-white text-xl sm:text-2xl font-bold text-center group-hover:opacity-90 transition-opacity">
+                  {ceo.name}
+                </div>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
-
-      {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent"></div>
-    </div>
+    </MarketingLayout>
   );
 } 
