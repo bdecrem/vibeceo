@@ -34,7 +34,7 @@ export default function Home() {
           </h1>
           <Link 
             href="/onboarding"
-            className="bg-white text-[#8B3A1D] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
+            className="bg-white text-[#3B0A64] hover:bg-white/90 font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-colors duration-200 w-fit text-base sm:text-lg"
           >
             Get Started
           </Link>
@@ -56,7 +56,7 @@ export default function Home() {
   return (
     <MobileViewport
       header={Header}
-      className="bg-gradient-to-br from-[#6B2916] via-[#8B3A1D] to-[#B84C24]"
+      className="bg-gradient-to-tr from-[#3B0A64] to-[#D1A6CB]"
       alignment="top"
     >
       <ViewportContent>

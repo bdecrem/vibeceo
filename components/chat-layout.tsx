@@ -11,8 +11,8 @@ export default function ChatLayout() {
   const { isOpen } = useSidebar()
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-br from-[#8B3A1D]/[0.05] via-[#B84C24]/[0.05] to-[#E67E22]/[0.08]">
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#8B3A1D] via-[#B84C24] to-[#E67E22] flex items-center px-4 py-3 shadow-md">
+    <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-tr from-[#3B0A64]/[0.05] to-[#D1A6CB]/[0.08]">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-[#3B0A64] flex items-center px-4 py-3 shadow-md">
         <div className="flex items-center w-full">
           <div className="[&_button]:text-white [&_button]:hover:text-white/90 [&_button]:hover:bg-white/10">
             <SidebarTrigger />

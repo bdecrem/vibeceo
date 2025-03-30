@@ -20,8 +20,8 @@ export function ChatMessage({ message, time }: ChatMessageProps) {
       <div className={cn(`
         max-w-[85%] rounded-lg px-4 py-2 
         ${message.role === 'assistant' 
-          ? 'bg-[#E67E22]/10 text-[#8B3A1D] border border-[#8B3A1D]/10' 
-          : 'bg-[#8B3A1D]/10 text-[#8B3A1D] border border-[#8B3A1D]/10'
+          ? 'bg-[#3B0A64]/10 text-[#3B0A64] border border-[#3B0A64]/10' 
+          : 'bg-[#D1A6CB]/10 text-[#3B0A64] border border-[#D1A6CB]/10'
         }`,
         isStreaming && 'animate-pulse'
       )}>
@@ -32,7 +32,7 @@ export function ChatMessage({ message, time }: ChatMessageProps) {
           )}
         </div>
         {time && (
-          <div className="text-xs mt-1 text-[#8B3A1D]/50">
+          <div className="text-xs mt-1 text-[#3B0A64]/50">
             {time}
           </div>
         )}
