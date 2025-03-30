@@ -21,7 +21,7 @@ export default function ChatLayout() {
             href="/"
             className="absolute left-1/2 -translate-x-1/2 text-sm font-medium text-white hover:text-white/90 transition-colors"
           >
-            myVEO
+            Advisors Foundry
           </Link>
         </div>
       </div>

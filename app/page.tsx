@@ -9,13 +9,13 @@ export default function Home() {
     <div className="flex items-center gap-3 px-4 py-4">
       <Image
         src="/logo.png"
-        alt="myVEO Logo"
+        alt="Advisors Foundry Logo"
         width={40}
         height={40}
         priority
         className="object-contain sm:w-12 sm:h-12"
       />
-      <span className="text-white text-xl sm:text-2xl font-bold">myVEO</span>
+      <span className="text-white text-xl sm:text-2xl font-bold">Advisors Foundry</span>
     </div>
   );
 

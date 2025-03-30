@@ -18,7 +18,7 @@ export default function ContentLayout({ children }: ContentLayoutProps) {
         <div className="flex items-center w-full">
           <SidebarTrigger />
           <div className="absolute left-1/2 -translate-x-1/2 text-sm font-medium text-foreground">
-            myVEO.ai
+            Advisors Foundry
           </div>
         </div>
       </div>
