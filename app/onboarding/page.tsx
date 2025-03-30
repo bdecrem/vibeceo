@@ -16,7 +16,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#8B3A1D] via-[#B84C24] to-[#E67E22]">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-tr from-[#3B0A64] to-[#D1A6CB]">
       {/* Logo Section */}
       <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10">
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">

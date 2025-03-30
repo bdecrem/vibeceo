@@ -117,7 +117,7 @@ export default function ChatArea() {
               <Button 
                 type="submit" 
                 size="icon" 
-                className="shrink-0 h-10 w-10 md:h-9 md:w-9" 
+                className="shrink-0 h-10 w-10 md:h-9 md:w-9 bg-[#3B0A64] hover:bg-[#3B0A64]/90 text-white" 
                 disabled={isLoading}
               >
                 {isLoading ? (
