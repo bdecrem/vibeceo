@@ -1,33 +1,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { MobileViewport } from '@/components/layouts/mobile-viewport';
-import { ViewportContent } from '@/components/layouts/viewport-content';
-import { MobileGrid } from '@/components/layouts/mobile-grid';
+import { MarketingLayout } from '@/components/layouts/marketing-layout';
 
 export default function Home() {
-  const Header = (
-    <div className="flex items-center gap-3 px-4 py-4">
-      <Image
-        src="/logo.png"
-        alt="Advisors Foundry Logo"
-        width={40}
-        height={40}
-        priority
-        className="object-contain sm:w-12 sm:h-12"
-      />
-      <span className="text-white text-xl sm:text-2xl font-bold">Advisors Foundry</span>
-    </div>
-  );
-
-  const HeroContent = (
-    <div className="flex flex-col h-[100dvh]">
-      {/* Header space compensation */}
-      <div className="h-[4rem] shrink-0" />
-      
-      {/* Main content area with image */}
-      <div className="flex-1 flex flex-col px-4">
-        <div className="flex-1 flex flex-col justify-start pt-16 sm:pt-20">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-8">
+  return (
+    <MarketingLayout>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[calc(100dvh-88px)] sm:min-h-[calc(100dvh-96px)]">
+        {/* Text Content */}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-white leading-[1.1] mb-8">
             World leading<br />
             startup coaches,<br />
             freshly minted.
@@ -40,32 +21,19 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="relative w-full h-[48vh] sm:h-[52vh] shrink-0 mt-6 sm:mt-8">
-          <Image
-            src="/executives.png"
-            alt="Business Executives"
-            fill
-            className="object-contain object-bottom"
-            priority
-          />
+        {/* Image Container */}
+        <div className="relative flex items-end justify-center lg:justify-end h-[min(50vh,500px)] lg:h-auto">
+          <div className="relative w-full h-full lg:aspect-[4/3] lg:max-h-[600px]">
+            <Image
+              src="/executives.png"
+              alt="Business Executives"
+              fill
+              className="object-contain object-bottom"
+              priority
+            />
+          </div>
         </div>
       </div>
-    </div>
-  );
-
-  return (
-    <MobileViewport
-      header={Header}
-      className="bg-gradient-to-tr from-[#3B0A64] to-[#D1A6CB]"
-      alignment="top"
-    >
-      <ViewportContent>
-        <MobileGrid
-          template="stacked"
-          mainContent={HeroContent}
-          spacing="none"
-        />
-      </ViewportContent>
-    </MobileViewport>
+    </MarketingLayout>
   );
 } 
