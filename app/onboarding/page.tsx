@@ -22,20 +22,20 @@ export default function Onboarding() {
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <Image
             src="/logo.png"
-            alt="myVEO Logo"
+            alt="Advisors Foundry Logo"
             width={40}
             height={40}
             priority
             className="object-contain sm:w-12 sm:h-12"
           />
-          <span className="text-white text-xl sm:text-2xl font-bold">myVEO</span>
+          <span className="text-white text-xl sm:text-2xl font-bold">Advisors Foundry</span>
         </Link>
       </div>
 
       <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-8">
         <div className="text-center space-y-8 sm:space-y-12 max-w-4xl z-10 mt-16 sm:mt-0">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 sm:mb-16">
-            Pick your VEO:
+            Pick your Advisor:
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
