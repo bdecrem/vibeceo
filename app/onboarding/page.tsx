@@ -35,7 +35,7 @@ export default function Onboarding() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-8">
         <div className="text-center space-y-8 sm:space-y-12 max-w-4xl z-10 mt-16 sm:mt-0">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 sm:mb-16">
-            Pick your Advisor:
+            Pick your advisor:
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
