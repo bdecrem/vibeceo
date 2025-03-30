@@ -28,9 +28,9 @@ export default function Home() {
       <div className="flex-1 flex flex-col px-4">
         <div className="flex-1 flex flex-col justify-center -mt-12">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
-            Leadership that<br />
-            inspires,<br />
-            automated.
+            World leading<br />
+            startup coaches,<br />
+            freshly minted.
           </h1>
           <Link 
             href="/onboarding"
