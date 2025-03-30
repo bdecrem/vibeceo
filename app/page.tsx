@@ -6,30 +6,29 @@ import { ArrowRight, Sparkles, Zap, Brain, Users } from "lucide-react"
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Replace this with your existing gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-400 via-purple-600 to-purple-900 -z-10" />
+      {/* Gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-teal-900 via-teal-800 to-teal-900 -z-10" />
 
-      {/* Replace with your existing header/navigation */}
+      {/* Header/navigation */}
       <nav className="container mx-auto py-6">
         <div className="text-2xl font-bold text-white">
-          {/* Add your hexagon logo here */}
-          <span className="text-purple-200">Advisors</span>Foundry
+          <span className="text-teal-200">Advisors</span>Foundry
         </div>
       </nav>
 
-      {/* Hero Section - Adapt to match your existing design */}
+      {/* Hero Section */}
       <section className="container mx-auto flex flex-col items-center text-center pt-16 md:pt-24 pb-16">
         <div className="space-y-4 max-w-3xl">
           <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
             World leading startup coaches,
-            <span className="block text-purple-200">freshly minted.</span>
+            <span className="block text-teal-200">freshly minted.</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
             Algorithmically optimized advice that sounds just human enough to be legally distinct from actual humans.
           </p>
           <div className="pt-6">
             <Link href="/coaches">
-              <Button size="lg" className="bg-white hover:bg-gray-100 text-purple-900 px-8 py-6 text-lg rounded-full">
+              <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-6 text-lg rounded-full">
                 Get Started <ArrowRight className="ml-2" />
               </Button>
             </Link>
@@ -70,7 +69,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Coaches Section - WHITE BACKGROUND */}
+      {/* Coaches Section */}
       <section className="bg-white py-16">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
@@ -79,7 +78,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-1.jpeg" alt="Startup Coach" fill className="object-cover" />
+                <Image src="/images/coach-1.jpeg" alt="Startup Coach" fill className="object-cover" priority />
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Donte Disrupt</h3>
@@ -103,7 +102,7 @@ export default function Home() {
 
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-2.jpeg" alt="Startup Coach" fill className="object-cover" />
+                <Image src="/images/coach-2.jpeg" alt="Startup Coach" fill className="object-cover" priority />
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Venus Metrics</h3>
@@ -136,7 +135,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials - BLACK BACKGROUND */}
+      {/* Testimonials */}
       <section className="bg-black py-16">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-white text-center mb-12">
@@ -161,7 +160,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section - DARK TEAL BACKGROUND */}
+      {/* CTA Section */}
       <section className="bg-teal-900 py-16">
         <div className="container mx-auto">
           <div className="bg-teal-800/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 text-center">
