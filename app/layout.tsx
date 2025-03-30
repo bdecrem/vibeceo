@@ -8,8 +8,19 @@ import { CEOProvider } from '@/lib/contexts/ceo-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "myVEO - Your AI Leadership Coach",
-  description: "Get personalized leadership advice from AI-powered CEOs",
+  title: "Advisors Foundry",
+  description: "Get personalized leadership advice from AI-powered advisors",
+  openGraph: {
+    title: "Advisors Foundry",
+    description: "Get personalized leadership advice from AI-powered advisors",
+    type: "website",
+    siteName: "Advisors Foundry",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Advisors Foundry",
+    description: "Get personalized leadership advice from AI-powered advisors",
+  }
 }
 
 export default function RootLayout({
