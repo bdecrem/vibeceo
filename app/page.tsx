@@ -26,8 +26,8 @@ export default function Home() {
       
       {/* Main content area with image */}
       <div className="flex-1 flex flex-col px-4">
-        <div className="flex-1 flex flex-col justify-center -mt-12">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+        <div className="flex-1 flex flex-col justify-start pt-16 sm:pt-20">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-8">
             World leading<br />
             startup coaches,<br />
             freshly minted.
@@ -40,7 +40,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="relative w-full h-[35vh] shrink-0">
+        <div className="relative w-full h-[48vh] sm:h-[52vh] shrink-0 mt-6 sm:mt-8">
           <Image
             src="/executives.png"
             alt="Business Executives"
