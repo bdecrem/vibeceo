@@ -6,52 +6,53 @@ import { Calendar, MessageSquare, Clock, Award, Zap, Target, Code, Lightbulb } f
 export default function CoachesPage() {
   return (
     <main className="min-h-screen">
-      {/* Replace with your existing gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-400 via-purple-600 to-purple-900 -z-10" />
+      {/* Gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-teal-900 via-teal-800 to-teal-900 -z-10" />
 
-      {/* Header - Adapt to match your existing header */}
+      {/* Header */}
       <header className="text-white">
         <div className="container mx-auto py-6">
           <Link href="/" className="inline-block">
-            <div className="text-2xl font-bold cursor-pointer hover:text-purple-200 transition-colors">
-              <span className="text-purple-200">Advisors</span>Foundry
+            <div className="text-2xl font-bold cursor-pointer hover:text-teal-200 transition-colors">
+              <span className="text-teal-200">Advisors</span>Foundry
             </div>
           </Link>
         </div>
         <div className="container mx-auto py-12 md:py-20 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Meet Our Coaches</h1>
-          <p className="text-xl text-purple-100 max-w-2xl mx-auto">
+          <p className="text-xl text-teal-100 max-w-2xl mx-auto">
             Select the perfect advisor to guide your startup through its inevitable pivot to AI.
           </p>
         </div>
       </header>
 
-      {/* Coaches Grid - Adapt styling to match your site */}
+      {/* Coaches Grid */}
       <section className="container mx-auto py-12 md:py-20">
         <div className="grid grid-cols-1 gap-12">
-          {/* Coach Card Example - Adapt to your design system */}
+          {/* Donte */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/3 relative h-80 md:h-auto">
-                <Image src="/images/coach-1.jpeg" alt="Donte Disrupt" fill className="object-cover" />
+                <Image src="/images/coach-1.jpeg" alt="Donte Disrupt" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3 text-white">
                 <h2 className="text-3xl font-bold">Donte Disrupt</h2>
-                <p className="text-purple-200 text-lg">Chief Vision Optimizer</p>
+                <p className="text-teal-200 text-lg">Chief Vision Optimizer</p>
 
                 <p className="my-6 text-lg">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
                   a 100% chance of sounding profound."
                 </p>
 
-                {/* Adapt buttons to match your site's design */}
                 <div className="flex flex-col sm:flex-row gap-4 mt-8">
                   <Button variant="outline" className="border-white text-white hover:bg-white/10">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Button className="bg-white hover:bg-gray-100 text-purple-900 font-medium">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
-                  </Button>
+                  <Link href="/chat">
+                    <Button className="bg-white hover:bg-gray-100 text-teal-900 font-medium">
+                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -61,7 +62,7 @@ export default function CoachesPage() {
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/3 relative h-80 md:h-auto">
-                <Image src="/images/coach-2.jpeg" alt="Venus Metrics" fill className="object-cover" />
+                <Image src="/images/coach-2.jpeg" alt="Venus Metrics" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -108,9 +109,11 @@ export default function CoachesPage() {
                   <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Venus
-                  </Button>
+                  <Link href="/chat">
+                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Venus
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -120,7 +123,7 @@ export default function CoachesPage() {
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/3 relative h-80 md:h-auto">
-                <Image src="/images/coach-3.jpeg" alt="Kailey Calm" fill className="object-cover" />
+                <Image src="/images/coach-3.jpeg" alt="Kailey Calm" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -167,9 +170,11 @@ export default function CoachesPage() {
                   <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Kailey
-                  </Button>
+                  <Link href="/chat">
+                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Kailey
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -179,7 +184,7 @@ export default function CoachesPage() {
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/3 relative h-80 md:h-auto">
-                <Image src="/images/coach-4.jpeg" alt="Alice Logic" fill className="object-cover" />
+                <Image src="/images/coach-4.jpeg" alt="Alice Logic" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -226,9 +231,11 @@ export default function CoachesPage() {
                   <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alice
-                  </Button>
+                  <Link href="/chat">
+                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alice
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
