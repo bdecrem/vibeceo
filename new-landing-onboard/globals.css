@@ -24,12 +24,6 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 173 80% 40%;
     --radius: 0.5rem;
-
-    /* Safe area insets */
-    --sat: env(safe-area-inset-top);
-    --sar: env(safe-area-inset-right);
-    --sab: env(safe-area-inset-bottom);
-    --sal: env(safe-area-inset-left);
   }
 
   .dark {
@@ -64,30 +58,8 @@
   }
 }
 
-/* Safe area utilities */
-.pt-safe {
-  padding-top: var(--sat);
-}
-
-.pr-safe {
-  padding-right: var(--sar);
-}
-
-.pb-safe {
-  padding-bottom: var(--sab);
-}
-
-.pl-safe {
-  padding-left: var(--sal);
-}
-
-/* Full viewport height utilities */
-.h-screen-safe {
-  height: 100vh;
-  height: 100dvh;
-}
-
 html,
 body {
   scroll-behavior: smooth;
-} 
+}
+

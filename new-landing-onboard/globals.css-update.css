@@ -1,0 +1,35 @@
+/* Update these CSS variables in your globals.css file */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    /* Update primary color to purple */
+    --primary: 270 40% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Additional colors to match your site */
+    --purple-light: 270 40% 70%;
+    --purple-medium: 270 40% 50%;
+    --purple-dark: 270 40% 30%;
+
+    /* Other variables remain the same */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    /* Update primary color to purple */
+    --primary: 270 40% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Other variables remain the same */
+  }
+}
+
+/* Add this gradient class for backgrounds */
+.purple-gradient-bg {
+  background: linear-gradient(135deg, var(--purple-light) 0%, var(--purple-medium) 50%, var(--purple-dark) 100%);
+}
+

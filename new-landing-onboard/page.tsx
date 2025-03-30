@@ -190,6 +190,10 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Additional sections from our mockup - adapt as needed */}
+      {/* ... */}
     </main>
   )
-} 
+}
+
