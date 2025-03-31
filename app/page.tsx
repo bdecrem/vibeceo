@@ -11,8 +11,17 @@ export default function Home() {
 
       {/* Header/navigation */}
       <nav className="container mx-auto py-6">
-        <div className="text-2xl font-bold text-white">
-          <span className="text-[#40e0d0]">Advisors</span>Foundry
+        <div className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="AdvisorsFoundry Logo"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
+          <div className="text-2xl font-bold text-white">
+            <span className="text-[#40e0d0]">Advisors</span>Foundry
+          </div>
         </div>
       </nav>
 
