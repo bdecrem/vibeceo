@@ -1,20 +1,38 @@
 # myVEO.ai
 
-An AI-powered executive leadership platform that provides personalized CEO mentorship and guidance.
+An AI-powered platform connecting startup founders with experienced CEOs for personalized guidance and mentorship.
+
+## Stable Version Note
+
+This version represents a stable build of the application with working chat functionality and CEO selection. The application is built with:
+
+- Next.js 14 for the framework
+- TypeScript for type safety
+- Tailwind CSS for styling
+- OpenAI integration for chat functionality
+- Vercel for deployment
 
 ## Features
 
-- Choose between two AI executive mentors: Donte and Kailey
-- Get real-time leadership advice and guidance
-- Mobile-first design with responsive desktop support
-- Modern, clean user interface
+- Real-time chat with AI CEOs
+- Dynamic CEO selection
+- Responsive design
+- Modern UI with Tailwind CSS
 
-## Tech Stack
+## Development
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- Radix UI primitives
+```bash
+npm install
+npm run dev
+```
+
+## Deployment
+
+The application is deployed on Vercel and can be accessed at the project URL.
+
+## Note
+
+This version has been specifically selected for its stability and working features. Any further development should branch from this version.
 
 ## Latest Update
 Last deployment: March 28, 2025 - 9:52 AM
