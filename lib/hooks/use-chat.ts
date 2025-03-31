@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { type Message, type StreamingChatResponse } from '@/lib/openai'
 import { useChatStore } from '@/lib/store/chat-store'
-import { useCEO } from '@/lib/contexts/ceo-context'
+import { useCEO } from '@/lib/providers/ceo-provider'
 
 export function useChat() {
   const { messages, isLoading, error, addMessage, updateLastMessage, setLoading, setError } = useChatStore()
@@ -26,7 +26,7 @@ export function useChat() {
         body: JSON.stringify({ 
           messages: [...clientMessages, userMessage],
           stream: true,
-          ceoId: selectedCEO?.id || 'donte'
+          ceoId: selectedCEO?.id
         }),
       })
 
