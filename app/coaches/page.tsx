@@ -7,20 +7,20 @@ export default function CoachesPage() {
   return (
     <main className="min-h-screen">
       {/* Gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-900 via-teal-800 to-teal-900 -z-10" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#1a3d3d] via-[#1e4545] to-[#1a3d3d] -z-10" />
 
       {/* Header */}
       <header className="text-white">
         <div className="container mx-auto py-6">
           <Link href="/" className="inline-block">
-            <div className="text-2xl font-bold cursor-pointer hover:text-teal-200 transition-colors">
-              <span className="text-teal-200">Advisors</span>Foundry
+            <div className="text-2xl font-bold cursor-pointer hover:text-[#40e0d0] transition-colors">
+              <span className="text-[#40e0d0]">Advisors</span>Foundry
             </div>
           </Link>
         </div>
         <div className="container mx-auto py-12 md:py-20 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Meet Our Coaches</h1>
-          <p className="text-xl text-teal-100 max-w-2xl mx-auto">
+          <p className="text-xl text-[#40e0d0] max-w-2xl mx-auto">
             Select the perfect advisor to guide your startup through its inevitable pivot to AI.
           </p>
         </div>
@@ -30,26 +30,56 @@ export default function CoachesPage() {
       <section className="container mx-auto py-12 md:py-20">
         <div className="grid grid-cols-1 gap-12">
           {/* Donte */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/3 relative h-80 md:h-auto">
                 <Image src="/images/coach-1.jpeg" alt="Donte Disrupt" fill className="object-cover" priority />
               </div>
-              <div className="p-8 md:w-2/3 text-white">
-                <h2 className="text-3xl font-bold">Donte Disrupt</h2>
-                <p className="text-teal-200 text-lg">Chief Vision Optimizer</p>
+              <div className="p-8 md:w-2/3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900">Donte Disrupt</h2>
+                    <p className="text-[#40e0d0] text-lg">Chief Vision Optimizer</p>
+                  </div>
+                </div>
 
-                <p className="my-6 text-lg">
+                <p className="text-gray-700 mb-6 text-lg">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
                   a 100% chance of sounding profound."
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                  <Button variant="outline" className="border-white text-white hover:bg-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  <div className="flex items-center">
+                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">10+ pivots executed</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">60-min vision sessions</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">Vision architect</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">Disruption expert</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Blockchain</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Failure</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Pivots</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Link href="/chat">
-                    <Button className="bg-white hover:bg-gray-100 text-teal-900 font-medium">
+                  <Link href="/dashboard?ceo=donte">
+                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
                       <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
                     </Button>
                   </Link>
@@ -68,7 +98,7 @@ export default function CoachesPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">Venus Metrics</h2>
-                    <p className="text-teal-600 text-lg">Execution Specialist</p>
+                    <p className="text-[#40e0d0] text-lg">Execution Specialist</p>
                   </div>
                 </div>
 
@@ -80,37 +110,37 @@ export default function CoachesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   <div className="flex items-center">
-                    <Award className="h-5 w-5 text-teal-600 mr-2" />
+                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">5+ acquisitions</span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-teal-600 mr-2" />
+                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">90-min intensive sessions</span>
                   </div>
                   <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-teal-600 mr-2" />
+                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Execution expert</span>
                   </div>
                   <div className="flex items-center">
-                    <Target className="h-5 w-5 text-teal-600 mr-2" />
+                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Productivity maximizer</span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Scaling</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Burnout</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Intensity</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Metrics</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Growth</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Burnout</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Intensity</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Metrics</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Growth</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
+                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Link href="/chat">
-                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                  <Link href="/dashboard?ceo=venus">
+                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
                       <MessageSquare className="mr-2 h-4 w-4" /> Chat with Venus
                     </Button>
                   </Link>
@@ -129,7 +159,7 @@ export default function CoachesPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">Kailey Calm</h2>
-                    <p className="text-teal-600 text-lg">Strategic Alignment Officer</p>
+                    <p className="text-[#40e0d0] text-lg">Strategic Alignment Officer</p>
                   </div>
                 </div>
 
@@ -141,37 +171,37 @@ export default function CoachesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   <div className="flex items-center">
-                    <Award className="h-5 w-5 text-teal-600 mr-2" />
+                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">10+ years in venture capital</span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-teal-600 mr-2" />
+                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">75-min strategic sessions</span>
                   </div>
                   <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-teal-600 mr-2" />
+                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Focus architect</span>
                   </div>
                   <div className="flex items-center">
-                    <Target className="h-5 w-5 text-teal-600 mr-2" />
+                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Decision framework expert</span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Strategy</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Focus</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Prioritization</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Funding</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Patience</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Strategy</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Focus</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Prioritization</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Funding</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Patience</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
+                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Link href="/chat">
-                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                  <Link href="/dashboard?ceo=kailey">
+                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
                       <MessageSquare className="mr-2 h-4 w-4" /> Chat with Kailey
                     </Button>
                   </Link>
@@ -190,7 +220,7 @@ export default function CoachesPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">Alice Logic</h2>
-                    <p className="text-teal-600 text-lg">Technical Translation Expert</p>
+                    <p className="text-[#40e0d0] text-lg">Technical Translation Expert</p>
                   </div>
                 </div>
 
@@ -202,37 +232,37 @@ export default function CoachesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   <div className="flex items-center">
-                    <Code className="h-5 w-5 text-teal-600 mr-2" />
+                    <Code className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Former CTO of 3 startups</span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-teal-600 mr-2" />
+                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">60-min technical reviews</span>
                   </div>
                   <div className="flex items-center">
-                    <Lightbulb className="h-5 w-5 text-teal-600 mr-2" />
+                    <Lightbulb className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">Tech-to-business translator</span>
                   </div>
                   <div className="flex items-center">
-                    <Target className="h-5 w-5 text-teal-600 mr-2" />
+                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
                     <span className="text-gray-700">AI reality checker</span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">AI</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Engineering</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Technical</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Architecture</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Feasibility</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Engineering</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Technical</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Architecture</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Feasibility</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
+                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
                     <Calendar className="mr-2 h-4 w-4" /> Book a Session
                   </Button>
-                  <Link href="/chat">
-                    <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium">
+                  <Link href="/dashboard?ceo=alice">
+                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
                       <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alice
                     </Button>
                   </Link>

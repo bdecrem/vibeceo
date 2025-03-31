@@ -7,12 +7,12 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col">
       {/* Gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-900 via-teal-800 to-teal-900 -z-10" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#1a3d3d] via-[#1e4545] to-[#1a3d3d] -z-10" />
 
       {/* Header/navigation */}
       <nav className="container mx-auto py-6">
         <div className="text-2xl font-bold text-white">
-          <span className="text-teal-200">Advisors</span>Foundry
+          <span className="text-[#40e0d0]">Advisors</span>Foundry
         </div>
       </nav>
 
@@ -21,14 +21,14 @@ export default function Home() {
         <div className="space-y-4 max-w-3xl">
           <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
             World leading startup coaches,
-            <span className="block text-teal-200">freshly minted.</span>
+            <span className="block text-[#40e0d0]">freshly minted.</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
             Algorithmically optimized advice that sounds just human enough to be legally distinct from actual humans.
           </p>
           <div className="pt-6">
             <Link href="/coaches">
-              <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-6 text-lg rounded-full">
+              <Button size="lg" className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
                 Get Started <ArrowRight className="ml-2" />
               </Button>
             </Link>
@@ -40,8 +40,8 @@ export default function Home() {
       <section className="container mx-auto py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-teal-500 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Sparkles className="text-white" />
+            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <Sparkles className="text-[#1a3d3d]" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Disruptively Mundane</h3>
             <p className="text-gray-300">
@@ -49,8 +49,8 @@ export default function Home() {
             </p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-teal-500 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Zap className="text-white" />
+            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <Zap className="text-[#1a3d3d]" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Aggressively Mediocre</h3>
             <p className="text-gray-300">
@@ -58,8 +58,8 @@ export default function Home() {
             </p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-teal-500 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Brain className="text-white" />
+            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <Brain className="text-[#1a3d3d]" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Artificially Authentic</h3>
             <p className="text-gray-300">
@@ -73,7 +73,7 @@ export default function Home() {
       <section className="bg-white py-16">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-            Meet Your <span className="text-teal-600">Definitely Human</span> Coaches
+            Meet Your <span className="text-[#40e0d0]">Definitely Human</span> Coaches
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
@@ -82,18 +82,18 @@ export default function Home() {
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Donte Disrupt</h3>
-                <p className="text-teal-600 mb-4">Chief Vision Optimizer</p>
+                <p className="text-[#40e0d0] mb-4">Chief Vision Optimizer</p>
                 <p className="text-gray-700">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
                   a 100% chance of sounding profound."
                 </p>
                 <div className="mt-4 flex space-x-2">
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Blockchain</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">AI</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Failure</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Blockchain</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Failure</span>
                 </div>
                 <div className="mt-4">
-                  <Link href="/coaches" className="text-teal-600 hover:text-teal-700 font-medium">
+                  <Link href="/coaches" className="text-[#40e0d0] hover:text-[#3bcdc0] font-medium">
                     More about Donte →
                   </Link>
                 </div>
@@ -106,18 +106,18 @@ export default function Home() {
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Venus Metrics</h3>
-                <p className="text-teal-600 mb-4">Execution Specialist</p>
+                <p className="text-[#40e0d0] mb-4">Execution Specialist</p>
                 <p className="text-gray-700">
                   "I don't believe in work-life balance. I believe in work-work balance. One side is your startup, the
                   other side is thinking about your startup."
                 </p>
                 <div className="mt-4 flex space-x-2">
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Scaling</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Burnout</span>
-                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">Intensity</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Burnout</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Intensity</span>
                 </div>
                 <div className="mt-4">
-                  <Link href="/coaches" className="text-teal-600 hover:text-teal-700 font-medium">
+                  <Link href="/coaches" className="text-[#40e0d0] hover:text-[#3bcdc0] font-medium">
                     More about Venus →
                   </Link>
                 </div>
@@ -127,7 +127,7 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <Link href="/coaches">
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+              <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
                 <Users className="mr-2 h-4 w-4" /> Meet All Our Coaches
               </Button>
             </Link>
@@ -139,7 +139,7 @@ export default function Home() {
       <section className="bg-black py-16">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-white text-center mb-12">
-            What Our <span className="text-teal-400">Definitely Real</span> Clients Say
+            What Our <span className="text-[#40e0d0]">Definitely Real</span> Clients Say
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-gray-900 p-6 rounded-xl">
@@ -161,16 +161,16 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-teal-900 py-16">
+      <section className="bg-[#1a3d3d] py-16">
         <div className="container mx-auto">
-          <div className="bg-teal-800/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 text-center">
+          <div className="bg-[#1e4545]/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to be statistically average?</h2>
-            <p className="text-xl text-teal-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-[#40e0d0] mb-8 max-w-2xl mx-auto">
               Our coaches are standing by, or at least their algorithms are. Join the 94% of startups that will
               eventually fail, but with better buzzwords.
             </p>
             <Link href="/coaches">
-              <Button size="lg" className="bg-white hover:bg-gray-100 text-teal-900 px-8 py-6 text-lg rounded-full">
+              <Button size="lg" className="bg-white hover:bg-gray-100 text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
                 Get Started <ArrowRight className="ml-2" />
               </Button>
             </Link>
@@ -183,7 +183,7 @@ export default function Home() {
         <div className="flex justify-between items-center text-gray-400 text-sm">
           <div>YC - F2025</div>
           <div>
-            <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-teal-300">
+            <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
               Support us on Product Hunt ❤️
             </a>
           </div>
