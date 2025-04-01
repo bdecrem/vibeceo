@@ -125,7 +125,7 @@ export default function CoachesPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg italic">
+                <p className="text-gray-700 mb-6 italic">
                   "From gut-healing beauty elixirs to biohacked lattes, I'm leading a new era of high-performance self-care that blends adaptogens with algorithm-friendly aesthetics. Whether hosting BioSync retreats or experimenting with cellular hydration formulas, I'm redefining what it means to glow."
                 </p>
 
@@ -198,7 +198,7 @@ export default function CoachesPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg">
+                <p className="text-gray-700 mb-6 italic">
                   "I don't believe in work-life balance. I believe in work-work balance. One side is your startup, the
                   other side is thinking about your startup. I'll help you optimize every minute of your day for maximum
                   burnout efficiency."
@@ -259,7 +259,7 @@ export default function CoachesPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg">
+                <p className="text-gray-700 mb-6 italic">
                   "While others are chasing the next shiny object, I help founders find clarity in chaos. My approach
                   combines ruthless prioritization with strategic patience. I'll help you identify which fires are worth
                   letting burn."
@@ -320,7 +320,7 @@ export default function CoachesPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg">
+                <p className="text-gray-700 mb-6 italic">
                   "Most founders can't tell the difference between AI, ML, and a fancy IF statement. I bridge the gap
                   between technical possibilities and business realities. I'll help you understand what your engineers
                   are actually building."
