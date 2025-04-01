@@ -49,7 +49,7 @@ export default function CoachesPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg italic">
+                <p className="text-gray-700 mb-6 italic">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
                   a 100% chance of sounding profound. I specialize in helping founders realize their
                   idea is actually a completely different idea."
@@ -103,7 +103,7 @@ export default function CoachesPage() {
                 </div>
 
                 <Link href="/dashboard?ceo=donte">
-                  <Button className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium py-3 px-6 rounded-full">
+                  <Button className="bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
                     <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
                   </Button>
                 </Link>
@@ -176,7 +176,7 @@ export default function CoachesPage() {
                 </div>
 
                 <Link href="/dashboard?ceo=alex">
-                  <Button className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium py-3 px-6 rounded-full">
+                  <Button className="bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
                     <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alex
                   </Button>
                 </Link>
