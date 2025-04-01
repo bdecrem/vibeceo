@@ -54,7 +54,7 @@ export default function CoachesPage() {
 
                 <p className="text-gray-700 mb-6 text-lg">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
-                  a 100% chance of sounding profound."
+                  a 100% chance of sounding profound." Donte most recently <a href="https://v0-new-project-su1cynagsdw.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#3bcdc0]">worked at DOGE</a>.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
