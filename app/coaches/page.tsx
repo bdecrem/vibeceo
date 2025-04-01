@@ -56,14 +56,14 @@ export default function CoachesPage() {
                 </p>
 
                 <div className="text-gray-700 space-y-4 mb-8">
-                  <p className="text-lg">
+                  <p>
                     After founding three startups in the blockchain space (all acquired for undisclosed amounts that were
                     definitely not zero), Donte discovered his true calling: telling other founders what they're doing wrong. With a
                     background in theoretical computer science and speculative finance, he excels at identifying patterns that
                     don't exist and market opportunities that are just beyond reach.
                   </p>
                   
-                  <p className="text-lg">
+                  <p>
                     Donte's coaching methodology combines Silicon Valley buzzwords with just enough technical jargon to
                     sound credible. His clients appreciate his ability to transform simple ideas into complex, venture-fundable
                     narratives. When not advising startups, Donte can be found writing Medium articles about "The Future of X"
@@ -71,7 +71,7 @@ export default function CoachesPage() {
                   </p>
                 </div>
 
-                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8 text-xl">
+                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -86,19 +86,19 @@ export default function CoachesPage() {
                 <div className="grid grid-cols-2 gap-x-6 gap-y-8 mb-8">
                   <div className="flex items-center gap-3">
                     <Award className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">7+ failed startups</span>
+                    <span className="text-gray-700">7+ failed startups</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">60-min sessions</span>
+                    <span className="text-gray-700">60-min sessions</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Zap className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">AI specialist</span>
+                    <span className="text-gray-700">AI specialist</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Target className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">Pivot strategist</span>
+                    <span className="text-gray-700">Pivot strategist</span>
                   </div>
                 </div>
 
@@ -130,13 +130,13 @@ export default function CoachesPage() {
                 </p>
 
                 <div className="text-gray-700 space-y-4 mb-8">
-                  <p className="text-lg">
+                  <p>
                     Raised between Topanga Canyon and Santa Monica, Alex launched LUNAA from her dorm at UCLA with a single product: 
                     a marine collagen sea moss blend that sold out after going viral on TikTok. Today, LUNAA is stocked in Erewhon, 
                     loved by influencers, and backed by a VC fund known for investing in "spiritually scalable" tech.
                   </p>
                   
-                  <p className="text-lg">
+                  <p>
                     Alex is more than a founder — she's a movement. Her approach combines ancient wisdom with modern science, 
                     creating wellness solutions that are both Instagram-worthy and scientifically sound. Through her BioSync 
                     retreats and walking meetings down Abbot Kinney, she's pioneering a new paradigm of entrepreneurship that 
@@ -144,7 +144,7 @@ export default function CoachesPage() {
                   </p>
                 </div>
 
-                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8 text-xl">
+                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -159,19 +159,19 @@ export default function CoachesPage() {
                 <div className="grid grid-cols-2 gap-x-6 gap-y-8 mb-8">
                   <div className="flex items-center gap-3">
                     <Award className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">$3.5M Seed Raised</span>
+                    <span className="text-gray-700">$3.5M Seed Raised</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">90-min sessions</span>
+                    <span className="text-gray-700">90-min sessions</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Zap className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">DTC Expert</span>
+                    <span className="text-gray-700">DTC Expert</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Target className="h-6 w-6 text-[#40F7E3]" />
-                    <span className="text-gray-700 text-xl">Wellness Pioneer</span>
+                    <span className="text-gray-700">Wellness Pioneer</span>
                   </div>
                 </div>
 
