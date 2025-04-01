@@ -111,23 +111,22 @@ export default function Home() {
 
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-2.jpeg" alt="Startup Coach" fill className="object-cover" priority />
+                <Image src="/images/coach-5.png" alt="Startup Coach" fill className="object-cover" priority />
               </div>
               <div className="p-6 md:w-3/5">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Venus Metrics</h3>
-                <p className="text-[#40e0d0] mb-4">Execution Specialist</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>
+                <p className="text-[#40e0d0] mb-4">Founder & CEO of LUNAA</p>
                 <p className="text-gray-700">
-                  "I don't believe in work-life balance. I believe in work-work balance. One side is your startup, the
-                  other side is thinking about your startup."
+                  "Whether I'm hosting BioSync retreats in Tulum, experimenting with cellular hydration formulas, or leading walking meetings down Abbot Kinney, I'm redefining the wellness founder archetype one chlorophyll latte at a time."
                 </p>
                 <div className="mt-4 flex space-x-2">
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Wellness</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">DTC</span>
                   <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Burnout</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Intensity</span>
                 </div>
                 <div className="mt-4">
                   <Link href="/coaches" className="text-[#40e0d0] hover:text-[#3bcdc0] font-medium">
-                    More about Venus →
+                    More about Alex →
                   </Link>
                 </div>
               </div>

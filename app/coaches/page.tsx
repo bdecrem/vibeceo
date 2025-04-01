@@ -97,6 +97,65 @@ export default function CoachesPage() {
             </div>
           </div>
 
+          {/* Alex */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="md:flex">
+              <div className="md:w-1/3 relative h-80 md:h-auto">
+                <Image src="/images/coach-5.png" alt="Alex Monroe" fill className="object-cover" priority />
+              </div>
+              <div className="p-8 md:w-2/3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900">Alex Monroe</h2>
+                    <p className="text-[#40e0d0] text-lg">Founder & CEO of LUNAA</p>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 mb-6 text-lg">
+                  "From gut-healing beauty elixirs to biohacked lattes, I'm leading a new era of high-performance self-care that blends adaptogens with algorithm-friendly aesthetics. Whether hosting BioSync retreats or experimenting with cellular hydration formulas, I'm redefining what it means to glow."
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  <div className="flex items-center">
+                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">$3.5M Seed Round Raised</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">90-min wellness sessions</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">DTC Growth Expert</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
+                    <span className="text-gray-700">Wellness Innovator</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Wellness</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">DTC</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Brand Building</span>
+                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Community</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
+                    <Calendar className="mr-2 h-4 w-4" /> Book a Session
+                  </Button>
+                  <Link href="/dashboard?ceo=alex">
+                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
+                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alex
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Venus */}
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
