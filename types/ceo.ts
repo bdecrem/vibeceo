@@ -1,12 +1,10 @@
 export interface CEO {
   id: string;
   name: string;
+  prompt: string;
+  character: string;
+  style: string;
   image: string;
-  personality: string;
-  prompts: {
-    system: string;
-    user: string;
-  };
 }
 
 export interface CEOContextType {
