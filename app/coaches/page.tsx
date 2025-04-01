@@ -5,12 +5,9 @@ import { Calendar, MessageSquare, Clock, Award, Zap, Target, Code, Lightbulb } f
 
 export default function CoachesPage() {
   return (
-    <main className="min-h-screen">
-      {/* Gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#1a3d3d] via-[#1e4545] to-[#1a3d3d] -z-10" />
-
+    <main className="min-h-screen bg-[#f7fafa]">
       {/* Header */}
-      <header className="text-white">
+      <header className="bg-[#0F4A4A] text-white">
         <div className="container mx-auto py-6">
           <Link href="/" className="inline-block">
             <div className="flex items-center gap-2">
@@ -21,7 +18,7 @@ export default function CoachesPage() {
                 height={40}
                 className="w-10 h-10"
               />
-              <div className="text-2xl font-bold cursor-pointer hover:text-[#40e0d0] transition-colors">
+              <div className="text-2xl font-bold cursor-pointer">
                 <span className="text-[#40e0d0]">Advisors</span>Foundry
               </div>
             </div>
@@ -45,54 +42,71 @@ export default function CoachesPage() {
                 <Image src="/images/coach-1.jpeg" alt="Donte Disrupt" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">Donte Disrupt</h2>
                     <p className="text-[#40e0d0] text-lg">Chief Vision Optimizer</p>
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg">
+                <p className="text-gray-700 mb-6 text-lg italic">
                   "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
-                  a 100% chance of sounding profound." Donte most recently <a href="https://v0-new-project-su1cynagsdw.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#3bcdc0]">worked at DOGE</a>.
+                  a 100% chance of sounding profound. I specialize in helping founders realize their
+                  idea is actually a completely different idea."
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  <div className="flex items-center">
-                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">10+ pivots executed</span>
+                <div className="text-gray-700 space-y-4 mb-8">
+                  <p className="text-lg">
+                    After founding three startups in the blockchain space (all acquired for undisclosed amounts that were
+                    definitely not zero), Donte discovered his true calling: telling other founders what they're doing wrong. With a
+                    background in theoretical computer science and speculative finance, he excels at identifying patterns that
+                    don't exist and market opportunities that are just beyond reach.
+                  </p>
+                  
+                  <p className="text-lg">
+                    Donte's coaching methodology combines Silicon Valley buzzwords with just enough technical jargon to
+                    sound credible. His clients appreciate his ability to transform simple ideas into complex, venture-fundable
+                    narratives. When not advising startups, Donte can be found writing Medium articles about "The Future of X"
+                    and practicing his TED Talk in the mirror.
+                  </p>
+                </div>
+
+                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8 text-xl">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                  </svg>
+                  Read Donte's Articles on Medium
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                    <path d="M7 17L17 7"></path>
+                    <path d="M7 7h10v10"></path>
+                  </svg>
+                </a>
+
+                <div className="grid grid-cols-2 gap-x-6 gap-y-8 mb-8">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">7+ failed startups</span>
                   </div>
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">60-min vision sessions</span>
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">60-min sessions</span>
                   </div>
-                  <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">Vision architect</span>
+                  <div className="flex items-center gap-3">
+                    <Zap className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">AI specialist</span>
                   </div>
-                  <div className="flex items-center">
-                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">Disruption expert</span>
+                  <div className="flex items-center gap-3">
+                    <Target className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">Pivot strategist</span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 mb-8">
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Blockchain</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Failure</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Pivots</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
-                    <Calendar className="mr-2 h-4 w-4" /> Book a Session
+                <Link href="/dashboard?ceo=donte">
+                  <Button className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium py-3 px-6 rounded-full">
+                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
                   </Button>
-                  <Link href="/dashboard?ceo=donte">
-                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
-                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Donte
-                    </Button>
-                  </Link>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -104,54 +118,68 @@ export default function CoachesPage() {
                 <Image src="/images/coach-5.png" alt="Alex Monroe" fill className="object-cover" priority />
               </div>
               <div className="p-8 md:w-2/3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">Alex Monroe</h2>
                     <p className="text-[#40e0d0] text-lg">Founder & CEO of LUNAA</p>
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-6 text-lg">
+                <p className="text-gray-700 mb-6 text-lg italic">
                   "From gut-healing beauty elixirs to biohacked lattes, I'm leading a new era of high-performance self-care that blends adaptogens with algorithm-friendly aesthetics. Whether hosting BioSync retreats or experimenting with cellular hydration formulas, I'm redefining what it means to glow."
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  <div className="flex items-center">
-                    <Award className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">$3.5M Seed Round Raised</span>
+                <div className="text-gray-700 space-y-4 mb-8">
+                  <p className="text-lg">
+                    Raised between Topanga Canyon and Santa Monica, Alex launched LUNAA from her dorm at UCLA with a single product: 
+                    a marine collagen sea moss blend that sold out after going viral on TikTok. Today, LUNAA is stocked in Erewhon, 
+                    loved by influencers, and backed by a VC fund known for investing in "spiritually scalable" tech.
+                  </p>
+                  
+                  <p className="text-lg">
+                    Alex is more than a founder — she's a movement. Her approach combines ancient wisdom with modern science, 
+                    creating wellness solutions that are both Instagram-worthy and scientifically sound. Through her BioSync 
+                    retreats and walking meetings down Abbot Kinney, she's pioneering a new paradigm of entrepreneurship that 
+                    prioritizes cellular alignment alongside capital efficiency.
+                  </p>
+                </div>
+
+                <a href="#" className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8 text-xl">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                  </svg>
+                  Follow Alex's Journey on LinkedIn
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                    <path d="M7 17L17 7"></path>
+                    <path d="M7 7h10v10"></path>
+                  </svg>
+                </a>
+
+                <div className="grid grid-cols-2 gap-x-6 gap-y-8 mb-8">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">$3.5M Seed Raised</span>
                   </div>
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">90-min wellness sessions</span>
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">90-min sessions</span>
                   </div>
-                  <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">DTC Growth Expert</span>
+                  <div className="flex items-center gap-3">
+                    <Zap className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">DTC Expert</span>
                   </div>
-                  <div className="flex items-center">
-                    <Target className="h-5 w-5 text-[#40e0d0] mr-2" />
-                    <span className="text-gray-700">Wellness Innovator</span>
+                  <div className="flex items-center gap-3">
+                    <Target className="h-6 w-6 text-[#40F7E3]" />
+                    <span className="text-gray-700 text-xl">Wellness Pioneer</span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 mb-8">
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Wellness</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">DTC</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Brand Building</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Community</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button variant="outline" className="border-[#40e0d0] text-[#40e0d0] hover:bg-[#e6faf8]">
-                    <Calendar className="mr-2 h-4 w-4" /> Book a Session
+                <Link href="/dashboard?ceo=alex">
+                  <Button className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium py-3 px-6 rounded-full">
+                    <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alex
                   </Button>
-                  <Link href="/dashboard?ceo=alex">
-                    <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
-                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with Alex
-                    </Button>
-                  </Link>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -342,11 +370,11 @@ export default function CoachesPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-gray-100 py-16">
+      <section className="bg-white py-16">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
           <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-[#f7fafa] p-6 rounded-lg shadow-sm">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">How do coaching sessions work?</h3>
               <p className="text-gray-700">
                 Our coaching sessions are conducted via video call and last between 60-90 minutes depending on the
