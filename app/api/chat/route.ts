@@ -21,13 +21,13 @@ export async function POST(request: Request) {
 
     // Find the selected CEO
     const selectedCEO = ceos.find(ceo => ceo.id === ceoId) || ceos[0]
-    console.log('Selected CEO:', selectedCEO.id, 'with prompt:', selectedCEO.prompts.system.substring(0, 100) + '...')
+    console.log('Selected CEO:', selectedCEO.id, 'with prompt:', selectedCEO.prompt.substring(0, 100) + '...')
 
     // Create a new messages array with the CEO's system prompt
     const messagesWithPrompt: Message[] = [
       {
         role: 'system' as const,
-        content: selectedCEO.prompts.system
+        content: selectedCEO.prompt
       }
     ]
 
