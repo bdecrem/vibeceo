@@ -80,6 +80,27 @@ export default function CoachesPage() {
               ]
             },
             {
+              id: 'eljas',
+              name: 'Eljas Virtanen',
+              title: 'Sustainability Visionary & CEO of Clean Shit',
+              image: '/images/coach-6.png',
+              quote: "Turn leftovers into leadership. Real change smells a little — but it's powerful, clean, and worth getting your hands dirty for.",
+              bio: [
+                "Eljas is a Finnish sustainability visionary, former Nokia CEO, and current head of Clean Shit—a compost-to-energy company turning municipal waste into clean, circular power. Known for his dry humor, ethical clarity, and zero-carbon footprint, Eljas leads with quiet intensity and a T-shirt that reads \"This is powerful shit.\" He accidentally landed on his town's city council after giving an impassioned speech about democratic reform, only to find himself excelling at the messy, real work of helping people work together.",
+                "Despite his deep roots in corporate leadership, Eljas thrives in the compost pile of civic life. His philosophy is simple: \"Turn leftovers into leadership.\" He speaks five languages, bathes in ice holes, and is secretly building a vintage car museum beneath his farmhouse. Whether advising mayors on circular infrastructure or helping startups build impact-first strategies, Eljas reminds us that real change smells a little — but it's powerful, clean, and worth getting your hands dirty for."
+              ],
+              socialLink: {
+                text: "Must-read profile on Eljas in Kaupungin Ääni",
+                href: "https://v0-kaupungin-aeaeni-interview-asy3h1.vercel.app"
+              },
+              stats: [
+                { icon: Award, text: "Former Nokia CEO" },
+                { icon: Clock, text: "75-min sessions" },
+                { icon: Zap, text: "Sustainability Expert" },
+                { icon: Target, text: "Circular Economy Pioneer" }
+              ]
+            },
+            {
               id: 'venus',
               name: 'Venus Metrics',
               title: 'Execution Specialist',
