@@ -51,6 +51,18 @@ export default function CoachesPage() {
                 text: "Read the transcript of Donte's Twitter Spaces",
                 href: "https://v0-new-project-su1cynagsdw.vercel.app"
               },
+              xLink: {
+                text: "Follow Donte on X",
+                href: "https://x.com/dontedelph64172",
+                icon: (
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="w-6 h-6">
+                    <path
+                      fill="currentColor"
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                    />
+                  </svg>
+                )
+              },
               stats: [
                 { icon: Award, text: "7+ failed startups" },
                 { icon: Clock, text: "60-min sessions" },
@@ -187,7 +199,7 @@ export default function CoachesPage() {
                     ))}
                   </div>
 
-                  <a href={coach.socialLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8" target="_blank" rel="noopener noreferrer">
+                  <a href={coach.socialLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-4" target="_blank" rel="noopener noreferrer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -198,6 +210,16 @@ export default function CoachesPage() {
                       <path d="M7 7h10v10"></path>
                     </svg>
                   </a>
+                  {coach.xLink && (
+                    <a href={coach.xLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8" target="_blank" rel="noopener noreferrer">
+                      {coach.xLink.icon}
+                      {coach.xLink.text}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M7 17L17 7"></path>
+                        <path d="M7 7h10v10"></path>
+                      </svg>
+                    </a>
+                  )}
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-8 mb-8">
                     {coach.stats.map((stat, index) => (
