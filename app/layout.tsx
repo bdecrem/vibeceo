@@ -8,18 +8,28 @@ import { CEOProvider } from '@/lib/providers/ceo-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Advisors Foundry",
-  description: "Get personalized leadership advice from AI-powered advisors",
+  metadataBase: new URL('http://localhost:3000'),
+  title: "AdvisorsFoundry",
+  description: "World leading startup coaches, freshly minted.",
   openGraph: {
-    title: "Advisors Foundry",
-    description: "Get personalized leadership advice from AI-powered advisors",
+    title: "AdvisorsFoundry",
+    description: "World leading startup coaches, freshly minted.",
     type: "website",
-    siteName: "Advisors Foundry",
+    siteName: "AdvisorsFoundry",
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'AdvisorsFoundry - World leading startup coaches, freshly minted.'
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Advisors Foundry",
-    description: "Get personalized leadership advice from AI-powered advisors",
+    title: "AdvisorsFoundry",
+    description: "World leading startup coaches, freshly minted.",
+    images: ['/og-image.png']
   }
 }
 
