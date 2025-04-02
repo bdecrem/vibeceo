@@ -37,6 +37,11 @@ This version has been specifically selected for its stability and working featur
 ## Latest Update
 Last deployment: March 28, 2025 - 9:52 AM
 
+## Coach Updates
+- March 28, 2024: Added Eljas Virtanen, Finnish sustainability visionary and former Nokia CEO
+- Updated coach profile images and layout
+- Enhanced chat interaction styles
+
 ## Development
 To run the development build:
 1. Install dependencies: `npm install`
