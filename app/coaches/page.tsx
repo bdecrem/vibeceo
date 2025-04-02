@@ -132,8 +132,8 @@ export default function CoachesPage() {
                 "Her unique methodology helps founders distinguish between genuine opportunities and shiny distractions. When not advising startups, Kailey practices what she preaches through mindful meditation and strategic procrastination."
               ],
               socialLink: {
-                text: "Read Kailey's Strategic Insights",
-                href: "#"
+                text: "Check out Kailey's Fast Company cover spread!",
+                href: "https://v0-veo-leadership.vercel.app"
               },
               stats: [
                 { icon: Award, text: "10+ years in venture capital" },
