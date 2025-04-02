@@ -91,7 +91,7 @@ export default function CoachesPage() {
               ],
               socialLink: {
                 text: "Must-read profile on Eljas in Kaupungin Ääni",
-                href: "https://v0-kaupungin-aeaeni-interview-asy3h1.vercel.app"
+                href: "https://v0-kaupungin-aeaeni-interview-f9pai0.vercel.app"
               },
               stats: [
                 { icon: Award, text: "Former Nokia CEO" },
