@@ -81,8 +81,8 @@ export default function CoachesPage() {
                 "Alex is more than a founder — she's a movement. Her approach combines ancient wisdom with modern science, creating wellness solutions that are both Instagram-worthy and scientifically sound. Through her BioSync retreats and walking meetings down Abbot Kinney, she's pioneering a new paradigm of entrepreneurship that prioritizes cellular alignment alongside capital efficiency."
               ],
               socialLink: {
-                text: "Follow Alex's Journey on LinkedIn",
-                href: "#"
+                text: "Shop at Alexir!",
+                href: "https://v0-alexir-e-commerce-site.vercel.app"
               },
               stats: [
                 { icon: Award, text: "$3.5M Seed Raised" },
@@ -120,12 +120,7 @@ export default function CoachesPage() {
               quote: "I don't believe in work-life balance. I believe in work-work balance. One side is your startup, the other side is thinking about your startup. I'll help you optimize every minute of your day for maximum burnout efficiency.",
               bio: [
                 "Venus is the epitome of Silicon Valley's \"move fast and break things\" philosophy — especially if those things are traditional notions of human limitations. After optimizing her own sleep schedule down to 2.5 hours per night through a combination of polyphasic sleep and pure determination, she now helps founders achieve similar levels of unsustainable productivity.",
-                "Her coaching style combines data-driven insights with an almost religious devotion to metrics. She's famous for her \"no-excuses\" approach to startup growth and her controversial belief that weekends are just poorly optimized workdays."
               ],
-              socialLink: {
-                text: "Read Venus's Productivity Tips",
-                href: "#"
-              },
               stats: [
                 { icon: Award, text: "5+ acquisitions" },
                 { icon: Clock, text: "90-min intensive sessions" },
@@ -164,10 +159,6 @@ export default function CoachesPage() {
                 "As a former CTO of three startups, Alice has seen every flavor of technical confusion and over-promise. She specializes in translating between engineer-speak and founder-speak, helping both sides understand what's actually possible with current technology.",
                 "Her pragmatic approach to technical assessment has saved countless startups from building solutions in search of problems. She excels at helping non-technical founders understand their technical stack without getting lost in the details."
               ],
-              socialLink: {
-                text: "Read Alice's Tech Insights",
-                href: "#"
-              },
               stats: [
                 { icon: Code, text: "Former CTO of 3 startups" },
                 { icon: Clock, text: "60-min technical reviews" },
@@ -199,17 +190,19 @@ export default function CoachesPage() {
                     ))}
                   </div>
 
-                  <a href={coach.socialLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-4" target="_blank" rel="noopener noreferrer">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                    </svg>
-                    {coach.socialLink.text}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                      <path d="M7 17L17 7"></path>
-                      <path d="M7 7h10v10"></path>
-                    </svg>
-                  </a>
+                  {coach.socialLink && (
+                    <a href={coach.socialLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-4" target="_blank" rel="noopener noreferrer">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                      </svg>
+                      {coach.socialLink.text}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M7 17L17 7"></path>
+                        <path d="M7 7h10v10"></path>
+                      </svg>
+                    </a>
+                  )}
                   {coach.xLink && (
                     <a href={coach.xLink.href} className="text-[#40F7E3] hover:text-[#40F7E3]/80 flex items-center gap-3 mb-8" target="_blank" rel="noopener noreferrer">
                       {coach.xLink.icon}
