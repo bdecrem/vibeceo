@@ -73,11 +73,11 @@ export default function CoachesPage() {
             {
               id: 'alex',
               name: 'Alex Monroe',
-              title: 'Founder & CEO of LUNAA',
+              title: 'Founder & CEO of Alexir',
               image: '/images/coach-5.png',
               quote: "From gut-healing beauty elixirs to biohacked lattes, I'm leading a new era of high-performance self-care that blends adaptogens with algorithm-friendly aesthetics. Whether hosting BioSync retreats or experimenting with cellular hydration formulas, I'm redefining what it means to glow.",
               bio: [
-                "Raised between Topanga Canyon and Santa Monica, Alex launched LUNAA from her dorm at UCLA with a single product: a marine collagen sea moss blend that sold out after going viral on TikTok. Today, LUNAA is stocked in Erewhon, loved by influencers, and backed by a VC fund known for investing in \"spiritually scalable\" tech.",
+                "Raised between Topanga Canyon and Santa Monica, Alex launched Alexir from her dorm at UCLA with a single product: a marine collagen sea moss blend that sold out after going viral on TikTok. Today, Alexir is stocked in Erewhon, loved by influencers, and backed by a VC fund known for investing in \"spiritually scalable\" tech.",
                 "Alex is more than a founder — she's a movement. Her approach combines ancient wisdom with modern science, creating wellness solutions that are both Instagram-worthy and scientifically sound. Through her BioSync retreats and walking meetings down Abbot Kinney, she's pioneering a new paradigm of entrepreneurship that prioritizes cellular alignment alongside capital efficiency."
               ],
               socialLink: {
