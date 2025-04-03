@@ -213,21 +213,22 @@ export default function CoachesPage() {
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-4">
                     <Link href={`/dashboard?ceo=${coach.id}`}>
-                      <Button className="bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
+                      <Button className="w-[200px] flex items-center justify-center bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
                         <MessageSquare className="mr-2 h-4 w-4" /> Chat with {coach.name.split(' ')[0]}
                       </Button>
                     </Link>
                     {coach.xLink && (
                       <a 
-                        href={coach.xLink.href} 
-                        className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#40F7E3] text-[#1a3d3d] hover:bg-[#40F7E3]/10 transition-colors"
+                        href={coach.xLink.href}
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
-                        {coach.xLink.icon}
-                        <span>Follow on X</span>
+                        <Button className="w-[200px] flex items-center justify-center border-2 border-[#40F7E3] bg-transparent hover:bg-[#40F7E3]/10 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
+                          {coach.xLink.icon}
+                          <span className="ml-2">Follow on X</span>
+                        </Button>
                       </a>
                     )}
                   </div>
