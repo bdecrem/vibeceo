@@ -223,11 +223,24 @@ export default function CoachesPage() {
                     ))}
                   </div>
 
-                  <Link href={`/dashboard?ceo=${coach.id}`}>
-                    <Button className="bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
-                      <MessageSquare className="mr-2 h-4 w-4" /> Chat with {coach.name.split(' ')[0]}
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-4">
+                    <Link href={`/dashboard?ceo=${coach.id}`}>
+                      <Button className="bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
+                        <MessageSquare className="mr-2 h-4 w-4" /> Chat with {coach.name.split(' ')[0]}
+                      </Button>
+                    </Link>
+                    {coach.xLink && (
+                      <a 
+                        href={coach.xLink.href} 
+                        className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#40F7E3] text-[#1a3d3d] hover:bg-[#40F7E3]/10 transition-colors"
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        {coach.xLink.icon}
+                        <span>Follow on X</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
