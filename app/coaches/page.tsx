@@ -92,6 +92,27 @@ export default function CoachesPage() {
               ]
             },
             {
+              id: 'rohan',
+              name: 'Rohan Mehta',
+              title: 'Casino Magnate & Wall Street Veteran',
+              image: '/images/coach-7.png',
+              quote: "If you're not winning, you're losing. And if you're not talking, you're irrelevant. I treat every day like a live market and every conversation like a hostile takeover.",
+              bio: [
+                "A second-generation Indian American, Rohan made his first millions on the trading floor before pivoting to the desert, where he now runs one of the most profitable private gaming empires in Las Vegas. Ruthlessly sharp, he interrupts more than he listens, calculates faster than he blinks, and sees people as probabilities.",
+                "His casinos aren't themed, they're engineered: precision-designed machines built to extract maximum value and attention. Behind closed doors, he plays high-stakes M&A like poker — and always stacks the deck. Ask him about ethics, and he'll smirk: \"There's no morality in math.\""
+              ],
+              socialLink: {
+                text: "Read the viral leaked email from the Winference event",
+                href: "https://v0-winference-email-page-o5leny.vercel.app"
+              },
+              stats: [
+                { icon: Award, text: "Wall Street to Vegas" },
+                { icon: Clock, text: "45-min power sessions" },
+                { icon: Zap, text: "M&A specialist" },
+                { icon: Target, text: "High-stakes strategist" }
+              ]
+            },
+            {
               id: 'eljas',
               name: 'Eljas Virtanen',
               title: 'Sustainability Visionary & CEO of Clean Shit',
