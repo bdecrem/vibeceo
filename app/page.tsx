@@ -115,7 +115,7 @@ export default function Home() {
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>
-                <p className="text-[#40e0d0] mb-4">Founder & CEO of LUNAA</p>
+                <p className="text-[#40e0d0] mb-4">Founder & CEO of Alexir</p>
                 <p className="text-gray-700">
                   "Whether I'm hosting BioSync retreats in Tulum, experimenting with cellular hydration formulas, or leading walking meetings down Abbot Kinney, I'm redefining the wellness founder archetype one chlorophyll latte at a time."
                 </p>
