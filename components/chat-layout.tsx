@@ -46,7 +46,7 @@ export default function ChatLayout() {
 					className={cn(
 						"transition-all duration-300 w-[240px] md:w-60 border-r border-[#40e0d0]/10 bg-white/50 backdrop-blur-sm",
 						isOpen
-							? "md:relative fixed h-[92dvh] left-0 z-20"
+							? "md:relative fixed max-md:h-[92dvh] left-0 z-20"
 							: "absolute -left-[240px] md:-left-60"
 					)}
 				>
