@@ -1,5 +1,7 @@
 # Modern React Application with Next.js and Tailwind CSS
 
+*Last updated: April 5, 2025*
+
 A modern, responsive web application built with Next.js, React, TypeScript, and Tailwind CSS. This application features a sophisticated theming system, mobile-optimized components, and accessibility-first design.
 
 ## 🚀 Quick Start
