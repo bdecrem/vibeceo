@@ -68,7 +68,7 @@ export default function ChatSidebar() {
 				</SidebarGroup>
 			</SidebarContent>
 
-			<SidebarFooter className="shrink-0 p-4 border-t">
+			<SidebarFooter className="shrink-0 p-4">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton>
