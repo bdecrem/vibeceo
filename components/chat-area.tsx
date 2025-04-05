@@ -74,10 +74,10 @@ export default function ChatArea() {
 	};
 
 	return (
-		<div className="flex flex-col h-full w-full bg-[hsl(var(--background-outer))]">
-			<div className="flex flex-col h-full max-w-2xl mx-auto w-full px-2 md:px-8 bg-[hsl(var(--background))]">
+		<div className="h-full bg-[hsl(var(--background-outer))]">
+			<div className="flex h-full flex-col max-w-2xl mx-auto w-full px-2 md:px-8 bg-[hsl(var(--background))]">
 				<div
-					className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-32 md:pb-24 pt-20 md:pt-20"
+					className="grow overflow-y-auto p-4 scrollbar-light space-y-4 h-0 pb-32 md:pb-24 pt-20 md:pt-20"
 					onScroll={handleScroll}
 				>
 					{messages.map((message, index) => (
