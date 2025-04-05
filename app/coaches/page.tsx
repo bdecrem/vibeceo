@@ -102,8 +102,8 @@ export default function CoachesPage() {
                 "His casinos aren't themed, they're engineered: precision-designed machines built to extract maximum value and attention. Behind closed doors, he plays high-stakes M&A like poker — and always stacks the deck. Ask him about ethics, and he'll smirk: \"There's no morality in math.\""
               ],
               socialLink: {
-                text: "Read the viral leaked email from the Winference event",
-                href: "https://v0-winference-email-page-o5leny.vercel.app"
+                text: "Read: This is what leadership sounds like at 3:19 AM",
+                href: "https://v0-winference-email-page.vercel.app"
               },
               stats: [
                 { icon: Award, text: "Wall Street to Vegas" },
