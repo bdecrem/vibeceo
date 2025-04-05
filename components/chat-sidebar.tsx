@@ -7,23 +7,23 @@ import {
 export default function ChatSidebar() {
 	return (
 		<Sidebar>
-			<SidebarContent className="flex flex-col gap-6 md:gap-8 px-6 py-8 md:py-12">
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+			<SidebarContent className="flex flex-col py-12 md:py-16">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					Donte
 				</button>
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					Sophia
 				</button>
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					Marcus
 				</button>
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					Elena
 				</button>
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					James
 				</button>
-				<button className="text-left text-lg md:text-xl font-medium hover:text-[#40e0d0] transition-colors">
+				<button className="py-1.5 px-6 text-left text-sm hover:bg-white/5 transition-colors">
 					Maya
 				</button>
 			</SidebarContent>
