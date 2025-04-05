@@ -219,7 +219,7 @@ export default function CoachesPage() {
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                       </svg>
-                      <span className="text-gray-900 underline">{coach.socialLink.text}</span>
+                      <span className="text-gray-900 underline italic">{coach.socialLink.text}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#40F7E3]">
                         <path d="M7 17L17 7"></path>
                         <path d="M7 7h10v10"></path>
