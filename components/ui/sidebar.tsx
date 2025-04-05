@@ -55,7 +55,7 @@ export const Sidebar = React.forwardRef<
 		<div
 			ref={ref}
 			className={cn(
-				"group/sidebar h-full flex-col bg-[#1a3d3d] backdrop-blur-sm text-white transition-all duration-300 md:border-0 border",
+				"group/sidebar h-full flex-col bg-[#1a3d3d]/[0.98] backdrop-blur-sm text-white transition-all duration-300 md:border-0 border-0",
 				"relative z-40 md:z-0",
 				"w-[240px] md:w-60 shrink-0",
 				isOpen
