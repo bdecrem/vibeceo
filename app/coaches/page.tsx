@@ -49,7 +49,7 @@ export default function CoachesPage() {
               ],
               socialLink: {
                 text: "Read the transcript of Donte's Twitter Spaces",
-                href: "https://v0-new-project-su1cynagsdw.vercel.app"
+                href: "https://v0-new-project-su1cynagsdw-8vtaks.vercel.app"
               },
               xLink: {
                 text: "Follow Donte on X",
