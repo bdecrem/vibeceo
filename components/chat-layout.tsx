@@ -44,7 +44,7 @@ export default function ChatLayout() {
 			<div className="flex grow relative">
 				<div
 					className={cn(
-						"transition-all duration-300 w-[240px] md:w-60 border-r border-[#40e0d0]/10 bg-[#1a3d3d]/95 backdrop-blur-sm text-white [&_button]:text-white/90 [&_button:hover]:bg-white/5 [&_button:hover]:text-white [&_span]:text-white/90",
+						"transition-all duration-300 w-[240px] md:w-60 border-r border-[#40e0d0]/10 bg-[#1a3d3d] backdrop-blur-sm text-white [&_button]:text-white/90 [&_button:hover]:bg-white/5 [&_button:hover]:text-white [&_span]:text-white/90",
 						isOpen
 							? "md:relative fixed max-md:h-[92dvh] left-0 z-20"
 							: "absolute -left-[240px] md:-left-60"
