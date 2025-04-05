@@ -55,7 +55,7 @@ export const Sidebar = React.forwardRef<
 		<div
 			ref={ref}
 			className={cn(
-				"group/sidebar h-full flex-col bg-background transition-all duration-300 md:border-0 border",
+				"group/sidebar h-full flex-col bg-[#1a3d3d]/95 backdrop-blur-sm text-white transition-all duration-300 md:border-0 border",
 				"relative z-40 md:z-0",
 				"w-[240px] md:w-60 shrink-0",
 				isOpen
@@ -174,7 +174,10 @@ export const SidebarGroupLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<div
 		ref={ref}
-		className={cn("mb-2 text-xs font-semibold text-foreground/60", className)}
+		className={cn(
+			"mb-2 text-xs font-medium text-white/50 uppercase tracking-wider",
+			className
+		)}
 		{...props}
 	/>
 ));
@@ -216,8 +219,10 @@ export const SidebarMenuButton = React.forwardRef<
 		<button
 			ref={ref}
 			className={cn(
-				"group relative flex w-full items-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-				isActive && "bg-accent",
+				"group relative flex w-full items-center rounded-lg text-sm font-medium",
+				"hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#40e0d0]",
+				"text-white/90 disabled:pointer-events-none disabled:opacity-50",
+				isActive && "bg-white/5",
 				!isOpen && "justify-center",
 				className
 			)}
@@ -238,7 +243,7 @@ export const SidebarMenuButton = React.forwardRef<
 					</span>
 				</div>
 			) : (
-				<span className="w-full text-left">{children[1]}</span>
+				<span className="w-full text-left px-3 py-2">{children[1]}</span>
 			)}
 		</button>
 	);
