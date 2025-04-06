@@ -77,7 +77,7 @@ export default function ChatArea() {
 		<div className="h-full bg-[hsl(var(--background-outer))]">
 			<div className="flex h-full flex-col max-w-2xl mx-auto w-full px-2 md:px-8 bg-[hsl(var(--background))]">
 				<div
-					className="grow overflow-y-auto p-4 scrollbar-light space-y-4 h-0 pb-32 md:pb-24 pt-20 md:pt-20"
+					className="grow overflow-y-auto p-4 scrollbar-light space-y-4 h-0 pb-32 md:pb-24 pt-2 md:pt-2"
 					onScroll={handleScroll}
 				>
 					{messages.map((message, index) => (
@@ -116,7 +116,7 @@ export default function ChatArea() {
 							</Button>
 							<Input
 								ref={inputRef}
-								placeholder="Type a message..."
+								placeholder="Message your coach"
 								value={newMessage}
 								onChange={(e) => setNewMessage(e.target.value)}
 								className="flex-1 text-base"
