@@ -5,7 +5,7 @@ import ChatSidebar from "@/components/chat-sidebar";
 import ChatArea from "@/components/chat-area";
 import { SidebarTrigger } from "@/components/sidebar-trigger";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useCEO } from "@/lib/providers/ceo-provider";
+import { useCEO } from "@/lib/contexts/ceo-context";
 import Link from "next/link";
 
 export default function ChatLayout() {
@@ -33,7 +33,7 @@ export default function ChatLayout() {
 							<>
 								<span className="text-white/40">•</span>
 								<span className="text-[#40e0d0] text-sm">
-									{selectedCEO.name.split(" ")[0]}
+									{selectedCEO.name}
 								</span>
 							</>
 						)}

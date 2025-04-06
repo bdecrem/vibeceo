@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useCEO } from '@/lib/providers/ceo-provider'
+import { useCEO } from '@/lib/contexts/ceo-context'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import ChatLayout from '@/components/chat-layout'
 import { ceos } from '@/data/ceos'

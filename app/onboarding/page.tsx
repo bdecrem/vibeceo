@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useCEO } from '@/lib/providers/ceo-provider';
+import { useCEO } from '@/lib/contexts/ceo-context';
 import { ceos } from '@/data/ceos';
 import { MarketingLayout } from '@/components/layouts/marketing-layout';
 

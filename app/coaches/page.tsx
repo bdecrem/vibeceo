@@ -239,7 +239,7 @@ export default function CoachesPage() {
                   <div className="flex flex-col gap-4">
                     <Link href={`/dashboard?ceo=${coach.id}`}>
                       <Button className="w-[200px] flex items-center justify-center bg-[#40F7E3] hover:bg-[#40F7E3]/80 text-[#1a3d3d] font-medium py-3 px-6 rounded-full">
-                        <MessageSquare className="mr-2 h-4 w-4" /> Chat with {coach.name.split(' ')[0]}
+                        <MessageSquare className="mr-2 h-4 w-4" /> Chat with {coach.name}
                       </Button>
                     </Link>
                     {coach.xLink && (
