@@ -189,7 +189,11 @@ export default function Home() {
       {/* Footer */}
       <footer className="container mx-auto py-8 border-t border-white/10 mt-auto">
         <div className="flex justify-between items-center text-gray-400 text-sm">
-          <div>YC - F2025</div>
+          <div>
+            <a href="https://coaches.advisorsfoundry.ai" target="_blank" rel="noopener noreferrer" className="hover:text-[#40e0d0]">
+              YC - F2025
+            </a>
+          </div>
           <div>
             <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
               Support us on Product Hunt ❤️
