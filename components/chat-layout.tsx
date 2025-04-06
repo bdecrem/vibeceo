@@ -9,7 +9,7 @@ import { useCEO } from "@/lib/contexts/ceo-context";
 import Link from "next/link";
 
 export default function ChatLayout() {
-	const { isOpen } = useSidebar();
+	const { isOpen, toggle } = useSidebar();
 	const { selectedCEO } = useCEO();
 
 	return (
@@ -52,11 +52,14 @@ export default function ChatLayout() {
 				>
 					<ChatSidebar />
 				</div>
-				<div
-					className={cn(
-						"min-h-0 bg-white/40 max-md:shrink-0 w-full backdrop-blur-sm"
-					)}
-				>
+				{/* Mobile overlay for tap-to-dismiss */}
+				{isOpen && (
+					<div 
+						className="md:hidden fixed inset-0 z-10 ml-[240px]"
+						onClick={toggle}
+					/>
+				)}
+				<div className="min-h-0 bg-white/40 max-md:shrink-0 w-full backdrop-blur-sm">
 					<ChatArea />
 				</div>
 			</div>
