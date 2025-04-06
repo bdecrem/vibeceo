@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { type Message, type StreamingChatResponse } from '@/lib/openai'
 import { useChatStore } from '@/lib/store/chat-store'
-import { useCEO } from '@/lib/providers/ceo-provider'
+import { useCEO } from '@/lib/contexts/ceo-context'
 
 export function useChat() {
   const { messages, isLoading, error, addMessage, updateLastMessage, setLoading, setError } = useChatStore()

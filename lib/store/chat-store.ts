@@ -1,5 +1,6 @@
 import { type Message } from '@/lib/openai'
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 interface ChatState {
   messages: Message[]
@@ -26,5 +27,5 @@ export const useChatStore = create<ChatState>((set) => ({
   })),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
-  clearMessages: () => set({ messages: [], error: null })
+  clearMessages: () => set({ messages: [], error: null, isLoading: false })
 })) 
