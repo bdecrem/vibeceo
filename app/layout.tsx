@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     siteName: "AdvisorsFoundry",
     images: [
       {
-        url: '/og-image.png',
+        url: '/social-card.png',
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: 'AdvisorsFoundry - World leading startup coaches, freshly minted.'
       }
     ]
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AdvisorsFoundry",
     description: "World leading startup coaches, freshly minted.",
-    images: ['/og-image.png']
+    images: ['/social-card.png']
   }
 }
 
