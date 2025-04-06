@@ -8,7 +8,7 @@ import { CEOProvider } from '@/lib/contexts/ceo-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL('https://www.advisorsfoundry.ai'),
   title: "AdvisorsFoundry",
   description: "World leading startup coaches, freshly minted.",
   openGraph: {
