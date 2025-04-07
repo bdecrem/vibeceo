@@ -82,7 +82,7 @@ export default function CoachesPage() {
               ],
               socialLink: {
                 text: "Shop at Alexir!",
-                href: "https://v0-alexir-e-commerce-site.vercel.app"
+                href: "https://www.alexirwellness.com"
               },
               xLink: {
                 text: "Alex on IG",
