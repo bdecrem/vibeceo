@@ -87,7 +87,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-1.jpeg" alt="Startup Coach" fill className="object-cover" priority />
+                <Image src="/images/coach-1.jpeg" alt="Startup Coach" fill className="object-cover object-[center_top]" priority />
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Donte Disrupt</h3>
@@ -111,7 +111,7 @@ export default function Home() {
 
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-5.png" alt="Startup Coach" fill className="object-cover" priority />
+                <Image src="/images/coach-5.png" alt="Startup Coach" fill className="object-cover object-[center_top]" priority />
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>

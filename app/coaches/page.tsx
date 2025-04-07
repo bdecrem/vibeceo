@@ -193,7 +193,7 @@ export default function CoachesPage() {
             <div key={coach.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:w-1/3 relative h-80 md:h-auto">
-                  <Image src={coach.image} alt={coach.name} fill className="object-cover" priority />
+                  <Image src={coach.image} alt={coach.name} fill className="object-cover object-[center_top]" priority />
                 </div>
                 <div className="p-8 md:w-2/3">
                   <div className="flex flex-col md:flex-row md:items-start justify-between mb-6">

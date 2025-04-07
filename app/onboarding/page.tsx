@@ -34,7 +34,7 @@ export default function Onboarding() {
                     src={ceo.image}
                     alt={ceo.name}
                     fill
-                    className="object-cover object-[center_40%]"
+                    className="object-cover object-[center_top]"
                     priority
                   />
                 </div>
