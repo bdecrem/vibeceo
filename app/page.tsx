@@ -195,6 +195,11 @@ export default function Home() {
             </a>
           </div>
           <div>
+            <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
+              Join our Discord
+            </a>
+          </div>
+          <div>
             <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
               Support us on Product Hunt ❤️
             </a>
