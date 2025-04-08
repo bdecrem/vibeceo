@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run build:bot",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
     "build:bot": "rm -rf dist && tsc --project tsconfig.bot.json",
-    "discord-bot": "npm run build:bot && node ./dist/scripts/start-discord-bot.js"
+    "discord-bot": "node dist/scripts/start-discord-bot.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
