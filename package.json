@@ -2,12 +2,15 @@
   "name": "vibeceo8",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && tsc --project tsconfig.bot.json",
     "start": "next start",
     "lint": "next lint",
-    "test": "playwright test"
+    "test": "playwright test",
+    "build:bot": "tsc --project tsconfig.bot.json",
+    "discord-bot": "npm run build:bot && node dist/scripts/start-discord-bot.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -16,6 +19,8 @@
     "@radix-ui/react-slot": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
     "lucide-react": "^0.330.0",
     "next": "14.1.0",
     "openai": "^4.89.1",
@@ -43,6 +48,7 @@
     "postcss": "^8.4.35",
     "puppeteer": "^24.4.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
   "keywords": [],

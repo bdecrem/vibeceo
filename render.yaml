@@ -1,1 +1,27 @@
- 
+services:
+  - type: web
+    name: vibeceo-discord-bot
+    env: node
+    buildCommand: npm install && npm run build:bot
+    startCommand: node dist/scripts/start-discord-bot.js
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-3.5-turbo
+      - key: OPENAI_MAX_TOKENS
+        value: "1000"
+      - key: WEBHOOK_URL_DONTE
+        sync: false
+      - key: WEBHOOK_URL_ALEX
+        sync: false
+      - key: WEBHOOK_URL_ROHAN
+        sync: false
+      - key: WEBHOOK_URL_VENUS
+        sync: false
+      - key: WEBHOOK_URL_ELJAS
+        sync: false
+      - key: WEBHOOK_URL_KAILEY
+        sync: false 
