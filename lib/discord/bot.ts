@@ -2,6 +2,9 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { handleMessage } from './handlers.js';
 import { initializeWebhooks } from './webhooks.js';
 
+// Global variable to track if a bot instance is already running
+let isBotRunning = false;
+
 // Initialize Discord client with necessary intents
 const client = new Client({
   intents: [
@@ -29,6 +32,14 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 export async function startBot(token: string, webhookUrls: Record<string, string>) {
+  // Check if another instance is already running
+  if (isBotRunning) {
+    console.error('Another bot instance is already running. Exiting...');
+    process.exit(1);
+  }
+  
+  isBotRunning = true;
+  
   try {
     await client.login(token);
     
@@ -49,12 +60,14 @@ export async function startBot(token: string, webhookUrls: Record<string, string
     console.log('Discord bot started successfully');
   } catch (error) {
     console.error('Failed to start Discord bot:', error);
+    isBotRunning = false;
     throw error;
   }
 }
 
 export function stopBot() {
   client.destroy();
+  isBotRunning = false;
   console.log('Discord bot stopped');
 }
 

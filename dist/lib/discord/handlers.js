@@ -1,6 +1,6 @@
-import { getCharacter, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters';
-import { sendAsCharacter } from './webhooks';
-import { generateCharacterResponse } from './ai';
+import { getCharacter, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters.js';
+import { sendAsCharacter } from './webhooks.js';
+import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
 // Track processed message IDs with timestamps for cleanup
 const processedMessages = new Map();

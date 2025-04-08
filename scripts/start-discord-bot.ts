@@ -1,5 +1,5 @@
-import { startBot } from '../lib/discord/bot';
-import { validateConfig } from '../lib/discord/config';
+import { startBot } from '../lib/discord/bot.js';
+import { validateConfig } from '../lib/discord/config.js';
 
 async function main() {
   try {

@@ -10,6 +10,7 @@
     "lint": "next lint",
     "test": "playwright test",
     "build:bot": "rm -rf dist && tsc --project tsconfig.bot.json",
+    "predeploy:bot": "npm run build:bot",
     "discord-bot": "node dist/scripts/start-discord-bot.js"
   },
   "dependencies": {

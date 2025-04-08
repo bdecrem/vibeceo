@@ -1,7 +1,7 @@
 import { Message, TextChannel, ThreadChannel } from 'discord.js';
-import { ceos } from '../../data/discord-ceos';
-import { generateCharacterResponse } from './ai';
-import { sendAsCharacter } from './webhooks';
+import { ceos } from '../../data/discord-ceos.js';
+import { generateCharacterResponse } from './ai.js';
+import { sendAsCharacter } from './webhooks.js';
 
 // We'll define the CEO type here since we can't use the import
 interface CEO {

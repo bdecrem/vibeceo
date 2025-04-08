@@ -1,7 +1,7 @@
 import { TextChannel, ThreadChannel } from 'discord.js';
-import { ceos } from '../../data/discord-ceos';
-import { generateCharacterResponse } from './ai';
-import { sendAsCharacter } from './webhooks';
+import { ceos } from '../../data/discord-ceos.js';
+import { generateCharacterResponse } from './ai.js';
+import { sendAsCharacter } from './webhooks.js';
 // Store active characters for each channel
 const activeCharacters = new Map();
 // Get all available characters

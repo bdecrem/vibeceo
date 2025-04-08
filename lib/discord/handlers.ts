@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
-import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters';
-import { initializeWebhooks, sendAsCharacter } from './webhooks';
-import { generateCharacterResponse } from './ai';
+import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters.js';
+import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
+import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
 
 // Track processed message IDs with timestamps for cleanup
