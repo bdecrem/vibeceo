@@ -4,8 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Load environment variables from .env.local
-config({ path: path.resolve(__dirname, '../../.env.local') });
+// Load environment variables from .env.local in project root
+config({ path: path.resolve(process.cwd(), '.env.local') });
 if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY is not set in environment variables');
 }

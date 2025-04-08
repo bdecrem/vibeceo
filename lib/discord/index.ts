@@ -8,8 +8,8 @@ import { validateConfig } from './config.js';
 // Initialize the Discord bot
 export async function initializeDiscordBot() {
   try {
-    const { token, webhookUrls } = validateConfig();
-    await startBot(token, webhookUrls);
+    validateConfig(); // This will throw if config is invalid
+    await startBot();
     return true;
   } catch (error) {
     console.error('Failed to initialize Discord bot:', error);
