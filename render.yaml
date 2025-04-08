@@ -1,9 +1,9 @@
 services:
-  - type: web
+  - type: worker
     name: vibeceo-discord-bot
     env: node
-    buildCommand: npm install && npm run build:bot
-    startCommand: node dist/scripts/start-discord-bot.js
+    buildCommand: npm install
+    startCommand: npm run discord-bot
     # Only include necessary files
     includeFiles:
       - lib/discord/**/*
