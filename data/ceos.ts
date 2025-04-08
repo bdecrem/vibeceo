@@ -1,4 +1,12 @@
-import type { CEO } from '../types/ceo';
+// CEO type definition
+export interface CEO {
+  id: string;
+  name: string;
+  prompt: string;
+  character: string;
+  style: string;
+  image: string;
+}
 
 export const ceos: CEO[] = [
   {
