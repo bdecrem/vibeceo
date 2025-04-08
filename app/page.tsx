@@ -188,7 +188,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="container mx-auto py-8 border-t border-white/10 mt-auto">
-        <div className="flex justify-between items-center text-gray-400 text-sm">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400 text-sm">
           <div>
             <a href="https://coaches.advisorsfoundry.ai" target="_blank" rel="noopener noreferrer" className="hover:text-[#40e0d0]">
               YC - F2025
