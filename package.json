@@ -9,9 +9,12 @@
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
-    "build:bot": "rm -rf dist && tsc --project tsconfig.bot.json",
+    "clean": "rimraf dist",
+    "build:bot": "npm run clean && tsc --project tsconfig.bot.json",
+    "start:bot:dev": "npm run build:bot && node dist/scripts/start-discord-bot.js",
+    "start:bot:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
     "predeploy:bot": "npm run build:bot",
-    "discord-bot": "node dist/scripts/start-discord-bot.js"
+    "deploy:bot": "npm run start:bot:prod"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -22,6 +25,7 @@
     "clsx": "^2.1.1",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "ioredis": "^5.6.0",
     "lucide-react": "^0.330.0",
     "next": "14.1.0",
     "openai": "^4.89.1",
@@ -48,6 +52,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.35",
     "puppeteer": "^24.4.0",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"

@@ -3,29 +3,70 @@ import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInterac
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
+import Redis from 'ioredis';
+import { handlePitchCommand } from './pitch.js';
 
-// Track processed message IDs with timestamps for cleanup
-const processedMessages = new Map<string, number>();
+// Message deduplication system
+class MessageDeduplication {
+  private redis: Redis | null = null;
+  private memoryCache: Map<string, number> = new Map();
+  private readonly CACHE_EXPIRY = 300000; // 5 minutes in ms
 
-// Cleanup messages older than 5 minutes
-function cleanupOldMessages() {
-  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-  for (const [messageId, timestamp] of processedMessages) {
-    if (timestamp < fiveMinutesAgo) {
-      processedMessages.delete(messageId);
+  constructor() {
+    // Initialize Redis if URL is provided
+    if (process.env.REDIS_URL) {
+      try {
+        this.redis = new Redis(process.env.REDIS_URL);
+        console.log('Redis connected successfully');
+      } catch (error) {
+        console.error('Failed to connect to Redis:', error);
+        console.log('Falling back to in-memory cache');
+      }
+    } else {
+      console.log('No Redis URL provided, using in-memory cache');
     }
   }
+
+  async isMessageProcessed(messageId: string): Promise<boolean> {
+    try {
+      if (this.redis) {
+        // Try Redis first
+        const key = `processed:${messageId}`;
+        const result = await this.redis.set(key, '1', 'EX', 300, 'NX');
+        return result === null; // If null, key already existed
+      } else {
+        // Use in-memory cache
+        const now = Date.now();
+        if (this.memoryCache.has(messageId)) {
+          return true;
+        }
+        this.memoryCache.set(messageId, now);
+        
+        // Cleanup old entries
+        for (const [key, timestamp] of this.memoryCache.entries()) {
+          if (now - timestamp > this.CACHE_EXPIRY) {
+            this.memoryCache.delete(key);
+          }
+        }
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking message status:', error);
+      // On error, fall back to in-memory cache
+      return this.memoryCache.has(messageId);
+    }
+  }
+
+  async cleanup() {
+    if (this.redis) {
+      await this.redis.quit();
+    }
+    this.memoryCache.clear();
+  }
 }
 
-// Check if message was processed and mark it if not
-function isMessageProcessed(messageId: string): boolean {
-  cleanupOldMessages(); // Cleanup old messages
-  if (processedMessages.has(messageId)) {
-    return true;
-  }
-  processedMessages.set(messageId, Date.now());
-  return false;
-}
+// Initialize message deduplication
+const messageDedup = new MessageDeduplication();
 
 // Command prefix for bot commands
 const PREFIX = '!';
@@ -199,7 +240,7 @@ export async function handleMessage(message: Message): Promise<void> {
     if (message.author.bot) return;
 
     // Check if message was already processed
-    if (isMessageProcessed(message.id)) {
+    if (await messageDedup.isMessageProcessed(message.id)) {
       console.log(`Skipping already processed message: ${message.id}`);
       return;
     }
@@ -252,6 +293,7 @@ Available commands:
 - \`!character list\`: List all available characters
 - \`!character select [name]\`: Select a character to talk to
 - \`!group [char1] [char2] [char3]\`: Start a group discussion with 3 characters
+- \`!pitch [your idea]\`: Present your business idea to all coaches for feedback and voting
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
@@ -309,10 +351,26 @@ For example: "hey alex" or "hi donte"
       return;
     }
 
+    // Handle pitch command
+    if (command === 'pitch') {
+      const idea = args.join(' ').trim();
+      if (!idea) {
+        await message.reply('Please provide your business idea after the !pitch command.');
+        return;
+      }
+      await handlePitchCommand(message, idea);
+      return;
+    }
+
     // Handle unknown commands
     await message.reply('Unknown command. Type !help to see available commands.');
   } catch (error) {
-    console.error('Error handling message:', error);
-    await message.reply('Sorry, there was an error processing your command.');
+    console.error('Error in handleMessage:', error);
+    throw error;
   }
+}
+
+// Export cleanup function for graceful shutdown
+export async function cleanup() {
+  await messageDedup.cleanup();
 } 
