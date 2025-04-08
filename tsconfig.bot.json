@@ -8,12 +8,17 @@
     "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
     "scripts/**/*",
     "lib/discord/**/*",
-    "data/**/*"
+    "data/**/*",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules",
