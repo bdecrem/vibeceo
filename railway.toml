@@ -6,7 +6,7 @@ buildCommand = "npm run build:bot"
 startCommand = "npm run start:bot:prod"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "on-failure"
+restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 10
 
 [service]
