@@ -6,8 +6,6 @@ buildCommand = "npm run build:bot"
 startCommand = "npm run start:bot:prod"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "ALWAYS"
-restartPolicyMaxRetries = 10
 
 [service]
 name = "vibeceo-discord-bot" 
