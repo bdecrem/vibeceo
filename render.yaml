@@ -4,6 +4,16 @@ services:
     env: node
     buildCommand: npm install && npm run build:bot
     startCommand: node dist/scripts/start-discord-bot.js
+    # Only include necessary files
+    includeFiles:
+      - lib/discord/**/*
+      - scripts/**/*
+      - data/**/*
+      - package.json
+      - package-lock.json
+      - tsconfig.bot.json
+      - render.yaml
+      - .renderignore
     envVars:
       - key: DISCORD_BOT_TOKEN
         sync: false

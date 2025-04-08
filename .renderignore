@@ -1,0 +1,28 @@
+# Next.js website files
+app/
+public/
+components/
+styles/
+.next/
+
+# Development files
+.vscode/
+.git/
+.gitignore
+.env.example
+README.md
+
+# Test files
+tests/
+playwright.config.ts
+test-results/
+playwright-report/
+
+# Only include what the bot needs:
+# - lib/discord/
+# - scripts/
+# - data/
+# - package.json
+# - tsconfig.bot.json
+# - render.yaml
+# - .env.local (for environment variables) 
