@@ -1,20 +1,42 @@
 import { startBot } from '../lib/discord/bot.js';
-import { validateConfig } from '../lib/discord/config.js';
-async function main() {
+import dotenv from 'dotenv';
+import './health-check.js';
+// Load environment variables from .env.local
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config({ path: '.env.local' });
+}
+// Check if another instance is already running
+if (process.env.BOT_INSTANCE_ID) {
+    console.log('Another bot instance is already running. Exiting...');
+    process.exit(0);
+}
+// Set instance ID to prevent multiple instances
+process.env.BOT_INSTANCE_ID = Date.now().toString();
+// Start the bot
+startBot().catch(error => {
+    console.error('Failed to start bot:', error);
+    process.exit(1);
+});
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM signal. Starting graceful shutdown...');
+    cleanup();
+});
+process.on('SIGINT', () => {
+    console.log('Received SIGINT signal. Starting graceful shutdown...');
+    cleanup();
+});
+async function cleanup() {
+    console.log('Cleaning up...');
     try {
-        // Validate configuration and get token and webhook URLs
-        const { token, webhookUrls } = validateConfig();
-        // Start the bot
-        await startBot(token, webhookUrls);
-        // Handle shutdown gracefully
-        process.on('SIGINT', () => {
-            console.log('Shutting down bot...');
-            process.exit(0);
-        });
+        // Import cleanup function from handlers
+        const { cleanup: handlersCleanup } = await import('../lib/discord/handlers.js');
+        await handlersCleanup();
+        console.log('Cleanup completed');
+        process.exit(0);
     }
     catch (error) {
-        console.error('Failed to start bot:', error);
+        console.error('Error during cleanup:', error);
         process.exit(1);
     }
 }
-main();

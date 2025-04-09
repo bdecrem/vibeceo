@@ -1,0 +1,16 @@
+[project]
+name = "vibeceo"
+
+[services.website]
+name = "vibeceo-website"
+start = "npm run start"
+env = "production"
+
+[services.bot]
+name = "vibeceo-discord-bot"
+start = "node dist/scripts/start-discord-bot.js"
+env = "production"
+
+[plugins]
+  [plugins.env]
+  path = ".env" 
