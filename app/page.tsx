@@ -6,6 +6,12 @@ import { ArrowRight, Sparkles, Zap, Brain, Users } from "lucide-react"
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col">
+      <div className="bg-pink-500 text-white text-center py-2 font-bold">
+        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
+          💡 Join our Discord to pitch your idea to the coaches!
+        </a>
+      </div>
+
       {/* Gradient background */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#1a3d3d] via-[#1e4545] to-[#1a3d3d] -z-10" />
 
