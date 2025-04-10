@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "name": "No Hardcoded Secrets",
+      "pattern": "password|secret|api[_-]?key|token|credential",
+      "message": "Avoid hardcoding sensitive information. Use environment variables instead.",
+      "severity": "error"
+    },
+    {
+      "name": "Environment Variables",
+      "pattern": "process\\.env\\.[A-Z_]+",
+      "message": "Use environment variables for configuration",
+      "severity": "info"
+    }
+  ]
+} 

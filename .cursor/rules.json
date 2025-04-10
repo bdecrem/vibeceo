@@ -1,0 +1,14 @@
+{
+  "imports": [
+    "./security-rules.json",
+    "./code-style-rules.json"
+  ],
+  "rules": [
+    {
+      "name": "Custom Project Rules",
+      "pattern": "TODO|FIXME",
+      "message": "Address todos and fixmes before committing",
+      "severity": "warning"
+    }
+  ]
+} 

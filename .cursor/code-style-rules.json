@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "name": "Consistent Indentation",
+      "pattern": "^\\s{2,}[^\\s]",
+      "message": "Use consistent 2-space indentation",
+      "severity": "warning"
+    },
+    {
+      "name": "Trailing Spaces",
+      "pattern": "\\s+$",
+      "message": "Remove trailing whitespace",
+      "severity": "warning"
+    },
+    {
+      "name": "Semicolon Usage",
+      "pattern": "[^;]\\s*$",
+      "message": "End statements with semicolons",
+      "severity": "warning"
+    }
+  ]
+} 
