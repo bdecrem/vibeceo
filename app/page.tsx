@@ -1,9 +1,64 @@
+"use client";
+
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Sparkles, Zap, Brain, Users } from "lucide-react"
+import { useState } from 'react';
 
 export default function Home() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = [
+    {
+      img: '/images/coach-1.jpeg',
+      name: 'Donte Disrupt',
+      title: 'Chief Vision Optimizer',
+      text: "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and a 100% chance of sounding profound."
+    },
+    {
+      img: '/images/coach-2.jpeg',
+      name: 'Alex Monroe',
+      title: 'Founder & CEO of Alexir',
+      text: "Whether I'm hosting BioSync retreats in Tulum, experimenting with cellular hydration formulas, or leading walking meetings down Abbot Kinney, I'm redefining the wellness founder archetype one chlorophyll latte at a time."
+    },
+    {
+      img: '/images/coach-3.jpeg',
+      name: 'Rohan Mehta',
+      title: 'Casino Magnate & Wall Street Veteran',
+      text: "If you're not winning, you're losing. And if you're not talking, you're irrelevant. I treat every day like a live market and every conversation like a hostile takeover."
+    },
+    {
+      img: '/images/coach-4.jpeg',
+      name: 'Venus Metrics',
+      title: 'Execution Specialist',
+      text: "I don't believe in work-life balance. I believe in work-work balance. One side is your startup, the other side is thinking about your startup. I'll help you optimize every minute of your day for maximum burnout efficiency."
+    },
+    {
+      img: '/images/coach-5.png',
+      name: 'Kailey Calm',
+      title: 'Strategic Alignment Officer',
+      text: "While others are chasing the next shiny object, I help founders find clarity in chaos. My approach combines ruthless prioritization with strategic patience. I'll help you identify which fires are worth letting burn."
+    },
+    {
+      img: '/images/coach-6.png',
+      name: 'Eljas Virtanen',
+      title: 'Sustainability Visionary & CEO of Clean Shit',
+      text: "Most founders can't tell the difference between AI, ML, and a fancy IF statement. I bridge the gap between technical possibilities and business realities. I'll help you understand what your engineers are actually building."
+    }
+  ];
+
+  const handlePrev = () => {
+    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleDotClick = (index: number) => {
+    setCurrentSlide(index);
+  };
+
   return (
     <main className="flex min-h-screen flex-col">
       <div className="bg-pink-500 text-white text-center py-2 font-bold">
@@ -117,7 +172,7 @@ export default function Home() {
 
             <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-5.png" alt="Startup Coach" fill className="object-cover object-[center_top]" priority />
+                <Image src="/images/coach-2.jpeg" alt="Startup Coach" fill className="object-cover object-[center_top]" priority />
               </div>
               <div className="p-6 md:w-3/5">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>
@@ -145,6 +200,48 @@ export default function Home() {
                 <Users className="mr-2 h-4 w-4" /> Meet All Our Coaches
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* New Section */}
+      <section className="bg-[#e6faf8] py-16">
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
+          <div className="relative flex justify-center items-center">
+            <button onClick={handlePrev} className="absolute left-0 bg-[#1a3d3d] text-white p-2 rounded-full">&lt;</button>
+            <div className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-8 max-w-md mx-4">
+              <div className="flex items-center mb-4">
+                <img src={slides[currentSlide].img} alt="Profile" className="w-12 h-12 rounded-full mr-4" />
+                <div className="text-left">
+                  <p className="font-bold">{slides[currentSlide].name}</p>
+                  <p className="text-sm text-[#40e0d0]">{slides[currentSlide].title}</p>
+                </div>
+              </div>
+              <p className="text-gray-700">
+                {slides[currentSlide].text}
+              </p>
+            </div>
+            <button onClick={handleNext} className="absolute right-0 bg-[#1a3d3d] text-white p-2 rounded-full">&gt;</button>
+          </div>
+          <div className="flex justify-center mt-4">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handleDotClick(index)}
+                className={`w-2 h-2 rounded-full mx-1 focus:outline-none ${index === currentSlide ? 'bg-[#40e0d0]' : 'bg-[#1a3d3d]'}`}
+              ></button>
+            ))}
+          </div>
+          <div className="mt-8">
+            <p className="text-gray-700 mb-4">
+              Our coaches drop hot takes, startup hacks, and probably some buzzwords. Straight to your inbox.
+            </p>
+            <a href="https://advisorsfoundry.substack.com/?utm_campaign=email-home&r=5hpkk9" target="_blank" rel="noopener noreferrer">
+              <button className="bg-[#40e0d0] text-[#1a3d3d] px-6 py-3 rounded-full font-medium">
+                Subscribe to Substack →
+              </button>
+            </a>
           </div>
         </div>
       </section>

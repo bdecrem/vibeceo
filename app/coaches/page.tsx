@@ -182,7 +182,6 @@ export default function CoachesPage() {
                 { icon: Target, text: "Decision framework expert" }
               ]
             },
-            /*
             {
               id: 'alice',
               name: 'Alice Logic',
@@ -200,7 +199,6 @@ export default function CoachesPage() {
                 { icon: Target, text: "AI reality checker" }
               ]
             }
-            */
           ].map((coach) => (
             <div key={coach.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="md:flex">
