@@ -8,7 +8,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <div className="bg-pink-500 text-white text-center py-2 font-bold">
         <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
-          💡 Join our Discord to pitch your idea to the coaches!
+          💡 Join the Discord to pitch your idea to the coaches!
         </a>
       </div>
 
@@ -175,37 +175,35 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-[#1a3d3d] py-16">
-        <div className="container mx-auto">
-          <div className="bg-[#1e4545]/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ backgroundColor: 'lightgrey', padding: '10px', borderRadius: '5px' }}>Ready to be statistically average?</h2>
-            <p className="text-xl text-[#40e0d0] mb-8 max-w-2xl mx-auto">
-              Our coaches are standing by, or at least their algorithms are. Join the 94% of startups that will
-              eventually fail, but with better buzzwords.
-            </p>
-            <Link href="/coaches">
-              <Button size="lg" className="bg-white hover:bg-gray-100 text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
-                Get Started <ArrowRight className="ml-2" />
-              </Button>
-            </Link>
-          </div>
+      <section className="py-16">
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to be statistically average?</h2>
+          <p className="text-xl text-[#40e0d0] mb-8 max-w-2xl mx-auto">
+            Our coaches are standing by, or at least their algorithms are. Join the 94% of startups that will
+            eventually fail, but with better buzzwords.
+          </p>
+          <Link href="/coaches">
+            <Button size="lg" className="bg-white hover:bg-gray-100 text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
+              Get Started <ArrowRight className="ml-2" />
+            </Button>
+          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="container mx-auto py-8 border-t border-white/10 mt-auto">
+      <footer className="container mx-auto py-8 mt-auto">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400 text-sm">
-          <div>
+          <div className="flex-1 text-left">
             <a href="https://coaches.advisorsfoundry.ai" target="_blank" rel="noopener noreferrer" className="hover:text-[#40e0d0]">
               YC - F2025
             </a>
           </div>
-          <div>
+          <div className="flex-1 text-center">
             <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
-              Join our Discord
+              Join the Discord
             </a>
           </div>
-          <div>
+          <div className="flex-1 text-right">
             <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
               Support us on Product Hunt ❤️
             </a>
