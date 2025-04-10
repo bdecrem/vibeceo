@@ -20,4 +20,4 @@ if [ ! -d node_modules ]; then
 fi
 
 echo "🚀 Starting bot..."
-npm run discord-bot 
+npm run start:bot:dev 
