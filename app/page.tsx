@@ -237,7 +237,7 @@ export default function Home() {
             <p className="text-gray-700 mb-4">
               Our coaches drop hot takes, startup hacks, and probably some buzzwords. Straight to your inbox.
             </p>
-            <a href="https://advisorsfoundry.substack.com/?utm_campaign=email-home&r=5hpkk9" target="_blank" rel="noopener noreferrer">
+            <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer">
               <button className="bg-[#40e0d0] text-[#1a3d3d] px-6 py-3 rounded-full font-medium">
                 Subscribe to Substack →
               </button>
