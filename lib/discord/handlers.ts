@@ -5,6 +5,8 @@ import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
 import Redis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
+import { scheduler } from './timer.js';
+import { Client } from 'discord.js';
 
 // Message deduplication system
 class MessageDeduplication {
@@ -233,6 +235,50 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
   }
 }
 
+// Watercooler chat function that can be called directly or by timer
+async function triggerWatercoolerChat(channelId: string, client: Client) {
+  const characters = getCharacters();
+  // Pick 3 random unique coaches
+  const selectedCharacters = [...characters]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+  
+  // First coach shares something about their day
+  const firstPrompt = `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
+  const firstMessage = await generateCharacterResponse(selectedCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+  await sendAsCharacter(channelId, selectedCharacters[0].id, firstMessage);
+
+  // Add a small delay before responses
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Second coach responds
+  const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". Respond to their update with your unique perspective and background. Stay true to your character's personality and interests.`;
+  const secondMessage = await generateCharacterResponse(selectedCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
+  await sendAsCharacter(channelId, selectedCharacters[1].id, secondMessage);
+
+  // Add another small delay
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Third coach responds
+  const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:
+  ${selectedCharacters[0].name}: "${firstMessage}"
+  ${selectedCharacters[1].name}: "${secondMessage}"
+  Add your unique perspective based on your background and personality. Keep it authentic to your character.`;
+  const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
+  await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
+}
+
+// Initialize scheduled tasks when bot starts
+export function initializeScheduledTasks(channelId: string, client: Client) {
+  // Schedule watercooler chat for 9am PST every day
+  scheduler.addTask(
+    'watercooler',  // taskId
+    channelId,      // channelId
+    24 * 60 * 60 * 1000, // intervalMs (24 hours)
+    () => triggerWatercoolerChat(channelId, client) // handler
+  );
+}
+
 // Handle incoming messages
 export async function handleMessage(message: Message): Promise<void> {
   try {
@@ -294,6 +340,8 @@ Available commands:
 - \`!character select [name]\`: Select a character to talk to
 - \`!group [char1] [char2] [char3]\`: Start a group discussion with 3 characters
 - \`!pitch [your idea]\`: Present your business idea to all coaches for feedback and voting
+- \`!hello\`: Get a random coach to greet you
+- \`!watercooler\`: Listen in on a quick chat between three random coaches
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
@@ -362,6 +410,22 @@ For example: "hey alex" or "hi donte"
       return;
     }
 
+    // Handle hello command
+    if (command === 'hello') {
+      const characters = getCharacters();
+      const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+      const greetingPrompt = `You are ${randomCharacter.name}. Give a brief, friendly greeting in your unique voice and style (max 20 words).`;
+      const greeting = await generateCharacterResponse(randomCharacter.prompt + '\n' + greetingPrompt, 'greeting');
+      await sendAsCharacter(message.channelId, randomCharacter.id, greeting);
+      return;
+    }
+
+    // Handle watercooler command
+    if (command === 'watercooler') {
+      await triggerWatercoolerChat(message.channelId, message.client);
+      return;
+    }
+
     // Handle unknown commands
     await message.reply('Unknown command. Type !help to see available commands.');
   } catch (error) {
@@ -373,4 +437,5 @@ For example: "hey alex" or "hi donte"
 // Export cleanup function for graceful shutdown
 export async function cleanup() {
   await messageDedup.cleanup();
+  scheduler.cleanup();
 } 
