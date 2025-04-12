@@ -23,5 +23,11 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "discord-bot",
+    "dist/scripts/start-discord-bot.js",
+    "lib/discord/**/*",
+    "scripts/bot/**/*"
+  ]
 } 
