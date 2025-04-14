@@ -78,49 +78,6 @@ export async function startBot() {
     console.log('All webhooks initialized successfully');
     console.log('Discord bot started successfully');
 
-    // Wait a moment for everything to be ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Have Rohan say Hello using handleMessage
-    try {
-      console.log('Attempting to have Rohan say Hello...');
-      // Create a message-like object for Rohan
-      const channel = await client.channels.fetch('1354474492629618831');
-      if (channel instanceof TextChannel) {
-        const fakeMessage = {
-          content: 'hey rohan',
-          channel: channel,
-          channelId: channel.id,
-          author: { bot: false },
-          reply: async () => {},
-          // Add minimum required Message properties
-          id: 'startup-hello',
-          createdTimestamp: Date.now(),
-          guild: channel.guild,
-          member: null,
-          webhookId: null,
-          flags: { bitfield: 0 },
-          system: false,
-          pinned: false,
-          tts: false,
-          nonce: null,
-          embeds: [],
-          components: [],
-          attachments: new Map(),
-          stickers: new Map(),
-          position: 0,
-          reactions: new Map(),
-          mentions: { everyone: false, users: new Map(), roles: new Map(), channels: new Map() },
-          cleanContent: 'hey rohan',
-          type: 0
-        } as unknown as Message;
-        await handleMessage(fakeMessage);
-        console.log('Rohan Hello message processed successfully');
-      }
-    } catch (error) {
-      console.error('Failed to send hello message:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-    }
   } catch (error) {
     console.error('Failed to start Discord bot:', error);
     isBotRunning = false;
