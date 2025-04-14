@@ -81,14 +81,14 @@ export async function startBot() {
     // Wait a moment for everything to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Have Alex say Hello using handleMessage
+    // Have Rohan say Hello using handleMessage
     try {
-      console.log('Attempting to have Alex say Hello...');
-      // Create a message-like object for Alex
+      console.log('Attempting to have Rohan say Hello...');
+      // Create a message-like object for Rohan
       const channel = await client.channels.fetch('1354474492629618831');
       if (channel instanceof TextChannel) {
         const fakeMessage = {
-          content: 'hey alex',
+          content: 'hey rohan',
           channel: channel,
           channelId: channel.id,
           author: { bot: false },
@@ -111,11 +111,11 @@ export async function startBot() {
           position: 0,
           reactions: new Map(),
           mentions: { everyone: false, users: new Map(), roles: new Map(), channels: new Map() },
-          cleanContent: 'hey alex',
+          cleanContent: 'hey rohan',
           type: 0
         } as unknown as Message;
         await handleMessage(fakeMessage);
-        console.log('Alex Hello message processed successfully');
+        console.log('Rohan Hello message processed successfully');
       }
     } catch (error) {
       console.error('Failed to send hello message:', error);
