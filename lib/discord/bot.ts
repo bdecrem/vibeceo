@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, TextChannel } from 'discord.js';
 import { handleMessage } from './handlers.js';
 import { initializeWebhooks } from './webhooks.js';
 import { validateConfig } from './config.js';
@@ -19,17 +19,14 @@ const client = new Client({
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
   
-  // Send Hello message to all text channels
-  for (const guild of client.guilds.cache.values()) {
-    const channels = await guild.channels.fetch();
-    for (const channel of channels.values()) {
-      if (channel && channel.isTextBased()) {
-        try {
-          await channel.send('Hello');
-        } catch (error) {
-          console.error(`Failed to send hello message to channel ${channel.id}:`, error);
-        }
-      }
+  // Send Hello message to the specific channel
+  const channel = await client.channels.fetch('1354474492629618831');
+  if (channel && channel instanceof TextChannel) {
+    try {
+      await channel.send('Hello');
+      console.log('Sent Hello message to channel');
+    } catch (error) {
+      console.error('Failed to send hello message:', error);
     }
   }
 });
