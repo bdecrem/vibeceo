@@ -82,11 +82,18 @@ export async function startBot() {
     try {
       console.log('Starting watercooler chat on startup...');
       const channelId = process.env.DISCORD_CHANNEL_ID;
+      console.log('Using channel ID:', channelId);
+      
       if (!channelId) {
         throw new Error('DISCORD_CHANNEL_ID environment variable is not set');
       }
+      
+      console.log('Fetching channel...');
       const channel = await client.channels.fetch(channelId);
+      console.log('Channel fetch result:', channel ? 'Found' : 'Not found');
+      
       if (channel instanceof TextChannel) {
+        console.log('Channel is a text channel, creating fake message...');
         const fakeMessage = {
           content: '!watercooler',
           channel: channel,
@@ -113,12 +120,17 @@ export async function startBot() {
           cleanContent: '!watercooler',
           type: 0
         } as unknown as Message;
+        
+        console.log('Calling handleMessage with fake message...');
         await handleMessage(fakeMessage);
         console.log('Watercooler chat started successfully');
+      } else {
+        console.error('Channel is not a text channel. Type:', channel?.constructor.name);
       }
     } catch (error) {
       console.error('Failed to start watercooler chat:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     }
 
   } catch (error) {
