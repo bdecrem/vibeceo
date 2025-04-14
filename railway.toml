@@ -8,5 +8,6 @@ env = "production"
 
 [services.bot]
 name = "vibeceo-discord-bot"
-start = "node dist/scripts/start-discord-bot.js"
+build_command = "npm run build:bot"
+start = "npm run start:bot:prod"
 env = "production" 
