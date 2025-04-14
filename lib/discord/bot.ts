@@ -18,6 +18,50 @@ const client = new Client({
 // Event handler when the bot is ready
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+  
+  try {
+    // Get webhook URLs
+    const { webhookUrls } = validateConfig();
+    
+    // Initialize webhooks for each channel the bot has access to
+    console.log('Starting webhook initialization...');
+    for (const guild of client.guilds.cache.values()) {
+      const channels = await guild.channels.fetch();
+      for (const channel of channels.values()) {
+        if (channel && channel.isTextBased()) {
+          try {
+            await initializeWebhooks(channel.id, webhookUrls);
+            console.log(`Webhooks initialized for channel: ${channel.id}`);
+            
+            // If this is our target channel, trigger the watercooler chat
+            if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
+              console.log('Triggering watercooler chat for channel:', channel.id);
+              const fakeMessage = {
+                author: { bot: false },
+                content: '!watercooler',
+                channelId: channel.id,
+                client: client,
+                id: 'startup-watercooler-' + Date.now(), // Make ID unique
+                reply: async () => {},
+                channel: channel,
+                createdTimestamp: Date.now(),
+                guild: channel.guild
+              } as unknown as Message;
+              
+              await handleMessage(fakeMessage);
+            }
+          } catch (error) {
+            console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
+          }
+        }
+      }
+    }
+    
+    console.log('All webhooks initialized successfully');
+    console.log('Discord bot started successfully');
+  } catch (error) {
+    console.error('Error during bot initialization:', error);
+  }
 });
 
 // Handle incoming messages
@@ -53,48 +97,12 @@ export async function startBot() {
   isBotRunning = true;
   
   try {
-    // Validate configuration
-    const { token, webhookUrls } = validateConfig();
+    // Validate configuration and get token
+    const { token } = validateConfig();
     
     // Log in to Discord
     await client.login(token);
     
-    // Initialize webhooks for each channel the bot has access to
-    console.log('Starting webhook initialization...');
-    for (const guild of client.guilds.cache.values()) {
-      const channels = await guild.channels.fetch();
-      for (const channel of channels.values()) {
-        if (channel && channel.isTextBased()) {
-          try {
-            await initializeWebhooks(channel.id, webhookUrls);
-            console.log(`Webhooks initialized for channel: ${channel.id}`);
-            
-            // If this is our target channel, trigger the watercooler chat
-            if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
-              const fakeMessage = {
-                author: { bot: false },
-                content: '!watercooler',
-                channelId: channel.id,
-                client: client,
-                id: 'startup-watercooler',
-                reply: async () => {},
-                channel: channel,
-                createdTimestamp: Date.now(),
-                guild: channel.guild
-              } as unknown as Message;
-              
-              await handleMessage(fakeMessage);
-            }
-          } catch (error) {
-            console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
-          }
-        }
-      }
-    }
-    
-    console.log('All webhooks initialized successfully');
-    console.log('Discord bot started successfully');
-
   } catch (error) {
     console.error('Failed to start Discord bot:', error);
     isBotRunning = false;
