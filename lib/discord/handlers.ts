@@ -237,35 +237,57 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
 
 // Watercooler chat function that can be called directly or by timer
 async function triggerWatercoolerChat(channelId: string, client: Client) {
-  const characters = getCharacters();
-  // Pick 3 random unique coaches
-  const selectedCharacters = [...characters]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
-  
-  // First coach shares something about their day
-  const firstPrompt = `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
-  const firstMessage = await generateCharacterResponse(selectedCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
-  await sendAsCharacter(channelId, selectedCharacters[0].id, firstMessage);
+  try {
+    console.log('Starting watercooler chat for channel:', channelId);
+    const characters = getCharacters();
+    console.log('Available characters:', characters.map(c => c.name).join(', '));
+    
+    // Pick 3 random unique coaches
+    const selectedCharacters = [...characters]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
+    console.log('Selected characters:', selectedCharacters.map(c => c.name).join(', '));
+    
+    // First coach shares something about their day
+    console.log('Generating first message...');
+    const firstPrompt = `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
+    const firstMessage = await generateCharacterResponse(selectedCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+    console.log('First message generated:', firstMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, selectedCharacters[0].id, firstMessage);
+    console.log('First message sent successfully');
 
-  // Add a small delay before responses
-  await new Promise(resolve => setTimeout(resolve, 2000));
+    // Add a small delay before responses
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // Second coach responds
-  const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". Respond to their update with your unique perspective and background. Stay true to your character's personality and interests.`;
-  const secondMessage = await generateCharacterResponse(selectedCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
-  await sendAsCharacter(channelId, selectedCharacters[1].id, secondMessage);
+    // Second coach responds
+    console.log('Generating second message...');
+    const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
+    const secondMessage = await generateCharacterResponse(selectedCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
+    console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, selectedCharacters[1].id, secondMessage);
+    console.log('Second message sent successfully');
 
-  // Add another small delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
+    // Add another small delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // Third coach responds
-  const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:
-  ${selectedCharacters[0].name}: "${firstMessage}"
-  ${selectedCharacters[1].name}: "${secondMessage}"
-  Add your unique perspective based on your background and personality. Keep it authentic to your character.`;
-  const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
-  await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
+    // Third coach responds
+    console.log('Generating third message...');
+    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:
+    ${selectedCharacters[0].name}: "${firstMessage}"
+    ${selectedCharacters[1].name}: "${secondMessage}"
+    Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
+    const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
+    console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
+    console.log('Third message sent successfully');
+    
+    console.log('Watercooler chat completed successfully');
+  } catch (error) {
+    console.error('Error in watercooler chat:', error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    throw error; // Re-throw to be handled by caller
+  }
 }
 
 // Initialize scheduled tasks when bot starts
@@ -283,13 +305,18 @@ export function initializeScheduledTasks(channelId: string, client: Client) {
 export async function handleMessage(message: Message): Promise<void> {
   try {
     // Ignore messages from bots
-    if (message.author.bot) return;
-
-    // Check if message was already processed
-    if (await messageDedup.isMessageProcessed(message.id)) {
-      console.log(`Skipping already processed message: ${message.id}`);
+    if (message.author.bot) {
+      console.log('Ignoring bot message:', message.id);
       return;
     }
+
+    // Check if message was already processed
+    console.log('Checking if message was processed:', message.id);
+    if (await messageDedup.isMessageProcessed(message.id)) {
+      console.log(`Message ${message.id} was already processed, skipping`);
+      return;
+    }
+    console.log('Message was not processed before, continuing');
 
     const content = message.content.toLowerCase();
     
