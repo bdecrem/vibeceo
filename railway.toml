@@ -13,4 +13,4 @@ env = "production"
 
 [plugins]
   [plugins.env]
-  path = ".env" 
+  path = ".env.local" 
