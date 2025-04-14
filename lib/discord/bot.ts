@@ -95,30 +95,15 @@ export async function startBot() {
       if (channel instanceof TextChannel) {
         console.log('Channel is a text channel, creating fake message...');
         const fakeMessage = {
-          content: '!watercooler',
-          channel: channel,
-          channelId: channel.id,
           author: { bot: false },
-          reply: async () => {},
+          content: '!watercooler',
+          channelId: channel.id,
+          client: client,
           id: 'startup-watercooler',
+          reply: async () => {},
+          channel: channel,
           createdTimestamp: Date.now(),
-          guild: channel.guild,
-          member: null,
-          webhookId: null,
-          flags: { bitfield: 0 },
-          system: false,
-          pinned: false,
-          tts: false,
-          nonce: null,
-          embeds: [],
-          components: [],
-          attachments: new Map(),
-          stickers: new Map(),
-          position: 0,
-          reactions: new Map(),
-          mentions: { everyone: false, users: new Map(), roles: new Map(), channels: new Map() },
-          cleanContent: '!watercooler',
-          type: 0
+          guild: channel.guild
         } as unknown as Message;
         
         console.log('Calling handleMessage with fake message...');
