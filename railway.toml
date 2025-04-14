@@ -9,8 +9,4 @@ env = "production"
 [services.bot]
 name = "vibeceo-discord-bot"
 start = "node dist/scripts/start-discord-bot.js"
-env = "production"
-
-[plugins]
-  [plugins.env]
-  path = ".env.local" 
+env = "production" 
