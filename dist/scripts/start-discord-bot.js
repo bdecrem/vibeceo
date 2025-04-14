@@ -18,25 +18,7 @@ startBot().catch(error => {
     process.exit(1);
 });
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('Received SIGTERM signal. Starting graceful shutdown...');
-    cleanup();
-});
 process.on('SIGINT', () => {
-    console.log('Received SIGINT signal. Starting graceful shutdown...');
-    cleanup();
+    console.log('Shutting down bot...');
+    process.exit(0);
 });
-async function cleanup() {
-    console.log('Cleaning up...');
-    try {
-        // Import cleanup function from handlers
-        const { cleanup: handlersCleanup } = await import('../lib/discord/handlers.js');
-        await handlersCleanup();
-        console.log('Cleanup completed');
-        process.exit(0);
-    }
-    catch (error) {
-        console.error('Error during cleanup:', error);
-        process.exit(1);
-    }
-}

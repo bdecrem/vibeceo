@@ -46,5 +46,4 @@ next-env.d.ts
 .dropbox.attr
 .dropbox.cache
 
-# Temporarily ignore discord-bot folder (WIP)
-/discord-bot/
+
