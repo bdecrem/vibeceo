@@ -39,24 +39,6 @@ client.once(Events.ClientReady, async (readyClient) => {
               await sendAsCharacter(channel.id, 'donte', "Hey everyone! Just testing the webhook system.");
               console.log('Test message sent successfully');
             }
-            
-            // If this is our target channel, trigger the watercooler chat
-            if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
-              console.log('Triggering watercooler chat for channel:', channel.id);
-              const fakeMessage = {
-                author: { bot: false },
-                content: '!watercooler',
-                channelId: channel.id,
-                client: client,
-                id: 'startup-watercooler-' + Date.now(), // Make ID unique
-                reply: async () => {},
-                channel: channel,
-                createdTimestamp: Date.now(),
-                guild: channel.guild
-              } as unknown as Message;
-              
-              await handleMessage(fakeMessage);
-            }
           } catch (error) {
             console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
           }
