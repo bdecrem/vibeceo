@@ -2,7 +2,7 @@
 
 A Next.js web application with Discord bot integration for CEO coaching and management.
 
-*Last updated: April 10, 2025 at 10:26 AM PDT*
+*Last updated: April 13, 2025 at 9:43 PM PDT*
 
 ## Overview
 
@@ -32,7 +32,7 @@ VibeCEO8 is a comprehensive platform that combines a Next.js web application wit
 
 ### Discord Bot
 - `/scripts` - Bot scripts and utilities
-  - `start-discord-bot.js` - Main bot entry point
+  - `start-discord-bot.ts` - Main bot entry point (compiles to `dist/scripts/start-discord-bot.js`)
 - `start-bot.sh` - Bot startup script
 - `bot-monitor.log` - Bot monitoring logs
 - `tsconfig.bot.json` - Bot-specific TypeScript configuration
@@ -40,10 +40,13 @@ VibeCEO8 is a comprehensive platform that combines a Next.js web application wit
 ## Getting Started
 
 1. Clone the repository
-2. Install dependencies:
+2. Install dependencies and build the bot:
    ```bash
    npm install
    ```
+   This will:
+   - Install all dependencies
+   - Compile TypeScript files to JavaScript in the `dist` directory
 3. Set up environment variables (see INSTALL.md for details)
 4. Start the development server:
    ```bash
@@ -51,13 +54,15 @@ VibeCEO8 is a comprehensive platform that combines a Next.js web application wit
    ```
 5. Start the Discord bot:
    ```bash
-   ./start-bot.sh
+   node dist/scripts/start-discord-bot.js
    ```
 
 ## Deployment
 
 The application can be deployed to:
 - Railway (using railway.toml)
+  - Build command: `npm install`
+  - Start command: `node dist/scripts/start-discord-bot.js`
 - Render (using render.yaml)
 
 ## Security
