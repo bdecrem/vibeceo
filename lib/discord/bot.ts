@@ -16,8 +16,22 @@ const client = new Client({
 });
 
 // Event handler when the bot is ready
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+  
+  // Send Hello message to all text channels
+  for (const guild of client.guilds.cache.values()) {
+    const channels = await guild.channels.fetch();
+    for (const channel of channels.values()) {
+      if (channel && channel.isTextBased()) {
+        try {
+          await channel.send('Hello');
+        } catch (error) {
+          console.error(`Failed to send hello message to channel ${channel.id}:`, error);
+        }
+      }
+    }
+  }
 });
 
 // Handle incoming messages
