@@ -18,6 +18,34 @@ const client = new Client({
 // Event handler when the bot is ready
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+  
+  // Start watercooler chat on startup
+  try {
+    const channelId = process.env.DISCORD_CHANNEL_ID;
+    if (!channelId) {
+      throw new Error('DISCORD_CHANNEL_ID environment variable is not set');
+    }
+    
+    const channel = await readyClient.channels.fetch(channelId);
+    
+    if (channel instanceof TextChannel) {
+      const fakeMessage = {
+        author: { bot: false },
+        content: '!watercooler',
+        channelId: channel.id,
+        client: readyClient,
+        id: 'startup-watercooler',
+        reply: async () => {},
+        channel: channel,
+        createdTimestamp: Date.now(),
+        guild: channel.guild
+      } as unknown as Message;
+      
+      await handleMessage(fakeMessage);
+    }
+  } catch (error) {
+    console.error('Failed to start watercooler chat:', error);
+  }
 });
 
 // Handle incoming messages
@@ -77,46 +105,6 @@ export async function startBot() {
     
     console.log('All webhooks initialized successfully');
     console.log('Discord bot started successfully');
-
-    // Start watercooler chat on startup
-    try {
-      console.log('Starting watercooler chat on startup...');
-      const channelId = process.env.DISCORD_CHANNEL_ID;
-      console.log('Using channel ID:', channelId);
-      
-      if (!channelId) {
-        throw new Error('DISCORD_CHANNEL_ID environment variable is not set');
-      }
-      
-      console.log('Fetching channel...');
-      const channel = await client.channels.fetch(channelId);
-      console.log('Channel fetch result:', channel ? 'Found' : 'Not found');
-      
-      if (channel instanceof TextChannel) {
-        console.log('Channel is a text channel, creating fake message...');
-        const fakeMessage = {
-          author: { bot: false },
-          content: '!watercooler',
-          channelId: channel.id,
-          client: client,
-          id: 'startup-watercooler',
-          reply: async () => {},
-          channel: channel,
-          createdTimestamp: Date.now(),
-          guild: channel.guild
-        } as unknown as Message;
-        
-        console.log('Calling handleMessage with fake message...');
-        await handleMessage(fakeMessage);
-        console.log('Watercooler chat started successfully');
-      } else {
-        console.error('Channel is not a text channel. Type:', channel?.constructor.name);
-      }
-    } catch (error) {
-      console.error('Failed to start watercooler chat:', error);
-      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    }
 
   } catch (error) {
     console.error('Failed to start Discord bot:', error);
