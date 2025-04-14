@@ -18,34 +18,6 @@ const client = new Client({
 // Event handler when the bot is ready
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-  
-  // Start watercooler chat on startup
-  try {
-    const channelId = process.env.DISCORD_CHANNEL_ID;
-    if (!channelId) {
-      throw new Error('DISCORD_CHANNEL_ID environment variable is not set');
-    }
-    
-    const channel = await readyClient.channels.fetch(channelId);
-    
-    if (channel instanceof TextChannel) {
-      const fakeMessage = {
-        author: { bot: false },
-        content: '!watercooler',
-        channelId: channel.id,
-        client: readyClient,
-        id: 'startup-watercooler',
-        reply: async () => {},
-        channel: channel,
-        createdTimestamp: Date.now(),
-        guild: channel.guild
-      } as unknown as Message;
-      
-      await handleMessage(fakeMessage);
-    }
-  } catch (error) {
-    console.error('Failed to start watercooler chat:', error);
-  }
 });
 
 // Handle incoming messages
@@ -96,6 +68,23 @@ export async function startBot() {
           try {
             await initializeWebhooks(channel.id, webhookUrls);
             console.log(`Webhooks initialized for channel: ${channel.id}`);
+            
+            // If this is our target channel, trigger the watercooler chat
+            if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
+              const fakeMessage = {
+                author: { bot: false },
+                content: '!watercooler',
+                channelId: channel.id,
+                client: client,
+                id: 'startup-watercooler',
+                reply: async () => {},
+                channel: channel,
+                createdTimestamp: Date.now(),
+                guild: channel.guild
+              } as unknown as Message;
+              
+              await handleMessage(fakeMessage);
+            }
           } catch (error) {
             console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
           }
