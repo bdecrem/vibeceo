@@ -33,6 +33,13 @@ client.once(Events.ClientReady, async (readyClient) => {
             await initializeWebhooks(channel.id, webhookUrls);
             console.log(`Webhooks initialized for channel: ${channel.id}`);
             
+            // Simple test message to verify webhook system
+            if (channel.id === process.env.DISCORD_CHANNEL_ID) {
+              console.log('Sending test message to verify webhook system...');
+              await sendAsCharacter(channel.id, 'donte', "Hey everyone! Just testing the webhook system.");
+              console.log('Test message sent successfully');
+            }
+            
             // If this is our target channel, trigger the watercooler chat
             if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
               console.log('Triggering watercooler chat for channel:', channel.id);
