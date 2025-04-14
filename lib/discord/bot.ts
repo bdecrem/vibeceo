@@ -78,6 +78,49 @@ export async function startBot() {
     console.log('All webhooks initialized successfully');
     console.log('Discord bot started successfully');
 
+    // Start watercooler chat on startup
+    try {
+      console.log('Starting watercooler chat on startup...');
+      const channelId = process.env.DISCORD_CHANNEL_ID;
+      if (!channelId) {
+        throw new Error('DISCORD_CHANNEL_ID environment variable is not set');
+      }
+      const channel = await client.channels.fetch(channelId);
+      if (channel instanceof TextChannel) {
+        const fakeMessage = {
+          content: '!watercooler',
+          channel: channel,
+          channelId: channel.id,
+          author: { bot: false },
+          reply: async () => {},
+          id: 'startup-watercooler',
+          createdTimestamp: Date.now(),
+          guild: channel.guild,
+          member: null,
+          webhookId: null,
+          flags: { bitfield: 0 },
+          system: false,
+          pinned: false,
+          tts: false,
+          nonce: null,
+          embeds: [],
+          components: [],
+          attachments: new Map(),
+          stickers: new Map(),
+          position: 0,
+          reactions: new Map(),
+          mentions: { everyone: false, users: new Map(), roles: new Map(), channels: new Map() },
+          cleanContent: '!watercooler',
+          type: 0
+        } as unknown as Message;
+        await handleMessage(fakeMessage);
+        console.log('Watercooler chat started successfully');
+      }
+    } catch (error) {
+      console.error('Failed to start watercooler chat:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+    }
+
   } catch (error) {
     console.error('Failed to start Discord bot:', error);
     isBotRunning = false;
