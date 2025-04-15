@@ -88,3 +88,25 @@ Please refer to the project's contribution guidelines for details on our code of
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Production Deployment: Railway
+
+To ensure the latest build files are running on Railway, follow these steps:
+
+1. **Stop all Railway services:**
+   ```bash
+   railway down | cat
+   ```
+   - When prompted, type `y` and press Enter to confirm.
+
+2. **Start all Railway services with the latest code:**
+   ```bash
+   railway up | cat
+   ```
+
+3. **(Optional) Check status:**
+   ```bash
+   railway status | cat
+   ```
+
+_Note: These steps ensure that the latest build artifacts are deployed and running in production. Always commit and push your changes before running these commands._
