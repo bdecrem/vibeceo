@@ -237,7 +237,7 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
 }
 
 // Watercooler chat function that can be called directly or by timer
-async function triggerWatercoolerChat(channelId: string, client: Client) {
+export async function triggerWatercoolerChat(channelId: string, client: Client) {
   try {
     console.log('Starting watercooler chat for channel:', channelId);
     const characters = getCharacters();
@@ -290,21 +290,20 @@ async function triggerWatercoolerChat(channelId: string, client: Client) {
 
 // Initialize scheduled tasks when bot starts
 export function initializeScheduledTasks(channelId: string, client: Client) {
-  // Schedule watercooler chat every 60 minutes
-  scheduler.addTask(
-    'watercooler',  // taskId
-    channelId,      // channelId
-    60 * 60 * 1000, // intervalMs (60 minutes)
-    () => triggerWatercoolerChat(channelId, client) // handler
-  );
+  // (Disabled) Old timer-based scheduling is now handled by the centralized scheduler.
+  // scheduler.addTask(
+  //   'watercooler',  // taskId
+  //   channelId,      // channelId
+  //   60 * 60 * 1000, // intervalMs (60 minutes)
+  //   () => triggerWatercoolerChat(channelId, client) // handler
+  // );
 
-  // Schedule news chat every 4 minutes
-  scheduler.addTask(
-    'newschat',     // taskId
-    channelId,      // channelId
-    4 * 60 * 1000,  // intervalMs (4 minutes)
-    () => triggerNewsChat(channelId, client) // handler
-  );
+  // scheduler.addTask(
+  //   'newschat',     // taskId
+  //   channelId,      // channelId
+  //   4 * 60 * 1000,  // intervalMs (4 minutes)
+  //   () => triggerNewsChat(channelId, client) // handler
+  // );
 }
 
 // Handle incoming messages

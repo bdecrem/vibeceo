@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, TextChannel, Message } from 'discord
 import { handleMessage, initializeScheduledTasks } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
+import { startCentralizedScheduler } from './scheduler.js';
 
 // Global variable to track if a bot instance is already running
 let isBotRunning = false;
@@ -38,8 +39,8 @@ client.once(Events.ClientReady, async (readyClient) => {
               console.log('Triggering watercooler chat for channel:', channel.id);
               
               // Initialize scheduled tasks for this channel
-              initializeScheduledTasks(channel.id, client);
-              console.log('Scheduled tasks initialized for channel:', channel.id);
+              startCentralizedScheduler(channel.id, client);
+              console.log('Centralized scheduler started for channel:', channel.id);
               
               const fakeMessage = {
                 author: { bot: false },
