@@ -2,8 +2,8 @@ class TaskScheduler {
     constructor() {
         this.tasks = new Map();
         this.intervalId = null;
-        // Check tasks every minute
-        this.intervalId = setInterval(() => this.checkTasks(), 60000);
+        // Check tasks every 10 seconds
+        this.intervalId = setInterval(() => this.checkTasks(), 10000);
     }
     addTask(taskId, channelId, intervalMs, handler) {
         this.tasks.set(taskId, {

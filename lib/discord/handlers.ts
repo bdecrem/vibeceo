@@ -273,10 +273,7 @@ async function triggerWatercoolerChat(channelId: string, client: Client) {
 
     // Third coach responds
     console.log('Generating third message...');
-    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:
-    ${selectedCharacters[0].name}: "${firstMessage}"
-    ${selectedCharacters[1].name}: "${secondMessage}"
-    Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
+    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:\n    ${selectedCharacters[0].name}: "${firstMessage}"\n    ${selectedCharacters[1].name}: "${secondMessage}"\n    Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
     const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
     console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
@@ -301,7 +298,13 @@ export function initializeScheduledTasks(channelId: string, client: Client) {
     () => triggerWatercoolerChat(channelId, client) // handler
   );
 
-  // Newschat will only be triggered manually for now
+  // Schedule news chat every 4 minutes
+  scheduler.addTask(
+    'newschat',     // taskId
+    channelId,      // channelId
+    4 * 60 * 1000,  // intervalMs (4 minutes)
+    () => triggerNewsChat(channelId, client) // handler
+  );
 }
 
 // Handle incoming messages

@@ -12,8 +12,8 @@ class TaskScheduler {
   private intervalId: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Check tasks every minute
-    this.intervalId = setInterval(() => this.checkTasks(), 60000);
+    // Check tasks every 10 seconds
+    this.intervalId = setInterval(() => this.checkTasks(), 10000);
   }
 
   addTask(taskId: string, channelId: string, intervalMs: number, handler: () => Promise<void>) {
