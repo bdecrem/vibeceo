@@ -136,7 +136,7 @@ async function startNewsDiscussion(channelId: string, story: NewsStory, characte
     // First coach introduces the news
     const firstPrompt = `You are ${characters[0].name}. You just read this news story: "${story.title}". 
     ${story.description ? `Here's more context: ${story.description}` : ''}
-    Share your strong opinion about this news. What's your take on it? Be bold and decisive in your perspective.`;
+    Share your strong opinion about this news. What's your take on it? Be bold and decisive in your perspective. Keep your response under 150 words.`;
     
     const firstMessage = await generateCharacterResponse(characters[0].prompt + '\n' + firstPrompt, story.title);
     const firstMessageWithLink = `${firstMessage}\n\n[Read the full story here](${story.url})`;
@@ -145,7 +145,7 @@ async function startNewsDiscussion(channelId: string, story: NewsStory, characte
 
     // Second coach responds
     const secondPrompt = `You are ${characters[1].name}. ${characters[0].name} just shared this news story: "${story.title}" and said: "${firstMessage}".
-    Respond to their perspective. Do you agree or disagree? Why? Take a strong position and explain your reasoning.`;
+    Respond to their perspective. Do you agree or disagree? Why? Take a strong position and explain your reasoning. Keep your response under 150 words.`;
     
     const secondMessage = await generateCharacterResponse(characters[1].prompt + '\n' + secondPrompt, firstMessage);
     await sendAsCharacter(channelId, characters[1].id, secondMessage);
@@ -155,7 +155,7 @@ async function startNewsDiscussion(channelId: string, story: NewsStory, characte
     const thirdPrompt = `You are ${characters[2].name}. Responding to this exchange about the news story "${story.title}":
     ${characters[0].name}: "${firstMessage}"
     ${characters[1].name}: "${secondMessage}"
-    What's your unique perspective on this? How does it differ from what's been said? Take a position that challenges or adds a new dimension to the discussion.`;
+    What's your unique perspective on this? How does it differ from what's been said? Take a position that challenges or adds a new dimension to the discussion. Keep your response under 150 words.`;
     
     const thirdMessage = await generateCharacterResponse(characters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
     await sendAsCharacter(channelId, characters[2].id, thirdMessage);
@@ -166,7 +166,7 @@ async function startNewsDiscussion(channelId: string, story: NewsStory, characte
     ${characters[0].name}: "${firstMessage}"
     ${characters[1].name}: "${secondMessage}"
     ${characters[2].name}: "${thirdMessage}"
-    Take a strong position on this issue. What's your controversial take? Challenge the assumptions made by others.`;
+    Take a strong position on this issue. What's your controversial take? Challenge the assumptions made by others. Keep your response under 150 words.`;
     
     const fourthMessage = await generateCharacterResponse(characters[3].prompt + '\n' + fourthPrompt, firstMessage + ' ' + secondMessage + ' ' + thirdMessage);
     await sendAsCharacter(channelId, characters[3].id, fourthMessage);
