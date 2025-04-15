@@ -1,6 +1,6 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
-import { handleMessage } from './handlers.js';
-import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
+import { Client, Events, GatewayIntentBits, TextChannel } from 'discord.js';
+import { handleMessage, initializeScheduledTasks } from './handlers.js';
+import { initializeWebhooks } from './webhooks.js';
 import { validateConfig } from './config.js';
 // Global variable to track if a bot instance is already running
 let isBotRunning = false;
@@ -27,11 +27,24 @@ client.once(Events.ClientReady, async (readyClient) => {
                     try {
                         await initializeWebhooks(channel.id, webhookUrls);
                         console.log(`Webhooks initialized for channel: ${channel.id}`);
-                        // Simple test message to verify webhook system
-                        if (channel.id === process.env.DISCORD_CHANNEL_ID) {
-                            console.log('Sending test message to verify webhook system...');
-                            await sendAsCharacter(channel.id, 'donte', "Hey everyone! Just testing the webhook system.");
-                            console.log('Test message sent successfully');
+                        // If this is our target channel, trigger the watercooler chat
+                        if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
+                            console.log('Triggering watercooler chat for channel:', channel.id);
+                            // Initialize scheduled tasks for this channel
+                            initializeScheduledTasks(channel.id, client);
+                            console.log('Scheduled tasks initialized for channel:', channel.id);
+                            const fakeMessage = {
+                                author: { bot: false },
+                                content: '!watercooler',
+                                channelId: channel.id,
+                                client: client,
+                                id: 'startup-watercooler-' + Date.now(),
+                                reply: async () => { },
+                                channel: channel,
+                                createdTimestamp: Date.now(),
+                                guild: channel.guild
+                            };
+                            await handleMessage(fakeMessage);
                         }
                     }
                     catch (error) {
@@ -67,6 +80,8 @@ client.on(Events.MessageCreate, async (message) => {
 });
 // Start the bot
 export async function startBot() {
+    console.log('=== BOT STARTUP INFO ===');
+    console.log('Node.js version:', process.version);
     console.log('Starting bot...');
     console.log('Instance ID:', process.env.BOT_INSTANCE_ID);
     console.log('Process ID:', process.pid);
