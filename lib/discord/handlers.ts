@@ -292,11 +292,11 @@ async function triggerWatercoolerChat(channelId: string, client: Client) {
 
 // Initialize scheduled tasks when bot starts
 export function initializeScheduledTasks(channelId: string, client: Client) {
-  // Schedule watercooler chat every 15 minutes
+  // Schedule watercooler chat every 2 minutes
   scheduler.addTask(
     'watercooler',  // taskId
     channelId,      // channelId
-    15 * 60 * 1000, // intervalMs (15 minutes)
+    2 * 60 * 1000, // intervalMs (2 minutes)
     () => triggerWatercoolerChat(channelId, client) // handler
   );
 }

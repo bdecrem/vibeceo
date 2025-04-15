@@ -1,5 +1,5 @@
 import { Client, Events, GatewayIntentBits, TextChannel, Message } from 'discord.js';
-import { handleMessage } from './handlers.js';
+import { handleMessage, initializeScheduledTasks } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
 
@@ -36,6 +36,11 @@ client.once(Events.ClientReady, async (readyClient) => {
             // If this is our target channel, trigger the watercooler chat
             if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
               console.log('Triggering watercooler chat for channel:', channel.id);
+              
+              // Initialize scheduled tasks for this channel
+              initializeScheduledTasks(channel.id, client);
+              console.log('Scheduled tasks initialized for channel:', channel.id);
+              
               const fakeMessage = {
                 author: { bot: false },
                 content: '!watercooler',
