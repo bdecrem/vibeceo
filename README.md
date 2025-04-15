@@ -65,6 +65,16 @@ The application can be deployed to:
   - Start command: `node dist/scripts/start-discord-bot.js`
 - Render (using render.yaml)
 
+## Deployment Notes
+
+### Railway Configuration
+- Uses direct command: `node dist/scripts/start-discord-bot.js`
+- No railway.toml required
+- Node.js version: 18
+- Automatically triggers watercooler chat on startup
+
+Last updated: April 14, 2025
+
 ## Security
 
 - Credentials are managed through environment variables
