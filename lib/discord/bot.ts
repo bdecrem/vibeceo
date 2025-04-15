@@ -72,8 +72,9 @@ client.on(Events.MessageCreate, async (message) => {
 
 // Start the bot
 export async function startBot() {
-  console.log('Starting bot...');
+  console.log('=== BOT STARTUP INFO ===');
   console.log('Node.js version:', process.version);
+  console.log('Starting bot...');
   console.log('Instance ID:', process.env.BOT_INSTANCE_ID);
   console.log('Process ID:', process.pid);
   console.log('Environment:', process.env.NODE_ENV);
