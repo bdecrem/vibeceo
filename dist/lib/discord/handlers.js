@@ -5,6 +5,7 @@ import { WebhookClient } from 'discord.js';
 import Redis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
+import { triggerNewsChat } from './news.js';
 // Message deduplication system
 class MessageDeduplication {
     constructor() {
@@ -247,12 +248,13 @@ async function triggerWatercoolerChat(channelId, client) {
 }
 // Initialize scheduled tasks when bot starts
 export function initializeScheduledTasks(channelId, client) {
-    // Schedule watercooler chat every 15 minutes
+    // Schedule watercooler chat every 60 minutes
     scheduler.addTask('watercooler', // taskId
     channelId, // channelId
-    15 * 60 * 1000, // intervalMs (15 minutes)
+    60 * 60 * 1000, // intervalMs (60 minutes)
     () => triggerWatercoolerChat(channelId, client) // handler
     );
+    // Newschat will only be triggered manually for now
 }
 // Handle incoming messages
 export async function handleMessage(message) {
@@ -315,6 +317,7 @@ Available commands:
 - \`!pitch [your idea]\`: Present your business idea to all coaches for feedback and voting
 - \`!hello\`: Get a random coach to greet you
 - \`!watercooler\`: Listen in on a quick chat between three random coaches
+- \`!newschat\`: Start a discussion about trending news relevant to the coaches
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
@@ -387,6 +390,11 @@ For example: "hey alex" or "hi donte"
         // Handle watercooler command
         if (command === 'watercooler') {
             await triggerWatercoolerChat(message.channelId, message.client);
+            return;
+        }
+        // Handle newschat command
+        if (command === 'newschat') {
+            await triggerNewsChat(message.channelId, message.client);
             return;
         }
         // Handle unknown commands
