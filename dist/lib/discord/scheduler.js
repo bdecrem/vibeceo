@@ -3,6 +3,7 @@ import path from 'path';
 import { triggerWatercoolerChat } from './handlers.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
+import { triggerPitchChat } from './pitch.js';
 // Path to the schedule file
 const SCHEDULE_PATH = path.join(process.cwd(), 'data', 'schedule.txt');
 // Service mapping
@@ -10,6 +11,7 @@ const serviceMap = {
     watercooler: triggerWatercoolerChat,
     newschat: triggerNewsChat,
     tmzchat: triggerTmzChat,
+    pitchchat: triggerPitchChat,
     // Add more services here as needed
 };
 let scheduleByHour = {};

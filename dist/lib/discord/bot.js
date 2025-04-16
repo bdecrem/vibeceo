@@ -28,24 +28,11 @@ client.once(Events.ClientReady, async (readyClient) => {
                     try {
                         await initializeWebhooks(channel.id, webhookUrls);
                         console.log(`Webhooks initialized for channel: ${channel.id}`);
-                        // If this is our target channel, trigger the watercooler chat
+                        // If this is our target channel, start the scheduler
                         if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
-                            console.log('Triggering watercooler chat for channel:', channel.id);
                             // Initialize scheduled tasks for this channel
                             startCentralizedScheduler(channel.id, client);
                             console.log('Centralized scheduler started for channel:', channel.id);
-                            const fakeMessage = {
-                                author: { bot: false },
-                                content: '!watercooler',
-                                channelId: channel.id,
-                                client: client,
-                                id: 'startup-watercooler-' + Date.now(),
-                                reply: async () => { },
-                                channel: channel,
-                                createdTimestamp: Date.now(),
-                                guild: channel.guild
-                            };
-                            await handleMessage(fakeMessage);
                         }
                     }
                     catch (error) {

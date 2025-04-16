@@ -3,6 +3,7 @@ import path from 'path';
 import { triggerWatercoolerChat } from './handlers.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
+import { triggerPitchChat } from './pitch.js';
 import { Client } from 'discord.js';
 
 // Path to the schedule file
@@ -13,6 +14,7 @@ const serviceMap: Record<string, (channelId: string, client: Client) => Promise<
   watercooler: triggerWatercoolerChat,
   newschat: triggerNewsChat,
   tmzchat: triggerTmzChat,
+  pitchchat: triggerPitchChat,
   // Add more services here as needed
 };
 

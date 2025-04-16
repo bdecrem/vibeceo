@@ -1,7 +1,59 @@
 import { getCharacter, getCharacters } from './characters.js';
 import { sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
+import fs from 'fs';
+import path from 'path';
 const activePitches = new Map();
+// Function to get a random pitch idea from the file
+function getRandomPitchIdea() {
+    const pitchIdeasPath = process.env.PITCH_IDEAS_FILE || path.join(process.cwd(), 'data', 'pitch-ideas.txt');
+    try {
+        const ideas = fs.readFileSync(pitchIdeasPath, 'utf-8').split('\n').filter(line => line.trim());
+        return ideas[Math.floor(Math.random() * ideas.length)];
+    }
+    catch (error) {
+        console.error('Error reading pitch ideas:', error);
+        return 'A new social network for connecting professionals';
+    }
+}
+// Function to trigger pitch chat from scheduler
+export async function triggerPitchChat(channelId, client) {
+    try {
+        console.log('Starting scheduled pitch chat for channel:', channelId);
+        // Check if there's already an active pitch session
+        if (activePitches.has(channelId)) {
+            console.log('Pitch chat already active in this channel');
+            return;
+        }
+        // Get a random pitch idea
+        const idea = getRandomPitchIdea();
+        // Create a fake message object
+        const channel = await client.channels.fetch(channelId);
+        if (!channel?.isTextBased()) {
+            console.error('Channel not found or not text-based');
+            return;
+        }
+        // Start the pitch discussion
+        const textChannel = channel;
+        await textChannel.send(`Starting scheduled pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`);
+        // Initialize pitch state
+        const state = {
+            idea,
+            round: 1,
+            responses: [],
+            votes: {},
+            isActive: true
+        };
+        activePitches.set(channelId, state);
+        // Start the first round
+        await continuePitchDiscussion(channelId);
+    }
+    catch (error) {
+        console.error('Error in scheduled pitch chat:', error);
+        // Clean up state on error
+        activePitches.delete(channelId);
+    }
+}
 export async function handlePitchCommand(message, idea) {
     const channelId = message.channelId;
     // Check if there's already an active pitch session
