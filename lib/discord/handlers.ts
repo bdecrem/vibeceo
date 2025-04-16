@@ -8,6 +8,7 @@ import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { Client } from 'discord.js';
 import { triggerNewsChat } from './news.js';
+import { triggerTmzChat } from './tmz.js';
 
 // Message deduplication system
 class MessageDeduplication {
@@ -375,6 +376,7 @@ Available commands:
 - \`!hello\`: Get a random coach to greet you
 - \`!watercooler\`: Listen in on a quick chat between three random coaches
 - \`!newschat\`: Start a discussion about trending news relevant to the coaches
+- \`!tmzchat\`: Start a discussion about trending news relevant to the coaches
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
@@ -462,6 +464,12 @@ For example: "hey alex" or "hi donte"
     // Handle newschat command
     if (command === 'newschat') {
       await triggerNewsChat(message.channelId, message.client);
+      return;
+    }
+
+    // Handle tmzchat command
+    if (command === 'tmzchat') {
+      await triggerTmzChat(message.channelId, message.client);
       return;
     }
 

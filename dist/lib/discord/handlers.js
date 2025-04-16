@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { triggerNewsChat } from './news.js';
+import { triggerTmzChat } from './tmz.js';
 // Message deduplication system
 class MessageDeduplication {
     constructor() {
@@ -199,7 +200,7 @@ async function continueDiscussion(channelId, state) {
     }
 }
 // Watercooler chat function that can be called directly or by timer
-async function triggerWatercoolerChat(channelId, client) {
+export async function triggerWatercoolerChat(channelId, client) {
     try {
         console.log('Starting watercooler chat for channel:', channelId);
         const characters = getCharacters();
@@ -245,18 +246,19 @@ async function triggerWatercoolerChat(channelId, client) {
 }
 // Initialize scheduled tasks when bot starts
 export function initializeScheduledTasks(channelId, client) {
-    // Schedule watercooler chat every 60 minutes
-    scheduler.addTask('watercooler', // taskId
-    channelId, // channelId
-    60 * 60 * 1000, // intervalMs (60 minutes)
-    () => triggerWatercoolerChat(channelId, client) // handler
-    );
-    // Schedule news chat every 4 minutes
-    scheduler.addTask('newschat', // taskId
-    channelId, // channelId
-    4 * 60 * 1000, // intervalMs (4 minutes)
-    () => triggerNewsChat(channelId, client) // handler
-    );
+    // (Disabled) Old timer-based scheduling is now handled by the centralized scheduler.
+    // scheduler.addTask(
+    //   'watercooler',  // taskId
+    //   channelId,      // channelId
+    //   60 * 60 * 1000, // intervalMs (60 minutes)
+    //   () => triggerWatercoolerChat(channelId, client) // handler
+    // );
+    // scheduler.addTask(
+    //   'newschat',     // taskId
+    //   channelId,      // channelId
+    //   4 * 60 * 1000,  // intervalMs (4 minutes)
+    //   () => triggerNewsChat(channelId, client) // handler
+    // );
 }
 // Handle incoming messages
 export async function handleMessage(message) {
@@ -320,6 +322,7 @@ Available commands:
 - \`!hello\`: Get a random coach to greet you
 - \`!watercooler\`: Listen in on a quick chat between three random coaches
 - \`!newschat\`: Start a discussion about trending news relevant to the coaches
+- \`!tmzchat\`: Start a discussion about trending news relevant to the coaches
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
@@ -397,6 +400,11 @@ For example: "hey alex" or "hi donte"
         // Handle newschat command
         if (command === 'newschat') {
             await triggerNewsChat(message.channelId, message.client);
+            return;
+        }
+        // Handle tmzchat command
+        if (command === 'tmzchat') {
+            await triggerTmzChat(message.channelId, message.client);
             return;
         }
         // Handle unknown commands

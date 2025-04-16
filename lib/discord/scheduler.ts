@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { triggerWatercoolerChat } from './handlers.js';
 import { triggerNewsChat } from './news.js';
+import { triggerTmzChat } from './tmz.js';
 import { Client } from 'discord.js';
 
 // Path to the schedule file
@@ -11,6 +12,7 @@ const SCHEDULE_PATH = path.join(process.cwd(), 'data', 'schedule.txt');
 const serviceMap: Record<string, (channelId: string, client: Client) => Promise<void>> = {
   watercooler: triggerWatercoolerChat,
   newschat: triggerNewsChat,
+  tmzchat: triggerTmzChat,
   // Add more services here as needed
 };
 
