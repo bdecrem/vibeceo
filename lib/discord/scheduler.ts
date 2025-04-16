@@ -4,7 +4,8 @@ import { triggerWatercoolerChat } from './handlers.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
 import { triggerPitchChat } from './pitch.js';
-import { Client } from 'discord.js';
+import { Client, TextChannel } from 'discord.js';
+import { sendEventMessage, EVENT_MESSAGES } from './eventMessages.js';
 
 // Path to the schedule file
 const SCHEDULE_PATH = path.join(process.cwd(), 'data', 'schedule.txt');
@@ -18,7 +19,9 @@ const serviceMap: Record<string, (channelId: string, client: Client) => Promise<
   // Add more services here as needed
 };
 
-let scheduleByHour: Record<number, string> = {};
+type EventType = keyof typeof EVENT_MESSAGES;
+
+let scheduleByHour: Record<number, EventType> = {};
 
 function loadSchedule() {
   try {
@@ -35,7 +38,7 @@ function loadSchedule() {
           continue;
         }
         const service = match[3];
-        scheduleByHour[hour] = service;
+        scheduleByHour[hour] = service as EventType;
       } else {
         console.warn(`[Scheduler] Invalid schedule line: ${line}`);
       }
@@ -59,6 +62,40 @@ fs.watchFile(SCHEDULE_PATH, (curr, prev) => {
   loadSchedule();
 });
 
+async function runServiceWithMessages(channelId: string, client: Client, serviceName: string) {
+  const channel = client.channels.cache.get(channelId) as TextChannel;
+  if (!channel) {
+    console.error(`[Scheduler] Channel ${channelId} not found`);
+    return;
+  }
+
+  if (!(serviceName in EVENT_MESSAGES)) {
+    console.warn(`[Scheduler] No messages defined for service '${serviceName}'`);
+    return;
+  }
+
+  try {
+    const now = new Date();
+    const gmtHour = now.getUTCHours();
+    const gmtMinutes = now.getUTCMinutes();
+    // Send intro message
+    await sendEventMessage(channel, serviceName as EventType, true, gmtHour, gmtMinutes);
+    
+    // Run the actual service
+    const serviceFn = serviceMap[serviceName];
+    if (serviceFn) {
+      await serviceFn(channelId, client);
+    } else {
+      console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
+    }
+    
+    // Send outro message
+    await sendEventMessage(channel, serviceName as EventType, false, gmtHour, gmtMinutes);
+  } catch (err) {
+    console.error(`[Scheduler] Error running '${serviceName}':`, err);
+  }
+}
+
 export function startCentralizedScheduler(channelId: string, client: Client) {
   const FAST_MODE = !!process.env.FAST_SCHEDULE;
   const FAST_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -71,14 +108,9 @@ export function startCentralizedScheduler(channelId: string, client: Client) {
       const pseudoHour = Math.floor(minutesSinceStart / 5) % 24;
       const serviceName = scheduleByHour[pseudoHour];
       console.log(`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName}'`);
-      const serviceFn = serviceMap[serviceName];
-      if (serviceFn) {
-        serviceFn(channelId, client)
-          .then(() => console.log(`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`))
-          .catch(err => console.error(`[Scheduler] [FAST] Error running '${serviceName}':`, err));
-      } else {
-        console.warn(`[Scheduler] [FAST] No service mapped for '${serviceName}' at pseudo-hour ${pseudoHour}`);
-      }
+      runServiceWithMessages(channelId, client, serviceName)
+        .then(() => console.log(`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`))
+        .catch(err => console.error(`[Scheduler] [FAST] Error running '${serviceName}':`, err));
       setTimeout(fastTick, FAST_INTERVAL_MS);
     }, 0);
   } else {
@@ -88,14 +120,9 @@ export function startCentralizedScheduler(channelId: string, client: Client) {
       const hour = now.getHours();
       const serviceName = scheduleByHour[hour];
       console.log(`[Scheduler] Hour ${hour}: scheduled service is '${serviceName}'`);
-      const serviceFn = serviceMap[serviceName];
-      if (serviceFn) {
-        serviceFn(channelId, client)
-          .then(() => console.log(`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`))
-          .catch(err => console.error(`[Scheduler] Error running '${serviceName}':`, err));
-      } else {
-        console.warn(`[Scheduler] No service mapped for '${serviceName}' at hour ${hour}`);
-      }
+      runServiceWithMessages(channelId, client, serviceName)
+        .then(() => console.log(`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`))
+        .catch(err => console.error(`[Scheduler] Error running '${serviceName}':`, err));
     }
 
     // Calculate ms until next hour
