@@ -98,14 +98,15 @@ async function runServiceWithMessages(channelId: string, client: Client, service
 
 export function startCentralizedScheduler(channelId: string, client: Client) {
   const FAST_MODE = !!process.env.FAST_SCHEDULE;
-  const FAST_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  const FAST_INTERVAL_MINUTES = parseInt(process.env.FAST_SCHEDULE || '60');
+  const FAST_INTERVAL_MS = FAST_INTERVAL_MINUTES * 60 * 1000;
   const START_TIME = Date.now();
 
   if (FAST_MODE) {
-    console.log('[Scheduler] FAST-FORWARD MODE ENABLED: 1 hour = 5 minutes');
+    console.log(`[Scheduler] FAST-FORWARD MODE ENABLED: 1 hour = ${FAST_INTERVAL_MINUTES} minutes`);
     setTimeout(function fastTick() {
       const minutesSinceStart = Math.floor((Date.now() - START_TIME) / 60000);
-      const pseudoHour = Math.floor(minutesSinceStart / 5) % 24;
+      const pseudoHour = Math.floor(minutesSinceStart / FAST_INTERVAL_MINUTES) % 24;
       const serviceName = scheduleByHour[pseudoHour];
       console.log(`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName}'`);
       runServiceWithMessages(channelId, client, serviceName)
