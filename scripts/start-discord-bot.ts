@@ -1,4 +1,4 @@
-import { startBot } from '../lib/discord/bot';
+import { startBot } from '../lib/discord/bot.js';
 import dotenv from 'dotenv';
 import './health-check';
 
