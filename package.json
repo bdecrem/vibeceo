@@ -14,7 +14,8 @@
     "start:bot:dev": "npm run build:bot && node dist/scripts/start-discord-bot.js",
     "start:bot:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
     "predeploy:bot": "npm run build:bot",
-    "deploy:bot": "npm run start:bot:prod"
+    "deploy:bot": "npm run start:bot:prod",
+    "postinstall": "npm run build:bot"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
