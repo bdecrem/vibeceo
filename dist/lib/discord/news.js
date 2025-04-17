@@ -2,6 +2,7 @@ import { getCharacters } from './characters.js';
 import { sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import axios from 'axios';
+import { getNextMessage } from './adminCommands.js';
 const activeNewsChats = new Map();
 let newsCache = null;
 const FOUR_HOURS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
@@ -9,15 +10,25 @@ const FOUR_HOURS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 export async function triggerNewsChat(channelId, client) {
     try {
         console.log('Starting news chat for channel:', channelId);
+        const characters = getCharacters();
+        // Check for admin message
+        const adminMessage = getNextMessage('newschat');
+        // If no admin message, get a random tech news topic
+        const relevantStory = adminMessage
+            ? (() => {
+                const urlMatch = adminMessage.match(/(https?:\/\/\S+)/);
+                const url = urlMatch ? urlMatch[1] : '';
+                const title = adminMessage.replace(url, '').trim();
+                return { title, description: '', url, source: 'Admin', publishedAt: new Date().toISOString() };
+            })()
+            : await getNextNewsStory();
+        if (!relevantStory) {
+            console.error('No relevant stories found');
+            return;
+        }
         // Check if there's already an active news chat
         if (activeNewsChats.has(channelId)) {
             console.log('News chat already active in this channel');
-            return;
-        }
-        // Get the next story to discuss
-        const relevantStory = await getNextNewsStory();
-        if (!relevantStory) {
-            console.error('No relevant stories found');
             return;
         }
         // Select appropriate coaches
@@ -27,12 +38,11 @@ export async function triggerNewsChat(channelId, client) {
             return;
         }
         // Start discussion
-        await startNewsDiscussion(channelId, relevantStory, selectedCharacters);
+        await startNewsDiscussion(channelId, relevantStory, selectedCharacters, adminMessage);
     }
     catch (error) {
         console.error('Error in news chat:', error);
-        // Clean up state on error
-        activeNewsChats.delete(channelId);
+        throw error;
     }
 }
 // Helper functions
@@ -88,7 +98,7 @@ function selectRelevantCoaches(story) {
         .sort(() => Math.random() - 0.5)
         .slice(0, 4);
 }
-async function startNewsDiscussion(channelId, story, characters) {
+async function startNewsDiscussion(channelId, story, characters, adminMessage) {
     // Initialize state
     const state = {
         newsStory: story,
@@ -99,79 +109,119 @@ async function startNewsDiscussion(channelId, story, characters) {
     activeNewsChats.set(channelId, state);
     try {
         // First coach introduces the news
-        const firstPrompt = `You are ${characters[0].name}. You just read this news story: "${story.title}". 
-    ${story.description ? `Here's more context: ${story.description}` : ''}
-    Share your strong opinion about this news. What's your take on it? Be bold and decisive in your perspective. Keep your response under 150 words.`;
-        const firstMessage = await generateCharacterResponse(characters[0].prompt + '\n' + firstPrompt, story.title);
-        const firstMessageWithLink = `${firstMessage}\n\n[Read the full story here](${story.url})`;
-        await sendAsCharacter(channelId, characters[0].id, firstMessageWithLink);
-        state.conversationHistory.push({ character: characters[0].id, message: firstMessage });
+        const firstPrompt = adminMessage
+            ? `You are ${characters[0].name}. Transform this tech news into a natural conversation starter, sharing your perspective: "${story.title}". 
+      Share your thoughts about this tech news in a conversational way. Be empathetic and authentic while staying true to your personality. Keep your response under 150 words.`
+            : `You are ${characters[0].name}. You just read this news story: "${story.title}". 
+      ${story.description ? `Here's more context: ${story.description}` : ''}
+      Share your strong opinion about this news. What's your take on it? Be bold and decisive in your perspective. Keep your response under 150 words.`;
+        let firstMessage;
+        try {
+            firstMessage = await generateCharacterResponse(characters[0].prompt + '\n' + firstPrompt, story.title);
+            const firstMessageWithLink = story.url
+                ? `${firstMessage}\n\n[Read the full story here](${story.url})`
+                : firstMessage;
+            await sendAsCharacter(channelId, characters[0].id, firstMessageWithLink);
+            state.conversationHistory.push({ character: characters[0].id, message: firstMessage });
+        }
+        catch (error) {
+            console.error('Error generating first message:', error);
+            return; // Exit early if first message fails
+        }
         // Second coach responds
-        const secondPrompt = `You are ${characters[1].name}. ${characters[0].name} just shared this news story: "${story.title}" and said: "${firstMessage}".
-    Respond to their perspective. Do you agree or disagree? Why? Take a strong position and explain your reasoning. Keep your response under 150 words.`;
-        const secondMessage = await generateCharacterResponse(characters[1].prompt + '\n' + secondPrompt, firstMessage);
-        await sendAsCharacter(channelId, characters[1].id, secondMessage);
-        state.conversationHistory.push({ character: characters[1].id, message: secondMessage });
+        let secondMessage;
+        try {
+            const secondPrompt = `You are ${characters[1].name}. ${characters[0].name} just shared this news story: "${story.title}" and said: "${firstMessage}".
+      Respond to their perspective. Do you agree or disagree? Why? Take a strong position and explain your reasoning. Keep your response under 150 words.`;
+            secondMessage = await generateCharacterResponse(characters[1].prompt + '\n' + secondPrompt, firstMessage);
+            await sendAsCharacter(channelId, characters[1].id, secondMessage);
+            state.conversationHistory.push({ character: characters[1].id, message: secondMessage });
+        }
+        catch (error) {
+            console.error('Error generating second message:', error);
+            return; // Exit after first response if second fails
+        }
         // Third coach responds
-        const thirdPrompt = `You are ${characters[2].name}. Responding to this exchange about the news story "${story.title}":
-    ${characters[0].name}: "${firstMessage}"
-    ${characters[1].name}: "${secondMessage}"
-    What's your unique perspective on this? How does it differ from what's been said? Take a position that challenges or adds a new dimension to the discussion. Keep your response under 150 words.`;
-        const thirdMessage = await generateCharacterResponse(characters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
-        await sendAsCharacter(channelId, characters[2].id, thirdMessage);
-        state.conversationHistory.push({ character: characters[2].id, message: thirdMessage });
+        let thirdMessage;
+        try {
+            const thirdPrompt = `You are ${characters[2].name}. Responding to this exchange about the news story "${story.title}":
+      ${characters[0].name}: "${firstMessage}"
+      ${characters[1].name}: "${secondMessage}"
+      What's your unique perspective on this? How does it differ from what's been said? Take a position that challenges or adds a new dimension to the discussion. Keep your response under 150 words.`;
+            thirdMessage = await generateCharacterResponse(characters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
+            await sendAsCharacter(channelId, characters[2].id, thirdMessage);
+            state.conversationHistory.push({ character: characters[2].id, message: thirdMessage });
+        }
+        catch (error) {
+            console.error('Error generating third message:', error);
+            return; // Exit after second response if third fails
+        }
         // Fourth coach responds
-        const fourthPrompt = `You are ${characters[3].name}. Responding to this discussion about the news story "${story.title}":
-    ${characters[0].name}: "${firstMessage}"
-    ${characters[1].name}: "${secondMessage}"
-    ${characters[2].name}: "${thirdMessage}"
-    Take a strong position on this issue. What's your controversial take? Challenge the assumptions made by others. Keep your response under 150 words.`;
-        const fourthMessage = await generateCharacterResponse(characters[3].prompt + '\n' + fourthPrompt, firstMessage + ' ' + secondMessage + ' ' + thirdMessage);
-        await sendAsCharacter(channelId, characters[3].id, fourthMessage);
-        state.conversationHistory.push({ character: characters[3].id, message: fourthMessage });
-        // First follow-up (from character 0)
-        const firstFollowUpPrompt = `You are ${characters[0].name}. Continuing the discussion about "${story.title}":
-    ${characters[1].name}: "${secondMessage}"
-    ${characters[2].name}: "${thirdMessage}"
-    ${characters[3].name}: "${fourthMessage}"
-    Respond to the most controversial point made. Do you strongly agree or disagree? Keep your response focused and concise (max 30 words).`;
-        const firstFollowUp = await generateCharacterResponse(characters[0].prompt + '\n' + firstFollowUpPrompt, secondMessage + ' ' + thirdMessage + ' ' + fourthMessage);
-        await sendAsCharacter(channelId, characters[0].id, firstFollowUp);
-        state.conversationHistory.push({ character: characters[0].id, message: firstFollowUp });
-        // Second follow-up (from character 1)
-        const secondFollowUpPrompt = `You are ${characters[1].name}. Continuing the discussion about "${story.title}":
-    ${characters[2].name}: "${thirdMessage}"
-    ${characters[3].name}: "${fourthMessage}"
-    ${characters[0].name}: "${firstFollowUp}"
-    Challenge one specific point made by another coach. What's wrong with their argument? Keep your response focused and concise (max 30 words).`;
-        const secondFollowUp = await generateCharacterResponse(characters[1].prompt + '\n' + secondFollowUpPrompt, thirdMessage + ' ' + fourthMessage + ' ' + firstFollowUp);
-        await sendAsCharacter(channelId, characters[1].id, secondFollowUp);
-        state.conversationHistory.push({ character: characters[1].id, message: secondFollowUp });
-        // Third follow-up (from character 2)
-        const thirdFollowUpPrompt = `You are ${characters[2].name}. Continuing the discussion about "${story.title}":
-    ${characters[3].name}: "${fourthMessage}"
-    ${characters[0].name}: "${firstFollowUp}"
-    ${characters[1].name}: "${secondFollowUp}"
-    Find common ground between two opposing views. How can they both be right? Keep your response focused and concise (max 30 words).`;
-        const thirdFollowUp = await generateCharacterResponse(characters[2].prompt + '\n' + thirdFollowUpPrompt, fourthMessage + ' ' + firstFollowUp + ' ' + secondFollowUp);
-        await sendAsCharacter(channelId, characters[2].id, thirdFollowUp);
-        state.conversationHistory.push({ character: characters[2].id, message: thirdFollowUp });
-        // Final response (from character 3)
-        const finalPrompt = `You are ${characters[3].name}. Wrapping up the discussion about "${story.title}":
-    ${characters[0].name}: "${firstFollowUp}"
-    ${characters[1].name}: "${secondFollowUp}"
-    ${characters[2].name}: "${thirdFollowUp}"
-    Make a provocative final statement that challenges the group's consensus. Keep your response focused and concise (max 30 words).`;
-        const finalMessage = await generateCharacterResponse(characters[3].prompt + '\n' + finalPrompt, firstFollowUp + ' ' + secondFollowUp + ' ' + thirdFollowUp);
-        await sendAsCharacter(channelId, characters[3].id, finalMessage);
-        state.conversationHistory.push({ character: characters[3].id, message: finalMessage });
+        let fourthMessage;
+        try {
+            const fourthPrompt = `You are ${characters[3].name}. Responding to this discussion about the news story "${story.title}":
+      ${characters[0].name}: "${firstMessage}"
+      ${characters[1].name}: "${secondMessage}"
+      ${characters[2].name}: "${thirdMessage}"
+      Take a strong position on this issue. What's your controversial take? Challenge the assumptions made by others. Keep your response under 150 words.`;
+            fourthMessage = await generateCharacterResponse(characters[3].prompt + '\n' + fourthPrompt, firstMessage + ' ' + secondMessage + ' ' + thirdMessage);
+            await sendAsCharacter(channelId, characters[3].id, fourthMessage);
+            state.conversationHistory.push({ character: characters[3].id, message: fourthMessage });
+        }
+        catch (error) {
+            console.error('Error generating fourth message:', error);
+            return; // Exit after third response if fourth fails
+        }
+        // Follow-up messages with individual error handling
+        try {
+            // First follow-up
+            const firstFollowUpPrompt = `You are ${characters[0].name}. Continuing the discussion about "${story.title}":
+      ${characters[1].name}: "${secondMessage}"
+      ${characters[2].name}: "${thirdMessage}"
+      ${characters[3].name}: "${fourthMessage}"
+      Respond to the most controversial point made. Do you strongly agree or disagree? Keep your response focused and concise (max 30 words).`;
+            const firstFollowUp = await generateCharacterResponse(characters[0].prompt + '\n' + firstFollowUpPrompt, secondMessage + ' ' + thirdMessage + ' ' + fourthMessage);
+            await sendAsCharacter(channelId, characters[0].id, firstFollowUp);
+            state.conversationHistory.push({ character: characters[0].id, message: firstFollowUp });
+            // Second follow-up
+            const secondFollowUpPrompt = `You are ${characters[1].name}. Continuing the discussion about "${story.title}":
+      ${characters[2].name}: "${thirdMessage}"
+      ${characters[3].name}: "${fourthMessage}"
+      ${characters[0].name}: "${firstFollowUp}"
+      Challenge one specific point made by another coach. What's wrong with their argument? Keep your response focused and concise (max 30 words).`;
+            const secondFollowUp = await generateCharacterResponse(characters[1].prompt + '\n' + secondFollowUpPrompt, thirdMessage + ' ' + fourthMessage + ' ' + firstFollowUp);
+            await sendAsCharacter(channelId, characters[1].id, secondFollowUp);
+            state.conversationHistory.push({ character: characters[1].id, message: secondFollowUp });
+            // Third follow-up
+            const thirdFollowUpPrompt = `You are ${characters[2].name}. Continuing the discussion about "${story.title}":
+      ${characters[3].name}: "${fourthMessage}"
+      ${characters[0].name}: "${firstFollowUp}"
+      ${characters[1].name}: "${secondFollowUp}"
+      Find common ground between two opposing views. How can they both be right? Keep your response focused and concise (max 30 words).`;
+            const thirdFollowUp = await generateCharacterResponse(characters[2].prompt + '\n' + thirdFollowUpPrompt, fourthMessage + ' ' + firstFollowUp + ' ' + secondFollowUp);
+            await sendAsCharacter(channelId, characters[2].id, thirdFollowUp);
+            state.conversationHistory.push({ character: characters[2].id, message: thirdFollowUp });
+            // Final response
+            const finalPrompt = `You are ${characters[3].name}. Wrapping up the discussion about "${story.title}":
+      ${characters[0].name}: "${firstFollowUp}"
+      ${characters[1].name}: "${secondFollowUp}"
+      ${characters[2].name}: "${thirdFollowUp}"
+      Make a provocative final statement that challenges the group's consensus. Keep your response focused and concise (max 30 words).`;
+            const finalMessage = await generateCharacterResponse(characters[3].prompt + '\n' + finalPrompt, firstFollowUp + ' ' + secondFollowUp + ' ' + thirdFollowUp);
+            await sendAsCharacter(channelId, characters[3].id, finalMessage);
+            state.conversationHistory.push({ character: characters[3].id, message: finalMessage });
+        }
+        catch (error) {
+            console.error('Error in follow-up messages:', error);
+            // Don't return here - let it proceed to cleanup
+        }
     }
     catch (error) {
-        console.error('Error in news discussion:', error);
+        console.error('Unexpected error in news discussion:', error);
     }
     finally {
         // Clean up state after discussion
         state.isActive = false;
-        activeNewsChats.delete(channelId); // Remove the state immediately instead of using setTimeout
+        activeNewsChats.delete(channelId);
     }
 }

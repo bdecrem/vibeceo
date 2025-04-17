@@ -31,4 +31,3 @@ export async function sendEventMessage(channel, eventType, isIntro, gmtHour, gmt
         await channel.send(message);
     }
 }
-//# sourceMappingURL=eventMessages.js.map

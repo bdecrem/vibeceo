@@ -7,6 +7,7 @@ import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
+import { getNextMessage, handleAdminCommand } from './adminCommands.js';
 // Message deduplication system
 class MessageDeduplication {
     constructor() {
@@ -205,6 +206,8 @@ export async function triggerWatercoolerChat(channelId, client) {
         console.log('Starting watercooler chat for channel:', channelId);
         const characters = getCharacters();
         console.log('Available characters:', characters.map(c => c.name).join(', '));
+        // Check for admin message
+        const adminMessage = getNextMessage('watercooler');
         // Pick 3 random unique coaches
         const selectedCharacters = [...characters]
             .sort(() => Math.random() - 0.5)
@@ -212,7 +215,9 @@ export async function triggerWatercoolerChat(channelId, client) {
         console.log('Selected characters:', selectedCharacters.map(c => c.name).join(', '));
         // First coach shares something about their day
         console.log('Generating first message...');
-        const firstPrompt = `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
+        const firstPrompt = adminMessage
+            ? `You are ${selectedCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
+            : `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
         const firstMessage = await generateCharacterResponse(selectedCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
         console.log('First message generated:', firstMessage.substring(0, 50) + '...');
         await sendAsCharacter(channelId, selectedCharacters[0].id, firstMessage);
@@ -276,6 +281,13 @@ export async function handleMessage(message) {
         }
         console.log('Message was not processed before, continuing');
         const content = message.content.toLowerCase();
+        // Check for admin commands first
+        if (content.startsWith('!') &&
+            (content.includes('-admin') || content === '!help-admin')) {
+            console.log('[ADMIN] Detected admin command:', message.content);
+            await handleAdminCommand(message);
+            return;
+        }
         // Check for natural language triggers
         for (const trigger of NATURAL_TRIGGERS) {
             if (content.startsWith(trigger)) {

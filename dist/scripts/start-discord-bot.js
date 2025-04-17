@@ -1,6 +1,6 @@
-import { startBot } from '../lib/discord/bot.js';
+import { startBot } from '../lib/discord/bot';
 import dotenv from 'dotenv';
-import './health-check.js';
+import './health-check';
 // Load environment variables from .env.local
 if (process.env.NODE_ENV !== 'production') {
     dotenv.config({ path: '.env.local' });

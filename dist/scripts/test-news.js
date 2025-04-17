@@ -20,4 +20,3 @@ async function testNewsFetching() {
     }
 }
 testNewsFetching();
-//# sourceMappingURL=test-news.js.map

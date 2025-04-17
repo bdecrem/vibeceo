@@ -90,4 +90,3 @@ export function getNextMessage(service) {
     nextMessages[service] = null; // Clear after getting
     return message;
 }
-//# sourceMappingURL=adminCommands.js.map

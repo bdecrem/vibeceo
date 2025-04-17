@@ -34,4 +34,3 @@ export function getLocationAndTime(gmtHour, gmtMinutes) {
         isNewLocation
     };
 }
-//# sourceMappingURL=locationTime.js.map
