@@ -2,7 +2,7 @@
 
 A Next.js web application with Discord bot integration for CEO coaching and management.
 
-*Last updated: April 13, 2025 at 9:43 PM PDT*
+*Last updated: April 17, 2025 at 11:30 AM PDT*
 
 ## Overview
 
@@ -72,8 +72,10 @@ The application can be deployed to:
 - No railway.toml required
 - Node.js version: 18
 - Automatically triggers watercooler chat on startup
+- Postinstall script ensures TypeScript compilation for bot files
+- Fast-forward mode enabled (1 hour = 10 minutes) for testing
 
-Last updated: April 14, 2025
+Last updated: April 17, 2025
 
 ## Security
 
