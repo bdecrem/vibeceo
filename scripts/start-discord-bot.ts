@@ -1,6 +1,6 @@
 import { startBot } from '../lib/discord/bot.js';
 import dotenv from 'dotenv';
-import './health-check';
+import './health-check.js';
 
 // Environment detection and node flags
 const isProduction = process.env.NODE_ENV === 'production';
