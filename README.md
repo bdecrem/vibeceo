@@ -2,7 +2,7 @@
 
 A Next.js web application with Discord bot integration for CEO coaching and management.
 
-*Last updated: April 13, 2025 at 9:43 PM PDT*
+*Last updated: April 17, 2025 at 11:30 AM PDT*
 
 ## Overview
 
@@ -61,19 +61,29 @@ VibeCEO8 is a comprehensive platform that combines a Next.js web application wit
 
 The application can be deployed to:
 - Railway (using railway.toml)
-  - Build command: `npm install`
-  - Start command: `node dist/scripts/start-discord-bot.js`
+  - Build command: `npm run build:bot`
+  - Start command: `npm run start:bot:prod`
+  - Environment: `NODE_ENV=production`
 - Render (using render.yaml)
 
 ## Deployment Notes
 
 ### Railway Configuration
-- Uses direct command: `node dist/scripts/start-discord-bot.js`
-- No railway.toml required
+- Build command: `npm run build:bot`
+- Start command: `npm run start:bot:prod`
+- Environment: `NODE_ENV=production`
 - Node.js version: 18
 - Automatically triggers watercooler chat on startup
 
-Last updated: April 14, 2025
+### Build Process
+The project uses a standardized build process:
+1. Development:
+   - `npm run start:bot:dev` - Builds and starts the bot in development mode
+2. Production:
+   - `npm run build:bot` - Builds the bot
+   - `npm run start:bot:prod` - Starts the bot in production mode with proper module resolution
+
+Last updated: April 17, 2025
 
 ## Security
 
@@ -109,4 +119,4 @@ To ensure the latest build files are running on Railway, follow these steps:
    railway status | cat
    ```
 
-_Note: These steps ensure that the latest build artifacts are deployed and running in production. Always commit and push your changes before running these commands._
+_Note: These steps ensure that the latest build artifacts are deployed and running in production. Always commit and push your changes before running these commands. The build process is now standardized with separate development and production commands._

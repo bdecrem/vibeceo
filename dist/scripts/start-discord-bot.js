@@ -13,10 +13,7 @@ if (process.env.BOT_INSTANCE_ID) {
 // Set instance ID to prevent multiple instances
 process.env.BOT_INSTANCE_ID = Date.now().toString();
 // Start the bot
-startBot().catch(error => {
-    console.error('Failed to start bot:', error);
-    process.exit(1);
-});
+startBot().catch(console.error);
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
     console.log('Received SIGTERM signal. Starting graceful shutdown...');

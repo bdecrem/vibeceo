@@ -27,7 +27,7 @@ const server = http.createServer((req, res) => {
   }
 });
 
-const PORT = process.env.HEALTH_CHECK_PORT || 3001;
+const PORT = process.env.HEALTH_CHECK_PORT || 3002;
 server.listen(PORT, () => {
   console.log(`Health check server listening on port ${PORT}`);
 }); 

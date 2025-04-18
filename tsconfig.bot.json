@@ -12,7 +12,9 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "allowJs": true,
+    "resolveJsonModule": true
   },
   "include": [
     "scripts/**/*",
