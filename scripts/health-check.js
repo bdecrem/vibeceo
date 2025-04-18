@@ -1,5 +1,6 @@
 import http from 'http';
 import { client } from '../lib/discord/bot.js';
+
 const server = http.createServer((req, res) => {
     if (req.url === '/health') {
         // Check Discord client status
@@ -26,7 +27,8 @@ const server = http.createServer((req, res) => {
         res.end();
     }
 });
+
 const PORT = process.env.HEALTH_CHECK_PORT || 3002;
 server.listen(PORT, () => {
     console.log(`Health check server listening on port ${PORT}`);
-});
+}); 
