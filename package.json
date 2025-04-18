@@ -11,8 +11,8 @@
     "test": "playwright test",
     "clean": "rimraf dist",
     "build:bot": "npm run clean && tsc --project tsconfig.bot.json",
-    "start:bot:dev": "npm run build:bot && node --experimental-specifier-resolution=node dist/scripts/start-discord-bot.js",
-    "start:bot:prod": "NODE_ENV=production node --experimental-specifier-resolution=node dist/scripts/start-discord-bot.js",
+    "start:bot:dev": "npm run build:bot && node dist/scripts/start-discord-bot.js",
+    "start:bot:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
     "predeploy:bot": "npm run build:bot",
     "deploy:bot": "npm run start:bot:prod",
     "postinstall": "npm run build:bot"
