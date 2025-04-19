@@ -5,6 +5,7 @@ import { generateCharacterResponse } from './ai.js';
 import { Client } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { PitchAnalysis, analyzePitch } from './pitchAnalysis.js';
 
 interface PitchState {
   idea: string;
@@ -12,6 +13,10 @@ interface PitchState {
   responses: Array<{character: string, message: string}>;
   votes: Record<string, string>;
   isActive: boolean;
+  // New fields for enhanced pitch mode
+  analysis?: PitchAnalysis;  // Optional to maintain backward compatibility
+  pros?: string[];          // Optional: extracted pros from discussion
+  cons?: string[];          // Optional: extracted cons from discussion
 }
 
 const activePitches = new Map<string, PitchState>();
@@ -42,6 +47,10 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
     // Get a random pitch idea
     const idea = getRandomPitchIdea();
     
+    // Analyze the pitch
+    const analysis = analyzePitch(idea);
+    console.log(`[Pitch Analysis] ${idea}:`, analysis);
+    
     // Create a fake message object
     const channel = await client.channels.fetch(channelId);
     if (!channel?.isTextBased()) {
@@ -51,15 +60,26 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
 
     // Start the pitch discussion
     const textChannel = channel as TextChannel;
-    await textChannel.send(`Starting scheduled pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`);
     
-    // Initialize pitch state
+    // Customize message based on analysis
+    const contextMessage = analysis.jokeScore > 7 
+      ? `Starting scheduled pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it.)`
+      : analysis.developmentScore > 7
+      ? `Starting scheduled pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it.)`
+      : `Starting scheduled pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`;
+    
+    await textChannel.send(contextMessage);
+    
+    // Initialize pitch state with analysis
     const state: PitchState = {
       idea,
       round: 1,
       responses: [],
       votes: {},
-      isActive: true
+      isActive: true,
+      analysis,
+      pros: [],
+      cons: []
     };
     activePitches.set(channelId, state);
 
@@ -81,18 +101,31 @@ export async function handlePitchCommand(message: Message, idea: string): Promis
     return;
   }
 
-  // Initialize pitch state
+  // Analyze the pitch
+  const analysis = analyzePitch(idea);
+  console.log(`[Pitch Analysis] ${idea}:`, analysis);
+
+  // Initialize pitch state with analysis
   const state: PitchState = {
     idea,
     round: 1,
     responses: [],
     votes: {},
-    isActive: true
+    isActive: true,
+    analysis,
+    pros: [],
+    cons: []
   };
   activePitches.set(channelId, state);
 
-  // Acknowledge the pitch
-  await message.reply(`Starting pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`);
+  // Acknowledge the pitch with analysis context
+  const contextMessage = analysis.jokeScore > 7 
+    ? `Starting pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it.)`
+    : analysis.developmentScore > 7
+    ? `Starting pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it.)`
+    : `Starting pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`;
+
+  await message.reply(contextMessage);
 
   // Start the first round
   await continuePitchDiscussion(channelId);
@@ -143,15 +176,38 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
     nextCharacter = availableCharacters[0];
   }
 
-  // Generate response
-  const contextPrompt = state.round === 1 
-    ? `You are ${nextCharacter.name}. A founder has pitched their business idea: "${state.idea}". 
-       Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice.
-       Focus on a single specific aspect of the idea.`
-    : `You are ${nextCharacter.name}. Continue the discussion about: "${state.idea}".
-       Previous comments in this round:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
-       Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character.
-       Focus on a different aspect than what others have mentioned.`;
+  // Generate response based on analysis
+  const analysis = state.analysis!; // We know analysis exists because we set it in handlePitchCommand/triggerPitchChat
+
+  // Base prompt template
+  let contextPrompt = `You are ${nextCharacter.name}. `;
+
+  // Add analysis context
+  if (analysis.jokeScore > 7) {
+    contextPrompt += `This is clearly a fun/playful idea: "${state.idea}". `;
+    contextPrompt += `Feel free to be creative and humorous in your response, but still provide some constructive feedback. `;
+  } else if (analysis.developmentScore > 7) {
+    contextPrompt += `This idea needs more development: "${state.idea}". `;
+    contextPrompt += `Help explore and expand on the concept while staying in character. `;
+  } else {
+    contextPrompt += `A founder has pitched their business idea: "${state.idea}". `;
+  }
+
+  // Add round-specific context
+  if (state.round === 1) {
+    contextPrompt += `Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice. `;
+    if (analysis.feasibilityScore < 3) {
+      contextPrompt += `Note: This idea has significant feasibility challenges. Address these while staying constructive. `;
+    }
+    if (analysis.noveltyScore > 7) {
+      contextPrompt += `This is a particularly novel idea - highlight what makes it unique. `;
+    }
+  } else {
+    contextPrompt += `Previous comments in this round:\n${currentRoundResponses.map(r => 
+      `${getCharacter(r.character)?.name}: "${r.message}"`
+    ).join('\n')}\n`;
+    contextPrompt += `Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character. `;
+  }
 
   try {
     const response = await generateCharacterResponse(nextCharacter.prompt + '\n' + contextPrompt, state.idea);
@@ -173,11 +229,25 @@ async function startVoting(channelId: string): Promise<void> {
 
   const characters = getCharacters();
   
-  // Generate votes
+  // Generate votes based on analysis
   for (const character of characters) {
-    const votePrompt = `You are ${character.name}. After discussing this business idea: "${state.idea}"
+    const analysis = state.analysis!;
+    
+    // Base vote prompt with analysis context
+    let votePrompt = `You are ${character.name}. After discussing this business idea: "${state.idea}"
       Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
-      Vote either INVEST or PASS, with a very brief reason (10 words max).`;
+      
+      Analysis of the idea:
+      - Novelty: ${analysis.noveltyScore}/10
+      - Feasibility: ${analysis.feasibilityScore}/10
+      - Development: ${analysis.developmentScore}/10
+      - Joke Score: ${analysis.jokeScore}/10
+      
+      Vote either INVEST or PASS, with a very brief reason (10 words max). Consider:
+      - Novel ideas (score > 7) are worth exploring even if risky
+      - Highly feasible ideas (score > 7) are safer bets
+      - Underdeveloped ideas (score > 7) need more work
+      - Joke ideas (score > 7) should be evaluated for entertainment value`;
     
     try {
       const vote = await generateCharacterResponse(character.prompt + '\n' + votePrompt, state.idea);
@@ -190,14 +260,28 @@ async function startVoting(channelId: string): Promise<void> {
     }
   }
 
-  // Calculate and display results
+  // Calculate and display results with more context
   const investCount = Object.values(state.votes).filter(v => v.toLowerCase().includes('invest')).length;
   const passCount = Object.values(state.votes).filter(v => v.toLowerCase().includes('pass')).length;
+  
+  const analysis = state.analysis!;
+  let resultContext = '';
+  
+  if (analysis.jokeScore > 7) {
+    resultContext = 'Note: This was evaluated as a fun/entertaining idea.';
+  } else if (analysis.developmentScore > 7) {
+    resultContext = 'Note: This idea needs more development work.';
+  } else if (analysis.feasibilityScore < 3) {
+    resultContext = 'Note: This idea has significant feasibility challenges.';
+  } else if (analysis.noveltyScore > 7) {
+    resultContext = 'Note: This is a particularly novel/innovative idea.';
+  }
   
   const resultMessage = `
 📊 Final Vote Results:
 INVEST: ${investCount} votes
 PASS: ${passCount} votes
+${resultContext}
 ${investCount > passCount ? '✨ The coaches would invest!' : '🤔 The coaches would pass.'}`;
 
   // Use the first character to announce results
