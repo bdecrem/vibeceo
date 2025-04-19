@@ -6,8 +6,26 @@ import { Client } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { PitchAnalysis, analyzePitch } from './pitchAnalysis.js';
+import { generatePromptContext } from './context.js';
+import OpenAI from 'openai';
 
-const TEST_MODE = true;  // Set to true to skip Discord messages
+// OpenAI configuration
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Set to true to skip Discord messages and reduce delays for testing
+const TEST_MODE = false;
+
+// Add timing utilities for test mode
+interface TimingMetrics {
+  analysisStart?: number;
+  analysisEnd?: number;
+  discussionStart?: number;
+  discussionEnd?: number;
+  votingStart?: number;
+  votingEnd?: number;
+}
 
 interface PitchState {
   idea: string;
@@ -19,6 +37,8 @@ interface PitchState {
   analysis?: PitchAnalysis;  // Optional to maintain backward compatibility
   pros?: string[];          // Optional: extracted pros from discussion
   cons?: string[];          // Optional: extracted cons from discussion
+  // Add timing metrics for test mode
+  timing?: TimingMetrics;
 }
 
 const activePitches = new Map<string, PitchState>();
@@ -33,6 +53,31 @@ function getRandomPitchIdea(): string {
     console.error('Error reading pitch ideas:', error);
     return 'A new social network for connecting professionals';
   }
+}
+
+// Helper function to get context message based on GPT analysis
+function getContextMessage(idea: string, analysis: PitchAnalysis): string {
+  const gptAnalysis = analysis.gptAnalysis;
+  
+  if (gptAnalysis) {
+    if (gptAnalysis.joke_level > 7) {
+      return `Starting pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it. Joke Level: ${gptAnalysis.joke_level}/10)`;
+    } else if (gptAnalysis.development > 7) {
+      return `Starting pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it. Development: ${gptAnalysis.development}/10)`;
+    } else if (gptAnalysis.quality < 3) {
+      return `Starting pitch discussion for: "${idea}"\n(Note: This idea has significant quality challenges. Quality: ${gptAnalysis.quality}/10)`;
+    } else if (gptAnalysis.novelty > 7) {
+      return `Starting pitch discussion for: "${idea}"\n(Note: This is a particularly novel idea. Novelty: ${gptAnalysis.novelty}/10)`;
+    }
+  }
+  
+  // Fallback to original analysis
+  if (analysis.jokeScore > 7) {
+    return `Starting pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it.)`;
+  } else if (analysis.developmentScore > 7) {
+    return `Starting pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it.)`;
+  }
+  return `Starting pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`;
 }
 
 // Function to trigger pitch chat from scheduler
@@ -63,12 +108,8 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
     // Start the pitch discussion
     const textChannel = channel as TextChannel;
     
-    // Customize message based on analysis
-    const contextMessage = analysis.jokeScore > 7 
-      ? `Starting scheduled pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it.)`
-      : analysis.developmentScore > 7
-      ? `Starting scheduled pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it.)`
-      : `Starting scheduled pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`;
+    // Use the same context message function
+    const contextMessage = getContextMessage(idea, analysis);
     
     await textChannel.send(contextMessage);
     
@@ -81,7 +122,8 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
       isActive: true,
       analysis,
       pros: [],
-      cons: []
+      cons: [],
+      timing: {}
     };
     activePitches.set(channelId, state);
 
@@ -103,11 +145,52 @@ export async function handlePitchCommand(message: Message, idea: string): Promis
     return;
   }
 
+  // Initialize timing metrics
+  const timing: TimingMetrics = {};
+  
+  if (TEST_MODE) {
+    console.log('\n=== Starting Pitch Analysis ===');
+    console.log(`Pitch: "${idea}"`);
+    timing.analysisStart = Date.now();
+  }
+
   // Analyze the pitch
   const analysis = await analyzePitch(idea);
-  console.log(`[Pitch Analysis] ${idea}:`, analysis);
+  
+  if (TEST_MODE) {
+    timing.analysisEnd = Date.now();
+    const analysisDuration = timing.analysisEnd - timing.analysisStart!;
+    
+    console.log('\n=== Analysis Results ===');
+    console.log(`Analysis Duration: ${analysisDuration}ms`);
+    
+    const gptAnalysis = analysis.gptAnalysis;
+    if (gptAnalysis) {
+      console.log('\nGPT Analysis:');
+      console.log(`Joke Level: ${gptAnalysis.joke_level}/10`);
+      console.log(`└─ ${gptAnalysis.rationale.joke_level}`);
+      console.log(`Development: ${gptAnalysis.development}/10`);
+      console.log(`└─ ${gptAnalysis.rationale.development}`);
+      console.log(`Quality: ${gptAnalysis.quality}/10`);
+      console.log(`└─ ${gptAnalysis.rationale.quality}`);
+      console.log(`Novelty: ${gptAnalysis.novelty}/10`);
+      console.log(`└─ ${gptAnalysis.rationale.novelty}`);
+    }
+    
+    // Generate and log context
+    const context = generatePromptContext({
+      isJoke: gptAnalysis ? gptAnalysis.joke_level > 7 : analysis.jokeScore > 7,
+      isUnderdeveloped: gptAnalysis ? gptAnalysis.development < 5 : analysis.developmentScore < 5,
+      pros: [],
+      cons: [],
+      originalMessage: null as any
+    });
+    
+    console.log('\n=== Generated Context ===');
+    console.log(context);
+  }
 
-  // Initialize pitch state with analysis
+  // Initialize pitch state with analysis and timing
   const state: PitchState = {
     idea,
     round: 1,
@@ -116,21 +199,21 @@ export async function handlePitchCommand(message: Message, idea: string): Promis
     isActive: true,
     analysis,
     pros: [],
-    cons: []
+    cons: [],
+    timing
   };
   activePitches.set(channelId, state);
 
-  // Acknowledge the pitch with analysis context
-  const contextMessage = analysis.jokeScore > 7 
-    ? `Starting pitch discussion for: "${idea}"\n(Note: This seems like a fun idea! The coaches will enjoy discussing it.)`
-    : analysis.developmentScore > 7
-    ? `Starting pitch discussion for: "${idea}"\n(Note: This idea could use more detail. The coaches will help explore it.)`
-    : `Starting pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`;
-
-  await message.reply(contextMessage);
-
-  // Start the first round
-  await continuePitchDiscussion(channelId);
+  if (TEST_MODE) {
+    console.log('\n=== Starting Discussion ===');
+    timing.discussionStart = Date.now();
+    await startVoting(channelId);
+  } else {
+    // Normal flow
+    const contextMessage = getContextMessage(idea, analysis);
+    await message.reply(contextMessage);
+    await continuePitchDiscussion(channelId);
+  }
 }
 
 async function continuePitchDiscussion(channelId: string): Promise<void> {
@@ -146,6 +229,43 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
 
   // Check if round is complete
   if (currentRoundResponses.length === characters.length) {
+    // Extract pros and cons from the round's responses
+    const roundResponses = state.responses.slice(-characters.length);
+    state.pros = state.pros || [];
+    state.cons = state.cons || [];
+    
+    // Use GPT to extract pros and cons from the discussion
+    try {
+      const discussionText = roundResponses.map(r => 
+        `${getCharacter(r.character)?.name}: ${r.message}`
+      ).join('\n');
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "Extract key pros and cons from this pitch discussion. Return ONLY a JSON object in this format: {\"pros\": [\"pro1\", \"pro2\"], \"cons\": [\"con1\", \"con2\"]}"
+          },
+          {
+            role: "user",
+            content: discussionText
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 250
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (content) {
+        const extracted = JSON.parse(content);
+        state.pros.push(...(extracted.pros || []));
+        state.cons.push(...(extracted.cons || []));
+      }
+    } catch (error) {
+      console.error('Error extracting pros/cons:', error);
+    }
+
     if (state.round === 2) {
       // All rounds complete, start voting
       await startVoting(channelId);
@@ -178,52 +298,70 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
     nextCharacter = availableCharacters[0];
   }
 
-  // Generate response based on analysis
+  // Generate response based on analysis and context
   const analysis = state.analysis!;
+  const gptAnalysis = analysis.gptAnalysis;
 
-  // Base prompt template
-  let contextPrompt = `You are ${nextCharacter.name}. `;
+  // Generate context for the prompt
+  const context = generatePromptContext({
+    isJoke: gptAnalysis ? gptAnalysis.joke_level > 7 : analysis.jokeScore > 7,
+    isUnderdeveloped: gptAnalysis ? gptAnalysis.development < 5 : analysis.developmentScore < 5,
+    pros: state.pros || [],
+    cons: state.cons || [],
+    originalMessage: null as any
+  });
 
-  // Add analysis context
-  if (analysis.jokeScore > 7) {
-    contextPrompt += `This is clearly a fun/playful idea: "${state.idea}". `;
-    contextPrompt += `Feel free to be creative and humorous in your response, but still provide some constructive feedback. `;
-  } else if (analysis.developmentScore > 7) {
-    contextPrompt += `This idea needs more development: "${state.idea}". `;
-    contextPrompt += `Help explore and expand on the concept while staying in character. `;
-  } else {
-    contextPrompt += `A founder has pitched their business idea: "${state.idea}". `;
-  }
+  // Base prompt template with context
+  let contextPrompt = `You are ${nextCharacter.name}. 
 
-  // Add round-specific context
-  if (state.round === 1) {
-    contextPrompt += `Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice. `;
-    if (analysis.feasibilityScore < 3) {
-      contextPrompt += `Note: This idea has significant feasibility challenges. Address these while staying constructive. `;
-    }
-    if (analysis.noveltyScore > 7) {
-      contextPrompt += `This is a particularly novel idea - highlight what makes it unique. `;
-    }
-  } else {
-    contextPrompt += `Previous comments in this round:\n${currentRoundResponses.map(r => 
-      `${getCharacter(r.character)?.name}: "${r.message}"`
-    ).join('\n')}\n`;
-    contextPrompt += `Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character. `;
-  }
+${context}
+
+The pitch: "${state.idea}"
+
+Your task: ${state.round === 1 ? 
+  "Give your initial reaction and analysis of this pitch." : 
+  "Build on the discussion and address points raised by others."}
+
+Guidelines:
+- Keep your response focused (max 50 words)
+- Stay in character and maintain your unique perspective
+- Be constructive but honest
+${gptAnalysis ? `
+Analysis context:
+- Joke Level: ${gptAnalysis.joke_level}/10 - ${gptAnalysis.rationale.joke_level}
+- Development: ${gptAnalysis.development}/10 - ${gptAnalysis.rationale.development}
+- Quality: ${gptAnalysis.quality}/10 - ${gptAnalysis.rationale.quality}
+- Novelty: ${gptAnalysis.novelty}/10 - ${gptAnalysis.rationale.novelty}` : ''}
+
+${state.round === 2 ? `Previous comments in this round:
+${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}` : ''}`;
 
   try {
     const response = await generateCharacterResponse(nextCharacter.prompt + '\n' + contextPrompt, state.idea);
     state.responses.push({ character: nextCharacter.id, message: response });
     
-    // Only send to Discord if not in test mode
-    if (!TEST_MODE) {
-      await sendAsCharacter(channelId, nextCharacter.id, response);
+    if (TEST_MODE) {
+      console.log(`\n${nextCharacter.name}:`);
+      console.log(`└─ ${response}`);
+      
+      // Log pros and cons if available
+      if (state.pros?.length || state.cons?.length) {
+        console.log('\nExtracted Points:');
+        if (state.pros?.length) {
+          console.log('Pros:');
+          state.pros.forEach(pro => console.log(`└─ ${pro}`));
+        }
+        if (state.cons?.length) {
+          console.log('Cons:');
+          state.cons.forEach(con => console.log(`└─ ${con}`));
+        }
+      }
     } else {
-      console.log(`[TEST MODE] ${nextCharacter.name}: ${response}`);
+      await sendAsCharacter(channelId, nextCharacter.id, response);
     }
 
-    // Add varying delays between responses to feel more natural
-    const delay = TEST_MODE ? 500 : 2000 + Math.random() * 1000; // Shorter delay in test mode
+    // Add varying delays between responses
+    const delay = TEST_MODE ? 500 : 2000 + Math.random() * 1000;
     setTimeout(() => continuePitchDiscussion(channelId), delay);
   } catch (error) {
     console.error('Error in pitch discussion:', error);
@@ -235,25 +373,33 @@ async function startVoting(channelId: string): Promise<void> {
   const state = activePitches.get(channelId);
   if (!state) return;
 
+  if (TEST_MODE) {
+    state.timing!.votingStart = Date.now();
+    console.log('\n=== Starting Voting ===');
+  }
+
   const characters = getCharacters();
   
-  // Generate votes based on analysis
+  // Generate votes based on GPT analysis
   for (const character of characters) {
     const analysis = state.analysis!;
+    const gptAnalysis = analysis.gptAnalysis;
     
-    // Base vote prompt with analysis context
-    let votePrompt = `You are ${character.name}. After discussing this business idea: "${state.idea}"
-      Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
+    // Base vote prompt with GPT analysis context
+    let votePrompt = `You are ${character.name}. After analyzing this business idea: "${state.idea}"
       
       Analysis of the idea:
-      - Novelty: ${analysis.noveltyScore}/10
-      - Feasibility: ${analysis.feasibilityScore}/10
-      - Development: ${analysis.developmentScore}/10
-      - Joke Score: ${analysis.jokeScore}/10
+      - Joke Level: ${gptAnalysis?.joke_level || analysis.jokeScore}/10
+      - Development: ${gptAnalysis?.development || analysis.developmentScore}/10
+      - Quality: ${gptAnalysis?.quality || analysis.feasibilityScore}/10
+      - Novelty: ${gptAnalysis?.novelty || analysis.noveltyScore}/10
+      
+      Rationale:
+      ${gptAnalysis ? Object.entries(gptAnalysis.rationale).map(([key, value]) => `- ${key}: ${value}`).join('\n') : ''}
       
       Vote either INVEST or PASS, with a very brief reason (10 words max). Consider:
+      - High quality ideas (score > 7) are safer bets
       - Novel ideas (score > 7) are worth exploring even if risky
-      - Highly feasible ideas (score > 7) are safer bets
       - Underdeveloped ideas (score > 7) need more work
       - Joke ideas (score > 7) should be evaluated for entertainment value`;
     
@@ -275,21 +421,35 @@ async function startVoting(channelId: string): Promise<void> {
     }
   }
 
-  // Calculate and display results with more context
+  // Calculate and display results with GPT analysis context
   const investCount = Object.values(state.votes).filter(v => v.toLowerCase().includes('invest')).length;
   const passCount = Object.values(state.votes).filter(v => v.toLowerCase().includes('pass')).length;
   
   const analysis = state.analysis!;
-  let resultContext = '';
+  const gptAnalysis = analysis.gptAnalysis;
   
-  if (analysis.jokeScore > 7) {
-    resultContext = 'Note: This was evaluated as a fun/entertaining idea.';
-  } else if (analysis.developmentScore > 7) {
-    resultContext = 'Note: This idea needs more development work.';
-  } else if (analysis.feasibilityScore < 3) {
-    resultContext = 'Note: This idea has significant feasibility challenges.';
-  } else if (analysis.noveltyScore > 7) {
-    resultContext = 'Note: This is a particularly novel/innovative idea.';
+  let resultContext = '';
+  if (gptAnalysis) {
+    if (gptAnalysis.joke_level > 7) {
+      resultContext = `Note: This was evaluated as a fun/entertaining idea (${gptAnalysis.joke_level}/10).`;
+    } else if (gptAnalysis.development > 7) {
+      resultContext = `Note: This idea needs more development work (${gptAnalysis.development}/10).`;
+    } else if (gptAnalysis.quality < 3) {
+      resultContext = `Note: This idea has significant quality/feasibility challenges (${gptAnalysis.quality}/10).`;
+    } else if (gptAnalysis.novelty > 7) {
+      resultContext = `Note: This is a particularly novel/innovative idea (${gptAnalysis.novelty}/10).`;
+    }
+  } else {
+    // Fallback to original analysis
+    if (analysis.jokeScore > 7) {
+      resultContext = 'Note: This was evaluated as a fun/entertaining idea.';
+    } else if (analysis.developmentScore > 7) {
+      resultContext = 'Note: This idea needs more development work.';
+    } else if (analysis.feasibilityScore < 3) {
+      resultContext = 'Note: This idea has significant feasibility challenges.';
+    } else if (analysis.noveltyScore > 7) {
+      resultContext = 'Note: This is a particularly novel/innovative idea.';
+    }
   }
   
   const resultMessage = `
@@ -306,6 +466,26 @@ ${investCount > passCount ? '✨ The coaches would invest!' : '🤔 The coaches 
     console.log(`[TEST MODE] Results: ${resultMessage}`);
   }
   
+  if (TEST_MODE) {
+    state.timing!.votingEnd = Date.now();
+    state.timing!.discussionEnd = state.timing!.votingEnd;
+    
+    const timings = state.timing!;
+    const analysisDuration = timings.analysisEnd! - timings.analysisStart!;
+    const discussionDuration = timings.discussionEnd! - timings.discussionStart!;
+    const votingDuration = timings.votingEnd! - timings.votingStart!;
+    const totalDuration = timings.votingEnd! - timings.analysisStart!;
+    
+    console.log('\n=== Final Results ===');
+    console.log(`INVEST: ${investCount} votes`);
+    console.log(`PASS: ${passCount} votes`);
+    console.log(`\n=== Performance Metrics ===`);
+    console.log(`Analysis Time: ${analysisDuration}ms`);
+    console.log(`Discussion Time: ${discussionDuration}ms`);
+    console.log(`Voting Time: ${votingDuration}ms`);
+    console.log(`Total Time: ${totalDuration}ms`);
+  }
+
   // Cleanup
   state.isActive = false;
   setTimeout(() => activePitches.delete(channelId), 5000);
