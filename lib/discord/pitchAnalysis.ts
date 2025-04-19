@@ -26,11 +26,29 @@ Return ONLY a number from 1-10 where:
 
 Pitch: "{pitch}"`;
 
+// New GPT-based analysis interface
+export interface GPTAnalysis {
+  joke_level: number;
+  development: number;
+  quality: number;
+  novelty: number;
+  rationale: {
+    joke_level: string;
+    development: string;
+    quality: string;
+    novelty: string;
+  };
+}
+
+// Original interface maintained for backward compatibility
 export interface PitchAnalysis {
   jokeScore: number;      // 1-10: How much is this a joke?
   developmentScore: number; // 1-10: How well developed is the idea?
   feasibilityScore: number; // 1-10: How feasible is the execution?
   noveltyScore: number;    // 1-10: How novel/unique is the idea?
+  
+  // New GPT-based analysis
+  gptAnalysis?: GPTAnalysis;
 }
 
 // Length-based analysis
@@ -145,32 +163,121 @@ async function analyzeDevelopmentWithGPT(pitch: string): Promise<number> {
   }
 }
 
-// Update analyzePitch to be async and use GPT analysis
+// Update the GPT analysis prompt template
+const GPT_ANALYSIS_PROMPT = `You are an expert startup analyst. For any startup pitch, you will evaluate four things on a scale from 1 to 10:
+
+1. Joke Level – How humorous, satirical, or unserious this pitch is
+2. Development – How fleshed out and clearly articulated the idea is
+3. Quality – How strong the idea is in terms of viability, market potential, and founder credibility
+4. Novelty – How unique or original the concept is
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "joke_level": number,
+  "development": number,
+  "quality": number,
+  "novelty": number,
+  "rationale": {
+    "joke_level": "one sentence explanation",
+    "development": "one sentence explanation",
+    "quality": "one sentence explanation",
+    "novelty": "one sentence explanation"
+  }
+}`;
+
+// Cache for GPT analysis
+interface CachedGPTAnalysis {
+  analysis: GPTAnalysis;
+  timestamp: number;
+}
+const gptAnalysisCache = new Map<string, CachedGPTAnalysis>();
+
+// Function to analyze pitch using GPT
+async function analyzePitchWithGPT(pitch: string): Promise<GPTAnalysis> {
+  // Check cache first
+  const cached = gptAnalysisCache.get(pitch);
+  if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+    return cached.analysis;
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: GPT_ANALYSIS_PROMPT
+        },
+        {
+          role: "user",
+          content: pitch
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No content in GPT response');
+    }
+
+    const analysis = JSON.parse(content) as GPTAnalysis;
+    
+    // Validate scores are between 1-10
+    const validatedAnalysis = {
+      joke_level: Math.min(Math.max(analysis.joke_level, 1), 10),
+      development: Math.min(Math.max(analysis.development, 1), 10),
+      quality: Math.min(Math.max(analysis.quality, 1), 10),
+      novelty: Math.min(Math.max(analysis.novelty, 1), 10),
+      rationale: analysis.rationale
+    };
+    
+    // Cache the result
+    gptAnalysisCache.set(pitch, {
+      analysis: validatedAnalysis,
+      timestamp: Date.now()
+    });
+
+    return validatedAnalysis;
+  } catch (error) {
+    console.error('GPT analysis failed:', error);
+    // Fallback to basic analysis
+    return {
+      joke_level: detectJokePatterns(pitch),
+      development: analyzeLength(pitch),
+      quality: 5,
+      novelty: checkNovelty(pitch),
+      rationale: {
+        joke_level: "Fallback analysis due to GPT error",
+        development: "Fallback analysis due to GPT error",
+        quality: "Fallback analysis due to GPT error",
+        novelty: "Fallback analysis due to GPT error"
+      }
+    };
+  }
+}
+
+// Update analyzePitch function
 export async function analyzePitch(pitch: string): Promise<PitchAnalysis> {
-  const words = pitch.toLowerCase().split(/\s+/);
+  // Get GPT analysis
+  const gptAnalysis = await analyzePitchWithGPT(pitch);
   
-  // Calculate scores
-  const jokeScore = detectJokePatterns(pitch);
-  const noveltyScore = checkNovelty(pitch);
-  const feasibilityScore = checkFeasibility(pitch);
-  const developmentScore = await analyzeDevelopmentWithGPT(pitch);
+  // Map GPT scores to original scores for backward compatibility
+  const analysis: PitchAnalysis = {
+    jokeScore: gptAnalysis.joke_level,
+    developmentScore: gptAnalysis.development,
+    feasibilityScore: gptAnalysis.quality,
+    noveltyScore: gptAnalysis.novelty,
+    gptAnalysis
+  };
 
   // Log results
   const logPath = path.join(process.cwd(), 'pitch-scores.log');
-  const logEntry = `[Pitch Analysis] "${pitch}": {
-    jokeScore: ${jokeScore},
-    developmentScore: ${developmentScore},
-    feasibilityScore: ${feasibilityScore},
-    noveltyScore: ${noveltyScore}
-  }\n`;
+  const logEntry = `[Pitch Analysis] "${pitch}": ${JSON.stringify(analysis, null, 2)}\n`;
   fs.appendFileSync(logPath, logEntry);
 
-  return {
-    jokeScore,
-    developmentScore,
-    feasibilityScore,
-    noveltyScore
-  };
+  return analysis;
 }
 
 // Test cases
