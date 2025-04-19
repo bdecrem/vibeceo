@@ -14,8 +14,7 @@
       "@/*": ["./*"]
     },
     "allowJs": true,
-    "resolveJsonModule": true,
-    "allowImportingTsExtensions": true
+    "resolveJsonModule": true
   },
   "include": [
     "scripts/**/*",

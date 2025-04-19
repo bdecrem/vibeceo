@@ -1,12 +1,12 @@
 import { Message, TextChannel } from 'discord.js';
-import { getCharacter, getCharacters } from './characters.ts';
-import { sendAsCharacter } from './webhooks.ts';
-import { generateCharacterResponse } from './ai.ts';
+import { getCharacter, getCharacters } from './characters.js';
+import { sendAsCharacter } from './webhooks.js';
+import { generateCharacterResponse } from './ai.js';
 import { Client } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { PitchAnalysis, analyzePitch } from './pitchAnalysis.ts';
-import { generatePromptContext } from './context.ts';
+import { PitchAnalysis, analyzePitch } from './pitchAnalysis.js';
+import { generatePromptContext } from './context.js';
 import OpenAI from 'openai';
 
 // OpenAI configuration
