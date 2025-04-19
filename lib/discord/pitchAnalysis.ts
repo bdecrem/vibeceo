@@ -1,5 +1,8 @@
 // Pitch analysis module for categorizing and scoring pitches
 
+import fs from 'fs';
+import path from 'path';
+
 export interface PitchAnalysis {
   jokeScore: number;      // 1-10: How much is this a joke?
   developmentScore: number; // 1-10: How well developed is the idea?
@@ -70,11 +73,30 @@ function checkNovelty(pitch: string): number {
 
 // Main analysis function
 export function analyzePitch(pitch: string): PitchAnalysis {
+  const words = pitch.toLowerCase().split(/\s+/);
+  const length = words.length;
+  
+  // Calculate scores
+  const jokeScore = detectJokePatterns(pitch);
+  const noveltyScore = checkNovelty(pitch);
+  const feasibilityScore = checkFeasibility(pitch);
+  const developmentScore = analyzeLength(pitch);
+
+  // Write to log file in requested format
+  const logPath = path.join(process.cwd(), 'pitch-scores.log');
+  const logEntry = `[Pitch Analysis] "${pitch}": {
+  jokeScore: ${jokeScore},
+  developmentScore: ${developmentScore},
+  feasibilityScore: ${feasibilityScore},
+  noveltyScore: ${noveltyScore}
+}\n`;
+  fs.appendFileSync(logPath, logEntry);
+
   return {
-    jokeScore: detectJokePatterns(pitch),
-    developmentScore: analyzeLength(pitch),
-    feasibilityScore: checkFeasibility(pitch),
-    noveltyScore: checkNovelty(pitch)
+    jokeScore,
+    developmentScore,
+    feasibilityScore,
+    noveltyScore
   };
 }
 
