@@ -7,6 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { PitchAnalysis, analyzePitch } from './pitchAnalysis.js';
 
+const TEST_MODE = true;  // Set to true to skip Discord messages
+
 interface PitchState {
   idea: string;
   round: number;
@@ -48,7 +50,7 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
     const idea = getRandomPitchIdea();
     
     // Analyze the pitch
-    const analysis = analyzePitch(idea);
+    const analysis = await analyzePitch(idea);
     console.log(`[Pitch Analysis] ${idea}:`, analysis);
     
     // Create a fake message object
@@ -102,7 +104,7 @@ export async function handlePitchCommand(message: Message, idea: string): Promis
   }
 
   // Analyze the pitch
-  const analysis = analyzePitch(idea);
+  const analysis = await analyzePitch(idea);
   console.log(`[Pitch Analysis] ${idea}:`, analysis);
 
   // Initialize pitch state with analysis
@@ -177,7 +179,7 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   }
 
   // Generate response based on analysis
-  const analysis = state.analysis!; // We know analysis exists because we set it in handlePitchCommand/triggerPitchChat
+  const analysis = state.analysis!;
 
   // Base prompt template
   let contextPrompt = `You are ${nextCharacter.name}. `;
@@ -212,10 +214,16 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   try {
     const response = await generateCharacterResponse(nextCharacter.prompt + '\n' + contextPrompt, state.idea);
     state.responses.push({ character: nextCharacter.id, message: response });
-    await sendAsCharacter(channelId, nextCharacter.id, response);
+    
+    // Only send to Discord if not in test mode
+    if (!TEST_MODE) {
+      await sendAsCharacter(channelId, nextCharacter.id, response);
+    } else {
+      console.log(`[TEST MODE] ${nextCharacter.name}: ${response}`);
+    }
 
     // Add varying delays between responses to feel more natural
-    const delay = 2000 + Math.random() * 1000;
+    const delay = TEST_MODE ? 500 : 2000 + Math.random() * 1000; // Shorter delay in test mode
     setTimeout(() => continuePitchDiscussion(channelId), delay);
   } catch (error) {
     console.error('Error in pitch discussion:', error);
@@ -252,9 +260,16 @@ async function startVoting(channelId: string): Promise<void> {
     try {
       const vote = await generateCharacterResponse(character.prompt + '\n' + votePrompt, state.idea);
       state.votes[character.id] = vote;
-      await sendAsCharacter(channelId, character.id, `🗳️ ${vote}`);
+      
+      // Only send to Discord if not in test mode
+      if (!TEST_MODE) {
+        await sendAsCharacter(channelId, character.id, `🗳️ ${vote}`);
+      } else {
+        console.log(`[TEST MODE] ${character.name} vote: ${vote}`);
+      }
+      
       // Add a small delay between votes
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, TEST_MODE ? 200 : 1000));
     } catch (error) {
       console.error('Error during voting:', error);
     }
@@ -284,8 +299,12 @@ PASS: ${passCount} votes
 ${resultContext}
 ${investCount > passCount ? '✨ The coaches would invest!' : '🤔 The coaches would pass.'}`;
 
-  // Use the first character to announce results
-  await sendAsCharacter(channelId, characters[0].id, resultMessage);
+  // Only send to Discord if not in test mode
+  if (!TEST_MODE) {
+    await sendAsCharacter(channelId, characters[0].id, resultMessage);
+  } else {
+    console.log(`[TEST MODE] Results: ${resultMessage}`);
+  }
   
   // Cleanup
   state.isActive = false;
