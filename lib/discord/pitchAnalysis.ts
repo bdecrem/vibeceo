@@ -1,7 +1,30 @@
 // Pitch analysis module for categorizing and scoring pitches
 
+import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
+
+// OpenAI configuration
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Development analysis prompt template
+const DEVELOPMENT_PROMPT = `Analyze this business pitch for its level of development. Consider:
+1. Market Understanding (target audience, market size, competition)
+2. Technical Detail (implementation approach, technology stack)
+3. Business Model (revenue streams, pricing, cost structure)
+4. Implementation Plan (timeline, resources, milestones)
+5. Risk Assessment (potential challenges, mitigation strategies)
+
+Return ONLY a number from 1-10 where:
+1 = Just an idea with no details
+3 = Basic concept with some market understanding
+5 = Clear value proposition with rough implementation plan
+7 = Detailed plan with market research and technical approach
+10 = Comprehensive business plan with clear execution strategy
+
+Pitch: "{pitch}"`;
 
 export interface PitchAnalysis {
   jokeScore: number;      // 1-10: How much is this a joke?
@@ -71,25 +94,75 @@ function checkNovelty(pitch: string): number {
   ) ? 3 : 6;
 }
 
-// Main analysis function
-export function analyzePitch(pitch: string): PitchAnalysis {
+// Cache for development scores
+interface CachedScore {
+  score: number;
+  timestamp: number;
+}
+const developmentCache = new Map<string, CachedScore>();
+
+// Function to analyze development using GPT
+async function analyzeDevelopmentWithGPT(pitch: string): Promise<number> {
+  // Check cache first
+  const cached = developmentCache.get(pitch);
+  if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+    return cached.score;
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a business analyst evaluating pitch ideas. Return ONLY a number from 1-10.'
+        },
+        {
+          role: 'user',
+          content: DEVELOPMENT_PROMPT.replace('{pitch}', pitch)
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 10
+    });
+
+    const score = parseInt(response.choices[0]?.message?.content || '5');
+    
+    // Validate score is between 1-10
+    const validatedScore = Math.min(Math.max(score, 1), 10);
+    
+    // Cache the result
+    developmentCache.set(pitch, {
+      score: validatedScore,
+      timestamp: Date.now()
+    });
+
+    return validatedScore;
+  } catch (error) {
+    console.error('GPT analysis failed:', error);
+    // Fallback to word count analysis
+    return analyzeLength(pitch);
+  }
+}
+
+// Update analyzePitch to be async and use GPT analysis
+export async function analyzePitch(pitch: string): Promise<PitchAnalysis> {
   const words = pitch.toLowerCase().split(/\s+/);
-  const length = words.length;
   
   // Calculate scores
   const jokeScore = detectJokePatterns(pitch);
   const noveltyScore = checkNovelty(pitch);
   const feasibilityScore = checkFeasibility(pitch);
-  const developmentScore = analyzeLength(pitch);
+  const developmentScore = await analyzeDevelopmentWithGPT(pitch);
 
-  // Write to log file in requested format
+  // Log results
   const logPath = path.join(process.cwd(), 'pitch-scores.log');
   const logEntry = `[Pitch Analysis] "${pitch}": {
-  jokeScore: ${jokeScore},
-  developmentScore: ${developmentScore},
-  feasibilityScore: ${feasibilityScore},
-  noveltyScore: ${noveltyScore}
-}\n`;
+    jokeScore: ${jokeScore},
+    developmentScore: ${developmentScore},
+    feasibilityScore: ${feasibilityScore},
+    noveltyScore: ${noveltyScore}
+  }\n`;
   fs.appendFileSync(logPath, logEntry);
 
   return {
