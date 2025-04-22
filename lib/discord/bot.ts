@@ -3,9 +3,11 @@ import { handleMessage, initializeScheduledTasks } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
 import { startCentralizedScheduler } from './scheduler.js';
+import { generateEpisodeContext } from './episodeContext.js';
 
-// Global variable to track if a bot instance is already running
+// Global variables to track bot state
 let isBotRunning = false;
+let currentEpisodeContext = null;
 
 // Initialize Discord client with necessary intents
 const client = new Client({
@@ -34,8 +36,20 @@ client.once(Events.ClientReady, async (readyClient) => {
             await initializeWebhooks(channel.id, webhookUrls);
             console.log(`Webhooks initialized for channel: ${channel.id}`);
             
-            // If this is our target channel, start the scheduler
+            // If this is our target channel, generate episode context and start scheduler
             if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
+              // Generate episode context
+              const unitDurationMinutes = parseInt(process.env.UNIT_DURATION_MINUTES || '20', 10);
+              console.log('Generating episode context with unit duration:', unitDurationMinutes, 'minutes');
+              currentEpisodeContext = await generateEpisodeContext(unitDurationMinutes);
+              console.log('Episode context generated:', {
+                date: currentEpisodeContext.date,
+                dayOfWeek: currentEpisodeContext.dayOfWeek,
+                startTime: currentEpisodeContext.startTime,
+                durationMinutes: currentEpisodeContext.durationMinutes,
+                uniqueLocations: [...new Set(currentEpisodeContext.locationTimeline)]
+              });
+              
               // Initialize scheduled tasks for this channel
               startCentralizedScheduler(channel.id, client);
               console.log('Centralized scheduler started for channel:', channel.id);
@@ -110,5 +124,5 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Export the client for use in other parts of the application
-export { client }; 
+// Export the client and episode context for use in other parts of the application
+export { client, currentEpisodeContext }; 

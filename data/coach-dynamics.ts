@@ -1,79 +1,66 @@
 // coach-dynamics.ts
 
-export const coachState = {
-  venus: {
-    emotionalTone: 'neutral',
+export interface CoachState {
+  emotionalTone: string;
+  flags: {
+    [key: string]: boolean;
+  };
+  relationalTilt: {
+    [coachId: string]: number;
+  };
+}
+
+export const coachState: { [coachId: string]: CoachState } = {
+  "sam": {
+    emotionalTone: "optimistic",
     flags: {
-      fasting: false,
+      "seekingInvestment": true,
+      "recentSuccess": false,
+      "networkExpansion": true
     },
     relationalTilt: {
-      kailey: 0,
-      rohan: 0,
-      donte: 0,
-      alex: 0,
-      eljas: 0,
+      "alex": 0.8,
+      "jordan": 0.6,
+      "taylor": 0.4
     }
   },
-
-  rohan: {
-    emotionalTone: 'neutral',
+  "alex": {
+    emotionalTone: "analytical",
     flags: {
-      fasting: false,
+      "marketResearch": true,
+      "competitorAnalysis": true,
+      "productLaunch": false
     },
     relationalTilt: {
-      kailey: 0,
-      venus: 0,
-      donte: 0,
-      alex: 0,
-      eljas: 0,
+      "sam": 0.8,
+      "jordan": 0.7,
+      "taylor": 0.5
     }
   },
-
-  kailey: {
-    emotionalTone: 'neutral',
-    flags: {},
+  "jordan": {
+    emotionalTone: "strategic",
+    flags: {
+      "teamBuilding": true,
+      "scalingChallenges": true,
+      "industryTrends": false
+    },
     relationalTilt: {
-      rohan: 0,
-      venus: 0,
-      donte: 0,
-      alex: 0,
-      eljas: 0,
+      "sam": 0.6,
+      "alex": 0.7,
+      "taylor": 0.9
     }
   },
-
-  eljas: {
-    emotionalTone: 'neutral',
-    flags: {},
+  "taylor": {
+    emotionalTone: "innovative",
+    flags: {
+      "techInnovation": true,
+      "sustainabilityGoals": true,
+      "globalExpansion": true
+    },
     relationalTilt: {
-      kailey: 0,
-      venus: 0,
-      donte: 0,
-      alex: 0,
-      rohan: 0,
-    }
-  },
-
-  alex: {
-    emotionalTone: 'neutral',
-    flags: {},
-    relationalTilt: {
-      kailey: 0,
-      venus: 0,
-      donte: 0,
-      rohan: 0,
-      eljas: 0,
-    }
-  },
-
-  donte: {
-    emotionalTone: 'neutral',
-    flags: {},
-    relationalTilt: {
-      kailey: 0,
-      venus: 0,
-      rohan: 0,
-      alex: 0,
-      eljas: 0,
+      "sam": 0.4,
+      "alex": 0.5,
+      "jordan": 0.9
     }
   }
 };

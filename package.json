@@ -10,7 +10,7 @@
     "lint": "next lint",
     "test": "playwright test",
     "clean": "rimraf dist",
-    "build:bot": "npm run clean && tsc --project tsconfig.bot.json",
+    "build:bot": "tsc -p tsconfig.bot.json",
     "start:bot:dev": "npm run build:bot && node dist/scripts/start-discord-bot.js",
     "start:bot:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
     "predeploy:bot": "npm run build:bot",
