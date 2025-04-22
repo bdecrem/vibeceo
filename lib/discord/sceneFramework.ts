@@ -303,7 +303,10 @@ Conversation Guidelines:
 - Reference the current location, time, and weather
 - Incorporate any relevant events or holidays
 - Maintain consistency with each coach's personality and current state
-- Progress the episode theme: ${episodeContext.theme}`;
+- Progress the episode theme: ${episodeContext.theme}
+- Allow for ambiguity and unspoken tensions
+- Use subtle, symbolic references to the motifs
+- Balance surface-level interactions with underlying conflicts`;
 }
 
 function generateOutroPrompt(
@@ -318,7 +321,9 @@ Closing Guidelines:
 - Summarize key points from the conversation
 - Reference the episode theme: ${episodeContext.theme}
 - Set up anticipation for the next scene
-- Maintain the natural flow of the conversation`;
+- Maintain the natural flow of the conversation
+- Leave some tensions unresolved
+- Use subtle, symbolic references to the motifs`;
 }
 
 interface ConversationLine {
