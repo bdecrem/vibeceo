@@ -18,7 +18,7 @@ export const coachBackstory: { [coachId: string]: any } = {
     birthday: 'November 11',
     pets: ['a hairless cat named Zeta'],
     relationshipStatus: 'queer, emotionally off-grid',
-    hobbies: ['calibrating her Roomba', 'backtesting failed marriages', 'collecting bunker blueprints'],
+    hobbies: ['calibrating her Roomba', 'backtesting failed marriages', 'collecting bunker blueprints', 'modeling black swan scenarios'],
     privateRitual: 'tracks all coach interactions in a private spreadsheet called resilience_model_v4.xlsx',
     arcAnchor: 'She\'s secretly preparing for an AI-induced market collapse, including operating an underground server farm and building an exit DAO no one knows about.',
     themes: ['AI', 'market collapse', 'DAO'],
