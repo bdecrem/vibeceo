@@ -8,9 +8,7 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "sourceMap": true,
-    "declaration": true,
-    "typeRoots": ["./lib/discord/types"],
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "*": ["*", "lib/discord/types/*"]

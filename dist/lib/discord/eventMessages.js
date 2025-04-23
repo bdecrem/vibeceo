@@ -1,7 +1,7 @@
 import { getLocationAndTime } from './locationTime.js';
 export const EVENT_MESSAGES = {
     watercooler: {
-        intro: "{arrival}They are gathering by the water cooler.",
+        intro: "{arrival}They are gathering by the watercooler.",
         outro: "The coaches have wandered back to their executive suites."
     },
     newschat: {

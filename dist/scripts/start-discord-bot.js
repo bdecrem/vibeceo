@@ -1,8 +1,10 @@
 import { startBot } from '../lib/discord/bot.js';
 import dotenv from 'dotenv';
-import './health-check';
+// Environment detection and node flags
+const isProduction = process.env.NODE_ENV === 'production';
+const nodeFlags = isProduction ? '--experimental-specifier-resolution=node' : '';
 // Load environment variables from .env.local
-if (process.env.NODE_ENV !== 'production') {
+if (!isProduction) {
     dotenv.config({ path: '.env.local' });
 }
 // Check if another instance is already running
@@ -12,6 +14,10 @@ if (process.env.BOT_INSTANCE_ID) {
 }
 // Set instance ID to prevent multiple instances
 process.env.BOT_INSTANCE_ID = Date.now().toString();
+// Apply node flags if in production
+if (nodeFlags) {
+    process.execArgv.push(nodeFlags);
+}
 // Start the bot
 startBot().catch(console.error);
 // Handle graceful shutdown
