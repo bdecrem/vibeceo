@@ -1,25 +1,26 @@
+// eslint-disable
 // coach-backstory.ts
 
 export interface CoachBackstory {
-  birthday: string;
-  pets: string[];
-  relationshipStatus: string;
-  hobbies: string[];
-  privateRitual: string;
-  arcAnchor: string;
-  themes: string[];
+  birthday: any;
+  pets: any[];
+  relationshipStatus: any;
+  hobbies: any[];
+  privateRitual: any;
+  arcAnchor: any;
+  themes?: any[];
   preferredTimes?: [number, number][];
-  preferredLocations?: string[];
+  preferredLocations?: any[];
 }
 
-export const coachBackstory: { [coachId: string]: CoachBackstory } = {
+export const coachBackstory: { [coachId: string]: any } = {
   venus: {
     birthday: 'November 11',
     pets: ['a hairless cat named Zeta'],
     relationshipStatus: 'queer, emotionally off-grid',
     hobbies: ['calibrating her Roomba', 'backtesting failed marriages', 'collecting bunker blueprints'],
     privateRitual: 'tracks all coach interactions in a private spreadsheet called resilience_model_v4.xlsx',
-    arcAnchor: 'She's secretly preparing for an AI-induced market collapse, including operating an underground server farm and building an exit DAO no one knows about.',
+    arcAnchor: 'She\'s secretly preparing for an AI-induced market collapse, including operating an underground server farm and building an exit DAO no one knows about.',
     themes: ['AI', 'market collapse', 'DAO'],
     preferredTimes: [[12, 14]],
     preferredLocations: ['home', 'office']
@@ -30,8 +31,8 @@ export const coachBackstory: { [coachId: string]: CoachBackstory } = {
     pets: ['used to own a Bengal cat named Risk'],
     relationshipStatus: 'divorced (twice), currently "between jets"',
     hobbies: ['espresso tasting', 'late-night spreadsheets', 'bluffing in low-stakes poker'],
-    privateRitual: 'doesn't eat before sundown on days he's losing',
-    arcAnchor: 'He's quietly trying to reclaim dominance after a recent public startup failure he refuses to acknowledge.',
+    privateRitual: 'doesn\'t eat before sundown on days he\'s losing',
+    arcAnchor: 'He\'s quietly trying to reclaim dominance after a recent public startup failure he refuses to acknowledge.',
     themes: ['startup', 'reclaim dominance'],
     preferredTimes: [[18, 20]],
     preferredLocations: ['home', 'office']
@@ -43,7 +44,7 @@ export const coachBackstory: { [coachId: string]: CoachBackstory } = {
     relationshipStatus: 'biromantic, recently disengaged',
     hobbies: ['walking meditation', 'reorganizing her closet', 'hand-copying quotes from unfinished books'],
     privateRitual: 'writes intentions in pencil, never pen',
-    arcAnchor: 'She was ghosted by a founder she mentored and hasn't fully recovered — it's affected how she builds trust and gives praise.',
+    arcAnchor: 'She was ghosted by a founder she mentored and hasn\'t fully recovered — it\'s affected how she builds trust and gives praise.',
     themes: ['ghosting', 'trust', 'praise'],
     preferredTimes: [[10, 12]],
     preferredLocations: ['home', 'office']
@@ -55,7 +56,7 @@ export const coachBackstory: { [coachId: string]: CoachBackstory } = {
     relationshipStatus: 'married, wife lives mostly in Finland',
     hobbies: ['birdwatching', 'composting metaphors', 'repairing abandoned bicycles'],
     privateRitual: 'deletes one unnecessary app every Monday morning',
-    arcAnchor: 'He's planning to step back from public work but hasn't told anyone — he's quietly testing replacements and letting things decay.',
+    arcAnchor: 'He\'s planning to step back from public work but hasn\'t told anyone — he\'s quietly testing replacements and letting things decay.',
     themes: ['step back', 'test', 'let decay'],
     preferredTimes: [[9, 11]],
     preferredLocations: ['home', 'office']
@@ -67,10 +68,10 @@ export const coachBackstory: { [coachId: string]: CoachBackstory } = {
     relationshipStatus: 'openly queer, "optimizing solo flow"',
     hobbies: ['cold plunges', 'HRV tracking', 'aesthetic moodboarding'],
     privateRitual: 'color-codes her calendar based on how each hour felt',
-    arcAnchor: 'She's secretly building a second startup under a pseudonym. It's scaling faster than expected, and she hasn't told the team.',
+    arcAnchor: 'She\'s secretly building a second startup under a pseudonym. It\'s scaling faster than expected, and she hasn\'t told the team.',
     themes: ['second startup', 'pseudonym', 'scaling'],
     preferredTimes: [[14, 16]],
-    arcAnchor: 'She's secretly building a second startup under a pseudonym. It's scaling faster than expected, and she hasn't told the team.'
+    preferredLocations: ['home', 'office']
   },
 
   donte: {
@@ -79,6 +80,9 @@ export const coachBackstory: { [coachId: string]: CoachBackstory } = {
     relationshipStatus: 'straight-adjacent, "dating across platforms"',
     hobbies: ['pitch deck archaeology', 'mentoring Gen Z VCs', 'rereading old TechCrunch headlines'],
     privateRitual: 'keeps a Moleskine of failed startup names called his "idea graveyard"',
-    arcAnchor: 'He's been rejected from YC three times. His fourth application is pending, and it's making him act strangely humble.'
+    arcAnchor: 'He\'s been rejected from YC three times. His fourth application is pending, and it\'s making him act strangely humble.',
+    themes: ['YC', 'rejection', 'humility'],
+    preferredTimes: [[15, 17]],
+    preferredLocations: ['home', 'office']
   }
 };

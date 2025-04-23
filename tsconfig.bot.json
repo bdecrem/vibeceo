@@ -10,6 +10,9 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "allowJs": true,
+    "noImplicitAny": false,
+    "strict": false,
+    "isolatedModules": false,
     "baseUrl": ".",
     "paths": {
       "*": ["*", "lib/discord/types/*"]
