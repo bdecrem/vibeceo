@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./",
-    "module": "commonjs",
+    "module": "es2022",
     "target": "es2017",
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -13,6 +13,7 @@
     "noImplicitAny": false,
     "strict": false,
     "isolatedModules": false,
+    "noEmit": false,
     "baseUrl": ".",
     "paths": {
       "*": ["*", "lib/discord/types/*"]

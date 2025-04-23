@@ -1,6 +1,21 @@
 // holidays.ts
 
-const countryMap = {
+interface CountryMap {
+  [key: string]: string;
+}
+
+interface Holiday {
+  name: string;
+  [key: string]: any;
+}
+
+interface HolidayResponse {
+  response: {
+    holidays?: Holiday[];
+  };
+}
+
+const countryMap: CountryMap = {
   'London': 'GB',
   'Los Angeles': 'US',
   'Singapore': 'SG'
@@ -32,8 +47,8 @@ export async function getHolidaysForDateAndCity(cityName: string, date: Date): P
       throw new Error(`Holiday API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.response.holidays?.map(holiday => holiday.name) || [];
+    const data: HolidayResponse = await response.json();
+    return data.response.holidays?.map((holiday: Holiday) => holiday.name) || [];
   } catch (error) {
     console.error(`Error fetching holidays for ${cityName}:`, error);
     return []; // return empty array on error

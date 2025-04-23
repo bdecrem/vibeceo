@@ -3,7 +3,7 @@ import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInterac
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
-import Redis from 'ioredis';
+import IORedis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { Client } from 'discord.js';
@@ -13,7 +13,7 @@ import { getNextMessage, handleAdminCommand } from './adminCommands.js';
 
 // Message deduplication system
 class MessageDeduplication {
-  private redis: Redis | null = null;
+  private redis: IORedis | null = null;
   private memoryCache: Map<string, number> = new Map();
   private readonly CACHE_EXPIRY = 300000; // 5 minutes in ms
 
@@ -21,7 +21,7 @@ class MessageDeduplication {
     // Initialize Redis if URL is provided
     if (process.env.REDIS_URL) {
       try {
-        this.redis = new Redis(process.env.REDIS_URL);
+        this.redis = new IORedis(process.env.REDIS_URL);
         console.log('Redis connected successfully');
       } catch (error) {
         console.error('Failed to connect to Redis:', error);

@@ -140,13 +140,13 @@ function weightedCoachSelection(
     let weight = 1.0;
     
     // Consider episode theme
-    if (episodeContext?.theme) {
+    if (episodeContext?.theme && coachBackstory[coach]?.themes) {
       const themeMatch = coachBackstory[coach].themes.includes(episodeContext.theme);
       weight *= themeMatch ? 1.5 : 0.8;
     }
     
     // Consider time of day preferences
-    const timePreference = coachBackstory[coach].preferredTimes;
+    const timePreference = coachBackstory[coach]?.preferredTimes;
     if (timePreference) {
       const currentHour = new Date().getHours();
       const isPreferredTime = timePreference.some(([start, end]: [number, number]) => 
@@ -156,7 +156,7 @@ function weightedCoachSelection(
     }
     
     // Consider location preferences
-    const locationPreference = coachBackstory[coach].preferredLocations;
+    const locationPreference = coachBackstory[coach]?.preferredLocations;
     if (locationPreference && episodeContext?.currentLocation) {
       const prefersLocation = locationPreference.includes(episodeContext.currentLocation);
       weight *= prefersLocation ? 1.4 : 0.9;
