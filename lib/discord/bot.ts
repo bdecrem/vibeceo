@@ -40,8 +40,8 @@ client.once(Events.ClientReady, async (readyClient) => {
             if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
               // Generate episode context
               const unitDurationMinutes = parseInt(process.env.UNIT_DURATION_MINUTES || '20', 10);
-              console.log('Generating episode context with unit duration:', unitDurationMinutes, 'minutes');
-              currentEpisodeContext = await generateEpisodeContext(unitDurationMinutes);
+              console.log(`Generating episode context with unit duration: ${unitDurationMinutes} minutes`);
+              currentEpisodeContext = await generateEpisodeContext(new Date().toISOString(), unitDurationMinutes);
               console.log('Episode context generated:', {
                 date: currentEpisodeContext.date,
                 dayOfWeek: currentEpisodeContext.dayOfWeek,
