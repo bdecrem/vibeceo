@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { startBot } from '../dist/lib/discord/bot.js';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,28 +20,66 @@ const logFile = path.join(logsDir, `bot-log-${timestamp}.txt`);
 // Write initial timestamp
 fs.writeFileSync(logFile, `=== Bot Started at ${new Date().toISOString()} ===\n\n`);
 
-// Start the bot process
-const botProcess = spawn('node', ['dist/scripts/start-discord-bot.js'], {
-    stdio: ['ignore', 'pipe', 'pipe']
-});
+// Capture console output
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
 
-// Handle stdout
-botProcess.stdout.on('data', (data) => {
-    const output = data.toString();
-    console.log(output);
+console.log = function() {
+    const output = Array.from(arguments).join(' ') + '\n';
     fs.appendFileSync(logFile, output);
+    originalConsoleLog.apply(console, arguments);
+};
+
+console.error = function() {
+    const output = 'ERROR: ' + Array.from(arguments).join(' ') + '\n';
+    fs.appendFileSync(logFile, output);
+    originalConsoleError.apply(console, arguments);
+};
+
+// Environment detection and node flags
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Load environment variables from .env.local
+if (!isProduction) {
+    dotenv.config({ path: '.env.local' });
+}
+
+// Start the bot
+startBot().catch(error => {
+    console.error('Bot error:', error);
+    process.exit(1);
 });
 
-// Handle stderr
-botProcess.stderr.on('data', (data) => {
-    const error = data.toString();
-    console.error(error);
-    fs.appendFileSync(logFile, `ERROR: ${error}`);
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    const message = 'Received SIGTERM signal. Starting graceful shutdown...\n';
+    fs.appendFileSync(logFile, message);
+    console.log(message);
+    cleanup();
 });
 
-// Handle process exit
-botProcess.on('exit', (code) => {
-    const exitMessage = `\n=== Bot Exited with code ${code} at ${new Date().toISOString()} ===\n`;
-    console.log(exitMessage);
-    fs.appendFileSync(logFile, exitMessage);
-}); 
+process.on('SIGINT', () => {
+    const message = 'Received SIGINT signal. Starting graceful shutdown...\n';
+    fs.appendFileSync(logFile, message);
+    console.log(message);
+    cleanup();
+});
+
+async function cleanup() {
+    const message = 'Cleaning up...\n';
+    fs.appendFileSync(logFile, message);
+    console.log(message);
+    try {
+        const { cleanup: handlersCleanup } = await import('../dist/lib/discord/handlers.js');
+        await handlersCleanup();
+        const completedMessage = 'Cleanup completed\n';
+        fs.appendFileSync(logFile, completedMessage);
+        console.log(completedMessage);
+        process.exit(0);
+    } catch (error) {
+        const errorMessage = `Error during cleanup: ${error}\n`;
+        fs.appendFileSync(logFile, errorMessage);
+        console.error(errorMessage);
+        process.exit(1);
+    }
+} 
