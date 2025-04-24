@@ -4,6 +4,7 @@ import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
 import { startCentralizedScheduler } from './scheduler.js';
 import { generateEpisodeContext } from './episodeContext.js';
+import { generateFullEpisode } from './sceneFramework.js';
 
 // Global variables to track bot state
 let isBotRunning = false;
@@ -41,14 +42,28 @@ client.once(Events.ClientReady, async (readyClient) => {
               // Generate episode context
               const unitDurationMinutes = parseInt(process.env.UNIT_DURATION_MINUTES || '20', 10);
               console.log(`Generating episode context with unit duration: ${unitDurationMinutes} minutes`);
+              
+              // Add explicit logging before episode context generation
+              console.log('=== STARTING EPISODE CONTEXT GENERATION ===');
               currentEpisodeContext = await generateEpisodeContext(new Date().toISOString(), unitDurationMinutes);
-              console.log('Episode context generated:', {
-                date: currentEpisodeContext.date,
-                dayOfWeek: currentEpisodeContext.dayOfWeek,
-                startTime: currentEpisodeContext.startTime,
-                durationMinutes: currentEpisodeContext.durationMinutes,
-                uniqueLocations: [...new Set(currentEpisodeContext.locationTimeline)]
-              });
+              console.log('=== EPISODE CONTEXT GENERATION COMPLETE ===');
+              
+              // Generate full episode with scenes
+              console.log('=== STARTING SCENE GENERATION ===');
+              const episode = await generateFullEpisode(currentEpisodeContext);
+              console.log('=== SCENE GENERATION COMPLETE ===');
+              
+              // Log the generated context in detail
+              console.log('=== EPISODE CONTEXT DETAILS ===');
+              console.log('Date:', currentEpisodeContext.date);
+              console.log('Day of Week:', currentEpisodeContext.dayOfWeek);
+              console.log('Start Time:', currentEpisodeContext.startTime);
+              console.log('Duration (minutes):', currentEpisodeContext.durationMinutes);
+              console.log('Theme:', currentEpisodeContext.theme);
+              console.log('Arc Summary:', currentEpisodeContext.arc.arcSummary);
+              console.log('Tone Keywords:', currentEpisodeContext.arc.toneKeywords.join(', '));
+              console.log('Motifs:', currentEpisodeContext.arc.motifs.join(', '));
+              console.log('Unique Locations:', [...new Set(currentEpisodeContext.locationTimeline)]);
               
               // Initialize scheduled tasks for this channel
               startCentralizedScheduler(channel.id, client);

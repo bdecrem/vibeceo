@@ -2,7 +2,7 @@ import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInterac
 import { sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
-import Redis from 'ioredis';
+import IORedis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { triggerNewsChat } from './news.js';
@@ -17,7 +17,7 @@ class MessageDeduplication {
         // Initialize Redis if URL is provided
         if (process.env.REDIS_URL) {
             try {
-                this.redis = new Redis(process.env.REDIS_URL);
+                this.redis = new IORedis(process.env.REDIS_URL);
                 console.log('Redis connected successfully');
             }
             catch (error) {
@@ -75,6 +75,7 @@ const NATURAL_TRIGGERS = ['hey', 'hi', 'hello', 'yo'];
 const activeGroupChats = new Map();
 // Handle group chat interactions
 async function handleGroupChat(message, state) {
+    var _a;
     try {
         // If no topic set, this message becomes the topic
         if (!state.topic) {
@@ -86,7 +87,7 @@ async function handleGroupChat(message, state) {
             const firstCharacter = getCharacter(state.participants[0]);
             if (firstCharacter) {
                 const contextPrompt = `You are starting a group discussion about: "${message.content}". 
-        You are discussing this with ${state.participants.slice(1).map(id => getCharacter(id)?.name).join(' and ')}.
+        You are discussing this with ${state.participants.slice(1).map(id => { var _a; return (_a = getCharacter(id)) === null || _a === void 0 ? void 0 : _a.name; }).join(' and ')}.
         Share your initial thoughts on this topic, speaking in your unique voice and style.`;
                 const response = await generateCharacterResponse(firstCharacter.prompt + '\n' + contextPrompt, message.content);
                 await sendAsCharacter(message.channelId, firstCharacter.id, response);
@@ -105,8 +106,11 @@ async function handleGroupChat(message, state) {
                 return; // All messages used up
             }
             // Find eligible characters (haven't spoken 3 times and weren't last to speak)
-            const eligibleCharacters = state.participants.filter(id => (state.messageCount[id] || 0) < 3 &&
-                id !== state.conversationHistory[state.conversationHistory.length - 1]?.character);
+            const eligibleCharacters = state.participants.filter(id => {
+                var _a;
+                return (state.messageCount[id] || 0) < 3 &&
+                    id !== ((_a = state.conversationHistory[state.conversationHistory.length - 1]) === null || _a === void 0 ? void 0 : _a.character);
+            });
             if (eligibleCharacters.length > 0) {
                 // Pick random eligible character, preferring those who have spoken less
                 const leastSpokenCount = Math.min(...eligibleCharacters.map(id => state.messageCount[id] || 0));
@@ -117,7 +121,7 @@ async function handleGroupChat(message, state) {
                     let contextMessages = [`User: "${message.content}"`];
                     if (state.conversationHistory.length > 0) {
                         const lastMessage = state.conversationHistory[state.conversationHistory.length - 1];
-                        contextMessages.unshift(`${getCharacter(lastMessage.character)?.name}: "${lastMessage.message}"`);
+                        contextMessages.unshift(`${(_a = getCharacter(lastMessage.character)) === null || _a === void 0 ? void 0 : _a.name}: "${lastMessage.message}"`);
                     }
                     const contextPrompt = `You are ${respondingCharacter.name} in a group discussion about "${state.topic}".
           The user just said: "${message.content}"
@@ -145,6 +149,7 @@ async function handleGroupChat(message, state) {
 }
 // Continue the discussion among characters
 async function continueDiscussion(channelId, state) {
+    var _a, _b;
     try {
         // Check if discussion should continue
         const totalMessages = Object.values(state.messageCount).reduce((a, b) => a + b, 0);
@@ -156,8 +161,11 @@ async function continueDiscussion(channelId, state) {
             return;
         }
         // Find characters who haven't spoken enough
-        const eligibleCharacters = state.participants.filter(id => (state.messageCount[id] || 0) < 3 &&
-            id !== state.conversationHistory[state.conversationHistory.length - 1]?.character);
+        const eligibleCharacters = state.participants.filter(id => {
+            var _a;
+            return (state.messageCount[id] || 0) < 3 &&
+                id !== ((_a = state.conversationHistory[state.conversationHistory.length - 1]) === null || _a === void 0 ? void 0 : _a.character);
+        });
         if (eligibleCharacters.length === 0)
             return;
         // Pick random eligible character, but prefer those who have spoken less
@@ -170,16 +178,16 @@ async function continueDiscussion(channelId, state) {
         // Get more focused context - last message and one other relevant message
         let contextMessages = [];
         const lastMessage = state.conversationHistory[state.conversationHistory.length - 1];
-        contextMessages.push(`${getCharacter(lastMessage.character)?.name}: "${lastMessage.message}"`);
+        contextMessages.push(`${(_a = getCharacter(lastMessage.character)) === null || _a === void 0 ? void 0 : _a.name}: "${lastMessage.message}"`);
         // Find one earlier message from another character that's most relevant
         for (let i = state.conversationHistory.length - 2; i >= 0; i--) {
             const msg = state.conversationHistory[i];
             if (msg.character !== lastMessage.character && msg.character !== nextCharacterId) {
-                contextMessages.unshift(`${getCharacter(msg.character)?.name}: "${msg.message}"`);
+                contextMessages.unshift(`${(_b = getCharacter(msg.character)) === null || _b === void 0 ? void 0 : _b.name}: "${msg.message}"`);
                 break;
             }
         }
-        const contextPrompt = `You are ${nextCharacter.name} in a quick group discussion about "${state.topic}" with ${state.participants.filter(id => id !== nextCharacterId).map(id => getCharacter(id)?.name).join(' and ')}.
+        const contextPrompt = `You are ${nextCharacter.name} in a quick group discussion about "${state.topic}" with ${state.participants.filter(id => id !== nextCharacterId).map(id => { var _a; return (_a = getCharacter(id)) === null || _a === void 0 ? void 0 : _a.name; }).join(' and ')}.
     
     Recent messages:
     ${contextMessages.join('\n')}
@@ -267,6 +275,7 @@ export function initializeScheduledTasks(channelId, client) {
 }
 // Handle incoming messages
 export async function handleMessage(message) {
+    var _a, _b;
     try {
         // Ignore messages from bots
         if (message.author.bot) {
@@ -322,7 +331,7 @@ export async function handleMessage(message) {
             return;
         }
         const args = content.slice(PREFIX.length).trim().split(/\s+/);
-        const command = args.shift()?.toLowerCase();
+        const command = (_a = args.shift()) === null || _a === void 0 ? void 0 : _a.toLowerCase();
         if (command === 'help') {
             const helpMessage = `
 Available commands:
@@ -343,7 +352,7 @@ For example: "hey alex" or "hi donte"
             return;
         }
         if (command === 'character') {
-            const subCommand = args[0]?.toLowerCase();
+            const subCommand = (_b = args[0]) === null || _b === void 0 ? void 0 : _b.toLowerCase();
             if (subCommand === 'list') {
                 const characterList = formatCharacterList();
                 await message.reply(`Here are the available characters:\n\n${characterList}`);
@@ -374,7 +383,7 @@ For example: "hey alex" or "hi donte"
                         messageCount: {},
                         conversationHistory: []
                     });
-                    const characterNames = characters.map(id => getCharacter(id)?.name).join(', ');
+                    const characterNames = characters.map(id => { var _a; return (_a = getCharacter(id)) === null || _a === void 0 ? void 0 : _a.name; }).join(', ');
                     await message.reply(`Started a group chat with ${characterNames}! Please provide a topic for them to discuss.`);
                 }
                 else {

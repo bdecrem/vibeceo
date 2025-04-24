@@ -1,15 +1,12 @@
 import OpenAI from 'openai';
 import { config } from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 // Load environment variables from .env.local in project root
 config({ path: path.resolve(process.cwd(), '.env.local') });
 if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY is not set in environment variables');
 }
-const openai = new OpenAI({
+export const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 export async function generateCharacterResponse(prompt, userMessage) {

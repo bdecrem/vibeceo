@@ -1,20 +1,15 @@
 // sceneFramework.ts
 
-import { EpisodeContext } from './episodeContext';
-import { getLocationAndTime } from './locationTime';
-import { coachState } from '../../data/coach-dynamics';
-import { coachBackstory } from '../../data/coach-backstory';
-import { CoachState, SceneCoachState } from './types/coaches';
+import { EpisodeContext } from './episodeContext.js';
+import { getLocationAndTime } from './locationTime.js';
+import { coachState } from '../../data/coach-dynamics.js';
+import { coachBackstory } from '../../data/coach-backstory.js';
+import { CoachState, SceneCoachState } from './types/coaches.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import fs from 'fs';
-import OpenAI from 'openai';
+import { openai } from './ai.js';
 import { TextChannel } from 'discord.js';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export interface SceneSeed {
   index: number;
@@ -270,12 +265,14 @@ function generateIntroPrompt(
   const eventContext = environment.events.length > 0 ? 
     `\nRecent events: ${environment.events.join(', ')}` : '';
     
-  return `Scene Context:
-Location: ${locationAndTime.location}
-Time: ${locationAndTime.localTime}
-Weather: ${environment.weather}${eventContext}
-Episode Theme: ${episodeContext.theme}
-Participants: ${coaches.join(', ')}`;
+  return `Generate a scene introduction that:
+  - Sets the location: ${locationAndTime.location}
+  - Establishes the time: ${locationAndTime.localTime}
+  - Describes the weather: ${environment.weather}${eventContext}
+  - Introduces the coaches: ${coaches.join(', ')}
+  - Reflects the episode theme: ${episodeContext.theme}
+  
+  Format: A single paragraph that sets the scene.`;
 }
 
 function generateConvoPrompt(
@@ -285,28 +282,20 @@ function generateConvoPrompt(
   episodeContext: EpisodeContext
 ): string {
   const coachContexts = coaches.map(coach => 
-    `Coach ${coach}:
-- Current emotional state: ${coachState[coach].emotionalTone}
-- Active flags: ${Object.entries(coachState[coach].flags)
-  .filter(([_, value]) => value)
-  .map(([key, _]) => key)
-  .join(', ')}`
-  ).join('\n\n');
+    `- ${coach}: ${coachState[coach].emotionalTone}`
+  ).join('\n');
 
-  return `${generateIntroPrompt(locationAndTime, environment, coaches, episodeContext)}
-
-Coach Contexts:
-${coachContexts}
-
-Conversation Guidelines:
-- Keep responses natural and conversational
-- Reference the current location, time, and weather
-- Incorporate any relevant events or holidays
-- Maintain consistency with each coach's personality and current state
-- Progress the episode theme: ${episodeContext.theme}
-- Allow for ambiguity and unspoken tensions
-- Use subtle, symbolic references to the motifs
-- Balance surface-level interactions with underlying conflicts`;
+  return `Generate a conversation between these coaches:
+  ${coachContexts}
+  
+  Requirements:
+  - Generate exactly 3 lines of dialogue
+  - One line per coach in order
+  - Each line should be a complete thought
+  - Reference the location, time, and weather
+  - Progress the episode theme: ${episodeContext.theme}
+  
+  Format: Three separate lines, one for each coach.`;
 }
 
 function generateOutroPrompt(
@@ -315,15 +304,13 @@ function generateOutroPrompt(
   coaches: string[],
   episodeContext: EpisodeContext
 ): string {
-  return `${generateIntroPrompt(locationAndTime, environment, coaches, episodeContext)}
-
-Closing Guidelines:
-- Summarize key points from the conversation
-- Reference the episode theme: ${episodeContext.theme}
-- Set up anticipation for the next scene
-- Maintain the natural flow of the conversation
-- Leave some tensions unresolved
-- Use subtle, symbolic references to the motifs`;
+  return `Generate a scene conclusion that:
+  - Summarizes the key points from the conversation
+  - References the episode theme: ${episodeContext.theme}
+  - Sets up anticipation for the next scene
+  - Leaves some tensions unresolved
+  
+  Format: A single paragraph that concludes the scene.`;
 }
 
 interface ConversationLine {
@@ -375,6 +362,8 @@ async function callGPT(
   model: 'gpt-4-turbo' | 'gpt-3.5-turbo' = 'gpt-4-turbo'
 ): Promise<string> {
   try {
+    console.log('Making GPT API call with prompt:', prompt);  // Debug log
+    
     const response = await openai.chat.completions.create({
       model,
       messages: [
@@ -392,7 +381,14 @@ async function callGPT(
       stream: false
     });
 
-    return response.choices[0]?.message?.content || '';
+    const content = response.choices[0]?.message?.content;
+    console.log('GPT API response:', content);  // Debug log
+    
+    if (!content) {
+      throw new Error('No content in GPT response');
+    }
+    
+    return content;
   } catch (error) {
     console.error('GPT API call failed:', error);
     throw error;
@@ -559,14 +555,25 @@ async function logSceneContent(
 export async function generateFullEpisode(
   episodeContext: EpisodeContext
 ): Promise<EpisodeScenes> {
+  console.log('=== GENERATING FULL EPISODE ===');
+  console.log('Episode Context:', {
+    date: episodeContext.date,
+    theme: episodeContext.theme,
+    startTime: episodeContext.startTime
+  });
+  
   const framework = await generateSceneFramework(episodeContext);
+  console.log('Scene Framework generated with', framework.seeds.length, 'scenes');
   
   // Generate content for each scene
   for (const seed of framework.seeds) {
+    console.log(`Generating content for scene ${seed.index}`);
     const content = await generateSceneContent(seed, episodeContext);
     framework.generatedContent[seed.index] = content;
+    console.log(`Scene ${seed.index} content generated`);
   }
 
+  console.log('=== FULL EPISODE GENERATION COMPLETE ===');
   return framework;
 }
 
