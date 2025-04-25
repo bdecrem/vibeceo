@@ -84,6 +84,11 @@ client.once(Events.ClientReady, async (readyClient) => {
         }
         console.log('All webhooks initialized successfully');
         console.log('Discord bot started successfully');
+        // Send initial announcement
+        const channel = client.channels.cache.get('1354474492629618831');
+        if (channel instanceof TextChannel) {
+            await channel.send('HELLO');
+        }
     }
     catch (error) {
         console.error('Error during bot initialization:', error);

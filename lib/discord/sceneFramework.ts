@@ -10,6 +10,7 @@ import { join } from 'path';
 import fs from 'fs';
 import { openai } from './ai.js';
 import { TextChannel } from 'discord.js';
+import pLimit from 'p-limit';
 
 export interface SceneSeed {
   index: number;
@@ -565,13 +566,26 @@ export async function generateFullEpisode(
   const framework = await generateSceneFramework(episodeContext);
   console.log('Scene Framework generated with', framework.seeds.length, 'scenes');
   
-  // Generate content for each scene
-  for (const seed of framework.seeds) {
-    console.log(`Generating content for scene ${seed.index}`);
-    const content = await generateSceneContent(seed, episodeContext);
-    framework.generatedContent[seed.index] = content;
-    console.log(`Scene ${seed.index} content generated`);
-  }
+  // Initialize rate limiter - limit to 5 concurrent requests
+  const limit = pLimit(5);
+  
+  // Generate content for each scene in parallel with rate limiting
+  const contentPromises = framework.seeds.map(seed => 
+    limit(async () => {
+      console.log(`Generating content for scene ${seed.index}`);
+      const content = await generateSceneContent(seed, episodeContext);
+      console.log(`Scene ${seed.index} content generated`);
+      return { index: seed.index, content };
+    })
+  );
+
+  // Wait for all scenes to be generated
+  const results = await Promise.all(contentPromises);
+  
+  // Assign generated content to framework
+  results.forEach(({ index, content }) => {
+    framework.generatedContent[index] = content;
+  });
 
   console.log('=== FULL EPISODE GENERATION COMPLETE ===');
   return framework;
