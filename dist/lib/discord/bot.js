@@ -46,25 +46,18 @@ client.once(Events.ClientReady, async (readyClient) => {
         }
         // Initialize Discord-specific components
         const { webhookUrls } = validateConfig();
-        // Initialize webhooks for each channel
+        // Initialize webhooks only for #general channel
         console.log('Starting webhook initialization...');
-        for (const guild of client.guilds.cache.values()) {
-            const channels = await guild.channels.fetch();
-            for (const channel of channels.values()) {
-                if (channel && channel.isTextBased()) {
-                    try {
-                        await initializeWebhooks(channel.id, webhookUrls);
-                        console.log(`Webhooks initialized for channel: ${channel.id}`);
-                        if (channel instanceof TextChannel) {
-                            startCentralizedScheduler(channel.id, client);
-                            console.log('Centralized scheduler started for channel:', channel.id);
-                        }
-                    }
-                    catch (error) {
-                        console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
-                    }
-                }
+        try {
+            await initializeWebhooks('1354474492629618831', webhookUrls);
+            console.log('Webhooks initialized for #general channel');
+            if (channel instanceof TextChannel) {
+                startCentralizedScheduler('1354474492629618831', client);
+                console.log('Centralized scheduler started for #general channel');
             }
+        }
+        catch (error) {
+            console.error('Failed to initialize webhooks for #general channel:', error);
         }
         console.log('All webhooks initialized successfully');
         console.log('Discord bot started successfully');
