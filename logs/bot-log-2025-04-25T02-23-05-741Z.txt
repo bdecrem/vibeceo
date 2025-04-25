@@ -1,0 +1,67 @@
+=== Bot Started at 2025-04-25T02:23:05.741Z ===
+
+=== BOT STARTUP INFO ===
+Node.js version: v23.10.0
+Starting bot...
+Instance ID: 
+Process ID: 24198
+Environment: production
+Ready! Logged in as TheAF#3282
+Starting webhook initialization...
+Initializing webhooks for channel: 1354474492629618831
+Available webhook URLs: donte,alex,rohan,venus,eljas,kailey
+Creating webhook client for donte
+Creating webhook client for alex
+Creating webhook client for rohan
+Creating webhook client for venus
+Creating webhook client for eljas
+Creating webhook client for kailey
+Webhooks initialized for channel: 1354474492629618831
+Webhooks initialized for channel: 1354474492629618831
+Generating episode context with unit duration: 20 minutes
+=== STARTING EPISODE CONTEXT GENERATION ===
+=== GENERATING EPISODE CONTEXT ===
+Start time: 2025-04-25T02:23:06.460Z
+Unit duration: 20
+Fetching weather...
+Weather fetched: [object Object]
+Fetching holidays...
+Holidays fetched: [object Object]
+=== GENERATING ARC ===
+Input context: [object Object]
+=== EPISODE CONTEXT ===
+Date: 2025-04-25
+Theme: Controlled Distance
+Arc Summary: A day of subtle tensions and unspoken truths.
+Tone Keywords: restrained, tense, ambiguous
+Motifs: window reflections, untouched plates, abandoned chairs
+Weather: [object Object]
+Holidays: [object Object]
+=== EPISODE CONTEXT GENERATION COMPLETE ===
+=== STARTING SCENE GENERATION ===
+=== GENERATING FULL EPISODE ===
+Episode Context: [object Object]
+ERROR: Failed to initialize webhooks for channel 1354474492629618831: Error: ENOENT: no such file or directory, open '/Users/zayne/Desktop/Dev/vibeceo/schedule.txt'
+Initializing webhooks for channel: 1354474492629618832
+Available webhook URLs: donte,alex,rohan,venus,eljas,kailey
+Creating webhook client for donte
+Creating webhook client for alex
+Creating webhook client for rohan
+Creating webhook client for venus
+Creating webhook client for eljas
+Creating webhook client for kailey
+Webhooks initialized for channel: 1354474492629618832
+Webhooks initialized for channel: 1354474492629618832
+Initializing webhooks for channel: 1354475891866206258
+Available webhook URLs: donte,alex,rohan,venus,eljas,kailey
+Creating webhook client for donte
+Creating webhook client for alex
+Creating webhook client for rohan
+Creating webhook client for venus
+Creating webhook client for eljas
+Creating webhook client for kailey
+Webhooks initialized for channel: 1354475891866206258
+Webhooks initialized for channel: 1354475891866206258
+All webhooks initialized successfully
+Discord bot started successfully
+Shutting down bot...

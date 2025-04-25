@@ -3,9 +3,35 @@ import { handleMessage, initializeScheduledTasks } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
 import { startCentralizedScheduler } from './scheduler.js';
+import { generateEpisodeContext } from './episodeContext.js';
+import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
+import { EpisodeContext } from './episodeContext.js';
 
-// Global variable to track if a bot instance is already running
+// Global variables to track bot state
 let isBotRunning = false;
+let currentEpisodeContext: EpisodeContext | null = null;
+let currentSceneIndex = 0;
+let currentEpisode: EpisodeScenes | null = null;
+
+// Function to update current scene
+export function updateCurrentScene(index: number) {
+  currentSceneIndex = index;
+  console.log(`Updated current scene to: ${index}`);
+}
+
+// Function to get current story info
+export function getCurrentStoryInfo() {
+  if (!currentEpisodeContext || !currentEpisode) {
+    return null;
+  }
+
+  return {
+    episodeContext: currentEpisodeContext,
+    currentEpisode,
+    currentScene: currentEpisode.generatedContent[currentSceneIndex],
+    sceneIndex: currentSceneIndex
+  };
+}
 
 // Initialize Discord client with necessary intents
 const client = new Client({
@@ -21,30 +47,27 @@ client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
   
   try {
-    // Get webhook URLs
+    // Send theme immediately
+    const channel = await client.channels.fetch('1354474492629618831');
+    if (channel instanceof TextChannel && currentEpisodeContext) {
+      await channel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nToday's episode: ${currentEpisodeContext.theme}\n✨ ━━━━━━━━━━━━━━━ ✨`);
+    }
+    
+    // Initialize Discord-specific components
     const { webhookUrls } = validateConfig();
     
-    // Initialize webhooks for each channel the bot has access to
+    // Initialize webhooks only for #general channel
     console.log('Starting webhook initialization...');
-    for (const guild of client.guilds.cache.values()) {
-      const channels = await guild.channels.fetch();
-      for (const channel of channels.values()) {
-        if (channel && channel.isTextBased()) {
-          try {
-            await initializeWebhooks(channel.id, webhookUrls);
-            console.log(`Webhooks initialized for channel: ${channel.id}`);
-            
-            // If this is our target channel, start the scheduler
-            if (channel.id === process.env.DISCORD_CHANNEL_ID && channel instanceof TextChannel) {
-              // Initialize scheduled tasks for this channel
-              startCentralizedScheduler(channel.id, client);
-              console.log('Centralized scheduler started for channel:', channel.id);
-            }
-          } catch (error) {
-            console.error(`Failed to initialize webhooks for channel ${channel.id}:`, error);
-          }
-        }
+    try {
+      await initializeWebhooks('1354474492629618831', webhookUrls);
+      console.log('Webhooks initialized for #general channel');
+      
+      if (channel instanceof TextChannel) {
+        startCentralizedScheduler('1354474492629618831', client);
+        console.log('Centralized scheduler started for #general channel');
       }
+    } catch (error) {
+      console.error('Failed to initialize webhooks for #general channel:', error);
     }
     
     console.log('All webhooks initialized successfully');
@@ -92,7 +115,31 @@ export async function startBot() {
     // Validate configuration and get token
     const { token } = validateConfig();
     
-    // Log in to Discord
+    // Generate all story content BEFORE connecting to Discord
+    const unitDurationMinutes = parseInt(process.env.UNIT_DURATION_MINUTES || '20', 10);
+    console.log(`Generating episode context with unit duration: ${unitDurationMinutes} minutes`);
+    
+    console.log('=== STARTING EPISODE CONTEXT GENERATION ===');
+    currentEpisodeContext = await generateEpisodeContext(new Date().toISOString(), unitDurationMinutes);
+    console.log('=== EPISODE CONTEXT GENERATION COMPLETE ===');
+    
+    console.log('=== STARTING SCENE GENERATION ===');
+    currentEpisode = await generateFullEpisode(currentEpisodeContext);
+    console.log('=== SCENE GENERATION COMPLETE ===');
+    
+    // Log the generated context in detail
+    console.log('=== EPISODE CONTEXT DETAILS ===');
+    console.log('Date:', currentEpisodeContext.date);
+    console.log('Day of Week:', currentEpisodeContext.dayOfWeek);
+    console.log('Start Time:', currentEpisodeContext.startTime);
+    console.log('Duration (minutes):', currentEpisodeContext.durationMinutes);
+    console.log('Theme:', currentEpisodeContext.theme);
+    console.log('Arc Summary:', currentEpisodeContext.arc.arcSummary);
+    console.log('Tone Keywords:', currentEpisodeContext.arc.toneKeywords.join(', '));
+    console.log('Motifs:', currentEpisodeContext.arc.motifs.join(', '));
+    console.log('Unique Locations:', [...new Set(currentEpisodeContext.locationTimeline)]);
+    
+    // Now that all content is generated, connect to Discord
     await client.login(token);
     
   } catch (error) {
@@ -110,5 +157,5 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Export the client for use in other parts of the application
-export { client }; 
+// Export the client and episode context for use in other parts of the application
+export { client, currentEpisodeContext, currentEpisode, currentSceneIndex }; 

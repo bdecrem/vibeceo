@@ -29,7 +29,7 @@ export async function triggerPitchChat(channelId, client) {
         const idea = getRandomPitchIdea();
         // Create a fake message object
         const channel = await client.channels.fetch(channelId);
-        if (!channel?.isTextBased()) {
+        if (!(channel === null || channel === void 0 ? void 0 : channel.isTextBased())) {
             console.error('Channel not found or not text-based');
             return;
         }
@@ -76,6 +76,7 @@ export async function handlePitchCommand(message, idea) {
     await continuePitchDiscussion(channelId);
 }
 async function continuePitchDiscussion(channelId) {
+    var _a;
     const state = activePitches.get(channelId);
     if (!state || !state.isActive)
         return;
@@ -96,7 +97,7 @@ async function continuePitchDiscussion(channelId) {
         return;
     }
     // Get the last speaker
-    const lastSpeaker = state.responses[state.responses.length - 1]?.character;
+    const lastSpeaker = (_a = state.responses[state.responses.length - 1]) === null || _a === void 0 ? void 0 : _a.character;
     // Find characters who haven't spoken in this round
     const availableCharacters = characters.filter(char => !currentRoundResponses.some(r => r.character === char.id));
     // If no available characters, something went wrong
@@ -115,7 +116,7 @@ async function continuePitchDiscussion(channelId) {
        Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice.
        Focus on a single specific aspect of the idea.`
         : `You are ${nextCharacter.name}. Continue the discussion about: "${state.idea}".
-       Previous comments in this round:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
+       Previous comments in this round:\n${currentRoundResponses.map(r => { var _a; return `${(_a = getCharacter(r.character)) === null || _a === void 0 ? void 0 : _a.name}: "${r.message}"`; }).join('\n')}
        Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character.
        Focus on a different aspect than what others have mentioned.`;
     try {
@@ -139,7 +140,7 @@ async function startVoting(channelId) {
     // Generate votes
     for (const character of characters) {
         const votePrompt = `You are ${character.name}. After discussing this business idea: "${state.idea}"
-      Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
+      Discussion history:\n${state.responses.map(r => { var _a; return `${(_a = getCharacter(r.character)) === null || _a === void 0 ? void 0 : _a.name}: "${r.message}"`; }).join('\n')}
       Vote either INVEST or PASS, with a very brief reason (10 words max).`;
         try {
             const vote = await generateCharacterResponse(character.prompt + '\n' + votePrompt, state.idea);

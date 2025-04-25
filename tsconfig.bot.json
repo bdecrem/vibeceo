@@ -1,21 +1,36 @@
 {
-	"compilerOptions": {
-		"target": "ES2020",
-		"module": "ES2020",
-		"moduleResolution": "node",
-		"esModuleInterop": true,
-		"outDir": "./dist",
-		"rootDir": "./",
-		"strict": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"baseUrl": "./",
-		"paths": {
-			"@/*": ["./*"]
-		},
-		"allowJs": true,
-		"resolveJsonModule": true
-	},
-	"include": ["scripts/**/*", "lib/discord/**/*", "data/**/*", "types/**/*"],
-	"exclude": ["node_modules", "dist", ".next", "app"]
-}
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "module": "es2022",
+    "target": "es2017",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "isolatedModules": false,
+    "noEmit": false,
+    "noImplicitReturns": false,
+    "allowUnreachableCode": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["*", "lib/discord/types/*"]
+    }
+  },
+  "include": [
+    "lib/discord/**/*.ts",
+    "lib/discord/**/*.d.ts",
+    "data/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "discord-bot",
+    "dist"
+  ]
+} 

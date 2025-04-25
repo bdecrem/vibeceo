@@ -3,17 +3,19 @@ import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInterac
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import { WebhookClient } from 'discord.js';
-import Redis from 'ioredis';
+import IORedis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
 import { Client } from 'discord.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
 import { getNextMessage, handleAdminCommand } from './adminCommands.js';
+import { getCurrentStoryInfo } from './bot.js';
+import { validateStoryInfo, formatStoryInfo } from './sceneFramework.js';
 
 // Message deduplication system
 class MessageDeduplication {
-  private redis: Redis | null = null;
+  private redis: IORedis | null = null;
   private memoryCache: Map<string, number> = new Map();
   private readonly CACHE_EXPIRY = 300000; // 5 minutes in ms
 
@@ -21,7 +23,7 @@ class MessageDeduplication {
     // Initialize Redis if URL is provided
     if (process.env.REDIS_URL) {
       try {
-        this.redis = new Redis(process.env.REDIS_URL);
+        this.redis = new IORedis(process.env.REDIS_URL);
         console.log('Redis connected successfully');
       } catch (error) {
         console.error('Failed to connect to Redis:', error);
@@ -341,6 +343,55 @@ export async function handleMessage(message: Message): Promise<void> {
       return;
     }
 
+    // Handle story-info command
+    if (content === '!story-info') {
+      console.log('[STORY] Story info requested by user:', message.author.tag);
+      try {
+        const storyInfo = getCurrentStoryInfo();
+        
+        if (!storyInfo) {
+          console.log('[STORY] No active story arc found');
+          await message.reply('No active story arc at the moment. The story will begin when the bot is fully initialized.');
+          return;
+        }
+
+        const { episodeContext, currentEpisode, currentScene, sceneIndex } = storyInfo;
+        console.log('[STORY] Retrieved story info:', {
+          theme: episodeContext.theme,
+          sceneIndex,
+          sceneType: currentScene.type,
+          activeCoaches: currentScene.coaches
+        });
+        
+        // Validate the data
+        if (!validateStoryInfo(episodeContext, currentEpisode, sceneIndex)) {
+          console.error('[STORY] Invalid story info data detected:', {
+            hasEpisodeContext: !!episodeContext,
+            hasCurrentEpisode: !!currentEpisode,
+            sceneIndex,
+            hasCurrentScene: !!currentScene
+          });
+          await message.reply('Sorry, there was an error retrieving the story information. Please try again later.');
+          return;
+        }
+
+        // Format and send the response
+        const response = formatStoryInfo(episodeContext, currentEpisode, sceneIndex);
+        console.log('[STORY] Sending story info response');
+        await message.reply(response);
+        console.log('[STORY] Story info response sent successfully');
+        
+      } catch (error) {
+        console.error('[STORY] Error handling story info command:', error);
+        console.error('[STORY] Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        await message.reply('Sorry, there was an error retrieving the story information. Please try again later.');
+      }
+      return;
+    }
+
     // Check for natural language triggers
     for (const trigger of NATURAL_TRIGGERS) {
       if (content.startsWith(trigger)) {
@@ -392,6 +443,7 @@ Available commands:
 - \`!watercooler\`: Listen in on a quick chat between three random coaches
 - \`!newschat\`: Start a discussion about trending news relevant to the coaches
 - \`!tmzchat\`: Start a discussion about trending news relevant to the coaches
+- \`!story-info\`: Show information about the current story arc and scene
 
 You can also start a conversation naturally by saying "hey [character]"!
 For example: "hey alex" or "hi donte"
