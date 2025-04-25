@@ -47,23 +47,10 @@ client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
   
   try {
-    // Send HELLO immediately - using the same pattern as other working announcements
+    // Send theme immediately
     const channel = await client.channels.fetch('1354474492629618831');
-    if (channel instanceof TextChannel) {
-      await channel.send('HELLO');
-      
-      // Send story arc information
-      if (currentEpisodeContext) {
-        const storyArcMessage = `
-**Today's Story Arc**
-Theme: ${currentEpisodeContext.theme}
-Arc Summary: ${currentEpisodeContext.arc.arcSummary}
-Tone Keywords: ${currentEpisodeContext.arc.toneKeywords.join(', ')}
-Motifs: ${currentEpisodeContext.arc.motifs.join(', ')}
-Unique Locations: ${[...new Set(currentEpisodeContext.locationTimeline)].join(', ')}
-`;
-        await channel.send(storyArcMessage);
-      }
+    if (channel instanceof TextChannel && currentEpisodeContext) {
+      await channel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nToday's episode: ${currentEpisodeContext.theme}\n✨ ━━━━━━━━━━━━━━━ ✨`);
     }
     
     // Initialize Discord-specific components
