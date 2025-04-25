@@ -11,7 +11,7 @@ export interface CoachState {
 }
 
 export const coachState: { [coachId: string]: CoachState } = {
-  "sam": {
+  "donte": {
     emotionalTone: "optimistic",
     flags: {
       "seekingInvestment": true,
@@ -20,47 +20,85 @@ export const coachState: { [coachId: string]: CoachState } = {
     },
     relationalTilt: {
       "alex": 0.8,
-      "jordan": 0.6,
-      "taylor": 0.4
+      "venus": 0.6,
+      "rohan": 0.3,
+      "eljas": 0.5,
+      "kailey": 0.7
+    }
+  },
+  "eljas": {
+    emotionalTone: "grounded",
+    flags: {
+      "sustainabilityFocus": true,
+      "communityBuilding": true,
+      "longTermPlanning": true
+    },
+    relationalTilt: {
+      "kailey": 0.6,
+      "rohan": 0.3,
+      "venus": 0.5,
+      "alex": 0.5,
+      "donte": 0.4
+    }
+  },
+  "venus": {
+    emotionalTone: "analytical",
+    flags: {
+      "dataDriven": true,
+      "riskAware": true,
+      "futureFocused": true
+    },
+    relationalTilt: {
+      "alex": 0.7,
+      "kailey": 0.6,
+      "donte": 0.3,
+      "rohan": 0.5,
+      "eljas": 0.5
     }
   },
   "alex": {
-    emotionalTone: "analytical",
-    flags: {
-      "marketResearch": true,
-      "competitorAnalysis": true,
-      "productLaunch": false
-    },
-    relationalTilt: {
-      "sam": 0.8,
-      "jordan": 0.7,
-      "taylor": 0.5
-    }
-  },
-  "jordan": {
-    emotionalTone: "strategic",
-    flags: {
-      "teamBuilding": true,
-      "scalingChallenges": true,
-      "industryTrends": false
-    },
-    relationalTilt: {
-      "sam": 0.6,
-      "alex": 0.7,
-      "taylor": 0.9
-    }
-  },
-  "taylor": {
     emotionalTone: "innovative",
     flags: {
-      "techInnovation": true,
-      "sustainabilityGoals": true,
-      "globalExpansion": true
+      "wellnessTech": true,
+      "dataDriven": true,
+      "futureFocused": true
     },
     relationalTilt: {
-      "sam": 0.4,
-      "alex": 0.5,
-      "jordan": 0.9
+      "venus": 0.8,
+      "donte": 0.7,
+      "kailey": 0.6,
+      "rohan": 0.4,
+      "eljas": 0.5
+    }
+  },
+  "rohan": {
+    emotionalTone: "aggressive",
+    flags: {
+      "competitive": true,
+      "shortTermFocus": true,
+      "highStakes": true
+    },
+    relationalTilt: {
+      "eljas": 0.3,
+      "kailey": 0.3,
+      "venus": 0.5,
+      "donte": 0.5,
+      "alex": 0.4
+    }
+  },
+  "kailey": {
+    emotionalTone: "calm",
+    flags: {
+      "strategicPatience": true,
+      "mindfulness": true,
+      "longTermFocus": true
+    },
+    relationalTilt: {
+      "eljas": 0.8,
+      "venus": 0.6,
+      "alex": 0.6,
+      "rohan": 0.3,
+      "donte": 0.5
     }
   }
 };
