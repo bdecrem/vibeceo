@@ -35,13 +35,14 @@ function validateMessage(service, message) {
 }
 // Handle admin commands
 export async function handleAdminCommand(message) {
+    var _a, _b;
     // Debug logging for roles
-    console.log(`[ADMIN CHECK] User ${message.author.tag} has roles:`, message.member?.roles.cache.map(role => ({
+    console.log(`[ADMIN CHECK] User ${message.author.tag} has roles:`, (_a = message.member) === null || _a === void 0 ? void 0 : _a.roles.cache.map(role => ({
         name: role.name,
         hasAdminPerm: role.permissions.has('Administrator')
     })));
     // Check if user has any admin role (case-insensitive)
-    const hasAdminRole = message.member?.roles.cache.some(role => {
+    const hasAdminRole = (_b = message.member) === null || _b === void 0 ? void 0 : _b.roles.cache.some(role => {
         const isAdmin = role.name.toLowerCase() === 'admin' ||
             role.name.toLowerCase().includes('admin') ||
             role.name.toLowerCase() === 'administrator' ||

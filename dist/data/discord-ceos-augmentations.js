@@ -196,13 +196,7 @@ export function getDiscussionCEO(id) {
     const augmentations = discussionAugmentations[id];
     if (!augmentations)
         return undefined;
-    return {
-        ...ceo,
-        discussion: {
-            ...augmentations,
-            role: id === 'venus' || id === 'rohan' ? 'skeptical' : 'neutral'
-        }
-    };
+    return Object.assign(Object.assign({}, ceo), { discussion: Object.assign(Object.assign({}, augmentations), { role: id === 'venus' || id === 'rohan' ? 'skeptical' : 'neutral' }) });
 }
 // Helper function to get all skeptical CEOs
 export function getSkepticalCEOs() {
