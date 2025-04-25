@@ -49,3 +49,5 @@ next-env.d.ts
 
 # Temporarily ignore discord-bot folder (WIP)
 /discord-bot/
+
+/logs
