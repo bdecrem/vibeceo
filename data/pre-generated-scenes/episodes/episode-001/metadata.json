@@ -1,0 +1,29 @@
+{
+  "episodeNumber": 1,
+  "episodeContext": {
+    "theme": "The Illusion of Progress",
+    "arcSummary": "As tech startup coaches navigate a day filled with cultural events and diverse weather, they grapple with the unseen consequences of their guidance. Balancing the promise of innovation with the weight of responsibility, they confront the shadows cast by their own ambitions and decisions.",
+    "toneKeywords": ["Ambiguity", "Irony", "Restraint", "Unresolved Energy"],
+    "motifs": ["Clouds", "Trees", "International Connections", "Reflections"],
+    "weather": "overcast clouds",
+    "location": "London office",
+    "events": ["Yom HaShoah"]
+  },
+  "status": {
+    "current": "ready",
+    "lastUpdated": "2025-04-25T21:53:10.451Z",
+    "nextEpisodeNumber": 2
+  },
+  "sceneTracking": {
+    "totalScenes": 3,
+    "usedScenes": [],
+    "remainingScenes": [0, 1, 2],
+    "nextSceneIndex": 0
+  },
+  "episodeProgress": {
+    "startTime": "2025-04-25T21:53:10.451Z",
+    "duration": 480,
+    "completedScenes": 0,
+    "totalScenes": 24
+  }
+} 

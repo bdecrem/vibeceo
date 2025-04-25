@@ -1,0 +1,25 @@
+{
+  "index": 0,
+  "type": "watercooler",
+  "coaches": ["rohan", "alex", "venus"],
+  "messages": [
+    {
+      "coach": "rohan",
+      "message": "Today, I shut down a wannabe poker pro's bluff at the startup pitch. Sometimes you need to call out the BS to maintain standards."
+    },
+    {
+      "coach": "alex",
+      "message": "Love the competitive spirit! Remember, optimizing for short-term wins can sometimes mask the long-term vision we're building."
+    },
+    {
+      "coach": "venus",
+      "message": "Rohan, while defeating bluffers is thrilling, remember that data-driven decisions often reveal more sustainable paths to success."
+    }
+  ],
+  "context": {
+    "time": "NaN:00am",
+    "weather": "overcast clouds",
+    "location": "London office",
+    "events": ["Yom HaShoah"]
+  }
+} 

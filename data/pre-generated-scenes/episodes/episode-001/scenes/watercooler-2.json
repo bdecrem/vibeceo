@@ -1,0 +1,25 @@
+{
+  "index": 2,
+  "type": "watercooler",
+  "coaches": ["kailey", "rohan", "eljas"],
+  "messages": [
+    {
+      "coach": "kailey",
+      "message": "In this overcast morning, I'm finding that true progress often comes from the quiet moments of reflection, not just the loud victories."
+    },
+    {
+      "coach": "rohan",
+      "message": "Reflection is fine, but action wins. I've seen too many startups fail because they spent too much time thinking and not enough time doing."
+    },
+    {
+      "coach": "eljas",
+      "message": "Balance is key. Sometimes what looks like progress is just motion, and what looks like stillness is actually deep transformation."
+    }
+  ],
+  "context": {
+    "time": "NaN:00am",
+    "weather": "overcast clouds",
+    "location": "London office",
+    "events": ["Yom HaShoah"]
+  }
+} 

@@ -1,0 +1,25 @@
+{
+  "index": 1,
+  "type": "watercooler",
+  "coaches": ["venus", "rohan", "alex"],
+  "messages": [
+    {
+      "coach": "venus",
+      "message": "Today, I recalibrated my AI doomsday model after analyzing the latest startup funding patterns. The numbers tell a fascinating story."
+    },
+    {
+      "coach": "rohan",
+      "message": "Recalibrating AI? Sounds cute. At Winference, we don't just analyze data - we create it. That's real progress."
+    },
+    {
+      "coach": "alex",
+      "message": "Recalibrating AI for growth and survival is key. But remember, the best innovations come from balancing data with human intuition."
+    }
+  ],
+  "context": {
+    "time": "NaN:00am",
+    "weather": "overcast clouds",
+    "location": "London office",
+    "events": ["Yom HaShoah"]
+  }
+} 
