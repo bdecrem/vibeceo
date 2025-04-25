@@ -56,7 +56,7 @@ export interface EpisodeScenes {
 }
 
 function readSchedule(): string[] {
-  const schedulePath = join(process.cwd(), 'schedule.txt');
+  const schedulePath = join(process.cwd(), 'data', 'schedule.txt');
   const scheduleContent = readFileSync(schedulePath, 'utf-8');
   return scheduleContent.trim().split('\n');
 }
@@ -897,4 +897,79 @@ function validateStateChanges(changes: Record<string, StateChange>): boolean {
 function isValidEmotionalTone(tone: string): boolean {
   const validTones = ['neutral', 'happy', 'sad', 'angry', 'excited', 'calm'];
   return validTones.includes(tone);
+}
+
+// Helper function to get current scene information
+export function getCurrentScene(episode: EpisodeScenes, sceneIndex: number): SceneContent | null {
+  if (!episode || sceneIndex < 0 || sceneIndex >= 24) {
+    return null;
+  }
+
+  const scene = episode.generatedContent[sceneIndex];
+  if (!scene) {
+    return null;
+  }
+
+  return scene;
+}
+
+// Helper function to format story info
+export function formatStoryInfo(episodeContext: EpisodeContext, episode: EpisodeScenes, sceneIndex: number): string {
+  if (!episodeContext || !episode) {
+    return 'No active story arc at the moment.';
+  }
+
+  const scene = episode.generatedContent[sceneIndex];
+  if (!scene) {
+    return 'Scene information not available.';
+  }
+
+  const seed = episode.seeds[sceneIndex];
+  if (!seed) {
+    return 'Scene information not available.';
+  }
+
+  return `
+**Current Story Arc**
+Theme: ${episodeContext.theme}
+Arc Summary: ${episodeContext.arc.arcSummary}
+
+**Current Scene** (${sceneIndex + 1} of 24)
+Type: ${scene.type}
+Location: ${seed.location}
+Time: ${seed.localTime}
+Active Coaches: ${scene.coaches.join(', ')}
+
+**Story Elements**
+Tone: ${episodeContext.arc.toneKeywords.join(', ')}
+Motifs: ${episodeContext.arc.motifs.join(', ')}
+  `;
+}
+
+// Helper function to validate story info data
+export function validateStoryInfo(episodeContext: EpisodeContext, episode: EpisodeScenes, sceneIndex: number): boolean {
+  if (!episodeContext || !episode) {
+    return false;
+  }
+
+  if (sceneIndex < 0 || sceneIndex >= 24) {
+    return false;
+  }
+
+  const scene = episode.generatedContent[sceneIndex];
+  if (!scene) {
+    return false;
+  }
+
+  const seed = episode.seeds[sceneIndex];
+  if (!seed) {
+    return false;
+  }
+
+  // Validate required fields
+  if (!scene.type || !scene.coaches || !seed.location || !seed.localTime) {
+    return false;
+  }
+
+  return true;
 } 
