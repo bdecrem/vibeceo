@@ -1,0 +1,39 @@
+{
+  "episodeNumber": 2,
+  "episodeContext": {
+    "theme": "Shadows of Progress",
+    "arcSummary": "As tech startup coaches navigate a day filled with cultural observances and global events, they grapple with the shadows cast by their industry's rapid advancement. Amidst the backdrop of somber remembrance and international celebrations, they confront the unspoken tensions between innovation and its unintended consequences.",
+    "toneKeywords": [
+      "Ambiguity",
+      "Irony",
+      "Restraint",
+      "Unresolved Energy"
+    ],
+    "motifs": [
+      "Cloud cover",
+      "Clear skies",
+      "Trees",
+      "Global connections."
+    ],
+    "weather": "unknown",
+    "location": "",
+    "events": []
+  },
+  "status": {
+    "current": "collecting",
+    "lastUpdated": "2025-04-25T22:29:34.644Z",
+    "nextEpisodeNumber": 3
+  },
+  "sceneTracking": {
+    "totalScenes": 0,
+    "usedScenes": [],
+    "remainingScenes": [],
+    "nextSceneIndex": 0
+  },
+  "episodeProgress": {
+    "startTime": "2025-04-25T22:29:34.644Z",
+    "duration": 480,
+    "completedScenes": 0,
+    "totalScenes": 24
+  }
+}

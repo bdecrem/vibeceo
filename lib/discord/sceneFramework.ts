@@ -4,6 +4,7 @@ import { EpisodeContext } from './episodeContext.js';
 import { getLocationAndTime } from './locationTime.js';
 import { coachState } from '../../data/coach-dynamics.js';
 import { coachBackstory } from '../../data/coach-backstory.js';
+import { ceos } from '../../data/discord-ceos.js';
 import { CoachState, SceneCoachState } from './types/coaches.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -11,6 +12,14 @@ import fs from 'fs';
 import { openai } from './ai.js';
 import { TextChannel } from 'discord.js';
 import pLimit from 'p-limit';
+import { validateSceneSeeds } from './validateSceneSeeds.js';
+
+interface CoachInfo {
+  id: string;
+  name: string;
+  style: string;
+  traits: string[];
+}
 
 export interface SceneSeed {
   index: number;
@@ -93,23 +102,35 @@ function selectCoachesForScene(
   previousScene?: SceneSeed,
   episodeContext?: EpisodeContext
 ): { coaches: string[]; coachStates: { [coachId: string]: SceneCoachState } } {
-  const allCoaches = Object.keys(coachState);
+  // Get valid coach IDs from ceos
+  const validCoachIds = ceos.map(c => c.id);
+  const allCoaches = validCoachIds;
+  
   let selectedCoaches: string[];
   
+  // Always select 3 coaches for watercooler scenes
   if (type === 'watercooler') {
     selectedCoaches = weightedCoachSelection(allCoaches, previousScene, 3, episodeContext);
   } else {
     selectedCoaches = weightedCoachSelection(allCoaches, previousScene, 2, episodeContext);
   }
 
+  // Validate selected coaches
+  const invalidCoaches = selectedCoaches.filter(coach => !validCoachIds.includes(coach));
+  if (invalidCoaches.length > 0) {
+    throw new Error(`Invalid coaches selected: ${invalidCoaches.join(', ')}`);
+  }
+
+  // Get coach states safely
   const coachStates: { [coachId: string]: SceneCoachState } = {};
   for (const coach of selectedCoaches) {
+    const state = getCoachState(coach);
     coachStates[coach] = {
-      emotionalTone: coachState[coach].emotionalTone,
-      activeFlags: Object.entries(coachState[coach].flags)
+      emotionalTone: state.emotionalTone,
+      activeFlags: Object.entries(state.flags || {})
         .filter(([_, value]) => value)
         .map(([key, _]) => key),
-      relationships: coachState[coach].relationalTilt
+      relationships: state.relationalTilt || {}
     };
   }
 
@@ -122,12 +143,27 @@ function weightedCoachSelection(
   count: number,
   episodeContext?: EpisodeContext
 ): string[] {
-  // Start with all coaches
-  let available = [...allCoaches];
+  // Validate input coaches
+  const validCoachIds = ceos.map(c => c.id);
+  const validCoaches = allCoaches.filter(coach => validCoachIds.includes(coach));
+  
+  if (validCoaches.length === 0) {
+    throw new Error('No valid coaches available for selection');
+  }
+  
+  // Start with valid coaches
+  let available = [...validCoaches];
   
   // Remove coaches from previous scene to avoid immediate repetition
   if (previousScene) {
     available = available.filter(coach => !previousScene.coaches.includes(coach));
+  }
+  
+  // If we don't have enough coaches after filtering, add some back
+  if (available.length < count) {
+    const previousCoaches = previousScene?.coaches || [];
+    const additionalCoaches = validCoaches.filter(coach => !previousCoaches.includes(coach));
+    available = [...available, ...additionalCoaches.slice(0, count - available.length)];
   }
   
   // Calculate weights based on various factors
@@ -183,6 +219,12 @@ function weightedCoachSelection(
         break;
       }
     }
+  }
+  
+  // Validate final selection
+  const invalidSelected = selected.filter(coach => !validCoachIds.includes(coach));
+  if (invalidSelected.length > 0) {
+    throw new Error(`Invalid coaches selected: ${invalidSelected.join(', ')}`);
   }
   
   return selected;
@@ -254,6 +296,14 @@ export async function generateSceneFramework(
     episode.seeds.push(seed);
   }
 
+  // Validate all scene seeds
+  const validationResults = validateSceneSeeds(episode.seeds);
+  const invalidScenes = validationResults.filter((result: { valid: boolean }) => !result.valid);
+  if (invalidScenes.length > 0) {
+    console.error('Invalid scenes detected:', invalidScenes);
+    throw new Error('Invalid scenes detected in episode generation');
+  }
+
   return episode;
 }
 
@@ -263,15 +313,43 @@ function generateIntroPrompt(
   coaches: string[],
   episodeContext: EpisodeContext
 ): string {
+  // Validate coaches
+  if (!coaches || coaches.length === 0) {
+    throw new Error('No coaches provided for scene');
+  }
+
+  const invalidCoaches = coaches.filter(coach => !ceos.find(c => c.id === coach));
+  if (invalidCoaches.length > 0) {
+    throw new Error(`Invalid coaches in scene: ${invalidCoaches.join(', ')}`);
+  }
+
   const eventContext = environment.events.length > 0 ? 
     `\nRecent events: ${environment.events.join(', ')}` : '';
+    
+  const coachInfo = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    if (!coachData) {
+      throw new Error(`Invalid coach ID: ${coach}`);
+    }
+    return `${coachData.name} (${coachData.character})`;
+  }).filter(Boolean).join(', ');
     
   return `Generate a scene introduction that:
   - Sets the location: ${locationAndTime.location}
   - Establishes the time: ${locationAndTime.localTime}
   - Describes the weather: ${environment.weather}${eventContext}
-  - Introduces the coaches: ${coaches.join(', ')}
+  - Introduces ONLY these specific coaches: ${coachInfo}
   - Reflects the episode theme: ${episodeContext.theme}
+  
+  CRITICAL RULES - NO EXCEPTIONS:
+  1. ONLY use these exact names: ${coachInfo}
+  2. NEVER use any other names
+  3. NEVER create new characters
+  4. NEVER use nicknames or first names
+  5. NEVER reference characters not in the list above
+  6. NEVER use "undefined" or "mysterious figure"
+  7. DO NOT include any dialogue or conversation
+  8. Focus on describing the scene, atmosphere, and character presence
   
   Format: A single paragraph that sets the scene.`;
 }
@@ -282,21 +360,56 @@ function generateConvoPrompt(
   coaches: string[],
   episodeContext: EpisodeContext
 ): string {
-  const coachContexts = coaches.map(coach => 
-    `- ${coach}: ${coachState[coach].emotionalTone}`
-  ).join('\n');
+  // Validate coaches
+  if (!coaches || coaches.length === 0) {
+    throw new Error('No coaches provided for scene');
+  }
 
-  return `Generate a conversation between these coaches:
-  ${coachContexts}
-  
-  Requirements:
-  - Generate exactly 3 lines of dialogue
-  - One line per coach in order
-  - Each line should be a complete thought
-  - Reference the location, time, and weather
-  - Progress the episode theme: ${episodeContext.theme}
-  
-  Format: Three separate lines, one for each coach.`;
+  const invalidCoaches = coaches.filter(coach => !ceos.find(c => c.id === coach));
+  if (invalidCoaches.length > 0) {
+    throw new Error(`Invalid coaches in scene: ${invalidCoaches.join(', ')}`);
+  }
+
+  const coachContexts = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    if (!coachData) {
+      throw new Error(`Invalid coach ID: ${coach}`);
+    }
+    return `- ${coachData.name} (${coachData.character})`;
+  }).join('\n');
+
+  const approvedCoaches = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    if (!coachData) {
+      throw new Error(`Invalid coach ID: ${coach}`);
+    }
+    return `${coachData.name}`;
+  }).join(', ');
+
+  return `Scene Context:
+- Location: ${locationAndTime.location}
+- Time: ${locationAndTime.localTime}
+- Weather: ${environment.weather}
+- Theme: ${episodeContext.arc.theme}
+- Motifs: ${episodeContext.arc.motifs.join(", ")}
+
+Approved Coaches:
+${coachContexts}
+
+CRITICAL FORMAT RULES:
+- Format each line EXACTLY as: [Full Coach Name]: [Short dialogue line]
+- One line per coach, in the order listed above.
+- Only use the exact names provided. No variations, nicknames, or invented characters.
+- Each line should be 2–3 sentences.
+- Tone must reflect ambiguity, restrained tension, and subtle misreading.
+- Mention weather or surroundings lightly, but emotionally.
+
+EXAMPLE OUTPUT:
+Donte Disrupt: London feels smaller under this sky. I like it when ambition has to fight harder.
+Alex Monroe: Cloudy days sharpen the senses. Or dull them, if you're too fragile.
+Venus Metrics: Fragility has a 74% correlation with poor forecasting outcomes. I've seen it first-hand.
+
+Generate a watercooler conversation with exactly 3 lines as instructed.`;
 }
 
 function generateOutroPrompt(
@@ -305,11 +418,38 @@ function generateOutroPrompt(
   coaches: string[],
   episodeContext: EpisodeContext
 ): string {
+  // Validate coaches
+  if (!coaches || coaches.length === 0) {
+    throw new Error('No coaches provided for scene');
+  }
+
+  const invalidCoaches = coaches.filter(coach => !ceos.find(c => c.id === coach));
+  if (invalidCoaches.length > 0) {
+    throw new Error(`Invalid coaches in scene: ${invalidCoaches.join(', ')}`);
+  }
+
+  const coachInfo = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    if (!coachData) {
+      throw new Error(`Invalid coach ID: ${coach}`);
+    }
+    return `${coachData.name} (${coachData.character})`;
+  }).join(', ');
+
   return `Generate a scene conclusion that:
   - Summarizes the key points from the conversation
   - References the episode theme: ${episodeContext.theme}
   - Sets up anticipation for the next scene
   - Leaves some tensions unresolved
+  - Only references the coaches who were present: ${coachInfo}
+  
+  CRITICAL RULES:
+  - ONLY use the coaches listed above
+  - DO NOT introduce or reference any other characters
+  - DO NOT create new characters
+  - DO NOT mention any characters not in the list above
+  - DO NOT include any dialogue or conversation
+  - Focus on describing the scene, atmosphere, and character presence
   
   Format: A single paragraph that concludes the scene.`;
 }
@@ -363,14 +503,26 @@ async function callGPT(
   model: 'gpt-4-turbo' | 'gpt-3.5-turbo' = 'gpt-4-turbo'
 ): Promise<string> {
   try {
-    console.log('Making GPT API call with prompt:', prompt);  // Debug log
+    console.log('Making GPT API call with prompt:', prompt);
     
     const response = await openai.chat.completions.create({
       model,
       messages: [
         {
           role: 'system',
-          content: 'You are a creative writer helping to generate scene content for a story. Keep responses concise and on-brand.'
+          content: `You are a literary scene writer crafting dialogue for a character-driven, emotionally restrained workplace drama.
+
+CRITICAL RULES:
+1. Only use the coach names explicitly provided. No invented names. No nicknames. No undefined characters.
+2. Every line of dialogue must begin with the exact full name of the coach provided, followed by a colon and a space.
+3. Never introduce any new characters.
+4. Prioritize emotional tension, visual subtext, restraint, and the unsaid.
+5. Avoid motivational slogans, corporate buzzwords, or direct exposition.
+6. Think Mad Men, Succession, or serious episodes of The Office — tension should live between the lines.
+7. Tone must feel observational, ironic, ambiguous, or quietly strained.
+8. Scenes should have emotional undertones without explicit conflict unless triggered.
+
+You are not writing a story about events. You are writing about atmospheres, gestures, and emotions that are almost but not quite spoken aloud.`
         },
         {
           role: 'user',
@@ -378,12 +530,12 @@ async function callGPT(
         }
       ],
       max_tokens: maxTokens,
-      temperature,
+      temperature: 0.5, // Lower temperature for more consistent output
       stream: false
     });
 
     const content = response.choices[0]?.message?.content;
-    console.log('GPT API response:', content);  // Debug log
+    console.log('GPT API response:', content);
     
     if (!content) {
       throw new Error('No content in GPT response');
@@ -405,6 +557,29 @@ async function parseConversationResponse(
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0);
+
+  // Validate that no non-coach characters are mentioned
+  const validCoachNames = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    return coachData?.name.toLowerCase();
+  });
+
+  const invalidCharacters = lines.some(line => {
+    const words = line.toLowerCase().split(' ');
+    return words.some(word => {
+      // Check if word is a potential character name (capitalized)
+      if (word[0] === word[0]?.toUpperCase()) {
+        return !validCoachNames.includes(word);
+      }
+      return false;
+    });
+  });
+
+  if (invalidCharacters) {
+    console.error('Invalid characters detected in response:', response);
+    // Use fallback conversation
+    return FALLBACK_TEMPLATES.conversation;
+  }
 
   // Map each coach to their line in order
   return coaches.map((coach, index) => ({
@@ -461,7 +636,7 @@ async function generateSceneWithGPT(
   };
 }
 
-async function generateSceneContent(
+export async function generateSceneContent(
   seed: SceneSeed,
   episodeContext: EpisodeContext
 ): Promise<SceneContent> {
@@ -986,4 +1161,51 @@ export function validateStoryInfo(episodeContext: EpisodeContext, episode: Episo
   }
 
   return true;
-} 
+}
+
+// Add validation function
+function validateCoachStates() {
+  const validCoachIds = ceos.map(c => c.id);
+  const coachStateIds = Object.keys(coachState);
+  
+  const missingCoaches = validCoachIds.filter(id => !coachStateIds.includes(id));
+  const extraCoaches = coachStateIds.filter(id => !validCoachIds.includes(id));
+  
+  if (missingCoaches.length > 0) {
+    console.error('Missing coach states for:', missingCoaches);
+  }
+  
+  if (extraCoaches.length > 0) {
+    console.error('Extra coach states found:', extraCoaches);
+  }
+  
+  if (missingCoaches.length > 0 || extraCoaches.length > 0) {
+    throw new Error('Coach state validation failed. See logs for details.');
+  }
+}
+
+// Call validation at startup
+validateCoachStates();
+
+// Add a function to get coach state safely
+function getCoachState(coachId: string): CoachState {
+  const state = coachState[coachId];
+  if (!state) {
+    console.error(`Available coach states: ${Object.keys(coachState).join(', ')}`);
+    console.error(`Looking for coach: ${coachId}`);
+    throw new Error(`Missing coach state for ${coachId}`);
+  }
+  return state;
+}
+
+// Monitor coachState modifications
+const originalCoachState = { ...coachState };
+Object.defineProperty(global, 'coachState', {
+  get: () => originalCoachState,
+  set: (newValue) => {
+    console.error('Attempt to modify coachState detected!');
+    console.error('Original state:', originalCoachState);
+    console.error('Attempted new state:', newValue);
+    throw new Error('coachState cannot be modified');
+  }
+}); 

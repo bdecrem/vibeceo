@@ -10,7 +10,8 @@ export interface CoachState {
   };
 }
 
-export const coachState: { [coachId: string]: CoachState } = {
+// Create the base state
+const baseCoachState: { [coachId: string]: CoachState } = {
   "donte": {
     emotionalTone: "optimistic",
     flags: {
@@ -102,3 +103,6 @@ export const coachState: { [coachId: string]: CoachState } = {
     }
   }
 };
+
+// Create an immutable copy
+export const coachState = Object.freeze(baseCoachState);
