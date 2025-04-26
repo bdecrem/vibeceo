@@ -1,0 +1,68 @@
+=== SAMPLE PROMPTS AND RESPONSES ===
+
+1. Intro Prompt Example:
+Generate a scene introduction that:
+  - Sets the location: London office
+  - Establishes the time: 9:00am
+  - Describes the weather: overcast clouds
+  - Introduces ONLY these specific coaches: Alex Monroe (Founder & CEO of Alexir), Donte Disrupt (Innovation Coach)
+  - Reflects the episode theme: Controlled Distance
+  
+  CRITICAL RULES - NO EXCEPTIONS:
+  1. ONLY use these exact names: Alex Monroe (Founder & CEO of Alexir), Donte Disrupt (Innovation Coach)
+  2. NEVER use any other names
+  3. NEVER create new characters
+  4. NEVER use nicknames or first names
+  5. NEVER reference characters not in the list above
+  6. NEVER use "undefined" or "mysterious figure"
+  
+  Format: A single paragraph that sets the scene.
+
+GPT Response:
+In the London office at 9:00am, overcast clouds cast a somber hue over the city. Alex Monroe, Founder & CEO of Alexir, stands by the window, deep in thought. Donte Disrupt paces the room with measured steps, his usual energy subdued by the weight of the day. The office hums with a quiet intensity, as if the shadows of growth are slowly beginning to take shape amidst the poignant atmosphere.
+
+2. Conversation Prompt Example:
+Generate a conversation between ONLY these specific coaches:
+  - Alex Monroe (Founder & CEO of Alexir): neutral
+  - Donte Disrupt (Innovation Coach): excited
+  - Venus Metrics (Data Coach): analytical
+
+  Format each line as: [Coach Name]: [Dialogue]
+
+  Only use the exact names listed below for [Coach Name]. No variations, no invented names, no nicknames, no substitutions.
+
+  The approved coaches are:
+  • Alex Monroe
+  • Donte Disrupt
+  • Venus Metrics
+
+  Requirements:
+  - Generate exactly 3 lines of dialogue
+  - One line per coach in order
+  - Each line should be a complete thought
+  - Reference the location, time, and weather
+  - Progress the episode theme: Controlled Distance
+
+GPT Response:
+Alex Monroe: The data suggests we need to maintain a controlled distance from our competitors.
+Donte Disrupt: But innovation thrives on breaking boundaries, not maintaining them.
+Venus Metrics: The numbers show a 37% increase in market share when we maintain strategic distance.
+
+3. Outro Prompt Example:
+Generate a scene conclusion that:
+  - Summarizes the key points from the conversation
+  - References the episode theme: Controlled Distance
+  - Sets up anticipation for the next scene
+  - Leaves some tensions unresolved
+  - Only references the coaches who were present: Alex Monroe (Founder & CEO of Alexir), Donte Disrupt (Innovation Coach)
+  
+  CRITICAL RULES:
+  - ONLY use the coaches listed above
+  - DO NOT introduce or reference any other characters
+  - DO NOT create new characters
+  - DO NOT mention any characters not in the list above
+  
+  Format: A single paragraph that concludes the scene.
+
+GPT Response:
+As Alex Monroe and Donte Disrupt wrap up their discussion about maintaining controlled distance in their coaching styles, unresolved tensions simmer beneath their polite exchange. The anticipation for the next scene hangs heavy in the air, hinting at deeper conflicts yet to surface between the two contrasting coaching styles. Their eyes meet, each silently challenging the other, foreshadowing a clash of ideologies that will test not only their coaching methods but also their resolve. 

@@ -270,7 +270,7 @@ export async function generateSceneFramework(
       coaches,
       coachStates,
       isLocationTransition: false,
-      introPrompt: generateIntroPrompt(locationAndTime, environment, coaches, episodeContext, false, sceneType),
+      introPrompt: generateIntroPrompt(locationAndTime, environment, coaches, episodeContext),
       convoPrompt: sceneType === 'watercooler' ? 
         generateConvoPrompt(locationAndTime, environment, coaches, episodeContext) : 
         undefined,
@@ -311,34 +311,47 @@ function generateIntroPrompt(
   locationAndTime: { location: string; localTime: string },
   environment: { weather: string; events: string[] },
   coaches: string[],
-  episodeContext: EpisodeContext,
-  isWeekend: boolean = false,
-  sceneType: string = 'watercooler'
+  episodeContext: EpisodeContext
 ): string {
-  const weekdayLocation = locationAndTime.location;
-  const weekendSettings = [
-    'a quiet cafe', 'a shaded courtyard', 'an empty bookstore lounge', 
-    'the waterfront', 'an open plaza', 'a sunlit park bench'
-  ];
-  const weekendLocation = weekendSettings[Math.floor(Math.random() * weekendSettings.length)];
-
-  const effectiveLocation = isWeekend ? weekendLocation : weekdayLocation;
-
-  const line1 = `It's ${locationAndTime.localTime} on a ${environment.weather} ${episodeContext.dayOfWeek} in ${effectiveLocation}.`;
-
-  let line2 = '';
-
-  if (sceneType === 'watercooler') {
-    line2 = `They are gathered loosely, half-finished coffees and unfinished sentences between them.`;
-  } else if (sceneType === 'newschat') {
-    line2 = `They are clustered around a flickering tablet, trading glances at the morning's headlines.`;
-  } else if (sceneType === 'tmzchat') {
-    line2 = `They are leaning near the espresso machine, raising eyebrows at a forgotten tabloid headline.`;
-  } else if (sceneType === 'pitchchat') {
-    line2 = `They are seated at a long table, flipping through pitch decks with the patience of people who have already decided.`;
+  // Validate coaches
+  if (!coaches || coaches.length === 0) {
+    throw new Error('No coaches provided for scene');
   }
 
-  return `${line1}\n${line2}`;
+  const invalidCoaches = coaches.filter(coach => !ceos.find(c => c.id === coach));
+  if (invalidCoaches.length > 0) {
+    throw new Error(`Invalid coaches in scene: ${invalidCoaches.join(', ')}`);
+  }
+
+  const eventContext = environment.events.length > 0 ? 
+    `\nRecent events: ${environment.events.join(', ')}` : '';
+    
+  const coachInfo = coaches.map(coach => {
+    const coachData = ceos.find(c => c.id === coach);
+    if (!coachData) {
+      throw new Error(`Invalid coach ID: ${coach}`);
+    }
+    return `${coachData.name} (${coachData.character})`;
+  }).filter(Boolean).join(', ');
+    
+  return `Generate a scene introduction that:
+  - Sets the location: ${locationAndTime.location}
+  - Establishes the time: ${locationAndTime.localTime}
+  - Describes the weather: ${environment.weather}${eventContext}
+  - Introduces ONLY these specific coaches: ${coachInfo}
+  - Reflects the episode theme: ${episodeContext.theme}
+  
+  CRITICAL RULES - NO EXCEPTIONS:
+  1. ONLY use these exact names: ${coachInfo}
+  2. NEVER use any other names
+  3. NEVER create new characters
+  4. NEVER use nicknames or first names
+  5. NEVER reference characters not in the list above
+  6. NEVER use "undefined" or "mysterious figure"
+  7. DO NOT include any dialogue or conversation
+  8. Focus on describing the scene, atmosphere, and character presence
+  
+  Format: A single paragraph that sets the scene.`;
 }
 
 function generateConvoPrompt(
@@ -587,9 +600,7 @@ async function generateSceneWithGPT(
     { location: seed.location, localTime: seed.localTime },
     { weather: seed.weather, events: seed.events },
     seed.coaches,
-    episodeContext,
-    false,
-    seed.type
+    episodeContext
   );
 
   const intro = await callGPT(introPrompt, 100, 0.7, model);
@@ -634,9 +645,7 @@ export async function generateSceneContent(
     { location: seed.location, localTime: seed.localTime },
     { weather: seed.weather, events: seed.events },
     seed.coaches,
-    episodeContext,
-    false,
-    seed.type
+    episodeContext
   );
 
   const convoPrompt = seed.type === 'watercooler' ? 
