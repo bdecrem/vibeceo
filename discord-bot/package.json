@@ -5,11 +5,11 @@
 	"main": "dist/discord-bot/scripts/start-discord-bot.js",
 	"type": "module",
 	"scripts": {
-		"start": "node dist/discord-bot/scripts/start-discord-bot.js",
+		"start": "node dist/scripts/start-discord-bot.js",
 		"dev": "npm run build && npm run start",
 		"build": "rimraf dist && tsc",
-		"start:dev": "NODE_ENV=developmentnode dist/discord-bot/scripts/start-discord-bot.js",
-		"start:prod": "NODE_ENV=production node dist/discord-bot/scripts/start-discord-bot.js"
+		"start:dev": "NODE_ENV=developmentnode dist/scripts/start-discord-bot.js",
+		"start:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",

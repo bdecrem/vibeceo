@@ -1,5 +1,5 @@
 import { Message, TextChannel, ThreadChannel } from "discord.js";
-import { ceos } from "../../../data/ceos.js";
+import { ceos } from "../../data/ceos.js";
 import { generateCharacterResponse } from "./ai.js";
 import { sendAsCharacter } from "./webhooks.js";
 

@@ -58,7 +58,7 @@ async function cleanup() {
 	try {
 		// Import cleanup function from handlers
 		const { cleanup: handlersCleanup } = await import(
-			"../../lib/discord/handlers.js"
+			"../lib/discord/handlers.js"
 		);
 		await handlersCleanup();
 		console.log("Cleanup completed");

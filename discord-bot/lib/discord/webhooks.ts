@@ -1,5 +1,4 @@
 import { WebhookClient } from "discord.js";
-import { CEO } from "../../data/ceos.js";
 
 // Store webhook clients for each channel
 const channelWebhooks = new Map<string, Map<string, WebhookClient>>();

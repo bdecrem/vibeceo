@@ -1,4 +1,4 @@
-import { type CEO, ceos } from "../../data/ceos.js";
+import { type CEO, ceos } from "./ceos.js";
 
 /**
  * Discussion-specific augmentations for CEO characters

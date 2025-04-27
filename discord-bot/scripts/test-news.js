@@ -1,4 +1,4 @@
-import { getNewsDiscussionTopic } from "../../lib/discord/news.js";
+import { getNewsDiscussionTopic } from "../lib/discord/news.js";
 
 async function testNewsFetching() {
 	console.log("Testing news fetching...");

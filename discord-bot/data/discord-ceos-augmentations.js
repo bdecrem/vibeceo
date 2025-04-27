@@ -1,4 +1,4 @@
-import { ceos } from "../discord-bot/data/ceos.js";
+import { ceos } from "./ceos.js";
 
 // Discussion-specific augmentations for each CEO
 export const discussionAugmentations = {

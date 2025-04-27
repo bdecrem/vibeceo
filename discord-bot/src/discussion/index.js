@@ -2,10 +2,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebhookClient } from "discord.js";
-import {
-	getDiscussionCEO,
-	getSkepticalCEOs,
-} from "../../data/discord-ceos-augmentations.js";
+import { getDiscussionCEO } from "../../data/discord-ceos-augmentations.js";
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { CEO, CEOContextType } from "@/types/ceo";
 import { useChatStore } from "@/lib/store/chat-store";
-import { ceos } from "@/../data/ceos";
+import { ceos } from "@/data/ceos";
 
 const STORAGE_KEY = "selected-ceo";
 

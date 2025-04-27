@@ -1,6 +1,6 @@
 "use client";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
-import { ceos } from "@/../data/ceos";
+import { ceos } from "@/data/ceos";
 import Link from "next/link";
 
 // Define coaches in the same order as Meet The Coaches page
