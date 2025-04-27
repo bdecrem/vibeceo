@@ -75,8 +75,26 @@ function determineLocationAndTime(
 	sceneIndex: number,
 	episodeContext: EpisodeContext
 ): { location: string; localTime: string } {
-	const sceneHour = parseInt(episodeContext.locationTimeline[sceneIndex], 10);
-	const { location, formattedTime, ampm } = getLocationAndTime(sceneHour, 0);
+	// Get the start time in UTC
+	const startTime = new Date(episodeContext.startTime);
+	const startHourUTC = startTime.getUTCHours();
+	const startMinutesUTC = startTime.getUTCMinutes();
+	
+	// Calculate total minutes passed for this scene
+	const minutesPassed = sceneIndex * episodeContext.unitDurationMinutes;
+	
+	// Calculate the scene's UTC time
+	const totalMinutesUTC = startHourUTC * 60 + startMinutesUTC + minutesPassed;
+	const sceneHourUTC = Math.floor(totalMinutesUTC / 60) % 24;
+	const sceneMinutesUTC = totalMinutesUTC % 60;
+
+	const { location, formattedTime, ampm } = getLocationAndTime(sceneHourUTC, sceneMinutesUTC);
+	
+	// Validate time components
+	if (!formattedTime || !ampm) {
+		throw new Error(`Invalid time format for scene ${sceneIndex}`);
+	}
+
 	return {
 		location,
 		localTime: `${formattedTime}${ampm}`,
@@ -370,6 +388,70 @@ export async function generateSceneFramework(
 	return episode;
 }
 
+async function callGPT(
+	prompt: string,
+	maxTokens: number = 150,
+	temperature: number = 0.7,
+	model: "gpt-4-turbo" | "gpt-3.5-turbo" = "gpt-4-turbo"
+): Promise<string> {
+	try {
+		console.log("Making GPT API call with prompt:", prompt);
+
+		const response = await openai.chat.completions.create({
+			model,
+			messages: [
+				{
+					role: "system",
+					content: `You are a writer describing scenes in a startup office. Your style is dry, detached, and lightly ironic.
+
+CRITICAL RULES:
+- ONLY describe what is physically visible: objects, settings, and observable actions.
+- DO NOT describe or imply any thoughts, motives, strategies, emotions, or psychological states.
+- DO NOT use words like "careful," "strategically," "battle," "power struggle," "assert control," "avoid," "measured distance," or any language that implies intent or feeling.
+- DO NOT describe eye contact, glances, or facial expressions.
+- DO NOT use cinematic, poetic, or atmospheric language.
+- DO NOT explain why anyone is doing anything.
+- DO NOT use dialogue or conversation.
+- DO NOT summarize or foreshadow.
+
+NEGATIVE EXAMPLES (DO NOT DO THIS):
+- "engaging in a power struggle over the last muffin"
+- "engaging in a passive-aggressive battle of thermostat adjustments"
+- "strategically avoiding making eye contact"
+- "careful to maintain a controlled distance"
+- "maintaining a carefully measured distance"
+
+POSITIVE EXAMPLES (DO THIS):
+- "The coaches are pretending to troubleshoot a jammed coffee machine while sneakily checking Slack."
+- "Rohan Mehta and Alex Monroe are hovering near the communal fridge, each pretending not to want the same LaCroix."
+- "The coaches trickled off toward their next meetings, dodging half-finished to-do lists as they went."
+- "The coaches drifted back to their desks, no wiser and only slightly more caffeinated."
+`,
+				},
+				{
+					role: "user",
+					content: prompt,
+				},
+			],
+			max_tokens: maxTokens,
+			temperature: 0.5, // Lower temperature for more consistent output
+			stream: false,
+		});
+
+		const content = response.choices[0]?.message?.content;
+		console.log("GPT API response:", content);
+
+		if (!content) {
+			throw new Error("No content in GPT response");
+		}
+
+		return content;
+	} catch (error) {
+		console.error("GPT API call failed:", error);
+		throw error;
+	}
+}
+
 function generateIntroPrompt(
 	locationAndTime: { location: string; localTime: string },
 	environment: { weather: string; events: string[] },
@@ -388,11 +470,6 @@ function generateIntroPrompt(
 		throw new Error(`Invalid coaches in scene: ${invalidCoaches.join(", ")}`);
 	}
 
-	const eventContext =
-		environment.events.length > 0
-			? `\nRecent events: ${environment.events.join(", ")}`
-			: "";
-
 	const coachInfo = coaches
 		.map((coach) => {
 			const coachData = ceos.find((c) => c.id === coach);
@@ -404,24 +481,30 @@ function generateIntroPrompt(
 		.filter(Boolean)
 		.join(", ");
 
-	return `Generate a scene introduction that:
-  - Sets the location: ${locationAndTime.location}
-  - Establishes the time: ${locationAndTime.localTime}
-  - Describes the weather: ${environment.weather}${eventContext}
-  - Introduces ONLY these specific coaches: ${coachInfo}
-  - Reflects the episode theme: ${episodeContext.theme}
+	return `Generate a scene introduction that follows these EXACT rules:
 
-  CRITICAL RULES - NO EXCEPTIONS:
-  1. ONLY use these exact names: ${coachInfo}
-  2. NEVER use any other names
-  3. NEVER create new characters
-  4. NEVER use nicknames or first names
-  5. NEVER reference characters not in the list above
-  6. NEVER use "undefined" or "mysterious figure"
-  7. DO NOT include any dialogue or conversation
-  8. Focus on describing the scene, atmosphere, and character presence
+CRITICAL FORMAT RULES:
+1. EXACTLY 2 lines total
+2. Line 1: Pure factual setup - time, weather, place
+3. Line 2: One dry, ironic group behavior - focus on small workplace absurdities
+4. NO psychological descriptions or emotional interpretations
+5. NO eye contact, glances, or facial expressions
+6. NO mood shifts or atmosphere descriptions
+7. NO dialogue or conversation
+8. If you describe any motives, strategies, emotions, or psychological states, you have failed. Only describe what is physically visible.
 
-  Format: A single paragraph that sets the scene.`;
+EXAMPLE CORRECT FORMAT:
+It's 11:26am on an overcast Thursday in the Los Angeles office.
+The coaches are pretending to troubleshoot a jammed coffee machine while sneakily checking Slack.
+
+SCENE CONTEXT:
+- Location: ${locationAndTime.location}
+- Time: ${locationAndTime.localTime}
+- Weather: ${environment.weather}
+- Coaches present: ${coachInfo}
+- Theme: ${episodeContext.theme}
+
+Generate a scene introduction following the exact format above.`;
 }
 
 function generateConvoPrompt(
@@ -516,22 +599,29 @@ function generateOutroPrompt(
 		})
 		.join(", ");
 
-	return `Generate a scene conclusion that:
-  - Summarizes the key points from the conversation
-  - References the episode theme: ${episodeContext.theme}
-  - Sets up anticipation for the next scene
-  - Leaves some tensions unresolved
-  - Only references the coaches who were present: ${coachInfo}
+	return `Generate a scene conclusion that follows these EXACT rules:
 
-  CRITICAL RULES:
-  - ONLY use the coaches listed above
-  - DO NOT introduce or reference any other characters
-  - DO NOT create new characters
-  - DO NOT mention any characters not in the list above
-  - DO NOT include any dialogue or conversation
-  - Focus on describing the scene, atmosphere, and character presence
+CRITICAL FORMAT RULES:
+1. EXACTLY 1 sentence
+2. Focus ONLY on physical dispersal
+3. Light workplace irony only
+4. NO psychological descriptions
+5. NO emotional interpretations
+6. NO predictions or foreshadowing
+7. NO dialogue or conversation
+8. If you describe any motives, strategies, emotions, or psychological states, you have failed. Only describe what is physically visible.
 
-  Format: A single paragraph that concludes the scene.`;
+EXAMPLE CORRECT FORMAT:
+The coaches trickled off toward their next meetings, dodging half-finished to-do lists as they went.
+
+SCENE CONTEXT:
+- Location: ${locationAndTime.location}
+- Time: ${locationAndTime.localTime}
+- Weather: ${environment.weather}
+- Coaches present: ${coachInfo}
+- Theme: ${episodeContext.theme}
+
+Generate a scene conclusion following the exact format above.`;
 }
 
 interface ConversationLine {
@@ -585,58 +675,6 @@ interface GPTResponse {
 	intro: string;
 	conversation?: ConversationLine[];
 	outro: string;
-}
-
-async function callGPT(
-	prompt: string,
-	maxTokens: number = 150,
-	temperature: number = 0.7,
-	model: "gpt-4-turbo" | "gpt-3.5-turbo" = "gpt-4-turbo"
-): Promise<string> {
-	try {
-		console.log("Making GPT API call with prompt:", prompt);
-
-		const response = await openai.chat.completions.create({
-			model,
-			messages: [
-				{
-					role: "system",
-					content: `You are a literary scene writer crafting dialogue for a character-driven, emotionally restrained workplace drama.
-
-CRITICAL RULES:
-1. Only use the coach names explicitly provided. No invented names. No nicknames. No undefined characters.
-2. Every line of dialogue must begin with the exact full name of the coach provided, followed by a colon and a space.
-3. Never introduce any new characters.
-4. Prioritize emotional tension, visual subtext, restraint, and the unsaid.
-5. Avoid motivational slogans, corporate buzzwords, or direct exposition.
-6. Think Mad Men, Succession, or serious episodes of The Office — tension should live between the lines.
-7. Tone must feel observational, ironic, ambiguous, or quietly strained.
-8. Scenes should have emotional undertones without explicit conflict unless triggered.
-
-You are not writing a story about events. You are writing about atmospheres, gestures, and emotions that are almost but not quite spoken aloud.`,
-				},
-				{
-					role: "user",
-					content: prompt,
-				},
-			],
-			max_tokens: maxTokens,
-			temperature: 0.5, // Lower temperature for more consistent output
-			stream: false,
-		});
-
-		const content = response.choices[0]?.message?.content;
-		console.log("GPT API response:", content);
-
-		if (!content) {
-			throw new Error("No content in GPT response");
-		}
-
-		return content;
-	} catch (error) {
-		console.error("GPT API call failed:", error);
-		throw error;
-	}
 }
 
 async function parseConversationResponse(
@@ -727,6 +765,42 @@ async function generateSceneWithGPT(
 	};
 }
 
+// Add validation function
+function validateSceneContent(sceneContent: { intro: string; outro: string; coaches: string[]; }): { passed: boolean; issues: string[] } {
+	const issues: string[] = [];
+
+	// Check intro line count
+	const introLines = sceneContent.intro.split('\n').length;
+	if (introLines !== 2) {
+		issues.push(`Intro has ${introLines} lines (expected 2).`);
+	}
+
+	// Check outro sentence count
+	const outroSentences = (sceneContent.outro.match(/\./g) || []).length;
+	if (outroSentences !== 1) {
+		issues.push(`Outro has ${outroSentences} sentences (expected 1).`);
+	}
+
+	// Check for quotes in intro or outro
+	if (sceneContent.intro.includes('"') || sceneContent.outro.includes('"')) {
+		issues.push(`Intro or outro contains dialogue (quotes detected).`);
+	}
+
+	// Check for emotional words
+	const emotionalWords = ["tension", "anticipation", "thoughts", "gaze", "emotion", "feelings", "reflection", "ponder"];
+	emotionalWords.forEach(word => {
+		if (sceneContent.intro.toLowerCase().includes(word) || sceneContent.outro.toLowerCase().includes(word)) {
+			issues.push(`Emotional word detected ('${word}') in intro or outro.`);
+		}
+	});
+
+	return {
+		passed: issues.length === 0,
+		issues,
+	};
+}
+
+// Update generateSceneContent to use validation
 export async function generateSceneContent(
 	seed: SceneSeed,
 	episodeContext: EpisodeContext
@@ -793,6 +867,12 @@ export async function generateSceneContent(
 			outro,
 		},
 	};
+
+	// Validate scene content
+	const validationResult = validateSceneContent(sceneContent);
+	if (!validationResult.passed) {
+		console.error(`Scene ${sceneContent.index} failed validation:`, validationResult.issues);
+	}
 
 	// Log to file
 	await logSceneContent(sceneContent, episodeContext.date);
