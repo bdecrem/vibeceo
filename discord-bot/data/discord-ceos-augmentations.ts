@@ -1,4 +1,4 @@
-import { type CEO, ceos } from "../../data/ceos";
+import { type CEO, ceos } from "../../data/ceos.js";
 
 /**
  * Discussion-specific augmentations for CEO characters
@@ -247,7 +247,7 @@ export const discussionAugmentations: Record<
 
 // Helper function to get a CEO with discussion augmentations
 export function getDiscussionCEO(id: string): DiscussionCEO | undefined {
-	const ceo = ceos.find((c) => c.id === id);
+	const ceo: CEO | undefined = ceos.find((c) => c.id === id);
 	if (!ceo) return undefined;
 
 	const augmentations = discussionAugmentations[id];
