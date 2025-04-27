@@ -1,4 +1,0 @@
-# Temporarily ignore discord-bot folder (WIP)
-/discord-bot/
-/dist
-.env.local
