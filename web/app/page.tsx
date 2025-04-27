@@ -276,7 +276,7 @@ export default function Home() {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to be statistically average?</h2>
           <p className="text-xl text-[#40e0d0] mb-8 max-w-2xl mx-auto">
-            Our coaches are standing by, or at least their algorithms are. Join the 94% of startups that will
+            Our coaches are standing by or at least their algorithms are. Join the 94% of startups that will
             eventually fail, but with better buzzwords.
           </p>
           <Link href="/coaches">
