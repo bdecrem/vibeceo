@@ -1,1 +1,29 @@
- 
+{
+	"name": "vibeceo-discord-bot",
+	"version": "1.0.0",
+	"description": "Discord bot for VibeCEO",
+	"main": "dist/discord-bot/scripts/start-discord-bot.js",
+	"type": "module",
+	"scripts": {
+		"start": "node dist/discord-bot/scripts/start-discord-bot.js",
+		"dev": "npm run build && npm run start",
+		"build": "rimraf dist && tsc",
+		"start:dev": "NODE_ENV=dev node dist/discord-bot/scripts/start-discord-bot.js",
+		"start:prod": "NODE_ENV=production node dist/discord-bot/scripts/start-discord-bot.js"
+	},
+	"dependencies": {
+		"@anthropic-ai/sdk": "^0.39.0",
+		"axios": "^1.6.7",
+		"discord.js": "^14.18.0",
+		"dotenv": "^16.4.7",
+		"ioredis": "^5.6.0",
+		"openai": "^4.89.1"
+	},
+	"devDependencies": {
+		"@types/node": "^20.11.0",
+		"rimraf": "^6.0.1",
+		"typescript": "^5.3.3"
+	},
+	"author": "",
+	"license": "ISC"
+}
