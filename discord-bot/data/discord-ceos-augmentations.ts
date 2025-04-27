@@ -3,7 +3,7 @@ import { type CEO, ceos } from "./ceos.js";
 /**
  * Discussion-specific augmentations for CEO characters
  * This file extends the base CEO type with discussion-specific behaviors
- * while maintaining the core character definitions from discord-ceos.ts
+ * while maintaining the core character definitions from ceos.ts
  */
 
 // Extend the CEO type with discussion-specific properties

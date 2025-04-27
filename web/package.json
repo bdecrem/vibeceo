@@ -8,19 +8,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-<<<<<<< HEAD:package.json
-		"test": "playwright test",
-		"clean": "rimraf dist",
-		"build:bot": "tsc -p tsconfig.bot.json",
-		"start:bot:dev": "npm run build:bot && node dist/scripts/start-discord-bot.js",
-		"start:bot:prod": "NODE_ENV=production npm run build:bot && node dist/scripts/start-discord-bot.js",
-		"start:bot:log": "npm run build:bot &&node scripts/start-discord-bot-with-logging.js",
-		"predeploy:bot": "npm run build:bot",
-		"deploy:bot": "npm run start:bot:prod",
-		"postinstall": "npm run build:bot"
-=======
 		"test": "playwright test"
->>>>>>> 8917ac5bcb03f4d0b35a21a11c040378bcb9ab85:web/package.json
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",
