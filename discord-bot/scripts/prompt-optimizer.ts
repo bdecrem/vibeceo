@@ -54,11 +54,13 @@ function detectPhysicalAction(text: string): number {
 }
 
 function detectMinimalLanguage(text: string): number {
+  if (!text) return 0;
+  
   // Split into intro and outro
   const [intro, outro] = text.split('\n');
   
   // Score intro
-  const introWords = intro.split(' ').length;
+  const introWords = intro ? intro.split(' ').length : 0;
   let introScore = 0;
   if (introWords <= 10) introScore = 5;
   else if (introWords <= 15) introScore = 4;
@@ -66,7 +68,7 @@ function detectMinimalLanguage(text: string): number {
   else introScore = 2;
 
   // Score outro
-  const outroWords = outro.split(' ').length;
+  const outroWords = outro ? outro.split(' ').length : 0;
   let outroScore = 0;
   if (outroWords <= 10) outroScore = 5;
   else if (outroWords <= 15) outroScore = 4;
