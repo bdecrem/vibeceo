@@ -1,0 +1,41 @@
+{
+  "id": "2025-04-30T17-21",
+  "createdAt": "2025-04-30T17:21:09.917Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Fractured Potential",
+    "arcSummary": "Tech startup coaches navigate a day filled with broken promises, missed opportunities, and unrealized dreams, struggling to piece together the shattered potential of their clients amidst a backdrop of fleeting hope and persistent setbacks.",
+    "toneKeywords": [
+      "Subdued",
+      "Tense",
+      "Melancholic",
+      "Ambivalent"
+    ],
+    "motifs": [
+      "Cracks",
+      "Shadows",
+      "Flickering Lights",
+      "Unfinished Blueprints"
+    ]
+  },
+  "scenes": [
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "They are syncing their calendars under the fluorescent lights.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:21",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "17:21",
+      "coaches": []
+    }
+  ]
+}

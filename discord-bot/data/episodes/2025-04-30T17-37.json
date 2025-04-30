@@ -1,0 +1,39 @@
+{
+  "id": "2025-04-30T17-37",
+  "createdAt": "2025-04-30T17:37:01.024Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "The coaches have just arrived at their Los Angeles office, where it's 10:37am. They are syncing calendars under the fluorescent temple lights.",
+      "outro": "The coaches have transcended back to their digital realms.",
+      "location": "Los Angeles office",
+      "localTime": "17:37",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "The coaches are at their Los Angeles office, where it's 10:41am. They are syncing calendars under the fluorescent temple lights.",
+      "outro": "The coaches have ascended to their strategic mountaintops.",
+      "location": "Los Angeles office",
+      "localTime": "17:41",
+      "coaches": []
+    }
+  ]
+}

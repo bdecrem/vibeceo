@@ -1,0 +1,95 @@
+{
+  "id": "2025-04-30T17-24",
+  "createdAt": "2025-04-30T17:24:53.030Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "The Illusion of Progress",
+    "arcSummary": "Tech startup coaches navigate a day filled with apparent advancements but underlying stagnation, where each success reveals a deeper sense of being trapped in a cycle of unfulfilled potential.",
+    "toneKeywords": [
+      "Ambiguity",
+      "Irony",
+      "Restraint",
+      "Discomfort"
+    ],
+    "motifs": [
+      "Clocks",
+      "Labyrinths",
+      "Shadows",
+      "Reflections"
+    ]
+  },
+  "scenes": [
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "The coaches have just arrived at their Los Angeles office, where it's 10:25am. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:25",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have dispersed to their strategic sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "17:25",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "The coaches are at their Los Angeles office, where it's 10:29am. They are synchronizing their digital calendars under fluorescent light.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:29",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have transcended back to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "17:29",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "The coaches are at their Los Angeles office, where it's 10:31am. They are syncing their digital calendars in the collaboration hub.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:31",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "17:31",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "The coaches are at their Los Angeles office, where it's 10:33am. They are syncing their calendars in the digital sanctuary.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:33",
+      "coaches": []
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "17:33",
+      "coaches": []
+    }
+  ]
+}

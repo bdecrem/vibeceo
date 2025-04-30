@@ -1,0 +1,41 @@
+{
+  "id": "2025-04-30T17-16",
+  "createdAt": "2025-04-30T17:16:30.926Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "They are aligning their chakras in the conference room.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "17:16",
+      "coaches": [],
+      "prompt": "You are crafting corporate microrituals. Create \"watercooler bumpers\" that transform startup culture into subtle ceremony through minimal language.\n\nEach bumper has two parts:\n1. INTRO: \"They are/have\" + corporate action with ritual undertones (7-10 words)\n2. OUTRO: \"The coaches have\" + movement suggesting spiritual transition (7-10 words)\n\nMake startup culture feel like strange religion without explicit religious language. Use corporate spaces as temples, business objects as artifacts, mundane activities as ceremonies.\n\nREQUIREMENTS:\n- Transform corporate into sacred without naming it\n- Use verbs suggesting both business and ritual\n- Maintain extreme economy - every word must earn its place\n- Create tension between communal worship and individual quest\n- No obvious religious metaphors or explicit mystical language\n\nEXAMPLES:\n\nIntro: They are circling the espresso machine in the break room.\nOutro: The coaches have returned to their productivity pods.\n\nIntro: They are comparing vision boards in the mindfulness alcove.\nOutro: The coaches have melted away to their executive suites.\n\nIntro: They have gathered by the aquarium, seeking inspiration from the fish.\nOutro: The coaches have floated back to their idea labs.\n\nCreate 10 new watercooler bumpers with minimal, precise language that transforms corporate culture into subtle ritual. Make startup mythology feel sacred without ever saying so.\n\nGenerate a single intro bumper now."
+    },
+    {
+      "index": -1,
+      "type": "watercooler",
+      "intro": "",
+      "outro": "The coaches have transcended back to their data-driven realities.",
+      "location": "Los Angeles office",
+      "localTime": "17:16",
+      "coaches": [],
+      "prompt": "You are crafting corporate microrituals. Create \"watercooler bumpers\" that transform startup culture into subtle ceremony through minimal language.\n\nEach bumper has two parts:\n1. INTRO: \"They are/have\" + corporate action with ritual undertones (7-10 words)\n2. OUTRO: \"The coaches have\" + movement suggesting spiritual transition (7-10 words)\n\nMake startup culture feel like strange religion without explicit religious language. Use corporate spaces as temples, business objects as artifacts, mundane activities as ceremonies.\n\nREQUIREMENTS:\n- Transform corporate into sacred without naming it\n- Use verbs suggesting both business and ritual\n- Maintain extreme economy - every word must earn its place\n- Create tension between communal worship and individual quest\n- No obvious religious metaphors or explicit mystical language\n\nEXAMPLES:\n\nIntro: They are circling the espresso machine in the break room.\nOutro: The coaches have returned to their productivity pods.\n\nIntro: They are comparing vision boards in the mindfulness alcove.\nOutro: The coaches have melted away to their executive suites.\n\nIntro: They have gathered by the aquarium, seeking inspiration from the fish.\nOutro: The coaches have floated back to their idea labs.\n\nCreate 10 new watercooler bumpers with minimal, precise language that transforms corporate culture into subtle ritual. Make startup mythology feel sacred without ever saying so.\n\nGenerate a single outro bumper now."
+    }
+  ]
+}

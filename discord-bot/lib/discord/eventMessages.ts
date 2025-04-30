@@ -1,5 +1,9 @@
 import { TextChannel } from "discord.js";
 import { getLocationAndTime } from "./locationTime.js";
+import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
+import { addScene, getCurrentEpisode } from "./episodeStorage.js";
+import path from "path";
+import fs from "fs";
 
 export const EVENT_MESSAGES = {
 	watercooler: {
@@ -23,6 +27,8 @@ export const EVENT_MESSAGES = {
 	},
 } as const;
 
+let currentSceneIndex = 0;
+
 export async function sendEventMessage(
 	channel: TextChannel,
 	eventType: keyof typeof EVENT_MESSAGES,
@@ -30,20 +36,65 @@ export async function sendEventMessage(
 	gmtHour: number,
 	gmtMinutes: number
 ) {
-	const message = isIntro
-		? EVENT_MESSAGES[eventType].intro
-		: EVENT_MESSAGES[eventType].outro;
+	let message: string;
+	let prompt: string | undefined;
+
+	if (eventType === 'watercooler') {
+		// Generate dynamic bumper for watercooler events
+		const { text, prompt: generatedPrompt } = await generateWatercoolerBumper(isIntro);
+		message = isIntro ? `{arrival}${text}` : text;
+		prompt = generatedPrompt;
+	} else {
+		// Use static messages for other event types
+		message = isIntro
+			? EVENT_MESSAGES[eventType].intro
+			: EVENT_MESSAGES[eventType].outro;
+	}
+
 	if (isIntro) {
-		const { location, formattedTime, ampm, isNewLocation } = getLocationAndTime(
+		const locationTime = await getLocationAndTime(
 			gmtHour,
 			gmtMinutes
 		);
+		const { location, formattedTime, ampm, isNewLocation, weather, weatherEmoji } = locationTime;
 		const arrivalText = isNewLocation
-			? `The coaches have just arrived at their ${location}, where it's ${formattedTime}${ampm}. `
-			: `The coaches are at their ${location}, where it's ${formattedTime}${ampm}. `;
-		const formattedMessage = message.replace("{arrival}", arrivalText);
-		await channel.send(formattedMessage);
-	} else {
-		await channel.send(message);
+			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `
+			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
+		message = message.replace("{arrival}", arrivalText);
 	}
+
+	// Store the scene in episode storage if it's a watercooler event
+	if (eventType === 'watercooler') {
+		const currentEpisode = getCurrentEpisode();
+		if (!currentEpisode) {
+			throw new Error('No active episode');
+		}
+
+		// Find the last scene for this event type
+		const lastScene = currentEpisode.scenes
+			.filter(s => s.type === 'watercooler')
+			.pop();
+
+		if (isIntro) {
+			// Start a new scene
+			currentSceneIndex++;
+			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
+			await addScene({
+				index: currentSceneIndex,
+				type: 'watercooler',
+				intro: message,
+				outro: '',
+				location: locationTime.location,
+				localTime: `${gmtHour}:${gmtMinutes}`,
+				coaches: []
+			});
+		} else if (lastScene) {
+			// Update the last scene with the outro
+			lastScene.outro = message;
+			const filePath = path.join(process.cwd(), 'data', 'episodes', `${currentEpisode.id}.json`);
+			fs.writeFileSync(filePath, JSON.stringify(currentEpisode, null, 2));
+		}
+	}
+
+	await channel.send(message);
 }

@@ -1,0 +1,39 @@
+{
+  "id": "2025-04-30T17-45",
+  "createdAt": "2025-04-30T17:45:48.652Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "The coaches have just arrived at their Los Angeles office under clear skies ☀️, where it's 10:45am. They are aligning their calendars under the sacred clock.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "17:45",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "The coaches are at their Los Angeles office under clear skies ☀️, where it's 10:49am. They are aligning their chakras through team-building exercises.",
+      "outro": "The coaches have exhaled, dispersing into the open workspace.",
+      "location": "Los Angeles office",
+      "localTime": "17:49",
+      "coaches": []
+    }
+  ]
+}

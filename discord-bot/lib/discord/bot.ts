@@ -6,6 +6,7 @@ import { startCentralizedScheduler } from './scheduler.js';
 import { generateEpisodeContext } from './episodeContext.js';
 import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
 import { EpisodeContext } from './episodeContext.js';
+import { createNewEpisode, addScene } from './episodeStorage.js';
 
 // Global variables to track bot state
 let isBotRunning = false;
@@ -122,6 +123,16 @@ export async function startBot() {
     console.log('=== STARTING EPISODE CONTEXT GENERATION ===');
     currentEpisodeContext = await generateEpisodeContext(new Date().toISOString(), unitDurationMinutes);
     console.log('=== EPISODE CONTEXT GENERATION COMPLETE ===');
+
+    // Create new episode in storage with the generated arc
+    console.log('=== CREATING EPISODE JSON STORAGE ===');
+    createNewEpisode({
+      theme: currentEpisodeContext.theme,
+      arcSummary: currentEpisodeContext.arc.arcSummary,
+      toneKeywords: currentEpisodeContext.arc.toneKeywords,
+      motifs: currentEpisodeContext.arc.motifs
+    }, unitDurationMinutes);
+    console.log('=== EPISODE JSON STORAGE CREATED ===');
     
     console.log('=== STARTING SCENE GENERATION ===');
     currentEpisode = await generateFullEpisode(currentEpisodeContext);

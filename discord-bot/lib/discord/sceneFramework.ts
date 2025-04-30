@@ -71,10 +71,10 @@ function readSchedule(): string[] {
 	return scheduleContent.trim().split("\n");
 }
 
-function determineLocationAndTime(
+async function determineLocationAndTime(
 	sceneIndex: number,
 	episodeContext: EpisodeContext
-): { location: string; localTime: string } {
+): Promise<{ location: string; localTime: string }> {
 	// Get the start time in UTC
 	const startTime = new Date(episodeContext.startTime);
 	const startHourUTC = startTime.getUTCHours();
@@ -88,7 +88,7 @@ function determineLocationAndTime(
 	const sceneHourUTC = Math.floor(totalMinutesUTC / 60) % 24;
 	const sceneMinutesUTC = totalMinutesUTC % 60;
 
-	const { location, formattedTime, ampm } = getLocationAndTime(sceneHourUTC, sceneMinutesUTC);
+	const { location, formattedTime, ampm } = await getLocationAndTime(sceneHourUTC, sceneMinutesUTC);
 	
 	// Validate time components
 	if (!formattedTime || !ampm) {
@@ -304,7 +304,7 @@ export async function generateSceneFramework(
 		const sceneType = schedule[i] as SceneSeed["type"];
 
 		// Determine location and time
-		const locationAndTime = determineLocationAndTime(i, episodeContext);
+		const locationAndTime = await determineLocationAndTime(i, episodeContext);
 
 		// Get environmental context
 		const environment = getEnvironmentalContext(

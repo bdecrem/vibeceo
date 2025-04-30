@@ -1,3 +1,6 @@
+import { getWeatherForCity } from './weather.js';
+import { getWeatherEmoji } from './weatherEmojis.js';
+
 let lastLocation: string | null = null;
 
 interface LocationAndTime {
@@ -5,9 +8,11 @@ interface LocationAndTime {
     formattedTime: string;
     ampm: string;
     isNewLocation: boolean;
+    weather: string;
+    weatherEmoji: string;
 }
 
-export function getLocationAndTime(gmtHour: number, gmtMinutes: number): LocationAndTime {
+export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): Promise<LocationAndTime> {
     let location: string;
     let localTime: number;
     let localMinutes: number;
@@ -39,10 +44,16 @@ export function getLocationAndTime(gmtHour: number, gmtMinutes: number): Locatio
     const formattedTime = localTime === 0 ? 12 : localTime > 12 ? localTime - 12 : localTime;
     const ampm = localTime >= 12 ? 'pm' : 'am';
 
+    // Get weather for the current location
+    const weather = await getWeatherForCity(location);
+    const weatherEmoji = getWeatherEmoji(weather);
+
     return {
         location,
         formattedTime: `${formattedTime}:${formattedMinutes}`,
         ampm,
-        isNewLocation
+        isNewLocation,
+        weather,
+        weatherEmoji
     };
 }
