@@ -16,14 +16,16 @@ type Bumper = {
   outro: string;
 };
 
-type BumperScore = {
-  physicality: { intro: number; outro: number };
-  minimalism: { intro: number; outro: number };
-  absurdity: { intro: number; outro: number };
-  storylessness: { intro: number; outro: number };
-  goldStandardMatch: number;  // 0-1 score for how close to gold standard
-  consistency: number;        // 0-1 score for how consistent across iterations
-};
+interface BumperScore {
+  intro: number;
+  outro: number;
+  structure: number;
+  tone: number;
+  content: number;
+  wordChoice: number;
+  thematicResonance: number;
+  total: number;
+}
 
 type IterationLog = {
   iteration: number;
@@ -116,89 +118,241 @@ function detectStoryHints(text: string): number {
   return Math.max(introScore, outroScore);
 }
 
-function scoreBumper(bumper: Bumper, previousScores: BumperScore[] = []): BumperScore {
-  const fullText = `${bumper.intro}\n${bumper.outro}`;
-  
-  // Get individual scores
-  const physicality = {
-    intro: detectPhysicalAction(bumper.intro),
-    outro: detectPhysicalAction(bumper.outro)
-  };
-  
-  const minimalism = {
-    intro: detectMinimalLanguage(bumper.intro),
-    outro: detectMinimalLanguage(bumper.outro)
-  };
-  
-  const absurdity = {
-    intro: detectAbsurdityLevel(bumper.intro),
-    outro: detectAbsurdityLevel(bumper.outro)
-  };
-  
-  const storylessness = {
-    intro: detectStoryHints(bumper.intro),
-    outro: detectStoryHints(bumper.outro)
+function scoreBumper(bumper: Bumper): BumperScore {
+  const score: BumperScore = {
+    intro: 0,
+    outro: 0,
+    structure: 0,
+    tone: 0,
+    content: 0,
+    wordChoice: 0,
+    thematicResonance: 0,
+    total: 0
   };
 
-  // Calculate gold standard match
-  const goldStandard = findGoldStandardMatch(bumper);
-  const goldStandardMatch = calculateSimilarity(bumper, goldStandard);
+  // Structure scoring (20%)
+  score.structure = scoreStructure(bumper);
 
-  // Calculate consistency with previous scores
-  let consistency = 1.0;
-  if (previousScores.length > 0) {
-    const avgPreviousScores = previousScores.reduce((acc, curr) => ({
-      physicality: acc.physicality + (curr.physicality.intro + curr.physicality.outro) / 2,
-      minimalism: acc.minimalism + (curr.minimalism.intro + curr.minimalism.outro) / 2,
-      absurdity: acc.absurdity + (curr.absurdity.intro + curr.absurdity.outro) / 2,
-      storylessness: acc.storylessness + (curr.storylessness.intro + curr.storylessness.outro) / 2
-    }), { physicality: 0, minimalism: 0, absurdity: 0, storylessness: 0 });
+  // Intro scoring (15%)
+  score.intro = scoreIntro(bumper.intro);
 
-    const count = previousScores.length;
-    avgPreviousScores.physicality /= count;
-    avgPreviousScores.minimalism /= count;
-    avgPreviousScores.absurdity /= count;
-    avgPreviousScores.storylessness /= count;
+  // Outro scoring (15%) 
+  score.outro = scoreOutro(bumper.outro);
 
-    const currentScores = {
-      physicality: (physicality.intro + physicality.outro) / 2,
-      minimalism: (minimalism.intro + minimalism.outro) / 2,
-      absurdity: (absurdity.intro + absurdity.outro) / 2,
-      storylessness: (storylessness.intro + storylessness.outro) / 2
-    };
+  // Tone scoring (15%)
+  score.tone = scoreTone(bumper);
 
-    // Calculate consistency as average difference from previous scores
-    const differences = [
-      Math.abs(currentScores.physicality - avgPreviousScores.physicality),
-      Math.abs(currentScores.minimalism - avgPreviousScores.minimalism),
-      Math.abs(currentScores.absurdity - avgPreviousScores.absurdity),
-      Math.abs(currentScores.storylessness - avgPreviousScores.storylessness)
-    ];
-    
-    consistency = 1 - (differences.reduce((a, b) => a + b, 0) / differences.length / 5);
+  // Content scoring (15%)
+  score.content = scoreContent(bumper);
+
+  // Word choice scoring (10%)
+  score.wordChoice = scoreWordChoice(bumper);
+
+  // Thematic resonance (10%)
+  score.thematicResonance = scoreThematicResonance(bumper);
+
+  // Calculate weighted total
+  score.total = (
+    score.structure * 0.20 +
+    score.intro * 0.15 +
+    score.outro * 0.15 +
+    score.tone * 0.15 +
+    score.content * 0.15 +
+    score.wordChoice * 0.10 +
+    score.thematicResonance * 0.10
+  );
+
+  return score;
+}
+
+function scoreStructure(bumper: Bumper): number {
+  let score = 0;
+
+  // Check intro starts with "They are" or "One of them"
+  if (bumper.intro.startsWith('They are') || bumper.intro.startsWith('One of them')) {
+    score += 0.3;
   }
 
-  return {
-    physicality,
-    minimalism,
-    absurdity,
-    storylessness,
-    goldStandardMatch,
-    consistency
-  };
+  // Check for two-line intro format
+  const introLines = bumper.intro.split('\n');
+  if (introLines.length === 2) {
+    // Check first line for time/place/weather
+    if (introLines[0].match(/\d{1,2}:\d{2}(?:am|pm)?|morning|afternoon|evening|night|dawn|dusk/i) &&
+        introLines[0].match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i) &&
+        introLines[0].match(/\b(sunny|cloudy|rainy|gray|humid|dry|windy|foggy)\b/i)) {
+      score += 0.2;
+    }
+    // Check second line for physical behavior
+    if (introLines[1].match(/\b(tap|click|type|scroll|swipe|adjust|move|walk|sit|stand|circle|hover|cluster|line|stack|arrange)\w*\b/i)) {
+      score += 0.2;
+    }
+  }
+
+  // Check for one-line outro
+  const outroLines = bumper.outro.split('\n');
+  if (outroLines.length === 1) {
+    score += 0.3;
+  }
+
+  return score;
+}
+
+function scoreIntro(intro: string): number {
+  let score = 0;
+  const lines = intro.split('\n');
+
+  // Check first line (time/place/weather)
+  if (lines[0]) {
+    // Check for time
+    if (lines[0].match(/\d{1,2}:\d{2}(?:am|pm)?|morning|afternoon|evening|night|dawn|dusk/i)) {
+      score += 0.2;
+    }
+    // Check for day
+    if (lines[0].match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i)) {
+      score += 0.2;
+    }
+    // Check for weather
+    if (lines[0].match(/\b(sunny|cloudy|rainy|gray|humid|dry|windy|foggy)\b/i)) {
+      score += 0.2;
+    }
+  }
+
+  // Check second line (physical behavior)
+  if (lines[1]) {
+    // Check for physical action verbs
+    if (lines[1].match(/\b(tap|click|type|scroll|swipe|adjust|move|walk|sit|stand|circle|hover|cluster|line|stack|arrange)\w*\b/i)) {
+      score += 0.2;
+    }
+    // Check for startup objects
+    if (lines[1].match(/\b(slack|zoom|meeting|standup|retro|sprint|agile|scrum|demo|pitch|whiteboard|coffee|water|snack|chair|desk|screen|keyboard|mouse|headphone|cable)\b/i)) {
+      score += 0.2;
+    }
+  }
+
+  return score;
+}
+
+function scoreOutro(outro: string): number {
+  let score = 0;
+
+  // Check for physical dispersal verbs
+  if (outro.match(/\b(dispers|retreat|vanish|migrat|drift|wander|shuffl|circl|trickl|melt|fade|dissipat)\w*\b/i)) {
+    score += 0.4;
+  }
+
+  // Check for object decay hints
+  if (outro.match(/\b(curl|fade|wilt|decay|erode|crumbl|dissolv|evaporat)\w*\b/i)) {
+    score += 0.3;
+  }
+
+  // Check for location references
+  if (outro.match(/\b(desk|room|space|corner|area|station|office|laptop|screen|monitor)\w*\b/i)) {
+    score += 0.3;
+  }
+
+  return score;
+}
+
+function scoreTone(bumper: Bumper): number {
+  let score = 0;
+
+  // Check for absence of emotional language
+  const hasEmotionalLanguage = /\b(happy|sad|angry|excited|frustrated|annoyed|delighted|awkward|hopeful|anxious|tense|bored)\b/i.test(bumper.intro + bumper.outro);
+  if (!hasEmotionalLanguage) {
+    score += 0.3;
+  }
+
+  // Check for absence of judgment words
+  const hasJudgmentWords = /\b(good|bad|better|worse|best|worst|should|must|need)\b/i.test(bumper.intro + bumper.outro);
+  if (!hasJudgmentWords) {
+    score += 0.3;
+  }
+
+  // Check for absence of narrative elements
+  const hasNarrativeElements = /\b(because|when|after|before|while|during|since|as|if)\b/i.test(bumper.intro + bumper.outro);
+  if (!hasNarrativeElements) {
+    score += 0.4;
+  }
+
+  return score;
+}
+
+function scoreContent(bumper: Bumper): number {
+  let score = 0;
+
+  // Check for startup/tech culture elements
+  if (bumper.intro.match(/\b(slack|zoom|meeting|standup|retro|sprint|agile|scrum|demo|pitch)\b/i)) {
+    score += 0.3;
+  }
+
+  // Check for mundane details
+  if (bumper.intro.match(/\b(coffee|water|snack|chair|desk|screen|keyboard|mouse|headphone|cable)\b/i)) {
+    score += 0.3;
+  }
+
+  // Check for group behavior focus
+  const hasIndividualFocus = /\b(he|she|[A-Z][a-z]+)\b/.test(bumper.intro + bumper.outro);
+  if (!hasIndividualFocus) {
+    score += 0.4;
+  }
+
+  return score;
+}
+
+function scoreWordChoice(bumper: Bumper): number {
+  let score = 0;
+
+  // Check for precise verbs
+  if (bumper.intro.match(/\b(calibrat|optimiz|synchroniz|configur|implement|deploy|iterat)\w*\b/i)) {
+    score += 0.4;
+  }
+
+  // Check for tech jargon
+  if ((bumper.intro + bumper.outro).match(/\b(algorithm|interface|protocol|bandwidth|latency|backend|frontend)\b/i)) {
+    score += 0.3;
+  }
+
+  // Check for startup buzzwords (but not too many)
+  const buzzwordCount = (bumper.intro + bumper.outro).match(/\b(disrupt|innovate|pivot|scale|leverage|synergy)\b/ig)?.length || 0;
+  if (buzzwordCount === 1) {
+    score += 0.3;
+  }
+
+  return score;
+}
+
+function scoreThematicResonance(bumper: Bumper): number {
+  let score = 0;
+
+  // Check for contrast between mundane and tech
+  const hasMundane = /\b(coffee|water|chair|desk|window|door)\b/i.test(bumper.intro + bumper.outro);
+  const hasTech = /\b(algorithm|code|server|api|database|cloud)\b/i.test(bumper.intro + bumper.outro);
+  if (hasMundane && hasTech) {
+    score += 0.4;
+  }
+
+  // Check for subtle absurdity
+  if ((bumper.intro + bumper.outro).match(/\b(unnecessarily|obsessively|meticulously|repeatedly|endlessly)\b/i)) {
+    score += 0.3;
+  }
+
+  // Check for startup culture commentary
+  if ((bumper.intro + bumper.outro).match(/\b(ritual|ceremony|tradition|culture|practice)\b/i)) {
+    score += 0.3;
+  }
+
+  return score;
 }
 
 // Quality check
 function isHighQuality(bumperScore: BumperScore): boolean {
   return (
-    bumperScore.physicality.intro >= 3 &&
-    bumperScore.physicality.outro >= 3 &&
-    bumperScore.minimalism.intro >= 3 &&
-    bumperScore.minimalism.outro >= 3 &&
-    bumperScore.absurdity.intro >= 3 &&
-    bumperScore.absurdity.outro >= 3 &&
-    bumperScore.storylessness.intro >= 3 &&
-    bumperScore.storylessness.outro >= 3
+    bumperScore.structure >= 3 &&
+    bumperScore.tone >= 3 &&
+    bumperScore.content >= 3 &&
+    bumperScore.outro >= 3 &&
+    bumperScore.wordChoice >= 3 &&
+    bumperScore.thematicResonance >= 3
   );
 }
 
@@ -213,12 +367,12 @@ Prompt:
 ${log.prompt}
 
 Scores:
-- Physicality: Intro ${log.scores.map(s => s.physicality.intro).join(', ')}, Outro ${log.scores.map(s => s.physicality.outro).join(', ')}
-- Minimalism: Intro ${log.scores.map(s => s.minimalism.intro).join(', ')}, Outro ${log.scores.map(s => s.minimalism.outro).join(', ')}
-- Absurdity: Intro ${log.scores.map(s => s.absurdity.intro).join(', ')}, Outro ${log.scores.map(s => s.absurdity.outro).join(', ')}
-- Storylessness: Intro ${log.scores.map(s => s.storylessness.intro).join(', ')}, Outro ${log.scores.map(s => s.storylessness.outro).join(', ')}
-- Gold Standard Match: ${log.scores.map(s => s.goldStandardMatch.toFixed(2)).join(', ')}
-- Consistency: ${log.scores.map(s => s.consistency.toFixed(2)).join(', ')}
+- Structure: ${log.scores.map(s => s.structure).join(', ')}
+- Tone: ${log.scores.map(s => s.tone).join(', ')}
+- Content: ${log.scores.map(s => s.content).join(', ')}
+- Outro: ${log.scores.map(s => s.outro).join(', ')}
+- Word Choice: ${log.scores.map(s => s.wordChoice).join(', ')}
+- Thematic: ${log.scores.map(s => s.thematicResonance).join(', ')}
 
 Best example:
 Intro: ${log.bestExample.intro}
@@ -311,190 +465,259 @@ function mutateBumper(bumper: Bumper): Bumper[] {
   ];
 }
 
-// Main optimization loop
-async function optimizePrompt(initialPrompt: string, maxIterations: number = 10, batchNumber: number = 1) {
-  let currentPrompt = initialPrompt;
-  let iteration = 1;
-  let bestBumpers: { bumper: Bumper; score: BumperScore }[] = [];
-
-  // First iteration is always base iteration
-  console.log(`Running base iteration for batch ${batchNumber}...`);
+function logSummaryIteration(batchNumber: number, iteration: number, prompt: string, bumpers: Bumper[]) {
+  const timestamp = new Date().toISOString();
+  const summaryLogFileName = `prompt-optimization-summary-batch${batchNumber}.log`;
   
-  // Generate batch of bumpers for base iteration
-  const baseResponse = await openai.chat.completions.create({
+  // Select 3 representative scenes
+  const selectedBumpers = bumpers.slice(0, 3);
+  
+  const summaryContent = `=== Iteration ${iteration} ===
+Timestamp: ${timestamp}
+
+Seed Prompt:
+${prompt}
+
+Generated Scenes:
+${selectedBumpers.map((bumper, index) => `
+${index + 1}. Intro: ${bumper.intro}
+   Outro: ${bumper.outro}`).join('\n')}
+
+`;
+
+  // Append to summary log file
+  fs.appendFileSync(summaryLogFileName, summaryContent);
+}
+
+async function generateVariation(prompt: string, variationType: 'minor' | 'moderate' | 'significant'): Promise<string> {
+  const temperature = variationType === 'minor' ? 0.7 : variationType === 'moderate' ? 0.8 : 0.9;
+  
+  const variationPrompt = `You are a prompt engineer. Generate a ${variationType} variation of this prompt.
+${variationType === 'minor' ? 'Keep the same structure but with different examples and emphasis. The variation should be minimal but distinct.' :
+  variationType === 'moderate' ? 'You can modify the structure and requirements while maintaining the core concept. Make more substantial changes than a minor variation.' :
+  'You can significantly modify the structure, requirements, and format rules while maintaining the core concept of observing startup absurdities.'}
+
+Template:
+${prompt}`;
+
+  const response = await openai.chat.completions.create({
     model: "gpt-4-turbo",
     messages: [
-      { role: "system", content: initialPrompt },
-      { role: "user", content: "Generate exactly 5 entries. Each entry must be exactly 2 lines: an intro line starting with 'They are' or 'They have', and an outro line starting with 'The coaches have'. Separate entries with blank lines." }
+      { role: "system", content: variationPrompt },
+      { role: "user", content: `Generate a ${variationType} variation of this prompt.` }
+    ],
+    temperature,
+    max_tokens: 1000
+  });
+
+  return response.choices[0]?.message?.content || prompt;
+}
+
+async function optimizePrompt(initialPrompt: string, maxIterations: number = 33, batchNumber: number = 1) {
+  let currentPrompt = initialPrompt;
+  let bestScore = 0;
+  let bestPrompt = initialPrompt;
+  let bestBumpers: Bumper[] = [];
+
+  // Run seed prompt first
+  console.log(`\nRunning seed prompt for batch ${batchNumber}...`);
+  const seedResponse = await openai.chat.completions.create({
+    model: "gpt-4-turbo",
+    messages: [
+      { role: "system", content: currentPrompt },
+      { role: "user", content: `Generate exactly 5 scenes. Each scene must follow this exact format:
+
+Line 1: Time, day, and weather (e.g., "It's 10:15am on a sunny Tuesday in the downtown loft.")
+Line 2: Physical action starting with "They are" (e.g., "They are huddled around a single glossy laptop.")
+Line 3: Physical dispersal or object decay (e.g., "The beanbags remain unoccupied.")
+
+Separate each scene with a blank line.` }
     ],
     temperature: 0.7,
     max_tokens: 1000
   });
 
-  const baseContent = baseResponse.choices[0]?.message?.content || '';
-  const baseBumpers = parseBumpers(baseContent);
-  
-  if (baseBumpers.length > 0) {
-    const scoredBaseBumpers = baseBumpers.map(bumper => ({
-      bumper,
-      score: scoreBumper(bumper)
-    }));
-    
-    const bestBaseBumper = scoredBaseBumpers.reduce((a, b) => {
-      const scoreA = a.score.physicality.intro + a.score.physicality.outro + a.score.minimalism.intro + a.score.minimalism.outro + a.score.absurdity.intro + a.score.absurdity.outro + a.score.storylessness.intro + a.score.storylessness.outro;
-      const scoreB = b.score.physicality.intro + b.score.physicality.outro + b.score.minimalism.intro + b.score.minimalism.outro + b.score.absurdity.intro + b.score.absurdity.outro + b.score.storylessness.intro + b.score.storylessness.outro;
-      return scoreA > scoreB ? a : b;
-    });
+  const seedContent = seedResponse.choices[0]?.message?.content;
+  if (seedContent) {
+    console.log('\nGenerated content:');
+    console.log(seedContent);
+    console.log('\nParsing content...');
+    const seedBumpers = parseBumpers(seedContent);
+    if (seedBumpers.length > 0) {
+      const scoredSeedBumpers = seedBumpers.map(bumper => ({
+        bumper,
+        score: scoreBumper(bumper)
+      }));
 
-    bestBumpers.push(bestBaseBumper);
+      const bestSeedBumper = scoredSeedBumpers.reduce((best, current) => 
+        current.score.total > best.score.total ? current : best
+      );
 
-    // Log base iteration
-    logIteration({
-      iteration: 1,
-      prompt: initialPrompt,
-      scores: scoredBaseBumpers.map(s => s.score),
-      bestExample: bestBaseBumper.bumper,
-      goldStandardMatch: findGoldStandardMatch(bestBaseBumper.bumper)
-    }, batchNumber);
+      // Log seed iteration
+      logIteration({
+        iteration: 1,
+        prompt: currentPrompt,
+        scores: scoredSeedBumpers.map(sb => sb.score),
+        bestExample: bestSeedBumper.bumper,
+        goldStandardMatch: findGoldStandardMatch(bestSeedBumper.bumper)
+      }, batchNumber);
 
-    // Update current prompt for next iterations
-    currentPrompt = modifyPrompt(initialPrompt, scoredBaseBumpers);
+      logSummaryIteration(batchNumber, 1, currentPrompt, seedBumpers);
+
+      if (bestSeedBumper.score.total > bestScore) {
+        bestScore = bestSeedBumper.score.total;
+        bestPrompt = currentPrompt;
+        bestBumpers = seedBumpers;
+      }
+    }
   }
 
-  // Continue with remaining iterations
-  iteration = 2;
-  while (iteration <= maxIterations) {
-    console.log(`Running iteration ${iteration}...`);
+  // Run variations
+  for (let i = 2; i <= maxIterations; i++) {
+    console.log(`\nRunning iteration ${i} of batch ${batchNumber}...`);
     
-    // Generate batch of bumpers
+    // Determine variation type based on iteration number
+    const variationType = i <= 12 ? 'minor' : i <= 23 ? 'moderate' : 'significant';
+    console.log(`Generating ${variationType} variation...`);
+    
+    // Generate variation
+    currentPrompt = await generateVariation(currentPrompt, variationType);
+    
+    // Generate bumpers with current prompt
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
         { role: "system", content: currentPrompt },
-        { role: "user", content: "Generate exactly 5 entries. Each entry must be exactly 2 lines: an intro line starting with 'They are' or 'They have', and an outro line starting with 'The coaches have'. Separate entries with blank lines." }
+        { role: "user", content: `Generate exactly 5 scenes. Each scene must follow this exact format:
+
+Line 1: Time, day, and weather (e.g., "It's 10:15am on a sunny Tuesday in the downtown loft.")
+Line 2: Physical action starting with "They are" (e.g., "They are huddled around a single glossy laptop.")
+Line 3: Physical dispersal or object decay (e.g., "The beanbags remain unoccupied.")
+
+Separate each scene with a blank line.` }
       ],
       temperature: 0.7,
       max_tokens: 1000
     });
 
-    console.log('Got response from OpenAI');
-    const content = response.choices[0]?.message?.content || '';
-    console.log('Content:', content);
-
-    // Parse and score the bumpers
-    const bumpers = parseBumpers(content);
-    console.log(`Parsed ${bumpers.length} bumpers`);
-
-    if (bumpers.length === 0) {
-      console.log('No valid bumpers found in response, retrying...');
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      console.error("No content generated");
       continue;
     }
 
-    // Score original bumpers
+    console.log('\nGenerated content:');
+    console.log(content);
+    console.log('\nParsing content...');
+
+    // Parse bumpers
+    const bumpers = parseBumpers(content);
+    if (bumpers.length === 0) {
+      console.error("No valid bumpers parsed");
+      continue;
+    }
+
+    // Score bumpers
     const scoredBumpers = bumpers.map(bumper => ({
       bumper,
       score: scoreBumper(bumper)
     }));
 
-    // Find high-quality bumpers
-    const highQualityBumpers = scoredBumpers.filter(s => isHighQuality(s.score));
-    console.log(`Found ${highQualityBumpers.length} high-quality bumpers`);
+    // Find best bumper
+    const bestBumper = scoredBumpers.reduce((best, current) => 
+      current.score.total > best.score.total ? current : best
+    );
 
-    // For each high-quality bumper, ask GPT to generate refined variants
-    const allVariants: { bumper: Bumper; score: BumperScore }[] = [];
-    
-    for (const scoredBumper of highQualityBumpers) {
-      console.log('Generating variants for:', scoredBumper.bumper.intro);
-      
-      const variantResponse = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages: [
-          { 
-            role: "system", 
-            content: `You are a dry, detached field-note observer of startup absurdities.
-            Generate 4 variations of this scene, each with a slight change to either:
-            - The physical action (e.g., poking → stacking)
-            - The location (e.g., minimalist cubes → glass-walled offices)
-            - The outro drift (e.g., dispersed → vanished)
-            - The object detail (e.g., staplers → chairs)
-            
-            Keep the same minimal, dry tone. No new narrative elements.
-            Each variation must be exactly 2 lines: an intro starting with "They are" or "They have",
-            and an outro starting with "The coaches have".
-            
-            Original scene:
-            ${scoredBumper.bumper.intro}
-            ${scoredBumper.bumper.outro}`
-          },
-          { role: "user", content: "Generate 4 variations, separated by blank lines." }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-
-      const variantContent = variantResponse.choices[0]?.message?.content || '';
-      const variantBumpers = parseBumpers(variantContent);
-      
-      // Score the variants
-      const scoredVariants = variantBumpers.map(bumper => ({
-        bumper,
-        score: scoreBumper(bumper)
-      }));
-      
-      allVariants.push(...scoredVariants);
-    }
-
-    // Combine original high-quality bumpers with their variants
-    const allCandidates = [...highQualityBumpers, ...allVariants];
-
-    // Find best example and its gold standard match
-    const bestBumper = allCandidates.reduce((a, b) => {
-      const scoreA = a.score.physicality.intro + a.score.physicality.outro + a.score.minimalism.intro + a.score.minimalism.outro + a.score.absurdity.intro + a.score.absurdity.outro + a.score.storylessness.intro + a.score.storylessness.outro;
-      const scoreB = b.score.physicality.intro + b.score.physicality.outro + b.score.minimalism.intro + b.score.minimalism.outro + b.score.absurdity.intro + b.score.absurdity.outro + b.score.storylessness.intro + b.score.storylessness.outro;
-      return scoreA > scoreB ? a : b;
-    });
-
-    // Keep track of best bumpers
-    bestBumpers.push(bestBumper);
-
-    // Log this iteration
-    logIteration({
-      iteration,
+    // Log iteration
+    const iterationLog: IterationLog = {
+      iteration: i,
       prompt: currentPrompt,
-      scores: allCandidates.map(s => s.score),
+      scores: scoredBumpers.map(sb => sb.score),
       bestExample: bestBumper.bumper,
       goldStandardMatch: findGoldStandardMatch(bestBumper.bumper)
-    }, batchNumber);
+    };
+    logIteration(iterationLog, batchNumber);
+    
+    // Log summary
+    logSummaryIteration(batchNumber, i, currentPrompt, bumpers);
 
-    // Send best bumpers to GPT for next iteration
-    const bestExamples = bestBumpers.map(b => `${b.bumper.intro}\n${b.bumper.outro}`).join('\n\n');
-    const nextPrompt = `${currentPrompt}\n\nBest examples from previous iterations:\n${bestExamples}`;
-
-    // Modify prompt based on scores
-    currentPrompt = modifyPrompt(nextPrompt, allCandidates);
-    iteration++;
+    // Update best score and prompt if needed
+    if (bestBumper.score.total > bestScore) {
+      bestScore = bestBumper.score.total;
+      bestPrompt = currentPrompt;
+      bestBumpers = bumpers;
+    }
   }
 
-  console.log(`Completed ${maxIterations} iterations.`);
-  return currentPrompt;
+  return {
+    bestPrompt,
+    bestScore,
+    bestBumpers
+  };
 }
 
 // Helper functions
 function parseBumpers(content: string): Bumper[] {
   const bumpers: Bumper[] = [];
-  const scenes = content.split('\n\n').filter(s => s.trim());
+  
+  // Split content into scenes based on double newlines
+  const scenes = content.split('\n\n').filter(scene => scene.trim().length > 0);
   
   for (const scene of scenes) {
-    const lines = scene.split('\n').filter(l => l.trim());
-    if (lines.length >= 2) {  // Changed from 3 to 2 since we only need intro and outro
-      bumpers.push({
-        intro: lines[0],
-        outro: lines[1]
-      });
+    // Skip template/format sections
+    if (scene.toLowerCase().includes('template:') || 
+        scene.toLowerCase().includes('format:') ||
+        scene.toLowerCase().includes('guidelines:') ||
+        scene.toLowerCase().includes('key rules:') ||
+        scene.toLowerCase().includes('tone:') ||
+        scene.toLowerCase().includes('objective:') ||
+        scene.toLowerCase().includes('purpose:') ||
+        scene.toLowerCase().includes('reminder:')) {
+      continue;
+    }
+
+    // Split scene into lines and clean them
+    const lines = scene.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    // Try to identify intro and outro
+    if (lines.length >= 2) {
+      let intro = '';
+      let outro = '';
+
+      // Check if the first line contains time and weather
+      if (lines[0].match(/\b(\d{1,2}:\d{2}|morning|afternoon|evening)\b.*\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i)) {
+        // If we have at least 3 lines, combine first two for intro
+        if (lines.length >= 3) {
+          intro = lines[0] + '\n' + lines[1];
+          outro = lines[2];
+        }
+        // If we only have 2 lines, use first for intro and second for outro
+        else {
+          intro = lines[0];
+          outro = lines[1];
+        }
+      }
+      // If first line doesn't match time/weather format, try to use it as a regular intro
+      else {
+        intro = lines[0];
+        outro = lines[lines.length - 1];  // Use last line as outro
+      }
+
+      // Only add if we have both intro and outro
+      if (intro && outro) {
+        bumpers.push({ intro, outro });
+      }
     }
   }
-  
-  console.log('Parsed bumpers:', bumpers);
+
+  console.log(`Parsed ${bumpers.length} bumpers from content`);
+  if (bumpers.length > 0) {
+    console.log('\nFirst parsed bumper:');
+    console.log('Intro:', bumpers[0].intro);
+    console.log('Outro:', bumpers[0].outro);
+  }
   return bumpers;
 }
 
@@ -539,50 +762,49 @@ function calculateSimilarity(bumper1: Bumper, bumper2: Bumper): number {
 function modifyPrompt(currentPrompt: string, scoredBumpers: { bumper: Bumper; score: BumperScore }[]): string {
   // Calculate average scores
   const avgScores = scoredBumpers.reduce((acc, curr) => ({
-    physicality: {
-      intro: acc.physicality.intro + curr.score.physicality.intro,
-      outro: acc.physicality.outro + curr.score.physicality.outro
-    },
-    minimalism: {
-      intro: acc.minimalism.intro + curr.score.minimalism.intro,
-      outro: acc.minimalism.outro + curr.score.minimalism.outro
-    },
-    absurdity: {
-      intro: acc.absurdity.intro + curr.score.absurdity.intro,
-      outro: acc.absurdity.outro + curr.score.absurdity.outro
-    },
-    storylessness: {
-      intro: acc.storylessness.intro + curr.score.storylessness.intro,
-      outro: acc.storylessness.outro + curr.score.storylessness.outro
-    }
-  }), { physicality: { intro: 0, outro: 0 }, minimalism: { intro: 0, outro: 0 }, absurdity: { intro: 0, outro: 0 }, storylessness: { intro: 0, outro: 0 } });
+    intro: acc.intro + curr.score.intro,
+    outro: acc.outro + curr.score.outro,
+    structure: acc.structure + curr.score.structure,
+    tone: acc.tone + curr.score.tone,
+    content: acc.content + curr.score.content,
+    wordChoice: acc.wordChoice + curr.score.wordChoice,
+    thematicResonance: acc.thematicResonance + curr.score.thematicResonance,
+    total: acc.total + curr.score.total
+  }), { 
+    intro: 0,
+    outro: 0,
+    structure: 0,
+    tone: 0,
+    content: 0,
+    wordChoice: 0,
+    thematicResonance: 0,
+    total: 0
+  });
   
   const count = Math.max(scoredBumpers.length, 1); // Prevent division by zero
-  avgScores.physicality.intro /= count;
-  avgScores.physicality.outro /= count;
-  avgScores.minimalism.intro /= count;
-  avgScores.minimalism.outro /= count;
-  avgScores.absurdity.intro /= count;
-  avgScores.absurdity.outro /= count;
-  avgScores.storylessness.intro /= count;
-  avgScores.storylessness.outro /= count;
+  avgScores.structure /= count;
+  avgScores.tone /= count;
+  avgScores.content /= count;
+  avgScores.outro /= count;
+  avgScores.wordChoice /= count;
+  avgScores.thematicResonance /= count;
   
   // Modify prompt based on lowest scores
   let newPrompt = currentPrompt;
   
-  if (avgScores.physicality.intro < 4) {
+  if (avgScores.structure < 4) {
     newPrompt += '\n- Focus on tiny physical actions: poking, stacking, balancing, tapping.';
   }
   
-  if (avgScores.minimalism.intro < 4) {
+  if (avgScores.tone < 4) {
     newPrompt += '\n- Use shorter sentences. Remove adjectives. No conjunctions.';
   }
   
-  if (avgScores.absurdity.intro < 4) {
+  if (avgScores.content < 4) {
     newPrompt += '\n- Emphasize low-stakes absurdities: tangled cables, mismatched socks, blinking lights.';
   }
   
-  if (avgScores.storylessness.intro < 4) {
+  if (avgScores.outro < 4) {
     newPrompt += '\n- Avoid any hint of story, tension, or resolution. Just record what you see.';
   }
   
@@ -692,123 +914,115 @@ Outro: The coaches have retreated to their ergonomic chairs.`;
 
 // Add function to find top 10 iterations
 async function findTopIterations(numBatches: number = 20) {
-  const allIterations: { 
-    batch: number; 
-    iteration: number; 
-    score: BumperScore; 
-    examples: Bumper[];  // Changed from single example to array of examples
-    prompt: string;
-  }[] = [];
-
-  // Read all log files
-  for (let i = 1; i <= numBatches; i++) {
-    const logFileName = `prompt-optimization-batch${i}.log`;
-    if (fs.existsSync(logFileName)) {
-      const content = fs.readFileSync(logFileName, 'utf-8');
-      const iterations = content.split('=== Iteration').slice(1);
-      
-      for (const iter of iterations) {
-        const lines = iter.split('\n');
-        const iterationNum = parseInt(lines[0].trim());
-        const prompt = lines.slice(2, lines.indexOf('Scores:')).join('\n').trim();
-        
-        // Parse scores
-        const scores = {
-          physicality: { 
-            intro: parseFloat(lines.find(l => l.includes('Physicality: Intro'))?.split(',')[0].split(':')[1].trim() || '0'),
-            outro: parseFloat(lines.find(l => l.includes('Physicality: Outro'))?.split(',')[0].split(':')[1].trim() || '0')
-          },
-          minimalism: {
-            intro: parseFloat(lines.find(l => l.includes('Minimalism: Intro'))?.split(',')[0].split(':')[1].trim() || '0'),
-            outro: parseFloat(lines.find(l => l.includes('Minimalism: Outro'))?.split(',')[0].split(':')[1].trim() || '0')
-          },
-          absurdity: {
-            intro: parseFloat(lines.find(l => l.includes('Absurdity: Intro'))?.split(',')[0].split(':')[1].trim() || '0'),
-            outro: parseFloat(lines.find(l => l.includes('Absurdity: Outro'))?.split(',')[0].split(':')[1].trim() || '0')
-          },
-          storylessness: {
-            intro: parseFloat(lines.find(l => l.includes('Storylessness: Intro'))?.split(',')[0].split(':')[1].trim() || '0'),
-            outro: parseFloat(lines.find(l => l.includes('Storylessness: Outro'))?.split(',')[0].split(':')[1].trim() || '0')
-          },
-          goldStandardMatch: parseFloat(lines.find(l => l.includes('Gold Standard Match:'))?.split(':')[1].trim() || '0'),
-          consistency: parseFloat(lines.find(l => l.includes('Consistency:'))?.split(':')[1].trim() || '0')
-        };
-
-        // Parse all examples from the iteration
-        const examples: Bumper[] = [];
-        const exampleStart = lines.findIndex(l => l.includes('Best example:'));
-        if (exampleStart !== -1) {
-          // Get the best example
-          examples.push({
-            intro: lines[exampleStart + 1].replace('Intro:', '').trim(),
-            outro: lines[exampleStart + 2].replace('Outro:', '').trim()
+  const allIterations: IterationLog[] = [];
+  
+  for (let batchNum = 1; batchNum <= numBatches; batchNum++) {
+    const logPath = path.join(__dirname, `prompt-optimization-batch${batchNum}.log`);
+    if (!fs.existsSync(logPath)) continue;
+    
+    const content = fs.readFileSync(logPath, 'utf8');
+    const iterations = content.split('\nIteration').slice(1);
+    
+    iterations.forEach(iteration => {
+      try {
+        const iterationNum = parseInt(iteration.match(/^(\d+)/)?.[1] || '0');
+        const prompt = iteration.match(/Prompt:\s*([\s\S]*?)\n(?:Scores|$)/)?.[1]?.trim() || '';
+        const scores = (iteration.match(/Scores:\s*([\s\S]*?)\n(?:Best|$)/)?.[1]?.trim() || '')
+          .split('\n')
+          .map(line => {
+            const score = parseFloat(line.match(/Score: ([\d.]+)/)?.[1] || '0');
+            return {
+              intro: score,
+              outro: score,
+              structure: score,
+              tone: score,
+              content: score,
+              wordChoice: score,
+              thematicResonance: score,
+              total: score
+            };
           });
-
-          // Look for additional examples in the content
-          const content = lines.join('\n');
-          const exampleMatches = content.match(/Intro: (.*?)\nOutro: (.*?)(?=\n|$)/g) || [];
-          for (const match of exampleMatches.slice(0, 4)) { // Get up to 4 more examples
-            const [intro, outro] = match.split('\n');
-            examples.push({
-              intro: intro.replace('Intro:', '').trim(),
-              outro: outro.replace('Outro:', '').trim()
-            });
-          }
+        
+        const bestExample = {
+          intro: iteration.match(/Best Example:\s*Intro: (.*?)(?:\n|$)/)?.[1] || '',
+          outro: iteration.match(/Outro: (.*?)(?:\n|$)/)?.[1] || ''
+        };
+        
+        const goldStandardMatch = {
+          intro: iteration.match(/Gold Standard Match:\s*Intro: (.*?)(?:\n|$)/)?.[1] || '',
+          outro: iteration.match(/Outro: (.*?)(?:\n|$)/)?.[1] || ''
+        };
+        
+        if (prompt && scores.length > 0) {
+          allIterations.push({
+            iteration: iterationNum,
+            prompt,
+            scores,
+            bestExample,
+            goldStandardMatch
+          });
         }
-
-        allIterations.push({
-          batch: i,
-          iteration: iterationNum,
-          score: scores,
-          examples,
-          prompt
-        });
+      } catch (err) {
+        console.error(`Error parsing iteration in batch ${batchNum}:`, err);
       }
-    }
+    });
   }
-
-  // Calculate weighted score for each iteration
-  const weightedScores = allIterations.map(iter => {
-    const score = iter.score;
-    const weightedScore = (
-      (score.physicality.intro + score.physicality.outro) * 0.3 +
-      (score.minimalism.intro + score.minimalism.outro) * 0.2 +
-      (score.absurdity.intro + score.absurdity.outro) * 0.2 +
-      (score.storylessness.intro + score.storylessness.outro) * 0.2 +
-      score.goldStandardMatch * 0.05 +
-      score.consistency * 0.05
-    ) / 2; // Divide by 2 to normalize to 0-5 scale
-
-    return { ...iter, weightedScore };
+  
+  // Calculate average scores for each iteration
+  const iterationAverages = allIterations.map(iteration => {
+    const avgScore = iteration.scores.reduce((acc, score) => ({
+      intro: acc.intro + score.intro / iteration.scores.length,
+      outro: acc.outro + score.outro / iteration.scores.length,
+      structure: acc.structure + score.structure / iteration.scores.length,
+      tone: acc.tone + score.tone / iteration.scores.length,
+      content: acc.content + score.content / iteration.scores.length,
+      wordChoice: acc.wordChoice + score.wordChoice / iteration.scores.length,
+      thematicResonance: acc.thematicResonance + score.thematicResonance / iteration.scores.length,
+      total: acc.total + score.total / iteration.scores.length
+    }), {
+      intro: 0,
+      outro: 0,
+      structure: 0,
+      tone: 0,
+      content: 0,
+      wordChoice: 0,
+      thematicResonance: 0,
+      total: 0
+    });
+    
+    return {
+      batchNum: Math.floor(iteration.iteration / 5) + 1,
+      iterationNum: iteration.iteration % 5 || 5,
+      avgScore,
+      prompt: iteration.prompt,
+      bestExample: iteration.bestExample,
+      goldStandardMatch: iteration.goldStandardMatch
+    };
   });
 
   // Sort by weighted score and get top 10
-  const top10 = weightedScores
-    .sort((a, b) => b.weightedScore - a.weightedScore)
+  const top10 = iterationAverages
+    .sort((a, b) => b.avgScore.total - a.avgScore.total)
     .slice(0, 10);
 
   // Log top 10 with all examples
-  const top10Log = `
-=== Top 10 Iterations ===
-${top10.map((iter, i) => `
-${i + 1}. Batch ${iter.batch}, Iteration ${iter.iteration}
-Weighted Score: ${iter.weightedScore.toFixed(2)}
-Physicality: ${(iter.score.physicality.intro + iter.score.physicality.outro) / 2}
-Minimalism: ${(iter.score.minimalism.intro + iter.score.minimalism.outro) / 2}
-Absurdity: ${(iter.score.absurdity.intro + iter.score.absurdity.outro) / 2}
-Storylessness: ${(iter.score.storylessness.intro + iter.score.storylessness.outro) / 2}
-Gold Standard Match: ${iter.score.goldStandardMatch}
-Consistency: ${iter.score.consistency}
+  const top10Log = top10.map((iter, i) => `
+${i + 1}. Batch ${iter.batchNum}, Iteration ${iter.iterationNum}
+Weighted Score: ${iter.avgScore.total.toFixed(2)}
+Structure: ${iter.avgScore.structure.toFixed(2)}
+Tone: ${iter.avgScore.tone.toFixed(2)}
+Content: ${iter.avgScore.content.toFixed(2)}
+Outro: ${iter.avgScore.outro.toFixed(2)}
+Word Choice: ${iter.avgScore.wordChoice.toFixed(2)}
+Thematic: ${iter.avgScore.thematicResonance.toFixed(2)}
 
 Prompt:
 ${iter.prompt}
 
-Examples:
-${iter.examples.map((ex, j) => `
-${j + 1}. ${ex.intro}
-   ${ex.outro}`).join('\n')}
-`).join('\n')}
-`;
+Best Examples:
+${iter.bestExample.intro}
+     ${iter.bestExample.outro}
+`).join('\n');
 
   fs.writeFileSync('top-10-iterations.log', top10Log);
   console.log('Top 10 iterations have been logged to top-10-iterations.log');
@@ -816,17 +1030,184 @@ ${j + 1}. ${ex.intro}
 
 // Add call to findTopIterations after all batches complete
 async function runAllBatches() {
-  console.log("Starting first set of batches with subtle variations...");
-  await runMultipleBatches(10, false);
-  
-  console.log("\nStarting second set of batches with significant variations...");
-  await runMultipleBatches(10, true);
+  console.log("Starting iterations with seed prompt...");
+  const seedPrompt = `You are a dry, detached field-note observer of startup absurdities.
+
+Every entry follows this structure:
+- Intro (2 lines):
+  - Line 1: Natural time, day, weather, location.
+  - Line 2: Visible collective physical absurdity (small group behaviors around mundane objects).
+- Outro (1 line):
+  - Physical dispersal only, written in present perfect tense (e.g., "They have drifted," "They have wandered," "They have melted away").
+
+Key rules:
+- No emotions, no motives, no story arcs.
+- Only visible actions — no dialogue, no plans.
+- Word choice should suggest light startup ritualism (e.g., vision boards, kombucha taps, standing desks).
+- Slightly elevated nouns and verbs are preferred over generic ones.
+- Tiny absurdities must feel ambient, not dramatic.
+- Group actions (even uncoordinated) are preferred to solo actions.
+
+Tone:
+- Dry, minimal, ambient, lightly amused.
+- Observational only — no commentary or judgment.
+
+Reminder:
+You are recording the quiet, cumulative absurdities of a startup herd at work.`;
+
+  // Run all iterations with seed prompt
+  await optimizePrompt(seedPrompt, 21, 1);
   
   console.log("\nFinding top 10 iterations...");
   await findTopIterations();
   
-  console.log("\nAll batches completed!");
+  console.log("\nAll iterations completed!");
+}
+
+async function runAllSeedPrompts() {
+  const seedPrompts = [
+    `You are observing the ambient drift of a startup office.
+
+You describe only what is physically visible: lazy rituals, office clutter, ambient absurdities.  
+You never describe emotions, motives, or strategies.  
+You never assign intention, and you never write stories.  
+You are capturing how the office moves, quietly, without explanation.
+
+You MUST:
+- Begin every intro with "They are..." — never with group nouns like "a group," "the team," or "employees."
+- Use exactly two lines for every intro:
+  - Line 1: factual time, place, and weather (e.g., "It's 2:10pm on a gray Monday in the Singapore penthouse.")
+  - Line 2: herd behavior involving startup artifacts (kombucha taps, Slack alerts, sticky notes, beanbags, whiteboards).
+- Write exactly one short sentence for the outro:
+  - Only physical dispersal (e.g., "They trickled off toward their desks.")
+  - You may describe object decay (e.g., "The sticky notes curled slowly.") but do not explain it.
+
+FORBIDDEN:
+- Character names or identifying traits.
+- Emotional language ("awkward," "hopeful," "anxious").
+- Strategic or narrative actions ("trying to," "debating," "planning").
+- Any form of dialogue or cinematic metaphor ("shadows stretching," "as the sun dipped").
+
+Tone:  
+Quiet. Bored. Dry.  
+Office as ecosystem. Drift as default.  
+Think like an exhausted anthropologist, not a screenwriter.`,
+
+    `You are documenting the ambient drift of startup life.
+
+You are not a storyteller. You are a quiet observer. You write dry, minimal field notes about the physical behaviors and absurd objects that define the office ritual ecosystem.
+
+You never describe motives.  
+You never describe emotions.  
+You never describe strategies, dynamics, or decisions.  
+You never invent stories.
+
+You MUST:
+
+- Begin every intro with "They are..." or "One of them..." — never use group nouns like "a group," "the team," or "employees."
+- Use exactly two lines for every intro:
+  - Line 1: factual time, place, and weather (e.g., "It's 3:15pm on a humid Thursday in the Singapore penthouse.")
+  - Line 2: physical behavior or light absurdity involving startup objects (e.g., kombucha taps, sticky notes, Slack alerts, beanbags, vision boards, charging stations, whiteboards).
+- Write exactly one sentence for every outro:
+  - Physical dispersal only (e.g., "They drifted back to their Slack threads.")
+  - You may hint at minor object decay (e.g., "The sticky notes continued to curl.")
+  - No motive, emotion, or implication — just movement.
+
+FORBIDDEN:
+- Character names (never Donte, Venus, etc.)
+- Group nouns (no "a group," "a trio," "the team")
+- Any kind of emotion, thought, intention, or reaction (no "awkward," "hopeful," "confused," "trying to…")
+- Cinematic or poetic descriptions (no "murmur," "linger," "shadows stretching," "sunlight glinting")
+- Dialogue or conversation (unless explicitly instructed)
+
+TONE:
+- Minimal
+- Dry
+- Slightly absurd
+- Always observational, never explanatory
+- Like field notes from a dream
+
+Final reminder:  
+You are not writing fiction. You are recording office drift.  
+Everything should feel faint, physical, and unnecessary.`,
+
+    `You are documenting the ambient drift of startup life.
+
+You are not a storyteller. You are a quiet observer. You write dry, minimal field notes about the physical behaviors and absurd objects that define the office ritual ecosystem.
+
+You do not explain motives.  
+You do not describe emotions.  
+You do not invent stories.  
+You do not interpret strategies, dynamics, or tension.  
+You do not try to be clever.
+
+You MUST:
+
+- Begin every intro with "They are..." or "One of them..."  
+- NEVER use group nouns like "a group," "the team," "several individuals," "employees," or "coworkers."
+- Write every intro in exactly **two lines**:
+  - **Line 1:** Factual time, place, and weather (e.g., "It's 3:15pm on a gray Thursday in the Singapore penthouse.")
+  - **Line 2:** Ambient, physical herd behavior involving startup objects (e.g., sticky notes, kombucha taps, Slack alerts, tote bags, whiteboards).
+- Write every outro as **one short sentence**:
+  - Only describe physical dispersal or movement (e.g., "They trickled back toward their laptops.")
+  - You may hint at passive object decay (e.g., "The sticky notes continued to curl.")
+  - Do not summarize, infer, or conclude.
+
+FORBIDDEN:
+- Character names (Donte, Venus, Rohan, etc.)
+- Specific people ("a woman," "a man," "the CEO," etc.)
+- Emotional language ("awkward," "tense," "bored," "hopeful")
+- Strategic or purposeful actions ("trying to," "preparing," "debating")
+- Narrative or cinematic phrases ("as the sun dipped," "shadows stretching," "lingering tension")
+- Dialogue or quotation (unless explicitly asked)
+
+TONE:
+- Minimal
+- Dry
+- Slightly absurd
+- Loosely anthropological
+- Quiet, atmospheric
+- Like accidental field notes about office entropy
+
+Final reminder:  
+You are not writing scenes.  
+You are quietly noting how objects and people drift.  
+Everything should feel unnecessary, physical, and faint.`
+  ];
+
+  const results = [];
+  
+  for (let i = 0; i < seedPrompts.length; i++) {
+    console.log(`\nStarting batch ${i + 1} with seed prompt ${i + 1}...`);
+    const result = await optimizePrompt(seedPrompts[i], 33, i + 1);
+    results.push(result);
+  }
+
+  // Create final summary
+  const timestamp = new Date().toISOString();
+  const finalSummaryFileName = `prompt-optimization-final-summary-${timestamp}.log`;
+  
+  const finalSummary = `=== Final Optimization Summary ===
+Timestamp: ${timestamp}
+
+${results.map((result, index) => `
+Batch ${index + 1} Results:
+Best Score: ${result.bestScore}
+Best Prompt:
+${result.bestPrompt}
+
+Best Scenes:
+${result.bestBumpers.slice(0, 3).map((bumper, i) => `
+${i + 1}. Intro: ${bumper.intro}
+   Outro: ${bumper.outro}`).join('\n')}
+`).join('\n')}
+`;
+
+  fs.writeFileSync(finalSummaryFileName, finalSummary);
+  console.log(`\nFinal summary saved to ${finalSummaryFileName}`);
+  
+  return results;
 }
 
 // Replace the existing execution code with this
-runAllBatches().catch(console.error);
+runAllSeedPrompts().catch(console.error);
