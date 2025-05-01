@@ -13,8 +13,10 @@ import { getNextMessage, handleAdminCommand } from './adminCommands.js';
 import { getCurrentStoryInfo } from './bot.js';
 import { validateStoryInfo, formatStoryInfo } from './sceneFramework.js';
 import { getRandomCharactersWithPairConfig, setWatercoolerPairConfig } from './characterPairs.js';
+import { getLocationAndTime } from './locationTime.js';
 import fs from 'fs';
 import path from 'path';
+import { sendEventMessage } from './eventMessages.js';
 
 // Message deduplication system
 class MessageDeduplication {
@@ -377,16 +379,37 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
       context: selectedArc?.context
     });
     
-    // First coach shares something about their day
-    console.log('Generating first message...');
-    const firstPrompt = adminMessage 
-      ? `You are ${validCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
-      : `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
-    
-    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
-    console.log('First message generated:', firstMessage.substring(0, 50) + '...');
-    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
-    console.log('First message sent successfully');
+    // First coach shares something about their day or the admin message
+    let firstMessage;
+    if (adminMessage) {
+      // Generate Donte's message in his own voice, using the admin message as a seed
+      const dontePrompt = `You are Donte, the hyper-efficient, control-obsessed startup founder who's always optimizing everything. 
+
+First, state this situation: Your dog is staying with you for a week and disrupting your carefully controlled environment.
+
+Then, express your deep frustration about this in your characteristic voice. 
+
+IMPORTANT DONTE TRAITS TO INCLUDE:
+1. Always frame things in terms of efficiency, optimization, or control
+2. Use startup/tech analogies and metrics
+3. Mention specific tools, systems, or processes you use
+4. Show mild irritation at inefficiency
+5. Reference your perfectly organized workspace or routines
+
+Example voice: "My dog is staying with me this week, and it's catastrophic. My workspace efficiency has dropped 47% due to random bark interruptions. My Pomodoro timer can't sync with these unpredictable pet variables!"
+
+Make it authentically Donte, with his obsession with control and optimization. Always start by mentioning the dog situation, then dive into your optimization complaints. (max 50 words)`;
+      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + dontePrompt, adminMessage);
+      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+      console.log('First message (Donte, generated) sent successfully');
+    } else {
+      console.log('Generating first message...');
+      const firstPrompt = `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
+      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+      console.log('First message generated:', firstMessage.substring(0, 50) + '...');
+      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+      console.log('First message sent successfully');
+    }
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -458,7 +481,15 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     const adminMessage = getNextMessage('waterheater');
     
     // Pick 3 random unique coaches using our pair config system
-    const selectedCharacterIds = getRandomCharactersWithPairConfig(3);
+    let selectedCharacterIds = getRandomCharactersWithPairConfig(3);
+    // Ensure Donte is always included and first
+    if (!selectedCharacterIds.includes('donte')) {
+      selectedCharacterIds[0] = 'donte';
+    } else if (selectedCharacterIds[0] !== 'donte') {
+      // Swap Donte to the first position
+      const donteIndex = selectedCharacterIds.indexOf('donte');
+      [selectedCharacterIds[0], selectedCharacterIds[donteIndex]] = [selectedCharacterIds[donteIndex], selectedCharacterIds[0]];
+    }
     const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id));
     
     // Validate that we have all required characters
@@ -491,17 +522,46 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
       promptAttribute: selectedArc?.promptAttribute,
       context: selectedArc?.context
     });
+
+    // First Round
+    console.log('Starting first round of conversation...');
     
-    // First coach shares something about their day
-    console.log('Generating first message...');
-    const firstPrompt = adminMessage 
-      ? `You are ${validCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
-      : `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
-    
-    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
-    console.log('First message generated:', firstMessage.substring(0, 50) + '...');
-    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
-    console.log('First message sent successfully');
+    // First coach shares something about their day or the admin message
+    let firstMessage;
+    if (adminMessage) {
+      // Send the intro message using the proper event message system
+      const channel = await client.channels.fetch(channelId) as TextChannel;
+      if (!channel) {
+        throw new Error('Channel not found');
+      }
+      await sendEventMessage(channel, 'waterheater', true, new Date().getUTCHours(), new Date().getUTCMinutes());
+      
+      // Generate Donte's message in his own voice
+      const dontePrompt = `You are Donte, the hyper-efficient, control-obsessed startup founder who's always optimizing everything. 
+
+Your dog is disrupting your carefully controlled environment. Express your deep frustration about this in your characteristic voice.
+
+IMPORTANT DONTE TRAITS TO INCLUDE:
+1. Always frame things in terms of efficiency, optimization, or control
+2. Use startup/tech analogies and metrics
+3. Mention specific tools, systems, or processes you use
+4. Show mild irritation at inefficiency
+5. Reference your perfectly organized workspace or routines
+
+Example voice: "My canine disruption levels are off the charts! Efficiency metrics are tanking due to uncalibrated pet variables. Need to pivot my routine with AI-assisted dog-walking apps. Control must be restored to optimize productivity!"
+
+Make it authentically Donte, with his obsession with control and optimization. Focus on metrics, systems, and optimization problems caused by the dog. (max 50 words)`;
+      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + dontePrompt, adminMessage);
+      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+      console.log('First message (Donte, generated) sent successfully');
+    } else {
+      console.log('Generating first message...');
+      const firstPrompt = `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
+      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+      console.log('First message generated:', firstMessage.substring(0, 50) + '...');
+      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+      console.log('First message sent successfully');
+    }
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -541,7 +601,6 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     await sendAsCharacter(channelId, validCharacters[1].id, secondMessage);
     console.log('Second message sent successfully');
 
-    // Add another small delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Third coach responds
@@ -557,6 +616,60 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
     console.log('Third message sent successfully');
+
+    // Add a longer delay between rounds
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Second Round
+    console.log('Starting second round of conversation...');
+
+    // First coach responds to the previous round
+    console.log('Generating fourth message...');
+    const fourthPrompt = `You are ${validCharacters[0].name} (${validCharacters[0].character}). 
+
+Previous exchange:
+${validCharacters[1].name}: "${secondMessage}"
+${validCharacters[2].name}: "${thirdMessage}"
+
+IMPORTANT: You are Donte responding to their suggestions about managing your dog disruption. React to their specific advice or comments, maintaining your obsession with efficiency and control. Show you tried their suggestions but found flaws in the optimization potential.
+
+Example: "Your suggestions have yielded suboptimal results. The AI-powered treat dispenser decreased workspace efficiency by 23.4%. And the smart collar analytics show concerning spikes in chaos metrics!"
+
+Keep it authentic to your character (max 50 words).`;
+    const fourthMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + fourthPrompt, secondMessage + ' ' + thirdMessage);
+    console.log('Fourth message generated:', fourthMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[0].id, fourthMessage);
+    console.log('Fourth message sent successfully');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Second coach responds
+    console.log('Generating fifth message...');
+    const fifthPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). Responding to this exchange:
+
+${validCharacters[2].name}: "${thirdMessage}"
+${validCharacters[0].name}: "${fourthMessage}"
+
+Add your unique perspective based on your background and personality. Engage directly with Donte's specific situation and his response to your earlier suggestion. Keep it authentic to your character (max 50 words).`;
+    const fifthMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + fifthPrompt, thirdMessage + ' ' + fourthMessage);
+    console.log('Fifth message generated:', fifthMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[1].id, fifthMessage);
+    console.log('Fifth message sent successfully');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Third coach concludes
+    console.log('Generating sixth message...');
+    const sixthPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). Responding to this exchange:
+
+${validCharacters[0].name}: "${fourthMessage}"
+${validCharacters[1].name}: "${fifthMessage}"
+
+Add your unique perspective based on your background and personality. Engage with both Donte's ongoing situation and the previous suggestions. Keep it authentic to your character (max 50 words).`;
+    const sixthMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + sixthPrompt, fourthMessage + ' ' + fifthMessage);
+    console.log('Sixth message generated:', sixthMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[2].id, sixthMessage);
+    console.log('Sixth message sent successfully');
 
     console.log('Waterheater chat completed successfully');
   } catch (error) {
