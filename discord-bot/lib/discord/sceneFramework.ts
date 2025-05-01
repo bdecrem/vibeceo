@@ -13,6 +13,7 @@ import { openai } from "./ai.js";
 import { TextChannel } from "discord.js";
 import pLimit from "p-limit";
 import { validateSceneSeeds } from "./validateSceneSeeds.js";
+import { getTensionContext } from './handlers.js';
 
 interface CoachInfo {
 	id: string;
@@ -1308,20 +1309,19 @@ export function formatStoryInfo(
 		return "Scene information not available.";
 	}
 
+	// Get tension context
+	const tensionContext = getTensionContext(sceneIndex);
+	const tensionLevel = tensionContext ? `Tension Level: ${tensionContext.intensity}` : '';
+
 	return `
 **Current Story Arc**
 Theme: ${episodeContext.theme}
-Arc Summary: ${episodeContext.arc.arcSummary}
+${tensionLevel}
 
 **Current Scene** (${sceneIndex + 1} of 24)
 Type: ${scene.type}
 Location: ${seed.location}
 Time: ${seed.localTime}
-Active Coaches: ${scene.coaches.join(", ")}
-
-**Story Elements**
-Tone: ${episodeContext.arc.toneKeywords.join(", ")}
-Motifs: ${episodeContext.arc.motifs.join(", ")}
   `;
 }
 
