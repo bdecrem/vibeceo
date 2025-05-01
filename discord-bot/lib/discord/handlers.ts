@@ -588,8 +588,7 @@ const serviceMap: Record<string, (channelId: string, client: Client) => Promise<
   watercooler: triggerWatercoolerChat,
   waterheater: triggerWaterheaterChat,
   newschat: triggerNewsChat,
-  tmzchat: triggerTmzChat,
-  pitchchat: triggerPitchChat,
+  tmzchat: triggerTmzChat
 };
 
 // Handle incoming messages
