@@ -2,6 +2,7 @@ import { TextChannel } from "discord.js";
 import { getLocationAndTime } from "./locationTime.js";
 import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
+import { updateCurrentScene } from "./bot.js";
 import path from "path";
 import fs from "fs";
 
@@ -27,7 +28,11 @@ export const EVENT_MESSAGES = {
 	},
 } as const;
 
+// Keep original scene index for event system
 let currentSceneIndex = 0;
+
+// Add new scene index for story info display
+let storyInfoSceneIndex = 0;
 
 export async function sendEventMessage(
 	channel: TextChannel,
@@ -76,8 +81,13 @@ export async function sendEventMessage(
 			.pop();
 
 		if (isIntro) {
-			// Start a new scene
+			// Increment both scene indices
 			currentSceneIndex++;
+			storyInfoSceneIndex++;
+			
+			// Update the story info scene index in bot.ts
+			updateCurrentScene(storyInfoSceneIndex);
+			
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({
 				index: currentSceneIndex,
