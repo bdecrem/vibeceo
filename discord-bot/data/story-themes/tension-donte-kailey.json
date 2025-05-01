@@ -1,0 +1,19 @@
+{
+  "theme": "Growing tension between Donte and Kailey",
+  "participants": ["donte", "kailey"],
+  "progression": {
+    "morning": {
+      "intensity": 0.3,
+      "context": "Subtle disagreement about approach - Donte pushes for rapid scaling while Kailey emphasizes sustainable growth"
+    },
+    "midday": {
+      "intensity": 0.5,
+      "context": "Growing friction - Their different philosophies becoming more apparent in team discussions"
+    },
+    "afternoon": {
+      "intensity": 0.7,
+      "context": "Peak tension - Clear contrast between their leadership styles affecting team dynamics"
+    }
+  },
+  "promptContext": "Note: There is underlying tension between Donte and Kailey. Donte advocates for aggressive growth and quick pivots, while Kailey emphasizes careful planning and sustainable scaling. Show this through subtle cues in their interaction - tone, word choice, or brief pauses - while keeping it professional. Their disagreement should feel present but not obvious."
+} 

@@ -10,7 +10,8 @@
 		"build": "rimraf dist && tsc",
 		"start:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
 		"start:log": "npm run build && node dist/scripts/start-discord-bot-with-logging.js",
-		"test:content": "npm run build && node dist/scripts/test-content-generator.js"
+		"test:content": "npm run build && node dist/scripts/test-content-generator.js",
+		"test:story": "npm run build && node dist/scripts/test-story-arc.js"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",

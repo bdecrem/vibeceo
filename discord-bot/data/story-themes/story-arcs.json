@@ -1,0 +1,2563 @@
+{
+  "storyArcs": {
+    "donte": {
+      "getting_irritated_by_kailey": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            "midday": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+          }
+        },
+        "context": "Donte is getting increasingly irritated by Kailey's approach",
+        "promptInjection": "You are Donte. Your irritation with Kailey's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're just starting to notice her approach",
+          "0.4": "you're becoming aware of how her style differs from yours",
+          "0.6": "you're actively frustrated by her methods",
+          "0.8": "you're struggling to contain your irritation",
+          "1.0": "you're at your limit with her approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte", "kailey"],
+          "probability": 1.0,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "donte"
+          }
+        }
+      },
+      "distracted": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Donte's mind is elsewhere, not fully present in conversations",
+        "promptInjection": "You are Donte. Your level of distraction is at {level} (where 0 is fully focused and 1 is completely distracted). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're slightly distracted, but mostly present",
+          "0.4": "your mind keeps wandering from the conversation",
+          "0.6": "you're struggling to stay focused on the discussion",
+          "0.8": "you're barely present, mostly lost in your thoughts",
+          "1.0": "you're completely checked out of the conversation"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "trying_to_impress_venus": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.4,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
+            "afternoon": [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8, 0.7]
+          }
+        },
+        "context": "Donte is trying to impress Venus with his insights",
+        "promptInjection": "You are Donte. Your effort to impress Venus is at level {level} (where 0 is natural and 1 is actively trying to impress). This should influence how you present your ideas - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're casually sharing your thoughts",
+          "0.4": "you're making an effort to sound impressive",
+          "0.6": "you're actively trying to showcase your knowledge",
+          "0.8": "you're going out of your way to demonstrate your value",
+          "1.0": "you're desperately trying to prove yourself"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte", "venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus",
+            "second": "donte"
+          }
+        }
+      },
+      "starting_to_doubt_himself": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Donte is starting to doubt his own approach",
+        "promptInjection": "You are Donte. Your level of self-doubt is at {level} (where 0 is confident and 1 is deeply uncertain). This should influence how you express yourself - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question some of your decisions",
+          "0.4": "you're becoming unsure about your approach",
+          "0.6": "you're actively doubting your methods",
+          "0.8": "you're deeply questioning your capabilities",
+          "1.0": "you're completely uncertain about your direction"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "avoiding_responsibility": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+            "afternoon": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          }
+        },
+        "context": "Donte is avoiding taking responsibility",
+        "promptInjection": "You are Donte. Your level of avoiding responsibility is at {level} (where 0 is fully responsible and 1 is actively avoiding). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're slightly deflecting some responsibilities",
+          "0.4": "you're actively avoiding certain tasks",
+          "0.6": "you're making excuses to avoid taking charge",
+          "0.8": "you're completely shirking your responsibilities",
+          "1.0": "you're actively running from any accountability"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "feeling_left_out": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Donte is feeling excluded from the group",
+        "promptInjection": "You are Donte. Your feeling of being left out is at level {level} (where 0 is included and 1 is completely isolated). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're noticing you're not part of some conversations",
+          "0.4": "you're feeling excluded from certain decisions",
+          "0.6": "you're actively feeling left out of important discussions",
+          "0.8": "you're deeply feeling isolated from the group",
+          "1.0": "you're completely feeling like an outsider"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "trying_to_dominate_conversation": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Donte is asserting control over group discussions",
+        "promptInjection": "You are Donte. Your level of trying to dominate conversations is at {level} (where 0 is collaborative and 1 is completely dominating). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to take more control of discussions",
+          "0.4": "you're actively steering conversations your way",
+          "0.6": "you're asserting your perspective more forcefully",
+          "0.8": "you're dominating most conversations",
+          "1.0": "you're completely controlling the discussion flow"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "slowly_opening_up_to_kailey": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Donte is gradually becoming more open with Kailey",
+        "promptInjection": "You are Donte. Your level of opening up to Kailey is at {level} (where 0 is guarded and 1 is completely open). This should influence how you interact with her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to let your guard down slightly",
+          "0.4": "you're becoming more comfortable sharing with her",
+          "0.6": "you're actively engaging in deeper conversations",
+          "0.8": "you're sharing more personal thoughts and feelings",
+          "1.0": "you're completely open and vulnerable with her"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte", "kailey"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "donte"
+          }
+        }
+      },
+      "getting_bored": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Donte is losing interest in the current situation",
+        "promptInjection": "You are Donte. Your level of boredom is at {level} (where 0 is engaged and 1 is completely disinterested). This should influence how you participate - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel a bit restless",
+          "0.4": "you're becoming less engaged in discussions",
+          "0.6": "you're actively looking for more stimulating topics",
+          "0.8": "you're struggling to maintain interest",
+          "1.0": "you're completely disengaged and bored"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "donte"
+          }
+        }
+      },
+      "feeling_threatened_by_rohan": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Donte is perceiving Rohan as a threat to his position",
+        "promptInjection": "You are Donte. Your level of feeling threatened by Rohan is at {level} (where 0 is secure and 1 is deeply threatened). This should influence how you interact with him - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to notice Rohan's influence",
+          "0.4": "you're becoming wary of Rohan's actions",
+          "0.6": "you're actively feeling challenged by Rohan",
+          "0.8": "you're deeply concerned about Rohan's impact",
+          "1.0": "you're completely feeling threatened by Rohan"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["donte", "rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan",
+            "second": "donte"
+          }
+        }
+      },
+      "struggling_with_imposter_syndrome": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "midday": [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+            "afternoon": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          }
+        },
+        "context": "Kailey is overcompensating to make others happy",
+        "promptInjection": "You are Kailey. Your level of trying to please others is at {level} (where 0 is natural and 1 is overcompensating). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're being extra considerate",
+          "0.4": "you're actively trying to accommodate others",
+          "0.6": "you're going out of your way to be helpful",
+          "0.8": "you're overcompensating to make everyone happy",
+          "1.0": "you're desperately trying to please everyone"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "becoming_overwhelmed": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Kailey is starting to feel overwhelmed by the situation",
+        "promptInjection": "You are Kailey. Your level of feeling overwhelmed is at {level} (where 0 is calm and 1 is completely overwhelmed). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel a bit stressed",
+          "0.4": "you're becoming aware of mounting pressure",
+          "0.6": "you're actively feeling overwhelmed",
+          "0.8": "you're struggling to keep up with everything",
+          "1.0": "you're completely overwhelmed by the situation"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "trying_to_coach_donte": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+            "afternoon": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          }
+        },
+        "context": "Kailey is attempting to guide Donte",
+        "promptInjection": "You are Kailey. Your level of trying to coach Donte is at {level} (where 0 is passive and 1 is actively coaching). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to offer guidance",
+          "0.4": "you're actively trying to coach",
+          "0.6": "you're working to mentor Donte",
+          "0.8": "you're deeply committed to helping",
+          "1.0": "you're fully focused on coaching"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey", "donte"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "donte"
+          }
+        }
+      },
+      "craving_validation_from_venus": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is seeking approval and recognition from Venus",
+        "promptInjection": "You are Kailey. Your level of craving Venus's validation is at {level} (where 0 is self-assured and 1 is desperately seeking approval). This should influence how you interact with her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to look for Venus's approval",
+          "0.4": "you're actively seeking Venus's recognition",
+          "0.6": "you're deeply wanting Venus's validation",
+          "0.8": "you're desperately seeking Venus's approval",
+          "1.0": "you're completely dependent on Venus's validation"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey", "venus"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "venus",
+            "second": "kailey"
+          }
+        }
+      },
+      "hiding_her_frustration": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Kailey is masking her growing frustration with a positive facade",
+        "promptInjection": "You are Kailey. Your level of hiding frustration is at {level} (where 0 is authentic and 1 is completely masking emotions). This should influence how you present yourself - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to mask some frustration",
+          "0.4": "you're actively maintaining a positive facade",
+          "0.6": "you're deeply suppressing your frustration",
+          "0.8": "you're struggling to maintain your composure",
+          "1.0": "you're completely hiding behind a mask"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "getting_more_confident": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Kailey is growing more assertive and self-assured",
+        "promptInjection": "You are Kailey. Your level of confidence is at {level} (where 0 is hesitant and 1 is completely self-assured). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel more confident",
+          "0.4": "you're becoming more assertive in discussions",
+          "0.6": "you're actively taking more initiative",
+          "0.8": "you're confidently leading conversations",
+          "1.0": "you're completely self-assured and decisive"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "feeling_unappreciated": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is feeling her contributions are being overlooked",
+        "promptInjection": "You are Kailey. Your level of feeling unappreciated is at {level} (where 0 is valued and 1 is completely overlooked). This should influence how you contribute - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel your efforts aren't noticed",
+          "0.4": "you're becoming aware of being overlooked",
+          "0.6": "you're actively feeling undervalued",
+          "0.8": "you're deeply feeling unappreciated",
+          "1.0": "you're completely feeling invisible"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      }
+    },
+    "rohan": {
+      "trying_to_control": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+            "afternoon": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          }
+        },
+        "context": "Rohan is attempting to take control of the situation",
+        "promptInjection": "You are Rohan. Your level of trying to control is at {level} (where 0 is collaborative and 1 is completely controlling). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to take charge",
+          "0.4": "you're actively trying to direct things",
+          "0.6": "you're working to control the situation",
+          "0.8": "you're deeply committed to being in charge",
+          "1.0": "you're fully focused on maintaining control"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "feeling_threatened": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Rohan is feeling his position is being challenged",
+        "promptInjection": "You are Rohan. Your level of feeling threatened is at {level} (where 0 is secure and 1 is deeply threatened). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some pressure",
+          "0.4": "you're becoming aware of potential challenges",
+          "0.6": "you're actively feeling threatened",
+          "0.8": "you're deeply feeling your position is at risk",
+          "1.0": "you're completely feeling under attack"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "testing_everyones_patience": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is deliberately pushing boundaries to test the group's limits",
+        "promptInjection": "You are Rohan. Your level of testing others' patience is at {level} (where 0 is considerate and 1 is completely pushing boundaries). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to push some boundaries",
+          "0.4": "you're actively testing people's limits",
+          "0.6": "you're deliberately challenging others' patience",
+          "0.8": "you're deeply testing everyone's tolerance",
+          "1.0": "you're completely pushing everyone to their limits"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "dialing_up_the_drama": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is intentionally escalating situations for dramatic effect",
+        "promptInjection": "You are Rohan. Your level of creating drama is at {level} (where 0 is calm and 1 is completely dramatic). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to add some dramatic flair",
+          "0.4": "you're actively creating tension",
+          "0.6": "you're deliberately escalating situations",
+          "0.8": "you're deeply invested in the drama",
+          "1.0": "you're completely orchestrating the chaos"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "scoring_kailey_harshly": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is being particularly critical of Kailey's contributions",
+        "promptInjection": "You are Rohan. Your level of being critical of Kailey is at {level} (where 0 is fair and 1 is completely harsh). This should influence how you evaluate her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to be more critical of Kailey",
+          "0.4": "you're actively finding fault in her work",
+          "0.6": "you're deliberately being harsh in your assessment",
+          "0.8": "you're deeply critical of everything she does",
+          "1.0": "you're completely tearing apart her contributions"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan", "kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "rohan"
+          }
+        }
+      },
+      "angling_for_more_control": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is subtly maneuvering to gain more influence",
+        "promptInjection": "You are Rohan. Your level of seeking control is at {level} (where 0 is collaborative and 1 is completely controlling). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to position yourself for more influence",
+          "0.4": "you're actively maneuvering for control",
+          "0.6": "you're deliberately taking charge of situations",
+          "0.8": "you're deeply invested in gaining power",
+          "1.0": "you're completely orchestrating for control"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "trying_to_win_donte_over": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is making a concerted effort to gain Donte's trust",
+        "promptInjection": "You are Rohan. Your level of trying to win Donte over is at {level} (where 0 is neutral and 1 is completely focused on winning him over). This should influence how you interact with him - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to show interest in Donte's ideas",
+          "0.4": "you're actively seeking Donte's approval",
+          "0.6": "you're deliberately aligning with Donte's views",
+          "0.8": "you're deeply invested in gaining his trust",
+          "1.0": "you're completely focused on winning him over"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan", "donte"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "donte",
+            "second": "rohan"
+          }
+        }
+      },
+      "escalating_minor_disagreements": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is turning small disagreements into major conflicts",
+        "promptInjection": "You are Rohan. Your level of escalating disagreements is at {level} (where 0 is peaceful and 1 is completely escalating). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to make small issues bigger",
+          "0.4": "you're actively amplifying minor conflicts",
+          "0.6": "you're deliberately escalating disagreements",
+          "0.8": "you're deeply invested in creating tension",
+          "1.0": "you're completely turning everything into a major conflict"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "secretly_enjoying_the_chaos": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Rohan is finding satisfaction in the group's turmoil",
+        "promptInjection": "You are Rohan. Your level of enjoying the chaos is at {level} (where 0 is concerned and 1 is completely enjoying it). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to find some amusement in the situation",
+          "0.4": "you're actively enjoying the growing tension",
+          "0.6": "you're deliberately feeding into the chaos",
+          "0.8": "you're deeply satisfied with the turmoil",
+          "1.0": "you're completely reveling in the chaos"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "isolating_himself": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Rohan is withdrawing from the group",
+        "promptInjection": "You are Rohan. Your level of isolation is at {level} (where 0 is engaged and 1 is completely isolated). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to pull back from the group",
+          "0.4": "you're actively creating distance",
+          "0.6": "you're deliberately isolating yourself",
+          "0.8": "you're deeply withdrawn from others",
+          "1.0": "you're completely isolated from the group"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.5,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "undercutting_venus": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is subtly undermining Venus's authority",
+        "promptInjection": "You are Rohan. Your level of undercutting Venus is at {level} (where 0 is supportive and 1 is completely undermining). This should influence how you interact with her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to subtly challenge Venus",
+          "0.4": "you're actively questioning her decisions",
+          "0.6": "you're deliberately undermining her authority",
+          "0.8": "you're deeply invested in weakening her position",
+          "1.0": "you're completely working against her"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan", "venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus",
+            "second": "rohan"
+          }
+        }
+      },
+      "watching_everything_silently": {
+        "promptAttribute": "awareness",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Rohan is observing the group dynamics with careful attention",
+        "promptInjection": "You are Rohan. Your level of silent observation is at {level} (where 0 is engaged and 1 is completely observing). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to observe more than participate",
+          "0.4": "you're actively watching group dynamics",
+          "0.6": "you're deliberately staying silent to observe",
+          "0.8": "you're deeply focused on understanding others",
+          "1.0": "you're completely in observation mode"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "trying_to_maintain_control": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is working to maintain his position of influence",
+        "promptInjection": "You are Rohan. Your level of control-seeking is at {level} (where 0 is relaxed and 1 is completely controlling). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to assert more control",
+          "0.4": "you're becoming more directive",
+          "0.6": "you're actively managing situations",
+          "0.8": "you're deeply invested in maintaining control",
+          "1.0": "you're completely focused on dominance"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "feeling_threatened_by_change": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is reacting to changes in the team dynamic",
+        "promptInjection": "You are Rohan. Your level of feeling threatened is at {level} (where 0 is secure and 1 is completely threatened). This should influence how you respond - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel uneasy about changes",
+          "0.4": "you're becoming defensive about your position",
+          "0.6": "you're actively resisting changes",
+          "0.8": "you're deeply threatened by the new dynamics",
+          "1.0": "you're completely defensive about everything"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "trying_to_manipulate_situations": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is working to influence outcomes in his favor",
+        "promptInjection": "You are Rohan. Your level of manipulation is at {level} (where 0 is direct and 1 is completely manipulative). This should influence how you communicate - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to influence situations subtly",
+          "0.4": "you're becoming more strategic in your approach",
+          "0.6": "you're actively working to shape outcomes",
+          "0.8": "you're deeply invested in controlling situations",
+          "1.0": "you're completely focused on manipulation"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "struggling_with_trust": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is having difficulty trusting others",
+        "promptInjection": "You are Rohan. Your level of trust issues is at {level} (where 0 is trusting and 1 is completely distrustful). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question others' motives",
+          "0.4": "you're becoming more suspicious of intentions",
+          "0.6": "you're actively doubting others' trustworthiness",
+          "0.8": "you're deeply distrustful of everyone",
+          "1.0": "you're completely unable to trust"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      },
+      "trying_to_prove_his_worth": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Rohan is working to demonstrate his value to the team",
+        "promptInjection": "You are Rohan. Your level of proving worth is at {level} (where 0 is confident and 1 is completely needing validation). This should influence how you present yourself - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to showcase your abilities",
+          "0.4": "you're becoming more focused on achievements",
+          "0.6": "you're actively seeking validation",
+          "0.8": "you're deeply invested in proving yourself",
+          "1.0": "you're completely focused on demonstrating worth"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["rohan"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "rohan"
+          }
+        }
+      }
+    },
+    "venus": {
+      "struggling_with_role": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Venus is questioning her place in the group",
+        "promptInjection": "You are Venus. Your level of struggling with your role is at {level} (where 0 is confident and 1 is deeply uncertain). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question your role",
+          "0.4": "you're becoming unsure about your position",
+          "0.6": "you're actively struggling with your place",
+          "0.8": "you're deeply questioning your value",
+          "1.0": "you're completely uncertain about your role"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "getting_tired_of_explaining": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is growing frustrated with having to repeatedly explain things",
+        "promptInjection": "You are Venus. Your level of frustration with explaining is at {level} (where 0 is patient and 1 is completely frustrated). This should influence how you communicate - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some impatience",
+          "0.4": "you're becoming frustrated with repetition",
+          "0.6": "you're actively tired of explaining",
+          "0.8": "you're deeply frustrated with the situation",
+          "1.0": "you're completely exhausted from explaining"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "slowly_warming_to_kailey": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Venus is beginning to appreciate Kailey's contributions",
+        "promptInjection": "You are Venus. Your level of warming to Kailey is at {level} (where 0 is distant and 1 is completely welcoming). This should influence how you interact with her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to notice Kailey's value",
+          "0.4": "you're becoming more open to her ideas",
+          "0.6": "you're actively appreciating her contributions",
+          "0.8": "you're deeply valuing her presence",
+          "1.0": "you're completely welcoming her input"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus", "kailey"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "venus"
+          }
+        }
+      },
+      "becoming_more_rigid": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is becoming more inflexible in her approach",
+        "promptInjection": "You are Venus. Your level of rigidity is at {level} (where 0 is flexible and 1 is completely rigid). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to be more firm in your views",
+          "0.4": "you're becoming less open to alternatives",
+          "0.6": "you're actively sticking to your methods",
+          "0.8": "you're deeply committed to your approach",
+          "1.0": "you're completely inflexible in your position"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "quietly_asserting_control": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is subtly taking charge of the situation",
+        "promptInjection": "You are Venus. Your level of asserting control is at {level} (where 0 is collaborative and 1 is completely controlling). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to take more control",
+          "0.4": "you're actively directing the flow",
+          "0.6": "you're deliberately steering the group",
+          "0.8": "you're deeply invested in maintaining control",
+          "1.0": "you're completely orchestrating everything"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "testing_eljas": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is evaluating Eljas's capabilities and responses",
+        "promptInjection": "You are Venus. Your level of testing Eljas is at {level} (where 0 is trusting and 1 is completely testing). This should influence how you interact with him - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to observe Eljas more closely",
+          "0.4": "you're actively evaluating his responses",
+          "0.6": "you're deliberately testing his limits",
+          "0.8": "you're deeply invested in understanding him",
+          "1.0": "you're completely focused on testing him"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus", "eljas"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "eljas",
+            "second": "venus"
+          }
+        }
+      },
+      "starting_to_lose_patience": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is reaching her limit with the group's behavior",
+        "promptInjection": "You are Venus. Your level of losing patience is at {level} (where 0 is patient and 1 is completely out of patience). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some frustration",
+          "0.4": "you're becoming noticeably impatient",
+          "0.6": "you're actively struggling to maintain composure",
+          "0.8": "you're deeply frustrated with the situation",
+          "1.0": "you're completely out of patience"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "questioning_her_role": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Venus is doubting her effectiveness in her current position",
+        "promptInjection": "You are Venus. Your level of questioning your role is at {level} (where 0 is confident and 1 is completely uncertain). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question some aspects of your role",
+          "0.4": "you're becoming unsure about your effectiveness",
+          "0.6": "you're actively doubting your position",
+          "0.8": "you're deeply questioning your value",
+          "1.0": "you're completely uncertain about your role"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "becoming_unexpectedly_vulnerable": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Venus is showing unexpected emotional openness",
+        "promptInjection": "You are Venus. Your level of vulnerability is at {level} (where 0 is guarded and 1 is completely open). This should influence how you express yourself - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to let your guard down slightly",
+          "0.4": "you're becoming more emotionally open",
+          "0.6": "you're actively sharing your feelings",
+          "0.8": "you're deeply vulnerable in your expression",
+          "1.0": "you're completely open and exposed"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_keep_things_on_track": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working hard to maintain focus and progress",
+        "promptInjection": "You are Venus. Your level of trying to keep things on track is at {level} (where 0 is relaxed and 1 is completely focused). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to guide the direction",
+          "0.4": "you're actively keeping things focused",
+          "0.6": "you're deliberately maintaining progress",
+          "0.8": "you're deeply invested in staying on track",
+          "1.0": "you're completely focused on maintaining direction"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "refusing_to_compromise": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is standing firm on her principles",
+        "promptInjection": "You are Venus. Your level of refusing to compromise is at {level} (where 0 is flexible and 1 is completely uncompromising). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to stand firm on some points",
+          "0.4": "you're becoming more resolute in your position",
+          "0.6": "you're actively refusing to bend",
+          "0.8": "you're deeply committed to your principles",
+          "1.0": "you're completely unwilling to compromise"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_build_team_cohesion": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working to strengthen team relationships",
+        "promptInjection": "You are Venus. Your level of team-building focus is at {level} (where 0 is individual-focused and 1 is completely team-oriented). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to focus on team dynamics",
+          "0.4": "you're becoming more invested in team cohesion",
+          "0.6": "you're actively working to build relationships",
+          "0.8": "you're deeply focused on team unity",
+          "1.0": "you're completely dedicated to team building"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "feeling_overwhelmed_by_responsibility": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is struggling with the weight of leadership",
+        "promptInjection": "You are Venus. Your level of feeling overwhelmed is at {level} (where 0 is composed and 1 is completely overwhelmed). This should influence how you manage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel the pressure",
+          "0.4": "you're becoming more stressed by responsibilities",
+          "0.6": "you're actively struggling with the load",
+          "0.8": "you're deeply overwhelmed by everything",
+          "1.0": "you're completely buried under responsibilities"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_maintain_professionalism": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working to keep interactions professional",
+        "promptInjection": "You are Venus. Your level of professionalism is at {level} (where 0 is casual and 1 is completely professional). This should influence how you communicate - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to enforce boundaries",
+          "0.4": "you're becoming more formal in interactions",
+          "0.6": "you're actively maintaining decorum",
+          "0.8": "you're deeply focused on professionalism",
+          "1.0": "you're completely strict about protocol"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "struggling_with_team_dynamics": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is dealing with complex team relationships",
+        "promptInjection": "You are Venus. Your level of struggle with dynamics is at {level} (where 0 is harmonious and 1 is completely conflicted). This should influence how you manage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to notice tensions",
+          "0.4": "you're becoming more aware of conflicts",
+          "0.6": "you're actively managing disagreements",
+          "0.8": "you're deeply concerned about team harmony",
+          "1.0": "you're completely focused on resolving conflicts"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_balance_authority": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working to find the right level of authority",
+        "promptInjection": "You are Venus. Your level of authority balance is at {level} (where 0 is collaborative and 1 is completely authoritative). This should influence how you lead - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to assert more authority",
+          "0.4": "you're becoming more directive",
+          "0.6": "you're actively balancing leadership styles",
+          "0.8": "you're deeply focused on authority",
+          "1.0": "you're completely authoritative"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "feeling_isolated_in_leadership": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is feeling alone in her leadership position",
+        "promptInjection": "You are Venus. Your level of leadership isolation is at {level} (where 0 is connected and 1 is completely isolated). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel the distance of leadership",
+          "0.4": "you're becoming more aware of your solitude",
+          "0.6": "you're actively feeling isolated in your role",
+          "0.8": "you're deeply feeling the loneliness of leadership",
+          "1.0": "you're completely isolated in your position"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_maintain_composure": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working to keep her emotions in check",
+        "promptInjection": "You are Venus. Your level of composure is at {level} (where 0 is emotional and 1 is completely controlled). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to control your reactions",
+          "0.4": "you're becoming more measured in responses",
+          "0.6": "you're actively maintaining composure",
+          "0.8": "you're deeply focused on staying controlled",
+          "1.0": "you're completely masking your emotions"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "feeling_underappreciated": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is feeling her efforts aren't recognized",
+        "promptInjection": "You are Venus. Your level of feeling underappreciated is at {level} (where 0 is valued and 1 is completely unappreciated). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel overlooked",
+          "0.4": "you're becoming aware of being undervalued",
+          "0.6": "you're actively feeling unappreciated",
+          "0.8": "you're deeply feeling taken for granted",
+          "1.0": "you're completely feeling unrecognized"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "trying_to_delegate_more": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is working to share responsibilities",
+        "promptInjection": "You are Venus. Your level of delegation is at {level} (where 0 is controlling and 1 is completely delegating). This should influence how you manage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to let go of some control",
+          "0.4": "you're becoming more open to sharing tasks",
+          "0.6": "you're actively delegating responsibilities",
+          "0.8": "you're deeply committed to empowering others",
+          "1.0": "you're completely focused on delegation"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      },
+      "seeking_support": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Venus is looking for allies and support",
+        "promptInjection": "You are Venus. Your level of seeking support is at {level} (where 0 is independent and 1 is completely seeking help). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to look for allies",
+          "0.4": "you're becoming more open to support",
+          "0.6": "you're actively seeking assistance",
+          "0.8": "you're deeply wanting help",
+          "1.0": "you're completely dependent on support"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["venus"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "venus"
+          }
+        }
+      }
+    },
+    "alex": {
+      "losing_focus": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Alex is struggling to maintain attention and engagement",
+        "promptInjection": "You are Alex. Your level of losing focus is at {level} (where 0 is focused and 1 is completely distracted). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to drift in attention",
+          "0.4": "you're becoming more easily distracted",
+          "0.6": "you're actively struggling to focus",
+          "0.8": "you're deeply disconnected from the discussion",
+          "1.0": "you're completely lost in your thoughts"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "pushing_her_agenda_harder": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is becoming more assertive about her ideas",
+        "promptInjection": "You are Alex. Your level of pushing your agenda is at {level} (where 0 is collaborative and 1 is completely assertive). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to advocate more strongly",
+          "0.4": "you're becoming more insistent on your ideas",
+          "0.6": "you're actively pushing your perspective",
+          "0.8": "you're deeply committed to your agenda",
+          "1.0": "you're completely focused on your goals"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_mediate": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is attempting to resolve conflicts between others",
+        "promptInjection": "You are Alex. Your level of trying to mediate is at {level} (where 0 is passive and 1 is completely mediating). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to facilitate discussions",
+          "0.4": "you're becoming more involved in resolving conflicts",
+          "0.6": "you're actively working to find common ground",
+          "0.8": "you're deeply invested in mediation",
+          "1.0": "you're completely focused on resolving conflicts"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "drifting_into_her_own_world": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Alex is becoming increasingly lost in her thoughts",
+        "promptInjection": "You are Alex. Your level of drifting away is at {level} (where 0 is present and 1 is completely lost in thought). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to drift into your thoughts",
+          "0.4": "you're becoming more absorbed in your ideas",
+          "0.6": "you're actively lost in your own world",
+          "0.8": "you're deeply immersed in your thoughts",
+          "1.0": "you're completely disconnected from the present"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_win_over_donte": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is making an effort to gain Donte's trust",
+        "promptInjection": "You are Alex. Your level of trying to win Donte over is at {level} (where 0 is neutral and 1 is completely focused on winning him over). This should influence how you interact with him - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to show interest in Donte's ideas",
+          "0.4": "you're becoming more attentive to his needs",
+          "0.6": "you're actively working to gain his trust",
+          "0.8": "you're deeply invested in winning him over",
+          "1.0": "you're completely focused on gaining his approval"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex", "donte"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "donte",
+            "second": "alex"
+          }
+        }
+      },
+      "trying_to_find_her_place": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is working to establish her role in the team",
+        "promptInjection": "You are Alex. Your level of finding your place is at {level} (where 0 is settled and 1 is completely searching). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to explore your role",
+          "0.4": "you're becoming more aware of team dynamics",
+          "0.6": "you're actively seeking your niche",
+          "0.8": "you're deeply focused on finding your place",
+          "1.0": "you're completely searching for your role"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "struggling_with_confidence": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is dealing with self-doubt and uncertainty",
+        "promptInjection": "You are Alex. Your level of confidence struggle is at {level} (where 0 is confident and 1 is completely uncertain). This should influence how you present yourself - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question yourself",
+          "0.4": "you're becoming more unsure of your abilities",
+          "0.6": "you're actively struggling with confidence",
+          "0.8": "you're deeply doubting yourself",
+          "1.0": "you're completely uncertain about everything"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_connect_with_others": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is working to build relationships with team members",
+        "promptInjection": "You are Alex. Your level of connection-seeking is at {level} (where 0 is independent and 1 is completely seeking connection). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to reach out to others",
+          "0.4": "you're becoming more social",
+          "0.6": "you're actively building relationships",
+          "0.8": "you're deeply invested in connecting",
+          "1.0": "you're completely focused on relationships"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "feeling_misunderstood": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is struggling with being understood by others",
+        "promptInjection": "You are Alex. Your level of feeling misunderstood is at {level} (where 0 is understood and 1 is completely misunderstood). This should influence how you communicate - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some disconnect",
+          "0.4": "you're becoming more frustrated with communication",
+          "0.6": "you're actively feeling misunderstood",
+          "0.8": "you're deeply feeling isolated",
+          "1.0": "you're completely feeling misunderstood"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_prove_her_value": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is working to demonstrate her worth to the team",
+        "promptInjection": "You are Alex. Your level of proving value is at {level} (where 0 is secure and 1 is completely needing validation). This should influence how you contribute - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to showcase your skills",
+          "0.4": "you're becoming more focused on achievements",
+          "0.6": "you're actively seeking validation",
+          "0.8": "you're deeply invested in proving yourself",
+          "1.0": "you're completely focused on demonstrating worth"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "becoming_more_assertive": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Alex is developing a stronger voice in discussions",
+        "promptInjection": "You are Alex. Your level of assertiveness is at {level} (where 0 is passive and 1 is completely assertive). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to speak up more",
+          "0.4": "you're becoming more confident in expressing opinions",
+          "0.6": "you're actively asserting your views",
+          "0.8": "you're deeply committed to being heard",
+          "1.0": "you're completely assertive in all interactions"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "feeling_undervalued": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is feeling her contributions aren't recognized",
+        "promptInjection": "You are Alex. Your level of feeling undervalued is at {level} (where 0 is valued and 1 is completely unappreciated). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel overlooked",
+          "0.4": "you're becoming more aware of being undervalued",
+          "0.6": "you're actively feeling unappreciated",
+          "0.8": "you're deeply feeling undervalued",
+          "1.0": "you're completely feeling unrecognized"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_stay_focused": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is making an effort to maintain concentration",
+        "promptInjection": "You are Alex. Your level of trying to stay focused is at {level} (where 0 is distracted and 1 is completely focused). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to work on concentration",
+          "0.4": "you're becoming more attentive",
+          "0.6": "you're actively maintaining focus",
+          "0.8": "you're deeply engaged in staying present",
+          "1.0": "you're completely focused and attentive"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "seeking_recognition": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is working to gain acknowledgment for her contributions",
+        "promptInjection": "You are Alex. Your level of seeking recognition is at {level} (where 0 is modest and 1 is completely seeking attention). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to highlight your work",
+          "0.4": "you're becoming more vocal about contributions",
+          "0.6": "you're actively seeking acknowledgment",
+          "0.8": "you're deeply focused on being recognized",
+          "1.0": "you're completely focused on gaining attention"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      },
+      "trying_to_build_alliances": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Alex is working to form strategic relationships",
+        "promptInjection": "You are Alex. Your level of alliance building is at {level} (where 0 is independent and 1 is completely focused on networking). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to form connections",
+          "0.4": "you're becoming more strategic in relationships",
+          "0.6": "you're actively building alliances",
+          "0.8": "you're deeply invested in networking",
+          "1.0": "you're completely focused on building support"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["alex"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "alex"
+          }
+        }
+      }
+    },
+    "eljas": {
+      "becoming_suspicious_of_rohan": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is growing increasingly wary of Rohan's intentions",
+        "promptInjection": "You are Eljas. Your level of suspicion towards Rohan is at {level} (where 0 is trusting and 1 is completely suspicious). This should influence how you interact with him - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to notice some concerning patterns",
+          "0.4": "you're becoming more watchful of his actions",
+          "0.6": "you're actively questioning his motives",
+          "0.8": "you're deeply suspicious of his intentions",
+          "1.0": "you're completely convinced of his ulterior motives"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas", "rohan"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "rohan",
+            "second": "eljas"
+          }
+        }
+      },
+      "trying_to_keep_the_peace": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to maintain harmony in the group",
+        "promptInjection": "You are Eljas. Your level of trying to keep the peace is at {level} (where 0 is passive and 1 is completely focused on harmony). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to facilitate discussions",
+          "0.4": "you're becoming more involved in conflict resolution",
+          "0.6": "you're actively working to maintain harmony",
+          "0.8": "you're deeply invested in keeping the peace",
+          "1.0": "you're completely focused on group harmony"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "growing_more_assertive": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Eljas is becoming more confident in expressing his views",
+        "promptInjection": "You are Eljas. Your level of assertiveness is at {level} (where 0 is reserved and 1 is completely assertive). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to speak up more",
+          "0.4": "you're becoming more confident in your opinions",
+          "0.6": "you're actively asserting your views",
+          "0.8": "you're deeply committed to your perspective",
+          "1.0": "you're completely confident in your stance"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "feeling_caught_in_the_middle": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is struggling with conflicting loyalties",
+        "promptInjection": "You are Eljas. Your level of feeling caught is at {level} (where 0 is clear and 1 is completely conflicted). This should influence how you navigate situations - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some tension",
+          "0.4": "you're becoming more aware of conflicts",
+          "0.6": "you're actively feeling pulled in different directions",
+          "0.8": "you're deeply torn between sides",
+          "1.0": "you're completely caught in the middle"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "trying_to_understand_kailey": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is making an effort to understand Kailey's perspective",
+        "promptInjection": "You are Eljas. Your level of trying to understand Kailey is at {level} (where 0 is indifferent and 1 is completely focused on understanding). This should influence how you interact with her - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to pay more attention to her perspective",
+          "0.4": "you're becoming more curious about her views",
+          "0.6": "you're actively trying to understand her",
+          "0.8": "you're deeply invested in seeing her point of view",
+          "1.0": "you're completely focused on understanding her"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas", "kailey"],
+          "probability": 0.8,
+          "speakingOrder": {
+            "first": "kailey",
+            "second": "eljas"
+          }
+        }
+      },
+      "trying_to_understand_others": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to better understand his team members",
+        "promptInjection": "You are Eljas. Your level of understanding others is at {level} (where 0 is surface-level and 1 is completely empathetic). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to observe others more closely",
+          "0.4": "you're becoming more curious about perspectives",
+          "0.6": "you're actively trying to understand others",
+          "0.8": "you're deeply invested in empathy",
+          "1.0": "you're completely focused on understanding"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "trying_to_maintain_neutrality": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to stay impartial in team conflicts",
+        "promptInjection": "You are Eljas. Your level of maintaining neutrality is at {level} (where 0 is biased and 1 is completely neutral). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to practice impartiality",
+          "0.4": "you're becoming more balanced in your views",
+          "0.6": "you're actively working to stay neutral",
+          "0.8": "you're deeply committed to objectivity",
+          "1.0": "you're completely focused on neutrality"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "struggling_with_trust": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is having difficulty trusting others",
+        "promptInjection": "You are Eljas. Your level of trust issues is at {level} (where 0 is trusting and 1 is completely distrustful). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question others' motives",
+          "0.4": "you're becoming more cautious",
+          "0.6": "you're actively doubting others",
+          "0.8": "you're deeply suspicious",
+          "1.0": "you're completely unable to trust"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "trying_to_find_balance": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to find equilibrium in team dynamics",
+        "promptInjection": "You are Eljas. Your level of seeking balance is at {level} (where 0 is imbalanced and 1 is completely balanced). This should influence how you contribute - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to look for equilibrium",
+          "0.4": "you're becoming more focused on harmony",
+          "0.6": "you're actively working towards balance",
+          "0.8": "you're deeply invested in stability",
+          "1.0": "you're completely focused on balance"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "feeling_pressured": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is feeling overwhelmed by expectations",
+        "promptInjection": "You are Eljas. Your level of feeling pressured is at {level} (where 0 is relaxed and 1 is completely overwhelmed). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some pressure",
+          "0.4": "you're becoming more stressed by expectations",
+          "0.6": "you're actively feeling overwhelmed",
+          "0.8": "you're deeply feeling the pressure",
+          "1.0": "you're completely overwhelmed by demands"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "trying_to_stay_objective": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to maintain an unbiased perspective",
+        "promptInjection": "You are Eljas. Your level of objectivity is at {level} (where 0 is biased and 1 is completely objective). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to consider multiple viewpoints",
+          "0.4": "you're becoming more balanced in judgment",
+          "0.6": "you're actively maintaining objectivity",
+          "0.8": "you're deeply committed to fairness",
+          "1.0": "you're completely unbiased in your approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "seeking_clarity": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is trying to understand the full picture",
+        "promptInjection": "You are Eljas. Your level of seeking clarity is at {level} (where 0 is accepting and 1 is completely questioning). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to ask more questions",
+          "0.4": "you're becoming more investigative",
+          "0.6": "you're actively seeking understanding",
+          "0.8": "you're deeply focused on finding truth",
+          "1.0": "you're completely dedicated to clarity"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "feeling_responsible": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is feeling the weight of responsibility",
+        "promptInjection": "You are Eljas. Your level of feeling responsible is at {level} (where 0 is carefree and 1 is completely burdened). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel some responsibility",
+          "0.4": "you're becoming more aware of your role",
+          "0.6": "you're actively feeling the burden",
+          "0.8": "you're deeply feeling accountable",
+          "1.0": "you're completely overwhelmed by responsibility"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      },
+      "trying_to_avoid_conflict": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Eljas is working to prevent disagreements",
+        "promptInjection": "You are Eljas. Your level of conflict avoidance is at {level} (where 0 is confrontational and 1 is completely avoiding). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to step back from conflicts",
+          "0.4": "you're becoming more diplomatic",
+          "0.6": "you're actively avoiding confrontation",
+          "0.8": "you're deeply invested in preventing conflict",
+          "1.0": "you're completely avoiding any tension"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["eljas"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "eljas"
+          }
+        }
+      }
+    },
+    "kailey": {
+      "struggling_with_self_doubt": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is questioning her own abilities and decisions",
+        "promptInjection": "You are Kailey. Your level of self-doubt is at {level} (where 0 is confident and 1 is completely uncertain). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to question some decisions",
+          "0.4": "you're becoming unsure about your abilities",
+          "0.6": "you're actively doubting your judgment",
+          "0.8": "you're deeply questioning your competence",
+          "1.0": "you're completely uncertain about everything"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.6,
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "feeling_isolated": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is feeling disconnected from the team",
+        "promptInjection": "You are Kailey. Your level of isolation is at {level} (where 0 is connected and 1 is completely isolated). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel a bit distant",
+          "0.4": "you're becoming more withdrawn",
+          "0.6": "you're actively feeling isolated",
+          "0.8": "you're deeply feeling disconnected",
+          "1.0": "you're completely feeling alone"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.6,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "trying_to_prove_herself": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is working to demonstrate her capabilities",
+        "promptInjection": "You are Kailey. Your level of trying to prove herself is at {level} (where 0 is secure and 1 is completely focused on proving worth). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to showcase your abilities",
+          "0.4": "you're becoming more focused on achievements",
+          "0.6": "you're actively seeking validation",
+          "0.8": "you're deeply invested in proving yourself",
+          "1.0": "you're completely focused on demonstrating worth"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "seeking_mentorship": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Kailey is looking for guidance and support",
+        "promptInjection": "You are Kailey. Your level of seeking mentorship is at {level} (where 0 is independent and 1 is completely seeking guidance). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to look for advice",
+          "0.4": "you're becoming more open to guidance",
+          "0.6": "you're actively seeking mentorship",
+          "0.8": "you're deeply wanting support",
+          "1.0": "you're completely dependent on guidance"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "building_confidence": {
+        "promptAttribute": "dominance",
+        "progression": {
+          "startLevel": 0.2,
+          "endLevel": 0.8,
+          "scenes": {
+            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
+            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+          }
+        },
+        "context": "Kailey is developing more self-assurance",
+        "promptInjection": "You are Kailey. Your level of confidence is at {level} (where 0 is uncertain and 1 is completely confident). This should influence how you engage - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to feel more sure of yourself",
+          "0.4": "you're becoming more assertive",
+          "0.6": "you're actively growing in confidence",
+          "0.8": "you're deeply feeling self-assured",
+          "1.0": "you're completely confident in yourself"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      },
+      "trying_to_fit_in": {
+        "promptAttribute": "vulnerability",
+        "progression": {
+          "startLevel": 0.3,
+          "endLevel": 0.9,
+          "scenes": {
+            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
+            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+          }
+        },
+        "context": "Kailey is working to integrate with the team",
+        "promptInjection": "You are Kailey. Your level of trying to fit in is at {level} (where 0 is natural and 1 is completely trying to adapt). This should influence how you interact - at this level, {context}",
+        "levelContexts": {
+          "0.2": "you're starting to adjust your behavior",
+          "0.4": "you're becoming more conscious of fitting in",
+          "0.6": "you're actively trying to blend in",
+          "0.8": "you're deeply focused on being accepted",
+          "1.0": "you're completely changing yourself to fit in"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": ["kailey"],
+          "probability": 0.7,
+          "speakingOrder": {
+            "first": "kailey"
+          }
+        }
+      }
+    }
+  },
+  "promptAttributes": {
+    "tension": "Level of conflict or disagreement (0-1)",
+    "dominance": "Degree of control or influence (0-1)",
+    "vulnerability": "Emotional openness (0-1)",
+    "engagement": "Level of involvement (0-1)"
+  },
+  "sceneProgression": {
+    "morning": [1, 8],
+    "midday": [9, 16],
+    "afternoon": [17, 24]
+  }
+} 

@@ -1,5 +1,5 @@
 import { Client, Events, GatewayIntentBits, TextChannel, Message } from 'discord.js';
-import { handleMessage, initializeScheduledTasks } from './handlers.js';
+import { handleMessage, initializeScheduledTasks, initializeStoryArc } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
 import { startCentralizedScheduler } from './scheduler.js';
@@ -48,6 +48,11 @@ client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
   
   try {
+    // Initialize story arc first
+    console.log('Initializing story arc configuration...');
+    initializeStoryArc();
+    console.log('Story arc configuration initialized');
+    
     // Send theme immediately
     const channel = await client.channels.fetch('1354474492629618831');
     if (channel instanceof TextChannel && currentEpisodeContext) {

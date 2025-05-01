@@ -247,24 +247,40 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
 function getTensionContext(sceneIndex: number): { intensity: number; context: string; promptInjection: string } | null {
   try {
     const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    const donteKaileyArc = storyArcs.find((arc: any) => arc.id === 'getting_irritated_by_kailey');
+    const donteKaileyArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
     
     if (!donteKaileyArc) {
       console.error('Story arc not found in story-arcs.json');
       return null;
     }
     
-    // For testing: Rapid tension increase over 5 scenes
+    // Determine time of day based on scene index (24 scenes per episode)
     let timeOfDay: 'morning' | 'midday' | 'afternoon';
-    if (sceneIndex < 2) timeOfDay = 'morning';      // Scenes 0-1: intensity 0.3
-    else if (sceneIndex < 4) timeOfDay = 'midday';  // Scenes 2-3: intensity 0.5
-    else timeOfDay = 'afternoon';                   // Scenes 4+: intensity 0.7
+    if (sceneIndex < 8) timeOfDay = 'morning';      // Scenes 0-7
+    else if (sceneIndex < 16) timeOfDay = 'midday'; // Scenes 8-15
+    else timeOfDay = 'afternoon';                   // Scenes 16-23
     
-    const levelContext = donteKaileyArc.levelContexts[timeOfDay];
+    // Get the progression data for the current time of day
+    const progression = donteKaileyArc.progression.scenes[timeOfDay];
+    // Get the specific intensity level for this scene (0-7 within the time period)
+    const sceneIndexInPeriod = sceneIndex % 8;
+    const intensity = progression[sceneIndexInPeriod];
+    
+    // Get the appropriate context for this intensity level
+    const levelContext = Object.entries(donteKaileyArc.levelContexts)
+      .reduce((closest, [level, context]) => {
+        const levelNum = parseFloat(level);
+        return Math.abs(levelNum - intensity) < Math.abs(parseFloat(closest[0]) - intensity)
+          ? [level, context]
+          : closest;
+      }, ['0.2', ''])[1];
+    
     return {
-      intensity: levelContext.intensity,
-      context: levelContext.context,
+      intensity,
+      context: donteKaileyArc.context,
       promptInjection: donteKaileyArc.promptInjection
+        .replace('{level}', intensity.toString())
+        .replace('{context}', levelContext)
     };
   } catch (error) {
     console.error('Error reading tension context:', error);
@@ -345,7 +361,7 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
 
     // Second coach responds
     console.log('Generating second message...');
-    const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". ${tensionContext ? `\n\n${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
+    const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". ${tensionContext && selectedCharacters[1].id === 'donte' ? `\n\nIMPORTANT: ${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})\n\nYour response should clearly reflect this level of irritation.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
     const secondMessage = await generateCharacterResponse(selectedCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
     console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, selectedCharacters[1].id, secondMessage);
@@ -356,7 +372,7 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
 
     // Third coach responds
     console.log('Generating third message...');
-    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:\n    ${selectedCharacters[0].name}: "${firstMessage}"\n    ${selectedCharacters[1].name}: "${secondMessage}"\n    ${tensionContext ? `\n\n${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
+    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:\n    ${selectedCharacters[0].name}: "${firstMessage}"\n    ${selectedCharacters[1].name}: "${secondMessage}"\n    ${tensionContext && selectedCharacters[2].id === 'donte' ? `\n\nIMPORTANT: ${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})\n\nYour response should clearly reflect this level of irritation.` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
     const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
     console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
