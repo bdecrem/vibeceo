@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-01T03-33",
+  "createdAt": "2025-05-01T03:33:06.744Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 11:33am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their data-driven heavens.",
+      "location": "Singapore penthouse",
+      "localTime": "3:33",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 11:35am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their strategic mountaintops.",
+      "location": "Singapore penthouse",
+      "localTime": "3:35",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 11:36am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital cloud realms.",
+      "location": "Singapore penthouse",
+      "localTime": "3:36",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 11:37am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have ascended to their data-driven heavens.",
+      "location": "Singapore penthouse",
+      "localTime": "3:37",
+      "coaches": []
+    }
+  ]
+}

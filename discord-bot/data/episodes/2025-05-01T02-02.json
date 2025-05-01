@@ -1,0 +1,111 @@
+{
+  "id": "2025-05-01T02-02",
+  "createdAt": "2025-05-01T02:02:03.781Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 10:02am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars in the digital cathedral.",
+      "outro": "The coaches have dispersed to their strategic silos.",
+      "location": "Singapore penthouse",
+      "localTime": "2:2",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 10:04am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:4",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 10:05am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team meeting.",
+      "outro": "The coaches have scattered to their virtual realms.",
+      "location": "Singapore penthouse",
+      "localTime": "2:5",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 10:06am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their laptops during the morning standup.",
+      "outro": "The coaches have dispersed to their innovation sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:6",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 10:08am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "2:8",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 10:09am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their energy in the conference room.",
+      "outro": "The coaches have exhaled, grounding themselves in the boardroom.",
+      "location": "Singapore penthouse",
+      "localTime": "2:9",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 10:10am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital realms.",
+      "location": "Singapore penthouse",
+      "localTime": "2:10",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 10:12am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have ascended to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "2:12",
+      "coaches": []
+    },
+    {
+      "index": 9,
+      "type": "watercooler",
+      "intro": "It's 10:13am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the sacred clock.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "2:13",
+      "coaches": []
+    },
+    {
+      "index": 10,
+      "type": "watercooler",
+      "intro": "It's 10:14am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their strategy circles.",
+      "location": "Singapore penthouse",
+      "localTime": "2:14",
+      "coaches": []
+    }
+  ]
+}

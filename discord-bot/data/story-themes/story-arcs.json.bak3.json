@@ -7,20 +7,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Donte is getting increasingly irritated by Kailey's approach",
         "promptInjection": "You are Donte. Your irritation with Kailey's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to her - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively frustrated by her methods",
+          "0.6": "you're visibly frustrated and showing clear signs of tension in your interactions",
           "1.0": "you're completely fed up with her methods"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["donte", "kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "donte"
@@ -33,20 +33,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Donte is gradually becoming more open with Kailey",
         "promptInjection": "You are Donte. Your level of opening up to Kailey is at {level} (where 0 is guarded and 1 is completely open). This should influence how you interact with her - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively engaging in deeper conversations",
+          "0.6": "you're clearly vulnerable and showing emotional strain in your interactions",
           "1.0": "you're completely open and vulnerable with her"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["donte", "kailey"],
-          "probability": 1.0,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "kailey",
             "second": "donte"
@@ -61,18 +61,18 @@
           "scenes": {
             "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Donte's mind is elsewhere, not fully present in conversations",
         "promptInjection": "You are Donte. Your level of distraction is at {level} (where 0 is fully focused and 1 is completely distracted). This should influence how you engage - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively distracted and having trouble focusing",
+          "0.6": "you're clearly distracted and struggling to maintain focus on the conversation",
           "1.0": "you're completely distracted and not paying attention"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["donte"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "donte"
@@ -85,20 +85,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Donte is losing interest in the current situation",
         "promptInjection": "You are Donte. Your level of boredom is at {level} (where 0 is engaged and 1 is completely disinterested). This should influence how you participate - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're becoming noticeably disinterested",
+          "0.6": "you're clearly disengaged and showing obvious signs of disinterest",
           "1.0": "you're completely checked out and uninterested"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["donte"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "donte"
@@ -111,20 +111,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Donte is perceiving Rohan as a threat to his position",
         "promptInjection": "You are Donte. Your level of feeling threatened by Rohan is at {level} (where 0 is secure and 1 is deeply threatened). This should influence how you interact with him - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively feeling challenged by Rohan",
+          "0.6": "you're visibly tense and showing clear signs of feeling threatened",
           "1.0": "you're completely feeling threatened by Rohan"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["donte", "rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "rohan",
             "second": "donte"
@@ -137,20 +137,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is overcompensating to make others happy",
         "promptInjection": "You are Kailey. Your level of trying to please others is at {level} (where 0 is natural and 1 is overcompensating). This should influence how you interact - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're going out of your way to be helpful",
+          "0.6": "you're clearly insecure and showing obvious signs of self-doubt",
           "1.0": "you're desperately trying to please everyone"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -163,20 +163,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is starting to feel overwhelmed by the situation",
         "promptInjection": "You are Kailey. Your level of feeling overwhelmed is at {level} (where 0 is calm and 1 is completely overwhelmed). This should influence how you engage - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively feeling overwhelmed",
+          "0.6": "you're clearly overwhelmed and showing obvious signs of stress",
           "1.0": "you're completely overwhelmed by the situation"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -189,20 +189,20 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is trying to mentor and guide Donte",
         "promptInjection": "You are Kailey. Your level of trying to coach Donte is at {level} (where 0 is hands-off and 1 is very involved). This should influence how you interact - at this level, {context}",
         "levelContexts": {
-          "0.6": "you're actively trying to guide him",
-          "1.0": "you're intensely focused on coaching him"
+          "0.6": "you're clearly invested and showing obvious signs of trying to help",
+          "1.0": "you're completely focused on mentoring him"
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey", "donte"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "kailey",
             "second": "donte"
@@ -215,9 +215,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is seeking approval and recognition from Venus",
@@ -228,7 +228,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey", "venus"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "venus",
             "second": "kailey"
@@ -241,9 +241,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is masking her growing frustration with a positive facade",
@@ -254,7 +254,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -267,9 +267,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is growing more assertive and self-assured",
@@ -280,7 +280,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -293,9 +293,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is feeling her contributions are being overlooked",
@@ -306,7 +306,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -321,9 +321,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
-            "afternoon": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is attempting to take control of the situation",
@@ -334,7 +334,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -347,9 +347,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is feeling threatened by others",
@@ -360,7 +360,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -373,9 +373,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is deliberately pushing boundaries to test the group's limits",
@@ -386,7 +386,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -399,9 +399,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is intentionally escalating situations for dramatic effect",
@@ -412,7 +412,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -425,9 +425,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is being particularly critical of Kailey's contributions",
@@ -438,7 +438,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan", "kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "kailey",
             "second": "rohan"
@@ -451,9 +451,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is subtly maneuvering to gain more influence",
@@ -464,7 +464,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -477,9 +477,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is making a concerted effort to gain Donte's trust",
@@ -490,7 +490,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan", "donte"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "donte",
             "second": "rohan"
@@ -503,9 +503,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is turning small disagreements into major conflicts",
@@ -516,7 +516,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -529,9 +529,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is finding satisfaction in the group's turmoil",
@@ -542,7 +542,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -555,9 +555,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is withdrawing from the group",
@@ -568,7 +568,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.5,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -581,9 +581,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is subtly undermining Venus's authority",
@@ -594,7 +594,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan", "venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "venus",
             "second": "rohan"
@@ -607,9 +607,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is observing the group dynamics with careful attention",
@@ -620,7 +620,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -633,9 +633,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is working to maintain his position of influence",
@@ -646,7 +646,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -659,9 +659,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is reacting to changes in the team dynamic",
@@ -672,7 +672,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -685,9 +685,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is working to influence outcomes in his favor",
@@ -698,7 +698,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -711,9 +711,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is having difficulty trusting others",
@@ -724,7 +724,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -737,9 +737,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is working to demonstrate his value to the team",
@@ -750,7 +750,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "rohan"
@@ -763,9 +763,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is testing and pushing boundaries",
@@ -776,7 +776,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "rohan",
             "second": "any"
@@ -789,9 +789,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is stirring up drama and tension",
@@ -802,7 +802,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "rohan",
             "second": "any"
@@ -815,9 +815,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-            "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Rohan is being critical of Kailey's approach",
@@ -828,7 +828,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["rohan", "kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "rohan",
             "second": "kailey"
@@ -843,9 +843,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is questioning her place in the group",
@@ -858,7 +858,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -871,9 +871,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is growing frustrated with having to repeatedly explain things",
@@ -886,7 +886,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -899,9 +899,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is beginning to appreciate Kailey's contributions",
@@ -914,7 +914,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus", "kailey"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "kailey",
             "second": "venus"
@@ -927,9 +927,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is becoming more inflexible in her approach",
@@ -942,7 +942,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -955,9 +955,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is subtly taking charge of the situation",
@@ -970,7 +970,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -983,9 +983,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is evaluating Eljas's capabilities and responses",
@@ -998,7 +998,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus", "eljas"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "eljas",
             "second": "venus"
@@ -1011,9 +1011,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is reaching her limit with the group's behavior",
@@ -1026,7 +1026,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1039,9 +1039,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is doubting her effectiveness in her current position",
@@ -1054,7 +1054,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1067,9 +1067,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is showing unexpected emotional openness",
@@ -1082,7 +1082,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1095,9 +1095,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working hard to maintain focus and progress",
@@ -1110,7 +1110,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1123,9 +1123,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is standing firm on her principles",
@@ -1138,7 +1138,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1151,9 +1151,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working to strengthen team relationships",
@@ -1166,7 +1166,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1179,9 +1179,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is struggling with the weight of leadership",
@@ -1194,7 +1194,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1207,9 +1207,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working to keep interactions professional",
@@ -1222,7 +1222,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1235,9 +1235,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is dealing with complex team relationships",
@@ -1250,7 +1250,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1263,9 +1263,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working to find the right level of authority",
@@ -1278,7 +1278,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1291,9 +1291,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is feeling alone in her leadership position",
@@ -1306,7 +1306,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1319,9 +1319,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working to keep her emotions in check",
@@ -1334,7 +1334,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1347,9 +1347,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is feeling her efforts aren't recognized",
@@ -1362,7 +1362,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1375,9 +1375,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is working to share responsibilities",
@@ -1390,7 +1390,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1403,9 +1403,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Venus is looking for allies and support",
@@ -1418,7 +1418,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["venus"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "venus"
@@ -1433,9 +1433,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is struggling to maintain attention and engagement",
@@ -1448,7 +1448,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1461,9 +1461,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is becoming more assertive about her ideas",
@@ -1476,7 +1476,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1489,9 +1489,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is attempting to resolve conflicts between others",
@@ -1504,7 +1504,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1517,9 +1517,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is becoming increasingly lost in her thoughts",
@@ -1532,7 +1532,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1545,9 +1545,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is making an effort to gain Donte's trust",
@@ -1560,7 +1560,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex", "donte"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "donte",
             "second": "alex"
@@ -1573,9 +1573,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is working to establish her role in the team",
@@ -1588,7 +1588,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1601,9 +1601,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is dealing with self-doubt and uncertainty",
@@ -1616,7 +1616,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1629,9 +1629,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is working to build relationships with team members",
@@ -1644,7 +1644,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1657,9 +1657,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is struggling with being understood by others",
@@ -1672,7 +1672,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1685,9 +1685,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is working to demonstrate her worth to the team",
@@ -1700,7 +1700,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1713,9 +1713,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is developing a stronger voice in discussions",
@@ -1728,7 +1728,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1741,9 +1741,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is feeling her contributions aren't recognized",
@@ -1756,7 +1756,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1769,9 +1769,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is making an effort to maintain concentration",
@@ -1784,7 +1784,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1797,9 +1797,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is working to gain acknowledgment for her contributions",
@@ -1812,7 +1812,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1825,9 +1825,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Alex is working to form strategic relationships",
@@ -1840,7 +1840,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["alex"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "alex"
@@ -1855,9 +1855,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is growing increasingly wary of Rohan's intentions",
@@ -1870,7 +1870,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas", "rohan"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "rohan",
             "second": "eljas"
@@ -1883,9 +1883,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to maintain harmony in the group",
@@ -1898,7 +1898,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -1911,9 +1911,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is becoming more confident in expressing his views",
@@ -1926,7 +1926,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -1939,9 +1939,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is struggling with conflicting loyalties",
@@ -1954,7 +1954,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -1967,9 +1967,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is making an effort to understand Kailey's perspective",
@@ -1982,7 +1982,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas", "kailey"],
-          "probability": 0.8,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "kailey",
             "second": "eljas"
@@ -1995,9 +1995,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to better understand his team members",
@@ -2010,7 +2010,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2023,9 +2023,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to stay impartial in team conflicts",
@@ -2038,7 +2038,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2051,9 +2051,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is having difficulty trusting others",
@@ -2066,7 +2066,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2079,9 +2079,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to find equilibrium in team dynamics",
@@ -2094,7 +2094,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2107,9 +2107,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is feeling overwhelmed by expectations",
@@ -2122,7 +2122,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2135,9 +2135,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to maintain an unbiased perspective",
@@ -2150,7 +2150,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2163,9 +2163,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is trying to understand the full picture",
@@ -2178,7 +2178,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2191,9 +2191,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is feeling the weight of responsibility",
@@ -2206,7 +2206,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2219,9 +2219,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Eljas is working to prevent disagreements",
@@ -2234,7 +2234,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["eljas"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "eljas"
@@ -2249,9 +2249,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is questioning her own abilities and decisions",
@@ -2264,8 +2264,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.6,
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2278,9 +2277,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is feeling disconnected from the team",
@@ -2293,7 +2292,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.6,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2306,9 +2305,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is working to demonstrate her capabilities",
@@ -2321,7 +2320,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2334,9 +2333,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is looking for guidance and support",
@@ -2349,7 +2348,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2362,9 +2361,9 @@
           "startLevel": 0.6,
           "endLevel": 1.0,
           "scenes": {
-            "morning": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7],
-            "midday": [0.7, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-            "afternoon": [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.7]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is developing more self-assurance",
@@ -2377,7 +2376,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2390,9 +2389,9 @@
           "startLevel": 0.3,
           "endLevel": 0.9,
           "scenes": {
-            "morning": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8],
-            "midday": [0.8, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
-            "afternoon": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.8]
+            "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+            "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
           }
         },
         "context": "Kailey is working to integrate with the team",
@@ -2405,7 +2404,7 @@
         },
         "watercoolerPresence": {
           "requiredCharacters": ["kailey"],
-          "probability": 0.7,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "kailey"
@@ -2439,8 +2438,8 @@
     "engagement": "Level of involvement (0-1)"
   },
   "sceneProgression": {
-    "morning": [1, 8],
-    "midday": [9, 16],
-    "afternoon": [17, 24]
+    "morning": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+    "afternoon": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   }
-} 
+}

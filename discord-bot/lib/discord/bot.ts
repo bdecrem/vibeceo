@@ -121,6 +121,11 @@ export async function startBot() {
     // Validate configuration and get token
     const { token } = validateConfig();
     
+    // Initialize story arc first
+    console.log('=== INITIALIZING STORY ARC ===');
+    initializeStoryArc();
+    console.log('=== STORY ARC INITIALIZED ===');
+    
     // Generate all story content BEFORE connecting to Discord
     const unitDurationMinutes = parseInt(process.env.UNIT_DURATION_MINUTES || '20', 10);
     console.log(`Generating episode context with unit duration: ${unitDurationMinutes} minutes`);

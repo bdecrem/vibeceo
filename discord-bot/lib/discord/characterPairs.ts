@@ -22,29 +22,34 @@ export function getWatercoolerPairConfig(): CharacterPairConfig | null {
 }
 
 export function getRandomCharactersWithPairConfig(count: number): string[] {
-  // If we have a pair config and random number is less than probability
   if (watercoolerPairConfig && Math.random() < watercoolerPairConfig.probability) {
-    // Force include both coaches in the correct order
-    const selected = [
-      watercoolerPairConfig.order.first,  // First speaker
-      watercoolerPairConfig.order.second, // Second speaker
-    ];
+    const slots: (string | null)[] = Array(count).fill(null);
+    const assigned = new Set<string>();
     
-    // Fill remaining slots randomly
-    const remainingCoaches = ceos.filter((c: CEO) => {
-      const config = watercoolerPairConfig!; // We know it's not null here due to the if check above
-      return c.id !== config.coach1 && c.id !== config.coach2;
-    });
-    while (selected.length < count) {
-      const randomCoach = remainingCoaches[Math.floor(Math.random() * remainingCoaches.length)];
-      if (!selected.includes(randomCoach.id)) {
-        selected.push(randomCoach.id);
+    // Always enforce second speaker if specified
+    if (watercoolerPairConfig.order.second) {
+      slots[1] = watercoolerPairConfig.order.second;
+      assigned.add(watercoolerPairConfig.order.second);
+    }
+    
+    // Then handle first speaker
+    if (watercoolerPairConfig.order.first !== 'any') {
+      slots[0] = watercoolerPairConfig.order.first;
+      assigned.add(watercoolerPairConfig.order.first);
+    }
+    
+    // Fill remaining slots with random characters not already assigned
+    for (let i = 0; i < slots.length; i++) {
+      if (!slots[i]) {
+        const available = ceos.filter(c => !assigned.has(c.id));
+        const pick = available[Math.floor(Math.random() * available.length)];
+        slots[i] = pick.id;
+        assigned.add(pick.id);
       }
     }
-    return selected;
+    return slots as string[];
   }
-  
-  // Otherwise use random selection
+  // Otherwise use random selection, ensuring uniqueness
   return [...ceos]
     .sort(() => Math.random() - 0.5)
     .slice(0, count)

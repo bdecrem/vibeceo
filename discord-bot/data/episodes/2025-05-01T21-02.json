@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-01T21-02",
+  "createdAt": "2025-05-01T21:02:56.088Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 2:03pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have synced their energies and dispersed to innovate.",
+      "location": "Los Angeles office",
+      "localTime": "21:3",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 2:05pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their laptops under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "21:5",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 2:06pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "21:6",
+      "coaches": []
+    }
+  ]
+}

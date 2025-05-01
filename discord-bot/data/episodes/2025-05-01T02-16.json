@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-01T02-16",
+  "createdAt": "2025-05-01T02:16:12.115Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 10:16am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:16",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 10:18am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "2:18",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 10:19am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras through team-building exercises.",
+      "outro": "The coaches have exhaled, ready to conquer the day.",
+      "location": "Singapore penthouse",
+      "localTime": "2:19",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 10:20am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras through PowerPoint presentations.",
+      "outro": "The coaches have dispersed, carrying their vibrations to the market.",
+      "location": "Singapore penthouse",
+      "localTime": "2:20",
+      "coaches": []
+    }
+  ]
+}

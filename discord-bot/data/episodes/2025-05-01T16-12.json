@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-01T16-12",
+  "createdAt": "2025-05-01T16:12:35.390Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:12am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "16:12",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:14am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "16:14",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:15am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their calendars under the sacred whiteboard.",
+      "outro": "The coaches have dispersed, carrying fragments of enlightenment.",
+      "location": "Los Angeles office",
+      "localTime": "16:15",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 9:16am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital shrines.",
+      "location": "Los Angeles office",
+      "localTime": "16:16",
+      "coaches": []
+    }
+  ]
+}

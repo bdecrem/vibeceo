@@ -1,4 +1,5 @@
-import { Message } from 'discord.js';
+import { Message, TextChannel, ThreadChannel, Client } from "discord.js";
+import { ceos, CEO } from "../../data/ceos.js";
 import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
@@ -6,7 +7,6 @@ import { WebhookClient } from 'discord.js';
 import IORedis from 'ioredis';
 import { handlePitchCommand } from './pitch.js';
 import { scheduler } from './timer.js';
-import { Client } from 'discord.js';
 import { triggerNewsChat } from './news.js';
 import { triggerTmzChat } from './tmz.js';
 import { getNextMessage, handleAdminCommand } from './adminCommands.js';
@@ -243,13 +243,13 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
   }
 }
 
-// Get tension context based on scene index
-function getTensionContext(sceneIndex: number): { intensity: number; context: string; promptInjection: string } | null {
+// Get story context based on scene index
+export function getStoryContext(sceneIndex: number): { intensity: number; context: string; promptInjection: string } | null {
   try {
     const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    const donteKaileyArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
+    const selectedArc = storyArcs.storyArcs.donte.distracted;
     
-    if (!donteKaileyArc) {
+    if (!selectedArc) {
       console.error('Story arc not found in story-arcs.json');
       return null;
     }
@@ -261,13 +261,13 @@ function getTensionContext(sceneIndex: number): { intensity: number; context: st
     else timeOfDay = 'afternoon';                   // Scenes 16-23
     
     // Get the progression data for the current time of day
-    const progression = donteKaileyArc.progression.scenes[timeOfDay];
+    const progression = selectedArc.progression.scenes[timeOfDay];
     // Get the specific intensity level for this scene (0-7 within the time period)
     const sceneIndexInPeriod = sceneIndex % 8;
     const intensity = progression[sceneIndexInPeriod];
     
     // Get the appropriate context for this intensity level
-    const levelContext = Object.entries(donteKaileyArc.levelContexts)
+    const levelContext = Object.entries(selectedArc.levelContexts)
       .reduce((closest, [level, context]) => {
         const levelNum = parseFloat(level);
         return Math.abs(levelNum - intensity) < Math.abs(parseFloat(closest[0]) - intensity)
@@ -277,13 +277,24 @@ function getTensionContext(sceneIndex: number): { intensity: number; context: st
     
     return {
       intensity,
-      context: donteKaileyArc.context,
-      promptInjection: donteKaileyArc.promptInjection
+      context: selectedArc.context,
+      promptInjection: selectedArc.promptInjection
         .replace('{level}', intensity.toString())
         .replace('{context}', levelContext)
     };
   } catch (error) {
-    console.error('Error reading tension context:', error);
+    console.error('Error reading story context:', error);
+    return null;
+  }
+}
+
+// Select a story arc (currently hardcoded to Donte's distracted arc)
+export function selectStoryArc() {
+  try {
+    const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
+    return storyArcs.storyArcs.donte.distracted;
+  } catch (error) {
+    console.error('Error selecting story arc:', error);
     return null;
   }
 }
@@ -291,28 +302,27 @@ function getTensionContext(sceneIndex: number): { intensity: number; context: st
 // Initialize story arc configuration
 export function initializeStoryArc() {
   try {
-    const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    const donteKaileyArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
+    const selectedArc = selectStoryArc();
     
-    if (!donteKaileyArc) {
-      console.error('Story arc not found in story-arcs.json');
+    if (!selectedArc) {
+      console.error('Story arc not found');
       return;
     }
 
-    const { requiredCharacters, probability, speakingOrder } = donteKaileyArc.watercoolerPresence;
+    const { requiredCharacters, probability, speakingOrder } = selectedArc.watercoolerPresence;
 
-    // Set up Donte and Kailey pair configuration from story arc data
+    // Set up character pair configuration from story arc data
     setWatercoolerPairConfig({
       coach1: requiredCharacters[0],
-      coach2: requiredCharacters[1],
+      coach2: requiredCharacters[0], // Use the same character for both if only one is required
       probability: probability,
       order: {
-        first: speakingOrder.first,
+        first: speakingOrder.first === 'any' ? 'any' : requiredCharacters[0],
         second: speakingOrder.second
       }
     });
     console.log('Story arc configuration initialized:', {
-      arc: 'getting_irritated_by_kailey',
+      arc: selectedArc.context,
       characters: requiredCharacters,
       probability,
       speakingOrder
@@ -334,37 +344,83 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
     
     // Pick 3 random unique coaches using our pair config system
     const selectedCharacterIds = getRandomCharactersWithPairConfig(3);
-    const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id)!);
-    console.log('Selected characters:', selectedCharacters.map(c => c.name).join(', '));
+    const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id));
+    
+    // Validate that we have all required characters
+    if (selectedCharacters.some(char => !char)) {
+      console.error('Invalid character IDs selected:', selectedCharacterIds);
+      throw new Error('Failed to get valid characters for watercooler chat');
+    }
+    
+    // After validation, we know all characters are defined
+    const validCharacters = selectedCharacters as CEO[];
+    console.log('Selected characters:', validCharacters.map(c => c.name).join(', '));
     
     // Get current scene index from episode context
     const storyInfo = getCurrentStoryInfo();
     const sceneIndex = storyInfo?.sceneIndex ?? 0;
+    console.log('[WATERCOOLER] Current scene index:', sceneIndex);
     
-    // Get tension context if Donte and Kailey are present
-    const tensionContext = selectedCharacterIds.includes('donte') && selectedCharacterIds.includes('kailey') 
-      ? getTensionContext(sceneIndex)
-      : null;
+    // Get story context if Donte is present
+    const storyContext = selectedCharacterIds.includes('donte') ? getStoryContext(sceneIndex) : null;
+    console.log('[WATERCOOLER] Story context for Donte:', {
+      hasContext: !!storyContext,
+      intensity: storyContext?.intensity,
+      context: storyContext?.context,
+      promptInjection: storyContext?.promptInjection
+    });
+    
+    const selectedArc = storyContext ? selectStoryArc() : null;
+    console.log('[WATERCOOLER] Selected story arc:', {
+      hasArc: !!selectedArc,
+      promptAttribute: selectedArc?.promptAttribute,
+      context: selectedArc?.context
+    });
     
     // First coach shares something about their day
     console.log('Generating first message...');
     const firstPrompt = adminMessage 
-      ? `You are ${selectedCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
-      : `You are ${selectedCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${selectedCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
+      ? `You are ${validCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
+      : `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a failed startup's pivot meeting, or if you're Venus, maybe you just updated your apocalypse probability models. Keep it natural and in your voice (max 30 words).`;
     
-    const firstMessage = await generateCharacterResponse(selectedCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
     console.log('First message generated:', firstMessage.substring(0, 50) + '...');
-    await sendAsCharacter(channelId, selectedCharacters[0].id, firstMessage);
+    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
     console.log('First message sent successfully');
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Second coach responds
     console.log('Generating second message...');
-    const secondPrompt = `You are ${selectedCharacters[1].name} (${selectedCharacters[1].character}). ${selectedCharacters[0].name} just said: "${firstMessage}". ${tensionContext && selectedCharacters[1].id === 'donte' ? `\n\nIMPORTANT: ${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})\n\nYour response should clearly reflect this level of irritation.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
-    const secondMessage = await generateCharacterResponse(selectedCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
+    let secondPrompt = '';
+    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement') {
+      console.log('[WATERCOOLER] Checking Donte distraction:', {
+        intensity: storyContext.intensity,
+        sceneIndex: sceneIndex,
+        timeOfDay: sceneIndex < 8 ? 'morning' : sceneIndex < 16 ? 'midday' : 'afternoon'
+      });
+      
+      // Check for moderate distraction (around 0.6)
+      if (Math.abs(storyContext.intensity - 0.6) < 0.1) {
+        console.log('[WATERCOOLER] Applying distraction prompt for Donte at level ~0.6');
+      // Override for moderate distraction
+        secondPrompt = `You are Donte. You are clearly distracted and struggling to maintain focus on the conversation.\n\nIMPORTANT: Your response MUST show OBVIOUS signs of distraction through your words ONLY. You MUST:\n1. Start responding to the topic but then suddenly switch to something unrelated\n2. Mix up details or get confused about what was just said\n3. Use filler words like "um", "uh", or "like" frequently\n4. Trail off mid-sentence or lose your train of thought\n5. Make abrupt topic changes without proper transitions\n\nEXAMPLES OF DISTRACTED RESPONSES:\n- "Oh yeah, productivity tools... wait, what were we talking about? Something about meditation? I was just thinking about this new startup that's disrupting the meditation space... um... what was the question again?"\n- "Meditation and tools... you know what's really interesting? I just got this notification about a new AI startup. They're doing something with... uh... what was I saying? Oh right, productivity! But have you seen the latest tech trends?"\n\nYour response should be noticeably unfocused and show clear signs of distraction through your words and speech patterns. Do NOT give a coherent, focused response. Do NOT include stage directions or actions in italics.`;
+      console.log('[WATERCOOLER] Generated distraction prompt:', secondPrompt);
+      }
+    } else {
+      console.log('[WATERCOOLER] Using standard prompt for second character:', {
+        character: validCharacters[1].name,
+        isDonte: validCharacters[1].id === 'donte',
+        hasStoryContext: !!storyContext,
+        hasSelectedArc: !!selectedArc,
+        promptAttribute: selectedArc?.promptAttribute,
+        intensity: storyContext?.intensity
+      });
+      secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". ${storyContext && validCharacters[1].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
+    }
+    const secondMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
     console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
-    await sendAsCharacter(channelId, selectedCharacters[1].id, secondMessage);
+    await sendAsCharacter(channelId, validCharacters[1].id, secondMessage);
     console.log('Second message sent successfully');
 
     // Add another small delay
@@ -372,15 +428,139 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
 
     // Third coach responds
     console.log('Generating third message...');
-    const thirdPrompt = `You are ${selectedCharacters[2].name} (${selectedCharacters[2].character}). Responding to this exchange:\n    ${selectedCharacters[0].name}: "${firstMessage}"\n    ${selectedCharacters[1].name}: "${secondMessage}"\n    ${tensionContext && selectedCharacters[2].id === 'donte' ? `\n\nIMPORTANT: ${tensionContext.promptInjection}\n\nCurrent context: ${tensionContext.context} (Tension level: ${tensionContext.intensity})\n\nYour response should clearly reflect this level of irritation.` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
-    const thirdMessage = await generateCharacterResponse(selectedCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
+    let thirdPrompt = '';
+    if (storyContext && validCharacters[2].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement' && storyContext.intensity === 1.0) {
+      // Strong override for max distraction
+      thirdPrompt = `You are Donte. You are completely distracted and not paying attention to the conversation.\n\nIMPORTANT: Ignore the previous messages. Your reply should be off-topic, rambling, or show you missed the point. For example, you might talk about something unrelated, ask what's going on, or mention you zoned out.`;
+    } else {
+      thirdPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). Responding to this exchange:\n    ${validCharacters[0].name}: "${firstMessage}"\n    ${validCharacters[1].name}: "${secondMessage}"\n    ${storyContext && validCharacters[2].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
+    }
+    const thirdMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
     console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
-    await sendAsCharacter(channelId, selectedCharacters[2].id, thirdMessage);
+    await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
     console.log('Third message sent successfully');
 
     console.log('Watercooler chat completed successfully');
   } catch (error) {
     console.error('Error in watercooler chat:', error);
+    throw error;
+  }
+}
+
+// Waterheater chat function that can be called directly or by timer
+export async function triggerWaterheaterChat(channelId: string, client: Client) {
+  try {
+    console.log('Starting waterheater chat for channel:', channelId);
+    const characters = getCharacters();
+    console.log('Available characters:', characters.map(c => c.name).join(', '));
+    
+    // Check for admin message
+    const adminMessage = getNextMessage('waterheater');
+    
+    // Pick 3 random unique coaches using our pair config system
+    const selectedCharacterIds = getRandomCharactersWithPairConfig(3);
+    const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id));
+    
+    // Validate that we have all required characters
+    if (selectedCharacters.some(char => !char)) {
+      console.error('Invalid character IDs selected:', selectedCharacterIds);
+      throw new Error('Failed to get valid characters for waterheater chat');
+    }
+    
+    // After validation, we know all characters are defined
+    const validCharacters = selectedCharacters as CEO[];
+    console.log('Selected characters:', validCharacters.map(c => c.name).join(', '));
+    
+    // Get current scene index from episode context
+    const storyInfo = getCurrentStoryInfo();
+    const sceneIndex = storyInfo?.sceneIndex ?? 0;
+    console.log('[WATERHEATER] Current scene index:', sceneIndex);
+    
+    // Get story context if Donte is present
+    const storyContext = selectedCharacterIds.includes('donte') ? getStoryContext(sceneIndex) : null;
+    console.log('[WATERHEATER] Story context for Donte:', {
+      hasContext: !!storyContext,
+      intensity: storyContext?.intensity,
+      context: storyContext?.context,
+      promptInjection: storyContext?.promptInjection
+    });
+    
+    const selectedArc = storyContext ? selectStoryArc() : null;
+    console.log('[WATERHEATER] Selected story arc:', {
+      hasArc: !!selectedArc,
+      promptAttribute: selectedArc?.promptAttribute,
+      context: selectedArc?.context
+    });
+    
+    // First coach shares something about their day
+    console.log('Generating first message...');
+    const firstPrompt = adminMessage 
+      ? `You are ${validCharacters[0].name}. Share your thoughts about: "${adminMessage}". Keep it natural and in your voice (max 30 words).`
+      : `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
+    
+    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
+    console.log('First message generated:', firstMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+    console.log('First message sent successfully');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Second coach responds
+    console.log('Generating second message...');
+    let secondPrompt = '';
+    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement') {
+      console.log('[WATERHEATER] Checking Donte distraction:', {
+        intensity: storyContext.intensity,
+        sceneIndex: sceneIndex,
+        timeOfDay: sceneIndex < 8 ? 'morning' : sceneIndex < 16 ? 'midday' : 'afternoon'
+      });
+      
+      // Check for moderate distraction (around 0.6)
+      if (Math.abs(storyContext.intensity - 0.6) < 0.1) {
+        console.log('[WATERHEATER] Applying distraction prompt for Donte at level ~0.6');
+        // Override for moderate distraction
+        secondPrompt = `You are Donte. You are clearly distracted and struggling to maintain focus on the conversation.\n\nIMPORTANT: Your response MUST show OBVIOUS signs of distraction through your words ONLY. You MUST:\n1. Start responding to the topic but then suddenly switch to something unrelated\n2. Mix up details or get confused about what was just said\n3. Use filler words like "um", "uh", or "like" frequently\n4. Trail off mid-sentence or lose your train of thought\n5. Make abrupt topic changes without proper transitions\n\nEXAMPLES OF DISTRACTED RESPONSES:\n- "Oh yeah, energy metrics... wait, what were we talking about? Something about steam? I was just thinking about this new startup that's disrupting the steam room space... um... what was the question again?"\n- "Steam and metrics... you know what's really interesting? I just got this notification about a new AI startup. They're doing something with... uh... what was I saying? Oh right, energy! But have you seen the latest tech trends?"\n\nYour response should be noticeably unfocused and show clear signs of distraction through your words and speech patterns. Do NOT give a coherent, focused response. Do NOT include stage directions or actions in italics.`;
+        console.log('[WATERHEATER] Generated distraction prompt:', secondPrompt);
+      }
+    }
+    
+    if (!secondPrompt) {
+      console.log('[WATERHEATER] Using standard prompt for second character:', {
+        character: validCharacters[1].name,
+        isDonte: validCharacters[1].id === 'donte',
+        hasStoryContext: !!storyContext,
+        hasSelectedArc: !!selectedArc,
+        promptAttribute: selectedArc?.promptAttribute,
+        intensity: storyContext?.intensity
+      });
+      secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". ${storyContext && validCharacters[1].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
+    }
+    
+    const secondMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
+    console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[1].id, secondMessage);
+    console.log('Second message sent successfully');
+
+    // Add another small delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Third coach responds
+    console.log('Generating third message...');
+    let thirdPrompt = '';
+    if (storyContext && validCharacters[2].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement' && storyContext.intensity === 1.0) {
+      // Strong override for max distraction
+      thirdPrompt = `You are Donte. You are completely distracted and not paying attention to the conversation.\n\nIMPORTANT: Ignore the previous messages. Your reply should be off-topic, rambling, or show you missed the point. For example, you might talk about something unrelated, ask what's going on, or mention you zoned out.`;
+    } else {
+      thirdPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). Responding to this exchange:\n    ${validCharacters[0].name}: "${firstMessage}"\n    ${validCharacters[1].name}: "${secondMessage}"\n    ${storyContext && validCharacters[2].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
+    }
+    const thirdMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
+    console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
+    await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
+    console.log('Third message sent successfully');
+
+    console.log('Waterheater chat completed successfully');
+  } catch (error) {
+    console.error('Error in waterheater chat:', error);
     throw error;
   }
 }
@@ -402,6 +582,15 @@ export function initializeScheduledTasks(channelId: string, client: Client) {
   //   () => triggerNewsChat(channelId, client) // handler
   // );
 }
+
+// Update the service map
+const serviceMap: Record<string, (channelId: string, client: Client) => Promise<void>> = {
+  watercooler: triggerWatercoolerChat,
+  waterheater: triggerWaterheaterChat,
+  newschat: triggerNewsChat,
+  tmzchat: triggerTmzChat,
+  pitchchat: triggerPitchChat,
+};
 
 // Handle incoming messages
 export async function handleMessage(message: Message): Promise<void> {
@@ -528,6 +717,7 @@ Available commands:
 - \`!pitch [your idea]\`: Present your business idea to all coaches for feedback and voting
 - \`!hello\`: Get a random coach to greet you
 - \`!watercooler\`: Listen in on a quick chat between three random coaches
+- \`!waterheater\`: Listen in on a heated discussion between three random coaches
 - \`!newschat\`: Start a discussion about trending news relevant to the coaches
 - \`!tmzchat\`: Start a discussion about trending news relevant to the coaches
 - \`!story-info\`: Show information about the current story arc and scene
@@ -612,6 +802,12 @@ For example: "hey alex" or "hi donte"
     // Handle watercooler command
     if (command === 'watercooler') {
       await triggerWatercoolerChat(message.channelId, message.client);
+      return;
+    }
+
+    // Handle waterheater command
+    if (command === 'waterheater') {
+      await triggerWaterheaterChat(message.channelId, message.client);
       return;
     }
 

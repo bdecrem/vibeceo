@@ -1,6 +1,7 @@
 import { TextChannel } from "discord.js";
 import { getLocationAndTime } from "./locationTime.js";
 import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
+import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
 import { updateCurrentScene } from "./bot.js";
 import path from "path";
@@ -10,6 +11,10 @@ export const EVENT_MESSAGES = {
 	watercooler: {
 		intro: "{arrival}They are gathering by the water cooler.",
 		outro: "The coaches have wandered back to their executive suites.",
+	},
+	waterheater: {
+		intro: "{arrival}They are gathering by the steam room.",
+		outro: "The coaches have dispersed like rising vapor to their workstations.",
 	},
 	newschat: {
 		intro:
@@ -49,6 +54,11 @@ export async function sendEventMessage(
 		const { text, prompt: generatedPrompt } = await generateWatercoolerBumper(isIntro);
 		message = isIntro ? `{arrival}${text}` : text;
 		prompt = generatedPrompt;
+	} else if (eventType === 'waterheater') {
+		// Generate dynamic bumper for waterheater events
+		const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
+		message = isIntro ? `{arrival}${text}` : text;
+		prompt = generatedPrompt;
 	} else {
 		// Use static messages for other event types
 		message = isIntro
@@ -68,8 +78,8 @@ export async function sendEventMessage(
 		message = message.replace("{arrival}", arrivalText);
 	}
 
-	// Store the scene in episode storage if it's a watercooler event
-	if (eventType === 'watercooler') {
+	// Store the scene in episode storage if it's a watercooler or waterheater event
+	if (eventType === 'watercooler' || eventType === 'waterheater') {
 		const currentEpisode = getCurrentEpisode();
 		if (!currentEpisode) {
 			throw new Error('No active episode');
@@ -77,7 +87,7 @@ export async function sendEventMessage(
 
 		// Find the last scene for this event type
 		const lastScene = currentEpisode.scenes
-			.filter(s => s.type === 'watercooler')
+			.filter(s => s.type === eventType)
 			.pop();
 
 		if (isIntro) {
@@ -91,7 +101,7 @@ export async function sendEventMessage(
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({
 				index: currentSceneIndex,
-				type: 'watercooler',
+				type: eventType,
 				intro: message,
 				outro: '',
 				location: locationTime.location,

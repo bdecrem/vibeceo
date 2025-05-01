@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-01T16-09",
+  "createdAt": "2025-05-01T16:09:22.602Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:09am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:9",
+      "coaches": []
+    }
+  ]
+}

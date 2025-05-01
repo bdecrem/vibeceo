@@ -108,6 +108,33 @@
       "location": "Los Angeles office",
       "localTime": "18:17",
       "coaches": []
+    },
+    {
+      "index": 11,
+      "type": "watercooler",
+      "intro": "It's 11:21am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "18:21",
+      "coaches": []
+    },
+    {
+      "index": 12,
+      "type": "watercooler",
+      "intro": "It's 11:23am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars in the digital shrine.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "18:23",
+      "coaches": []
+    },
+    {
+      "index": 13,
+      "type": "watercooler",
+      "intro": "It's 11:25am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their LinkedIn profiles under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their designated workstations.",
+      "location": "Los Angeles office",
+      "localTime": "18:25",
+      "coaches": []
     }
   ]
 }

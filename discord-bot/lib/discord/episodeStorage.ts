@@ -10,13 +10,13 @@ interface EpisodeArc {
 
 interface Scene {
   index: number;
-  type: "watercooler" | "newschat" | "tmzchat" | "pitchchat";
+  type: "watercooler" | "waterheater" | "newschat" | "tmzchat" | "pitchchat";
   intro: string;
   outro: string;
   location: string;
   localTime: string;
   coaches: string[];
-  prompt?: string; // Optional field to store the prompt used for watercooler events
+  prompt?: string; // Optional field to store the prompt used for watercooler/waterheater events
 }
 
 interface EpisodeData {

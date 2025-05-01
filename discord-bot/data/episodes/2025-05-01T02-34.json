@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-01T02-34",
+  "createdAt": "2025-05-01T02:34:23.767Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 10:34am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under fluorescent light.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:34",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 10:36am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their breathing before the all-hands meeting.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:36",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 10:37am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their sacred workstations.",
+      "location": "Singapore penthouse",
+      "localTime": "2:37",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 10:38am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their digital calendars under the skylight.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "2:38",
+      "coaches": []
+    }
+  ]
+}

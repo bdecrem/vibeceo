@@ -1,0 +1,68 @@
+{
+  "id": "2025-04-30T22-23",
+  "createdAt": "2025-04-30T22:23:02.922Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Illusions of Progress",
+    "arcSummary": "Tech startup coaches navigate a day filled with apparent advancements and breakthroughs, only to realize the fleeting nature of success and the persistence of underlying challenges. As they guide entrepreneurs through the highs and lows of innovation, the facade of progress masks deeper uncertainties and complexities.",
+    "toneKeywords": [
+      "Ambiguity",
+      "Irony",
+      "Restraint",
+      "Unresolved energy"
+    ],
+    "motifs": [
+      "Masks",
+      "Shadows",
+      "Reflections",
+      "Illusions"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 3:23pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras through team brainstorming sessions.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:23",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 3:25pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:25",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 3:26pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:26",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 3:27pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their KPIs under the fluorescent lights.",
+      "outro": "The coaches have ascended to their virtual mountaintops.",
+      "location": "Los Angeles office",
+      "localTime": "22:27",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 3:29pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have exhaled, returning to their data shrines.",
+      "location": "Los Angeles office",
+      "localTime": "22:29",
+      "coaches": []
+    }
+  ]
+}

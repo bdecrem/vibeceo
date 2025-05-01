@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-01T02-40",
+  "createdAt": "2025-05-01T02:40:19.069Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 10:40am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are synchronizing their calendars under the fluorescent lights.",
+      "outro": "The coaches have synced their energies in the virtual cloud.",
+      "location": "Singapore penthouse",
+      "localTime": "2:40",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 10:42am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have dispersed, carrying calm into chaos.",
+      "location": "Singapore penthouse",
+      "localTime": "2:42",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 10:43am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing calendars under the glowing whiteboard lights.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "2:43",
+      "coaches": []
+    }
+  ]
+}

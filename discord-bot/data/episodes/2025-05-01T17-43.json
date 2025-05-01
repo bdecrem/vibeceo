@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-01T17-43",
+  "createdAt": "2025-05-01T17:43:47.486Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 10:43am and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "17:43",
+      "coaches": []
+    }
+  ]
+}

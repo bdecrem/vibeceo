@@ -1,0 +1,93 @@
+{
+  "id": "2025-05-01T15-57",
+  "createdAt": "2025-05-01T15:57:56.828Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 3:58pm and the coaches have just arrived at their London office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "London office",
+      "localTime": "15:58",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:00am and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "16:0",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:01am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing calendars in the digital temple.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "16:1",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 9:02am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their innovation chambers.",
+      "location": "Los Angeles office",
+      "localTime": "16:2",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 9:04am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:4",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 9:05am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation altars.",
+      "location": "Los Angeles office",
+      "localTime": "16:5",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 9:06am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "16:6",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 9:08am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the sacred clock.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "16:8",
+      "coaches": []
+    }
+  ]
+}

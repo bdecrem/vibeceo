@@ -1,0 +1,705 @@
+{
+  "id": "2025-04-30T22-38",
+  "createdAt": "2025-04-30T22:38:41.911Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 3:38pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed, carrying tasks like sacred relics.",
+      "location": "Los Angeles office",
+      "localTime": "22:38",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 3:40pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "22:40",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 3:41pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team meeting.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:41",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 3:42pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "22:42",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 3:44pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "22:44",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 3:45pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:45",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 3:46pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have scattered to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:46",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 3:48pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their virtual meeting rooms.",
+      "location": "Los Angeles office",
+      "localTime": "22:48",
+      "coaches": []
+    },
+    {
+      "index": 9,
+      "type": "watercooler",
+      "intro": "It's 3:49pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have exhaled, dispersing back to their screens.",
+      "location": "Los Angeles office",
+      "localTime": "22:49",
+      "coaches": []
+    },
+    {
+      "index": 10,
+      "type": "watercooler",
+      "intro": "It's 3:50pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "22:50",
+      "coaches": []
+    },
+    {
+      "index": 11,
+      "type": "watercooler",
+      "intro": "It's 3:52pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their laptops under the fluorescent lights.",
+      "outro": "The coaches have transcended back to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "22:52",
+      "coaches": []
+    },
+    {
+      "index": 12,
+      "type": "watercooler",
+      "intro": "It's 3:53pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation cloud.",
+      "location": "Los Angeles office",
+      "localTime": "22:53",
+      "coaches": []
+    },
+    {
+      "index": 13,
+      "type": "watercooler",
+      "intro": "It's 3:54pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their breathing in the conference room.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "22:54",
+      "coaches": []
+    },
+    {
+      "index": 14,
+      "type": "watercooler",
+      "intro": "It's 3:56pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have ascended to their cloud-based realms.",
+      "location": "Los Angeles office",
+      "localTime": "22:56",
+      "coaches": []
+    },
+    {
+      "index": 15,
+      "type": "watercooler",
+      "intro": "It's 3:57pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, ready to tackle the day.",
+      "location": "Los Angeles office",
+      "localTime": "22:57",
+      "coaches": []
+    },
+    {
+      "index": 16,
+      "type": "watercooler",
+      "intro": "It's 3:58pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The mentors have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "22:58",
+      "coaches": []
+    },
+    {
+      "index": 17,
+      "type": "watercooler",
+      "intro": "It's 4:00pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual realm.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:0",
+      "coaches": []
+    },
+    {
+      "index": 18,
+      "type": "watercooler",
+      "intro": "It's 4:01pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to the cloud conference room.",
+      "location": "Los Angeles office",
+      "localTime": "23:1",
+      "coaches": []
+    },
+    {
+      "index": 19,
+      "type": "watercooler",
+      "intro": "It's 4:02pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:2",
+      "coaches": []
+    },
+    {
+      "index": 20,
+      "type": "watercooler",
+      "intro": "It's 4:04pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their virtual shrines.",
+      "location": "Los Angeles office",
+      "localTime": "23:4",
+      "coaches": []
+    },
+    {
+      "index": 21,
+      "type": "watercooler",
+      "intro": "It's 4:05pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have exhaled, releasing their strategic energy.",
+      "location": "Los Angeles office",
+      "localTime": "23:5",
+      "coaches": []
+    },
+    {
+      "index": 22,
+      "type": "watercooler",
+      "intro": "It's 4:06pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital temples.",
+      "location": "Los Angeles office",
+      "localTime": "23:6",
+      "coaches": []
+    },
+    {
+      "index": 23,
+      "type": "watercooler",
+      "intro": "It's 4:08pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their breathing in the conference room.",
+      "outro": "The coaches have ascended to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:8",
+      "coaches": []
+    },
+    {
+      "index": 24,
+      "type": "watercooler",
+      "intro": "It's 4:09pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to conquer their daily agendas.",
+      "location": "Los Angeles office",
+      "localTime": "23:9",
+      "coaches": []
+    },
+    {
+      "index": 25,
+      "type": "watercooler",
+      "intro": "It's 4:10pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:10",
+      "coaches": []
+    },
+    {
+      "index": 26,
+      "type": "watercooler",
+      "intro": "It's 4:12pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their KPIs under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:12",
+      "coaches": []
+    },
+    {
+      "index": 27,
+      "type": "watercooler",
+      "intro": "It's 4:13pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, ready to conquer the market.",
+      "location": "Los Angeles office",
+      "localTime": "23:13",
+      "coaches": []
+    },
+    {
+      "index": 28,
+      "type": "watercooler",
+      "intro": "It's 4:14pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:14",
+      "coaches": []
+    },
+    {
+      "index": 29,
+      "type": "watercooler",
+      "intro": "It's 4:16pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:16",
+      "coaches": []
+    },
+    {
+      "index": 30,
+      "type": "watercooler",
+      "intro": "It's 4:17pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars in the sacred atrium.",
+      "outro": "The coaches have transcended back to their digital realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:17",
+      "coaches": []
+    },
+    {
+      "index": 31,
+      "type": "watercooler",
+      "intro": "It's 4:18pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, dispersing into the workday flow.",
+      "location": "Los Angeles office",
+      "localTime": "23:18",
+      "coaches": []
+    },
+    {
+      "index": 32,
+      "type": "watercooler",
+      "intro": "It's 4:20pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:20",
+      "coaches": []
+    },
+    {
+      "index": 33,
+      "type": "watercooler",
+      "intro": "It's 4:21pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the sacred clock.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:21",
+      "coaches": []
+    },
+    {
+      "index": 34,
+      "type": "watercooler",
+      "intro": "It's 4:22pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their spreadsheets under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:22",
+      "coaches": []
+    },
+    {
+      "index": 35,
+      "type": "watercooler",
+      "intro": "It's 4:24pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:24",
+      "coaches": []
+    },
+    {
+      "index": 36,
+      "type": "watercooler",
+      "intro": "It's 4:25pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:25",
+      "coaches": []
+    },
+    {
+      "index": 37,
+      "type": "watercooler",
+      "intro": "It's 4:26pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:26",
+      "coaches": []
+    },
+    {
+      "index": 38,
+      "type": "watercooler",
+      "intro": "It's 4:28pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:28",
+      "coaches": []
+    },
+    {
+      "index": 39,
+      "type": "watercooler",
+      "intro": "It's 4:29pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:29",
+      "coaches": []
+    },
+    {
+      "index": 40,
+      "type": "watercooler",
+      "intro": "It's 4:30pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to the C-suite clouds.",
+      "location": "Los Angeles office",
+      "localTime": "23:30",
+      "coaches": []
+    },
+    {
+      "index": 41,
+      "type": "watercooler",
+      "intro": "It's 4:32pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:32",
+      "coaches": []
+    },
+    {
+      "index": 42,
+      "type": "watercooler",
+      "intro": "It's 4:33pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team huddle.",
+      "outro": "The coaches have ascended to their digital heavens.",
+      "location": "Los Angeles office",
+      "localTime": "23:33",
+      "coaches": []
+    },
+    {
+      "index": 43,
+      "type": "watercooler",
+      "intro": "It's 4:34pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, ready to conquer the day.",
+      "location": "Los Angeles office",
+      "localTime": "23:34",
+      "coaches": []
+    },
+    {
+      "index": 44,
+      "type": "watercooler",
+      "intro": "It's 4:36pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:36",
+      "coaches": []
+    },
+    {
+      "index": 45,
+      "type": "watercooler",
+      "intro": "It's 4:37pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital calendars under fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:37",
+      "coaches": []
+    },
+    {
+      "index": 46,
+      "type": "watercooler",
+      "intro": "It's 4:38pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual conference.",
+      "outro": "The coaches have transcended to their virtual boardrooms.",
+      "location": "Los Angeles office",
+      "localTime": "23:38",
+      "coaches": []
+    },
+    {
+      "index": 47,
+      "type": "watercooler",
+      "intro": "It's 4:40pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, ready to conquer the day.",
+      "location": "Los Angeles office",
+      "localTime": "23:40",
+      "coaches": []
+    },
+    {
+      "index": 48,
+      "type": "watercooler",
+      "intro": "It's 4:41pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing calendars under the fluorescent temple lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:41",
+      "coaches": []
+    },
+    {
+      "index": 49,
+      "type": "watercooler",
+      "intro": "It's 4:42pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their strategic huddles.",
+      "location": "Los Angeles office",
+      "localTime": "23:42",
+      "coaches": []
+    },
+    {
+      "index": 50,
+      "type": "watercooler",
+      "intro": "It's 4:44pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have ascended to their innovation altar.",
+      "location": "Los Angeles office",
+      "localTime": "23:44",
+      "coaches": []
+    },
+    {
+      "index": 51,
+      "type": "watercooler",
+      "intro": "It's 4:45pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have exhaled, ready to conquer the challenges ahead.",
+      "location": "Los Angeles office",
+      "localTime": "23:45",
+      "coaches": []
+    },
+    {
+      "index": 52,
+      "type": "watercooler",
+      "intro": "It's 4:46pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have transcended back to their digital realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:46",
+      "coaches": []
+    },
+    {
+      "index": 53,
+      "type": "watercooler",
+      "intro": "It's 4:48pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under the skylight.",
+      "outro": "The coaches have dispersed to their digital shrines.",
+      "location": "Los Angeles office",
+      "localTime": "23:48",
+      "coaches": []
+    },
+    {
+      "index": 54,
+      "type": "watercooler",
+      "intro": "It's 4:49pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breath with the office hum.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:49",
+      "coaches": []
+    },
+    {
+      "index": 55,
+      "type": "watercooler",
+      "intro": "It's 4:50pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have dispersed, carrying deadlines like sacred scrolls.",
+      "location": "Los Angeles office",
+      "localTime": "23:50",
+      "coaches": []
+    },
+    {
+      "index": 56,
+      "type": "watercooler",
+      "intro": "It's 4:52pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed into the digital ether.",
+      "location": "Los Angeles office",
+      "localTime": "23:52",
+      "coaches": []
+    },
+    {
+      "index": 57,
+      "type": "watercooler",
+      "intro": "It's 4:53pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their KPIs under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "23:53",
+      "coaches": []
+    },
+    {
+      "index": 58,
+      "type": "watercooler",
+      "intro": "It's 4:54pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their glass-walled corner offices.",
+      "location": "Los Angeles office",
+      "localTime": "23:54",
+      "coaches": []
+    },
+    {
+      "index": 59,
+      "type": "watercooler",
+      "intro": "It's 4:56pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:56",
+      "coaches": []
+    },
+    {
+      "index": 60,
+      "type": "watercooler",
+      "intro": "It's 4:57pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Los Angeles office",
+      "localTime": "23:57",
+      "coaches": []
+    },
+    {
+      "index": 61,
+      "type": "watercooler",
+      "intro": "It's 4:59pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "23:59",
+      "coaches": []
+    },
+    {
+      "index": 62,
+      "type": "watercooler",
+      "intro": "It's 5:06pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:6",
+      "coaches": []
+    },
+    {
+      "index": 63,
+      "type": "watercooler",
+      "intro": "It's 5:14pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:14",
+      "coaches": []
+    },
+    {
+      "index": 64,
+      "type": "watercooler",
+      "intro": "It's 5:15pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:15",
+      "coaches": []
+    },
+    {
+      "index": 65,
+      "type": "watercooler",
+      "intro": "It's 5:17pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their strategic planning summit.",
+      "location": "Los Angeles office",
+      "localTime": "0:17",
+      "coaches": []
+    },
+    {
+      "index": 66,
+      "type": "watercooler",
+      "intro": "It's 5:18pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:18",
+      "coaches": []
+    },
+    {
+      "index": 67,
+      "type": "watercooler",
+      "intro": "It's 5:19pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "0:19",
+      "coaches": []
+    },
+    {
+      "index": 68,
+      "type": "watercooler",
+      "intro": "It's 5:21pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have ascended to their innovation altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:21",
+      "coaches": []
+    },
+    {
+      "index": 69,
+      "type": "watercooler",
+      "intro": "It's 5:22pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their breathing in the conference room.",
+      "outro": "The coaches have ascended to their glass-walled offices.",
+      "location": "Los Angeles office",
+      "localTime": "0:22",
+      "coaches": []
+    },
+    {
+      "index": 70,
+      "type": "watercooler",
+      "intro": "It's 5:23pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the neon lights.",
+      "outro": "The coaches have ascended to their data-driven realms.",
+      "location": "Los Angeles office",
+      "localTime": "0:23",
+      "coaches": []
+    },
+    {
+      "index": 71,
+      "type": "watercooler",
+      "intro": "It's 5:25pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:25",
+      "coaches": []
+    },
+    {
+      "index": 72,
+      "type": "watercooler",
+      "intro": "It's 5:26pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their breathing in the conference room.",
+      "outro": "The coaches have synced their energies with the cloud.",
+      "location": "Los Angeles office",
+      "localTime": "0:26",
+      "coaches": []
+    },
+    {
+      "index": 73,
+      "type": "watercooler",
+      "intro": "It's 5:27pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breath before the Monday meeting.",
+      "outro": "The coaches have transcended back to their digital realms.",
+      "location": "Los Angeles office",
+      "localTime": "0:27",
+      "coaches": []
+    },
+    {
+      "index": 74,
+      "type": "watercooler",
+      "intro": "It's 5:29pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:29",
+      "coaches": []
+    },
+    {
+      "index": 75,
+      "type": "watercooler",
+      "intro": "It's 5:30pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital shrines.",
+      "location": "Los Angeles office",
+      "localTime": "0:30",
+      "coaches": []
+    },
+    {
+      "index": 76,
+      "type": "watercooler",
+      "intro": "It's 5:31pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breathing in the conference room.",
+      "outro": "The coaches have dispersed to their strategic huddles.",
+      "location": "Los Angeles office",
+      "localTime": "0:31",
+      "coaches": []
+    }
+  ]
+}

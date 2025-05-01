@@ -13,7 +13,7 @@ import { openai } from "./ai.js";
 import { TextChannel } from "discord.js";
 import pLimit from "p-limit";
 import { validateSceneSeeds } from "./validateSceneSeeds.js";
-import { getTensionContext } from './handlers.js';
+import { getStoryContext } from './handlers.js';
 
 interface CoachInfo {
 	id: string;
@@ -1310,7 +1310,7 @@ export function formatStoryInfo(
 	}
 
 	// Get tension context
-	const tensionContext = getTensionContext(sceneIndex);
+	const tensionContext = getStoryContext(sceneIndex);
 	const tensionLevel = tensionContext ? `Tension Level: ${tensionContext.intensity}` : '';
 
 	// Extract just the scene type without the time prefix
@@ -1321,7 +1321,7 @@ export function formatStoryInfo(
 Theme: ${episodeContext.theme}
 ${tensionLevel}
 
-**Current Scene** (${new Date().getHours() + 1} of 24)
+**Current Scene: ${sceneIndex + 1}/24**
 Type: ${sceneType}
 Location: ${seed.location}
 Time: ${seed.localTime}

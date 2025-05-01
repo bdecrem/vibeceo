@@ -3,6 +3,8 @@ import { getWeatherForCity } from './weather.js';
 import { getHolidaysForDateAndCity } from './holidays.js';
 import { knownCulturalEvents } from './culturalEvents.js'; // optional overlay
 import { generateCharacterResponse } from './ai.js';
+import fs from 'fs';
+import path from 'path';
 
 export interface EpisodeArc {
   theme: string;
@@ -33,44 +35,15 @@ async function generateArc(context: {
   console.log('=== GENERATING ARC ===');
   console.log('Input context:', context);
   
-  const prompt = `Generate a thematic arc for a day in the life of tech startup coaches.
-
-Context:
-Date: ${context.date}
-Weather Conditions:
-${Object.entries(context.weather).map(([city, weather]) => `- ${city}: ${weather}`).join('\n')}
-Cultural Events:
-${Object.entries(context.holidays)
-  .filter(([_, events]) => events.length > 0)
-  .map(([city, events]) => `- ${city}: ${events.join(', ')}`)
-  .join('\n')}
-
-Requirements:
-1. Theme should avoid corporate slogans or overt inspiration
-2. Arc should favor ambiguity, irony, or restrained discomfort
-3. Tone should reflect conflict beneath calm and unresolved energy
-4. Motifs should be subtle, aesthetic, and symbolic — not objects used literally
-
-Format your response exactly as follows:
-THEME: [one clear phrase]
-SUMMARY: [2-3 sentences describing the arc]
-TONE: [comma-separated list of 3-5 tone keywords]
-MOTIFS: [comma-separated list of 3-4 recurring elements]`;
-
-  const response = await generateCharacterResponse(prompt, "You are a narrative designer for a tech startup story.");
+  // Load story arcs
+  const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
+  const selectedArc = storyArcs.storyArcs.donte.distracted;
   
-  // Parse the response
-  const lines = response.split('\n');
-  const theme = lines.find(l => l.startsWith('THEME:'))?.replace('THEME:', '').trim() || 'Controlled Distance';
-  const summary = lines.find(l => l.startsWith('SUMMARY:'))?.replace('SUMMARY:', '').trim() || 'A day of subtle tensions and unspoken truths.';
-  const toneStr = lines.find(l => l.startsWith('TONE:'))?.replace('TONE:', '').trim() || 'restrained, tense, ambiguous';
-  const motifsStr = lines.find(l => l.startsWith('MOTIFS:'))?.replace('MOTIFS:', '').trim() || 'window reflections, untouched plates, abandoned chairs';
-
   return {
-    theme,
-    arcSummary: summary,
-    toneKeywords: toneStr.split(',').map(t => t.trim()),
-    motifs: motifsStr.split(',').map(m => m.trim())
+    theme: selectedArc.context,
+    arcSummary: `A day of ${selectedArc.promptAttribute} and its effects.`,
+    toneKeywords: [selectedArc.promptAttribute, "unfocused", "distracted"],
+    motifs: ["unfinished tasks", "lost train of thought", "wandering mind"]
   };
 }
 

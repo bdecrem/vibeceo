@@ -1,0 +1,30 @@
+{
+  "id": "2025-04-30T22-12",
+  "createdAt": "2025-04-30T22:12:07.413Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Controlled Distance",
+    "arcSummary": "A day of subtle tensions and unspoken truths.",
+    "toneKeywords": [
+      "restrained",
+      "tense",
+      "ambiguous"
+    ],
+    "motifs": [
+      "window reflections",
+      "untouched plates",
+      "abandoned chairs"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 3:12pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their strategic battlestations.",
+      "location": "Los Angeles office",
+      "localTime": "22:12",
+      "coaches": []
+    }
+  ]
+}

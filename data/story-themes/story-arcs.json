@@ -1,0 +1,64 @@
+  "craving_validation_from_venus": {
+    "promptAttribute": "vulnerability",
+    "progression": {
+      "startLevel": 0.6,
+      "endLevel": 1.0,
+      "scenes": {
+        "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+        "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+        "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+      }
+    },
+    "context": "Kailey is seeking approval and recognition from Venus",
+    "promptInjection": "You are Kailey. Your level of craving Venus's validation is at {level} (where 0 is self-assured and 1 is desperately seeking approval). This should influence how you interact with her - at this level, {context}",
+    "levelContexts": {
+      "0.6": "you're deeply wanting Venus's validation",
+      "1.0": "you're completely dependent on Venus's validation"
+    },
+    "watercoolerPresence": {
+      "requiredCharacters": ["kailey", "venus"],
+      "probability": 0.8,
+      "speakingOrder": {
+        "first": "venus",
+        "second": "kailey"
+      }
+    }
+  },
+  "hiding_her_frustration": {
+    "promptAttribute": "tension",
+    "progression": {
+      "startLevel": 0.6,
+      "endLevel": 1.0,
+      "scenes": {
+        "morning": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+        "midday": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+        "afternoon": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+      }
+    },
+    "context": "Kailey is masking her growing frustration with a positive facade",
+    "promptInjection": "You are Kailey. Your level of hiding frustration is at {level} (where 0 is authentic and 1 is completely masking emotions). This should influence how you present yourself - at this level, {context}",
+    "levelContexts": {
+      "0.6": "you're deeply suppressing your frustration",
+      "1.0": "you're completely hiding behind a mask"
+    },
+    "watercoolerPresence": {
+      "requiredCharacters": ["kailey"],
+      "probability": 0.7,
+      "speakingOrder": {
+        "first": "any",
+        "second": "kailey"
+      }
+    }
+  },
+  "promptAttributes": {
+    "tension": "Level of conflict or disagreement (0-1)",
+    "dominance": "Degree of control or influence (0-1)",
+    "vulnerability": "Emotional openness (0-1)",
+    "engagement": "Level of involvement (0-1)"
+  },
+  "sceneProgression": {
+    "morning": [1, 8],
+    "midday": [9, 16],
+    "afternoon": [17, 24]
+  }
+} 

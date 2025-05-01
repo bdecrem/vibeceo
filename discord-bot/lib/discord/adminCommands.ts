@@ -3,6 +3,7 @@ import { Message } from 'discord.js';
 // Store for next messages
 const nextMessages: Record<string, string | null> = {
   watercooler: null,
+  waterheater: null,
   newschat: null,
   tmzchat: null,
   pitchchat: null
@@ -13,6 +14,9 @@ const HELP_MESSAGE = `
 Admin Commands:
 !watercooler-admin [update] - Set next watercooler chat message (max 30 words)
 Example: !watercooler-admin just came from a failed startup's pivot meeting
+
+!waterheater-admin [update] - Set next waterheater chat message (max 30 words)
+Example: !waterheater-admin just came from a heated debate about startup valuations
 
 !newschat-admin [topic] - Set next tech news discussion topic
 Example: !newschat-admin OpenAI just released GPT-5
@@ -30,8 +34,9 @@ Note: All commands require ADMIN role
 function validateMessage(service: string, message: string): string | null {
   switch (service) {
     case 'watercooler':
+    case 'waterheater':
       if (message.split(' ').length > 30) {
-        return 'Message too long. Watercooler messages must be 30 words or less.';
+        return 'Message too long. Messages must be 30 words or less.';
       }
       break;
   }
