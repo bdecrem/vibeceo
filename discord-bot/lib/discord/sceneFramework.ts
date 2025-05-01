@@ -1313,13 +1313,16 @@ export function formatStoryInfo(
 	const tensionContext = getTensionContext(sceneIndex);
 	const tensionLevel = tensionContext ? `Tension Level: ${tensionContext.intensity}` : '';
 
+	// Extract just the scene type without the time prefix
+	const sceneType = scene.type.split(' ').pop() || scene.type;
+
 	return `
 **Current Story Arc**
 Theme: ${episodeContext.theme}
 ${tensionLevel}
 
-**Current Scene** (${sceneIndex + 1} of 24)
-Type: ${scene.type}
+**Current Scene** (${new Date().getHours() + 1} of 24)
+Type: ${sceneType}
 Location: ${seed.location}
 Time: ${seed.localTime}
   `;
