@@ -474,17 +474,11 @@ Make it authentically Donte, with his obsession with control and optimization. A
 // Waterheater chat function that can be called directly or by timer
 export async function triggerWaterheaterChat(channelId: string, client: Client) {
   try {
-    console.log('Starting waterheater chat for channel:', channelId);
+    console.log('\n=== WATERHEATER CHAT STARTED ===');
     const characters = getCharacters();
-    console.log('Available characters:', characters.map(c => c.name).join(', '));
     
     // Get available characters
     const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
-    console.log('Available characters:', availableCharacters.map((c: CEO) => c.name).join(', '));
-
-    // Check for admin-specified coach and issue, or auto-select
-    let selectedCoach: CEO;
-    let selectedIssue: string;
 
     // Auto-select random coach and incident
     const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
@@ -492,37 +486,25 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     if (!coachIncidents) {
       throw new Error(`No incidents found for coach ${randomCoach.name}`);
     }
-    selectedCoach = randomCoach;
-    selectedIssue = coachIncidents.incidents[Math.floor(Math.random() * coachIncidents.incidents.length)];
+    const selectedCoach = randomCoach;
+    const selectedIssue = coachIncidents.incidents[Math.floor(Math.random() * coachIncidents.incidents.length)];
 
     // Select two additional coaches
     const otherCoaches = availableCharacters.filter((c: CEO) => c.id !== selectedCoach.id);
     const secondCoach = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
     const thirdCoach = otherCoaches.filter((c: CEO) => c.id !== secondCoach.id)[Math.floor(Math.random() * (otherCoaches.length - 1))];
 
-    // Log selected coaches
-    console.log('Selected coaches:', {
-      first: selectedCoach.name,
-      second: secondCoach.name,
-      third: thirdCoach.name
-    });
-
     // Set up annoyance relationship
     const isAnnoyed = Math.random() > 0.5;
-    console.log('Annoyance relationship:', {
-      first: selectedCoach.name,
-      second: secondCoach.name,
-      isAnnoyed
-    });
 
-    // Get the channel
-    const channel = await client.channels.fetch(channelId) as TextChannel;
-    if (!channel) {
-      throw new Error('Channel not found');
-    }
-
-    // Send intro message
-    await sendEventMessage(channel, 'waterheater', true, new Date().getUTCHours(), new Date().getUTCMinutes());
+    // Log the initial setup
+    console.log('\n=== WATERHEATER SETUP ===');
+    console.log(`Coach with incident: ${selectedCoach.name}`);
+    console.log(`Incident: "${selectedIssue}"`);
+    console.log('\nParticipants:');
+    console.log(`1. ${selectedCoach.name} (has the incident)`);
+    console.log(`2. ${secondCoach.name} (${isAnnoyed ? 'annoyed' : 'supportive'} with ${selectedCoach.name})`);
+    console.log(`3. ${thirdCoach.name} (neutral)`);
 
     // First message - Issue presentation
     const firstMessage = await generateCharacterResponse(
@@ -566,10 +548,15 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     );
     await sendAsCharacter(channelId, thirdCoach.id, sixthMessage);
 
-    // Send outro message
-    await sendEventMessage(channel, 'waterheater', false, new Date().getUTCHours(), new Date().getUTCMinutes());
+    // Log the final state
+    console.log('\n=== WATERHEATER FINAL STATE ===');
+    console.log(`Incident: "${selectedIssue}"`);
+    console.log(`Coach with incident: ${selectedCoach.name}`);
+    console.log('\nFinal Relationships:');
+    console.log(`- ${secondCoach.name} is ${isAnnoyed ? 'annoyed' : 'supportive'} with ${selectedCoach.name}`);
+    console.log(`- ${thirdCoach.name} has escalated the tension`);
+    console.log('\n=== WATERHEATER CHAT COMPLETED ===\n');
 
-    console.log('Waterheater chat completed successfully');
   } catch (error) {
     console.error('Error in waterheater chat:', error);
     throw error;
