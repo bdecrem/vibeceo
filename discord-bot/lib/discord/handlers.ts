@@ -714,6 +714,13 @@ Real alignment doesn't beg for applause — it just vibrates higher.`
 		}
 		storyArcs.storyArcs[randomCoach.id][arcName] = arcData;
 
+		// Update the top-level currentIrritation field
+		storyArcs.currentIrritation = {
+			coach: randomCoach.id,
+			target: thirdCoach.id,
+			incident: selectedIssue.text
+		};
+
 		// Write the updated story arcs back to the file
 		fs.writeFileSync(storyArcsPath, JSON.stringify(storyArcs, null, 2));
 
