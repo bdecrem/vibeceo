@@ -477,127 +477,114 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     const characters = getCharacters();
     console.log('Available characters:', characters.map(c => c.name).join(', '));
     
-    // Check for admin message
+    // Get the admin-specified coach and issue
     const adminMessage = getNextMessage('waterheater');
-    
-    // Pick 3 random unique coaches using our pair config system
-    let selectedCharacterIds = getRandomCharactersWithPairConfig(3);
-    // Ensure Donte is always included and first
-    if (!selectedCharacterIds.includes('donte')) {
-      selectedCharacterIds[0] = 'donte';
-    } else if (selectedCharacterIds[0] !== 'donte') {
-      // Swap Donte to the first position
-      const donteIndex = selectedCharacterIds.indexOf('donte');
-      [selectedCharacterIds[0], selectedCharacterIds[donteIndex]] = [selectedCharacterIds[donteIndex], selectedCharacterIds[0]];
+    if (!adminMessage) {
+      console.error('No waterheater admin message set');
+      throw new Error('No waterheater admin message set');
     }
-    const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id));
+    
+    // Parse the coach and issue from admin message
+    const [firstCoach, ...issueParts] = adminMessage.split(':');
+    const issue = issueParts.join(':').trim();
+    
+    // Get all valid coaches except the first one
+    const validCoaches = ['alex', 'donte', 'rohan', 'venus', 'eljas', 'kailey'];
+    const otherCoaches = validCoaches.filter(coach => coach !== firstCoach);
+    
+    // Randomly select 2 more coaches
+    const shuffled = otherCoaches.sort(() => 0.5 - Math.random());
+    const [coach2, coach3] = shuffled.slice(0, 2);
+    
+    // Put all three coaches in an array
+    const selectedCoaches = [firstCoach, coach2, coach3];
+    
+    // Randomly select which coach gets annoyed at which other coach
+    const annoyedIndex = Math.floor(Math.random() * 3);
+    let annoyingIndex;
+    do {
+      annoyingIndex = Math.floor(Math.random() * 3);
+    } while (annoyingIndex === annoyedIndex);
+    
+    const annoyedCoach = selectedCoaches[annoyedIndex];
+    const annoyingCoach = selectedCoaches[annoyingIndex];
+    
+    console.log('Selected coaches:', {
+      firstCoach,
+      coach2,
+      coach3,
+      annoyanceRelationship: `${getCharacter(annoyedCoach)?.name} is getting annoyed at ${getCharacter(annoyingCoach)?.name}'s approach`
+    });
+
+    // Get the character objects
+    const selectedCharacters = selectedCoaches.map(id => getCharacter(id));
     
     // Validate that we have all required characters
     if (selectedCharacters.some(char => !char)) {
-      console.error('Invalid character IDs selected:', selectedCharacterIds);
+      console.error('Invalid character IDs selected:', selectedCoaches);
       throw new Error('Failed to get valid characters for waterheater chat');
     }
     
     // After validation, we know all characters are defined
     const validCharacters = selectedCharacters as CEO[];
-    console.log('Selected characters:', validCharacters.map(c => c.name).join(', '));
     
-    // Get current scene index from episode context
-    const storyInfo = getCurrentStoryInfo();
-    const sceneIndex = storyInfo?.sceneIndex ?? 0;
-    console.log('[WATERHEATER] Current scene index:', sceneIndex);
-    
-    // Get story context if Donte is present
-    const storyContext = selectedCharacterIds.includes('donte') ? getStoryContext(sceneIndex) : null;
-    console.log('[WATERHEATER] Story context for Donte:', {
-      hasContext: !!storyContext,
-      intensity: storyContext?.intensity,
-      context: storyContext?.context,
-      promptInjection: storyContext?.promptInjection
-    });
-    
-    const selectedArc = storyContext ? selectStoryArc() : null;
-    console.log('[WATERHEATER] Selected story arc:', {
-      hasArc: !!selectedArc,
-      promptAttribute: selectedArc?.promptAttribute,
-      context: selectedArc?.context
-    });
-
     // First Round
     console.log('Starting first round of conversation...');
     
-    // First coach shares something about their day or the admin message
-    let firstMessage;
-    if (adminMessage) {
-      // Send the intro message using the proper event message system
-      const channel = await client.channels.fetch(channelId) as TextChannel;
-      if (!channel) {
-        throw new Error('Channel not found');
-      }
-      await sendEventMessage(channel, 'waterheater', true, new Date().getUTCHours(), new Date().getUTCMinutes());
-      
-      // Generate Donte's message in his own voice
-      const dontePrompt = `You are Donte, the hyper-efficient, control-obsessed startup founder who's always optimizing everything. 
-
-Your dog is disrupting your carefully controlled environment. Express your deep frustration about this in your characteristic voice.
-
-IMPORTANT DONTE TRAITS TO INCLUDE:
-1. Always frame things in terms of efficiency, optimization, or control
-2. Use startup/tech analogies and metrics
-3. Mention specific tools, systems, or processes you use
-4. Show mild irritation at inefficiency
-5. Reference your perfectly organized workspace or routines
-
-Example voice: "My canine disruption levels are off the charts! Efficiency metrics are tanking due to uncalibrated pet variables. Need to pivot my routine with AI-assisted dog-walking apps. Control must be restored to optimize productivity!"
-
-Make it authentically Donte, with his obsession with control and optimization. Focus on metrics, systems, and optimization problems caused by the dog. (max 50 words)`;
-      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + dontePrompt, adminMessage);
-      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
-      console.log('First message (Donte, generated) sent successfully');
-    } else {
-      console.log('Generating first message...');
-      const firstPrompt = `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
-      firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, 'random_update');
-      console.log('First message generated:', firstMessage.substring(0, 50) + '...');
-      await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
-      console.log('First message sent successfully');
+    // Send the intro message
+    const channel = await client.channels.fetch(channelId) as TextChannel;
+    if (!channel) {
+      throw new Error('Channel not found');
     }
+    await sendEventMessage(channel, 'waterheater', true, new Date().getUTCHours(), new Date().getUTCMinutes());
+    
+    // First coach shares their issue
+    const firstPrompt = `You are ${validCharacters[0].name}, ${validCharacters[0].character}. 
+
+Your issue is: ${issue}
+
+IMPORTANT: First, describe the specific details of your issue (what exactly is wrong/happening). Then react to it in your authentic voice.
+
+Examples by character:
+- If you're Alex: First describe the exact problem (taste, texture, appearance, etc), then frame it as a growth opportunity
+- If you're Donte: First detail how something is disrupting your workflow (specific metrics/impacts), then talk about optimization
+- If you're Venus: First explain the exact environmental/social issue you're facing, then connect it to broader systemic trends
+- If you're Rohan: First describe the specific industry challenge you're encountering, then relate it to your experience
+- If you're Eljas: First outline the exact technical problem you're facing, then express excitement about solving it
+- If you're Kailey: First describe the specific team/culture issue you're seeing, then discuss its human impact
+
+Example responses:
+- Alex: "Just opened my premium ceremonial matcha from Kyoto and it's completely off - bitter, clumpy, with a metallic aftertaste. But what a perfect opportunity to optimize my tea sourcing and turn this quality control issue into a wellness experiment!"
+- Donte: "My workspace efficiency has dropped 47% due to constant barking. My Pomodoro timer can't sync with these unpredictable pet variables, and my perfectly organized desk setup is now chaos central!"
+
+Keep it authentic to your character's voice and natural attitude (max 50 words).`;
+    
+    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, issue);
+    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
+    console.log('First message sent successfully');
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Second coach responds
     console.log('Generating second message...');
-    let secondPrompt = '';
-    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement') {
-      console.log('[WATERHEATER] Checking Donte distraction:', {
-        intensity: storyContext.intensity,
-        sceneIndex: sceneIndex,
-        timeOfDay: sceneIndex < 8 ? 'morning' : sceneIndex < 16 ? 'midday' : 'afternoon'
-      });
-      
-      // Check for moderate distraction (around 0.6)
-      if (Math.abs(storyContext.intensity - 0.6) < 0.1) {
-        console.log('[WATERHEATER] Applying distraction prompt for Donte at level ~0.6');
-        // Override for moderate distraction
-        secondPrompt = `You are Donte. You are clearly distracted and struggling to maintain focus on the conversation.\n\nIMPORTANT: Your response MUST show OBVIOUS signs of distraction through your words ONLY. You MUST:\n1. Start responding to the topic but then suddenly switch to something unrelated\n2. Mix up details or get confused about what was just said\n3. Use filler words like "um", "uh", or "like" frequently\n4. Trail off mid-sentence or lose your train of thought\n5. Make abrupt topic changes without proper transitions\n\nEXAMPLES OF DISTRACTED RESPONSES:\n- "Oh yeah, energy metrics... wait, what were we talking about? Something about steam? I was just thinking about this new startup that's disrupting the steam room space... um... what was the question again?"\n- "Steam and metrics... you know what's really interesting? I just got this notification about a new AI startup. They're doing something with... uh... what was I saying? Oh right, energy! But have you seen the latest tech trends?"\n\nYour response should be noticeably unfocused and show clear signs of distraction through your words and speech patterns. Do NOT give a coherent, focused response. Do NOT include stage directions or actions in italics.`;
-        console.log('[WATERHEATER] Generated distraction prompt:', secondPrompt);
-      }
-    }
-    
-    if (!secondPrompt) {
-      console.log('[WATERHEATER] Using standard prompt for second character:', {
-        character: validCharacters[1].name,
-        isDonte: validCharacters[1].id === 'donte',
-        hasStoryContext: !!storyContext,
-        hasSelectedArc: !!selectedArc,
-        promptAttribute: selectedArc?.promptAttribute,
-        intensity: storyContext?.intensity
-      });
-      secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". ${storyContext && validCharacters[1].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
-    }
+    const secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). 
+
+${validCharacters[0].name} just said: "${firstMessage}"
+
+${validCharacters[1].id === annoyedCoach && validCharacters[0].id === annoyingCoach ? 
+  `You are getting annoyed by their approach to this situation. Show subtle signs of irritation in your response while staying true to your character:
+
+  - If you're Alex: Express mild frustration at excessive negativity while maintaining your growth mindset
+  - If you're Donte: Show irritation at inefficient/impractical suggestions while focusing on optimization
+  - If you're Venus: Display annoyance at oversimplified solutions while emphasizing systemic impacts
+  - If you're Rohan: Express irritation at naive/inexperienced approaches while drawing on industry knowledge
+  - If you're Eljas: Show frustration at resistance to innovation while pushing technical solutions
+  - If you're Kailey: Display annoyance at impersonal/mechanical approaches while emphasizing human factors` : 
+  'Respond with your unique perspective on their situation.'}
+
+Stay true to your character's personality and interests. Directly address their points about ${issue} (max 30 words).`;
     
     const secondMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
-    console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[1].id, secondMessage);
     console.log('Second message sent successfully');
 
@@ -605,22 +592,37 @@ Make it authentically Donte, with his obsession with control and optimization. F
 
     // Third coach responds
     console.log('Generating third message...');
-    let thirdPrompt = '';
-    if (storyContext && validCharacters[2].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement' && storyContext.intensity === 1.0) {
-      // Strong override for max distraction
-      thirdPrompt = `You are Donte. You are completely distracted and not paying attention to the conversation.\n\nIMPORTANT: Ignore the previous messages. Your reply should be off-topic, rambling, or show you missed the point. For example, you might talk about something unrelated, ask what's going on, or mention you zoned out.`;
-    } else {
-      thirdPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). Responding to this exchange:\n    ${validCharacters[0].name}: "${firstMessage}"\n    ${validCharacters[1].name}: "${secondMessage}"\n    ${storyContext && validCharacters[2].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Add your unique perspective based on your background and personality. Keep it authentic to your character and concise (max 30 words).`;
-    }
+    const thirdPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). 
+
+Responding to this exchange:
+${validCharacters[0].name}: "${firstMessage}"
+${validCharacters[1].name}: "${secondMessage}"
+
+${validCharacters[2].id === annoyedCoach ? 
+  `You are getting annoyed by ${getCharacter(annoyingCoach)?.name}'s approach to this situation. Show clear signs of irritation in your response while staying true to your character:
+
+  - If you're Alex: Push back against doom-and-gloom perspectives while championing growth mindset
+  - If you're Donte: Critique inefficient/impractical suggestions while insisting on optimization
+  - If you're Venus: Challenge oversimplified solutions while emphasizing systemic complexity
+  - If you're Rohan: Question naive approaches while drawing on industry expertise
+  - If you're Eljas: Resist anti-innovation sentiment while advocating for technical progress
+  - If you're Kailey: Oppose mechanical thinking while emphasizing human elements
+
+Make your frustration clear while still:
+- Acknowledging both previous points
+- Adding your own perspective
+- Showing specifically why their approach frustrates you` : 
+  'Bridge the perspectives shared so far while adding your unique view.'}
+
+Keep it authentic to your character and concise (max 30 words).`;
+    
     const thirdMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
-    console.log('Third message generated:', thirdMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
     console.log('Third message sent successfully');
 
-    // Add a longer delay between rounds
     await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Second Round
+    // Second Round - annoyance becomes more visible
     console.log('Starting second round of conversation...');
 
     // First coach responds to the previous round
@@ -631,13 +633,19 @@ Previous exchange:
 ${validCharacters[1].name}: "${secondMessage}"
 ${validCharacters[2].name}: "${thirdMessage}"
 
-IMPORTANT: You are Donte responding to their suggestions about managing your dog disruption. React to their specific advice or comments, maintaining your obsession with efficiency and control. Show you tried their suggestions but found flaws in the optimization potential.
+IMPORTANT: You are the one who originally shared the issue about ${issue}. Now you're responding to the advice and perspectives you just received. React authentically to what they said:
+- If you're Donte: Show your frustration with impractical advice, focus on how it affects your productivity metrics
+- If you're Alex: Express your enthusiasm about their suggestions, relate it to growth opportunities
+- If you're Venus: Analyze how their advice aligns with broader trends and impacts
+- If you're Rohan: Connect their suggestions to your industry experience
+- If you're Eljas: Show your excitement about implementing their ideas
+- If you're Kailey: Consider how their advice affects team dynamics
 
-Example: "Your suggestions have yielded suboptimal results. The AI-powered treat dispenser decreased workspace efficiency by 23.4%. And the smart collar analytics show concerning spikes in chaos metrics!"
+Example Donte reaction: "Hmm, 'embrace the chaos'? My productivity metrics don't account for random variables. Maybe I can optimize the dog's schedule to align with my Pomodoro cycles..."
 
-Keep it authentic to your character (max 50 words).`;
+Stay true to your character's voice while responding to their specific suggestions about ${issue} (max 50 words).`;
+    
     const fourthMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + fourthPrompt, secondMessage + ' ' + thirdMessage);
-    console.log('Fourth message generated:', fourthMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[0].id, fourthMessage);
     console.log('Fourth message sent successfully');
 
@@ -645,14 +653,28 @@ Keep it authentic to your character (max 50 words).`;
 
     // Second coach responds
     console.log('Generating fifth message...');
-    const fifthPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). Responding to this exchange:
+    const fifthPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). 
 
+Previous exchange:
 ${validCharacters[2].name}: "${thirdMessage}"
 ${validCharacters[0].name}: "${fourthMessage}"
 
-Add your unique perspective based on your background and personality. Engage directly with Donte's specific situation and his response to your earlier suggestion. Keep it authentic to your character (max 50 words).`;
+${validCharacters[1].id === annoyedCoach ? 
+  `Your annoyance with ${getCharacter(annoyingCoach)?.name}'s approach has reached a peak. Make your frustration very clear while staying true to your character:
+
+  - If you're Alex: Firmly reject excessive negativity, insist on growth opportunities
+  - If you're Donte: Dismiss inefficient suggestions, demand data-driven solutions
+  - If you're Venus: Challenge oversimplified thinking, emphasize systemic complexity
+  - If you're Rohan: Critique inexperienced perspectives, stand firm on industry best practices
+  - If you're Eljas: Push back against anti-innovation views, defend technical progress
+  - If you're Kailey: Reject mechanical approaches, champion human-centered solutions
+
+Show clear exasperation while still focusing on the core issue about ${issue}.` : 
+  'Address how the discussion has evolved and add your perspective on the disagreement.'}
+
+Keep your response focused and authentic (max 50 words).`;
+    
     const fifthMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + fifthPrompt, thirdMessage + ' ' + fourthMessage);
-    console.log('Fifth message generated:', fifthMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[1].id, fifthMessage);
     console.log('Fifth message sent successfully');
 
@@ -660,18 +682,33 @@ Add your unique perspective based on your background and personality. Engage dir
 
     // Third coach concludes
     console.log('Generating sixth message...');
-    const sixthPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). Responding to this exchange:
+    const sixthPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). 
 
+Previous exchange:
 ${validCharacters[0].name}: "${fourthMessage}"
 ${validCharacters[1].name}: "${fifthMessage}"
 
-Add your unique perspective based on your background and personality. Engage with both Donte's ongoing situation and the previous suggestions. Keep it authentic to your character (max 50 words).`;
+${validCharacters[2].id === annoyedCoach ? 
+  `This is your final response, and your frustration with ${getCharacter(annoyingCoach)?.name}'s approach has peaked. Make your irritation crystal clear while staying true to your character:
+
+  - If you're Alex: Deliver a final rejection of their negativity, emphasize the power of growth mindset
+  - If you're Donte: Dismiss their inefficient approach entirely, insist on data-driven optimization
+  - If you're Venus: Thoroughly critique their simplistic view, emphasize the true systemic complexity
+  - If you're Rohan: Give a final reality check from your industry experience, reject their naive approach
+  - If you're Eljas: Make a final push for innovation, reject their resistance to technical progress
+  - If you're Kailey: Deliver a passionate defense of human-centered approaches, reject their mechanical thinking
+
+Be direct about your disagreement while wrapping up the discussion about ${issue}.` : 
+  'Provide a final perspective that acknowledges the tension while staying true to your character.'}
+
+Keep it authentic and concise (max 50 words).`;
+    
     const sixthMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + sixthPrompt, fourthMessage + ' ' + fifthMessage);
-    console.log('Sixth message generated:', sixthMessage.substring(0, 50) + '...');
     await sendAsCharacter(channelId, validCharacters[2].id, sixthMessage);
     console.log('Sixth message sent successfully');
 
     console.log('Waterheater chat completed successfully');
+    console.log(`Final annoyance summary: ${getCharacter(annoyedCoach)?.name} was annoyed by ${getCharacter(annoyingCoach)?.name}'s approach`);
   } catch (error) {
     console.error('Error in waterheater chat:', error);
     throw error;

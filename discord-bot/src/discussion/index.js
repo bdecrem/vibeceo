@@ -58,6 +58,10 @@ let discussionState = {
 let lastSpeaker = null;
 let lastPoint = null;
 
+// Track who annoys who
+let annoyedCoach = null;
+let annoyingCoach = null;
+
 // Reset discussion state
 function resetDiscussionState() {
 	discussionState = {
@@ -67,6 +71,8 @@ function resetDiscussionState() {
 		messageCount: 0,
 		startTime: null,
 	};
+	annoyedCoach = null;
+	annoyingCoach = null;
 }
 
 // Generate a coach's response considering the previous message
@@ -94,6 +100,18 @@ function generateCoachResponse(coach, topic, previousSpeaker, previousPoint) {
 		// Add verbal tics as a separate sentence
 		const tic = verbalTics[Math.floor(Math.random() * verbalTics.length)];
 		response = `${opener} ${previousSpeaker}. ${tic}. `;
+
+		// Add annoyance if this coach is annoyed by the previous speaker
+		if (coach === annoyedCoach && previousSpeaker === annoyingCoach) {
+			const annoyedPhrases = [
+				"I have to say, I'm getting a bit tired of your constant...",
+				"Look, I appreciate your input, but...",
+				"I need to be honest here, your approach is...",
+				"Can we try to be a bit more practical about this?",
+				"I'm not sure I agree with your perspective on this..."
+			];
+			response += annoyedPhrases[Math.floor(Math.random() * annoyedPhrases.length)] + " ";
+		}
 	}
 
 	// Add topic-specific insight as a separate sentence
@@ -197,27 +215,35 @@ export async function startDiscussion(newsStory) {
 	lastSpeaker = null;
 	lastPoint = null;
 
-	// Select a random coach to start, ensuring at least 2 skeptical coaches
+	// Get all coaches
 	const coachIds = Object.keys(coaches);
-	const skepticalCoaches = ["rohan", "venus"]; // These coaches tend to be more skeptical
-	const initiator =
-		Math.random() > 0.5
-			? skepticalCoaches[Math.floor(Math.random() * skepticalCoaches.length)]
-			: coachIds[Math.floor(Math.random() * coachIds.length)];
+	
+	// 1. WE pick the first coach and their issue
+	// For now, hardcoding Alex with matcha tea issue as an example
+	// TODO: This should be configurable by the admin/system
+	const firstCoach = 'alex';
+	const firstCoachIssue = "Hey team! 🍵 I just got a bad batch of matcha tea. What do you think about this quality issue?";
+	
+	// 2. System randomly picks 2 more coaches
+	const otherCoaches = coachIds.filter(coach => coach !== firstCoach);
+	const shuffled = otherCoaches.sort(() => 0.5 - Math.random());
+	const [coach2, coach3] = shuffled.slice(0, 2);
+	
+	// 3. System randomly decides who annoys who among the 3 coaches
+	const allThree = [firstCoach, coach2, coach3];
+	const annoyedCoach = allThree[Math.floor(Math.random() * allThree.length)];
+	const remainingCoaches = allThree.filter(coach => coach !== annoyedCoach);
+	const annoyingCoach = remainingCoaches[Math.floor(Math.random() * remainingCoaches.length)];
 
 	try {
-		const initialMessage = `Hey team! 🚀 Check this out: ${newsStory.title}. ${
-			newsStory.description
-		} What are your thoughts on this? ${getCoachFlair(initiator)}`;
-
-		await coaches[initiator].webhook.send({
-			content: initialMessage,
-			username: coaches[initiator].name,
+		await coaches[firstCoach].webhook.send({
+			content: firstCoachIssue + " " + getCoachFlair(firstCoach),
+			username: coaches[firstCoach].name,
 		});
 
-		lastSpeaker = initiator;
-		lastPoint = newsStory.title;
-		discussionState.participationCount[initiator] = 1;
+		lastSpeaker = firstCoach;
+		lastPoint = firstCoachIssue;
+		discussionState.participationCount[firstCoach] = 1;
 		discussionState.messageCount = 1;
 
 		return true;

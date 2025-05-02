@@ -13,7 +13,7 @@ export const EVENT_MESSAGES = {
 		outro: "The coaches have wandered back to their executive suites.",
 	},
 	waterheater: {
-		intro: "{arrival}They are gathering by the steam room.",
+		intro: "{arrival}",
 		outro: "The coaches have dispersed like rising vapor to their workstations.",
 	},
 	newschat: {
@@ -48,6 +48,7 @@ export async function sendEventMessage(
 ) {
 	let message: string;
 	let prompt: string | undefined;
+	let waterheaterIssue: string = ""; // Store waterheater issue separately
 
 	if (eventType === 'watercooler') {
 		// Generate dynamic bumper for watercooler events
@@ -57,7 +58,8 @@ export async function sendEventMessage(
 	} else if (eventType === 'waterheater') {
 		// Generate dynamic bumper for waterheater events
 		const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
-		message = isIntro ? `{arrival}${text}` : text;
+		waterheaterIssue = text; // Store the issue
+		message = isIntro ? "{arrival}" : text; // Only use arrival placeholder for now
 		prompt = generatedPrompt;
 	} else {
 		// Use static messages for other event types
@@ -75,7 +77,13 @@ export async function sendEventMessage(
 		const arrivalText = isNewLocation
 			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `
 			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
-		message = message.replace("{arrival}", arrivalText);
+		
+		// Handle waterheater differently to preserve the issue text
+		if (eventType === 'waterheater') {
+			message = `${arrivalText}${waterheaterIssue}`;
+		} else {
+			message = message.replace("{arrival}", arrivalText);
+		}
 	}
 
 	// Store the scene in episode storage if it's a watercooler or waterheater event

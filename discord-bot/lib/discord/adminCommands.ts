@@ -4,6 +4,7 @@ import { Message } from 'discord.js';
 const nextMessages: Record<string, string | null> = {
   watercooler: null,
   waterheater: null,
+  waterheaterCoach: null,
   newschat: null,
   tmzchat: null,
   pitchchat: null
@@ -15,8 +16,9 @@ Admin Commands:
 !watercooler-admin [update] - Set next watercooler chat message (max 30 words)
 Example: !watercooler-admin just came from a failed startup's pivot meeting
 
-!waterheater-admin [update] - Set next waterheater chat message (max 30 words)
-Example: !waterheater-admin just came from a heated debate about startup valuations
+!waterheater-admin [coach] [issue] - Set next waterheater chat with coach and their issue (max 30 words total)
+Example: !waterheater-admin alex just got a bad batch of matcha tea
+Example: !waterheater-admin donte my dog is staying with me at work today
 
 !newschat-admin [topic] - Set next tech news discussion topic
 Example: !newschat-admin OpenAI just released GPT-5
@@ -96,7 +98,37 @@ export async function handleAdminCommand(message: Message) {
     return;
   }
 
-  // Validate message
+  // Special handling for waterheater-admin
+  if (service === 'waterheater') {
+    const parts = adminMessage.split(' ');
+    if (parts.length < 2) {
+      await message.reply('Please specify both coach name and issue. Example: !waterheater-admin alex just got a bad batch of matcha tea');
+      return;
+    }
+    const coach = parts[0].toLowerCase();
+    const issue = parts.slice(1).join(' ');
+    
+    // Validate coach name
+    const validCoaches = ['alex', 'donte', 'rohan', 'venus', 'eljas', 'kailey'];
+    if (!validCoaches.includes(coach)) {
+      await message.reply(`Invalid coach name. Valid coaches are: ${validCoaches.join(', ')}`);
+      return;
+    }
+
+    // Validate message length
+    if (issue.split(' ').length > 30) {
+      await message.reply('Issue too long. Must be 30 words or less.');
+      return;
+    }
+
+    // Store both coach and issue
+    nextMessages.waterheaterCoach = coach;
+    nextMessages.waterheater = issue;
+    await message.reply(`Waterheater chat set with ${coach} and issue: ${issue}`);
+    return;
+  }
+
+  // Validate message for other services
   const validationError = validateMessage(service, adminMessage);
   if (validationError) {
     await message.reply(validationError);
@@ -110,6 +142,14 @@ export async function handleAdminCommand(message: Message) {
 
 // Get next message for a service
 export function getNextMessage(service: string): string | null {
+  if (service === 'waterheater') {
+    const message = nextMessages.waterheater;
+    const coach = nextMessages.waterheaterCoach;
+    // Return the raw message and coach - let the handler format it
+    nextMessages.waterheaterCoach = null; // Clear after getting
+    nextMessages.waterheater = null; // Clear after getting
+    return coach && message ? `${coach}:${message}` : message;
+  }
   const message = nextMessages[service];
   nextMessages[service] = null; // Clear after getting
   return message;
