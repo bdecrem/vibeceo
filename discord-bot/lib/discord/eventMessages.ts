@@ -13,8 +13,8 @@ export const EVENT_MESSAGES = {
 		outro: "The coaches have wandered back to their executive suites.",
 	},
 	waterheater: {
-		intro: "{arrival}",
-		outro: "The coaches have dispersed like rising vapor to their workstations.",
+		intro: "{arrival}One of our coaches has something on their mind.",
+		outro: "The coaches have drifted back to their executive suites.",
 	},
 	newschat: {
 		intro:
@@ -59,7 +59,7 @@ export async function sendEventMessage(
 		// Generate dynamic bumper for waterheater events
 		const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
 		waterheaterIssue = text; // Store the issue
-		message = isIntro ? "{arrival}" : text; // Only use arrival placeholder for now
+		message = isIntro ? EVENT_MESSAGES[eventType].intro : EVENT_MESSAGES[eventType].outro; // Use the correct message for intro/outro
 		prompt = generatedPrompt;
 	} else {
 		// Use static messages for other event types
@@ -80,7 +80,7 @@ export async function sendEventMessage(
 		
 		// Handle waterheater differently to preserve the issue text
 		if (eventType === 'waterheater') {
-			message = `${arrivalText}${waterheaterIssue}`;
+			message = `${arrivalText}One of our coaches has something on their mind.`;
 		} else {
 			message = message.replace("{arrival}", arrivalText);
 		}
