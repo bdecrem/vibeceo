@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { triggerWatercoolerChat } from "./handlers.js";
+import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
+import { ceos, CEO } from "../../data/ceos.js";
+import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
 
 // Path to the schedule file
 const SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
@@ -19,6 +21,7 @@ const serviceMap: Record<
 	newschat: triggerNewsChat,
 	tmzchat: triggerTmzChat,
 	pitchchat: triggerPitchChat,
+	waterheater: triggerWaterheaterChat,
 	// Add more services here as needed
 };
 
@@ -96,14 +99,33 @@ async function runServiceWithMessages(
 		const now = new Date();
 		const gmtHour = now.getUTCHours();
 		const gmtMinutes = now.getUTCMinutes();
+
+		// For waterheater, select incident first
+		let selectedIncident = null;
+		if (serviceName === 'waterheater') {
+			const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
+			const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+			const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
+			if (coachIncidents) {
+				const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
+				selectedIncident = coachIncidents.incidents[randomIndex];
+			}
+		}
+
 		// Send intro message
 		await sendEventMessage(
 			channel,
 			serviceName as EventType,
 			true,
 			gmtHour,
-			gmtMinutes
+			gmtMinutes,
+			selectedIncident
 		);
+
+		// If it's a waterheater event, trigger the chat
+		if (serviceName === 'waterheater') {
+			await triggerWaterheaterChat(channel.id, client, selectedIncident);
+		}
 
 		// Run the actual service
 		const serviceFn = serviceMap[serviceName];

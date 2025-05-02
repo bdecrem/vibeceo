@@ -44,11 +44,11 @@ export async function sendEventMessage(
 	eventType: keyof typeof EVENT_MESSAGES,
 	isIntro: boolean,
 	gmtHour: number,
-	gmtMinutes: number
+	gmtMinutes: number,
+	selectedIncident?: { text: string; intro: string } | null
 ) {
 	let message: string;
 	let prompt: string | undefined;
-	let waterheaterIssue: string = ""; // Store waterheater issue separately
 
 	if (eventType === 'watercooler') {
 		// Generate dynamic bumper for watercooler events
@@ -56,11 +56,15 @@ export async function sendEventMessage(
 		message = isIntro ? `{arrival}${text}` : text;
 		prompt = generatedPrompt;
 	} else if (eventType === 'waterheater') {
-		// Generate dynamic bumper for waterheater events
-		const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
-		waterheaterIssue = text; // Store the issue
-		message = isIntro ? EVENT_MESSAGES[eventType].intro : EVENT_MESSAGES[eventType].outro; // Use the correct message for intro/outro
-		prompt = generatedPrompt;
+		if (isIntro && selectedIncident) {
+			// Use the selected incident's intro
+			message = isIntro ? `{arrival}${selectedIncident.intro}` : EVENT_MESSAGES[eventType].outro;
+		} else {
+			// Generate dynamic bumper for waterheater events
+			const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
+			message = isIntro ? `{arrival}${text}` : text;
+			prompt = generatedPrompt;
+		}
 	} else {
 		// Use static messages for other event types
 		message = isIntro
@@ -78,12 +82,7 @@ export async function sendEventMessage(
 			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `
 			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
 		
-		// Handle waterheater differently to preserve the issue text
-		if (eventType === 'waterheater') {
-			message = `${arrivalText}One of our coaches has something on their mind.`;
-		} else {
-			message = message.replace("{arrival}", arrivalText);
-		}
+		message = message.replace("{arrival}", arrivalText);
 	}
 
 	// Store the scene in episode storage if it's a watercooler or waterheater event
