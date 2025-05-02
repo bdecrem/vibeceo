@@ -551,23 +551,22 @@ export async function triggerWaterheaterChat(
 		// Message 1: Affected Coach casually shares incident
 		const firstMessage = await generateCharacterResponse(
 			randomCoach.prompt,
-			`You are ${randomCoach.name}. Write 1 Discord-style message where you casually mention something you did that had an unexpected outcome. 
+			`You are ${randomCoach.name}. Write 1 Discord-style message about this specific incident:
 
 The incident was: "${selectedIssue.text}"
 
 IMPORTANT:
-1. You MUST reference the incident above - this is non-negotiable
+1. You MUST directly reference the incident - no additional context or backstory
 2. DO NOT repeat the incident text exactly - rephrase it in first person
-3. Frame it as something you caused or initiated
-4. Use first person ("I", "my", "me")
-5. Express it in your unique voice and personality
-6. Include your authentic reaction to what happened
-7. Keep it short and tossed off, but make it feel natural to your character
+3. Use first person ("I", "my", "me")
+4. Express your immediate, authentic reaction to what happened
+5. Keep it simple and concrete - no philosophical lessons or abstract concepts
+6. Stay true to your character's voice and personality
+7. Keep it under 30 words
 
 Example style for Venus: "Yikes, I thought I added a clever optimization but instead it kicked everyone off my project board. Brrr"
 Example style for Donte: "My efficiency algorithm just kicked everyone off the board. 47% productivity drop. Not optimal."
-
-Keep it under 30 words.`
+Example style for Kailey: "Ugh, my favorite pen broke right before I was about to journal. Now I have to find another one that writes just as smoothly."`
 		);
 		await sendAsCharacter(channelId, randomCoach.id, firstMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -575,7 +574,18 @@ Keep it under 30 words.`
 		// Message 2: Coach B responds supportively
 		const secondMessage = await generateCharacterResponse(
 			secondCoach.prompt,
-			`You are ${secondCoach.name}. Respond to ${randomCoach.name}'s message about "${selectedIssue.text}". Stay in character. React with either mild support, curiosity, or neutrality. Do not escalate or criticize.`
+			`You are ${secondCoach.name}. Respond to ${randomCoach.name}'s message about "${selectedIssue.text}". 
+
+IMPORTANT:
+1. Keep it to 25 words maximum
+2. Use 1-2 short lines only
+3. React with mild support, curiosity, or neutrality
+4. No advice or analysis
+5. Stay in character
+6. Do not escalate or criticize
+7. Limit to 25 words. Sound like a real person, not a press release.
+
+Example style: Oh no, that's rough. Maybe try a different approach next time?`
 		);
 		await sendAsCharacter(channelId, secondCoach.id, secondMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -583,7 +593,19 @@ Keep it under 30 words.`
 		// Message 3: Coach C responds with friction
 		const thirdMessage = await generateCharacterResponse(
 			thirdCoach.prompt,
-			`You are ${thirdCoach.name}. Respond to the ongoing conversation about "${selectedIssue.text}". Say something dismissive, sarcastic, judgmental, or subtly off-tone. Stay fully in character. You are not trying to start a fight—but you say something that rubs ${randomCoach.name} the wrong way.`
+			`You are ${thirdCoach.name}. Respond to the ongoing conversation about "${selectedIssue.text}". 
+
+IMPORTANT:
+1. Keep it to 30 words maximum
+2. Use 1-2 lines only
+3. Be blunt or lightly mocking
+4. No tangents or explanations
+5. Stay fully in character
+6. You're not trying to start a fight—but say something that rubs ${randomCoach.name} the wrong way
+7. Be dismissive, dry, or subtly mocking. Don't monologue, and don't get mean. Keep it sharp, not hostile.
+8. Be sharp but dry. Avoid metaphors or lectures. Let the critique land clean in one line. Max 30 words.
+
+Example style: Sounds like a skill issue to me. Maybe you should've thought that through first?`
 		);
 		await sendAsCharacter(channelId, thirdCoach.id, thirdMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -591,7 +613,18 @@ Keep it under 30 words.`
 		// Message 4: Affected Coach pushes back
 		const fourthMessage = await generateCharacterResponse(
 			randomCoach.prompt,
-			`You are ${randomCoach.name}. You're starting to get annoyed at ${thirdCoach.name} for how they responded. Stay in character. Don't overreact. Just let the tension come through in a dry, clipped, or sharp reply.`
+			`You are ${randomCoach.name}. You're starting to get annoyed at ${thirdCoach.name} for how they responded. 
+
+IMPORTANT:
+1. Keep it to 25 words maximum
+2. Be dry, clipped, and reactive
+3. No full argument or defense
+4. Stay in character
+5. Don't overreact
+6. Let the tension come through in your tone
+7. Respond in one or two clipped lines. No explaining. Max 25 words.
+
+Example style: Thanks for the brilliant insight. Really helpful.`
 		);
 		await sendAsCharacter(channelId, randomCoach.id, fourthMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -599,7 +632,20 @@ Keep it under 30 words.`
 		// Message 5: Coach B follows up as mediator
 		const fifthMessage = await generateCharacterResponse(
 			secondCoach.prompt,
-			`You are ${secondCoach.name}. Respond to the tension between ${randomCoach.name} and ${thirdCoach.name}. Take on a mediator role with a character-appropriate response. For example, you might suggest they co-author a zine: "Triggered by Tools: Notes on Emotional Infrastructure." Use your character's unique perspective to smooth tension while keeping it light but meaningful.`
+			`You are ${secondCoach.name}. Respond to the tension between ${randomCoach.name} and ${thirdCoach.name}. 
+
+IMPORTANT:
+1. Keep it to 40 words maximum
+2. Take on a mediator role
+3. Use your character's unique perspective
+4. Keep it light but meaningful
+5. Stay in character
+6. Can be slightly longer if it fits your voice (e.g. Rohan or Venus)
+7. Respond in your voice, but don't explain a philosophy. You can propose something (e.g. co-author a zine), but keep it snappy.
+8. Choose to soothe or escalate. Either way, keep it under 35 words. No TED talk monologues — stay grounded and specific.
+
+Example style: You two should co-author a zine: 'Triggered by Tools: Notes on Emotional Infrastructure.'
+Example style: Maybe we all need a moment to recalibrate our energy fields here.`
 		);
 		await sendAsCharacter(channelId, secondCoach.id, fifthMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -607,7 +653,19 @@ Keep it under 30 words.`
 		// Message 6: Affected Coach closes
 		const sixthMessage = await generateCharacterResponse(
 			randomCoach.prompt,
-			`You are ${randomCoach.name}. Wrap up this moment with one final message. You are still annoyed at ${thirdCoach.name}. Keep it brief, slightly cold, and in character. Do not resolve the tension. Let it hang.`
+			`You are ${randomCoach.name}. Write 1 final Discord-style message to close the conversation.
+
+IMPORTANT:
+1. You are still annoyed at ${thirdCoach.name} — let that show.
+2. End with one cold or cutting line. Then add one short personal-flavor line (spiritual, sarcastic, etc.). Combined max: 25 words.
+3. Keep it dry, clipped, or cold — do NOT resolve the tension.
+4. Use one sharp sentence directed at ${thirdCoach.name}.
+5. Then add one more line that reflects your character's personal style or belief system — something low-key iconic, ironic, or spiritual (depending on the coach).
+6. Do NOT put your message in quotation marks.
+
+Example for Alex:
+Not impressed, Donte. Time to elevate your mindset.
+Real alignment doesn't beg for applause — it just vibrates higher.`
 		);
 		await sendAsCharacter(channelId, randomCoach.id, sixthMessage);
 
@@ -616,7 +674,7 @@ Keep it under 30 words.`
 		const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
 		
 		// Create a new story arc for the tension
-		const arcName = `getting_irritated_by_${randomCoach.id}`;
+		const arcName = `getting_irritated_by_${thirdCoach.id}`;
 		const arcData = {
 			promptAttribute: "tension",
 			progression: {
@@ -628,33 +686,33 @@ Keep it under 30 words.`
 					afternoon: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 				}
 			},
-			context: `${thirdCoach.name} is getting increasingly irritated by ${randomCoach.name}'s approach to "${selectedIssue.text}"`,
-			promptInjection: `You are ${thirdCoach.name}. Your irritation with ${randomCoach.name}'s approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}`,
+			context: `${randomCoach.name} is getting increasingly irritated by ${thirdCoach.name}'s approach to "${selectedIssue.text}"`,
+			promptInjection: `You are ${randomCoach.name}. Your irritation with ${thirdCoach.name}'s approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}`,
 			levelContexts: {
 				"0.0": "you're completely calm and professional",
 				"0.6": "you're actively frustrated by their methods and approach",
 				"1.0": "you're completely fed up with their methods and approach"
 			},
 			watercoolerPresence: {
-				requiredCharacters: [thirdCoach.id, randomCoach.id],
+				requiredCharacters: [randomCoach.id, thirdCoach.id],
 				probability: 0.66,
 				speakingOrder: {
 					first: "any",
-					second: thirdCoach.id
+					second: randomCoach.id
 				},
 				influence: {
 					type: "tension",
-					description: `The tension from the waterheater incident about "${selectedIssue.text}" influences all interactions between ${thirdCoach.name} and ${randomCoach.name}`,
+					description: `The tension from the waterheater incident about "${selectedIssue.text}" influences all interactions between ${randomCoach.name} and ${thirdCoach.name}`,
 					duration: "episode"
 				}
 			}
 		};
 
 		// Add the new story arc
-		if (!storyArcs.storyArcs[thirdCoach.id]) {
-			storyArcs.storyArcs[thirdCoach.id] = {};
+		if (!storyArcs.storyArcs[randomCoach.id]) {
+			storyArcs.storyArcs[randomCoach.id] = {};
 		}
-		storyArcs.storyArcs[thirdCoach.id][arcName] = arcData;
+		storyArcs.storyArcs[randomCoach.id][arcName] = arcData;
 
 		// Write the updated story arcs back to the file
 		fs.writeFileSync(storyArcsPath, JSON.stringify(storyArcs, null, 2));
@@ -667,7 +725,7 @@ Keep it under 30 words.`
 		console.log(`- ${secondCoach.name} (Coach B) is supportive/neutral`);
 		console.log(`- ${thirdCoach.name} (Coach C) has triggered tension with ${randomCoach.name}`);
 		console.log('\nCreated Story Arc:');
-		console.log(`- ${thirdCoach.name} getting irritated by ${randomCoach.name}`);
+		console.log(`- ${randomCoach.name} getting irritated by ${thirdCoach.name}`);
 		console.log(`- Tension will influence all subsequent watercooler scenes in the episode`);
 		console.log(`- Incident context: "${selectedIssue.text}"`);
 		console.log('\n=== WATERHEATER CHAT COMPLETED ===\n');
