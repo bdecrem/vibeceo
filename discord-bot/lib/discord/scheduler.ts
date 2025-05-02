@@ -125,14 +125,14 @@ async function runServiceWithMessages(
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === 'waterheater') {
 			await triggerWaterheaterChat(channel.id, client, selectedIncident);
-		}
-
-		// Run the actual service
-		const serviceFn = serviceMap[serviceName];
-		if (serviceFn) {
-			await serviceFn(channelId, client);
 		} else {
-			console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
+			// Run the actual service for non-waterheater events
+			const serviceFn = serviceMap[serviceName];
+			if (serviceFn) {
+				await serviceFn(channelId, client);
+			} else {
+				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
+			}
 		}
 
 		// Send outro message
