@@ -1,5 +1,6 @@
 import { Message, TextChannel, ThreadChannel, Client } from "discord.js";
 import { ceos, CEO } from "../../data/ceos.js";
+import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
 import { getCharacter, getCharacters, setActiveCharacter, handleCharacterInteraction, formatCharacterList } from './characters.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
@@ -477,238 +478,98 @@ export async function triggerWaterheaterChat(channelId: string, client: Client) 
     const characters = getCharacters();
     console.log('Available characters:', characters.map(c => c.name).join(', '));
     
-    // Get the admin-specified coach and issue
-    const adminMessage = getNextMessage('waterheater');
-    if (!adminMessage) {
-      console.error('No waterheater admin message set');
-      throw new Error('No waterheater admin message set');
+    // Get available characters
+    const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
+    console.log('Available characters:', availableCharacters.map((c: CEO) => c.name).join(', '));
+
+    // Check for admin-specified coach and issue, or auto-select
+    let selectedCoach: CEO;
+    let selectedIssue: string;
+
+    // Auto-select random coach and incident
+    const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+    const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
+    if (!coachIncidents) {
+      throw new Error(`No incidents found for coach ${randomCoach.name}`);
     }
-    
-    // Parse the coach and issue from admin message
-    const [firstCoach, ...issueParts] = adminMessage.split(':');
-    const issue = issueParts.join(':').trim();
-    
-    // Get all valid coaches except the first one
-    const validCoaches = ['alex', 'donte', 'rohan', 'venus', 'eljas', 'kailey'];
-    const otherCoaches = validCoaches.filter(coach => coach !== firstCoach);
-    
-    // Randomly select 2 more coaches
-    const shuffled = otherCoaches.sort(() => 0.5 - Math.random());
-    const [coach2, coach3] = shuffled.slice(0, 2);
-    
-    // Put all three coaches in an array
-    const selectedCoaches = [firstCoach, coach2, coach3];
-    
-    // Randomly select which coach gets annoyed at which other coach
-    const annoyedIndex = Math.floor(Math.random() * 3);
-    let annoyingIndex;
-    do {
-      annoyingIndex = Math.floor(Math.random() * 3);
-    } while (annoyingIndex === annoyedIndex);
-    
-    const annoyedCoach = selectedCoaches[annoyedIndex];
-    const annoyingCoach = selectedCoaches[annoyingIndex];
-    
+    selectedCoach = randomCoach;
+    selectedIssue = coachIncidents.incidents[Math.floor(Math.random() * coachIncidents.incidents.length)];
+
+    // Select two additional coaches
+    const otherCoaches = availableCharacters.filter((c: CEO) => c.id !== selectedCoach.id);
+    const secondCoach = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
+    const thirdCoach = otherCoaches.filter((c: CEO) => c.id !== secondCoach.id)[Math.floor(Math.random() * (otherCoaches.length - 1))];
+
+    // Log selected coaches
     console.log('Selected coaches:', {
-      firstCoach,
-      coach2,
-      coach3,
-      annoyanceRelationship: `${getCharacter(annoyedCoach)?.name} is getting annoyed at ${getCharacter(annoyingCoach)?.name}'s approach`
+      first: selectedCoach.name,
+      second: secondCoach.name,
+      third: thirdCoach.name
     });
 
-    // Get the character objects
-    const selectedCharacters = selectedCoaches.map(id => getCharacter(id));
-    
-    // Validate that we have all required characters
-    if (selectedCharacters.some(char => !char)) {
-      console.error('Invalid character IDs selected:', selectedCoaches);
-      throw new Error('Failed to get valid characters for waterheater chat');
-    }
-    
-    // After validation, we know all characters are defined
-    const validCharacters = selectedCharacters as CEO[];
-    
-    // First Round
-    console.log('Starting first round of conversation...');
-    
-    // Send the intro message
+    // Set up annoyance relationship
+    const isAnnoyed = Math.random() > 0.5;
+    console.log('Annoyance relationship:', {
+      first: selectedCoach.name,
+      second: secondCoach.name,
+      isAnnoyed
+    });
+
+    // Get the channel
     const channel = await client.channels.fetch(channelId) as TextChannel;
     if (!channel) {
       throw new Error('Channel not found');
     }
+
+    // Send intro message
     await sendEventMessage(channel, 'waterheater', true, new Date().getUTCHours(), new Date().getUTCMinutes());
-    
-    // First coach shares their issue
-    const firstPrompt = `You are ${validCharacters[0].name}, ${validCharacters[0].character}. 
 
-Your issue is: ${issue}
+    // First message - Issue presentation
+    const firstMessage = await generateCharacterResponse(
+      selectedCoach.prompt,
+      `You are ${selectedCoach.name}. You have something on your mind that's bothering you. Share your authentic thoughts about this issue: "${selectedIssue}". Be true to your character's personality and communication style.`
+    );
+    await sendAsCharacter(channelId, selectedCoach.id, firstMessage);
 
-IMPORTANT: First, describe the specific details of your issue (what exactly is wrong/happening). Then react to it in your authentic voice.
+    // Second message - Initial response
+    const secondMessage = await generateCharacterResponse(
+      secondCoach.prompt,
+      `You are ${secondCoach.name}. ${selectedCoach.name} just shared their thoughts about "${selectedIssue}". Respond authentically to their message, maintaining your character's voice. ${isAnnoyed ? 'You are slightly annoyed by their perspective.' : 'You are generally supportive but have a different view.'}`
+    );
+    await sendAsCharacter(channelId, secondCoach.id, secondMessage);
 
-Examples by character:
-- If you're Alex: First describe the exact problem (taste, texture, appearance, etc), then frame it as a growth opportunity
-- If you're Donte: First detail how something is disrupting your workflow (specific metrics/impacts), then talk about optimization
-- If you're Venus: First explain the exact environmental/social issue you're facing, then connect it to broader systemic trends
-- If you're Rohan: First describe the specific industry challenge you're encountering, then relate it to your experience
-- If you're Eljas: First outline the exact technical problem you're facing, then express excitement about solving it
-- If you're Kailey: First describe the specific team/culture issue you're seeing, then discuss its human impact
+    // Third message - Escalation
+    const thirdMessage = await generateCharacterResponse(
+      thirdCoach.prompt,
+      `You are ${thirdCoach.name}. You've just witnessed an exchange between ${selectedCoach.name} and ${secondCoach.name} about "${selectedIssue}". Share your thoughts, escalating the conversation while acknowledging both previous points.`
+    );
+    await sendAsCharacter(channelId, thirdCoach.id, thirdMessage);
 
-Example responses:
-- Alex: "Just opened my premium ceremonial matcha from Kyoto and it's completely off - bitter, clumpy, with a metallic aftertaste. But what a perfect opportunity to optimize my tea sourcing and turn this quality control issue into a wellness experiment!"
-- Donte: "My workspace efficiency has dropped 47% due to constant barking. My Pomodoro timer can't sync with these unpredictable pet variables, and my perfectly organized desk setup is now chaos central!"
+    // Fourth message - First response to tension
+    const fourthMessage = await generateCharacterResponse(
+      selectedCoach.prompt,
+      `You are ${selectedCoach.name}. You've just heard responses from ${secondCoach.name} and ${thirdCoach.name} about your thoughts on "${selectedIssue}". React authentically to their feedback, showing how you feel about their perspectives.`
+    );
+    await sendAsCharacter(channelId, selectedCoach.id, fourthMessage);
 
-Keep it authentic to your character's voice and natural attitude (max 50 words).`;
-    
-    const firstMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + firstPrompt, issue);
-    await sendAsCharacter(channelId, validCharacters[0].id, firstMessage);
-    console.log('First message sent successfully');
+    // Fifth message - Peak tension
+    const fifthMessage = await generateCharacterResponse(
+      secondCoach.prompt,
+      `You are ${secondCoach.name}. The conversation about "${selectedIssue}" has escalated. ${selectedCoach.name} and ${thirdCoach.name} have shared their perspectives. Express your peak frustration while maintaining focus on the core issue.`
+    );
+    await sendAsCharacter(channelId, secondCoach.id, fifthMessage);
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Sixth message - Final response
+    const sixthMessage = await generateCharacterResponse(
+      thirdCoach.prompt,
+      `You are ${thirdCoach.name}. The discussion about "${selectedIssue}" has reached its peak. ${selectedCoach.name} and ${secondCoach.name} have expressed their views. Provide a concluding response that shows your irritation while wrapping up the discussion.`
+    );
+    await sendAsCharacter(channelId, thirdCoach.id, sixthMessage);
 
-    // Second coach responds
-    console.log('Generating second message...');
-    const secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). 
-
-${validCharacters[0].name} just said: "${firstMessage}"
-
-${validCharacters[1].id === annoyedCoach && validCharacters[0].id === annoyingCoach ? 
-  `You are getting annoyed by their approach to this situation. Show subtle signs of irritation in your response while staying true to your character:
-
-  - If you're Alex: Express mild frustration at excessive negativity while maintaining your growth mindset
-  - If you're Donte: Show irritation at inefficient/impractical suggestions while focusing on optimization
-  - If you're Venus: Display annoyance at oversimplified solutions while emphasizing systemic impacts
-  - If you're Rohan: Express irritation at naive/inexperienced approaches while drawing on industry knowledge
-  - If you're Eljas: Show frustration at resistance to innovation while pushing technical solutions
-  - If you're Kailey: Display annoyance at impersonal/mechanical approaches while emphasizing human factors` : 
-  'Respond with your unique perspective on their situation.'}
-
-Stay true to your character's personality and interests. Directly address their points about ${issue} (max 30 words).`;
-    
-    const secondMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
-    await sendAsCharacter(channelId, validCharacters[1].id, secondMessage);
-    console.log('Second message sent successfully');
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Third coach responds
-    console.log('Generating third message...');
-    const thirdPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). 
-
-Responding to this exchange:
-${validCharacters[0].name}: "${firstMessage}"
-${validCharacters[1].name}: "${secondMessage}"
-
-${validCharacters[2].id === annoyedCoach ? 
-  `You are getting annoyed by ${getCharacter(annoyingCoach)?.name}'s approach to this situation. Show clear signs of irritation in your response while staying true to your character:
-
-  - If you're Alex: Push back against doom-and-gloom perspectives while championing growth mindset
-  - If you're Donte: Critique inefficient/impractical suggestions while insisting on optimization
-  - If you're Venus: Challenge oversimplified solutions while emphasizing systemic complexity
-  - If you're Rohan: Question naive approaches while drawing on industry expertise
-  - If you're Eljas: Resist anti-innovation sentiment while advocating for technical progress
-  - If you're Kailey: Oppose mechanical thinking while emphasizing human elements
-
-Make your frustration clear while still:
-- Acknowledging both previous points
-- Adding your own perspective
-- Showing specifically why their approach frustrates you` : 
-  'Bridge the perspectives shared so far while adding your unique view.'}
-
-Keep it authentic to your character and concise (max 30 words).`;
-    
-    const thirdMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
-    await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
-    console.log('Third message sent successfully');
-
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // Second Round - annoyance becomes more visible
-    console.log('Starting second round of conversation...');
-
-    // First coach responds to the previous round
-    console.log('Generating fourth message...');
-    const fourthPrompt = `You are ${validCharacters[0].name} (${validCharacters[0].character}). 
-
-Previous exchange:
-${validCharacters[1].name}: "${secondMessage}"
-${validCharacters[2].name}: "${thirdMessage}"
-
-IMPORTANT: You are the one who originally shared the issue about ${issue}. Now you're responding to the advice and perspectives you just received. React authentically to what they said:
-- If you're Donte: Show your frustration with impractical advice, focus on how it affects your productivity metrics
-- If you're Alex: Express your enthusiasm about their suggestions, relate it to growth opportunities
-- If you're Venus: Analyze how their advice aligns with broader trends and impacts
-- If you're Rohan: Connect their suggestions to your industry experience
-- If you're Eljas: Show your excitement about implementing their ideas
-- If you're Kailey: Consider how their advice affects team dynamics
-
-Example Donte reaction: "Hmm, 'embrace the chaos'? My productivity metrics don't account for random variables. Maybe I can optimize the dog's schedule to align with my Pomodoro cycles..."
-
-Stay true to your character's voice while responding to their specific suggestions about ${issue} (max 50 words).`;
-    
-    const fourthMessage = await generateCharacterResponse(validCharacters[0].prompt + '\n' + fourthPrompt, secondMessage + ' ' + thirdMessage);
-    await sendAsCharacter(channelId, validCharacters[0].id, fourthMessage);
-    console.log('Fourth message sent successfully');
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Second coach responds
-    console.log('Generating fifth message...');
-    const fifthPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). 
-
-Previous exchange:
-${validCharacters[2].name}: "${thirdMessage}"
-${validCharacters[0].name}: "${fourthMessage}"
-
-${validCharacters[1].id === annoyedCoach ? 
-  `Your annoyance with ${getCharacter(annoyingCoach)?.name}'s approach has reached a peak. Make your frustration very clear while staying true to your character:
-
-  - If you're Alex: Firmly reject excessive negativity, insist on growth opportunities
-  - If you're Donte: Dismiss inefficient suggestions, demand data-driven solutions
-  - If you're Venus: Challenge oversimplified thinking, emphasize systemic complexity
-  - If you're Rohan: Critique inexperienced perspectives, stand firm on industry best practices
-  - If you're Eljas: Push back against anti-innovation views, defend technical progress
-  - If you're Kailey: Reject mechanical approaches, champion human-centered solutions
-
-Show clear exasperation while still focusing on the core issue about ${issue}.` : 
-  'Address how the discussion has evolved and add your perspective on the disagreement.'}
-
-Keep your response focused and authentic (max 50 words).`;
-    
-    const fifthMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + fifthPrompt, thirdMessage + ' ' + fourthMessage);
-    await sendAsCharacter(channelId, validCharacters[1].id, fifthMessage);
-    console.log('Fifth message sent successfully');
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Third coach concludes
-    console.log('Generating sixth message...');
-    const sixthPrompt = `You are ${validCharacters[2].name} (${validCharacters[2].character}). 
-
-Previous exchange:
-${validCharacters[0].name}: "${fourthMessage}"
-${validCharacters[1].name}: "${fifthMessage}"
-
-${validCharacters[2].id === annoyedCoach ? 
-  `This is your final response, and your frustration with ${getCharacter(annoyingCoach)?.name}'s approach has peaked. Make your irritation crystal clear while staying true to your character:
-
-  - If you're Alex: Deliver a final rejection of their negativity, emphasize the power of growth mindset
-  - If you're Donte: Dismiss their inefficient approach entirely, insist on data-driven optimization
-  - If you're Venus: Thoroughly critique their simplistic view, emphasize the true systemic complexity
-  - If you're Rohan: Give a final reality check from your industry experience, reject their naive approach
-  - If you're Eljas: Make a final push for innovation, reject their resistance to technical progress
-  - If you're Kailey: Deliver a passionate defense of human-centered approaches, reject their mechanical thinking
-
-Be direct about your disagreement while wrapping up the discussion about ${issue}.` : 
-  'Provide a final perspective that acknowledges the tension while staying true to your character.'}
-
-Keep it authentic and concise (max 50 words).`;
-    
-    const sixthMessage = await generateCharacterResponse(validCharacters[2].prompt + '\n' + sixthPrompt, fourthMessage + ' ' + fifthMessage);
-    await sendAsCharacter(channelId, validCharacters[2].id, sixthMessage);
-    console.log('Sixth message sent successfully');
+    // Send outro message
+    await sendEventMessage(channel, 'waterheater', false, new Date().getUTCHours(), new Date().getUTCMinutes());
 
     console.log('Waterheater chat completed successfully');
-    console.log(`Final annoyance summary: ${getCharacter(annoyedCoach)?.name} was annoyed by ${getCharacter(annoyingCoach)?.name}'s approach`);
   } catch (error) {
     console.error('Error in waterheater chat:', error);
     throw error;
