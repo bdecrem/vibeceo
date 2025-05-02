@@ -477,72 +477,81 @@ Make it authentically Donte, with his obsession with control and optimization. A
 }
 
 // Waterheater chat function that can be called directly or by timer
-export async function triggerWaterheaterChat(channelId: string, client: Client, selectedIncident?: { text: string; intro: string } | null) {
-  try {
-    console.log('\n=== WATERHEATER CHAT STARTED ===');
-    
-    // Get available characters
-    const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
+export async function triggerWaterheaterChat(
+	channelId: string,
+	client: Client,
+	selectedIncident?: { text: string; intro: string } | null,
+	selectedCoachId?: string
+) {
+	try {
+		console.log('\n=== WATERHEATER CHAT STARTED ===');
+		
+		// Get available characters
+		const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
 
-    // Check for admin message
-    const adminMessage = getNextMessage('waterheater');
-    let randomCoach: CEO;
-    let selectedIssue: { text: string; intro: string };
+		// Check for admin message
+		const adminMessage = getNextMessage('waterheater');
+		let randomCoach: CEO;
+		let selectedIssue: { text: string; intro: string };
 
-    if (adminMessage) {
-      // Parse admin message in format "coach:issue"
-      const [coachId, issue] = adminMessage.split(':');
-      const foundCoach = availableCharacters.find(c => c.id === coachId.toLowerCase());
-      if (!foundCoach) {
-        throw new Error(`Invalid coach ID in admin message: ${coachId}`);
-      }
-      randomCoach = foundCoach;
-      selectedIssue = {
-        text: issue.trim(),
-        intro: issue.trim()
-      };
-    } else if (selectedIncident) {
-      // Use the pre-selected incident
-      randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
-      selectedIssue = selectedIncident;
-    } else {
-      // Auto-select random coach and incident
-      randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
-      const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
-      if (!coachIncidents) {
-        throw new Error(`No incidents found for coach ${randomCoach.name}`);
-      }
-      
-      // Debug logging for incident selection
-      console.log('\n=== INCIDENT SELECTION DEBUG ===');
-      console.log(`Available incidents for ${randomCoach.name}:`, coachIncidents.incidents);
-      const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
-      console.log(`Random index selected: ${randomIndex} out of ${coachIncidents.incidents.length} incidents`);
-      selectedIssue = coachIncidents.incidents[randomIndex];
-      console.log(`Selected incident: "${selectedIssue.text}"`);
-      console.log(`Selected intro: "${selectedIssue.intro}"`);
-      console.log('=== END INCIDENT SELECTION DEBUG ===\n');
-    }
+		if (adminMessage) {
+			// Parse admin message in format "coach:issue"
+			const [coachId, issue] = adminMessage.split(':');
+			const foundCoach = availableCharacters.find(c => c.id === coachId.toLowerCase());
+			if (!foundCoach) {
+				throw new Error(`Invalid coach ID in admin message: ${coachId}`);
+			}
+			randomCoach = foundCoach;
+			selectedIssue = {
+				text: issue.trim(),
+				intro: issue.trim()
+			};
+		} else if (selectedCoachId && selectedIncident) {
+			// Use the pre-selected coach and incident
+			const foundCoach = availableCharacters.find(c => c.id === selectedCoachId);
+			if (!foundCoach) {
+				throw new Error(`Invalid selected coach ID: ${selectedCoachId}`);
+			}
+			randomCoach = foundCoach;
+			selectedIssue = selectedIncident;
+		} else {
+			// Auto-select random coach and incident
+			randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+			const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
+			if (!coachIncidents) {
+				throw new Error(`No incidents found for coach ${randomCoach.name}`);
+			}
+			
+			// Debug logging for incident selection
+			console.log('\n=== INCIDENT SELECTION DEBUG ===');
+			console.log(`Available incidents for ${randomCoach.name}:`, coachIncidents.incidents);
+			const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
+			console.log(`Random index selected: ${randomIndex} out of ${coachIncidents.incidents.length} incidents`);
+			selectedIssue = coachIncidents.incidents[randomIndex];
+			console.log(`Selected incident: "${selectedIssue.text}"`);
+			console.log(`Selected intro: "${selectedIssue.intro}"`);
+			console.log('=== END INCIDENT SELECTION DEBUG ===\n');
+		}
 
-    // Select two additional coaches
-    const otherCoaches = availableCharacters.filter((c: CEO) => c.id !== randomCoach.id);
-    const secondCoach = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
-    const thirdCoach = otherCoaches.filter((c: CEO) => c.id !== secondCoach.id)[Math.floor(Math.random() * (otherCoaches.length - 1))];
+		// Select two additional coaches
+		const otherCoaches = availableCharacters.filter((c: CEO) => c.id !== randomCoach.id);
+		const secondCoach = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
+		const thirdCoach = otherCoaches.filter((c: CEO) => c.id !== secondCoach.id)[Math.floor(Math.random() * (otherCoaches.length - 1))];
 
-    // Log the initial setup
-    console.log('\n=== WATERHEATER SETUP ===');
-    console.log(`Affected Coach: ${randomCoach.name}`);
-    console.log(`Incident: "${selectedIssue.text}"`);
-    console.log(`Intro: "${selectedIssue.intro}"`);
-    console.log('\nParticipants:');
-    console.log(`1. ${randomCoach.name} (Affected Coach)`);
-    console.log(`2. ${secondCoach.name} (Coach B - Supportive/Neutral)`);
-    console.log(`3. ${thirdCoach.name} (Coach C - Will trigger tension)`);
+		// Log the initial setup
+		console.log('\n=== WATERHEATER SETUP ===');
+		console.log(`Affected Coach: ${randomCoach.name}`);
+		console.log(`Incident: "${selectedIssue.text}"`);
+		console.log(`Intro: "${selectedIssue.intro}"`);
+		console.log('\nParticipants:');
+		console.log(`1. ${randomCoach.name} (Affected Coach)`);
+		console.log(`2. ${secondCoach.name} (Coach B - Supportive/Neutral)`);
+		console.log(`3. ${thirdCoach.name} (Coach C - Will trigger tension)`);
 
-    // Message 1: Affected Coach casually shares incident
-    const firstMessage = await generateCharacterResponse(
-      randomCoach.prompt,
-      `You are ${randomCoach.name}. Write 1 Discord-style message where you casually mention something you did that had an unexpected outcome. 
+		// Message 1: Affected Coach casually shares incident
+		const firstMessage = await generateCharacterResponse(
+			randomCoach.prompt,
+			`You are ${randomCoach.name}. Write 1 Discord-style message where you casually mention something you did that had an unexpected outcome. 
 
 The incident was: "${selectedIssue.text}"
 
@@ -559,114 +568,114 @@ Example style for Venus: "Yikes, I thought I added a clever optimization but ins
 Example style for Donte: "My efficiency algorithm just kicked everyone off the board. 47% productivity drop. Not optimal."
 
 Keep it under 30 words.`
-    );
-    await sendAsCharacter(channelId, randomCoach.id, firstMessage);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+		);
+		await sendAsCharacter(channelId, randomCoach.id, firstMessage);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Message 2: Coach B responds supportively
-    const secondMessage = await generateCharacterResponse(
-      secondCoach.prompt,
-      `You are ${secondCoach.name}. Respond to ${randomCoach.name}'s message about "${selectedIssue.text}". Stay in character. React with either mild support, curiosity, or neutrality. Do not escalate or criticize.`
-    );
-    await sendAsCharacter(channelId, secondCoach.id, secondMessage);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+		// Message 2: Coach B responds supportively
+		const secondMessage = await generateCharacterResponse(
+			secondCoach.prompt,
+			`You are ${secondCoach.name}. Respond to ${randomCoach.name}'s message about "${selectedIssue.text}". Stay in character. React with either mild support, curiosity, or neutrality. Do not escalate or criticize.`
+		);
+		await sendAsCharacter(channelId, secondCoach.id, secondMessage);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Message 3: Coach C responds with friction
-    const thirdMessage = await generateCharacterResponse(
-      thirdCoach.prompt,
-      `You are ${thirdCoach.name}. Respond to the ongoing conversation about "${selectedIssue.text}". Say something dismissive, sarcastic, judgmental, or subtly off-tone. Stay fully in character. You are not trying to start a fight—but you say something that rubs ${randomCoach.name} the wrong way.`
-    );
-    await sendAsCharacter(channelId, thirdCoach.id, thirdMessage);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+		// Message 3: Coach C responds with friction
+		const thirdMessage = await generateCharacterResponse(
+			thirdCoach.prompt,
+			`You are ${thirdCoach.name}. Respond to the ongoing conversation about "${selectedIssue.text}". Say something dismissive, sarcastic, judgmental, or subtly off-tone. Stay fully in character. You are not trying to start a fight—but you say something that rubs ${randomCoach.name} the wrong way.`
+		);
+		await sendAsCharacter(channelId, thirdCoach.id, thirdMessage);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Message 4: Affected Coach pushes back
-    const fourthMessage = await generateCharacterResponse(
-      randomCoach.prompt,
-      `You are ${randomCoach.name}. You're starting to get annoyed at ${thirdCoach.name} for how they responded. Stay in character. Don't overreact. Just let the tension come through in a dry, clipped, or sharp reply.`
-    );
-    await sendAsCharacter(channelId, randomCoach.id, fourthMessage);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+		// Message 4: Affected Coach pushes back
+		const fourthMessage = await generateCharacterResponse(
+			randomCoach.prompt,
+			`You are ${randomCoach.name}. You're starting to get annoyed at ${thirdCoach.name} for how they responded. Stay in character. Don't overreact. Just let the tension come through in a dry, clipped, or sharp reply.`
+		);
+		await sendAsCharacter(channelId, randomCoach.id, fourthMessage);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Message 5: Coach B follows up as mediator
-    const fifthMessage = await generateCharacterResponse(
-      secondCoach.prompt,
-      `You are ${secondCoach.name}. Respond to the tension between ${randomCoach.name} and ${thirdCoach.name}. Take on a mediator role with a character-appropriate response. For example, you might suggest they co-author a zine: "Triggered by Tools: Notes on Emotional Infrastructure." Use your character's unique perspective to smooth tension while keeping it light but meaningful.`
-    );
-    await sendAsCharacter(channelId, secondCoach.id, fifthMessage);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+		// Message 5: Coach B follows up as mediator
+		const fifthMessage = await generateCharacterResponse(
+			secondCoach.prompt,
+			`You are ${secondCoach.name}. Respond to the tension between ${randomCoach.name} and ${thirdCoach.name}. Take on a mediator role with a character-appropriate response. For example, you might suggest they co-author a zine: "Triggered by Tools: Notes on Emotional Infrastructure." Use your character's unique perspective to smooth tension while keeping it light but meaningful.`
+		);
+		await sendAsCharacter(channelId, secondCoach.id, fifthMessage);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Message 6: Affected Coach closes
-    const sixthMessage = await generateCharacterResponse(
-      randomCoach.prompt,
-      `You are ${randomCoach.name}. Wrap up this moment with one final message. You are still annoyed at ${thirdCoach.name}. Keep it brief, slightly cold, and in character. Do not resolve the tension. Let it hang.`
-    );
-    await sendAsCharacter(channelId, randomCoach.id, sixthMessage);
+		// Message 6: Affected Coach closes
+		const sixthMessage = await generateCharacterResponse(
+			randomCoach.prompt,
+			`You are ${randomCoach.name}. Wrap up this moment with one final message. You are still annoyed at ${thirdCoach.name}. Keep it brief, slightly cold, and in character. Do not resolve the tension. Let it hang.`
+		);
+		await sendAsCharacter(channelId, randomCoach.id, sixthMessage);
 
-    // Create story arc based on the tension
-    const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
-    const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
-    
-    // Create a new story arc for the tension
-    const arcName = `getting_irritated_by_${randomCoach.id}`;
-    const arcData = {
-      promptAttribute: "tension",
-      progression: {
-        startLevel: 0.6,
-        endLevel: 1.0,
-        scenes: {
-          morning: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-          midday: [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-          afternoon: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        }
-      },
-      context: `${thirdCoach.name} is getting increasingly irritated by ${randomCoach.name}'s approach to "${selectedIssue.text}"`,
-      promptInjection: `You are ${thirdCoach.name}. Your irritation with ${randomCoach.name}'s approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}`,
-      levelContexts: {
-        "0.0": "you're completely calm and professional",
-        "0.6": "you're actively frustrated by their methods and approach",
-        "1.0": "you're completely fed up with their methods and approach"
-      },
-      watercoolerPresence: {
-        requiredCharacters: [thirdCoach.id, randomCoach.id],
-        probability: 0.66,
-        speakingOrder: {
-          first: "any",
-          second: thirdCoach.id
-        },
-        influence: {
-          type: "tension",
-          description: `The tension from the waterheater incident about "${selectedIssue.text}" influences all interactions between ${thirdCoach.name} and ${randomCoach.name}`,
-          duration: "episode"
-        }
-      }
-    };
+		// Create story arc based on the tension
+		const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+		const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+		
+		// Create a new story arc for the tension
+		const arcName = `getting_irritated_by_${randomCoach.id}`;
+		const arcData = {
+			promptAttribute: "tension",
+			progression: {
+				startLevel: 0.6,
+				endLevel: 1.0,
+				scenes: {
+					morning: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+					midday: [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+					afternoon: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+				}
+			},
+			context: `${thirdCoach.name} is getting increasingly irritated by ${randomCoach.name}'s approach to "${selectedIssue.text}"`,
+			promptInjection: `You are ${thirdCoach.name}. Your irritation with ${randomCoach.name}'s approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}`,
+			levelContexts: {
+				"0.0": "you're completely calm and professional",
+				"0.6": "you're actively frustrated by their methods and approach",
+				"1.0": "you're completely fed up with their methods and approach"
+			},
+			watercoolerPresence: {
+				requiredCharacters: [thirdCoach.id, randomCoach.id],
+				probability: 0.66,
+				speakingOrder: {
+					first: "any",
+					second: thirdCoach.id
+				},
+				influence: {
+					type: "tension",
+					description: `The tension from the waterheater incident about "${selectedIssue.text}" influences all interactions between ${thirdCoach.name} and ${randomCoach.name}`,
+					duration: "episode"
+				}
+			}
+		};
 
-    // Add the new story arc
-    if (!storyArcs.storyArcs[thirdCoach.id]) {
-      storyArcs.storyArcs[thirdCoach.id] = {};
-    }
-    storyArcs.storyArcs[thirdCoach.id][arcName] = arcData;
+		// Add the new story arc
+		if (!storyArcs.storyArcs[thirdCoach.id]) {
+			storyArcs.storyArcs[thirdCoach.id] = {};
+		}
+		storyArcs.storyArcs[thirdCoach.id][arcName] = arcData;
 
-    // Write the updated story arcs back to the file
-    fs.writeFileSync(storyArcsPath, JSON.stringify(storyArcs, null, 2));
+		// Write the updated story arcs back to the file
+		fs.writeFileSync(storyArcsPath, JSON.stringify(storyArcs, null, 2));
 
-    // Log the final state
-    console.log('\n=== WATERHEATER FINAL STATE ===');
-    console.log(`Incident: "${selectedIssue.text}"`);
-    console.log(`Affected Coach: ${randomCoach.name}`);
-    console.log('\nFinal Relationships:');
-    console.log(`- ${secondCoach.name} (Coach B) is supportive/neutral`);
-    console.log(`- ${thirdCoach.name} (Coach C) has triggered tension with ${randomCoach.name}`);
-    console.log('\nCreated Story Arc:');
-    console.log(`- ${thirdCoach.name} getting irritated by ${randomCoach.name}`);
-    console.log(`- Tension will influence all subsequent watercooler scenes in the episode`);
-    console.log(`- Incident context: "${selectedIssue.text}"`);
-    console.log('\n=== WATERHEATER CHAT COMPLETED ===\n');
+		// Log the final state
+		console.log('\n=== WATERHEATER FINAL STATE ===');
+		console.log(`Incident: "${selectedIssue.text}"`);
+		console.log(`Affected Coach: ${randomCoach.name}`);
+		console.log('\nFinal Relationships:');
+		console.log(`- ${secondCoach.name} (Coach B) is supportive/neutral`);
+		console.log(`- ${thirdCoach.name} (Coach C) has triggered tension with ${randomCoach.name}`);
+		console.log('\nCreated Story Arc:');
+		console.log(`- ${thirdCoach.name} getting irritated by ${randomCoach.name}`);
+		console.log(`- Tension will influence all subsequent watercooler scenes in the episode`);
+		console.log(`- Incident context: "${selectedIssue.text}"`);
+		console.log('\n=== WATERHEATER CHAT COMPLETED ===\n');
 
-  } catch (error) {
-    console.error('Error in waterheater chat:', error);
-    throw error;
-  }
+	} catch (error) {
+		console.error('Error in waterheater chat:', error);
+		throw error;
+	}
 }
 
 // Initialize scheduled tasks when bot starts

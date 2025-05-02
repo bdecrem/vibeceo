@@ -102,9 +102,11 @@ async function runServiceWithMessages(
 
 		// For waterheater, select incident first
 		let selectedIncident = null;
+		let selectedCoachId: string | undefined;
 		if (serviceName === 'waterheater') {
 			const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
 			const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+			selectedCoachId = randomCoach.id;
 			const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
 			if (coachIncidents) {
 				const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
@@ -124,7 +126,7 @@ async function runServiceWithMessages(
 
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === 'waterheater') {
-			await triggerWaterheaterChat(channel.id, client, selectedIncident);
+			await triggerWaterheaterChat(channel.id, client, selectedIncident, selectedCoachId);
 		} else {
 			// Run the actual service for non-waterheater events
 			const serviceFn = serviceMap[serviceName];
