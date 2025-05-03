@@ -12,28 +12,83 @@ interface LocationAndTime {
     weatherEmoji: string;
 }
 
+// Weekend schedule blocks
+const weekendBlocks = [
+    { startHour: 18, location: "Vegas", duration: 8 },    // Fri 6pm
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Sat 2am
+    { startHour: 10, location: "Berlin", duration: 8 },   // Sat 10am
+    { startHour: 18, location: "Vegas", duration: 8 },    // Sat 6pm
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Sun 2am
+    { startHour: 10, location: "Berlin", duration: 8 }    // Sun 10am
+];
+
+function isWeekend(): boolean {
+    const day = new Date().getDay();
+    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+}
+
+function getWeekendLocation(laHour: number): string {
+    // Find the current block based on LA time
+    const block = weekendBlocks.find(block => {
+        const endHour = (block.startHour + block.duration) % 24;
+        if (block.startHour < endHour) {
+            return laHour >= block.startHour && laHour < endHour;
+        } else {
+            // Handle overnight blocks
+            return laHour >= block.startHour || laHour < endHour;
+        }
+    });
+
+    return block ? block.location : "Los Angeles"; // Default to LA if no block found
+}
+
 export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): Promise<LocationAndTime> {
     let location: string;
     let localTime: number;
     let localMinutes: number;
 
-    if (gmtHour >= 16 || gmtHour < 1) {
-        // Los Angeles (GMT-7 during daylight saving time)
-        location = "Los Angeles office";
-        localTime = (gmtHour - 7 + 24) % 24; // GMT-7
-        localMinutes = gmtMinutes;
-    }
-    else if (gmtHour >= 1 && gmtHour < 8) {
-        // Singapore (GMT+8)
-        location = "Singapore penthouse";
-        localTime = (gmtHour + 8) % 24; // GMT+8
-        localMinutes = gmtMinutes;
-    }
-    else {
-        // London (GMT+0)
-        location = "London office";
-        localTime = gmtHour; // GMT+0
-        localMinutes = gmtMinutes;
+    // Convert GMT to LA time (GMT-7 during daylight saving time)
+    const laHour = (gmtHour - 7 + 24) % 24;
+
+    if (isWeekend()) {
+        // Use weekend schedule
+        location = getWeekendLocation(laHour);
+        
+        // Calculate local time based on location
+        switch (location) {
+            case "Vegas":
+                localTime = laHour; // Same as LA time
+                localMinutes = gmtMinutes;
+                break;
+            case "Tokyo":
+                localTime = (laHour + 15) % 24; // LA + 15 hours
+                localMinutes = gmtMinutes;
+                break;
+            case "Berlin":
+                localTime = (laHour + 9) % 24; // LA + 9 hours
+                localMinutes = gmtMinutes;
+                break;
+            default:
+                localTime = laHour;
+                localMinutes = gmtMinutes;
+        }
+    } else {
+        // Use weekday schedule
+        if (laHour >= 16 || laHour < 1) {
+            location = "Los Angeles office";
+            localTime = laHour;
+            localMinutes = gmtMinutes;
+        }
+        else if (laHour >= 1 && laHour < 8) {
+            location = "Singapore penthouse";
+            localTime = (laHour + 15) % 24; // LA + 15 hours
+            localMinutes = gmtMinutes;
+        }
+        else {
+            location = "London office";
+            localTime = (laHour + 8) % 24; // LA + 8 hours
+            localMinutes = gmtMinutes;
+        }
     }
 
     const isNewLocation = lastLocation !== location;
