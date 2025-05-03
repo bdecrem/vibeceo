@@ -1,5 +1,5 @@
-00:00 watercooler
-01:00 newschat
+00:00 waterheater
+01:00 watercooler
 02:00 watercooler
 03:00 watercooler
 04:00 watercooler

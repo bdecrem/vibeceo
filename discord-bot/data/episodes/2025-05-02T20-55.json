@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-02T20-55",
+  "createdAt": "2025-05-02T20:55:45.020Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 1:55pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Kailey's cherished journaling pen broke right before her daily reflection.",
+      "outro": "The coaches have ascended, carrying the fire of innovation.",
+      "location": "Los Angeles office",
+      "localTime": "20:55",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 2:01pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under the neon lights.",
+      "outro": "The coaches have dispersed to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "21:1",
+      "coaches": []
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-03T00-57",
+  "createdAt": "2025-05-03T00:57:21.119Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 5:57pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:57",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 5:58pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual agora.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "0:58",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 5:59pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars by the sacred whiteboard.",
+      "outro": "The coaches have synced their energies and dispersed to innovate.",
+      "location": "Los Angeles office",
+      "localTime": "0:59",
+      "coaches": []
+    }
+  ]
+}

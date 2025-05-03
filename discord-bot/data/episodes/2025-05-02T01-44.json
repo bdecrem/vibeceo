@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-02T01-44",
+  "createdAt": "2025-05-02T01:44:49.277Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:45am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "1:45",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "waterheater",
+      "intro": "It's 9:45am at the Singapore penthouse, where clear skies ☀️ stretch overhead. ",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:45",
+      "coaches": []
+    }
+  ]
+}

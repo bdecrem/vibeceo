@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-03T00-39",
+  "createdAt": "2025-05-03T00:39:54.169Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 5:40pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. During a crucial investor call, Donte's microphone started glitching.",
+      "outro": "The coaches have ignited, spreading sparks of innovation.",
+      "location": "Los Angeles office",
+      "localTime": "0:40",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 5:41pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their digital sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "0:41",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 5:42pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing calendars under the digital vision board.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Los Angeles office",
+      "localTime": "0:42",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 5:43pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "0:43",
+      "coaches": []
+    }
+  ]
+}

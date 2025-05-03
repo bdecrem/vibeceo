@@ -26,16 +26,15 @@ export function getRandomCharactersWithPairConfig(count: number): string[] {
     const slots: (string | null)[] = Array(count).fill(null);
     const assigned = new Set<string>();
     
-    // Always enforce second speaker if specified
-    if (watercoolerPairConfig.order.second) {
-      slots[1] = watercoolerPairConfig.order.second;
-      assigned.add(watercoolerPairConfig.order.second);
-    }
-    
-    // Then handle first speaker
+    // Enforce speaking order from config
     if (watercoolerPairConfig.order.first !== 'any') {
       slots[0] = watercoolerPairConfig.order.first;
       assigned.add(watercoolerPairConfig.order.first);
+    }
+    
+    if (watercoolerPairConfig.order.second !== 'any') {
+      slots[1] = watercoolerPairConfig.order.second;
+      assigned.add(watercoolerPairConfig.order.second);
     }
     
     // Fill remaining slots with random characters not already assigned

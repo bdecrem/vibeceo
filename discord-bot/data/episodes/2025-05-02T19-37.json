@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-02T19-37",
+  "createdAt": "2025-05-02T19:37:36.840Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:37pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Venus, known for perfect timing, missed a meeting due to a timezone error.",
+      "outro": "The coaches have ascended, carrying warmth to their endeavors.",
+      "location": "Los Angeles office",
+      "localTime": "19:37",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:39pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their breath with the stock market ticker.",
+      "outro": "The coaches have dispersed to their remote work shrines.",
+      "location": "Los Angeles office",
+      "localTime": "19:39",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 12:40pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to the boardroom in silence.",
+      "location": "Los Angeles office",
+      "localTime": "19:40",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 12:41pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team huddle.",
+      "outro": "The coaches have synchronized into the virtual cloud.",
+      "location": "Los Angeles office",
+      "localTime": "19:41",
+      "coaches": []
+    }
+  ]
+}

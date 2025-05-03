@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-02T19-34",
+  "createdAt": "2025-05-02T19:34:51.939Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:35pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Building operations fined Eljas for planting kale on the office roof.",
+      "outro": "The coaches have ascended, carrying the warmth of transformation.",
+      "location": "Los Angeles office",
+      "localTime": "19:35",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:37pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras in the conference room.",
+      "outro": "The coaches have ascended to their innovation sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "19:37",
+      "coaches": []
+    }
+  ]
+}

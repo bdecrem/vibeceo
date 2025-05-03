@@ -56,7 +56,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     // Send theme immediately
     const channel = await client.channels.fetch('1354474492629618831');
     if (channel instanceof TextChannel && currentEpisodeContext) {
-      await channel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nToday's episode: ${currentEpisodeContext.theme}\n✨ ━━━━━━━━━━━━━━━ ✨`);
+      await channel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nWelcome to The AF\n✨ ━━━━━━━━━━━━━━━ ✨`);
     }
     
     // Initialize Discord-specific components

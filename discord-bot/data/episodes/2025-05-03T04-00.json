@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T04-00",
+  "createdAt": "2025-05-03T04:00:44.012Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 12:00pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Singapore penthouse",
+      "localTime": "4:0",
+      "coaches": []
+    }
+  ]
+}

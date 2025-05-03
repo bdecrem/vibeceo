@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-03T04-26",
+  "createdAt": "2025-05-03T04:26:08.284Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:26pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. Eljas posted a detailed anti-capitalist message in the wrong Slack channel.",
+      "outro": "The coaches have ascended like flickering flames to their meetings.",
+      "location": "Singapore penthouse",
+      "localTime": "4:26",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:27pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing calendars for the weekly strategy huddle.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "4:27",
+      "coaches": []
+    }
+  ]
+}

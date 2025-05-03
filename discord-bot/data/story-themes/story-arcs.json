@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "rohan",
-    "target": "kailey",
-    "incident": "He asked for feedback and immediately regretted it.",
+    "coach": "kailey",
+    "target": "eljas",
+    "incident": "She journaled through lunch and forgot to eat.",
     "probability": 0.67,
     "intensity": {
       "morning": [
@@ -825,27 +825,26 @@
             ]
           }
         },
-        "context": "Kailey Calm is getting increasingly irritated by Venus Metrics's approach to \"She hit inbox zero and immediately panicked.\"",
+        "context": "Kailey Calm is getting increasingly irritated by Venus Metrics's approach to \"Her Notion reflections disappeared in a sync error.\"",
         "promptInjection": "You are Kailey Calm. Your irritation with Venus Metrics's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "kailey",
             "venus"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "kailey"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She hit inbox zero and immediately panicked.\" influences all interactions between Kailey Calm and Venus Metrics",
+            "description": "The tension from the waterheater incident about \"Her Notion reflections disappeared in a sync error.\" influences all interactions between Kailey Calm and Venus Metrics",
             "duration": "episode"
           }
         }
@@ -888,27 +887,26 @@
             ]
           }
         },
-        "context": "Kailey Calm is getting increasingly irritated by Eljas Virtanen's approach to \"She cried in voice notes and accidentally sent one.\"",
+        "context": "Kailey Calm is getting increasingly irritated by Eljas Virtanen's approach to \"She journaled through lunch and forgot to eat.\"",
         "promptInjection": "You are Kailey Calm. Your irritation with Eljas Virtanen's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "kailey",
             "eljas"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "kailey"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She cried in voice notes and accidentally sent one.\" influences all interactions between Kailey Calm and Eljas Virtanen",
+            "description": "The tension from the waterheater incident about \"She journaled through lunch and forgot to eat.\" influences all interactions between Kailey Calm and Eljas Virtanen",
             "duration": "episode"
           }
         }
@@ -1079,27 +1077,26 @@
             ]
           }
         },
-        "context": "Venus Metrics is getting increasingly irritated by Eljas Virtanen's approach to \"She misspelled \"execution\" in a shared deck.\"",
+        "context": "Venus Metrics is getting increasingly irritated by Eljas Virtanen's approach to \"She forgot to eat for 36 hours and called it \"streamlining.\"\"",
         "promptInjection": "You are Venus Metrics. Your irritation with Eljas Virtanen's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "venus",
             "eljas"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "venus"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She misspelled \"execution\" in a shared deck.\" influences all interactions between Venus Metrics and Eljas Virtanen",
+            "description": "The tension from the waterheater incident about \"She forgot to eat for 36 hours and called it \"streamlining.\"\" influences all interactions between Venus Metrics and Eljas Virtanen",
             "duration": "episode"
           }
         }
@@ -1840,27 +1837,26 @@
             ]
           }
         },
-        "context": "Eljas Virtanen is getting increasingly irritated by Kailey Calm's approach to \"His camera glitched mid-rant and froze on a weird face.\"",
+        "context": "Eljas Virtanen is getting increasingly irritated by Kailey Calm's approach to \"He got into a Slack fight about parking equity.\"",
         "promptInjection": "You are Eljas Virtanen. Your irritation with Kailey Calm's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "eljas",
             "kailey"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "eljas"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"His camera glitched mid-rant and froze on a weird face.\" influences all interactions between Eljas Virtanen and Kailey Calm",
+            "description": "The tension from the waterheater incident about \"He got into a Slack fight about parking equity.\" influences all interactions between Eljas Virtanen and Kailey Calm",
             "duration": "episode"
           }
         }

@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-03T04-18",
+  "createdAt": "2025-05-03T04:18:55.674Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:19pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. A venture capitalist publicly described Venus as \"too intense\" in a tweet.",
+      "outro": "The coaches have extinguished, carrying the flame of innovation within.",
+      "location": "Singapore penthouse",
+      "localTime": "4:19",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:20pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "4:20",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 12:21pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have dispersed to their innovation sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "4:21",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 12:22pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars at the conference table.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "4:22",
+      "coaches": []
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-03T00-16",
+  "createdAt": "2025-05-03T00:16:01.217Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte Disrupt is getting increasingly irritated by Kailey Calm's approach to \"His AI-generated leadership quote went mildly viral… as a joke.\"",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 5:16pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. A team member responded to Venus's detailed Notion document with just \"love this.\"",
+      "outro": "The coaches have percolated back to their collaborative spaces.",
+      "location": "Los Angeles office",
+      "localTime": "0:16",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 5:22pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their data-driven heavens.",
+      "location": "Los Angeles office",
+      "localTime": "0:22",
+      "coaches": []
+    }
+  ]
+}

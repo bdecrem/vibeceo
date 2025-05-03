@@ -1,0 +1,66 @@
+{
+  "id": "2025-05-03T05-01",
+  "createdAt": "2025-05-03T05:01:18.866Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 1:01pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. Venus's new automation script accidentally removed everyone from the project board.",
+      "outro": "The coaches have ascended, carrying the warmth of transformation.",
+      "location": "Singapore penthouse",
+      "localTime": "5:1",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 1:02pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent sky.",
+      "outro": "The coaches have scattered to their innovation chambers.",
+      "location": "Singapore penthouse",
+      "localTime": "5:2",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 1:03pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the neon lights.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "5:3",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 1:04pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent light.",
+      "outro": "The coaches have dispersed to their digital altars.",
+      "location": "Singapore penthouse",
+      "localTime": "5:4",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 1:05pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are balancing laptops on standing desks for focus.",
+      "outro": "The coaches have transcended into the cloud of innovation.",
+      "location": "Singapore penthouse",
+      "localTime": "5:5",
+      "coaches": []
+    }
+  ]
+}

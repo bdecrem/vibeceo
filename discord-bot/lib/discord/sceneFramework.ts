@@ -1321,8 +1321,25 @@ export function formatStoryInfo(
 		return "No irritation data available.";
 	}
 
+	// Calculate intensity for this scene, using watercooler logic
+	let intensity = '?';
+	const intensityObj = currentIrritation?.intensity;
+	if (intensityObj && typeof sceneIndex === 'number' && sceneIndex >= 0 && sceneIndex < 24) {
+		let timeOfDay: 'morning' | 'midday' | 'afternoon';
+		if (sceneIndex < 8) timeOfDay = 'morning';
+		else if (sceneIndex < 16) timeOfDay = 'midday';
+		else timeOfDay = 'afternoon';
+		const arr = intensityObj[timeOfDay];
+		const idx = sceneIndex % 8;
+		if (Array.isArray(arr) && arr.length > idx && typeof arr[idx] === 'number') {
+			intensity = arr[idx].toString();
+		}
+	}
+
+	const sceneNum = (sceneIndex + 1).toString().padStart(2, '0');
+
 	return `${coachName} dealt with an issue: ${incident}.
-${coachName} is irritated with ${targetName} because of an exchange that happened early in the episode.`;
+${coachName} is irritated with ${targetName} because of an exchange that happened early in the episode.\n\nscene: ${sceneNum} intensity: ${intensity}`;
 }
 
 // Helper function to validate story info data

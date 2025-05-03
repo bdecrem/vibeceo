@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-02T21-30",
+  "createdAt": "2025-05-02T21:30:56.915Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 2:31pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. One of Donte's AI-generated leadership quotes went viral, but as a meme.",
+      "outro": "The coaches have ascended like sparks to the boardroom.",
+      "location": "Los Angeles office",
+      "localTime": "21:31",
+      "coaches": []
+    }
+  ]
+}

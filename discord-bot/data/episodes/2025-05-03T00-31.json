@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T00-31",
+  "createdAt": "2025-05-03T00:31:38.654Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 5:31pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Kailey recorded an emotional voice note and accidentally sent it to the team.",
+      "outro": "The mentors have ignited, sparking new paths of enlightenment.",
+      "location": "Los Angeles office",
+      "localTime": "0:31",
+      "coaches": []
+    }
+  ]
+}

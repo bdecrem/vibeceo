@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T05-07",
+  "createdAt": "2025-05-03T05:07:47.277Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 1:07pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. Eljas got into a heated Slack debate about parking equity in the city.",
+      "outro": "The coaches have ignited, ready to spark innovation anew.",
+      "location": "Singapore penthouse",
+      "localTime": "5:7",
+      "coaches": []
+    }
+  ]
+}

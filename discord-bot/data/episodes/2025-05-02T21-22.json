@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-02T21-22",
+  "createdAt": "2025-05-02T21:22:51.929Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 2:23pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Venus's microphone failed during a critical sprint review.",
+      "outro": "The coaches have transcended, igniting their entrepreneurial spirits.",
+      "location": "Los Angeles office",
+      "localTime": "21:23",
+      "coaches": []
+    }
+  ]
+}

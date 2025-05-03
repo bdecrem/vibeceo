@@ -1,0 +1,57 @@
+{
+  "id": "2025-05-03T00-33",
+  "createdAt": "2025-05-03T00:33:59.591Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 5:34pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Venus made a typo in the word \"execution\" in a company-wide presentation.",
+      "outro": "The coaches have ascended in the elevator of enlightenment.",
+      "location": "Los Angeles office",
+      "localTime": "0:34",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 5:35pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their breathing in the conference room.",
+      "outro": "The coaches have ascended to their innovation citadels.",
+      "location": "Los Angeles office",
+      "localTime": "0:35",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 5:36pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have dispersed to their digital realms.",
+      "location": "Los Angeles office",
+      "localTime": "0:36",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 5:37pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their laptops in the open workspace.",
+      "outro": "The coaches have ascended to their strategic planning chambers.",
+      "location": "Los Angeles office",
+      "localTime": "0:37",
+      "coaches": []
+    }
+  ]
+}

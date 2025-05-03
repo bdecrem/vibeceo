@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-02T19-09",
+  "createdAt": "2025-05-02T19:09:51.749Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:10pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Someone misinterpreted Eljas's \"burn it down gently\" hoodie as a threat.",
+      "outro": "The coaches have ascended, their energy now transformed.",
+      "location": "Los Angeles office",
+      "localTime": "19:10",
+      "coaches": []
+    }
+  ]
+}

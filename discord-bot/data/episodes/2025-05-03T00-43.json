@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-03T00-43",
+  "createdAt": "2025-05-03T00:43:14.770Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 5:43pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Eljas's camera froze during a passionate rant, capturing an awkward expression.",
+      "outro": "The coaches have ignited, spreading sparks of innovation.",
+      "location": "Los Angeles office",
+      "localTime": "0:43",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 5:44pm at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team huddle.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "0:44",
+      "coaches": []
+    }
+  ]
+}

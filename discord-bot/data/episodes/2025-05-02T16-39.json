@@ -1,0 +1,75 @@
+{
+  "id": "2025-05-02T16-39",
+  "createdAt": "2025-05-02T16:39:39.093Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:39am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have transcended back to their data sanctuaries.",
+      "location": "Los Angeles office",
+      "localTime": "16:39",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "waterheater",
+      "intro": "It's 9:40am at the Los Angeles office, where clear skies ☀️ stretch overhead. One of our coaches has something on their mind.",
+      "outro": "The coaches have drifted back to their executive suites.",
+      "location": "Los Angeles office",
+      "localTime": "16:40",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:45am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are synchronizing their digital calendars under the skylight.",
+      "outro": "The coaches have dispersed to their designated workstations.",
+      "location": "Los Angeles office",
+      "localTime": "16:45",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 9:48am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars at the sacred whiteboard.",
+      "outro": "The coaches have dispersed to their digital shrines.",
+      "location": "Los Angeles office",
+      "localTime": "16:48",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 9:51am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their laptops at the charging station.",
+      "outro": "The coaches have dispersed to their strategic battle stations.",
+      "location": "Los Angeles office",
+      "localTime": "16:51",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 9:57am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have aligned to their strategic timelines.",
+      "location": "Los Angeles office",
+      "localTime": "16:57",
+      "coaches": []
+    }
+  ]
+}

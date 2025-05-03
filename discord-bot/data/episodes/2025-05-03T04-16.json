@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-03T04-16",
+  "createdAt": "2025-05-03T04:16:09.920Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:16pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. The app Eljas built from scratch crashed during a team demonstration.",
+      "outro": "The coaches have ascended, carrying the warmth of transformation.",
+      "location": "Singapore penthouse",
+      "localTime": "4:16",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:17pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their digital avatars in the virtual lobby.",
+      "outro": "The coaches have ascended to their digital cloud sanctuaries.",
+      "location": "Singapore penthouse",
+      "localTime": "4:17",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 12:18pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have synced their energies and dispersed to innovate.",
+      "location": "Singapore penthouse",
+      "localTime": "4:18",
+      "coaches": []
+    }
+  ]
+}

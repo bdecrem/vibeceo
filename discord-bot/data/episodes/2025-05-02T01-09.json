@@ -1,0 +1,93 @@
+{
+  "id": "2025-05-02T01-09",
+  "createdAt": "2025-05-02T01:09:34.276Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:09am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent light.",
+      "outro": "The coaches have dispersed to their virtual realms.",
+      "location": "Singapore penthouse",
+      "localTime": "1:9",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "waterheater",
+      "intro": "It's 9:10am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are harnessing the power of the espresso machine's steam. Donte's dog is staying with him for a week.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:10",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "waterheater",
+      "intro": "It's 9:15am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their energies under the fluorescent sun. Donte's dog is staying with him for a week.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:15",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 9:15am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their data-driven heavens.",
+      "location": "Singapore penthouse",
+      "localTime": "1:15",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "waterheater",
+      "intro": "It's 9:16am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are kindling creative sparks around the office fireplace. Donte's dog is staying with him for a week.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:16",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "waterheater",
+      "intro": "It's 9:18am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are kindling innovation fires in the brainstorm bonfire. Donte's dog is staying with him for a week.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:18",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 9:18am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their Kanban boards under the neon lights.",
+      "outro": "The coaches have ascended to their glass-walled sky altars.",
+      "location": "Singapore penthouse",
+      "localTime": "1:18",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 9:21am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their digital calendars under the fluorescent lights.",
+      "outro": "The coaches have ascended to their virtual cloud realms.",
+      "location": "Singapore penthouse",
+      "localTime": "1:21",
+      "coaches": []
+    }
+  ]
+}

@@ -37,7 +37,7 @@ async function generateArc(context: {
   
   // Load story arcs
   const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-  const selectedArc = storyArcs.storyArcs.donte.distracted;
+  const selectedArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
   
   return {
     theme: selectedArc.context,

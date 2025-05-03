@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-02T19-15",
+  "createdAt": "2025-05-02T19:15:19.971Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte's mind is elsewhere, not fully present in conversations",
+    "arcSummary": "A day of engagement and its effects.",
+    "toneKeywords": [
+      "engagement",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:15pm and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. Another team member created a duplicate of Venus's Asana board.",
+      "outro": "The coaches have dissipated like warmth into the ethers.",
+      "location": "Los Angeles office",
+      "localTime": "19:15",
+      "coaches": []
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "2025-05-03T04-14",
+  "createdAt": "2025-05-03T04:14:05.031Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 12:14pm and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. Alex's Shopify store unexpectedly reverted to its 2018 theme.",
+      "outro": "The coaches have ascended, carrying the warmth of transformation.",
+      "location": "Singapore penthouse",
+      "localTime": "4:14",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 12:15pm at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing laptops in the collaborative workspace.",
+      "outro": "The coaches have ascended to the boardroom of dreams.",
+      "location": "Singapore penthouse",
+      "localTime": "4:15",
+      "coaches": []
+    }
+  ]
+}

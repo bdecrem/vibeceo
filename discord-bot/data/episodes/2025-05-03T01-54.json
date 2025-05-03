@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-03T01-54",
+  "createdAt": "2025-05-03T01:54:40.681Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 9:54am and the coaches have just arrived at their Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their chakras during the team huddle.",
+      "outro": "The coaches have synced their energies for success.",
+      "location": "Singapore penthouse",
+      "localTime": "1:54",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:55am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are syncing their smartwatches at the innovation altar.",
+      "outro": "The coaches have dispersed to their sacred workstations.",
+      "location": "Singapore penthouse",
+      "localTime": "1:55",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:56am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their KPIs under the fluorescent lights.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "1:56",
+      "coaches": []
+    }
+  ]
+}
