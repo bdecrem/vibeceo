@@ -300,7 +300,14 @@ export function getStoryContext(sceneIndex: number): { intensity: number; contex
 export function selectStoryArc() {
   try {
     const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    return storyArcs.storyArcs.donte.getting_irritated_by_kailey;
+    const arc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
+    
+    // If probability is 0, return null to indicate no story arc
+    if (arc.watercoolerPresence.probability === 0) {
+      return null;
+    }
+    
+    return arc;
   } catch (error) {
     console.error('Error selecting story arc:', error);
     return null;
@@ -313,7 +320,7 @@ export function initializeStoryArc() {
     const selectedArc = selectStoryArc();
     
     if (!selectedArc) {
-      console.error('Story arc not found');
+      console.log('No story arc active (probability is 0)');
       return;
     }
 
@@ -350,8 +357,77 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
     // Check for admin message
     const adminMessage = getNextMessage('watercooler');
     
-    // Pick 3 random unique coaches using our pair config system
-    const selectedCharacterIds = getRandomCharactersWithPairConfig(3);
+    // Get current scene index from episode context
+    const storyInfo = getCurrentStoryInfo();
+    const sceneIndex = storyInfo?.sceneIndex ?? 0;
+    console.log('[WATERCOOLER] Current scene index:', sceneIndex);
+    
+    // Read story arcs and current irritation
+    const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+    const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+    const currentIrritation = storyArcs.currentIrritation;
+    
+    // Check if we should apply irritation based on currentIrritation probability
+    const shouldApplyIrritation = currentIrritation && 
+                                 currentIrritation.probability > 0 && 
+                                 Math.random() < currentIrritation.probability;
+    
+    console.log('[WATERCOOLER] Irritation check:', {
+      hasIrritation: !!currentIrritation,
+      probability: currentIrritation?.probability,
+      shouldApply: shouldApplyIrritation
+    });
+    
+    // If applying irritation, get the correct intensity based on time of day
+    let intensity = 0;
+    if (shouldApplyIrritation) {
+      // Determine time of day based on scene index (24 scenes per episode)
+      let timeOfDay: 'morning' | 'midday' | 'afternoon';
+      if (sceneIndex < 8) timeOfDay = 'morning';      // Scenes 0-7
+      else if (sceneIndex < 16) timeOfDay = 'midday'; // Scenes 8-15
+      else timeOfDay = 'afternoon';                   // Scenes 16-23
+      
+      // Get the specific intensity level for this scene (0-7 within the time period)
+      const sceneIndexInPeriod = sceneIndex % 8;
+      intensity = currentIrritation.intensity[timeOfDay][sceneIndexInPeriod];
+      
+      console.log('\n=== WATERCOOLER INTENSITY DEBUG ===');
+      console.log(`Scene Index: ${sceneIndex}`);
+      console.log(`Time of Day: ${timeOfDay}`);
+      console.log(`Scene Index in Period: ${sceneIndexInPeriod}`);
+      console.log(`Intensity Array: [${currentIrritation.intensity[timeOfDay].join(', ')}]`);
+      console.log(`Selected Intensity: ${intensity}`);
+      console.log('================================\n');
+      
+      console.log('[WATERCOOLER] Irritation intensity:', {
+        timeOfDay,
+        sceneIndexInPeriod,
+        intensity
+      });
+    }
+    
+    // If applying irritation, ensure the irritated coach is included
+    let selectedCharacterIds;
+    if (shouldApplyIrritation) {
+      // Force target to speak first, coach to speak second
+      selectedCharacterIds = [currentIrritation.target, currentIrritation.coach];
+      // Then get 1 more random coach, excluding both target and coach
+      const otherCoaches = getCharacters()
+        .filter(c => c.id !== currentIrritation.target && c.id !== currentIrritation.coach)
+        .map(c => c.id);
+      const randomCoach = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
+      selectedCharacterIds.push(randomCoach);
+      
+      console.log('[WATERCOOLER] Enforced speaking order:', {
+        first: currentIrritation.target,
+        second: currentIrritation.coach,
+        third: randomCoach
+      });
+    } else {
+      // If not applying irritation, just get 3 random coaches
+      selectedCharacterIds = getRandomCharactersWithPairConfig(3);
+    }
+    
     const selectedCharacters = selectedCharacterIds.map(id => getCharacter(id));
     
     // Validate that we have all required characters
@@ -363,11 +439,6 @@ export async function triggerWatercoolerChat(channelId: string, client: Client) 
     // After validation, we know all characters are defined
     const validCharacters = selectedCharacters as CEO[];
     console.log('Selected characters:', validCharacters.map(c => c.name).join(', '));
-    
-    // Get current scene index from episode context
-    const storyInfo = getCurrentStoryInfo();
-    const sceneIndex = storyInfo?.sceneIndex ?? 0;
-    console.log('[WATERCOOLER] Current scene index:', sceneIndex);
     
     // Get story context if Donte is present
     const storyContext = selectedCharacterIds.includes('donte') ? getStoryContext(sceneIndex) : null;
@@ -422,16 +493,19 @@ Make it authentically Donte, with his obsession with control and optimization. A
     // Second coach responds
     console.log('Generating second message...');
     let secondPrompt = '';
-    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'tension') {
-      console.log('[WATERCOOLER] Applying irritation for Donte:', {
-        intensity: storyContext.intensity,
-        context: storyContext.context,
-        promptInjection: storyContext.promptInjection
-      });
+    if (shouldApplyIrritation && validCharacters[1].id === currentIrritation.coach) {
+      console.log('[WATERCOOLER] Applying irritation for', currentIrritation.coach, 'towards', currentIrritation.target);
       
-      secondPrompt = `You are Donte. ${validCharacters[0].name} just said: "${firstMessage}"
-
-${storyContext.promptInjection}
+      // Get the story arc for this irritation
+      const storyArc = storyArcs.storyArcs[currentIrritation.coach]?.[`getting_irritated_by_${currentIrritation.target}`];
+      if (storyArc) {
+        // Get the appropriate level context based on intensity
+        const levelContext = storyArc.levelContexts[Math.round(intensity * 10) / 10] || storyArc.levelContexts['0.6'];
+        const promptInjection = storyArc.promptInjection
+          .replace('{level}', intensity.toString())
+          .replace('{context}', levelContext);
+        
+        secondPrompt = `You are ${validCharacters[1].name}. ${validCharacters[0].name} just said: "${firstMessage}"\n\n${promptInjection}
 
 Your response MUST show clear signs of irritation through:
 1. Being dismissive or condescending
@@ -440,9 +514,34 @@ Your response MUST show clear signs of irritation through:
 4. Showing frustration with inefficiency
 5. Using startup/tech analogies to criticize
 
-Example irritated response: "Right. Because that's exactly what we need - more abstract thinking. Maybe focus on actual metrics and KPIs instead of whatever that was."
+The intensity of your irritation is ${intensity} (where 0 is calm and 1 is extremely irritated).
+- At 0.0: Stay completely calm and professional
+- At 0.4: Show mild frustration with their approach
+- At 0.6: Show active frustration with their methods and approach
+- At 1.0: Show complete frustration and be openly hostile
 
-Keep it under 30 words and make your irritation obvious.`;
+Keep it under 30 words and make your irritation level match the intensity.`;
+      } else {
+        // Fallback to default irritation prompt if story arc not found
+        secondPrompt = `You are ${validCharacters[1].name}. ${validCharacters[0].name} just said: "${firstMessage}"
+
+Your irritation with ${currentIrritation.target}'s approach is at level ${intensity} (where 0 is calm and 1 is extremely irritated).
+
+Your response MUST show clear signs of irritation through:
+1. Being dismissive or condescending
+2. Using short, clipped responses
+3. Focusing on efficiency and optimization
+4. Showing frustration with inefficiency
+5. Using startup/tech analogies to criticize
+
+The intensity of your irritation is ${intensity} (where 0 is calm and 1 is extremely irritated).
+- At 0.0: Stay completely calm and professional
+- At 0.4: Show mild frustration with their approach
+- At 0.6: Show active frustration with their methods and approach
+- At 1.0: Show complete frustration and be openly hostile
+
+Keep it under 30 words and make your irritation level match the intensity.`;
+      }
     } else {
       secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
     }
@@ -557,7 +656,7 @@ The incident was: "${selectedIssue.text}"
 IMPORTANT:
 1. You MUST directly reference the incident - no additional context or backstory
 2. DO NOT repeat the incident text exactly - rephrase it in first person
-3. Use first person ("I", "my", "me")
+3. Use first person ("I", "my", "me") - this is crucial
 4. Express your immediate, authentic reaction to what happened
 5. Keep it simple and concrete - no philosophical lessons or abstract concepts
 6. Stay true to your character's voice and personality
@@ -566,7 +665,10 @@ IMPORTANT:
 
 Example style for Venus: Yikes, I thought I added a clever optimization but instead it kicked everyone off my project board. Brrr
 Example style for Donte: My efficiency algorithm just kicked everyone off the board. 47% productivity drop. Not optimal.
-Example style for Kailey: Ugh, my favorite pen broke right before I was about to journal. Now I have to find another one that writes just as smoothly.`
+Example style for Kailey: Ugh, my favorite pen broke right before I was about to journal. Now I have to find another one that writes just as smoothly.
+
+BAD EXAMPLE (don't use third person): "He wrote a long anti-capitalist rant... in the wrong channel. Oops, that's a compost-worthy mix-up!"
+GOOD EXAMPLE (use first person): "I accidentally posted my anti-capitalist rant in the wrong channel. Classic me, always mixing up my revolutionary manifestos."`
 		);
 		await sendAsCharacter(channelId, randomCoach.id, firstMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
@@ -715,10 +817,21 @@ Real alignment doesn't beg for applause — it just vibrates higher.`
 		storyArcs.storyArcs[randomCoach.id][arcName] = arcData;
 
 		// Update the top-level currentIrritation field
+		const existingIrritation = storyArcs.currentIrritation || {
+			probability: 0.66,
+			intensity: {
+				morning: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+				midday: [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
+				afternoon: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+			}
+		};
+
 		storyArcs.currentIrritation = {
 			coach: randomCoach.id,
 			target: thirdCoach.id,
-			incident: selectedIssue.text
+			incident: selectedIssue.text,
+			probability: existingIrritation.probability,
+			intensity: existingIrritation.intensity
 		};
 
 		// Write the updated story arcs back to the file
