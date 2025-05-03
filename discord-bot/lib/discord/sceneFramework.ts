@@ -14,6 +14,7 @@ import { TextChannel } from "discord.js";
 import pLimit from "p-limit";
 import { validateSceneSeeds } from "./validateSceneSeeds.js";
 import { getStoryContext } from './handlers.js';
+import path from "path";
 
 interface CoachInfo {
 	id: string;
@@ -1295,37 +1296,33 @@ export function formatStoryInfo(
 	episode: EpisodeScenes,
 	sceneIndex: number
 ): string {
-	if (!episodeContext || !episode) {
-		return "No active story arc at the moment.";
+	// Read currentIrritation from story-arcs.json
+	const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+	let currentIrritation: any = null;
+	try {
+		const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+		currentIrritation = storyArcs.currentIrritation;
+	} catch (e) {
+		return "No irritation data available.";
 	}
 
-	const scene = episode.generatedContent[sceneIndex];
-	if (!scene) {
-		return "Scene information not available.";
+	// Defensive type checks and name mapping
+	const coachId = currentIrritation?.coach;
+	const targetId = currentIrritation?.target;
+	const incident = currentIrritation?.incident;
+
+	const coach = ceos.find(c => c.id === coachId);
+	const target = ceos.find(c => c.id === targetId);
+
+	const coachName = coach?.name || (coachId ? coachId.charAt(0).toUpperCase() + coachId.slice(1) : "Unknown");
+	const targetName = target?.name || (targetId ? targetId.charAt(0).toUpperCase() + targetId.slice(1) : "Unknown");
+
+	if (!coachName || !incident || !targetName) {
+		return "No irritation data available.";
 	}
 
-	const seed = episode.seeds[sceneIndex];
-	if (!seed) {
-		return "Scene information not available.";
-	}
-
-	// Get tension context
-	const tensionContext = getStoryContext(sceneIndex);
-	const tensionLevel = tensionContext ? `Tension Level: ${tensionContext.intensity}` : '';
-
-	// Extract just the scene type without the time prefix
-	const sceneType = scene.type.split(' ').pop() || scene.type;
-
-	return `
-**Current Story Arc**
-Theme: ${episodeContext.theme}
-${tensionLevel}
-
-**Current Scene: ${sceneIndex + 1}/24**
-Type: ${sceneType}
-Location: ${seed.location}
-Time: ${seed.localTime}
-  `;
+	return `${coachName} dealt with an issue: ${incident}.
+${coachName} is irritated with ${targetName} because of an exchange that happened early in the episode.`;
 }
 
 // Helper function to validate story info data
