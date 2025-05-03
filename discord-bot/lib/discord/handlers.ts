@@ -255,7 +255,7 @@ async function continueDiscussion(channelId: string, state: GroupChatState) {
 export function getStoryContext(sceneIndex: number): { intensity: number; context: string; promptInjection: string } | null {
   try {
     const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    const selectedArc = storyArcs.storyArcs.donte.distracted;
+    const selectedArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
     
     if (!selectedArc) {
       console.error('Story arc not found in story-arcs.json');
@@ -296,11 +296,11 @@ export function getStoryContext(sceneIndex: number): { intensity: number; contex
   }
 }
 
-// Select a story arc (currently hardcoded to Donte's distracted arc)
+// Select a story arc (hardcoded to Donte's irritation by Kailey)
 export function selectStoryArc() {
   try {
     const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-    return storyArcs.storyArcs.donte.distracted;
+    return storyArcs.storyArcs.donte.getting_irritated_by_kailey;
   } catch (error) {
     console.error('Error selecting story arc:', error);
     return null;
@@ -322,10 +322,10 @@ export function initializeStoryArc() {
     // Set up character pair configuration from story arc data
     setWatercoolerPairConfig({
       coach1: requiredCharacters[0],
-      coach2: requiredCharacters[0], // Use the same character for both if only one is required
+      coach2: requiredCharacters[1] || requiredCharacters[0],
       probability: probability,
       order: {
-        first: speakingOrder.first === 'any' ? 'any' : requiredCharacters[0],
+        first: speakingOrder.first,
         second: speakingOrder.second
       }
     });
@@ -422,30 +422,29 @@ Make it authentically Donte, with his obsession with control and optimization. A
     // Second coach responds
     console.log('Generating second message...');
     let secondPrompt = '';
-    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'engagement') {
-      console.log('[WATERCOOLER] Checking Donte distraction:', {
+    if (storyContext && validCharacters[1].id === 'donte' && selectedArc && selectedArc.promptAttribute === 'tension') {
+      console.log('[WATERCOOLER] Applying irritation for Donte:', {
         intensity: storyContext.intensity,
-        sceneIndex: sceneIndex,
-        timeOfDay: sceneIndex < 8 ? 'morning' : sceneIndex < 16 ? 'midday' : 'afternoon'
+        context: storyContext.context,
+        promptInjection: storyContext.promptInjection
       });
       
-      // Check for moderate distraction (around 0.6)
-      if (Math.abs(storyContext.intensity - 0.6) < 0.1) {
-        console.log('[WATERCOOLER] Applying distraction prompt for Donte at level ~0.6');
-      // Override for moderate distraction
-        secondPrompt = `You are Donte. You are clearly distracted and struggling to maintain focus on the conversation.\n\nIMPORTANT: Your response MUST show OBVIOUS signs of distraction through your words ONLY. You MUST:\n1. Start responding to the topic but then suddenly switch to something unrelated\n2. Mix up details or get confused about what was just said\n3. Use filler words like "um", "uh", or "like" frequently\n4. Trail off mid-sentence or lose your train of thought\n5. Make abrupt topic changes without proper transitions\n\nEXAMPLES OF DISTRACTED RESPONSES:\n- "Oh yeah, productivity tools... wait, what were we talking about? Something about meditation? I was just thinking about this new startup that's disrupting the meditation space... um... what was the question again?"\n- "Meditation and tools... you know what's really interesting? I just got this notification about a new AI startup. They're doing something with... uh... what was I saying? Oh right, productivity! But have you seen the latest tech trends?"\n\nYour response should be noticeably unfocused and show clear signs of distraction through your words and speech patterns. Do NOT give a coherent, focused response. Do NOT include stage directions or actions in italics.`;
-      console.log('[WATERCOOLER] Generated distraction prompt:', secondPrompt);
-      }
+      secondPrompt = `You are Donte. ${validCharacters[0].name} just said: "${firstMessage}"
+
+${storyContext.promptInjection}
+
+Your response MUST show clear signs of irritation through:
+1. Being dismissive or condescending
+2. Using short, clipped responses
+3. Focusing on efficiency and optimization
+4. Showing frustration with inefficiency
+5. Using startup/tech analogies to criticize
+
+Example irritated response: "Right. Because that's exactly what we need - more abstract thinking. Maybe focus on actual metrics and KPIs instead of whatever that was."
+
+Keep it under 30 words and make your irritation obvious.`;
     } else {
-      console.log('[WATERCOOLER] Using standard prompt for second character:', {
-        character: validCharacters[1].name,
-        isDonte: validCharacters[1].id === 'donte',
-        hasStoryContext: !!storyContext,
-        hasSelectedArc: !!selectedArc,
-        promptAttribute: selectedArc?.promptAttribute,
-        intensity: storyContext?.intensity
-      });
-      secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". ${storyContext && validCharacters[1].id === 'donte' && selectedArc ? `\n\nIMPORTANT: ${storyContext.promptInjection}\n\nCurrent context: ${storyContext.context} (${selectedArc.promptAttribute} level: ${storyContext.intensity})\n\nYour response should clearly reflect this level of ${selectedArc.promptAttribute}.` : ''} Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
+      secondPrompt = `You are ${validCharacters[1].name} (${validCharacters[1].character}). ${validCharacters[0].name} just said: "${firstMessage}". Respond to their update with your unique perspective and background. Stay true to your character's personality and interests. Keep it natural and in your voice (max 30 words).`;
     }
     const secondMessage = await generateCharacterResponse(validCharacters[1].prompt + '\n' + secondPrompt, firstMessage);
     console.log('Second message generated:', secondMessage.substring(0, 50) + '...');
@@ -563,10 +562,11 @@ IMPORTANT:
 5. Keep it simple and concrete - no philosophical lessons or abstract concepts
 6. Stay true to your character's voice and personality
 7. Keep it under 30 words
+8. Do NOT put your message in quotation marks.
 
-Example style for Venus: "Yikes, I thought I added a clever optimization but instead it kicked everyone off my project board. Brrr"
-Example style for Donte: "My efficiency algorithm just kicked everyone off the board. 47% productivity drop. Not optimal."
-Example style for Kailey: "Ugh, my favorite pen broke right before I was about to journal. Now I have to find another one that writes just as smoothly."`
+Example style for Venus: Yikes, I thought I added a clever optimization but instead it kicked everyone off my project board. Brrr
+Example style for Donte: My efficiency algorithm just kicked everyone off the board. 47% productivity drop. Not optimal.
+Example style for Kailey: Ugh, my favorite pen broke right before I was about to journal. Now I have to find another one that writes just as smoothly.`
 		);
 		await sendAsCharacter(channelId, randomCoach.id, firstMessage);
 		await new Promise(resolve => setTimeout(resolve, 2000));
