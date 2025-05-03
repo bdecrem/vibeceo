@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T18-22",
+  "createdAt": "2025-05-03T18:22:46.582Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 8:22pm and the coaches have just arrived at their Berlin, where overcast clouds skies ☀️ stretch overhead. A sync error caused Kailey's personal Notion reflections to vanish.",
+      "outro": "The coaches have ascended, carrying the flame of innovation.",
+      "location": "Berlin",
+      "localTime": "18:22",
+      "coaches": []
+    }
+  ]
+}

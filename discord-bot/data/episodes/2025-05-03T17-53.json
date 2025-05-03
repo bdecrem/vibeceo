@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T17-53",
+  "createdAt": "2025-05-03T17:53:13.478Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 7:53pm and the coaches have just arrived at their Berlin, where overcast clouds skies ☀️ stretch overhead. Alex got emotional during a founder onboarding and forgot to mute her mic.",
+      "outro": "The coaches have burned bright, now spreading sparks of innovation.",
+      "location": "Berlin",
+      "localTime": "17:53",
+      "coaches": []
+    }
+  ]
+}

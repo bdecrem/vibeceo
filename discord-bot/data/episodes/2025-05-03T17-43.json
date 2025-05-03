@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-03T17-43",
+  "createdAt": "2025-05-03T17:43:47.194Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 10:43am and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. During a motivational video shoot, Rohan's mirror suddenly fell.",
+      "outro": "The coaches have ascended, carrying the warmth of transformation.",
+      "location": "Los Angeles office",
+      "localTime": "17:43",
+      "coaches": []
+    }
+  ]
+}

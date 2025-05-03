@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
     "coach": "kailey",
-    "target": "eljas",
-    "incident": "She journaled through lunch and forgot to eat.",
+    "target": "rohan",
+    "incident": "Her Notion reflections disappeared in a sync error.",
     "probability": 0.67,
     "intensity": {
       "morning": [
@@ -762,27 +762,26 @@
             ]
           }
         },
-        "context": "Kailey Calm is getting increasingly irritated by Rohan Mehta's approach to \"She posted a vision board with a typo in the headline.\"",
+        "context": "Kailey Calm is getting increasingly irritated by Rohan Mehta's approach to \"Her Notion reflections disappeared in a sync error.\"",
         "promptInjection": "You are Kailey Calm. Your irritation with Rohan Mehta's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "kailey",
             "rohan"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "kailey"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She posted a vision board with a typo in the headline.\" influences all interactions between Kailey Calm and Rohan Mehta",
+            "description": "The tension from the waterheater incident about \"Her Notion reflections disappeared in a sync error.\" influences all interactions between Kailey Calm and Rohan Mehta",
             "duration": "episode"
           }
         }
@@ -1456,27 +1455,26 @@
             ]
           }
         },
-        "context": "Alex Monroe is getting increasingly irritated by Kailey Calm's approach to \"She posted a vision board with a typo in the headline.\"",
+        "context": "Alex Monroe is getting increasingly irritated by Kailey Calm's approach to \"She cried during a founder onboarding and didn't mute.\"",
         "promptInjection": "You are Alex Monroe. Your irritation with Kailey Calm's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "alex",
             "kailey"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "alex"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She posted a vision board with a typo in the headline.\" influences all interactions between Alex Monroe and Kailey Calm",
+            "description": "The tension from the waterheater incident about \"She cried during a founder onboarding and didn't mute.\" influences all interactions between Alex Monroe and Kailey Calm",
             "duration": "episode"
           }
         }
@@ -1730,6 +1728,68 @@
           "influence": {
             "type": "tension",
             "description": "The tension from the waterheater incident about \"His mirror fell while he was filming a pep talk.\" influences all interactions between Rohan Mehta and Donte Disrupt",
+            "duration": "episode"
+          }
+        }
+      },
+      "getting_irritated_by_eljas": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Rohan Mehta is getting increasingly irritated by Eljas Virtanen's approach to \"His mirror fell while he was filming a pep talk.\"",
+        "promptInjection": "You are Rohan Mehta. Your irritation with Eljas Virtanen's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "rohan",
+            "eljas"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "rohan"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"His mirror fell while he was filming a pep talk.\" influences all interactions between Rohan Mehta and Eljas Virtanen",
             "duration": "episode"
           }
         }
