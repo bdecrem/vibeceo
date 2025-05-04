@@ -1,0 +1,108 @@
+{
+  "events": {
+    "las_vegas": {
+      "short": [
+        {
+          "name": "The Velvet Pit",
+          "type": "cocktail bar",
+          "description": "Absinthe-fueled burlesque lounge with velvet booths and a secret drink menu."
+        },
+        {
+          "name": "Neon Pony",
+          "type": "themed bar",
+          "description": "A cowboy-meets-vaporwave stop with glowing saddle stools and mechanical bull karaoke."
+        },
+        {
+          "name": "Elevator 88",
+          "type": "experience bar",
+          "description": "Guests sip cocktails while riding a fake haunted hotel elevator."
+        },
+        {
+          "name": "Hot Take Booths",
+          "type": "AI bar",
+          "description": "An AI podcast bar where you record spicy takes over flights of mezcal."
+        },
+        {
+          "name": "Cosmic Karaoke Capsule",
+          "type": "karaoke pod",
+          "description": "Sing inside a galaxy-themed pod with rotating light orbs and zero gravity drinks."
+        },
+        {
+          "name": "Casino Crawl: Roulette-Only Rule",
+          "type": "mini crawl",
+          "description": "A mini-casino hopping experience where you can only play roulette."
+        },
+        {
+          "name": "Shotglass Museum",
+          "type": "novelty bar",
+          "description": "Thousands of vintage shotglasses; take one home if you guess the trivia right."
+        },
+        {
+          "name": "Mirror Maze Martini Hour",
+          "type": "immersive bar",
+          "description": "Navigate a mirror maze to reach a floating martini cart that won't stop moving."
+        },
+        {
+          "name": "Mini Elvis Wedding Crasher Experience",
+          "type": "pop-up event",
+          "description": "Crash a fake wedding with an Elvis impersonator and champagne tower."
+        },
+        {
+          "name": "High Stakes Popcorn Tasting",
+          "type": "tasting event",
+          "description": "Each popcorn flavor has a price, but one is secretly laced with ghost pepper dust."
+        },
+        {
+          "name": "The Vibe Check Lounge",
+          "type": "social bar",
+          "description": "Mood lighting shifts based on your aura; bartenders change drinks mid-order."
+        },
+        {
+          "name": "VR Speed Dating Lounge",
+          "type": "VR experience",
+          "description": "Meet avatars in a neon-lit lounge before deciding if you want to meet IRL in the next room."
+        },
+        {
+          "name": "The Atomic Boba Lab",
+          "type": "themed cafe",
+          "description": "Sci-fi boba drinks with glowing tapioca and dry ice steam served in beakers."
+        },
+        {
+          "name": "Poolside Tarot Readings",
+          "type": "rooftop lounge",
+          "description": "Sit poolside while a tarot reader tells your fortune between mojito refills."
+        },
+        {
+          "name": "Mobster Mocktail Hideout",
+          "type": "mocktail bar",
+          "description": "Alcohol-free 1930s speakeasy with fake poker tables and dramatic roleplay staff."
+        },
+        {
+          "name": "Glow Axe Throwing",
+          "type": "axe bar",
+          "description": "Blacklight-lit axe lanes with LED axes and disco ball targets."
+        },
+        {
+          "name": "Whiskey Pong Pop-Up",
+          "type": "pop-up bar",
+          "description": "Table tennis meets whiskey flight; winners pick the next soundtrack."
+        },
+        {
+          "name": "Drive-thru Champagne Tasting",
+          "type": "novelty tasting",
+          "description": "Ride in a slow golf cart through different bubbles, snacks handed through windows."
+        },
+        {
+          "name": "Lip Sync Deathmatch Bar",
+          "type": "performance bar",
+          "description": "Guests must lip sync for their drink — winner gets top-shelf cocktails."
+        },
+        {
+          "name": "Mood Ring Speakeasy",
+          "type": "secret bar",
+          "description": "Entry based on your ring color — the vibe determines the playlist and menu."
+        }
+      ]
+    }
+  }
+} 
