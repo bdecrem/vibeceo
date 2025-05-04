@@ -31,6 +31,10 @@ export const EVENT_MESSAGES = {
 		outro:
 			"The Board room has emptied out. These folks need to clean up after themselves.",
 	},
+	weekendvibes: {
+		intro: "{arrival}It's time for some weekend vibes.",
+		outro: "The coaches are off enjoying their weekend."
+	},
 } as const;
 
 // Keep original scene index for event system
@@ -78,10 +82,15 @@ export async function sendEventMessage(
 			gmtMinutes
 		);
 		const { location, formattedTime, ampm, isNewLocation, weather, weatherEmoji } = locationTime;
-		const arrivalText = isNewLocation
+		let arrivalText = isNewLocation
 			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `
 			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
-		
+
+		// Add WEEKENDVIBES for weekendvibes event type
+		if (eventType === 'weekendvibes') {
+			arrivalText += 'WEEKENDVIBES ';
+		}
+
 		message = message.replace("{arrival}", arrivalText);
 	}
 

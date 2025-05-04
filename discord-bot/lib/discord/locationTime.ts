@@ -22,7 +22,7 @@ const weekendBlocks = [
     { startHour: 10, location: "Berlin", duration: 8 }    // Sun 10am
 ];
 
-function isWeekend(): boolean {
+export function isWeekend(): boolean {
     const day = new Date().getDay();
     return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
 }
@@ -75,19 +75,19 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
     } else {
         // Use weekday schedule
         if (laHour >= 16 || laHour < 1) {
-            location = "Los Angeles office";
+        location = "Los Angeles office";
             localTime = laHour;
-            localMinutes = gmtMinutes;
-        }
+        localMinutes = gmtMinutes;
+    }
         else if (laHour >= 1 && laHour < 8) {
-            location = "Singapore penthouse";
+        location = "Singapore penthouse";
             localTime = (laHour + 15) % 24; // LA + 15 hours
-            localMinutes = gmtMinutes;
-        }
-        else {
-            location = "London office";
+        localMinutes = gmtMinutes;
+    }
+    else {
+        location = "London office";
             localTime = (laHour + 8) % 24; // LA + 8 hours
-            localMinutes = gmtMinutes;
+        localMinutes = gmtMinutes;
         }
     }
 
