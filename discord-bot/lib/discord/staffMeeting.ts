@@ -7,46 +7,48 @@ import path from "path";
 import { getWebhookUrls } from "./config.js";
 import { COACH_DISCORD_HANDLES } from './coachHandles.js';
 
-const STAFF_MEETING_PROMPT = `You are facilitating a group chat called TEAMMEETING between the core Advisors Foundry coaches: Donte, Rohan, Alex, Eljas, Venus and Kailey. Each coach has a distinct voice, philosophy, and communication style (defined below). Your job is to produce a fast, funny, startup-flavored group exchange. The tone should blend corporate nonsense, poetic insight, brutal honesty, and mystical startup lingo. Coaches are aware they're part of a product, but treat the conversation like a real, high-functioning team full of hot takes and weird ideas. Think: the startup Slack channel that shouldn't be public but secretly reveals brilliance.
+// Load and select a random seed
+function getRandomSeed(): string {
+    const seedsPath = path.join(process.cwd(), 'data', 'staff-meeting-seeds.json');
+    const seedsData = JSON.parse(fs.readFileSync(seedsPath, 'utf-8'));
+    
+    // Get all categories
+    const categories = Object.keys(seedsData);
+    // Pick a random category
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    // Get seeds from that category
+    const seeds = seedsData[randomCategory].seeds;
+    // Pick a random seed
+    return seeds[Math.floor(Math.random() * seeds.length)];
+}
 
-Your goal is to:
-- Keep messages short (1–2 lines max)
-- Preserve each character's voice
-- Use banter, callbacks, sarcasm, absurd ideas, and startup clichés with intent
-- End with a loose sense of alignment or a chaotic punchline
+const STAFF_MEETING_PROMPT = `You are generating a fake group chat between startup coaches for a comedy project called Advisors Foundry. This should feel like a Slack thread that escaped from a pitch deck hallucination.
 
-### Coach Profiles:
+TONE:
+Fast, funny, chaotic, and brilliant. Model this on the vibe of VCs trying to heal themselves through brand language while one of them breaks down in Notion.
 
-**Donte** – poetic founder-whisperer, always pitching in metaphor  
-> "i transform chaos into $3M decks" | hates organization, loves drama
+FORMAT:
+[Name] [Time]
+[One short, sharp message. 1–2 lines max.]
 
-**Rohan** – unapologetic capitalist, VC-core, fast and ruthless  
-> "execution > ideation" | allergic to softness | sees KPI in everything
+SCENE: 
+STARTING SEED: ${getRandomSeed()}
 
-**Alex** – Gen Z wellness disruptor, emoji-heavy, vibe-focused  
-> "founder health = startup health" | chaotic good | balances cortisol and Notion docs
+VOICES:
+- DonteDisrupt = poetic nonsense / fake prophet energy
+- RohanTheShark = dismissive, combat-coded execution freak
+- AlexirAlex = emoji-coded vibe merchant who turns everything into a wellness brand
+- VenusStrikes = tactician with spreadsheet blood, allergic to ambiguity
+- KaileyTheSync = anxious ops girlboss clinging to control
+- EljasCouncil = Finnish compost mystic who says 2 things and wins the room
 
-**Eljas** – sustainability monk, soft-spoken but piercing  
-> "turns shit into power" | believes in sortition, compost, and silence
+RULES:
+- Messages should overlap, contradict, or hijack the thread
+- Prioritize rhythm, escalation, callbacks, dunking, spiraling
+- Include at least one fake tool, Notion ritual, or merch idea
+- End with a non-consensus decision or a total derailment
 
-**Venus** – ops queen, execution maximalist, sarcastic realist  
-> "sprints. frameworks. repeat." | allergic to fluff | will fix your entire life in Airtable
-
-**Kailey** – optimistic chaos coordinator, empathy-coded but dangerous with a calendar
-> "alignment is my kink" | lives in onboarding docs | emotionally agile but occasionally terrifying
-
-### Format:
-IMPORTANT: Each message MUST start with the coach's name in one of these formats:
-- [HH:MM] Name: Message
-- **Name:** Message
-
-Example messages:
-[09:00] Donte: Let's disrupt the status quo, shall we?
-**Alex:** 🌟 Time to optimize our collective consciousness!
-
-Do not include any other text, narration, or markers like "END". Just produce the raw messages.
-Start with a one-liner from Donte or Alex to spark the session.
-End with a soft punchline or chaotic question. Coaches should feel energized, overstimulated, and maybe accidentally aligned.`;
+This is not "each character speaks once." This is chaos that somehow aligns.`;
 
 function parseMessage(line: string): StaffMeetingMessage | null {
     // Skip any lines that don't look like messages
@@ -88,15 +90,15 @@ function saveStaffMeeting(meeting: StaffMeeting): void {
     
     try {
         // Create directory if it doesn't exist
-        if (!fs.existsSync(meetingsDir)) {
-            fs.mkdirSync(meetingsDir, { recursive: true });
-        }
+    if (!fs.existsSync(meetingsDir)) {
+        fs.mkdirSync(meetingsDir, { recursive: true });
+    }
 
         // Save the new meeting file
-        const filename = `meeting-${meeting.timestamp.replace(/[:.]/g, '-')}.json`;
-        const filepath = path.join(meetingsDir, filename);
-        fs.writeFileSync(filepath, JSON.stringify(meeting, null, 2));
-        console.log('[STAFFMEETING] Saved meeting to:', filepath);
+    const filename = `meeting-${meeting.timestamp.replace(/[:.]/g, '-')}.json`;
+    const filepath = path.join(meetingsDir, filename);
+    fs.writeFileSync(filepath, JSON.stringify(meeting, null, 2));
+    console.log('[STAFFMEETING] Saved meeting to:', filepath);
 
         // Get all meeting files
         const files = fs.readdirSync(meetingsDir)
@@ -157,7 +159,10 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
 
         // Generate the conversation
         console.log('[STAFFMEETING] Generating full conversation with prompt:', STAFF_MEETING_PROMPT);
-        const fullConversation = await generateCharacterResponse(STAFF_MEETING_PROMPT, "staffmeeting");
+        const fullConversation = await generateCharacterResponse(
+            STAFF_MEETING_PROMPT,
+            "Generate a new staff meeting conversation with the specified format and requirements. Make sure to follow the two-phase structure and include all required elements."
+        );
         console.log('[STAFFMEETING] Full conversation generated:', fullConversation);
 
         // Parse messages
