@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
+import { triggerWatercoolerChat, triggerWaterheaterChat, triggerStaffMeeting } from "./handlers.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
@@ -22,6 +22,7 @@ const serviceMap: Record<
 	tmzchat: triggerTmzChat,
 	pitchchat: triggerPitchChat,
 	waterheater: triggerWaterheaterChat,
+	staffmeeting: triggerStaffMeeting,
 	// Add more services here as needed
 };
 
@@ -82,9 +83,11 @@ async function runServiceWithMessages(
 	client: Client,
 	serviceName: string
 ) {
-	const channel = client.channels.cache.get(channelId) as TextChannel;
+	// For staff meetings, use the specific staff meetings channel
+	const targetChannelId = serviceName === 'staffmeeting' ? '1369356692428423240' : channelId;
+	const channel = client.channels.cache.get(targetChannelId) as TextChannel;
 	if (!channel) {
-		console.error(`[Scheduler] Channel ${channelId} not found`);
+		console.error(`[Scheduler] Channel ${targetChannelId} not found`);
 		return;
 	}
 

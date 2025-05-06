@@ -1084,6 +1084,33 @@ Real alignment doesn't beg for applause — it just vibrates higher.`
 	}
 }
 
+export async function triggerStaffMeeting(channelId: string, client: Client) {
+	try {
+		// Get all active coaches
+		const activeCoaches = getCharacters();
+		
+		// Get current time in GMT
+		const now = new Date();
+		const gmtHour = now.getUTCHours();
+		const gmtMinutes = now.getUTCMinutes();
+		
+		// Use the specific #staffmeetings channel ID
+		const staffMeetingsChannelId = '1369356692428423240';
+		
+		// Get the channel
+		const channel = await client.channels.fetch(staffMeetingsChannelId) as TextChannel;
+		if (!channel) {
+			throw new Error('Channel not found');
+		}
+		
+		// Wait for 5 minutes
+		await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+		
+	} catch (error) {
+		console.error("Error in staff meeting:", error);
+	}
+}
+
 // Initialize scheduled tasks when bot starts
 export function initializeScheduledTasks(channelId: string, client: Client) {
 	// (Disabled) Old timer-based scheduling is now handled by the centralized scheduler.
