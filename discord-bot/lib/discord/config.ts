@@ -26,23 +26,44 @@ export function getWebhookUrls() {
   const webhookUrls: Record<string, string> = {};
   
   // Load webhook URLs from environment variables
-  if (process.env.WEBHOOK_URL_DONTE) {
-    webhookUrls['donte'] = process.env.WEBHOOK_URL_DONTE;
+  // General channel webhooks
+  if (process.env.GENERAL_WEBHOOK_URL_DONTE) {
+    webhookUrls['general_donte'] = process.env.GENERAL_WEBHOOK_URL_DONTE;
   }
-  if (process.env.WEBHOOK_URL_ALEX) {
-    webhookUrls['alex'] = process.env.WEBHOOK_URL_ALEX;
+  if (process.env.GENERAL_WEBHOOK_URL_ALEX) {
+    webhookUrls['general_alex'] = process.env.GENERAL_WEBHOOK_URL_ALEX;
   }
-  if (process.env.WEBHOOK_URL_ROHAN) {
-    webhookUrls['rohan'] = process.env.WEBHOOK_URL_ROHAN;
+  if (process.env.GENERAL_WEBHOOK_URL_ROHAN) {
+    webhookUrls['general_rohan'] = process.env.GENERAL_WEBHOOK_URL_ROHAN;
   }
-  if (process.env.WEBHOOK_URL_VENUS) {
-    webhookUrls['venus'] = process.env.WEBHOOK_URL_VENUS;
+  if (process.env.GENERAL_WEBHOOK_URL_VENUS) {
+    webhookUrls['general_venus'] = process.env.GENERAL_WEBHOOK_URL_VENUS;
   }
-  if (process.env.WEBHOOK_URL_ELJAS) {
-    webhookUrls['eljas'] = process.env.WEBHOOK_URL_ELJAS;
+  if (process.env.GENERAL_WEBHOOK_URL_ELJAS) {
+    webhookUrls['general_eljas'] = process.env.GENERAL_WEBHOOK_URL_ELJAS;
   }
-  if (process.env.WEBHOOK_URL_KAILEY) {
-    webhookUrls['kailey'] = process.env.WEBHOOK_URL_KAILEY;
+  if (process.env.GENERAL_WEBHOOK_URL_KAILEY) {
+    webhookUrls['general_kailey'] = process.env.GENERAL_WEBHOOK_URL_KAILEY;
+  }
+
+  // Staff meetings channel webhooks
+  if (process.env.STAFF_WEBHOOK_URL_DONTE) {
+    webhookUrls['staff_donte'] = process.env.STAFF_WEBHOOK_URL_DONTE;
+  }
+  if (process.env.STAFF_WEBHOOK_URL_ALEX) {
+    webhookUrls['staff_alex'] = process.env.STAFF_WEBHOOK_URL_ALEX;
+  }
+  if (process.env.STAFF_WEBHOOK_URL_ROHAN) {
+    webhookUrls['staff_rohan'] = process.env.STAFF_WEBHOOK_URL_ROHAN;
+  }
+  if (process.env.STAFF_WEBHOOK_URL_VENUS) {
+    webhookUrls['staff_venus'] = process.env.STAFF_WEBHOOK_URL_VENUS;
+  }
+  if (process.env.STAFF_WEBHOOK_URL_ELJAS) {
+    webhookUrls['staff_eljas'] = process.env.STAFF_WEBHOOK_URL_ELJAS;
+  }
+  if (process.env.STAFF_WEBHOOK_URL_KAILEY) {
+    webhookUrls['staff_kailey'] = process.env.STAFF_WEBHOOK_URL_KAILEY;
   }
   
   return webhookUrls;

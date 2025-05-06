@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { triggerWatercoolerChat, triggerWaterheaterChat, triggerStaffMeeting } from "./handlers.js";
+import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
+import { triggerStaffMeeting } from "./staffMeeting.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
@@ -8,6 +9,7 @@ import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
 import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
+import { cleanupWebhooks } from "./webhooks.js";
 
 // Path to the schedule file
 const SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
@@ -15,7 +17,7 @@ const SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
 // Service mapping
 const serviceMap: Record<
 	string,
-	(channelId: string, client: Client) => Promise<void>
+	(channelId: string, client: Client) => Promise<void | number>
 > = {
 	watercooler: triggerWatercoolerChat,
 	newschat: triggerNewsChat,
@@ -85,6 +87,12 @@ async function runServiceWithMessages(
 ) {
 	// For staff meetings, use the specific staff meetings channel
 	const targetChannelId = serviceName === 'staffmeeting' ? '1369356692428423240' : channelId;
+	console.log(`[Scheduler] Using channel ID ${targetChannelId} for service ${serviceName}`);
+	
+	// Clean up any existing webhooks for both channels to ensure clean state
+	cleanupWebhooks(channelId);
+	cleanupWebhooks('1369356692428423240');
+	
 	const channel = client.channels.cache.get(targetChannelId) as TextChannel;
 	if (!channel) {
 		console.error(`[Scheduler] Channel ${targetChannelId} not found`);
@@ -129,10 +137,17 @@ async function runServiceWithMessages(
 
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === 'waterheater') {
-			await triggerWaterheaterChat(channel.id, client, selectedIncident, selectedCoachId);
+			await triggerWaterheaterChat(targetChannelId, client, selectedIncident, selectedCoachId);
 		} else if (serviceName === 'staffmeeting') {
-			// For staff meetings, just wait 5 minutes and send outro
-			await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+			// For staff meetings, ensure we're using the correct channel ID
+			console.log('[Scheduler] Starting staff meeting in channel:', targetChannelId);
+			
+			// Trigger the staff meeting chat and get the total time needed
+			const messageTime = await triggerStaffMeeting(targetChannelId, client);
+			console.log('[Scheduler] Staff meeting messages completed, waiting', messageTime + 5000, 'ms before outro');
+			// Wait for messages to complete plus a small buffer
+			await new Promise(resolve => setTimeout(resolve, messageTime + 5000));
+			// Send outro message
 			await sendEventMessage(
 				channel,
 				serviceName as EventType,
@@ -144,7 +159,7 @@ async function runServiceWithMessages(
 			// Run the actual service for other events
 			const serviceFn = serviceMap[serviceName];
 			if (serviceFn) {
-				await serviceFn(channelId, client);
+				await serviceFn(targetChannelId, client);
 			} else {
 				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
 			}
