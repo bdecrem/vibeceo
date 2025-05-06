@@ -130,8 +130,18 @@ async function runServiceWithMessages(
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === 'waterheater') {
 			await triggerWaterheaterChat(channel.id, client, selectedIncident, selectedCoachId);
+		} else if (serviceName === 'staffmeeting') {
+			// For staff meetings, just wait 5 minutes and send outro
+			await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+			await sendEventMessage(
+				channel,
+				serviceName as EventType,
+				false,
+				gmtHour,
+				gmtMinutes
+			);
 		} else {
-			// Run the actual service for non-waterheater events
+			// Run the actual service for other events
 			const serviceFn = serviceMap[serviceName];
 			if (serviceFn) {
 				await serviceFn(channelId, client);
@@ -139,17 +149,8 @@ async function runServiceWithMessages(
 				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
 			}
 		}
-
-		// Send outro message
-		await sendEventMessage(
-			channel,
-			serviceName as EventType,
-			false,
-			gmtHour,
-			gmtMinutes
-		);
-	} catch (err) {
-		console.error(`[Scheduler] Error running '${serviceName}':`, err);
+	} catch (error) {
+		console.error(`[Scheduler] Error running service ${serviceName}:`, error);
 	}
 }
 

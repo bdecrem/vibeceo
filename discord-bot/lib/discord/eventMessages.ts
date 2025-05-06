@@ -31,6 +31,10 @@ export const EVENT_MESSAGES = {
 		outro:
 			"The Board room has emptied out. These folks need to clean up after themselves.",
 	},
+	staffmeeting: {
+		intro: "{arrival}The coaches are gathering for their daily staff meeting.",
+		outro: "The staff meeting has concluded. The coaches have returned to their duties.",
+	},
 } as const;
 
 // Keep original scene index for event system

@@ -1086,9 +1086,6 @@ Real alignment doesn't beg for applause — it just vibrates higher.`
 
 export async function triggerStaffMeeting(channelId: string, client: Client) {
 	try {
-		// Get all active coaches
-		const activeCoaches = getCharacters();
-		
 		// Get current time in GMT
 		const now = new Date();
 		const gmtHour = now.getUTCHours();
@@ -1100,11 +1097,29 @@ export async function triggerStaffMeeting(channelId: string, client: Client) {
 		// Get the channel
 		const channel = await client.channels.fetch(staffMeetingsChannelId) as TextChannel;
 		if (!channel) {
-			throw new Error('Channel not found');
+			throw new Error('Staff meetings channel not found');
 		}
-		
+
+		// Send the intro message
+		await sendEventMessage(
+			channel,
+			'staffmeeting',
+			true,
+			gmtHour,
+			gmtMinutes
+		);
+
 		// Wait for 5 minutes
 		await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+
+		// Send the outro message
+		await sendEventMessage(
+			channel,
+			'staffmeeting',
+			false,
+			gmtHour,
+			gmtMinutes
+		);
 		
 	} catch (error) {
 		console.error("Error in staff meeting:", error);
