@@ -69,7 +69,6 @@ export async function sendAsCharacter(channelId: string, characterName: string, 
 		console.log(`[Webhooks] Found webhook for ${characterName} in channel ${channelId}, sending message...`);
 		await webhook.send({
 			content,
-			username: characterName,
 			avatarURL: getAvatarUrl(characterName)
 		});
 		console.log(`[Webhooks] Successfully sent message as ${characterName} to channel ${channelId}`);
