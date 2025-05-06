@@ -5,6 +5,7 @@ import { StaffMeeting, StaffMeetingMessage } from "./types.js";
 import fs from "fs";
 import path from "path";
 import { getWebhookUrls } from "./config.js";
+import { COACH_DISCORD_HANDLES } from './coachHandles.js';
 
 const STAFF_MEETING_PROMPT = `You are facilitating a group chat called TEAMMEETING between the core Advisors Foundry coaches: Donte, Rohan, Alex, Eljas, Venus and Kailey. Each coach has a distinct voice, philosophy, and communication style (defined below). Your job is to produce a fast, funny, startup-flavored group exchange. The tone should blend corporate nonsense, poetic insight, brutal honesty, and mystical startup lingo. Coaches are aware they're part of a product, but treat the conversation like a real, high-functioning team full of hot takes and weird ideas. Think: the startup Slack channel that shouldn't be public but secretly reveals brilliance.
 
@@ -47,15 +48,6 @@ Do not include any other text, narration, or markers like "END". Just produce th
 Start with a one-liner from Donte or Alex to spark the session.
 End with a soft punchline or chaotic question. Coaches should feel energized, overstimulated, and maybe accidentally aligned.`;
 
-const COACH_DISCORD_HANDLES = {
-    donte: 'donte',
-    rohan: 'rohan',
-    alex: 'alex',
-    eljas: 'eljas',
-    venus: 'venus',
-    kailey: 'kailey'
-} as const;
-
 function parseMessage(line: string): StaffMeetingMessage | null {
     // Skip any lines that don't look like messages
     if (line === '**END**' || !line.includes(':')) {
@@ -75,15 +67,16 @@ function parseMessage(line: string): StaffMeetingMessage | null {
 
     const coachName = match[1].toLowerCase();
     const messageContent = match[2];
-    const handle = COACH_DISCORD_HANDLES[coachName as keyof typeof COACH_DISCORD_HANDLES];
-
-    if (!handle) {
+    
+    // Get the Discord handle for this coach
+    const coachHandle = COACH_DISCORD_HANDLES[coachName as keyof typeof COACH_DISCORD_HANDLES];
+    if (!coachHandle) {
         console.warn('[STAFFMEETING] No handle found for coach:', coachName);
         return null;
     }
-
+    
     return {
-        coach: handle,
+        coach: coachHandle, // Use the Discord handle instead of lowercase name
         content: messageContent,
         format: timestampMatch ? 'timestamped' : 'bold',
         status: 'pending'
@@ -92,14 +85,42 @@ function parseMessage(line: string): StaffMeetingMessage | null {
 
 function saveStaffMeeting(meeting: StaffMeeting): void {
     const meetingsDir = path.join(process.cwd(), 'data', 'staff-meetings');
-    if (!fs.existsSync(meetingsDir)) {
-        fs.mkdirSync(meetingsDir, { recursive: true });
-    }
+    
+    try {
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(meetingsDir)) {
+            fs.mkdirSync(meetingsDir, { recursive: true });
+        }
 
-    const filename = `meeting-${meeting.timestamp.replace(/[:.]/g, '-')}.json`;
-    const filepath = path.join(meetingsDir, filename);
-    fs.writeFileSync(filepath, JSON.stringify(meeting, null, 2));
-    console.log('[STAFFMEETING] Saved meeting to:', filepath);
+        // Save the new meeting file
+        const filename = `meeting-${meeting.timestamp.replace(/[:.]/g, '-')}.json`;
+        const filepath = path.join(meetingsDir, filename);
+        fs.writeFileSync(filepath, JSON.stringify(meeting, null, 2));
+        console.log('[STAFFMEETING] Saved meeting to:', filepath);
+
+        // Get all meeting files
+        const files = fs.readdirSync(meetingsDir)
+            .filter(file => file.startsWith('meeting-') && file.endsWith('.json'))
+            .map(file => ({
+                name: file,
+                path: path.join(meetingsDir, file),
+                timestamp: fs.statSync(path.join(meetingsDir, file)).mtime.getTime()
+            }))
+            .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
+
+        // Keep only the 3 most recent files
+        if (files.length > 3) {
+            const filesToDelete = files.slice(3);
+            for (const file of filesToDelete) {
+                fs.unlinkSync(file.path);
+                console.log('[STAFFMEETING] Deleted old meeting file:', file.name);
+            }
+        }
+    } catch (error) {
+        console.error('[STAFFMEETING] Error managing meeting files:', error);
+        // Still throw the error to maintain existing error handling
+        throw error;
+    }
 }
 
 export async function triggerStaffMeeting(channelId: string, client: Client): Promise<number> {
@@ -151,32 +172,32 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
         // If fewer than 30 messages, pad with banter
         const MIN_MESSAGES = 30;
         const banterLines: Record<string, string[]> = {
-            donte: [
+            [COACH_DISCORD_HANDLES.donte]: [
                 "Chaos is just another word for opportunity.",
                 "Let's turn this brainstorm into a revenue storm.",
                 "Disruption is my love language."
             ],
-            rohan: [
+            [COACH_DISCORD_HANDLES.rohan]: [
                 "Can we monetize this tangent?",
                 "If it doesn't scale, it fails.",
                 "Let's KPI that idea to death."
             ],
-            alex: [
+            [COACH_DISCORD_HANDLES.alex]: [
                 "Vibes are up, cortisol is down!",
                 "Let's Notion our way to nirvana.",
                 "Wellness check: who's hydrated?"
             ],
-            eljas: [
+            [COACH_DISCORD_HANDLES.eljas]: [
                 "Compost your doubts, grow your vision.",
                 "Silence is the best framework.",
                 "Let's recycle this idea into something greener."
             ],
-            venus: [
+            [COACH_DISCORD_HANDLES.venus]: [
                 "Frameworks before feelings, people.",
                 "Airtable is my happy place.",
                 "Let's sprint, not stroll."
             ],
-            kailey: [
+            [COACH_DISCORD_HANDLES.kailey]: [
                 "Alignment is just a meeting away!",
                 "My calendar is scarier than your roadmap.",
                 "Let's onboard this chaos."
@@ -219,10 +240,9 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
         console.log('[STAFFMEETING] Starting to send messages...');
         for (const message of meeting.messages) {
             try {
-                const handle = COACH_DISCORD_HANDLES[message.coach as keyof typeof COACH_DISCORD_HANDLES] || message.coach;
-                console.log(`[STAFFMEETING] Attempting to send message as ${handle}:`, message.content);
-                await sendAsCharacter(staffMeetingsChannelId, handle, message.content);
-                console.log(`[STAFFMEETING] Successfully sent message as ${handle}`);
+                console.log(`[STAFFMEETING] Attempting to send message as ${message.coach}:`, message.content);
+                await sendAsCharacter(staffMeetingsChannelId, message.coach, message.content);
+                console.log(`[STAFFMEETING] Successfully sent message as ${message.coach}`);
                 message.status = 'sent';
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (err) {
