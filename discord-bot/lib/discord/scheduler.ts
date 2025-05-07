@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
 import { triggerStaffMeeting } from "./staffMeeting.js";
+import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
@@ -25,6 +26,7 @@ const serviceMap: Record<
 	pitchchat: triggerPitchChat,
 	waterheater: triggerWaterheaterChat,
 	staffmeeting: triggerStaffMeeting,
+	simplestaffmeeting: triggerSimpleStaffMeeting,
 	// Add more services here as needed
 };
 

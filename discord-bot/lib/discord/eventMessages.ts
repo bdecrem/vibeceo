@@ -35,6 +35,10 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}The coaches are gathering for their daily staff meeting.",
 		outro: "The staff meeting has concluded. The coaches have returned to their duties.",
 	},
+	simplestaffmeeting: {
+		intro: "{arrival}The coaches are gathering for a quick staff meeting.",
+		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
+	},
 } as const;
 
 // Keep original scene index for event system
