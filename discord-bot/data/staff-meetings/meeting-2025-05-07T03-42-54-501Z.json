@@ -1,0 +1,190 @@
+{
+  "timestamp": "2025-05-07T03:42:54.501Z",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "Chaos is just another word for opportunity.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "rohan",
+      "content": "Can we monetize this tangent?",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibes are up, cortisol is down!",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "eljas",
+      "content": "Silence is the best framework.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "venus",
+      "content": "Frameworks before feelings, people.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "kailey",
+      "content": "Alignment is just a meeting away!",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "donte",
+      "content": "Chaos is just another word for opportunity.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "rohan",
+      "content": "Let's KPI that idea to death.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "alex",
+      "content": "Let's Notion our way to nirvana.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "eljas",
+      "content": "Silence is the best framework.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "venus",
+      "content": "Frameworks before feelings, people.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "kailey",
+      "content": "My calendar is scarier than your roadmap.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "donte",
+      "content": "Chaos is just another word for opportunity.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "rohan",
+      "content": "Can we monetize this tangent?",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "alex",
+      "content": "Let's Notion our way to nirvana.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "eljas",
+      "content": "Let's recycle this idea into something greener.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "venus",
+      "content": "Frameworks before feelings, people.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "kailey",
+      "content": "Alignment is just a meeting away!",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "donte",
+      "content": "Chaos is just another word for opportunity.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "rohan",
+      "content": "If it doesn't scale, it fails.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "alex",
+      "content": "Wellness check: who's hydrated?",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "eljas",
+      "content": "Let's recycle this idea into something greener.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "venus",
+      "content": "Airtable is my happy place.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "kailey",
+      "content": "Let's onboard this chaos.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "donte",
+      "content": "Let's turn this brainstorm into a revenue storm.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "rohan",
+      "content": "Can we monetize this tangent?",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "alex",
+      "content": "Let's Notion our way to nirvana.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "eljas",
+      "content": "Let's recycle this idea into something greener.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "venus",
+      "content": "Frameworks before feelings, people.",
+      "format": "bold",
+      "status": "failed"
+    },
+    {
+      "coach": "kailey",
+      "content": "Alignment is just a meeting away!",
+      "format": "bold",
+      "status": "failed"
+    }
+  ],
+  "metadata": {
+    "total_messages": 30,
+    "expected_duration": 60000,
+    "validation_status": "valid"
+  }
+}

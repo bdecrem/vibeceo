@@ -1,0 +1,77 @@
+{
+  "strategic_nonsense": {
+    "name": "🧠 Strategic Nonsense",
+    "seeds": [
+      "We need to improve internal alignment.",
+      "Let's define our Q2 objectives.",
+      "We still don't agree on what \"traction\" means.",
+      "The board wants us to clarify our moat.",
+      "Our CAC has become sentient.",
+      "Revenue is fine. Morale is a crime scene.",
+      "Who keeps deleting the product roadmap?",
+      "Let's agree on one definition of \"done.\"",
+      "The new intern built a KPI dashboard and now runs ops.",
+      "Legal says we can't call it \"emotional arbitrage\" anymore."
+    ]
+  },
+  "emotional_spiral": {
+    "name": "🌀 Emotional Spiral Starters",
+    "seeds": [
+      "The founder cried during onboarding again.",
+      "I think someone is microdosing in the pitch deck.",
+      "We need to talk about calendar trauma.",
+      "Someone replaced the retreat agenda with poetry.",
+      "The coaches are not emotionally aligned with the product.",
+      "Our vibe sync ran 3 hours late and ended in silence.",
+      "The team has too many feelings and not enough frameworks.",
+      "Someone pitched \"empathy as a service.\"",
+      "We're oversubscribed emotionally but underfunded financially.",
+      "Stop saying \"resonance\" unless it's in a sentence."
+    ]
+  },
+  "slack_meltdowns": {
+    "name": "☕️ Slack Meltdowns",
+    "seeds": [
+      "Who deleted the Notion board again?",
+      "I can't find the vibe calendar.",
+      "Someone renamed every folder to \"SoulWork.\"",
+      "Venus locked the alignment doc.",
+      "The roadmap is now a Figma moodboard.",
+      "Why are we getting Slack alerts from the printer?",
+      "I think Kailey created a cult accidentally.",
+      "Please stop tagging \"@founderenergy\" in threads.",
+      "The agenda is just a single emoji.",
+      "Someone added a journaling prompt to the CRM."
+    ]
+  },
+  "retreat_chaos": {
+    "name": "🏔️ Retreat Chaos",
+    "seeds": [
+      "Should our offsite include ritualized conflict resolution?",
+      "Is it legally risky to host a sweat lodge in WeWork?",
+      "Donte wants a gong at every meeting.",
+      "Kailey booked a venue with no Wi-Fi.",
+      "We're not aligned on if this is a retreat or an exorcism.",
+      "Rohan wants to call it a \"pre-IPO vision quest.\"",
+      "Alex made wellness lanyards.",
+      "Venus won't share a room with chaos energy.",
+      "We accidentally planned a summit during Mercury retrograde.",
+      "The Airbnb host is now on the advisory board."
+    ]
+  },
+  "founders_journey": {
+    "name": "📉 Founder's Journey Hell",
+    "seeds": [
+      "Our lead investor is ghosting us and writing haikus.",
+      "A competitor acquired our spiritual advisor.",
+      "The founder got stuck in a pitch loop.",
+      "Someone rebranded our deck as a therapy workbook.",
+      "Our biggest investor is now a wellness influencer.",
+      "We need to define \"exit\" emotionally.",
+      "Should we hire someone to manage our imposter syndrome?",
+      "Who leaked the alignment doc to TechCrunch?",
+      "The founder renamed the startup \"me.\"",
+      "Our valuation is high but our soul is flat."
+    ]
+  }
+} 

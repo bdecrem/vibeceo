@@ -147,6 +147,11 @@ function saveStaffMeeting(meeting: StaffMeeting): void {
 
 export async function triggerStaffMeeting(channelId: string, client: Client): Promise<number> {
     try {
+        console.log('\n🔔 STAFF MEETING TRIGGERED 🔔');
+        console.log('Time:', new Date().toISOString());
+        console.log('Channel ID:', channelId);
+        console.log('----------------------------------------');
+        
         console.log('[STAFFMEETING] Entered triggerStaffMeeting');
         const now = new Date();
         
@@ -182,9 +187,15 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
         const systemPrompt = STAFF_MEETING_PROMPT + '\n\nIMPORTANT: Do NOT have each character speak once in order. Do NOT ignore the seed. The conversation must spiral, escalate, and reference the seed repeatedly.';
         const userPrompt = `The seed for today's meeting is: ${selectedSeed}\n\nGenerate a chaotic, reactive, and hilarious group chat as described above. The seed must be referenced, hijacked, or escalated throughout the conversation. Avoid turn-taking. Avoid generic slogans. Make it feel like a real, messy Slack thread.`;
         
-        console.log('[STAFFMEETING] Generating conversation with seed:', selectedSeed);
-        console.log('[STAFFMEETING] System prompt:', systemPrompt);
-        console.log('[STAFFMEETING] User prompt:', userPrompt);
+        console.log('\n=== STAFF MEETING PROMPT DEBUG ===');
+        console.log('Selected Seed:', selectedSeed);
+        console.log('\nSystem Prompt:', systemPrompt);
+        console.log('\nUser Prompt:', userPrompt);
+        console.log('\nFull Messages Array:', JSON.stringify([
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+        ], null, 2));
+        console.log('=== END PROMPT DEBUG ===\n');
         
         const response = await openai.chat.completions.create({
             model: "gpt-4-0125-preview",

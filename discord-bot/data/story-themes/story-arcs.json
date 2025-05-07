@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
     "coach": "kailey",
-    "target": "eljas",
-    "incident": "She journaled through lunch and forgot to eat.",
+    "target": "alex",
+    "incident": "Her self-care checklist got roasted in a comment thread.",
     "probability": 0.67,
     "intensity": {
       "morning": [
@@ -762,27 +762,26 @@
             ]
           }
         },
-        "context": "Kailey Calm is getting increasingly irritated by Rohan Mehta's approach to \"She posted a vision board with a typo in the headline.\"",
+        "context": "Kailey Calm is getting increasingly irritated by Rohan Mehta's approach to \"She journaled through lunch and forgot to eat.\"",
         "promptInjection": "You are Kailey Calm. Your irritation with Rohan Mehta's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "kailey",
             "rohan"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "kailey"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She posted a vision board with a typo in the headline.\" influences all interactions between Kailey Calm and Rohan Mehta",
+            "description": "The tension from the waterheater incident about \"She journaled through lunch and forgot to eat.\" influences all interactions between Kailey Calm and Rohan Mehta",
             "duration": "episode"
           }
         }
@@ -825,7 +824,7 @@
             ]
           }
         },
-        "context": "Kailey Calm is getting increasingly irritated by Venus Metrics's approach to \"Her Notion reflections disappeared in a sync error.\"",
+        "context": "Kailey Calm is getting increasingly irritated by Venus Metrics's approach to \"She hit inbox zero and immediately panicked.\"",
         "promptInjection": "You are Kailey Calm. Your irritation with Venus Metrics's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
@@ -844,7 +843,7 @@
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"Her Notion reflections disappeared in a sync error.\" influences all interactions between Kailey Calm and Venus Metrics",
+            "description": "The tension from the waterheater incident about \"She hit inbox zero and immediately panicked.\" influences all interactions between Kailey Calm and Venus Metrics",
             "duration": "episode"
           }
         }
@@ -910,6 +909,130 @@
             "duration": "episode"
           }
         }
+      },
+      "getting_irritated_by_donte": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Kailey Calm is getting increasingly irritated by Donte Disrupt's approach to \"She hit inbox zero and immediately panicked.\"",
+        "promptInjection": "You are Kailey Calm. Your irritation with Donte Disrupt's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "kailey",
+            "donte"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "kailey"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"She hit inbox zero and immediately panicked.\" influences all interactions between Kailey Calm and Donte Disrupt",
+            "duration": "episode"
+          }
+        }
+      },
+      "getting_irritated_by_alex": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Kailey Calm is getting increasingly irritated by Alex Monroe's approach to \"Her self-care checklist got roasted in a comment thread.\"",
+        "promptInjection": "You are Kailey Calm. Your irritation with Alex Monroe's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "kailey",
+            "alex"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "kailey"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"Her self-care checklist got roasted in a comment thread.\" influences all interactions between Kailey Calm and Alex Monroe",
+            "duration": "episode"
+          }
+        }
       }
     },
     "venus": {
@@ -951,27 +1074,26 @@
             ]
           }
         },
-        "context": "Venus Metrics is getting increasingly irritated by Rohan Mehta's approach to \"She uploaded a voice memo meant to be private.\"",
+        "context": "Venus Metrics is getting increasingly irritated by Rohan Mehta's approach to \"Her Asana board got duplicated by someone else.\"",
         "promptInjection": "You are Venus Metrics. Your irritation with Rohan Mehta's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "venus",
             "rohan"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "venus"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She uploaded a voice memo meant to be private.\" influences all interactions between Venus Metrics and Rohan Mehta",
+            "description": "The tension from the waterheater incident about \"Her Asana board got duplicated by someone else.\" influences all interactions between Venus Metrics and Rohan Mehta",
             "duration": "episode"
           }
         }
@@ -1456,27 +1578,26 @@
             ]
           }
         },
-        "context": "Alex Monroe is getting increasingly irritated by Kailey Calm's approach to \"She posted a vision board with a typo in the headline.\"",
+        "context": "Alex Monroe is getting increasingly irritated by Kailey Calm's approach to \"Her Shopify theme reverted to a 2018 version.\"",
         "promptInjection": "You are Alex Monroe. Your irritation with Kailey Calm's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
-            "{coach}",
+            "alex",
             "kailey"
           ],
           "probability": 0.66,
           "speakingOrder": {
             "first": "any",
-            "second": "{coach}"
+            "second": "alex"
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"She posted a vision board with a typo in the headline.\" influences all interactions between Alex Monroe and Kailey Calm",
+            "description": "The tension from the waterheater incident about \"Her Shopify theme reverted to a 2018 version.\" influences all interactions between Alex Monroe and Kailey Calm",
             "duration": "episode"
           }
         }

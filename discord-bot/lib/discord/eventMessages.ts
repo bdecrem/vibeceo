@@ -127,5 +127,15 @@ export async function sendEventMessage(
 		}
 	}
 
-	await channel.send(message);
+	// For staff meetings, use the specific staff meetings channel
+	const targetChannel = eventType === 'staffmeeting' 
+		? await channel.client.channels.fetch('1369356692428423240') as TextChannel
+		: channel;
+
+	if (!targetChannel) {
+		throw new Error(`Target channel not found for event type ${eventType}`);
+	}
+
+	// Send the message to the target channel
+	await targetChannel.send(message);
 }
