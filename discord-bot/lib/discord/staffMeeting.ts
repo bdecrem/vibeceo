@@ -22,7 +22,7 @@ function getRandomSeed(): string {
     return seeds[Math.floor(Math.random() * seeds.length)];
 }
 
-const STAFF_MEETING_PROMPT = `You are generating a group chat between fictional startup coaches for a satirical project called Advisors Foundry.
+export const STAFF_MEETING_PROMPT = `You are generating a group chat between fictional startup coaches for a satirical project called Advisors Foundry.
 
 The tone is: chaotic, self-important, emotionally unstable, and occasionally brilliant. Think: a Slack thread between six coaches who believe they're changing the world through alignment and pitch decks — but they can't even agree on a calendar.
 
@@ -36,12 +36,12 @@ FORMAT:
 [Short message in their voice — 1–2 lines max]
 
 CHARACTERS:
-- DonteDisrupt = poetic nonsense / fake visionary / "let's cook" energy
-- RohanTheShark = VC predator / execution maximalist / allergic to emotions
-- AlexirAlex = Gen Z wellness disruptor / emoji-overuser / vibes first
-- VenusStrikes = ruthless quant / precision obsessed / hates vibes
-- KaileyTheSync = ops lead on the edge / compulsive Notion scheduler / gets ignored often
-- EljasCouncil = compost mystic from Finland / haunting metaphors / always wins the room with 1 line
+- Donte = poetic nonsense / fake visionary / "let's cook" energy
+- Rohan = VC predator / execution maximalist / allergic to emotions
+- Alex = Gen Z wellness disruptor / emoji-overuser / vibes first
+- Venus = ruthless quant / precision obsessed / hates vibes
+- Kailey = ops lead on the edge / compulsive Notion scheduler / gets ignored often
+- Eljas = compost mystic from Finland / haunting metaphors / always wins the room with 1 line
 
 RULES:
 - Characters must directly reference or react to each other
@@ -60,47 +60,75 @@ This is NOT a "sample dialogue." This is a group of brilliant egomaniacs trapped
 
 // Map of real names to Discord handles
 const COACH_NAME_TO_HANDLE: Record<string, string> = {
-    'DonteDisrupt': COACH_DISCORD_HANDLES.donte,
-    'RohanTheShark': COACH_DISCORD_HANDLES.rohan,
-    'AlexirAlex': COACH_DISCORD_HANDLES.alex,
-    'VenusStrikes': COACH_DISCORD_HANDLES.venus,
-    'KaileyTheSync': COACH_DISCORD_HANDLES.kailey,
-    'EljasCouncil': COACH_DISCORD_HANDLES.eljas
+    'Donte': COACH_DISCORD_HANDLES.donte,
+    'Rohan': COACH_DISCORD_HANDLES.rohan,
+    'Alex': COACH_DISCORD_HANDLES.alex,
+    'Venus': COACH_DISCORD_HANDLES.venus,
+    'Kailey': COACH_DISCORD_HANDLES.kailey,
+    'Eljas': COACH_DISCORD_HANDLES.eljas
 };
 
 function parseMessage(line: string): StaffMeetingMessage | null {
-    // Skip any lines that don't look like messages
-    if (line === '**END**' || !line.includes(':')) {
-        console.log('[STAFFMEETING] Skipping non-message line:', line);
+    // Skip empty lines or the end marker
+    if (!line.trim() || line === '**END**') {
+        console.log('[STAFFMEETING] Skipping empty line or end marker');
         return null;
     }
 
-    // Try both timestamped and bold formats
-    const timestampMatch = line.match(/^\[?(\d{1,2}:\d{2})\]?\s*(\w+):\s*(.*)$/);
-    const boldMatch = line.match(/^\*\*(\w+):\*\*\s*(.*)$/);
-    const match = timestampMatch || boldMatch;
+    // Try multiple formats:
+    // 1. [Name] [Time] Message
+    // 2. **Name:** Message
+    // 3. **Name** Message
+    const formats = [
+        /^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.+)$/,  // [Name] [Time] Message
+        /^\*\*([^:]+):\*\*\s*(.+)$/,  // **Name:** Message
+        /^\*\*([^*]+)\*\*\s*(.+)$/    // **Name** Message
+    ];
+
+    let match = null;
+    let formatUsed = '';
+
+    for (const regex of formats) {
+        const result = line.match(regex);
+        if (result) {
+            match = result;
+            formatUsed = regex.toString();
+            break;
+        }
+    }
 
     if (!match) {
-        console.warn('[STAFFMEETING] Line did not match expected format:', line);
+        console.warn('[STAFFMEETING] Line did not match any expected format:', line);
         return null;
     }
 
-    // For timestamped format, match[1] is time, match[2] is name, match[3] is content
-    // For bold format, match[1] is name, match[2] is content
-    const coachName = timestampMatch ? match[2] : match[1];
-    const messageContent = timestampMatch ? match[3] : match[2];
+    const coachName = match[1].trim();
+    const messageContent = match[2].trim();
     
     // Get the Discord handle for this coach
     const coachHandle = COACH_NAME_TO_HANDLE[coachName];
     if (!coachHandle) {
-        console.warn('[STAFFMEETING] No handle found for coach:', coachName);
+        console.warn('[STAFFMEETING] No handle found for coach:', coachName, 'in line:', line);
         return null;
     }
+
+    // Validate message content
+    if (messageContent.length < 5 || messageContent.length > 500) {
+        console.warn('[STAFFMEETING] Message content length invalid:', messageContent.length, 'in line:', line);
+        return null;
+    }
+
+    // Log successful parse
+    console.log('[STAFFMEETING] Successfully parsed message:', {
+        format: formatUsed,
+        coach: coachName,
+        content: messageContent
+    });
     
     return {
         coach: coachHandle,
         content: messageContent,
-        format: timestampMatch ? 'timestamped' : 'bold',
+        format: 'bold',
         status: 'pending'
     };
 }
@@ -143,6 +171,39 @@ function saveStaffMeeting(meeting: StaffMeeting): void {
         // Still throw the error to maintain existing error handling
         throw error;
     }
+}
+
+// Add validation for seed references
+function validateSeedReferences(messages: StaffMeetingMessage[], seed: string): boolean {
+    const seedLower = seed.toLowerCase();
+    const references = messages.filter(msg => 
+        msg.content.toLowerCase().includes(seedLower)
+    ).length;
+    
+    console.log(`[STAFFMEETING] Found ${references} seed references in ${messages.length} messages`);
+    return references >= 3;
+}
+
+// Add validation for message reactions
+function validateMessageReactions(messages: StaffMeetingMessage[]): boolean {
+    let hasReactions = true;
+    for (let i = 1; i < messages.length; i++) {
+        const prevMsg = messages[i-1].content.toLowerCase();
+        const currMsg = messages[i].content.toLowerCase();
+        
+        // Check if current message references previous message
+        const isReaction = currMsg.includes('this') || 
+                          currMsg.includes('that') || 
+                          currMsg.includes('it') ||
+                          currMsg.includes('?') ||
+                          currMsg.includes('!');
+        
+        if (!isReaction) {
+            console.warn('[STAFFMEETING] Message might not be a reaction:', currMsg);
+            hasReactions = false;
+        }
+    }
+    return hasReactions;
 }
 
 export async function triggerStaffMeeting(channelId: string, client: Client): Promise<number> {
@@ -203,7 +264,10 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt }
             ],
-            temperature: 1.0,
+            temperature: 0.7,
+            top_p: 0.9,
+            presence_penalty: 0.6,
+            frequency_penalty: 0.5
         });
 
         const fullConversation = response.choices[0].message.content;
@@ -218,61 +282,22 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
         console.log(`[STAFFMEETING] Parsed ${lines.length} lines from conversation.`);
 
         // Create staff meeting object
-        let parsedMessages = lines
+        const messages = lines
             .map((line: string) => parseMessage(line))
             .filter((msg: StaffMeetingMessage | null): msg is StaffMeetingMessage => msg !== null);
 
-        // If fewer than 30 messages, pad with banter
-        const MIN_MESSAGES = 30;
-        const banterLines: Record<string, string[]> = {
-            [COACH_DISCORD_HANDLES.donte]: [
-                "Chaos is just another word for opportunity.",
-                "Let's turn this brainstorm into a revenue storm.",
-                "Disruption is my love language."
-            ],
-            [COACH_DISCORD_HANDLES.rohan]: [
-                "Can we monetize this tangent?",
-                "If it doesn't scale, it fails.",
-                "Let's KPI that idea to death."
-            ],
-            [COACH_DISCORD_HANDLES.alex]: [
-                "Vibes are up, cortisol is down!",
-                "Let's Notion our way to nirvana.",
-                "Wellness check: who's hydrated?"
-            ],
-            [COACH_DISCORD_HANDLES.eljas]: [
-                "Compost your doubts, grow your vision.",
-                "Silence is the best framework.",
-                "Let's recycle this idea into something greener."
-            ],
-            [COACH_DISCORD_HANDLES.venus]: [
-                "Frameworks before feelings, people.",
-                "Airtable is my happy place.",
-                "Let's sprint, not stroll."
-            ],
-            [COACH_DISCORD_HANDLES.kailey]: [
-                "Alignment is just a meeting away!",
-                "My calendar is scarier than your roadmap.",
-                "Let's onboard this chaos."
-            ]
-        };
-        const coachHandles = Object.values(COACH_DISCORD_HANDLES);
-        let banterIndex = 0;
-        while (parsedMessages.length < MIN_MESSAGES) {
-            const coach = coachHandles[banterIndex % coachHandles.length];
-            const banter = banterLines[coach][Math.floor(Math.random() * banterLines[coach].length)];
-            parsedMessages.push({
-                coach,
-                content: banter,
-                format: 'bold',
-                status: 'pending'
-            });
-            banterIndex++;
+        // Validate the conversation
+        if (!validateSeedReferences(messages, selectedSeed)) {
+            console.warn('[STAFFMEETING] Warning: Not enough seed references in conversation');
+        }
+
+        if (!validateMessageReactions(messages)) {
+            console.warn('[STAFFMEETING] Warning: Some messages might not be proper reactions');
         }
 
         const meeting: StaffMeeting = {
             timestamp: now.toISOString(),
-            messages: parsedMessages,
+            messages: messages,
             metadata: {
                 total_messages: 0, // Will be updated after filtering
                 expected_duration: 0, // Will be updated after filtering
