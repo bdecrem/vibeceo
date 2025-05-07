@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeWebhooks, sendAsCharacter, cleanupWebhooks } from './webhooks.js';
 import { getWebhookUrls } from './config.js';
+import { sendEventMessage } from './eventMessages.js';
+import { TextChannel, Client } from 'discord.js';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,25 +29,8 @@ if (!fs.existsSync(meetingsDir)) {
     fs.mkdirSync(meetingsDir, { recursive: true });
 }
 
-async function postLatestMeetingToDiscord() {
+async function postLatestMeetingToDiscord(client: Client) {
     try {
-        // 1. Run test-gpt-prompt.js to generate meeting
-        // console.log('Generating new meeting via test-gpt-prompt.js...');
-        // const scriptPath = path.join(process.cwd(), 'test-gpt-prompt.js');
-        // console.log('Running script at:', scriptPath);
-        
-        // await new Promise((resolve, reject) => {
-        //     exec(`node "${scriptPath}"`, (error, stdout, stderr) => {
-        //         if (error) {
-        //             console.error('Error running test-gpt-prompt.js:', error);
-        //             reject(error);
-        //             return;
-        //         }
-        //         console.log(stdout);
-        //         resolve(stdout);
-        //     });
-        // });
-
         // 2. Hardcode the path to the latest meeting file
         const latestMeetingPath = path.join(meetingsDir, 'meeting-2025-05-07T21-04-25-647Z.json');
         console.log('Reading meeting file from:', latestMeetingPath);
@@ -60,6 +45,22 @@ async function postLatestMeetingToDiscord() {
         const webhookUrls = getWebhookUrls();
         cleanupWebhooks(STAFF_MEETINGS_CHANNEL_ID);
         await initializeWebhooks(STAFF_MEETINGS_CHANNEL_ID, webhookUrls);
+
+        // Get the channel for sending event messages
+        const channel = await client.channels.fetch(STAFF_MEETINGS_CHANNEL_ID) as TextChannel;
+        if (!channel) {
+            throw new Error('Staff meetings channel not found');
+        }
+
+        // Send intro message
+        const now = new Date();
+        await sendEventMessage(
+            channel,
+            'simplestaffmeeting',
+            true,
+            now.getUTCHours(),
+            now.getUTCMinutes()
+        );
 
         // 5. Send messages
         console.log('Sending messages...');
@@ -76,6 +77,15 @@ async function postLatestMeetingToDiscord() {
             }
         }
 
+        // Send outro message
+        await sendEventMessage(
+            channel,
+            'simplestaffmeeting',
+            false,
+            now.getUTCHours(),
+            now.getUTCMinutes()
+        );
+
         console.log('Finished sending all messages');
     } catch (error) {
         console.error('Error:', error);
@@ -84,14 +94,13 @@ async function postLatestMeetingToDiscord() {
 }
 
 // Export for use in other files
-export async function triggerSimpleStaffMeeting(): Promise<void> {
-    await postLatestMeetingToDiscord();
+export async function triggerSimpleStaffMeeting(channelId: string, client: Client): Promise<void> {
+    await postLatestMeetingToDiscord(client);
 }
 
 // Run if this module is the entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
-    postLatestMeetingToDiscord().catch(error => {
-        console.error('Unhandled error:', error);
-        process.exit(1);
-    });
+    // Note: This won't work as a standalone script anymore since it needs a client
+    console.error('This module cannot be run directly as it requires a Discord client');
+    process.exit(1);
 } 
