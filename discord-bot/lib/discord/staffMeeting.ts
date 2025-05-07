@@ -1,54 +1,72 @@
 import { Client, TextChannel } from "discord.js";
-import { generateCharacterResponse } from "./ai.js";
 import { sendAsCharacter, initializeWebhooks, cleanupWebhooks, channelWebhooks } from "./webhooks.js";
 import { StaffMeeting, StaffMeetingMessage } from "./types.js";
 import fs from "fs";
 import path from "path";
 import { getWebhookUrls } from "./config.js";
 import { COACH_DISCORD_HANDLES } from './coachHandles.js';
+import OpenAI from "openai";
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 // Load and select a random seed
 function getRandomSeed(): string {
-    const seedsPath = path.join(process.cwd(), 'data', 'staff-meeting-seeds.json');
-    const seedsData = JSON.parse(fs.readFileSync(seedsPath, 'utf-8'));
-    
-    // Get all categories
-    const categories = Object.keys(seedsData);
-    // Pick a random category
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-    // Get seeds from that category
-    const seeds = seedsData[randomCategory].seeds;
-    // Pick a random seed
+    const seeds = [
+        "The roadmap is now a Figma moodboard.",
+        "Our vibe sync ended in silence.",
+        "Donte brought a gong to sprint planning."
+    ];
     return seeds[Math.floor(Math.random() * seeds.length)];
 }
 
-const STAFF_MEETING_PROMPT = `You are generating a fake group chat between startup coaches for a comedy project called Advisors Foundry. This should feel like a Slack thread that escaped from a pitch deck hallucination.
+const STAFF_MEETING_PROMPT = `You are generating a group chat between fictional startup coaches for a satirical project called Advisors Foundry.
 
-TONE:
-Fast, funny, chaotic, and brilliant. Model this on the vibe of VCs trying to heal themselves through brand language while one of them breaks down in Notion.
+The tone is: chaotic, self-important, emotionally unstable, and occasionally brilliant. Think: a Slack thread between six coaches who believe they're changing the world through alignment and pitch decks — but they can't even agree on a calendar.
+
+Your goal is to make the conversation feel real, layered, reactive, and hilarious.
+
+SCENE:
+The seed for today's meeting is: {{SEED}}
 
 FORMAT:
-[Name] [Time]
-[One short, sharp message. 1–2 lines max.]
+[Name] [Time]  
+[Short message in their voice — 1–2 lines max]
 
-SCENE: 
-STARTING SEED: ${getRandomSeed()}
-
-VOICES:
-- DonteDisrupt = poetic nonsense / fake prophet energy
-- RohanTheShark = dismissive, combat-coded execution freak
-- AlexirAlex = emoji-coded vibe merchant who turns everything into a wellness brand
-- VenusStrikes = tactician with spreadsheet blood, allergic to ambiguity
-- KaileyTheSync = anxious ops girlboss clinging to control
-- EljasCouncil = Finnish compost mystic who says 2 things and wins the room
+CHARACTERS:
+- DonteDisrupt = poetic nonsense / fake visionary / "let's cook" energy
+- RohanTheShark = VC predator / execution maximalist / allergic to emotions
+- AlexirAlex = Gen Z wellness disruptor / emoji-overuser / vibes first
+- VenusStrikes = ruthless quant / precision obsessed / hates vibes
+- KaileyTheSync = ops lead on the edge / compulsive Notion scheduler / gets ignored often
+- EljasCouncil = compost mystic from Finland / haunting metaphors / always wins the room with 1 line
 
 RULES:
-- Messages should overlap, contradict, or hijack the thread
-- Prioritize rhythm, escalation, callbacks, dunking, spiraling
-- Include at least one fake tool, Notion ritual, or merch idea
-- End with a non-consensus decision or a total derailment
+- Characters must directly reference or react to each other
+- They should dunk, build, contradict, or hijack the thread
+- Include sarcasm, spirals, fake rituals, invented tools, and weird metaphors
+- Escalate tension — the thread should unravel into brilliance or disaster
+- End with either: a punchline, someone ghosting, or a fake decision no one agrees with
 
-This is not "each character speaks once." This is chaos that somehow aligns.`;
+AVOID:
+- Turn-taking
+- Generic slogans
+- "Everyone gets a line" energy
+- Repeating startup clichés
+
+This is NOT a "sample dialogue." This is a group of brilliant egomaniacs trapped in a Slack thread, trying to align without imploding.`;
+
+// Map of real names to Discord handles
+const COACH_NAME_TO_HANDLE: Record<string, string> = {
+    'DonteDisrupt': COACH_DISCORD_HANDLES.donte,
+    'RohanTheShark': COACH_DISCORD_HANDLES.rohan,
+    'AlexirAlex': COACH_DISCORD_HANDLES.alex,
+    'VenusStrikes': COACH_DISCORD_HANDLES.venus,
+    'KaileyTheSync': COACH_DISCORD_HANDLES.kailey,
+    'EljasCouncil': COACH_DISCORD_HANDLES.eljas
+};
 
 function parseMessage(line: string): StaffMeetingMessage | null {
     // Skip any lines that don't look like messages
@@ -58,7 +76,7 @@ function parseMessage(line: string): StaffMeetingMessage | null {
     }
 
     // Try both timestamped and bold formats
-    const timestampMatch = line.match(/^\[?\d{1,2}:\d{2}\]?\s*(\w+):\s*(.*)$/);
+    const timestampMatch = line.match(/^\[?(\d{1,2}:\d{2})\]?\s*(\w+):\s*(.*)$/);
     const boldMatch = line.match(/^\*\*(\w+):\*\*\s*(.*)$/);
     const match = timestampMatch || boldMatch;
 
@@ -67,18 +85,20 @@ function parseMessage(line: string): StaffMeetingMessage | null {
         return null;
     }
 
-    const coachName = match[1].toLowerCase();
-    const messageContent = match[2];
+    // For timestamped format, match[1] is time, match[2] is name, match[3] is content
+    // For bold format, match[1] is name, match[2] is content
+    const coachName = timestampMatch ? match[2] : match[1];
+    const messageContent = timestampMatch ? match[3] : match[2];
     
     // Get the Discord handle for this coach
-    const coachHandle = COACH_DISCORD_HANDLES[coachName as keyof typeof COACH_DISCORD_HANDLES];
+    const coachHandle = COACH_NAME_TO_HANDLE[coachName];
     if (!coachHandle) {
         console.warn('[STAFFMEETING] No handle found for coach:', coachName);
         return null;
     }
     
     return {
-        coach: coachHandle, // Use the Discord handle instead of lowercase name
+        coach: coachHandle,
         content: messageContent,
         format: timestampMatch ? 'timestamped' : 'bold',
         status: 'pending'
@@ -157,13 +177,30 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
         }
         console.log('[STAFFMEETING] Found channel:', channel.name);
 
-        // Generate the conversation
-        console.log('[STAFFMEETING] Generating full conversation with prompt:', STAFF_MEETING_PROMPT);
-        const fullConversation = await generateCharacterResponse(
-            STAFF_MEETING_PROMPT,
-            "Generate a new staff meeting conversation with the specified format and requirements. Make sure to follow the two-phase structure and include all required elements."
-        );
-        console.log('[STAFFMEETING] Full conversation generated:', fullConversation);
+        // Generate the conversation using GPT-4
+        const selectedSeed = getRandomSeed();
+        const systemPrompt = STAFF_MEETING_PROMPT + '\n\nIMPORTANT: Do NOT have each character speak once in order. Do NOT ignore the seed. The conversation must spiral, escalate, and reference the seed repeatedly.';
+        const userPrompt = `The seed for today's meeting is: ${selectedSeed}\n\nGenerate a chaotic, reactive, and hilarious group chat as described above. The seed must be referenced, hijacked, or escalated throughout the conversation. Avoid turn-taking. Avoid generic slogans. Make it feel like a real, messy Slack thread.`;
+        
+        console.log('[STAFFMEETING] Generating conversation with seed:', selectedSeed);
+        console.log('[STAFFMEETING] System prompt:', systemPrompt);
+        console.log('[STAFFMEETING] User prompt:', userPrompt);
+        
+        const response = await openai.chat.completions.create({
+            model: "gpt-4-0125-preview",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
+            temperature: 1.0,
+        });
+
+        const fullConversation = response.choices[0].message.content;
+        if (!fullConversation) {
+            throw new Error('No conversation generated from GPT-4');
+        }
+
+        console.log('[STAFFMEETING] Raw GPT-4 response:', fullConversation);
 
         // Parse messages
         const lines = fullConversation.split('\n').filter(line => line.trim());
@@ -171,8 +208,8 @@ export async function triggerStaffMeeting(channelId: string, client: Client): Pr
 
         // Create staff meeting object
         let parsedMessages = lines
-            .map(parseMessage)
-            .filter((msg): msg is StaffMeetingMessage => msg !== null);
+            .map((line: string) => parseMessage(line))
+            .filter((msg: StaffMeetingMessage | null): msg is StaffMeetingMessage => msg !== null);
 
         // If fewer than 30 messages, pad with banter
         const MIN_MESSAGES = 30;
