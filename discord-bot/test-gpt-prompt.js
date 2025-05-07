@@ -122,6 +122,103 @@ console.log('\n=== EXACT PROMPT SENT TO GPT ===\n');
 console.log(JSON.stringify(messages, null, 2));
 console.log('\n=== END PROMPT ===\n');
 
+// Map of coach names to their IDs
+const coachMap = {
+  'DonteDisrupt': 'donte',
+  'AlexirAlex': 'alex',
+  'RohanTheShark': 'rohan',
+  'VenusStrikes': 'venus',
+  'KaileyConnector': 'kailey',
+  'EljasCouncil': 'eljas'
+};
+
+function inferCoachFromContent(content) {
+  // Look for coach mentions or characteristic phrases
+  for (const [coachName, coachId] of Object.entries(coachMap)) {
+    if (content.includes(coachName) || content.includes(`@${coachName}`)) {
+      return coachId;
+    }
+  }
+
+  // Infer from characteristic phrases
+  if (content.match(/crystal|energy|vibe|healing|🔮|✨|🌞/i)) return 'alex';
+  if (content.match(/garbage|never|useless|out|quit/i)) return 'rohan';
+  if (content.match(/framework|metric|system|structure|document/i)) return 'venus';
+  if (content.match(/schedule|calendar|booking|time|meeting/i)) return 'kailey';
+  if (content.match(/forest|nature|sauna|compost|mud|steam/i)) return 'eljas';
+  if (content.match(/initiative|chaos|pivot|disrupt|roadmap/i)) return 'donte';
+
+  return null;
+}
+
+function parseMessage(line) {
+  // Skip empty lines
+  if (!line.trim()) return null;
+
+  // Try to match the standard format: CoachName 9:00 AM message
+  const match = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s+(.+)$/);
+  if (match) {
+    const [_, coachName, timestamp, content] = match;
+    const coachId = coachMap[coachName];
+    
+    if (!coachId) {
+      console.warn(`Unknown coach name: ${coachName}`);
+      return null;
+    }
+
+    if (content && content.trim()) {
+      return {
+        coach: coachId,
+        content: content.trim(),
+        timestamp: timestamp.trim()
+      };
+    }
+  } else {
+    // Try to infer the coach from the content
+    const content = line.trim();
+    const coachId = inferCoachFromContent(content);
+    
+    if (coachId) {
+      return {
+        coach: coachId,
+        content: content,
+        timestamp: '9:00 AM' // Default timestamp if none provided
+      };
+    }
+  }
+  
+  console.warn(`Could not parse line: ${line}`);
+  return null;
+}
+
+function validateMessages(messages) {
+  const errors = [];
+
+  // Check if we have at least 5 messages
+  if (messages.length < 5) {
+    errors.push(`Not enough messages generated (got ${messages.length}, need at least 5)`);
+  }
+
+  // Check if we have messages from at least 3 different coaches
+  const uniqueCoaches = new Set(messages.map(m => m.coach));
+  if (uniqueCoaches.size < 3) {
+    errors.push(`Not enough different coaches (got ${uniqueCoaches.size}, need at least 3)`);
+  }
+
+  // Check if we have at least 1 message with emojis
+  const emojiMessages = messages.filter(m => /\p{Emoji}/u.test(m.content));
+  if (emojiMessages.length < 1) {
+    errors.push(`No messages with emojis found`);
+  }
+
+  // If we have any errors, throw them all at once
+  if (errors.length > 0) {
+    throw new Error('Validation failed:\n' + errors.join('\n'));
+  }
+
+  return messages;
+}
+
 async function getGPTResponse() {
   try {
     const completion = await openai.chat.completions.create({
@@ -133,20 +230,47 @@ async function getGPTResponse() {
 
     const response = completion.choices[0].message.content;
 
-    const filePath = path.join(__dirname, 'gpt_latest_response.txt');
-    fs.writeFileSync(filePath, response, 'utf8');
+    // Save raw response for debugging
+    const rawFilePath = path.join(__dirname, 'gpt_latest_response.txt');
+    fs.writeFileSync(rawFilePath, response, 'utf8');
 
-    process.stdout.write('\n=== GPT RESPONSE ===\n\n');
-    process.stdout.write(response);
-    process.stdout.write('\n\n=== END RESPONSE ===\n');
+    // Parse the initial message
+    const initialMessage = parseMessage(priorMessages[0].content);
+    
+    // Parse the response into structured messages
+    const lines = response.split('\n').filter(line => line.trim());
+    const parsedMessages = lines
+      .map(parseMessage)
+      .filter(msg => msg !== null);
+
+    // Combine initial message with new messages
+    const allMessages = [initialMessage, ...parsedMessages].filter(msg => msg !== null);
+
+    // Validate all messages together
+    const validatedMessages = validateMessages(allMessages);
+
+    // Create staff-meetings directory if it doesn't exist
+    const meetingsDir = path.join(__dirname, 'data', 'staff-meetings');
+    if (!fs.existsSync(meetingsDir)) {
+      fs.mkdirSync(meetingsDir, { recursive: true });
+    }
+
+    // Save the structured messages to a JSON file
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const jsonFilePath = path.join(meetingsDir, `meeting-${timestamp}.json`);
+    fs.writeFileSync(jsonFilePath, JSON.stringify({ messages: validatedMessages }, null, 2));
+
+    console.log('\n=== GPT RESPONSE ===\n');
+    console.log(response);
+    console.log('\n=== END RESPONSE ===\n');
+    console.log(`\nSaved structured messages to: ${jsonFilePath}`);
 
   } catch (error) {
-    console.error('Error calling GPT:', error);
+    console.error('Error:', error);
     process.exit(1);
   }
 }
 
-fs.writeFileSync(path.join(__dirname, 'gpt_latest_response.txt'), '');
 getGPTResponse().catch(error => {
   console.error('Unhandled error:', error);
   process.exit(1);
