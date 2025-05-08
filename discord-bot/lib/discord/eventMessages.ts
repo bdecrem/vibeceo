@@ -92,8 +92,8 @@ export async function sendEventMessage(
 		);
 		const { location, formattedTime, ampm, isNewLocation, weather, weatherEmoji } = locationTime;
 		const arrivalText = isNewLocation
-			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `
-			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
+			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} ${weatherEmoji} stretch overhead. `
+			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} ${weatherEmoji} stretch overhead. `;
 		
 		message = message.replace("{arrival}", arrivalText);
 		
