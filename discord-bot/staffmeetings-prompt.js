@@ -155,6 +155,11 @@ function parseMessage(line) {
   // Skip empty lines
   if (!line.trim()) return null;
 
+  // Skip lines that are just coach name and timestamp (no message)
+  if (line.match(/^\w+\s+\d{1,2}:\d{2}\s+[AP]M$/)) {
+    return null;
+  }
+
   // Try to match the standard format: CoachName 9:00 AM message
   const match = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s+(.+)$/);
   if (match) {
