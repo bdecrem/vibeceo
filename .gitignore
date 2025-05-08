@@ -52,6 +52,9 @@ next-env.d.ts
 # Discord Bot
 /discord-bot/dist
 /discord-bot/node_modules
+/discord-bot/gpt_latest_response.txt
+/discord-bot/data/episodes/
+/discord-bot/data/staff-meetings/
 
 # ignore Logs
 /logs/
