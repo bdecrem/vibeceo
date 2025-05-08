@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-08T16-39",
+  "createdAt": "2025-05-08T16:39:00.415Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:41am at the Los Angeles office, where clear skies ☀️ stretch overhead. A coach Alex admires told her that her aura color seemed \"off\" today.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:41",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:43am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths before the strategy altar.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:43",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:45am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals under the neon mission statement.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:45",
+      "coaches": []
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-08T20-36",
+  "createdAt": "2025-05-08T20:36:22.530Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:38pm and the coaches have just arrived at their London office, where scattered clouds skies ⛅ stretch overhead. Alex got emotional during a founder onboarding and forgot to mute her mic.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "20:38",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:40pm at the London office, where scattered clouds skies ⛅ stretch overhead. They are aligning their agendas at the dawn meeting circle.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "London office",
+      "localTime": "20:40",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:42pm at the London office, where scattered clouds skies ⛅ stretch overhead. They are aligning energy with green plants in the atrium.",
+      "outro": "The coaches have ascended to their strategy sanctuaries.",
+      "location": "London office",
+      "localTime": "20:42",
+      "coaches": []
+    }
+  ]
+}

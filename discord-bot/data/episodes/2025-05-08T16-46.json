@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-08T16-46",
+  "createdAt": "2025-05-08T16:46:22.769Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:48am at the Los Angeles office, where clear skies ☀️ stretch overhead. Eljas's compost bin started overflowing during an important Zoom call.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:48",
+      "coaches": []
+    }
+  ]
+}

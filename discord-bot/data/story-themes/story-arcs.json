@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "kailey",
-    "target": "rohan",
-    "incident": "Her Notion reflections disappeared in a sync error.",
+    "coach": "alex",
+    "target": "donte",
+    "incident": "She cried during a founder onboarding and didn't mute.",
     "probability": 0.67,
     "intensity": {
       "morning": [
@@ -721,6 +721,68 @@
             "duration": "episode"
           }
         }
+      },
+      "getting_irritated_by_alex": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Donte Disrupt is getting increasingly irritated by Alex Monroe's approach to \"His old intern posted a Medium piece quoting him… poorly.\"",
+        "promptInjection": "You are Donte Disrupt. Your irritation with Alex Monroe's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "donte",
+            "alex"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "donte"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"His old intern posted a Medium piece quoting him… poorly.\" influences all interactions between Donte Disrupt and Alex Monroe",
+            "duration": "episode"
+          }
+        }
       }
     },
     "kailey": {
@@ -1392,11 +1454,10 @@
             ]
           }
         },
-        "context": "Alex Monroe is getting increasingly irritated by Donte Disrupt's approach to \"Her Shopify theme reverted to a 2018 version.\"",
+        "context": "Alex Monroe is getting increasingly irritated by Donte Disrupt's approach to \"She cried during a founder onboarding and didn't mute.\"",
         "promptInjection": "You are Alex Monroe. Your irritation with Donte Disrupt's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
@@ -1412,7 +1473,7 @@
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"Her Shopify theme reverted to a 2018 version.\" influences all interactions between Alex Monroe and Donte Disrupt",
+            "description": "The tension from the waterheater incident about \"She cried during a founder onboarding and didn't mute.\" influences all interactions between Alex Monroe and Donte Disrupt",
             "duration": "episode"
           }
         }

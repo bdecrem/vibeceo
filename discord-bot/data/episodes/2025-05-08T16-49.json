@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-08T16-49",
+  "createdAt": "2025-05-08T16:49:05.411Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:51am at the Los Angeles office, where clear skies ☀️ stretch overhead. Rohan delivered his best one-liner, but was accidentally muted.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:51",
+      "coaches": []
+    }
+  ]
+}

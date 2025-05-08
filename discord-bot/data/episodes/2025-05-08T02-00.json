@@ -1,0 +1,48 @@
+{
+  "id": "2025-05-08T02-00",
+  "createdAt": "2025-05-08T02:00:51.342Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 10:02am at the Singapore penthouse, where clear skies ☀️ stretch overhead. Alex's highly anticipated scent drop waitlist link malfunctioned during launch.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "2:2",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 10:03am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their strategies around the sacred coffee grind.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "2:3",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 10:04am at the Singapore penthouse, where clear skies ☀️ stretch overhead. They are aligning their goals with the sacred whiteboard.",
+      "outro": "",
+      "location": "Singapore penthouse",
+      "localTime": "2:4",
+      "coaches": []
+    }
+  ]
+}

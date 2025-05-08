@@ -4,6 +4,7 @@ import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
+import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -24,7 +25,7 @@ const serviceMap: Record<
 	tmzchat: triggerTmzChat,
 	pitchchat: triggerPitchChat,
 	waterheater: triggerWaterheaterChat,
-	weekendvibes: triggerWatercoolerChat, // Using watercooler chat for weekend vibes
+	weekendvibes: triggerWeekendVibesChat,
 	// Add more services here as needed
 };
 
@@ -43,6 +44,7 @@ export function initializeScheduler(client: Client) {
 function loadSchedule() {
 	try {
 		const isWeekendMode = isWeekend();
+		console.log(`[Scheduler] Is weekend mode: ${isWeekendMode}`);
 		const schedulePath = isWeekendMode ? WEEKEND_SCHEDULE_PATH : WEEKDAY_SCHEDULE_PATH;
 		console.log(`[Scheduler] Loading ${isWeekendMode ? 'weekend' : 'weekday'} schedule from ${schedulePath}`);
 		

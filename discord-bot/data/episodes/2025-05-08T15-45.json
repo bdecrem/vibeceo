@@ -1,0 +1,237 @@
+{
+  "id": "2025-05-08T15-45",
+  "createdAt": "2025-05-08T15:45:30.506Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 3:46pm at the London office, where clear skies ☀️ stretch overhead. Kailey got so absorbed in journaling that she completely missed lunch.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:46",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 3:47pm at the London office, where clear skies ☀️ stretch overhead. They are syncing breaths before the stand-up in the atrium.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:47",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 3:48pm at the London office, where clear skies ☀️ stretch overhead. They are synchronizing calendars beside the communal garden.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:48",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 3:49pm at the London office, where clear skies ☀️ stretch overhead. They are aligning mission statements under the neon manifesto.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:49",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 3:51pm at the London office, where clear skies ☀️ stretch overhead. They are syncing breaths before the strategy summit begins.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:51",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 3:52pm at the London office, where clear skies ☀️ stretch overhead. They are aligning their goals in the hallowed strategy room.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:52",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 3:53pm at the London office, where clear skies ☀️ stretch overhead. They are aligning their goals beneath the neon mission statement.  ",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:53",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 3:55pm at the London office, where clear skies ☀️ stretch overhead. They are aligning their agendas around the sacred coffee urn.  ",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:55",
+      "coaches": []
+    },
+    {
+      "index": 9,
+      "type": "watercooler",
+      "intro": "It's 3:56pm at the London office, where clear skies ☀️ stretch overhead. They are aligning goals beneath the glow of project timelines.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:56",
+      "coaches": []
+    },
+    {
+      "index": 10,
+      "type": "watercooler",
+      "intro": "It's 3:57pm at the London office, where clear skies ☀️ stretch overhead. They are aligning their goals around the sacred strategy table.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:57",
+      "coaches": []
+    },
+    {
+      "index": 11,
+      "type": "watercooler",
+      "intro": "It's 3:59pm at the London office, where clear skies ☀️ stretch overhead. They are aligning synergy charts under the light of projectors.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "15:59",
+      "coaches": []
+    },
+    {
+      "index": 12,
+      "type": "watercooler",
+      "intro": "It's 9:00am and the coaches have just arrived at their Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths by the panoramic windows at dawn.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:0",
+      "coaches": []
+    },
+    {
+      "index": 13,
+      "type": "watercooler",
+      "intro": "It's 9:01am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths before the strategy summit.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:1",
+      "coaches": []
+    },
+    {
+      "index": 14,
+      "type": "watercooler",
+      "intro": "It's 9:03am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals in the hallowed strategy room.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:3",
+      "coaches": []
+    },
+    {
+      "index": 15,
+      "type": "watercooler",
+      "intro": "It's 9:04am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals under the neon mission statement.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:4",
+      "coaches": []
+    },
+    {
+      "index": 16,
+      "type": "watercooler",
+      "intro": "It's 9:05am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals with the sacred graphs.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:5",
+      "coaches": []
+    },
+    {
+      "index": 17,
+      "type": "watercooler",
+      "intro": "It's 9:07am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals beneath the neon mission statement.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:7",
+      "coaches": []
+    },
+    {
+      "index": 18,
+      "type": "watercooler",
+      "intro": "It's 9:08am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals beneath the luminous strategy map.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:8",
+      "coaches": []
+    },
+    {
+      "index": 19,
+      "type": "waterheater",
+      "intro": "It's 9:10am at the Los Angeles office, where clear skies ☀️ stretch overhead. During an important talk, Alex's affirmation candle unexpectedly burned out.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:10",
+      "coaches": []
+    },
+    {
+      "index": 20,
+      "type": "watercooler",
+      "intro": "It's 9:11am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals with the sacred timeline in the foyer.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:11",
+      "coaches": []
+    },
+    {
+      "index": 21,
+      "type": "watercooler",
+      "intro": "It's 9:12am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their daily goals with the communal mission statement.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:12",
+      "coaches": []
+    },
+    {
+      "index": 22,
+      "type": "watercooler",
+      "intro": "It's 9:13am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning agendas around the sacred coffee urn.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:13",
+      "coaches": []
+    },
+    {
+      "index": 23,
+      "type": "watercooler",
+      "intro": "It's 9:15am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths before the morning scrum by the window.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:15",
+      "coaches": []
+    },
+    {
+      "index": 24,
+      "type": "watercooler",
+      "intro": "It's 9:16am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning mission statements under the neon manifesto.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:16",
+      "coaches": []
+    }
+  ]
+}

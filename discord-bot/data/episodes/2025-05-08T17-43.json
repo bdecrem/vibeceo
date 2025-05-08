@@ -1,0 +1,84 @@
+{
+  "id": "2025-05-08T17-43",
+  "createdAt": "2025-05-08T17:43:24.083Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 7:45pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their agendas around the communal table.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "17:45",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 7:47pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their goals beneath the luminous strategy map.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "17:47",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 7:49pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their laptops at the communal table.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "17:49",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 7:51pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their goals under the neon mission statement.  ",
+      "outro": "The coaches have ascended to their strategy sanctums.",
+      "location": "Berlin",
+      "localTime": "17:51",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 7:53pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their goals beneath the neon mission statement.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "17:53",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 7:56pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are syncing breaths before the digital altar of screens.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "17:56",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 7:58pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning synergy charts near the communal bean grinder.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "17:58",
+      "coaches": []
+    }
+  ]
+}

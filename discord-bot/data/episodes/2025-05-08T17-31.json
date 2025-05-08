@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-08T17-31",
+  "createdAt": "2025-05-08T17:31:49.544Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 7:34pm at the Berlin, where overcast clouds skies ☀️ stretch overhead. They are aligning their goals in the ambient light of dawn.",
+      "outro": "The coaches have ascended to their strategy sanctuaries.",
+      "location": "Berlin",
+      "localTime": "17:34",
+      "coaches": []
+    }
+  ]
+}

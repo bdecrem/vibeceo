@@ -25,7 +25,8 @@ export const DISCORD_CONFIG = {
 export function getWebhookUrls() {
   const webhookUrls: Record<string, string> = {};
   
-  // Load webhook URLs from environment variables
+  // Load webhook URLs from environment variables - check both formats
+  // First try WEBHOOK_URL_ format
   if (process.env.WEBHOOK_URL_DONTE) {
     webhookUrls['donte'] = process.env.WEBHOOK_URL_DONTE;
   }
@@ -43,6 +44,26 @@ export function getWebhookUrls() {
   }
   if (process.env.WEBHOOK_URL_KAILEY) {
     webhookUrls['kailey'] = process.env.WEBHOOK_URL_KAILEY;
+  }
+  
+  // Then try GENERAL_WEBHOOK_URL_ format
+  if (process.env.GENERAL_WEBHOOK_URL_DONTE) {
+    webhookUrls['donte'] = process.env.GENERAL_WEBHOOK_URL_DONTE;
+  }
+  if (process.env.GENERAL_WEBHOOK_URL_ALEX) {
+    webhookUrls['alex'] = process.env.GENERAL_WEBHOOK_URL_ALEX;
+  }
+  if (process.env.GENERAL_WEBHOOK_URL_ROHAN) {
+    webhookUrls['rohan'] = process.env.GENERAL_WEBHOOK_URL_ROHAN;
+  }
+  if (process.env.GENERAL_WEBHOOK_URL_VENUS) {
+    webhookUrls['venus'] = process.env.GENERAL_WEBHOOK_URL_VENUS;
+  }
+  if (process.env.GENERAL_WEBHOOK_URL_ELJAS) {
+    webhookUrls['eljas'] = process.env.GENERAL_WEBHOOK_URL_ELJAS;
+  }
+  if (process.env.GENERAL_WEBHOOK_URL_KAILEY) {
+    webhookUrls['kailey'] = process.env.GENERAL_WEBHOOK_URL_KAILEY;
   }
   
   return webhookUrls;

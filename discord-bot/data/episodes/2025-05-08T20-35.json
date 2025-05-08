@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-08T20-35",
+  "createdAt": "2025-05-08T20:35:15.947Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:35pm and the coaches have just arrived at their London office, where scattered clouds skies ⛅ stretch overhead. Alex got emotional during a founder onboarding and forgot to mute her mic.",
+      "outro": "The coaches have ascended, leaving trails of warm embers in their wake.",
+      "location": "London office",
+      "localTime": "20:35",
+      "coaches": []
+    }
+  ]
+}

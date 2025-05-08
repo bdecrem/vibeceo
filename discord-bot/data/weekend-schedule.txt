@@ -1,3 +1,4 @@
+# WEEKEND PARTY SCHEDULE - TESTING MODE ACTIVE
 # Weekend Party Schedule (All times below are in Los Angeles time, UTC-7)
 #
 # Weekdays END Friday at 6pm in Los Angeles.
@@ -29,19 +30,19 @@ Sunday 10am | Berlin | 8
 02:00 watercooler
 03:00 watercooler
 04:00 watercooler
-05:00 watercooler
+05:00 weekendvibes
 06:00 watercooler
 07:00 watercooler
 08:00 watercooler
 09:00 watercooler
 10:00 watercooler
 11:00 watercooler
-12:00 watercooler
+12:00 weekendvibes
 13:00 watercooler
 14:00 watercooler
 15:00 watercooler
 16:00 watercooler
-17:00 watercooler
+17:00 weekendvibes
 18:00 watercooler
 19:00 watercooler
 20:00 watercooler

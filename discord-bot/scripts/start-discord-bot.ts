@@ -4,6 +4,18 @@ import "./health-check.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// TESTING: Add manual check of weekend function for debugging
+import { isWeekend, getLocationAndTime } from "../lib/discord/locationTime.js";
+const testWeekend = async () => {
+	console.log("=== WEEKEND STATUS TEST ===");
+	console.log(`Current time: ${new Date().toString()}`);
+	console.log(`Is weekend: ${isWeekend()}`);
+	const locationInfo = await getLocationAndTime(new Date().getUTCHours(), new Date().getMinutes());
+	console.log(`Current location: ${locationInfo.location}`);
+	console.log(`Current time: ${locationInfo.formattedTime} ${locationInfo.ampm}`);
+	console.log("===========================");
+}
+
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,8 +51,11 @@ if (nodeFlags) {
 	process.execArgv.push(nodeFlags);
 }
 
-// Start the bot
-startBot().catch(console.error);
+// Run weekend test before starting bot
+testWeekend().then(() => {
+	// Start the bot
+	startBot().catch(console.error);
+});
 
 // Handle graceful shutdown
 process.on("SIGTERM", () => {

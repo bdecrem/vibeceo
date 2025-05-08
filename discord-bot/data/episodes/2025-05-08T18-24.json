@@ -1,0 +1,372 @@
+{
+  "id": "2025-05-08T18-24",
+  "createdAt": "2025-05-08T18:24:28.353Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "watercooler",
+      "intro": "It's 8:28pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their laptops at the communal table.",
+      "outro": "",
+      "location": "Berlin",
+      "localTime": "18:28",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 8:30pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are aligning their goals under the neon strategy map.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "18:30",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 8:32pm at the Berlin, where overcast clouds skies ☁️ stretch overhead. They are syncing breaths before the strategy summit begins.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "18:32",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 8:36pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths before the strategy summit in the atrium.",
+      "outro": "",
+      "location": "Berlin",
+      "localTime": "18:36",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 8:38pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning synergies around the sacred coffee brew.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "18:38",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 8:40pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths around the communal table.",
+      "outro": "The coaches have ascended to their summit chambers.",
+      "location": "Berlin",
+      "localTime": "18:40",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 8:42pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals with the sacred whiteboard.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "18:42",
+      "coaches": []
+    },
+    {
+      "index": 8,
+      "type": "watercooler",
+      "intro": "It's 8:44pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals with the rhythm of the market bell.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "18:44",
+      "coaches": []
+    },
+    {
+      "index": 9,
+      "type": "watercooler",
+      "intro": "It's 8:46pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths before the strategy altar.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "18:46",
+      "coaches": []
+    },
+    {
+      "index": 10,
+      "type": "watercooler",
+      "intro": "It's 8:50pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning energies around the communal table.",
+      "outro": "The coaches have ascended to their strategy summit.",
+      "location": "Berlin",
+      "localTime": "18:50",
+      "coaches": []
+    },
+    {
+      "index": 11,
+      "type": "watercooler",
+      "intro": "It's 8:52pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their tasks beneath the strategy tree.",
+      "outro": "The coaches have ascended to their strategy summit.",
+      "location": "Berlin",
+      "localTime": "18:52",
+      "coaches": []
+    },
+    {
+      "index": 12,
+      "type": "watercooler",
+      "intro": "It's 8:54pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their screens for the communal sync.",
+      "outro": "",
+      "location": "Berlin",
+      "localTime": "18:54",
+      "coaches": []
+    },
+    {
+      "index": 13,
+      "type": "watercooler",
+      "intro": "It's 9:02pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their agendas under the glow of projectors.",
+      "outro": "The coaches have ascended to their strategy summit.",
+      "location": "Berlin",
+      "localTime": "19:2",
+      "coaches": []
+    },
+    {
+      "index": 14,
+      "type": "watercooler",
+      "intro": "It's 9:05pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals with the sacred coffee grind.",
+      "outro": "The coaches have ascended to their strategy sanctums.",
+      "location": "Berlin",
+      "localTime": "19:5",
+      "coaches": []
+    },
+    {
+      "index": 15,
+      "type": "watercooler",
+      "intro": "It's 9:10pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals under the neon manifesto.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "19:10",
+      "coaches": []
+    },
+    {
+      "index": 16,
+      "type": "watercooler",
+      "intro": "It's 9:14pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths around the communal charging station.",
+      "outro": "",
+      "location": "Berlin",
+      "localTime": "19:14",
+      "coaches": []
+    },
+    {
+      "index": 17,
+      "type": "watercooler",
+      "intro": "It's 9:16pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals beneath the skylight’s morning glow.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "19:16",
+      "coaches": []
+    },
+    {
+      "index": 18,
+      "type": "watercooler",
+      "intro": "It's 9:18pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals around the sacred fire pit.",
+      "outro": "",
+      "location": "Berlin",
+      "localTime": "19:18",
+      "coaches": []
+    },
+    {
+      "index": 19,
+      "type": "watercooler",
+      "intro": "It's 9:20pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their laptops like stones in a sacred circle.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "19:20",
+      "coaches": []
+    },
+    {
+      "index": 20,
+      "type": "watercooler",
+      "intro": "It's 9:26pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals under the light of the data projector.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "19:26",
+      "coaches": []
+    },
+    {
+      "index": 21,
+      "type": "watercooler",
+      "intro": "It's 9:28pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths around the communal charging station.",
+      "outro": "The coaches have ascended to their strategy sanctums.",
+      "location": "Berlin",
+      "localTime": "19:28",
+      "coaches": []
+    },
+    {
+      "index": 22,
+      "type": "watercooler",
+      "intro": "It's 9:30pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths around the communal standing desk.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "19:30",
+      "coaches": []
+    },
+    {
+      "index": 23,
+      "type": "watercooler",
+      "intro": "It's 9:32pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals with the sacred project timeline.",
+      "outro": "The coaches have ascended to their strategic sanctums.",
+      "location": "Berlin",
+      "localTime": "19:32",
+      "coaches": []
+    },
+    {
+      "index": 24,
+      "type": "watercooler",
+      "intro": "It's 9:34pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are synchronizing their smartwatches before the strategy pilgrimage.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "19:34",
+      "coaches": []
+    },
+    {
+      "index": 25,
+      "type": "watercooler",
+      "intro": "It's 9:36pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning ambitions around the communal table.",
+      "outro": "The coaches have ascended to their strategy summit.",
+      "location": "Berlin",
+      "localTime": "19:36",
+      "coaches": []
+    },
+    {
+      "index": 26,
+      "type": "watercooler",
+      "intro": "It's 9:50pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals under the light of the lobby's skylight.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "19:50",
+      "coaches": []
+    },
+    {
+      "index": 27,
+      "type": "watercooler",
+      "intro": "It's 10:03pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning goals beneath the neon mission statement.  ",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "20:3",
+      "coaches": []
+    },
+    {
+      "index": 28,
+      "type": "watercooler",
+      "intro": "It's 10:06pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their laptops in the communal garden.",
+      "outro": "The coaches have ascended to their strategy sanctuaries.",
+      "location": "Berlin",
+      "localTime": "20:6",
+      "coaches": []
+    },
+    {
+      "index": 29,
+      "type": "watercooler",
+      "intro": "It's 10:09pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals beneath the skylight's glow.",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "20:9",
+      "coaches": []
+    },
+    {
+      "index": 30,
+      "type": "watercooler",
+      "intro": "It's 10:13pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals beneath the neon mission statement.  ",
+      "outro": "The coaches have ascended to their strategy sanctum.",
+      "location": "Berlin",
+      "localTime": "20:13",
+      "coaches": []
+    },
+    {
+      "index": 31,
+      "type": "watercooler",
+      "intro": "It's 10:15pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals beneath the skylight's morning glow.",
+      "outro": "The coaches have ascended to their strategy summit.",
+      "location": "Berlin",
+      "localTime": "20:15",
+      "coaches": []
+    },
+    {
+      "index": 32,
+      "type": "watercooler",
+      "intro": "It's 10:17pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning strategies around the sacred communal table.  ",
+      "outro": "The coaches have ascended to their strategy sanctuaries.",
+      "location": "Berlin",
+      "localTime": "20:17",
+      "coaches": []
+    },
+    {
+      "index": 33,
+      "type": "watercooler",
+      "intro": "It's 10:19pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals in the hallowed conference hall.  ",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "20:19",
+      "coaches": []
+    },
+    {
+      "index": 34,
+      "type": "watercooler",
+      "intro": "It's 10:21pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their goals beneath the skylight's gaze.",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "20:21",
+      "coaches": []
+    },
+    {
+      "index": 35,
+      "type": "watercooler",
+      "intro": "It's 10:23pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths before the strategy altar.  ",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "20:23",
+      "coaches": []
+    },
+    {
+      "index": 36,
+      "type": "watercooler",
+      "intro": "It's 10:27pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning synergies around the sacred communal table.  ",
+      "outro": "The coaches have ascended to their sky-high strategy sanctums.",
+      "location": "Berlin",
+      "localTime": "20:27",
+      "coaches": []
+    },
+    {
+      "index": 37,
+      "type": "watercooler",
+      "intro": "It's 10:29pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning their agendas around the sacred coffee urn.  ",
+      "outro": "The coaches have ascended to their strategy summits.",
+      "location": "Berlin",
+      "localTime": "20:29",
+      "coaches": []
+    },
+    {
+      "index": 38,
+      "type": "watercooler",
+      "intro": "It's 10:31pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are syncing breaths before the strategy altar.",
+      "outro": "The coaches have ascended toward their sky-view chambers.",
+      "location": "Berlin",
+      "localTime": "20:31",
+      "coaches": []
+    },
+    {
+      "index": 39,
+      "type": "watercooler",
+      "intro": "It's 10:33pm at the Berlin, where clear sky skies ☀️ stretch overhead. They are aligning strategies around the sacred communal table.",
+      "outro": "The coaches have ascended to their strategy sanctuaries.",
+      "location": "Berlin",
+      "localTime": "20:33",
+      "coaches": []
+    }
+  ]
+}

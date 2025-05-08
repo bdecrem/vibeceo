@@ -1,0 +1,307 @@
+{
+  "Berlin": {
+    "short": [
+      {
+        "name": "Glowshot Karaoke Tram",
+        "type": "pop-up tram party",
+        "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "The Spree Plunge",
+        "type": "river dip + espresso",
+        "description": "A 5-minute cold-dip pop-up in the river followed by instant espresso and group screaming.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Philosopher's Ping Pong",
+        "type": "conceptual game",
+        "description": "You lose a point every time you answer a question without citing Kant.",
+        "duration": "45-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Techno Yoga Warmup",
+        "type": "wellness rave",
+        "description": "40-minute Vinyasa under strobe lights, cued by a live DJ and someone whispering 'Surrender.'",
+        "duration": "40-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Bauhaus Bootcamp",
+        "type": "design fitness",
+        "description": "A design-themed HIIT class where instructors shout about symmetry and function over form.",
+        "duration": "45-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "The Apology Booth",
+        "type": "audio confession",
+        "description": "Record an anonymous voicemail apology to your ex. It's broadcast on low-range FM.",
+        "duration": "15-30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Elevator Exhibition",
+        "type": "micro-gallery",
+        "description": "4-minute micro-art gallery inside a glass elevator. One ride only. No looping.",
+        "duration": "10-20 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Dumpster Cheese Tasting",
+        "type": "eco-snack pop-up",
+        "description": "'Sourced' from Berlin's eco scene; hosted by a very sincere man named Lutz.",
+        "duration": "30-45 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Zine Speed-Dating",
+        "type": "creative exchange",
+        "description": "Trade self-published zines with strangers. No talking allowed. Judging is encouraged.",
+        "duration": "45-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Late Capitalism Bingo",
+        "type": "satirical game",
+        "description": "Spot ironic tattoos, unpaid interns, and startup founders in a curated Neukölln cafe.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Underwear Portrait Studio",
+        "type": "photo booth",
+        "description": "15-minute B&W film portraits taken in a drafty warehouse. Everyone's in their socks.",
+        "duration": "30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Cloud Bar",
+        "type": "abstract lounge",
+        "description": "A rooftop with only water vapor, ASMR playlists, and zero drinks. You leave thirstier.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Berliner Bear-Hug Booth",
+        "type": "human contact kiosk",
+        "description": "One euro for 30 seconds of aggressive but affirming hugging from a man in a bear suit.",
+        "duration": "10-20 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Rum Trader",
+        "type": "cocktail bar",
+        "description": "Iconic, tiny bar where cocktails are sacred and phones are frowned upon.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Green Door",
+        "type": "speakeasy bar",
+        "description": "Retro speakeasy with velvet wallpaper and a bell you have to ring to enter.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Becketts Kopf",
+        "type": "literary bar",
+        "description": "Literary-themed cocktail bar with deep vibes and old books behind the liquor.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Vabali Spa Happy Hour Sauna",
+        "type": "urban spa",
+        "description": "A quick post-work sweat and plunge just west of Hauptbahnhof.",
+        "duration": "60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Clärchens Ballhaus Front Garden",
+        "type": "beer garden",
+        "description": "Grab a quick spritz and hear accordion music in a 1913 dance garden.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Tempelhofer Feld",
+        "type": "open-air activity",
+        "description": "Join the 7pm joggers and kiteboarders on a decommissioned airport runway.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Bar Tausend",
+        "type": "underground lounge",
+        "description": "Hidden under the S-Bahn tracks, with brutalist design and pre-dinner DJ sets.",
+        "duration": "60 minutes",
+        "source": "real"
+      }
+    ],
+    "medium": [],
+    "long": []
+  },
+  "Vegas": {
+    "short": [
+      {
+        "name": "Mini Elvis Off",
+        "type": "lookalike contest",
+        "description": "Guests get one minute to out-Elvis each other. Winner gets a peanut butter martini.",
+        "duration": "30-45 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Slot Machine Confessional",
+        "type": "booth experience",
+        "description": "Pull the lever, hear a stranger's darkest secret, leave with a drink token.",
+        "duration": "15-30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Drive-Thru Compliment Tunnel",
+        "type": "car-based affirmation",
+        "description": "You're slowly driven through a glowing tunnel of actors giving you absurd praise.",
+        "duration": "20-30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Desert Limo Drift",
+        "type": "ride stunt",
+        "description": "Strap in for a high-speed limo donut session in a sand lot outside the Strip.",
+        "duration": "30-45 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Bubble Gun Rodeo",
+        "type": "mini sport",
+        "description": "Shoot biodegradable bubbles at robot clowns while riding a slow-moving bull.",
+        "duration": "25-40 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Slot-Size Escape Room",
+        "type": "micro escape",
+        "description": "You and a partner have 5 minutes to get out of a velvet-walled gambling closet.",
+        "duration": "15-25 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Neon Haiku Bar",
+        "type": "lit-lit bar",
+        "description": "You only get served if you order your drink in perfect haiku form.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Cirque du Snack",
+        "type": "live snack show",
+        "description": "Watch a 10-minute snack-themed acrobat set while eating popcorn on a podium.",
+        "duration": "20-30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Silent Slot Lounge",
+        "type": "meditative gambling",
+        "description": "No sound. Just you, plush headphones, and machines that whisper affirmations.",
+        "duration": "30-60 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Champagne Pong",
+        "type": "table game",
+        "description": "Pairs play pong with flutes and foam. Winner takes the bottle, loser gets sprayed.",
+        "duration": "30-45 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Velvet Tarot Drive-Up",
+        "type": "car tarot",
+        "description": "Get a two-card reading while parked behind a velvet curtain near the Strip.",
+        "duration": "15-25 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "The Bribe Table",
+        "type": "negotiation theater",
+        "description": "Sit at a circular table and try to bribe your way into dessert service.",
+        "duration": "20-30 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Selfie Courtroom",
+        "type": "interactive photo court",
+        "description": "Be judged for your Instagram crimes in a 5-minute mock trial with wigs.",
+        "duration": "15-25 minutes",
+        "source": "fictional"
+      },
+      {
+        "name": "Velveteen Rabbit",
+        "type": "cocktail bar",
+        "description": "Trendy bar known for creative drinks, cozy interior, and backyard patio.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "SkyBar at Waldorf Astoria",
+        "type": "rooftop bar",
+        "description": "Chic rooftop with stunning Strip views and refined drink menu.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Atomic Liquors",
+        "type": "historic bar",
+        "description": "Oldest freestanding bar in Vegas with retro charm and rooftop patio.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "The Laundry Room",
+        "type": "hidden speakeasy",
+        "description": "Secret entrance, strict reservations, and seriously artistic cocktails.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "AREA15 Art Walk",
+        "type": "immersive art venue",
+        "description": "Pop into art installations and wild shops at Vegas' immersive culture hub.",
+        "duration": "45-60 minutes",
+        "source": "real"
+      },
+      {
+        "name": "Fremont Street Zipline",
+        "type": "fast thrill ride",
+        "description": "Fly across Fremont under neon lights in under 2 minutes of screaming fun.",
+        "duration": "30 minutes",
+        "source": "real"
+      },
+      {
+        "name": "The Chandelier at Cosmopolitan",
+        "type": "multi-level bar",
+        "description": "Have a quick cocktail inside a literal crystal chandelier.",
+        "duration": "30-45 minutes",
+        "source": "real"
+      }
+    ],
+    "medium": [],
+    "long": []
+  },
+  "Tokyo": {
+    "short": [
+      {
+        "name": "Shibuya Crossing",
+        "type": "attraction",
+        "description": "World's busiest pedestrian crossing with amazing people-watching.",
+        "duration": "30 minutes",
+        "source": "real"
+      }
+    ],
+    "medium": [],
+    "long": []
+  }
+}

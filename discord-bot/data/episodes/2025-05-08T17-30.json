@@ -1,0 +1,30 @@
+{
+  "id": "2025-05-08T17-30",
+  "createdAt": "2025-05-08T17:30:15.277Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 6:30pm and the coaches have just arrived at their London office, where clear skies ☀️ stretch overhead. A former intern published a Medium article that misquoted Donte in an unflattering way.",
+      "outro": "",
+      "location": "London office",
+      "localTime": "17:30",
+      "coaches": []
+    }
+  ]
+}

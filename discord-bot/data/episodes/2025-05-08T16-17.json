@@ -1,0 +1,84 @@
+{
+  "id": "2025-05-08T16-17",
+  "createdAt": "2025-05-08T16:17:11.378Z",
+  "timeSpeed": 20,
+  "arc": {
+    "theme": "Donte is getting increasingly irritated by Kailey's approach",
+    "arcSummary": "A day of tension and its effects.",
+    "toneKeywords": [
+      "tension",
+      "unfocused",
+      "distracted"
+    ],
+    "motifs": [
+      "unfinished tasks",
+      "lost train of thought",
+      "wandering mind"
+    ]
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "type": "waterheater",
+      "intro": "It's 9:18am at the Los Angeles office, where clear skies ☀️ stretch overhead. One of Donte's AI-generated leadership quotes went viral, but as a meme.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:18",
+      "coaches": []
+    },
+    {
+      "index": 2,
+      "type": "watercooler",
+      "intro": "It's 9:19am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are forging alliances over shared screens in hushed tones.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:19",
+      "coaches": []
+    },
+    {
+      "index": 3,
+      "type": "watercooler",
+      "intro": "It's 9:20am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths around the communal charging station.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:20",
+      "coaches": []
+    },
+    {
+      "index": 4,
+      "type": "watercooler",
+      "intro": "It's 9:21am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning goals beside the communal brew station.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:21",
+      "coaches": []
+    },
+    {
+      "index": 5,
+      "type": "watercooler",
+      "intro": "It's 9:23am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning synergy charts under the glow of meeting room screens.  ",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:23",
+      "coaches": []
+    },
+    {
+      "index": 6,
+      "type": "watercooler",
+      "intro": "It's 9:24am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are syncing breaths before the strategy summit.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:24",
+      "coaches": []
+    },
+    {
+      "index": 7,
+      "type": "watercooler",
+      "intro": "It's 9:25am at the Los Angeles office, where clear skies ☀️ stretch overhead. They are aligning their goals with the sacred whiteboard.",
+      "outro": "",
+      "location": "Los Angeles office",
+      "localTime": "16:25",
+      "coaches": []
+    }
+  ]
+}

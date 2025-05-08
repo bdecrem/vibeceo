@@ -23,8 +23,41 @@ const weekendBlocks = [
 ];
 
 export function isWeekend(): boolean {
-    const day = new Date().getDay();
-    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+    // TEMPORARY OVERRIDE: Always return false for testing
+    console.log('[LocationTime] Forcing weekday mode for testing');
+    return false;
+    
+    /*
+    // Get current date in LA timezone (UTC-7)
+    const now = new Date();
+    // Convert to LA time (GMT-7)
+    const utcHour = now.getUTCHours();
+    const laHour = (utcHour - 7 + 24) % 24;
+    const day = now.getUTCDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
+    
+    // TESTING: Include Wednesday, Thursday in weekend
+    // Weekend starts Wednesday 6pm LA time
+    if (day === 3 && laHour >= 18) {
+        return true;
+    }
+    
+    // All day Thursday is weekend (for testing)
+    if (day === 4) {
+        return true;
+    }
+    
+    // All day Saturday is weekend
+    if (day === 6) {
+        return true;
+    }
+    
+    // Weekend ends Sunday 6pm LA time
+    if (day === 0 && laHour < 18) {
+        return true;
+    }
+    
+    return false;
+    */
 }
 
 function getWeekendLocation(laHour: number): string {
@@ -61,11 +94,11 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localMinutes = gmtMinutes;
                 break;
             case "Tokyo":
-                localTime = (laHour + 15) % 24; // LA + 15 hours
+                localTime = (laHour + 16) % 24; // LA + 16 hours (GMT+9)
                 localMinutes = gmtMinutes;
                 break;
             case "Berlin":
-                localTime = (laHour + 9) % 24; // LA + 9 hours
+                localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
                 localMinutes = gmtMinutes;
                 break;
             default:
@@ -75,19 +108,19 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
     } else {
         // Use weekday schedule
         if (laHour >= 16 || laHour < 1) {
-        location = "Los Angeles office";
+            location = "Los Angeles office";
             localTime = laHour;
-        localMinutes = gmtMinutes;
-    }
+            localMinutes = gmtMinutes;
+        }
         else if (laHour >= 1 && laHour < 8) {
-        location = "Singapore penthouse";
+            location = "Singapore penthouse";
             localTime = (laHour + 15) % 24; // LA + 15 hours
-        localMinutes = gmtMinutes;
-    }
-    else {
-        location = "London office";
+            localMinutes = gmtMinutes;
+        }
+        else {
+            location = "London office";
             localTime = (laHour + 8) % 24; // LA + 8 hours
-        localMinutes = gmtMinutes;
+            localMinutes = gmtMinutes;
         }
     }
 
