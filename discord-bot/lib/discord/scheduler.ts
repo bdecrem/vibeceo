@@ -88,13 +88,16 @@ async function runServiceWithMessages(
 	serviceName: string
 ) {
 	// For staff meetings, use the specific staff meetings channel
-	const targetChannelId = serviceName === 'staffmeeting' ? '1369356692428423240' : channelId;
-	console.log(`[Scheduler] Using channel ID ${targetChannelId} for service ${serviceName}`);
-	
+	const targetChannelId =
+		serviceName === "staffmeeting" ? "1369356692428423240" : channelId;
+	console.log(
+		`[Scheduler] Using channel ID ${targetChannelId} for service ${serviceName}`
+	);
+
 	// Clean up any existing webhooks for both channels to ensure clean state
 	cleanupWebhooks(channelId);
-	cleanupWebhooks('1369356692428423240');
-	
+	cleanupWebhooks("1369356692428423240");
+
 	const channel = client.channels.cache.get(targetChannelId) as TextChannel;
 	if (!channel) {
 		console.error(`[Scheduler] Channel ${targetChannelId} not found`);
@@ -116,13 +119,22 @@ async function runServiceWithMessages(
 		// For waterheater, select incident first
 		let selectedIncident = null;
 		let selectedCoachId: string | undefined;
-		if (serviceName === 'waterheater') {
-			const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
-			const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+		if (serviceName === "waterheater") {
+			const availableCharacters = ceos.filter(
+				(char: CEO) => char.id !== "system"
+			);
+			const randomCoach =
+				availableCharacters[
+					Math.floor(Math.random() * availableCharacters.length)
+				];
 			selectedCoachId = randomCoach.id;
-			const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
+			const coachIncidents = waterheaterIncidents.find(
+				(c: { id: string }) => c.id === randomCoach.id
+			);
 			if (coachIncidents) {
-				const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
+				const randomIndex = Math.floor(
+					Math.random() * coachIncidents.incidents.length
+				);
 				selectedIncident = coachIncidents.incidents[randomIndex];
 			}
 		}
@@ -138,17 +150,29 @@ async function runServiceWithMessages(
 		);
 
 		// If it's a waterheater event, trigger the chat
-		if (serviceName === 'waterheater') {
-			await triggerWaterheaterChat(targetChannelId, client, selectedIncident, selectedCoachId);
-		} else if (serviceName === 'staffmeeting') {
+		if (serviceName === "waterheater") {
+			await triggerWaterheaterChat(
+				targetChannelId,
+				client,
+				selectedIncident,
+				selectedCoachId
+			);
+		} else if (serviceName === "staffmeeting") {
 			// For staff meetings, ensure we're using the correct channel ID
-			console.log('[Scheduler] Starting staff meeting in channel:', targetChannelId);
-			
+			console.log(
+				"[Scheduler] Starting staff meeting in channel:",
+				targetChannelId
+			);
+
 			// Trigger the staff meeting chat and get the total time needed
 			const messageTime = await triggerStaffMeeting(targetChannelId, client);
-			console.log('[Scheduler] Staff meeting messages completed, waiting', messageTime + 5000, 'ms before outro');
+			console.log(
+				"[Scheduler] Staff meeting messages completed, waiting",
+				messageTime + 5000,
+				"ms before outro"
+			);
 			// Wait for messages to complete plus a small buffer
-			await new Promise(resolve => setTimeout(resolve, messageTime + 5000));
+			await new Promise((resolve) => setTimeout(resolve, messageTime + 5000));
 			// Send outro message
 			await sendEventMessage(
 				channel,

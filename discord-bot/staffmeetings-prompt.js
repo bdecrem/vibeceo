@@ -1,32 +1,74 @@
-import OpenAI from 'openai';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import OpenAI from "openai";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables
-const envPath = path.resolve(__dirname, '.env.local');
-console.log('Loading environment from:', envPath);
+const envPath = path.resolve(__dirname, ".env.local");
+console.log("Loading environment from:", envPath);
 const result = dotenv.config({ path: envPath });
 if (result.error) {
-  console.error('Error loading .env.local:', result.error);
-  process.exit(1);
+	console.error("Error loading .env.local:", result.error);
+	process.exit(1);
 }
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+	apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Load staff meeting seeds
+const seedsPath = path.resolve(__dirname, "data", "staff-meeting-seeds.json");
+const staffMeetingSeeds = JSON.parse(fs.readFileSync(seedsPath, "utf8"));
+
+// Updated function to get a random seed from the JSON file
+function getRandomSeed() {
+	try {
+		// Get all category keys from the seeds file
+		const categories = Object.keys(staffMeetingSeeds);
+
+		// Select a random category
+		const randomCategory =
+			categories[Math.floor(Math.random() * categories.length)];
+
+		// Get the seeds array from the selected category
+		const seedsArray = staffMeetingSeeds[randomCategory].seeds;
+
+		// Select a random seed from the array
+		const randomSeed =
+			seedsArray[Math.floor(Math.random() * seedsArray.length)];
+
+		console.log(
+			`Selected seed from category "${staffMeetingSeeds[randomCategory].name}": "${randomSeed}"`
+		);
+		return randomSeed;
+	} catch (error) {
+		console.error("Error selecting random seed:", error);
+		// Fallback to hardcoded seeds if there's an error
+		const fallbackSeeds = [
+			"The roadmap is now a Figma moodboard.",
+			"Our vibe sync ended in silence.",
+			"Donte brought a gong to sprint planning.",
+		];
+		return fallbackSeeds[Math.floor(Math.random() * fallbackSeeds.length)];
+	}
+}
+
+const selectedSeed = getRandomSeed();
+
 // Updated system prompt with stricter chaos instructions
-const STAFF_MEETING_PROMPT = `Generate a MESSY, RAW Slack group chat between 6 startup coaches. This isn't clever - it's chaotic and authentically human:
+const STAFF_MEETING_PROMPT = `
+The seed for today's meeting is: ${selectedSeed}
+
+Generate a MESSY, RAW Slack group chat between 6 startup coaches. This isn't clever - it's chaotic and authentically human:
 
 ⸻
 
 FORMAT:
-CoachName 9:00 AM  
+CoachName 9:00 AM
 ultra-short, lowercase Slack message (most <10 words, many <5)
 
 ⸻
@@ -76,7 +118,7 @@ CONCRETE ARTIFACTS (include at least 2):
 
 ENDING:
 The conversation MUST end with a powerful mic-drop line from one of the coaches. Examples:
-- "chaos is just compost with ambition" 
+- "chaos is just compost with ambition"
 - "new meeting: scream into the void. daily."
 - "i've started a doc called burn.it.down"
 
@@ -85,9 +127,9 @@ The conversation MUST end with a powerful mic-drop line from one of the coaches.
 THINK REAL SLACK: messy, people talking over each other, inside jokes, no perfect replies, chaos.
 `;
 
-const priorMessages = [
-  { role: "assistant", content: "DonteDisrupt 9:00 AM\ni think the roadmap deleted itself 🌀" }
-];
+// const priorMessages = [
+//   { role: "assistant", content: "DonteDisrupt 9:00 AM\ni think the roadmap deleted itself 🌀" }
+// ];
 
 const userPrompt = `continue with 25-30 chaotic short messages.
 
@@ -113,170 +155,177 @@ remember: authentic slack is MESSY - not clever or polished
 `;
 
 const messages = [
-  { role: "system", content: STAFF_MEETING_PROMPT },
-  ...priorMessages,
-  { role: "user", content: userPrompt }
+	{ role: "system", content: STAFF_MEETING_PROMPT },
+	// ...priorMessages,
+	{ role: "user", content: userPrompt },
 ];
 
-console.log('\n=== EXACT PROMPT SENT TO GPT ===\n');
+console.log("\n=== EXACT PROMPT SENT TO GPT ===\n");
 console.log(JSON.stringify(messages, null, 2));
-console.log('\n=== END PROMPT ===\n');
+console.log("\n=== END PROMPT ===\n");
 
 // Map of coach names to their IDs
 const coachMap = {
-  'DonteDisrupt': 'donte',
-  'AlexirAlex': 'alex',
-  'RohanTheShark': 'rohan',
-  'VenusStrikes': 'venus',
-  'KaileyConnector': 'kailey',
-  'EljasCouncil': 'eljas'
+	DonteDisrupt: "donte",
+	AlexirAlex: "alex",
+	RohanTheShark: "rohan",
+	VenusStrikes: "venus",
+	KaileyConnector: "kailey",
+	EljasCouncil: "eljas",
 };
 
 function inferCoachFromContent(content) {
-  // Look for coach mentions or characteristic phrases
-  for (const [coachName, coachId] of Object.entries(coachMap)) {
-    if (content.includes(coachName) || content.includes(`@${coachName}`)) {
-      return coachId;
-    }
-  }
+	// Look for coach mentions or characteristic phrases
+	for (const [coachName, coachId] of Object.entries(coachMap)) {
+		if (content.includes(coachName) || content.includes(`@${coachName}`)) {
+			return coachId;
+		}
+	}
 
-  // Infer from characteristic phrases
-  if (content.match(/crystal|energy|vibe|healing|🔮|✨|🌞/i)) return 'alex';
-  if (content.match(/garbage|never|useless|out|quit/i)) return 'rohan';
-  if (content.match(/framework|metric|system|structure|document/i)) return 'venus';
-  if (content.match(/schedule|calendar|booking|time|meeting/i)) return 'kailey';
-  if (content.match(/forest|nature|sauna|compost|mud|steam/i)) return 'eljas';
-  if (content.match(/initiative|chaos|pivot|disrupt|roadmap/i)) return 'donte';
+	// Infer from characteristic phrases
+	if (content.match(/crystal|energy|vibe|healing|🔮|✨|🌞/i)) return "alex";
+	if (content.match(/garbage|never|useless|out|quit/i)) return "rohan";
+	if (content.match(/framework|metric|system|structure|document/i))
+		return "venus";
+	if (content.match(/schedule|calendar|booking|time|meeting/i)) return "kailey";
+	if (content.match(/forest|nature|sauna|compost|mud|steam/i)) return "eljas";
+	if (content.match(/initiative|chaos|pivot|disrupt|roadmap/i)) return "donte";
 
-  return null;
+	return null;
 }
 
 function parseMessage(line) {
-  // Skip empty lines
-  if (!line.trim()) return null;
+	// Skip empty lines
+	if (!line.trim()) return null;
 
-  // Skip lines that are just coach name and timestamp (no message)
-  if (line.match(/^\w+\s+\d{1,2}:\d{2}\s+[AP]M$/)) {
-    return null;
-  }
+	// Skip lines that are just coach name and timestamp (no message)
+	if (line.match(/^\w+\s+\d{1,2}:\d{2}\s+[AP]M$/)) {
+		return null;
+	}
 
-  // Try to match the standard format: CoachName 9:00 AM message
-  const match = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s+(.+)$/);
-  if (match) {
-    const [_, coachName, timestamp, content] = match;
-    const coachId = coachMap[coachName];
-    
-    if (!coachId) {
-      console.warn(`Unknown coach name: ${coachName}`);
-      return null;
-    }
+	// Try to match the standard format: CoachName 9:00 AM message
+	const match = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s+(.+)$/);
+	if (match) {
+		const [_, coachName, timestamp, content] = match;
+		const coachId = coachMap[coachName];
 
-    if (content && content.trim()) {
-      return {
-        coach: coachId,
-        content: content.trim(),
-        timestamp: timestamp.trim()
-      };
-    }
-  } else {
-    // Try to infer the coach from the content
-    const content = line.trim();
-    const coachId = inferCoachFromContent(content);
-    
-    if (coachId) {
-      return {
-        coach: coachId,
-        content: content,
-        timestamp: '9:00 AM' // Default timestamp if none provided
-      };
-    }
-  }
-  
-  console.warn(`Could not parse line: ${line}`);
-  return null;
+		if (!coachId) {
+			console.warn(`Unknown coach name: ${coachName}`);
+			return null;
+		}
+
+		if (content && content.trim()) {
+			return {
+				coach: coachId,
+				content: content.trim(),
+				timestamp: timestamp.trim(),
+			};
+		}
+	} else {
+		// Try to infer the coach from the content
+		const content = line.trim();
+		const coachId = inferCoachFromContent(content);
+
+		if (coachId) {
+			return {
+				coach: coachId,
+				content: content,
+				timestamp: "9:00 AM", // Default timestamp if none provided
+			};
+		}
+	}
+
+	console.warn(`Could not parse line: ${line}`);
+	return null;
 }
 
 function validateMessages(messages) {
-  const errors = [];
+	const errors = [];
 
-  // Check if we have at least 5 messages
-  if (messages.length < 5) {
-    errors.push(`Not enough messages generated (got ${messages.length}, need at least 5)`);
-  }
+	// Check if we have at least 5 messages
+	if (messages.length < 5) {
+		errors.push(
+			`Not enough messages generated (got ${messages.length}, need at least 5)`
+		);
+	}
 
-  // Check if we have messages from at least 3 different coaches
-  const uniqueCoaches = new Set(messages.map(m => m.coach));
-  if (uniqueCoaches.size < 3) {
-    errors.push(`Not enough different coaches (got ${uniqueCoaches.size}, need at least 3)`);
-  }
+	// Check if we have messages from at least 3 different coaches
+	const uniqueCoaches = new Set(messages.map((m) => m.coach));
+	if (uniqueCoaches.size < 3) {
+		errors.push(
+			`Not enough different coaches (got ${uniqueCoaches.size}, need at least 3)`
+		);
+	}
 
-  // Check if we have at least 1 message with emojis
-  const emojiMessages = messages.filter(m => /\p{Emoji}/u.test(m.content));
-  if (emojiMessages.length < 1) {
-    errors.push(`No messages with emojis found`);
-  }
+	// Check if we have at least 1 message with emojis
+	const emojiMessages = messages.filter((m) => /\p{Emoji}/u.test(m.content));
+	if (emojiMessages.length < 1) {
+		errors.push(`No messages with emojis found`);
+	}
 
-  // If we have any errors, throw them all at once
-  if (errors.length > 0) {
-    throw new Error('Validation failed:\n' + errors.join('\n'));
-  }
+	// If we have any errors, throw them all at once
+	if (errors.length > 0) {
+		throw new Error("Validation failed:\n" + errors.join("\n"));
+	}
 
-  return messages;
+	return messages;
 }
 
 async function getGPTResponse() {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages,
-      temperature: 1.0,
-      max_tokens: 3500
-    });
+	try {
+		const completion = await openai.chat.completions.create({
+			model: "gpt-4-turbo-preview",
+			messages,
+			temperature: 1.0,
+			max_tokens: 3500,
+		});
 
-    const response = completion.choices[0].message.content;
+		const response = completion.choices[0].message.content;
 
-    // Save raw response for debugging
-    const rawFilePath = path.join(__dirname, 'gpt_latest_response.txt');
-    fs.writeFileSync(rawFilePath, response, 'utf8');
+		// Save raw response for debugging
+		const rawFilePath = path.join(__dirname, "gpt_latest_response.txt");
+		fs.writeFileSync(rawFilePath, response, "utf8");
 
-    // Parse the initial message
-    const initialMessage = parseMessage(priorMessages[0].content);
-    
-    // Parse the response into structured messages
-    const lines = response.split('\n').filter(line => line.trim());
-    const parsedMessages = lines
-      .map(parseMessage)
-      .filter(msg => msg !== null);
+		// Parse the initial message
+		// const initialMessage = parseMessage(priorMessages[0].content);
 
-    // Combine initial message with new messages
-    const allMessages = [initialMessage, ...parsedMessages].filter(msg => msg !== null);
+		// Parse the response into structured messages
+		const lines = response.split("\n").filter((line) => line.trim());
+		const parsedMessages = lines
+			.map(parseMessage)
+			.filter((msg) => msg !== null);
 
-    // Validate all messages together
-    const validatedMessages = validateMessages(allMessages);
+		// Combine initial message with new messages
+		const allMessages = [...parsedMessages].filter((msg) => msg !== null);
 
-    // Create staff-meetings directory if it doesn't exist
-    const meetingsDir = path.join(__dirname, 'data', 'staff-meetings');
-    if (!fs.existsSync(meetingsDir)) {
-      fs.mkdirSync(meetingsDir, { recursive: true });
-    }
+		// Validate all messages together
+		const validatedMessages = validateMessages(allMessages);
 
-    // Save the structured messages to a JSON file
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const jsonFilePath = path.join(meetingsDir, `meeting-${timestamp}.json`);
-    fs.writeFileSync(jsonFilePath, JSON.stringify({ messages: validatedMessages }, null, 2));
+		// Create staff-meetings directory if it doesn't exist
+		const meetingsDir = path.join(__dirname, "data", "staff-meetings");
+		if (!fs.existsSync(meetingsDir)) {
+			fs.mkdirSync(meetingsDir, { recursive: true });
+		}
 
-    console.log('\n=== GPT RESPONSE ===\n');
-    console.log(response);
-    console.log('\n=== END RESPONSE ===\n');
-    console.log(`\nSaved structured messages to: ${jsonFilePath}`);
+		// Save the structured messages to a JSON file
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		const jsonFilePath = path.join(meetingsDir, `meeting-${timestamp}.json`);
+		fs.writeFileSync(
+			jsonFilePath,
+			JSON.stringify({ messages: validatedMessages }, null, 2)
+		);
 
-  } catch (error) {
-    console.error('Error:', error);
-    process.exit(1);
-  }
+		console.log("\n=== GPT RESPONSE ===\n");
+		console.log(response);
+		console.log("\n=== END RESPONSE ===\n");
+		console.log(`\nSaved structured messages to: ${jsonFilePath}`);
+	} catch (error) {
+		console.error("Error:", error);
+		process.exit(1);
+	}
 }
 
-getGPTResponse().catch(error => {
-  console.error('Unhandled error:', error);
-  process.exit(1);
+getGPTResponse().catch((error) => {
+	console.error("Unhandled error:", error);
+	process.exit(1);
 });
