@@ -89,7 +89,10 @@ async function runServiceWithMessages(
 ) {
 	// For staff meetings, use the specific staff meetings channel
 	const targetChannelId =
-		serviceName === "staffmeeting" ? "1369356692428423240" : channelId;
+		serviceName === "staffmeeting" || serviceName === "simplestaffmeeting" 
+			? "1369356692428423240" 
+			: channelId;
+			
 	console.log(
 		`[Scheduler] Using channel ID ${targetChannelId} for service ${serviceName}`
 	);
@@ -181,6 +184,19 @@ async function runServiceWithMessages(
 				gmtHour,
 				gmtMinutes
 			);
+		} else if (serviceName === "simplestaffmeeting") {
+			// Handle simple staff meetings - ensure they complete before moving on
+			console.log(
+				"[Scheduler] Starting simple staff meeting in channel:",
+				targetChannelId
+			);
+			
+			// Allow the simple staff meeting to run to completion
+			await triggerSimpleStaffMeeting(targetChannelId, client);
+			
+			console.log("[Scheduler] Simple staff meeting completed");
+			
+			// Simple staff meeting already sends its own outro via sendEventMessage
 		} else {
 			// Run the actual service for other events
 			const serviceFn = serviceMap[serviceName];

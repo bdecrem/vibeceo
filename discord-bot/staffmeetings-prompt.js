@@ -198,45 +198,24 @@ function parseMessage(line) {
 	// Skip empty lines
 	if (!line.trim()) return null;
 
-	// Skip lines that are just coach name and timestamp (no message)
-	if (line.match(/^\w+\s+\d{1,2}:\d{2}\s+[AP]M$/)) {
-		return null;
-	}
-
-	// Try to match the standard format: CoachName 9:00 AM message
-	const match = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s+(.+)$/);
-	if (match) {
-		const [_, coachName, timestamp, content] = match;
-		const coachId = coachMap[coachName];
-
-		if (!coachId) {
-			console.warn(`Unknown coach name: ${coachName}`);
-			return null;
-		}
-
-		if (content && content.trim()) {
-			return {
-				coach: coachId,
-				content: content.trim(),
-				timestamp: timestamp.trim(),
-			};
-		}
+	// Improved regex to match the format: Number CoachName Time AM/PM
+	// Also handles the format without the number: CoachName Time AM/PM
+	const headerMatch = line.match(/^(?:\d+\s+)?(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s*$/);
+	
+	if (headerMatch) {
+		// This is just a message header line, store it to pair with the content
+		return {
+			type: "header",
+			coach: headerMatch[1],
+			timestamp: headerMatch[2].trim()
+		};
 	} else {
-		// Try to infer the coach from the content
-		const content = line.trim();
-		const coachId = inferCoachFromContent(content);
-
-		if (coachId) {
-			return {
-				coach: coachId,
-				content: content,
-				timestamp: "9:00 AM", // Default timestamp if none provided
-			};
-		}
+		// This is a content line, to be paired with the most recent header
+		return {
+			type: "content",
+			content: line.trim()
+		};
 	}
-
-	console.warn(`Could not parse line: ${line}`);
-	return null;
 }
 
 function validateMessages(messages) {
@@ -286,20 +265,73 @@ async function getGPTResponse() {
 		const rawFilePath = path.join(__dirname, "gpt_latest_response.txt");
 		fs.writeFileSync(rawFilePath, response, "utf8");
 
-		// Parse the initial message
-		// const initialMessage = parseMessage(priorMessages[0].content);
-
-		// Parse the response into structured messages
+		// Process the response into structured messages
 		const lines = response.split("\n").filter((line) => line.trim());
-		const parsedMessages = lines
-			.map(parseMessage)
-			.filter((msg) => msg !== null);
+		
+		// Parse the response using a more robust two-pass approach
+		const parsedLines = lines.map(parseMessage).filter(line => line !== null);
+		
+		// Combine header lines and content lines to create complete messages
+		const structuredMessages = [];
+		let currentCoach = null;
+		let currentTimestamp = null;
+		let currentContent = [];
+		
+		// Process each parsed line
+		for (const line of parsedLines) {
+			if (line.type === "header") {
+				// If we have a previous message ready, add it
+				if (currentCoach && currentContent.length > 0) {
+					structuredMessages.push({
+						coach: coachMap[currentCoach] || inferCoachFromContent(currentContent.join(" ")),
+						content: currentContent.join(" ").trim(),
+						timestamp: currentTimestamp
+					});
+					currentContent = [];
+				}
+				
+				// Start a new message
+				currentCoach = line.coach;
+				currentTimestamp = line.timestamp;
+			} else if (line.type === "content") {
+				// Add content to the current message
+				currentContent.push(line.content);
+			}
+		}
+		
+		// Add the last message if there is one
+		if (currentCoach && currentContent.length > 0) {
+			structuredMessages.push({
+				coach: coachMap[currentCoach] || inferCoachFromContent(currentContent.join(" ")),
+				content: currentContent.join(" ").trim(),
+				timestamp: currentTimestamp
+			});
+		}
 
-		// Combine initial message with new messages
-		const allMessages = [...parsedMessages].filter((msg) => msg !== null);
+		// Fix common issues with the parsed messages
+		const cleanedMessages = structuredMessages
+			.map(msg => {
+				// Ensure we have a valid coach ID
+				if (!msg.coach && msg.content) {
+					msg.coach = inferCoachFromContent(msg.content);
+				}
+				
+				// Default to donte if we still can't determine the coach
+				if (!msg.coach) {
+					msg.coach = "donte";
+				}
+				
+				return msg;
+			})
+			.filter(msg => msg !== null && msg.content && msg.content.trim());
 
-		// Validate all messages together
-		const validatedMessages = validateMessages(allMessages);
+		// Make sure we have all messages and they're valid
+		if (cleanedMessages.length < 5) {
+			console.warn(`WARNING: Only parsed ${cleanedMessages.length} messages. This may indicate a parsing problem.`);
+		}
+		
+		// Validate the messages
+		const validatedMessages = validateMessages(cleanedMessages);
 
 		// Create staff-meetings directory if it doesn't exist
 		const meetingsDir = path.join(__dirname, "data", "staff-meetings");

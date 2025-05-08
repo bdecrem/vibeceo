@@ -113,23 +113,33 @@ async function postLatestMeetingToDiscord(client: Client) {
 		);
 
 		// Send messages
-		console.log("Sending messages...");
+		console.log(`Sending ${latestMeeting.messages.length} staff meeting messages...`);
+		let successCount = 0;
+		let errorCount = 0;
+		
 		for (const message of latestMeeting.messages) {
 			try {
 				// Remove 'staff_' prefix if it exists
 				const coachName = message.coach.replace("staff_", "").toLowerCase();
-				console.log(`Sending message as ${coachName}:`, message.content);
+				console.log(`Sending message (${successCount + 1}/${latestMeeting.messages.length}) as ${coachName}:`, message.content);
 				await sendAsCharacter(
 					STAFF_MEETINGS_CHANNEL_ID,
 					coachName,
 					message.content
 				);
 				console.log(`Successfully sent message as ${coachName}`);
-				await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
+				successCount++;
+				// Slower delay to ensure we don't hit rate limits
+				await new Promise((resolve) => setTimeout(resolve, 2500)); // 2.5 second delay
 			} catch (error) {
 				console.error(`Error sending message as ${message.coach}:`, error);
+				errorCount++;
+				// Give extra time on errors before trying the next one
+				await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 second delay after error
 			}
 		}
+
+		console.log(`Staff meeting message sending complete! Success: ${successCount}, Errors: ${errorCount}`);
 
 		// Send outro message
 		await sendEventMessage(
@@ -141,8 +151,9 @@ async function postLatestMeetingToDiscord(client: Client) {
 		);
 
 		console.log("Finished sending all messages");
+		return true; // Indicate success for better handling by callers
 	} catch (error) {
-		console.error("Error:", error);
+		console.error("Error in postLatestMeetingToDiscord:", error);
 		throw error;
 	}
 }
@@ -152,7 +163,9 @@ export async function triggerSimpleStaffMeeting(
 	channelId: string,
 	client: Client
 ): Promise<void> {
-	await postLatestMeetingToDiscord(client);
+	console.log("Triggering simple staff meeting...");
+	const result = await postLatestMeetingToDiscord(client);
+	console.log("Staff meeting posting completed with result:", result);
 }
 
 // Run if this module is the entry point
