@@ -39,6 +39,10 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}The coaches are gathering for a quick staff meeting because {reason}.",
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
+	weekendvibes: {
+		intro: "{arrival}The weekend has begun! Our coaches are ready to party in {location}.",
+		outro: "The weekend party in {location} is winding down. The coaches look refreshed and ready for more adventures.",
+	},
 } as const;
 
 // Keep original scene index for event system
@@ -93,6 +97,12 @@ export async function sendEventMessage(
 		
 		message = message.replace("{arrival}", arrivalText);
 		
+		// Replace {location} placeholder for weekendvibes
+		if (eventType === 'weekendvibes') {
+			const cityOnly = location.replace(' office', '').replace(' penthouse', '');
+			message = message.replace("{location}", cityOnly);
+		}
+		
 		// Replace {reason} placeholder for simplestaffmeeting
 		if (eventType === 'simplestaffmeeting' && meetingReason) {
 			console.log(`Replacing {reason} placeholder with: "${meetingReason}"`);
@@ -120,6 +130,11 @@ export async function sendEventMessage(
 				console.log(`Used default complete message: "${message}"`);
 			}
 		}
+	} else if (eventType === 'weekendvibes') {
+		// Also handle the location placeholder in the outro message
+		const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
+		const cityOnly = locationTime.location.replace(' office', '').replace(' penthouse', '');
+		message = message.replace("{location}", cityOnly);
 	}
 
 	// Store the scene in episode storage if it's a watercooler or waterheater event

@@ -9,6 +9,7 @@ import { sendAsCharacter } from './webhooks.js';
 import { generateCharacterResponse } from './ai.js';
 import { getLocationAndTime } from './locationTime.js';
 import { ceos } from '../../data/ceos.js';
+import { sendEventMessage } from './eventMessages.js';
 
 // Import activities data
 const activitiesPath = path.join(process.cwd(), 'data', 'weekend-activities.json');
@@ -122,6 +123,21 @@ export async function triggerWeekendVibesChat(channelId: string, client: Client)
       return;
     }
 
+    // Get the channel
+    const channel = await client.channels.fetch(channelId) as TextChannel;
+    if (!channel) {
+      throw new Error(`Channel ${channelId} not found`);
+    }
+
+    // Send intro message
+    await sendEventMessage(
+      channel,
+      'weekendvibes',
+      true,
+      now.getUTCHours(),
+      now.getUTCMinutes()
+    );
+
     // Initialize state
     const state: WeekendVibesState = {
       location,
@@ -135,6 +151,15 @@ export async function triggerWeekendVibesChat(channelId: string, client: Client)
 
     // Start the weekend party conversation
     await startWeekendVibesConversation(channelId, client, state);
+    
+    // Send outro message
+    await sendEventMessage(
+      channel,
+      'weekendvibes',
+      false,
+      now.getUTCHours(),
+      now.getUTCMinutes()
+    );
     
     // Clear the active weekend vibes after it's done
     setTimeout(() => {
