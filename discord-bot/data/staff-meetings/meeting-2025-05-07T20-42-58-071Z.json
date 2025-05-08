@@ -1,21 +1,21 @@
 {
-  "timestamp": "2025-05-07T02:15:53.918Z",
+  "timestamp": "2025-05-07T20:42:58.071Z",
   "messages": [
     {
       "coach": "donte",
-      "content": "Disruption is my love language.",
+      "content": "Let's turn this brainstorm into a revenue storm.",
       "format": "bold",
       "status": "sent"
     },
     {
       "coach": "rohan",
-      "content": "Let's KPI that idea to death.",
+      "content": "Can we monetize this tangent?",
       "format": "bold",
       "status": "sent"
     },
     {
       "coach": "alex",
-      "content": "Wellness check: who's hydrated?",
+      "content": "Vibes are up, cortisol is down!",
       "format": "bold",
       "status": "sent"
     },
@@ -35,6 +35,42 @@
       "coach": "kailey",
       "content": "Alignment is just a meeting away!",
       "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "donte",
+      "content": "Let's turn this brainstorm into a revenue storm.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "rohan",
+      "content": "Can we monetize this tangent?",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "alex",
+      "content": "Wellness check: who's hydrated?",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "eljas",
+      "content": "Let's recycle this idea into something greener.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "venus",
+      "content": "Airtable is my happy place.",
+      "format": "bold",
+      "status": "sent"
+    },
+    {
+      "coach": "kailey",
+      "content": "My calendar is scarier than your roadmap.",
+      "format": "bold",
       "status": "failed"
     },
     {
@@ -45,13 +81,13 @@
     },
     {
       "coach": "rohan",
-      "content": "Let's KPI that idea to death.",
+      "content": "If it doesn't scale, it fails.",
       "format": "bold",
       "status": "failed"
     },
     {
       "coach": "alex",
-      "content": "Let's Notion our way to nirvana.",
+      "content": "Vibes are up, cortisol is down!",
       "format": "bold",
       "status": "failed"
     },
@@ -93,7 +129,7 @@
     },
     {
       "coach": "eljas",
-      "content": "Let's recycle this idea into something greener.",
+      "content": "Silence is the best framework.",
       "format": "bold",
       "status": "failed"
     },
@@ -105,7 +141,7 @@
     },
     {
       "coach": "kailey",
-      "content": "Alignment is just a meeting away!",
+      "content": "My calendar is scarier than your roadmap.",
       "format": "bold",
       "status": "failed"
     },
@@ -123,13 +159,13 @@
     },
     {
       "coach": "alex",
-      "content": "Wellness check: who's hydrated?",
+      "content": "Vibes are up, cortisol is down!",
       "format": "bold",
       "status": "failed"
     },
     {
       "coach": "eljas",
-      "content": "Compost your doubts, grow your vision.",
+      "content": "Let's recycle this idea into something greener.",
       "format": "bold",
       "status": "failed"
     },
@@ -142,42 +178,6 @@
     {
       "coach": "kailey",
       "content": "Alignment is just a meeting away!",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "donte",
-      "content": "Chaos is just another word for opportunity.",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "rohan",
-      "content": "If it doesn't scale, it fails.",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "alex",
-      "content": "Wellness check: who's hydrated?",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "eljas",
-      "content": "Compost your doubts, grow your vision.",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "venus",
-      "content": "Let's sprint, not stroll.",
-      "format": "bold",
-      "status": "failed"
-    },
-    {
-      "coach": "kailey",
-      "content": "My calendar is scarier than your roadmap.",
       "format": "bold",
       "status": "failed"
     }
