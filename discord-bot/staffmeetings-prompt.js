@@ -38,13 +38,16 @@ function getRandomSeed() {
 		const seedsArray = staffMeetingSeeds[randomCategory].seeds;
 
 		// Select a random seed from the array
-		const randomSeed =
+		const randomSeedObj =
 			seedsArray[Math.floor(Math.random() * seedsArray.length)];
+		
+		// Extract the text from the seed object
+		const randomSeedText = randomSeedObj.text;
 
 		console.log(
-			`Selected seed from category "${staffMeetingSeeds[randomCategory].name}": "${randomSeed}"`
+			`Selected seed from category "${staffMeetingSeeds[randomCategory].name}": "${randomSeedText}"`
 		);
-		return randomSeed;
+		return randomSeedText;
 	} catch (error) {
 		console.error("Error selecting random seed:", error);
 		// Fallback to hardcoded seeds if there's an error

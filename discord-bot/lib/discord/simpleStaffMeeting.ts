@@ -53,7 +53,7 @@ function getLatestMeetingFile(): string {
 }
 
 // Function to execute the staff meetings prompt script
-async function generateNewMeeting(): Promise<void> {
+async function generateNewMeeting(): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const scriptPath = path.join(process.cwd(), "staffmeetings-prompt.js");
 		console.log("Executing staff meetings prompt script:", scriptPath);
@@ -68,16 +68,59 @@ async function generateNewMeeting(): Promise<void> {
 				console.error("Script stderr:", stderr);
 			}
 			console.log("Script stdout:", stdout);
-			resolve();
+			resolve(stdout);
 		});
 	});
+}
+
+// Function to extract the selected seed from the script output
+function extractSelectedSeed(output: string): { text: string; sentence_fragment: string } | null {
+	try {
+		// Look for the selected seed in the output
+		const seedMatch = output.match(/Selected seed from category "([^"]+)": "([^"]+)"/);
+		if (!seedMatch) {
+			console.warn("Could not find selected seed in output");
+			return null;
+		}
+
+		const seedText = seedMatch[2];
+		
+		// Get the staff meeting seeds file
+		const seedsPath = path.join(process.cwd(), "data", "staff-meeting-seeds.json");
+		const staffMeetingSeeds = JSON.parse(fs.readFileSync(seedsPath, "utf8"));
+		
+		// Find the seed in the JSON file
+		for (const categoryKey of Object.keys(staffMeetingSeeds)) {
+			const category = staffMeetingSeeds[categoryKey];
+			if (category && Array.isArray(category.seeds)) {
+				for (const seed of category.seeds) {
+					if (typeof seed === 'object' && seed !== null && seed.text === seedText) {
+						return {
+							text: seed.text,
+							sentence_fragment: seed.sentence_fragment
+						};
+					}
+				}
+			}
+		}
+		
+		console.warn("Could not find seed in staff-meeting-seeds.json:", seedText);
+		return null;
+	} catch (error) {
+		console.error("Error extracting selected seed:", error);
+		return null;
+	}
 }
 
 async function postLatestMeetingToDiscord(client: Client) {
 	try {
 		// First generate a new meeting
 		console.log("Generating new meeting...");
-		await generateNewMeeting();
+		const scriptOutput = await generateNewMeeting();
+
+		// Extract the selected seed from the script output
+		const selectedSeed = extractSelectedSeed(scriptOutput);
+		const meetingReason = selectedSeed?.sentence_fragment || "they need to sync up";
 
 		// Then get the latest meeting file
 		const latestMeetingPath = getLatestMeetingFile();
@@ -109,7 +152,9 @@ async function postLatestMeetingToDiscord(client: Client) {
 			"simplestaffmeeting",
 			true,
 			now.getUTCHours(),
-			now.getUTCMinutes()
+			now.getUTCMinutes(),
+			null,
+			meetingReason
 		);
 
 		// Send messages

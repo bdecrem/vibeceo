@@ -36,7 +36,7 @@ export const EVENT_MESSAGES = {
 		outro: "The staff meeting has concluded. The coaches have returned to their duties.",
 	},
 	simplestaffmeeting: {
-		intro: "{arrival}The coaches are gathering for a quick staff meeting.",
+		intro: "{arrival}The coaches are gathering for a quick staff meeting because {reason}.",
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
 } as const;
@@ -53,7 +53,8 @@ export async function sendEventMessage(
 	isIntro: boolean,
 	gmtHour: number,
 	gmtMinutes: number,
-	selectedIncident?: { text: string; intro: string } | null
+	selectedIncident?: { text: string; intro: string } | null,
+	meetingReason?: string
 ) {
 	let message: string;
 	let prompt: string | undefined;
@@ -91,6 +92,11 @@ export async function sendEventMessage(
 			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} skies ${weatherEmoji} stretch overhead. `;
 		
 		message = message.replace("{arrival}", arrivalText);
+		
+		// Replace {reason} placeholder for simplestaffmeeting
+		if (eventType === 'simplestaffmeeting' && meetingReason) {
+			message = message.replace("{reason}", meetingReason);
+		}
 	}
 
 	// Store the scene in episode storage if it's a watercooler or waterheater event
