@@ -47,12 +47,13 @@ export const WEATHER_EMOJIS: WeatherEmoji[] = [
 ];
 
 /**
- * Returns the appropriate emoji for a weather description.
+ * Returns the appropriate emoji for a weather description, considering time of day.
  * 
  * @param weatherDescription The weather description from OpenWeatherMap API
+ * @param hour Optional hour of day (0-23) to determine day/night emoji variants
  * @returns An emoji representing the weather
  */
-export function getWeatherEmoji(weatherDescription: string): string {
+export function getWeatherEmoji(weatherDescription: string, hour?: number): string {
   if (!weatherDescription) return "☀️"; // Default to sun
   
   const lowerDescription = weatherDescription.toLowerCase();
@@ -65,8 +66,27 @@ export function getWeatherEmoji(weatherDescription: string): string {
   // For debugging
   if (!match) {
     console.log(`No emoji match found for weather: "${weatherDescription}"`);
+    return "☀️"; // Default to sun
   }
   
-  // Return the emoji if found, otherwise return a default sun emoji
-  return match?.emoji || "☀️";
+  // Apply time of day adjustments
+  if (hour !== undefined) {
+    const isNight = hour < 6 || hour >= 20; // Consider 8pm-6am as night
+    
+    // Apply nighttime variants for specific weather conditions
+    if (isNight) {
+      if (match.description === "clear sky" || match.description === "clear" || match.description === "sunny") {
+        return "🌙"; // Moon for clear night
+      }
+      if (match.description === "few clouds") {
+        return "🌙"; // Moon with few clouds at night
+      }
+      if (match.description === "scattered clouds") {
+        return "☁️"; // Clouds are less visible at night
+      }
+    }
+  }
+  
+  // Return the emoji
+  return match.emoji;
 } 

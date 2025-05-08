@@ -134,7 +134,7 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
 
     // Get weather for the current location
     const weather = await getWeatherForCity(location);
-    const weatherEmoji = getWeatherEmoji(weather);
+    const weatherEmoji = getWeatherEmoji(weather, localTime);
 
     return {
         location,
