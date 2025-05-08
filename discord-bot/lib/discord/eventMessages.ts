@@ -95,7 +95,30 @@ export async function sendEventMessage(
 		
 		// Replace {reason} placeholder for simplestaffmeeting
 		if (eventType === 'simplestaffmeeting' && meetingReason) {
-			message = message.replace("{reason}", meetingReason);
+			console.log(`Replacing {reason} placeholder with: "${meetingReason}"`);
+			console.log(`Message before replacement: "${message}"`);
+			
+			// Check if the message actually contains the placeholder
+			if (!message.includes("{reason}")) {
+				console.warn("WARNING: Message does not contain {reason} placeholder!");
+				// Default to a complete message with the reason
+				message = `${arrivalText}The coaches are gathering for a quick staff meeting because ${meetingReason}.`;
+			} else {
+				message = message.replace("{reason}", meetingReason);
+			}
+			
+			console.log(`Message after replacement: "${message}"`);
+		} else if (eventType === 'simplestaffmeeting') {
+			console.warn(`No meetingReason provided for simplestaffmeeting! eventType=${eventType}, isIntro=${isIntro}, meetingReason=${meetingReason}`);
+			// Default reason if missing
+			if (message.includes("{reason}")) {
+				message = message.replace("{reason}", "there's an urgent need to synchronize");
+				console.log(`Used default reason. Message after replacement: "${message}"`);
+			} else {
+				// Handle completely missing placeholder - construct a default complete message
+				message = `${arrivalText}The coaches are gathering for a quick staff meeting because there's an urgent need to synchronize.`;
+				console.log(`Used default complete message: "${message}"`);
+			}
 		}
 	}
 

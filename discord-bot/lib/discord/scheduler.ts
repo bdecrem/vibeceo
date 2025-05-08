@@ -142,15 +142,17 @@ async function runServiceWithMessages(
 			}
 		}
 
-		// Send intro message
-		await sendEventMessage(
-			channel,
-			serviceName as EventType,
-			true,
-			gmtHour,
-			gmtMinutes,
-			selectedIncident
-		);
+		// Send intro message (except for simplestaffmeeting which handles its own messages)
+		if (serviceName !== "simplestaffmeeting") {
+			await sendEventMessage(
+				channel,
+				serviceName as EventType,
+				true,
+				gmtHour,
+				gmtMinutes,
+				selectedIncident
+			);
+		}
 
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === "waterheater") {
@@ -192,11 +194,13 @@ async function runServiceWithMessages(
 			);
 			
 			// Allow the simple staff meeting to run to completion
+			// IMPORTANT: Don't send intro/outro messages here, let the simpleStaffMeeting handle it
+			// The intro message with the seed fragment needs to come from within simpleStaffMeeting
 			await triggerSimpleStaffMeeting(targetChannelId, client);
 			
 			console.log("[Scheduler] Simple staff meeting completed");
 			
-			// Simple staff meeting already sends its own outro via sendEventMessage
+			// simpleStaffMeeting already sends its own intro/outro messages
 		} else {
 			// Run the actual service for other events
 			const serviceFn = serviceMap[serviceName];
@@ -204,6 +208,17 @@ async function runServiceWithMessages(
 				await serviceFn(targetChannelId, client);
 			} else {
 				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
+			}
+			
+			// Send outro message (except for simplestaffmeeting which handles its own messages)
+			if (serviceName !== "simplestaffmeeting") {
+				await sendEventMessage(
+					channel,
+					serviceName as EventType,
+					false,
+					gmtHour,
+					gmtMinutes
+				);
 			}
 		}
 	} catch (error) {

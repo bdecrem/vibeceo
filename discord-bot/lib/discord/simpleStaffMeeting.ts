@@ -77,34 +77,62 @@ async function generateNewMeeting(): Promise<string> {
 function extractSelectedSeed(output: string): { text: string; sentence_fragment: string } | null {
 	try {
 		// Look for the selected seed in the output
-		const seedMatch = output.match(/Selected seed from category "([^"]+)": "([^"]+)"/);
-		if (!seedMatch) {
-			console.warn("Could not find selected seed in output");
-			return null;
-		}
+		console.log("Extracting seed from output...");
 
-		const seedText = seedMatch[2];
+		// Try to find the seed with the updated format which includes the fragment
+		const seedWithFragmentMatch = output.match(/Selected seed from category "([^"]+)": "([^"]+)" with fragment: "([^"]+)"/);
+		if (seedWithFragmentMatch) {
+			const [_, category, seedText, sentenceFragment] = seedWithFragmentMatch;
+			console.log(`Found seed with category "${category}", text "${seedText}", fragment "${sentenceFragment}"`);
+			return {
+				text: seedText,
+				sentence_fragment: sentenceFragment
+			};
+		}
 		
-		// Get the staff meeting seeds file
-		const seedsPath = path.join(process.cwd(), "data", "staff-meeting-seeds.json");
-		const staffMeetingSeeds = JSON.parse(fs.readFileSync(seedsPath, "utf8"));
-		
-		// Find the seed in the JSON file
-		for (const categoryKey of Object.keys(staffMeetingSeeds)) {
-			const category = staffMeetingSeeds[categoryKey];
-			if (category && Array.isArray(category.seeds)) {
-				for (const seed of category.seeds) {
-					if (typeof seed === 'object' && seed !== null && seed.text === seedText) {
-						return {
-							text: seed.text,
-							sentence_fragment: seed.sentence_fragment
-						};
+		// Fall back to the older format if needed
+		const seedMatch = output.match(/Selected seed from category "([^"]+)": "([^"]+)"/);
+		if (seedMatch) {
+			const seedText = seedMatch[2];
+			console.log("Found seed text in older format:", seedText);
+			
+			// Get the staff meeting seeds file
+			const seedsPath = path.join(process.cwd(), "data", "staff-meeting-seeds.json");
+			if (fs.existsSync(seedsPath)) {
+				try {
+					const staffMeetingSeeds = JSON.parse(fs.readFileSync(seedsPath, "utf8"));
+					
+					// Find the seed in the JSON file to get its sentence fragment
+					for (const categoryKey of Object.keys(staffMeetingSeeds)) {
+						const category = staffMeetingSeeds[categoryKey];
+						if (category && Array.isArray(category.seeds)) {
+							for (const seed of category.seeds) {
+								if (typeof seed === 'object' && seed !== null && seed.text === seedText) {
+									console.log("Found matching seed with fragment:", seed.sentence_fragment);
+									return {
+										text: seed.text,
+										sentence_fragment: seed.sentence_fragment
+									};
+								}
+							}
+						}
 					}
+				} catch (error) {
+					console.error("Error loading staff meeting seeds file:", error);
 				}
 			}
+			
+			// If we can't find the fragment, create one from the seed text
+			console.log("Creating fallback sentence fragment from seed text");
+			// Convert "We need to improve alignment" to "they need to improve alignment"
+			const fallbackFragment = seedText.replace(/^We/, "they").replace(/^I/, "someone").toLowerCase();
+			return {
+				text: seedText,
+				sentence_fragment: fallbackFragment
+			};
 		}
 		
-		console.warn("Could not find seed in staff-meeting-seeds.json:", seedText);
+		console.warn("Could not find seed in script output or seeds file");
 		return null;
 	} catch (error) {
 		console.error("Error extracting selected seed:", error);
@@ -117,10 +145,15 @@ async function postLatestMeetingToDiscord(client: Client) {
 		// First generate a new meeting
 		console.log("Generating new meeting...");
 		const scriptOutput = await generateNewMeeting();
+		console.log("Script output received, length:", scriptOutput.length);
 
 		// Extract the selected seed from the script output
 		const selectedSeed = extractSelectedSeed(scriptOutput);
-		const meetingReason = selectedSeed?.sentence_fragment || "they need to sync up";
+		console.log("Selected seed result:", selectedSeed);
+		
+		// Provide a default reason if no seed is found or if extraction fails
+		const meetingReason = selectedSeed?.sentence_fragment || "there's an urgent need to synchronize";
+		console.log("Using meeting reason:", meetingReason);
 
 		// Then get the latest meeting file
 		const latestMeetingPath = getLatestMeetingFile();
@@ -145,8 +178,9 @@ async function postLatestMeetingToDiscord(client: Client) {
 			throw new Error("Staff meetings channel not found");
 		}
 
-		// Send intro message
+		// Send intro message with explicitly defined reason
 		const now = new Date();
+		console.log("Sending intro message with reason:", meetingReason);
 		await sendEventMessage(
 			channel,
 			"simplestaffmeeting",

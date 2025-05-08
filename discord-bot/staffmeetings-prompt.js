@@ -41,22 +41,38 @@ function getRandomSeed() {
 		const randomSeedObj =
 			seedsArray[Math.floor(Math.random() * seedsArray.length)];
 		
-		// Extract the text from the seed object
+		// Extract the text and sentence_fragment from the seed object
 		const randomSeedText = randomSeedObj.text;
+		const sentenceFragment = randomSeedObj.sentence_fragment;
 
 		console.log(
-			`Selected seed from category "${staffMeetingSeeds[randomCategory].name}": "${randomSeedText}"`
+			`Selected seed from category "${staffMeetingSeeds[randomCategory].name}": "${randomSeedText}" with fragment: "${sentenceFragment}"`
 		);
-		return randomSeedText;
+		
+		// Return both the text and sentence_fragment
+		return {
+			text: randomSeedText,
+			sentence_fragment: sentenceFragment
+		};
 	} catch (error) {
 		console.error("Error selecting random seed:", error);
 		// Fallback to hardcoded seeds if there's an error
 		const fallbackSeeds = [
-			"The roadmap is now a Figma moodboard.",
-			"Our vibe sync ended in silence.",
-			"Donte brought a gong to sprint planning.",
+			{
+				text: "The roadmap is now a Figma moodboard.",
+				sentence_fragment: "the roadmap has become a Figma moodboard"
+			},
+			{
+				text: "Our vibe sync ended in silence.",
+				sentence_fragment: "their vibe sync ended in silence"
+			},
+			{
+				text: "Donte brought a gong to sprint planning.",
+				sentence_fragment: "Donte brought a gong to sprint planning"
+			}
 		];
-		return fallbackSeeds[Math.floor(Math.random() * fallbackSeeds.length)];
+		const fallbackSeed = fallbackSeeds[Math.floor(Math.random() * fallbackSeeds.length)];
+		return fallbackSeed;
 	}
 }
 
@@ -64,7 +80,7 @@ const selectedSeed = getRandomSeed();
 
 // Updated system prompt with stricter chaos instructions
 const STAFF_MEETING_PROMPT = `
-The seed for today's meeting is: ${selectedSeed}
+The seed for today's meeting is: ${selectedSeed.text}
 
 Generate a MESSY, RAW Slack group chat between 6 startup coaches. This isn't clever - it's chaotic and authentically human:
 
@@ -201,19 +217,19 @@ function parseMessage(line) {
 	// Skip empty lines
 	if (!line.trim()) return null;
 
-	// Improved regex to match the format: Number CoachName Time AM/PM
-	// Also handles the format without the number: CoachName Time AM/PM
-	const headerMatch = line.match(/^(?:\d+\s+)?(\w+)\s+(\d{1,2}:\d{2}\s+[AP]M)\s*$/);
+	// Improved regex to match the format: "CoachName Time AM/PM"
+	// This handles various formats like "CoachName 9:00 AM" or "CoachName 10:15 PM"
+	const headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
 	
 	if (headerMatch) {
-		// This is just a message header line, store it to pair with the content
+		// This is a message header line
 		return {
 			type: "header",
 			coach: headerMatch[1],
 			timestamp: headerMatch[2].trim()
 		};
 	} else {
-		// This is a content line, to be paired with the most recent header
+		// This is likely a content line
 		return {
 			type: "content",
 			content: line.trim()
@@ -255,6 +271,7 @@ function validateMessages(messages) {
 
 async function getGPTResponse() {
 	try {
+		console.log("Requesting response from GPT-4...");
 		const completion = await openai.chat.completions.create({
 			model: "gpt-4-turbo-preview",
 			messages,
@@ -263,78 +280,100 @@ async function getGPTResponse() {
 		});
 
 		const response = completion.choices[0].message.content;
+		console.log("Received response from GPT-4");
 
 		// Save raw response for debugging
 		const rawFilePath = path.join(__dirname, "gpt_latest_response.txt");
 		fs.writeFileSync(rawFilePath, response, "utf8");
+		console.log(`Saved raw response to ${rawFilePath}`);
 
-		// Process the response into structured messages
-		const lines = response.split("\n").filter((line) => line.trim());
+		// Process the response using a more robust approach with improved debugging
+		console.log("Beginning response parsing...");
 		
-		// Parse the response using a more robust two-pass approach
-		const parsedLines = lines.map(parseMessage).filter(line => line !== null);
+		// Split the response into lines and perform the first pass - identify headers and content
+		const lines = response.split("\n");
+		console.log(`Found ${lines.length} total lines in response`);
 		
-		// Combine header lines and content lines to create complete messages
+		// Track parsing progress
+		let parsedHeaders = 0;
+		let parsedContent = 0;
+		
+		// First pass: identify headers and content lines
 		const structuredMessages = [];
-		let currentCoach = null;
-		let currentTimestamp = null;
-		let currentContent = [];
+		let currentMessage = null;
 		
-		// Process each parsed line
-		for (const line of parsedLines) {
-			if (line.type === "header") {
-				// If we have a previous message ready, add it
-				if (currentCoach && currentContent.length > 0) {
-					structuredMessages.push({
-						coach: coachMap[currentCoach] || inferCoachFromContent(currentContent.join(" ")),
-						content: currentContent.join(" ").trim(),
-						timestamp: currentTimestamp
-					});
-					currentContent = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+			
+			// Skip empty lines
+			if (!line) continue;
+			
+			// Check if this line has a coach name and timestamp format
+			// Format: CoachName 9:00 AM
+			const headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
+			
+			if (headerMatch) {
+				// If we were building a previous message, finalize it now
+				if (currentMessage) {
+					structuredMessages.push(currentMessage);
+					parsedContent++;
 				}
 				
 				// Start a new message
-				currentCoach = line.coach;
-				currentTimestamp = line.timestamp;
-			} else if (line.type === "content") {
+				currentMessage = {
+					coach: headerMatch[1],
+					timestamp: headerMatch[2].trim(),
+					content: "",
+					rawLines: []
+				};
+				parsedHeaders++;
+			} else if (currentMessage) {
 				// Add content to the current message
-				currentContent.push(line.content);
+				currentMessage.rawLines.push(line);
+				
+				// If current content is empty, this is the first content line
+				if (!currentMessage.content) {
+					currentMessage.content = line;
+				} else {
+					// Append with a space
+					currentMessage.content += " " + line;
+				}
 			}
 		}
 		
-		// Add the last message if there is one
-		if (currentCoach && currentContent.length > 0) {
-			structuredMessages.push({
-				coach: coachMap[currentCoach] || inferCoachFromContent(currentContent.join(" ")),
-				content: currentContent.join(" ").trim(),
-				timestamp: currentTimestamp
-			});
-		}
-
-		// Fix common issues with the parsed messages
-		const cleanedMessages = structuredMessages
-			.map(msg => {
-				// Ensure we have a valid coach ID
-				if (!msg.coach && msg.content) {
-					msg.coach = inferCoachFromContent(msg.content);
-				}
-				
-				// Default to donte if we still can't determine the coach
-				if (!msg.coach) {
-					msg.coach = "donte";
-				}
-				
-				return msg;
-			})
-			.filter(msg => msg !== null && msg.content && msg.content.trim());
-
-		// Make sure we have all messages and they're valid
-		if (cleanedMessages.length < 5) {
-			console.warn(`WARNING: Only parsed ${cleanedMessages.length} messages. This may indicate a parsing problem.`);
+		// Don't forget the last message
+		if (currentMessage) {
+			structuredMessages.push(currentMessage);
+			parsedContent++;
 		}
 		
+		console.log(`First pass completed: found ${parsedHeaders} headers and ${parsedContent} content blocks`);
+		
+		// Second pass: clean up and map coach names to IDs
+		const finalMessages = structuredMessages.map(msg => {
+			// Get the coach ID from the coach map, or infer it from content
+			const coachId = coachMap[msg.coach] || inferCoachFromContent(msg.content);
+			
+			return {
+				coach: coachId || "donte", // Default to Donte if we can't determine
+				content: msg.content.trim(),
+				timestamp: msg.timestamp
+			};
+		});
+		
+		console.log(`Finalized ${finalMessages.length} messages after processing`);
+
 		// Validate the messages
-		const validatedMessages = validateMessages(cleanedMessages);
+		if (finalMessages.length < 5) {
+			console.warn(`WARNING: Only parsed ${finalMessages.length} messages. This may indicate a parsing problem.`);
+			console.warn("Raw response first 100 chars:", response.substring(0, 100));
+		}
+		
+		const validMessages = finalMessages.filter(msg => 
+			msg.coach && msg.content && msg.content.trim().length > 0
+		);
+		
+		console.log(`After validation: ${validMessages.length} valid messages`);
 
 		// Create staff-meetings directory if it doesn't exist
 		const meetingsDir = path.join(__dirname, "data", "staff-meetings");
@@ -345,18 +384,27 @@ async function getGPTResponse() {
 		// Save the structured messages to a JSON file
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 		const jsonFilePath = path.join(meetingsDir, `meeting-${timestamp}.json`);
+		
+		// Save even if validation would fail - better to have partial data than none
 		fs.writeFileSync(
 			jsonFilePath,
-			JSON.stringify({ messages: validatedMessages }, null, 2)
+			JSON.stringify({ messages: validMessages }, null, 2)
 		);
 
-		console.log("\n=== GPT RESPONSE ===\n");
-		console.log(response);
-		console.log("\n=== END RESPONSE ===\n");
-		console.log(`\nSaved structured messages to: ${jsonFilePath}`);
+		console.log(`Saved ${validMessages.length} structured messages to: ${jsonFilePath}`);
+		
+		// Print parsing stats
+		console.log("\n=== PARSING STATS ===");
+		console.log(`Total lines in response: ${lines.length}`);
+		console.log(`Headers detected: ${parsedHeaders}`);
+		console.log(`Content blocks: ${parsedContent}`);
+		console.log(`Final message count: ${validMessages.length}`);
+		console.log("=== END STATS ===\n");
+
+		return validMessages;
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		console.error("Error in GPT response processing:", error);
+		throw error;
 	}
 }
 
