@@ -2,7 +2,7 @@ import { Client, Events, GatewayIntentBits, TextChannel, Message } from 'discord
 import { handleMessage, initializeScheduledTasks, initializeStoryArc } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
 import { validateConfig } from './config.js';
-import { startCentralizedScheduler } from './scheduler.js';
+import { initializeScheduler } from './scheduler.js';
 import { generateEpisodeContext } from './episodeContext.js';
 import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
 import { EpisodeContext } from './episodeContext.js';
@@ -69,7 +69,7 @@ client.once(Events.ClientReady, async (readyClient) => {
       console.log('Webhooks initialized for #general channel');
       
       if (channel instanceof TextChannel) {
-        startCentralizedScheduler('1354474492629618831', client);
+        initializeScheduler(client);
         console.log('Centralized scheduler started for #general channel');
       }
     } catch (error) {

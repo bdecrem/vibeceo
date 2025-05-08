@@ -1,46 +1,60 @@
 import fs from "fs";
 import path from "path";
 import { triggerWatercoolerChat, triggerWaterheaterChat } from "./handlers.js";
-import { triggerStaffMeeting } from "./staffMeeting.js";
-import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
+import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
 import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
-import { cleanupWebhooks } from "./webhooks.js";
+import { isWeekend } from "./locationTime.js";
 
-// Path to the schedule file
-const SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
+// Path to the schedule files
+const WEEKDAY_SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
+const WEEKEND_SCHEDULE_PATH = path.join(process.cwd(), "data", "weekend-schedule.txt");
 
 // Service mapping
 const serviceMap: Record<
 	string,
-	(channelId: string, client: Client) => Promise<void | number>
+	(channelId: string, client: Client) => Promise<void>
 > = {
 	watercooler: triggerWatercoolerChat,
 	newschat: triggerNewsChat,
 	tmzchat: triggerTmzChat,
 	pitchchat: triggerPitchChat,
 	waterheater: triggerWaterheaterChat,
-	staffmeeting: triggerStaffMeeting,
-	simplestaffmeeting: triggerSimpleStaffMeeting,
+	weekendvibes: triggerWeekendVibesChat,
 	// Add more services here as needed
 };
 
 type EventType = keyof typeof EVENT_MESSAGES;
 
 let scheduleByHour: Record<number, EventType> = {};
+let discordClient: Client | null = null;
+
+// Initialize scheduler with Discord client
+export function initializeScheduler(client: Client) {
+	discordClient = client;
+	loadSchedule();
+	startScheduler();
+}
 
 function loadSchedule() {
 	try {
-		const content = fs.readFileSync(SCHEDULE_PATH, "utf-8");
+		const isWeekendMode = isWeekend();
+		console.log(`[Scheduler] Is weekend mode: ${isWeekendMode}`);
+		const schedulePath = isWeekendMode ? WEEKEND_SCHEDULE_PATH : WEEKDAY_SCHEDULE_PATH;
+		console.log(`[Scheduler] Loading ${isWeekendMode ? 'weekend' : 'weekday'} schedule from ${schedulePath}`);
+		
+		const content = fs.readFileSync(schedulePath, "utf-8");
 		const lines = content
 			.split("\n")
 			.map((line) => line.trim())
-			.filter(Boolean);
+			.filter(Boolean)
+			.filter(line => !line.startsWith('#') && !line.startsWith('LOCATION')); // Skip comments and location blocks
+		
 		scheduleByHour = {};
 		for (const line of lines) {
 			const match = line.match(/^(\d{2}):(\d{2})\s+(\w+)$/);
@@ -73,37 +87,29 @@ function loadSchedule() {
 	}
 }
 
-// Load schedule at startup
-loadSchedule();
+// Watch for changes in both schedule files
+fs.watchFile(WEEKDAY_SCHEDULE_PATH, (curr, prev) => {
+	console.log("[Scheduler] Detected weekday schedule file change, reloading...");
+	loadSchedule();
+});
 
-// Optionally, watch for changes
-fs.watchFile(SCHEDULE_PATH, (curr, prev) => {
-	console.log("[Scheduler] Detected schedule file change, reloading...");
+fs.watchFile(WEEKEND_SCHEDULE_PATH, (curr, prev) => {
+	console.log("[Scheduler] Detected weekend schedule file change, reloading...");
 	loadSchedule();
 });
 
 async function runServiceWithMessages(
 	channelId: string,
-	client: Client,
 	serviceName: string
 ) {
-	// For staff meetings, use the specific staff meetings channel
-	const targetChannelId =
-		serviceName === "staffmeeting" || serviceName === "simplestaffmeeting" 
-			? "1369356692428423240" 
-			: channelId;
-			
-	console.log(
-		`[Scheduler] Using channel ID ${targetChannelId} for service ${serviceName}`
-	);
+	if (!discordClient) {
+		console.error("[Scheduler] Discord client not initialized");
+		return;
+	}
 
-	// Clean up any existing webhooks for both channels to ensure clean state
-	cleanupWebhooks(channelId);
-	cleanupWebhooks("1369356692428423240");
-
-	const channel = client.channels.cache.get(targetChannelId) as TextChannel;
+	const channel = discordClient.channels.cache.get(channelId) as TextChannel;
 	if (!channel) {
-		console.error(`[Scheduler] Channel ${targetChannelId} not found`);
+		console.error(`[Scheduler] Channel ${channelId} not found`);
 		return;
 	}
 
@@ -122,115 +128,64 @@ async function runServiceWithMessages(
 		// For waterheater, select incident first
 		let selectedIncident = null;
 		let selectedCoachId: string | undefined;
-		if (serviceName === "waterheater") {
-			const availableCharacters = ceos.filter(
-				(char: CEO) => char.id !== "system"
-			);
-			const randomCoach =
-				availableCharacters[
-					Math.floor(Math.random() * availableCharacters.length)
-				];
+		if (serviceName === 'waterheater') {
+			const availableCharacters = ceos.filter((char: CEO) => char.id !== 'system');
+			const randomCoach = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
 			selectedCoachId = randomCoach.id;
-			const coachIncidents = waterheaterIncidents.find(
-				(c: { id: string }) => c.id === randomCoach.id
-			);
+			const coachIncidents = waterheaterIncidents.find((c: { id: string }) => c.id === randomCoach.id);
 			if (coachIncidents) {
-				const randomIndex = Math.floor(
-					Math.random() * coachIncidents.incidents.length
-				);
+				const randomIndex = Math.floor(Math.random() * coachIncidents.incidents.length);
 				selectedIncident = coachIncidents.incidents[randomIndex];
 			}
 		}
 
-		// Send intro message (except for simplestaffmeeting which handles its own messages)
-		if (serviceName !== "simplestaffmeeting") {
-			await sendEventMessage(
-				channel,
-				serviceName as EventType,
-				true,
-				gmtHour,
-				gmtMinutes,
-				selectedIncident
-			);
-		}
+		// Send intro message
+		await sendEventMessage(
+			channel,
+			serviceName as EventType,
+			true,
+			gmtHour,
+			gmtMinutes,
+			selectedIncident
+		);
 
 		// If it's a waterheater event, trigger the chat
-		if (serviceName === "waterheater") {
-			await triggerWaterheaterChat(
-				targetChannelId,
-				client,
-				selectedIncident,
-				selectedCoachId
-			);
-		} else if (serviceName === "staffmeeting") {
-			// For staff meetings, ensure we're using the correct channel ID
-			console.log(
-				"[Scheduler] Starting staff meeting in channel:",
-				targetChannelId
-			);
-
-			// Trigger the staff meeting chat and get the total time needed
-			const messageTime = await triggerStaffMeeting(targetChannelId, client);
-			console.log(
-				"[Scheduler] Staff meeting messages completed, waiting",
-				messageTime + 5000,
-				"ms before outro"
-			);
-			// Wait for messages to complete plus a small buffer
-			await new Promise((resolve) => setTimeout(resolve, messageTime + 5000));
-			// Send outro message
-			await sendEventMessage(
-				channel,
-				serviceName as EventType,
-				false,
-				gmtHour,
-				gmtMinutes
-			);
-		} else if (serviceName === "simplestaffmeeting") {
-			// Handle simple staff meetings - ensure they complete before moving on
-			console.log(
-				"[Scheduler] Starting simple staff meeting in channel:",
-				targetChannelId
-			);
-			
-			// Allow the simple staff meeting to run to completion
-			// IMPORTANT: Don't send intro/outro messages here, let the simpleStaffMeeting handle it
-			// The intro message with the seed fragment needs to come from within simpleStaffMeeting
-			await triggerSimpleStaffMeeting(targetChannelId, client);
-			
-			console.log("[Scheduler] Simple staff meeting completed");
-			
-			// simpleStaffMeeting already sends its own intro/outro messages
+		if (serviceName === 'waterheater') {
+			await triggerWaterheaterChat(channel.id, discordClient, selectedIncident, selectedCoachId);
 		} else {
-			// Run the actual service for other events
+			// Run the actual service for non-waterheater events
 			const serviceFn = serviceMap[serviceName];
 			if (serviceFn) {
-				await serviceFn(targetChannelId, client);
+				await serviceFn(channelId, discordClient);
 			} else {
 				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
 			}
-			
-			// Send outro message (except for simplestaffmeeting which handles its own messages)
-			if (serviceName !== "simplestaffmeeting") {
-				await sendEventMessage(
-					channel,
-					serviceName as EventType,
-					false,
-					gmtHour,
-					gmtMinutes
-				);
-			}
 		}
-	} catch (error) {
-		console.error(`[Scheduler] Error running service ${serviceName}:`, error);
+
+		// Send outro message
+		await sendEventMessage(
+			channel,
+			serviceName as EventType,
+			false,
+			gmtHour,
+			gmtMinutes
+		);
+	} catch (err) {
+		console.error(`[Scheduler] Error running '${serviceName}':`, err);
 	}
 }
 
-export function startCentralizedScheduler(channelId: string, client: Client) {
+function startScheduler() {
+	if (!discordClient) {
+		console.error("[Scheduler] Discord client not initialized");
+		return;
+	}
+
 	const FAST_MODE = !!process.env.FAST_SCHEDULE;
 	const FAST_INTERVAL_MINUTES = parseInt(process.env.FAST_SCHEDULE || "60");
 	const FAST_INTERVAL_MS = FAST_INTERVAL_MINUTES * 60 * 1000;
 	const START_TIME = Date.now();
+	const channelId = process.env.DISCORD_CHANNEL_ID!;
 
 	if (FAST_MODE) {
 		console.log(
@@ -244,7 +199,7 @@ export function startCentralizedScheduler(channelId: string, client: Client) {
 			console.log(
 				`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName}'`
 			);
-			runServiceWithMessages(channelId, client, serviceName)
+			runServiceWithMessages(channelId, serviceName)
 				.then(() =>
 					console.log(
 						`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`
@@ -267,30 +222,40 @@ export function startCentralizedScheduler(channelId: string, client: Client) {
 			console.log(
 				`[Scheduler] Hour ${hour}: scheduled service is '${serviceName}'`
 			);
-			runServiceWithMessages(channelId, client, serviceName)
+			runServiceWithMessages(channelId, serviceName)
 				.then(() =>
 					console.log(
 						`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`
 					)
 				)
 				.catch((err) =>
-					console.error(`[Scheduler] Error running '${serviceName}':`, err)
+					console.error(
+						`[Scheduler] Error running '${serviceName}':`,
+						err
+					)
 				);
 		}
 
-		// Calculate ms until next hour
 		function msUntilNextHour() {
 			const now = new Date();
-			return (
-				(60 - now.getMinutes()) * 60 * 1000 -
-				now.getSeconds() * 1000 -
-				now.getMilliseconds()
-			);
+			const nextHour = new Date(now);
+			nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+			return nextHour.getTime() - now.getTime();
 		}
 
+		// Run immediately if it's the start of an hour
+		const now = new Date();
+		if (now.getMinutes() === 0) {
+			runScheduledService();
+		}
+
+		// Then schedule for the next hour
 		setTimeout(function tick() {
 			runScheduledService();
-			setTimeout(tick, 60 * 60 * 1000); // Every hour
+			setTimeout(tick, msUntilNextHour());
 		}, msUntilNextHour());
 	}
 }
+
+// Export for testing
+export { loadSchedule, runServiceWithMessages };
