@@ -91,9 +91,22 @@ export async function sendEventMessage(
 			gmtMinutes
 		);
 		const { location, formattedTime, ampm, isNewLocation, weather, weatherEmoji } = locationTime;
+		
+		// Determine the correct preposition based on location
+		let cityText = '';
+		if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo')) {
+			// For weekend cities, use "in [City]"
+			// Extract just the city name without "office" or "penthouse"
+			const cityName = location.replace(' office', '').replace(' penthouse', '');
+			cityText = `in ${cityName}`;
+		} else {
+			// For office locations, use "at their [Location]"
+			cityText = `at their ${location}`;
+		}
+		
 		const arrivalText = isNewLocation
-			? `It's ${formattedTime}${ampm} and the coaches have just arrived at their ${location}, where ${weather} ${weatherEmoji} stretch overhead. `
-			: `It's ${formattedTime}${ampm} at the ${location}, where ${weather} ${weatherEmoji} stretch overhead. `;
+			? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretch overhead. `
+			: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretch overhead. `;
 		
 		message = message.replace("{arrival}", arrivalText);
 		
