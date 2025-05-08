@@ -23,9 +23,9 @@ const weekendBlocks = [
 ];
 
 export function isWeekend(): boolean {
-    // TEMPORARY OVERRIDE: Always return false for testing
-    console.log('[LocationTime] Forcing weekday mode for testing');
-    return false;
+    // TEMPORARY OVERRIDE: Always return true for testing
+    console.log('[LocationTime] Forcing weekend mode for testing');
+    return true;
     
     /*
     // Get current date in LA timezone (UTC-7)
