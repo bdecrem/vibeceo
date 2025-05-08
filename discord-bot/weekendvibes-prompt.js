@@ -76,75 +76,131 @@ function getRandomSeed() {
 	}
 }
 
+// Load weekend activities data
+const weekendActivitiesPath = path.resolve(__dirname, "data", "weekend-activities.json");
+const weekendActivities = JSON.parse(fs.readFileSync(weekendActivitiesPath, "utf8"));
+
+// Function to randomly select a weekend activity based on city and duration
+function getRandomWeekendActivity(city, duration) {
+	try {
+		// Validate inputs
+		const validCities = ["Berlin", "Vegas", "Tokyo"];
+		const validDurations = ["short", "medium", "long"];
+		
+		if (!validCities.includes(city)) {
+			console.error(`Invalid city: ${city}. Using default city Berlin.`);
+			city = "Berlin";
+		}
+		
+		if (!validDurations.includes(duration)) {
+			console.error(`Invalid duration: ${duration}. Using default duration short.`);
+			duration = "short";
+		}
+		
+		// Get activities for the specified city and duration
+		const activities = weekendActivities[city][duration];
+		
+		if (!activities || activities.length === 0) {
+			throw new Error(`No activities found for ${city}, ${duration}.`);
+		}
+		
+		// Select a random activity
+		const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+		
+		console.log(`Selected activity in ${city} (${duration}): "${randomActivity.name}" - ${randomActivity.type}`);
+		
+		return randomActivity;
+	} catch (error) {
+		console.error("Error selecting weekend activity:", error);
+		// Return a fallback activity
+		return {
+			name: "Improv Comedy Night",
+			type: "entertainment",
+			description: "Last-minute tickets to a local improv show with drinks included.",
+			duration: "2 hours",
+			source: "fallback"
+		};
+	}
+}
+
 const selectedSeed = getRandomSeed();
 
-// Updated system prompt with stricter chaos instructions
-const STAFF_MEETING_PROMPT = `
-The seed for today's meeting is: ${selectedSeed.text}
+// Function to build a dynamic weekend plans prompt
+function buildWeekendPlansPrompt(city, duration, selectedActivity) {
+	return `
+It is 7:00 PM on a weekend night in ${city}. The coaches have approximately ${duration === "short" ? "under 90 minutes" : duration === "medium" ? "1–3 hours" : "more than 3 hours"} to do something together.
 
-Generate a MESSY, RAW Slack group chat between 6 startup coaches. This isn't clever - it's chaotic and authentically human:
+Tonight's selected activity is: **"${selectedActivity.name}"** — a ${selectedActivity.type}
+> ${selectedActivity.description}
+
+They will have a chaotic Slack-style conversation about what to do tonight, and MUST eventually agree (badly) to do this activity.
 
 ⸻
 
 FORMAT:
-CoachName 9:00 AM
+CoachName 7:00 PM  
 ultra-short, lowercase Slack message (most <10 words, many <5)
 
 ⸻
 
 CAST (keep distinct voices):
-- DonteDisrupt – buzzword prophet. lowercase only. "truth is just vibes that got funding"
+- DonteDisrupt – buzzword prophet. lowercase only. "chaos is the strategy"
 - AlexirAlex – wellness-obsessed. emoji abuser. says things like "energy" and "vibes"
-- RohanTheShark – ruthless operator. one-word responses. "never" or "garbage"
-- VenusStrikes – tries to framework chaos and fails. "metrics" and "systems" person
-- KaileyConnector – calendar anxiety personified. scheduling breakdown imminent.
-- EljasCouncil – finnish mystic. sauna, compost, and nature metaphors.
+- RohanTheShark – ruthless operator. one-word responses. "never" or "trash"
+- VenusStrikes – tries to framework chaos and fails. uses Notion like a weapon.
+- KaileyConnector – calendar anxiety personified. fully melting down.
+- EljasCouncil – finnish mystic. sauna logic, compost wisdom, quietly strange.
 
 ⸻
 
-STRICT STRUCTURAL REQUIREMENTS:
+STRUCTURAL RULES:
 - 40% of messages MUST be under 6 words
 - At least 5 messages MUST be single-word or emoji-only
-- MAX 15 words for any message
-- include at least 3 typos (real human ones, not fake "teh")
-- break thread pattern - people talk over each other
-- same timestamp sometimes (two people posting at once)
-- some messages get zero responses
-- abrupt topic changes (at least 2 that make no sense)
-- someone posts, then immediately posts again
-- reference google docs, notion docs, or deliverables no one has seen
-- someone meta-comments on the chaos
-- lowercase everything except names
+- MAX 15 words per message
+- include at least 3 typos
+- break thread patterns — people talk over each other
+- same timestamp sometimes (two posts at once)
+- some messages get ignored
+- abrupt topic changes (at least 2)
+- someone posts twice in a row
+- reference activity ideas no one understands
+- someone tries to schedule a Notion doc party
+- someone creates a fake framework for the night
+- someone suggests something illegal and then walks it back
+- someone quotes vibes like it's a source
 
 ⸻
 
-CHARACTER ARCS (disguise these as natural typing):
-- Donte turns random comment into new initiative with operation name
-- Kailey has calendar/scheduling breakdown
-- Rohan threatens to quit/start rival company
-- Venus tries to create framework for something absurd
-- Alex suggests crystal/energy healing for business problem
-- Eljas delivers nature wisdom that makes no sense
+CHARACTER ARCS (disguise as natural chaos):
+- Donte creates "Operation NightDrive" or similar
+- Kailey can't find calendar slots even for partying
+- Venus tries to rank options in a matrix
+- Rohan calls everything garbage and wants out
+- Alex suggests moonlight meditation or vibesync
+- Eljas says something about mushrooms or steam
 
 ⸻
 
-CONCRETE ARTIFACTS (include at least 2):
-- Notion doc or framework with absurd name ("Revenue Healing Framework v0.1")
-- Scheduled meeting with ridiculous purpose ("Scream Into The Void. Daily.")
-- Playbook or guide referencing the chaos ("Crystal Cashflow Playbook")
+TANGIBLE ARTIFACTS:
+- 2 fake Notion docs or frameworks (e.g. "Party Metrics v0.2" or "The Chaos Ladder")
+- 1 proposed invite or event name ("Full Moon Night Ops")
 
 ⸻
 
 ENDING:
-The conversation MUST end with a powerful mic-drop line from one of the coaches. Examples:
-- "chaos is just compost with ambition"
-- "new meeting: scream into the void. daily."
-- "i've started a doc called burn.it.down"
+The convo must resolve with the coaches agreeing (chaotically) to do: **"${selectedActivity.name}"**
+
+End with a mic-drop line like:
+- "we're doing it. see you in the fog."
+- "chaos is booked. 7:45 sharp."
+- "i've created a doc called regret.ops"
 
 ⸻
 
-THINK REAL SLACK: messy, people talking over each other, inside jokes, no perfect replies, chaos.
+REMEMBER:
+This is raw, funny, human Slack. Meme-core meets founder meltdown. Make it overlap, unravel, and resolve — badly.
 `;
+}
 
 // const priorMessages = [
 //   { role: "assistant", content: "DonteDisrupt 9:00 AM\ni think the roadmap deleted itself 🌀" }
@@ -173,15 +229,12 @@ CRITICAL:
 remember: authentic slack is MESSY - not clever or polished
 `;
 
+// Initial placeholder messages array - will be updated in getGPTResponse
 const messages = [
-	{ role: "system", content: STAFF_MEETING_PROMPT },
+	{ role: "system", content: "placeholder" }, // Will be replaced with dynamic prompt
 	// ...priorMessages,
 	{ role: "user", content: userPrompt },
 ];
-
-console.log("\n=== EXACT PROMPT SENT TO GPT ===\n");
-console.log(JSON.stringify(messages, null, 2));
-console.log("\n=== END PROMPT ===\n");
 
 // Map of coach names to their IDs
 const coachMap = {
@@ -269,8 +322,50 @@ function validateMessages(messages) {
 	return messages;
 }
 
-async function getGPTResponse() {
+async function getGPTResponse(city = "Berlin") {
 	try {
+		// Validate the city
+		const validCities = ["Berlin", "Vegas", "Tokyo"];
+		if (!validCities.includes(city)) {
+			console.warn(`Invalid city: ${city}. Using default city Berlin.`);
+			city = "Berlin";
+		}
+		
+		// Determine the appropriate duration based on available time
+		// Read available time from environment variables (in minutes)
+		const availableTime = process.env.AVAILABLE_TIME_MINUTES ? 
+			parseInt(process.env.AVAILABLE_TIME_MINUTES, 10) : 60; // Default to 60 minutes if not specified
+		
+		console.log(`Available time: ${availableTime} minutes`);
+		
+		// Map available time to duration category
+		let duration;
+		if (availableTime < 90) {
+			duration = "short";  // Under 90 minutes
+		} else if (availableTime <= 180) {
+			duration = "medium"; // 1-3 hours
+		} else {
+			duration = "long";   // More than 3 hours
+		}
+		
+		console.log(`Selected duration category: ${duration} based on ${availableTime} minutes available`);
+		
+		// Get a random activity for this city and duration
+		const selectedActivity = getRandomWeekendActivity(city, duration);
+		
+		console.log(`Weekend activity selected for ${city}: ${selectedActivity.name}`);
+
+		// Build the dynamic prompt
+		const weekendPrompt = buildWeekendPlansPrompt(city, duration, selectedActivity);
+		
+		// Update messages with the newly built prompt
+		messages[0] = { role: "system", content: weekendPrompt };
+		
+		// Log the actual prompt AFTER it's been updated
+		console.log("\n=== EXACT PROMPT SENT TO GPT ===\n");
+		console.log(JSON.stringify(messages, null, 2));
+		console.log("\n=== END PROMPT ===\n");
+
 		console.log("Requesting response from GPT-4...");
 		const completion = await openai.chat.completions.create({
 			model: "gpt-4-turbo-preview",
@@ -385,13 +480,18 @@ async function getGPTResponse() {
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 		const jsonFilePath = path.join(meetingsDir, `weekend-${timestamp}.json`);
 		
-		// Save even if validation would fail - better to have partial data than none
-		fs.writeFileSync(
-			jsonFilePath,
-			JSON.stringify({ messages: validMessages }, null, 2)
-		);
+		// Create the data object to save, including the selected activity
+		const dataToSave = {
+			location: city,
+			activity: selectedActivity,
+			seed: selectedSeed.text,
+			messages: validMessages
+		};
+		
+		// Save everything to the JSON file
+		fs.writeFileSync(jsonFilePath, JSON.stringify(dataToSave, null, 2));
 
-		console.log(`Saved ${validMessages.length} structured messages to: ${jsonFilePath}`);
+		console.log(`Saved ${validMessages.length} structured messages with activity info to: ${jsonFilePath}`);
 		
 		// Print parsing stats
 		console.log("\n=== PARSING STATS ===");
@@ -401,14 +501,19 @@ async function getGPTResponse() {
 		console.log(`Final message count: ${validMessages.length}`);
 		console.log("=== END STATS ===\n");
 
-		return validMessages;
+		return {
+			messages: validMessages,
+			location: city,
+			activity: selectedActivity
+		};
 	} catch (error) {
 		console.error("Error in GPT response processing:", error);
 		throw error;
 	}
 }
 
-getGPTResponse().catch((error) => {
+// Update the function call to include the city parameter
+getGPTResponse("Berlin").catch((error) => {
 	console.error("Unhandled error:", error);
 	process.exit(1);
 });
