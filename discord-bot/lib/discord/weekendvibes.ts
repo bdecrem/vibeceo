@@ -11,6 +11,7 @@ import { getWebhookUrls } from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
 import { TextChannel, Client } from "discord.js";
 import dotenv from "dotenv";
+import { cleanupWeekendConversations } from "./fileCleanup.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,26 @@ const GENERAL_CHANNEL_ID = "1354474492629618831";
 const meetingsDir = path.join(process.cwd(), "data", "weekend-conversations");
 if (!fs.existsSync(meetingsDir)) {
 	fs.mkdirSync(meetingsDir, { recursive: true });
+}
+
+// Store the latest weekend activity reason for the scheduler to use
+let latestWeekendReason: string = "there's an urgent need to party";
+
+// Store the latest weekend activity details
+let latestWeekendActivity = {
+	name: "",
+	type: "",
+	description: ""
+};
+
+// Export the weekend reason getter for the scheduler
+export function getLatestWeekendReason(): string {
+	return latestWeekendReason;
+}
+
+// Export the weekend activity info for the scheduler
+export function getLatestWeekendActivity(): { name: string; type: string; description: string } {
+	return latestWeekendActivity;
 }
 
 // Function to find the latest meeting file
@@ -154,15 +175,39 @@ async function postLatestWeekendToDiscord(client: Client) {
 		// Provide a default reason if no seed is found or if extraction fails
 		const meetingReason = selectedSeed?.sentence_fragment || "there's an urgent need to synchronize";
 		console.log("Using meeting reason:", meetingReason);
+        
+        // Store the meeting reason for the scheduler to use
+        latestWeekendReason = meetingReason;
 
 		// Then get the latest meeting file
 		const latestMeetingPath = getLatestWeekendFile();
 		console.log("Reading meeting file from:", latestMeetingPath);
+		
+		// Clean up old weekend conversation files, keeping only the 3 most recent ones
+		const cleanupResult = cleanupWeekendConversations(3);
+		console.log(`File cleanup complete: kept ${cleanupResult.kept} files, deleted ${cleanupResult.deleted} files`);
 
 		// Read the meeting file
 		const latestMeeting = JSON.parse(
 			fs.readFileSync(latestMeetingPath, "utf8")
 		);
+
+		// Store the activity information for use in the outro message
+		if (latestMeeting.activity) {
+			console.log("Storing activity information:", latestMeeting.activity);
+			latestWeekendActivity = {
+				name: latestMeeting.activity.name || "weekend activity",
+				type: latestMeeting.activity.type || "fun event",
+				description: latestMeeting.activity.description || "some weekend fun"
+			};
+		} else {
+			console.warn("No activity found in the weekend file, using defaults");
+			latestWeekendActivity = {
+				name: "mystery weekend adventure",
+				type: "spontaneous event",
+				description: "unexpected weekend shenanigans"
+			};
+		}
 
 		// Initialize webhooks
 		console.log("Initializing webhooks...");
@@ -178,18 +223,8 @@ async function postLatestWeekendToDiscord(client: Client) {
 			throw new Error("Weekend activities channel not found");
 		}
 
-		// Send intro message with explicitly defined reason
-		const now = new Date();
-		console.log("Sending intro message with reason:", meetingReason);
-		await sendEventMessage(
-			channel,
-			"weekendvibes",
-			true,
-			now.getUTCHours(),
-			now.getUTCMinutes(),
-			null,
-			meetingReason
-		);
+		// NOTE: Not sending intro message here anymore - scheduler handles this
+		// The 'meetingReason' will be passed to the scheduler through the getLatestWeekendReason function
 
 		// Send messages
 		console.log(`Sending ${latestMeeting.messages.length} staff meeting messages...`);
@@ -220,14 +255,7 @@ async function postLatestWeekendToDiscord(client: Client) {
 
 		console.log(`Staff meeting message sending complete! Success: ${successCount}, Errors: ${errorCount}`);
 
-		// Send outro message
-		await sendEventMessage(
-			channel,
-			"weekendvibes",
-			false,
-			now.getUTCHours(),
-			now.getUTCMinutes()
-		);
+		// NOTE: Not sending outro message here anymore - scheduler handles this
 
 		console.log("Finished sending all messages");
 		return true; // Indicate success for better handling by callers

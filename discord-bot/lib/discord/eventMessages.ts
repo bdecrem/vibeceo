@@ -4,17 +4,18 @@ import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
 import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
 import { updateCurrentScene } from "./bot.js";
+import { getLatestWeekendReason, getLatestWeekendActivity } from "./weekendvibes.js";
 import path from "path";
 import fs from "fs";
 
 export const EVENT_MESSAGES = {
 	watercooler: {
-		intro: "{arrival}They are gathering by the water cooler.",
-		outro: "The coaches have wandered back to their executive suites.",
+		intro: "Hey everyone, time for a quick water cooler chat!",
+		outro: "Thanks for chatting, everyone! Back to work now."
 	},
 	waterheater: {
-		intro: "{arrival}One of our coaches has something on their mind.",
-		outro: "The coaches have drifted back to their executive suites.",
+		intro: "Hey everyone, it's time for a waterheater! Brace yourselves...",
+		outro: "That was... interesting. Let's get back to work now."
 	},
 	newschat: {
 		intro:
@@ -32,16 +33,16 @@ export const EVENT_MESSAGES = {
 			"The Board room has emptied out. These folks need to clean up after themselves.",
 	},
 	staffmeeting: {
-		intro: "{arrival}The coaches are gathering for their daily staff meeting.",
-		outro: "The staff meeting has concluded. The coaches have returned to their duties.",
+		intro: "Hey everyone, time for a quick staff meeting because {reason}.",
+		outro: "Thanks for the staff meeting, everyone! That was... productive?"
 	},
 	simplestaffmeeting: {
 		intro: "{arrival}The coaches are gathering for a quick staff meeting because {reason}.",
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
 	weekendvibes: {
-		intro: "{arrival}The weekend has begun! Our coaches are ready to party in {location}.",
-		outro: "The weekend party in {location} is winding down. The coaches look refreshed and ready for more adventures.",
+		intro: "{arrival}The coaches are antsy, eager to make a plan for the night.",
+		outro: "After their chaotic planning session, the coaches settled on {activity}: a {activityType} featuring {activityDescription}"
 	},
 } as const;
 
@@ -105,8 +106,8 @@ export async function sendEventMessage(
 		}
 		
 		const arrivalText = isNewLocation
-			? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretch overhead. `
-			: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretch overhead. `;
+			? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `
+			: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `;
 		
 		message = message.replace("{arrival}", arrivalText);
 		
@@ -144,10 +145,20 @@ export async function sendEventMessage(
 			}
 		}
 	} else if (eventType === 'weekendvibes') {
-		// Also handle the location placeholder in the outro message
+		// Handle the location placeholder in the outro message
 		const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 		const cityOnly = locationTime.location.replace(' office', '').replace(' penthouse', '');
 		message = message.replace("{location}", cityOnly);
+		
+		// For outro messages, replace activity placeholders
+		if (!isIntro) {
+			const activityInfo = getLatestWeekendActivity();
+			message = message
+				.replace("{activity}", activityInfo.name)
+				.replace("{activityType}", activityInfo.type)
+				.replace("{activityDescription}", activityInfo.description);
+			console.log("Updated weekend outro with activity info:", activityInfo);
+		}
 	}
 
 	// Store the scene in episode storage if it's a watercooler or waterheater event
