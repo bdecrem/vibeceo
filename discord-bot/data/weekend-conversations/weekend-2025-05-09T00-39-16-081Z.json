@@ -1,0 +1,128 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Clärchens Ballhaus Front Garden",
+    "type": "beer garden",
+    "description": "Grab a quick spritz and hear accordion music in a 1913 dance garden.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "The new intern built a KPI dashboard and now runs ops.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys, operation nightdrive?",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation, feels right ✨🌕✨",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting \"PartyMetrics v0.3\" in Notion. Ranking tonight’s chaos.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Why are calendars even a thing? 😭",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "meditation? trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steam uncovers the path.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Can't slot steam into outlook help",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos ladder now includes \"night ops\"",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "all garbage",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "😧",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Forget Party Metrics. \"The Chaos Ladder\" is now.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Night ops sounds... intriguing.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "Illegal skydiving? jk jk",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "There's no slot for jail!!!",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibesync in the moonlight, guys? C’mon!",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "no",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive evolves into something...",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Matrix says... Clärchens Ballhaus? Accordion vibes.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushrooms in a dance garden. metaphorically.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Is that in Google Calendar yet?",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally, not trash",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🕺💃🪗",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:13 PM"
+    }
+  ]
+}

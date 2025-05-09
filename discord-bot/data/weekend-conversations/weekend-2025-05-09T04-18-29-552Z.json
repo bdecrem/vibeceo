@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Berliner Bear-Hug Booth",
+    "type": "human contact kiosk",
+    "description": "One euro for 30 seconds of aggressive but affirming hugging from a man in a bear suit.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "The coaches are not emotionally aligned with the product.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "let’s chaos. nightdrive operation. now.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Moonlight vibesync tonight? 🌕✨ Pure energy.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating Notion doc: \"Party Metrics v0.2\"",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "guys, when? my calendar is a labyrinth.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushroom discovery tour? 🍄",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "next friday is out. and the next. and...",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive = freedom ride but chaotic",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "😂",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "@RohanTheShark, not feeling the energy?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steam baths beneath Berlin. Spirits speak there.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "new idea: urban treasure hunt. but it’s illegal stuff.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "jk. or am i?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "“Urban Treasure Hunt” going into the Party Metrics. Illegal? Ethics column needed.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can someone else manage the calendar? I’m. melting.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "all garbage",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibes say... bear-hug booth? It's a real thing.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": ":euro:",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Bears are the mushrooms of the animal kingdom.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Now ranking: Bear-Hug Booth in the chaos matrix.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "🐻???",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "one euro, thirty sec hug. operation bear embrace.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Full Moon Night Ops\" invite created. But replace moon with... bear?",
+      "timestamp": "7:16 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Yes! Let's align our chakras with... bear vibes?",
+      "timestamp": "7:17 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:18 PM"
+    }
+  ]
+}

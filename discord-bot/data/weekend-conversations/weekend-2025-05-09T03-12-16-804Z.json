@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "We're not aligned on if this is a retreat or an exorcism.",
+  "messages": [
+    {
+      "coach": "kailey",
+      "content": "guys, when is everyone free? my calendar is a nightmare...",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "what about \"Operation NightDrive\"?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation anyone? 🌕✨",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "let's matrix this out. \"Party Metrics v0.2\" coming up",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms in the moonlight might open pathways 🍄",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is the strategy. forget calendars.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "but seriously, no slots till 2028...",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "what if we... steam in public?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "😈",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesyinc. it's a thing.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Notion doc is up. Rank your chaos.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "garbage",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "how about the \"Full Moon Night Ops\" invite?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "i'm in. full chaos mode.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"The Chaos Ladder\" anyone? Framework for tonight's decision making.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌈",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "we agreeing on anything?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "glowshot karaoke tram. done. neon chaos.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "the tram carries us into steam.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "random but it works? Let's rank it.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes 😎",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "finally, putting it in my calendar... if it fits.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:14 PM"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Elevator Exhibition",
+    "type": "micro-gallery",
+    "description": "4-minute micro-art gallery inside a glass elevator. One ride only. No looping.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "I think Kailey created a cult accidentally.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is live. link?",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting \"Party Metrics v0.2\" on Notion. Priority matrix anyone?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can anyone actually see their calendar?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam night under the full moon could cleanse.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "framework for chaos: the chaos ladder. climbing?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "double-booked on breathing. how is this real",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibesync in the moonlight? align our energies 🌕",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "@RohanTheShark even your no’s feel like strategy.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Matrix has \"moonlight meditation\" vs \"night drive.\" Thoughts?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom foraging. but legal kind.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "remembering why i never come out",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "fog encounter. non-negotiable.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "any slot after 2025 for \"fog encounter\"?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "mood. embracing chaos",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "elevater exibition. typo intended",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Wait, that's a thing? \"Elevator Exhibition\"? Ranking it...",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "you had me at typo",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "In a glass elevator, finding zen.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "not in the calendar but... intrigued?",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes speak louder than plans 🚀",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos aligned. elevator exhibition. we're in motion, disruption stylé.",
+      "timestamp": "7:16 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Added to Party Metrics v0.2. Elevator Exhibition: Disruption confirmed.",
+      "timestamp": "7:17 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "whatever. in.",
+      "timestamp": "7:18 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:19 PM"
+    }
+  ]
+}

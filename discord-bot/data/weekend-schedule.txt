@@ -1,30 +1,3 @@
-# WEEKEND PARTY SCHEDULE - TESTING MODE ACTIVE
-# Weekend Party Schedule (All times below are in Los Angeles time, UTC-7)
-#
-# Weekdays END Friday at 6pm in Los Angeles.
-# From that moment, the bot enters "weekend party mode" and cycles through the following blocks:
-#
-# | Block | City    | LA Start Time | Local Time in City | Duration (hrs) |
-# |-------|---------|--------------|--------------------|----------------|
-# | 1     | Vegas   | Fri 6pm      | Fri 6pm–2am        | 8              |
-# | 2     | Tokyo   | Sat 2am      | Sat 6pm–2am        | 8              |
-# | 3     | Berlin  | Sat 10am     | Sat 7pm–3am        | 8              |
-# | 4     | Vegas   | Sat 6pm      | Sat 6pm–2am        | 8              |
-# | 5     | Tokyo   | Sun 2am      | Sun 6pm–2am        | 8              |
-# | 6     | Berlin  | Sun 10am     | Sun 7pm–3am        | 8              |
-#
-# Weekdays RESUME Monday at 9am in Singapore (which is Sunday 6pm in LA).
-#
-# Format below: StartTime (LA) | Location | DurationHours
-Friday 6pm | Vegas  | 8
-Saturday 2am | Tokyo  | 8
-Saturday 10am | Berlin | 8
-Saturday 6pm | Vegas  | 8
-Sunday 2am | Tokyo  | 8
-Sunday 10am | Berlin | 8
-# Handoff back to weekday schedule at Sunday 6pm LA time (Monday 9am Singapore time)
-
-# 24-hour weekend schedule (LA time)
 00:00 weekendvibes
 01:00 watercooler
 02:00 watercooler

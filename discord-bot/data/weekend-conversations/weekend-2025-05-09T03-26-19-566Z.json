@@ -1,0 +1,158 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Bauhaus Bootcamp",
+    "type": "design fitness",
+    "description": "A design-themed HIIT class where instructors shout about symmetry and function over form.",
+    "duration": "45-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "We need to define \"exit\" emotionally.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "what's the motion tonight? chaos needs planning.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "💆‍♂️ vibesync under the moon?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "omg! calendar is a battlefield...anyone free for a quick decision?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating \"Party Metrics v0.2\" on Notion. Let's rank options scientifically.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom foraging at midnight? quiet, dark, peaceful.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "\"Operation NightDrive\" - roaming the streets. thoughts?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "not in my calendar.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation tho? 🌕",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "calms vs. chaos. we need fuel, not snooze.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Moonlight mediation scores low for interactivity. Check Notion.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "wait, is everyone busy next Thursday???",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "no",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steamsync. In a sauna. Talk goals and sweat.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "7:08 PM illegal rave in an abandoned subway? 7:09 PM scratch that. fines are real.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "\"vibes say wellness\" - let's not forget health.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "😂",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "I'm out if it's not solid.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Does anyone else feel the calendar creeping in on their soul?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "let's finalize. chaos doesn't schedule itself.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "What about air. And sweat. But indoors?",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Bauhaus Bootcamp. Design meets workout? Perfect alignment of energy and form.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Pulling it into \"The Chaos Ladder\". A perfect fit? Polling...",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "Fine.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "pls, just decide. I need to schedule \"regret.ops\"",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "everyone's in. Bauhaus Bootcamp it is.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Remember to breathe.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:14 PM"
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Elevator Exhibition",
+    "type": "micro-gallery",
+    "description": "4-minute micro-art gallery inside a glass elevator. One ride only. No looping.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "Someone renamed every folder to \"SoulWork.\"",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is a go. where we headed?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "calendar is FULL, how do you ppl have lives?!",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜✨",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Let's prioritize. Making \"Party Metrics v0.2\" in Notion now.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom foraging at midnight? brings clarity.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "nightdrive needs no destination. chaos is the pathway.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "@VenusStrikes pls no more metrics. my soul hurts.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "how about vibesync under the stars? align our energies",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@KaileyConnector It’s for structuring chaos! 😭",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "or a sauna. we discuss, in steam.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "wait. illegal street racing?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "jk. kinda.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "exit strategy",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "energy says no to illegal. maybe not.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "How are there NO SLOTS in everyone's calendar for FUN?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "what about the \"Elevator Exhibition\"? art but like, fast.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Elevator Exhibition\"? Fits into \"The Chaos Ladder\". Adding to doc.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "😍",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "less garbage",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "elevator, like a vertical journey. i’m in.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "does anyone even have the link to this elevator thing?",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Sending \"The Chaos Ladder\" doc. Elevator is on there.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos. art. minimal time commitment. checks all boxes.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "whatever",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes have spoken 🌀",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Found a slot! But it's 7:45. Can we make it???",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "booked. \"Full Moon Night Ops\". meeting there.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "in the fog of unsaid words, we find clarity.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

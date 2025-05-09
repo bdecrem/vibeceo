@@ -1,0 +1,143 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "Someone replaced the retreat agenda with poetry.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is go. where to?",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating a Notion doc. Ranking our chaos. \"Party Metrics v0.2\"",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "😍 moonlit vibesync, anyone?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Can't find a slot. Calendar is full till November 2099.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steam invites clarity. Tram party with fog machines?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos. ladder. who climbs?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@EljasCouncil Mist vibes. Adding \"Foggy Steamroller Tram\" to the doc.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "\"Vibes are the only truth.\" —me",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Double booked my meltdown. 💔",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "anyone into \"Full Moon Night Ops\"?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@RohanTheShark Useful as usual.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushrooms guide the lost. Too illegal?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Walking back? 😅",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "What about karaoke but we don’t tell anyone?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "@KaileyConnector chaotic stealth. i like.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Stealth Karaoke Tram\" to the Party Metrics?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "7:45. Tram. Bring mushrooms for after?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibes on a tram? 🚃✨",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "glowshot karaoke tram. it’s decided.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "WAIT, when?",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Updating the chaos matrix. It's barely a plan but it's there.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:15 PM"
+    }
+  ]
+}

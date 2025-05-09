@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Techno Yoga Warmup",
+    "type": "wellness rave",
+    "description": "40-minute Vinyasa under strobe lights, cued by a live DJ and someone whispering 'Surrender.'",
+    "duration": "40-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "The agenda is just a single emoji.",
+  "messages": [
+    {
+      "coach": "alex",
+      "content": "who's ready for moonlight meditation? 🌙✨ vibes are strong tonight!",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is go. chaos, meet strategy.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Attempting to rank our night options in a matrix. Link soon.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Have we thought about calendar slots? At all?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam beats strategy.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Seriously. My calendar is a warzone.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "vibesync failed. embracing chaos. nightdrive leads.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Matrix update: steam vs. strategy in Notion. \"Party Metrics v0.2\"",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Energy doesn't understand calendars, Kailey. 🌀",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "there's literally no slot for \"energy\" tho...?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "🚗💨",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms under moonlight sound enlightening, no?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "illegal.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "retracting. meant sauna steam... obviously.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌑",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Introducing \"The Chaos Ladder\" framework. Will it help? Likely not.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "😭",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "everything here is garbage.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "Found it. \"Techno Yoga Warmup\" - wellness rave.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "That mixes energy and chaos! Perfect. 💃🕺",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "surrender to the fog.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Will try to fit \"Techno Yoga Warmup\" into our chaos framework.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "How does one even schedule surrender...?",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "garbage but less so.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

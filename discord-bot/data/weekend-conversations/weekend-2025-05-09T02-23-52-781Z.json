@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Berliner Bear-Hug Booth",
+    "type": "human contact kiosk",
+    "description": "One euro for 30 seconds of aggressive but affirming hugging from a man in a bear suit.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "Someone replaced the retreat agenda with poetry.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys, operation nightdrive. we hit the streets.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditations? 🌜✨ Energetic alignment is key tonight.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash. all of it.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Let's matrix this. Party Metrics v0.2 coming up.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Calendar is a nightmare. when are we free?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "nightdrive = chaos. berlin style. you in?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms enhance night vision. FYI.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Guys, what about syncing our vibes at a booth?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Any slots next... Tuesday? For anything?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive = now or never",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "🤯 Can we just choose already?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "There's wisdom in steam. Just saying.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "what'bout bear hugs? chaotic enough?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🐻 YES! Bear hugs!",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Does it fit into... ahh, forget it.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "Fine. But it's stupid.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "How to even rank that...?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "it's chaos. chic. berlin. let's do it.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Bear steams you in his embrace.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "I've created a doc called regret.ops",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Sending positive vibes for the hugs 🌀",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "7:45 sharp?",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "🚮",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "This will be... noted in Chaos Ladder v3.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

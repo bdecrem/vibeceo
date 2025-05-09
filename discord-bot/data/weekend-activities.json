@@ -142,8 +142,252 @@
         "source": "real"
       }
     ],
-    "medium": [],
-    "long": []
+    "medium": [  {
+    "name": "Berliner Time Warp Caf\u00e9",
+    "type": "immersive dinner lounge",
+    "description": "Each hour, the menu and music shift to a different decade. Waitstaff change accents accordingly.",
+    "source": "fictional"
+  },
+  {
+    "name": "Currywurst Cabaret",
+    "type": "theatrical dinner",
+    "description": "Dinner theater where each course triggers a new overly dramatic song about processed meat.",
+    "source": "fictional"
+  },
+  {
+    "name": "Glowgarten",
+    "type": "techno beer garden",
+    "description": "LED-lit tables, synthy background beats, and glowing pretzels in an urban nature park.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Loft of Fables",
+    "type": "storytelling supper",
+    "description": "Multi-course dinner narrated by actors impersonating mythical Berlin creatures.",
+    "source": "fictional"
+  },
+  {
+    "name": "Flamingo Forecast",
+    "type": "weather-reactive pop-up",
+    "description": "Your food, lighting, and music all change based on simulated Berlin weather patterns.",
+    "source": "fictional"
+  },
+  {
+    "name": "Prosecco Poetry Arena",
+    "type": "open mic + bubbles",
+    "description": "One hour of slam poetry, two hours of shouting back positive affirmations over Prosecco refills.",
+    "source": "fictional"
+  },
+  {
+    "name": "Late Stage Sitcom Bar",
+    "type": "meta-television lounge",
+    "description": "Everything\u2019s a sitcom here. You order, laugh track plays. Staff wear fake mics. It\u2019s uncanny.",
+    "source": "fictional"
+  },
+  {
+    "name": "Krautrock Sauna Sessions",
+    "type": "spa rave fusion",
+    "description": "Sauna rounds timed to obscure 70s prog rock. Hydration stations serve herbal gin shots.",
+    "source": "fictional"
+  },
+  {
+    "name": "Dinner & Drone Darts",
+    "type": "hybrid dining experience",
+    "description": "Throw darts at flying drones to win appetizers. Losers have to explain their startup idea.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Emotional Buffet",
+    "type": "experimental food theater",
+    "description": "Each buffet station represents a different feeling. No labels. Cry if necessary.",
+    "source": "fictional"
+  },
+  {
+    "name": "Haus of Echo",
+    "type": "silent disco restaurant",
+    "description": "Your table wears synced headphones; conversations and menus shift based on BPM.",
+    "source": "fictional"
+  },
+  {
+    "name": "Dinner at the End of Capitalism",
+    "type": "dystopian prix fixe",
+    "description": "A communal dinner served by robots wearing anarchist patches. Menu in binary.",
+    "source": "fictional"
+  },
+  {
+    "name": "Flaneur Feast",
+    "type": "walking supper",
+    "description": "Each course served at a different sidewalk. Staff on rollerblades. Philosophical prompts provided.",
+    "source": "fictional"
+  },
+  {
+    "name": "Cookies Cream",
+    "type": "vegetarian fine dining",
+    "description": "Hidden upscale vegetarian spot behind a loading dock \u2014 inventive, iconic, Berlin-core.",
+    "source": "real"
+  },
+  {
+    "name": "Neni Berlin",
+    "type": "rooftop restaurant",
+    "description": "Glass-walled greenhouse rooftop with Mediterranean fusion and panoramic zoo views.",
+    "source": "real"
+  },
+  {
+    "name": "Katz Orange",
+    "type": "modern German dining",
+    "description": "Rustic-modern dishes in a brick courtyard with biodynamic wines and candlelight.",
+    "source": "real"
+  },
+  {
+    "name": "Borchardt",
+    "type": "classic brasserie",
+    "description": "Old-school, high-ceilinged institution favored by celebrities, politicians, and power-lunchers.",
+    "source": "real"
+  },
+  {
+    "name": "Mrs. Robinson\u2019s",
+    "type": "neo-bistro",
+    "description": "Casual fine dining with big Berlin personality and ever-changing fusion plates.",
+    "source": "real"
+  },
+  {
+    "name": "Grill Royal",
+    "type": "steakhouse",
+    "description": "See-and-be-seen riverside steakhouse with big art, bold prices, and serious vibes.",
+    "source": "real"
+  },
+  {
+    "name": "Tim Raue",
+    "type": "Michelin-starred Asian fusion",
+    "description": "Precision-plated, wildly creative cuisine in a minimalist gallery-like space.",
+    "source": "real"
+  }
+
+
+
+],
+    "long": [
+  {
+    "name": "The Endless Basement",
+    "type": "underground rave",
+    "description": "A club with no exits, just deeper levels. Each floor has stranger rules. You may forget your name.",
+    "source": "fictional"
+  },
+  {
+    "name": "Berliner Bureau of Lost Time",
+    "type": "immersive performance",
+    "description": "Once you enter, you must justify every hour you spend. Bureaucrats may detain you for emotional inconsistencies.",
+    "source": "fictional"
+  },
+  {
+    "name": "Scream Garden",
+    "type": "open-air emotion club",
+    "description": "Techno meets primal therapy in a fog-drenched courtyard full of whispering statues.",
+    "source": "fictional"
+  },
+  {
+    "name": "Club Nebel",
+    "type": "fog-only party",
+    "description": "No visuals. Just sound, mist, silhouettes, and the ghost of your ex's DJ set.",
+    "source": "fictional"
+  },
+  {
+    "name": "Kollektiv Collapse",
+    "type": "anarchist dinner rave",
+    "description": "Food, music, mutual aid, no bouncers. Leave when the compost starts fermenting.",
+    "source": "fictional"
+  },
+  {
+    "name": "Cicada Ball",
+    "type": "seasonal masquerade",
+    "description": "Only happens once every 17 weeks. Guests must wear masks until dawn. Some stay masked forever.",
+    "source": "fictional"
+  },
+  {
+    "name": "Tanzflucht",
+    "type": "mobile dance event",
+    "description": "You follow a silent disco van through alleys and over rooftops. If you fall behind, you\u2019re out.",
+    "source": "fictional"
+  },
+  {
+    "name": "Night of 1,000 Outfit Changes",
+    "type": "fashion rave",
+    "description": "Every hour, you must change outfits. Clothing racks spin from the ceiling.",
+    "source": "fictional"
+  },
+  {
+    "name": "Chaos Choir",
+    "type": "vocal rave",
+    "description": "Instead of DJs, it\u2019s screaming. Harmonized. Beautiful. Loud. You won't believe the drop.",
+    "source": "fictional"
+  },
+  {
+    "name": "Keller of Questions",
+    "type": "philosophical club",
+    "description": "Get in by answering a question. Stay by asking better ones. Exit by making someone cry.",
+    "source": "fictional"
+  },
+  {
+    "name": "Apokalounge",
+    "type": "post-apocalypse club",
+    "description": "All furniture is scavenged. You trade favors for drinks. The playlist is collapse-core.",
+    "source": "fictional"
+  },
+  {
+    "name": "Library of Looping Desire",
+    "type": "erotic archive party",
+    "description": "Every room has a different theme. You must catalog your night in footnotes.",
+    "source": "fictional"
+  },
+  {
+    "name": "Voidwerk",
+    "type": "concept club",
+    "description": "Each guest represents a concept. You are not allowed to break character until sunrise.",
+    "source": "fictional"
+  },
+  {
+    "name": "Berghain",
+    "type": "techno club",
+    "description": "Berlin\u2019s infamous temple of sound, open into the late morning. Door policy is ruthless. Music is worth it.",
+    "source": "real"
+  },
+  {
+    "name": "Sisyphos",
+    "type": "open-air club",
+    "description": "Beachy, burner-like club with art cars, hammocks, fire pits, and no clocks.",
+    "source": "real"
+  },
+  {
+    "name": "Kater Blau",
+    "type": "riverside club",
+    "description": "Whimsical, colorful chaos right on the Spree. Expect surprise sunrise moments.",
+    "source": "real"
+  },
+  {
+    "name": "Ritter Butzke",
+    "type": "multi-room party venue",
+    "description": "Converted factory with themed rooms, gritty basslines, and dedicated regulars.",
+    "source": "real"
+  },
+  {
+    "name": "Watergate",
+    "type": "club with a view",
+    "description": "Legendary house and techno spot with LED ceilings and panoramic Spree view.",
+    "source": "real"
+  },
+  {
+    "name": "Club der Visionaere",
+    "type": "canal bar/club",
+    "description": "Low-key summer day-to-night institution. Come for the vibe, stay until you're barefoot.",
+    "source": "real"
+  },
+  {
+    "name": "Anomalie Art Club",
+    "type": "experimental venue",
+    "description": "A shifting warehouse party/art hybrid. Projectors, DJs, and mild time distortion.",
+    "source": "real"
+  }
+]
   },
   "Vegas": {
     "short": [
@@ -288,20 +532,617 @@
         "source": "real"
       }
     ],
-    "medium": [],
-    "long": []
+    "medium": [
+  {
+    "name": "Slot Machine Story Hour",
+    "type": "immersive gambling theatre",
+    "description": "Every time you pull a lever, an actor narrates a new chapter of your descent into capitalist chaos.",
+    "source": "fictional"
+  },
+  {
+    "name": "Sin City Soup Supper",
+    "type": "themed dinner",
+    "description": "Each course is based on a different vice and served by staff in Greco-Roman togas.",
+    "source": "fictional"
+  },
+  {
+    "name": "Bingo & Betrayal",
+    "type": "interactive game night",
+    "description": "Win prizes, lose friends. Guests are assigned secrets and must bluff through every round.",
+    "source": "fictional"
+  },
+  {
+    "name": "Champagne Circus Training",
+    "type": "performance workshop",
+    "description": "You\u2019ll learn aerials after your second glass. Everyone signs a waiver. No one reads it.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Buffet of Broken Dreams",
+    "type": "dark comedy buffet",
+    "description": "A spoken-word MC guides you through lukewarm trays of existential dread and fondue.",
+    "source": "fictional"
+  },
+  {
+    "name": "Omni-Karaoke Arena",
+    "type": "karaoke arena",
+    "description": "Six stages. One spotlight. You sing while rotating on a moving platform surrounded by pyrotechnics.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Influencer Scavenger Hunt",
+    "type": "urban game",
+    "description": "Take selfies in 12 locations, capture 1 micro-celebrity, post 3 lies. Win drink credits.",
+    "source": "fictional"
+  },
+  {
+    "name": "Glow Noodle Roller Rave",
+    "type": "themed food rink",
+    "description": "LED ramen carts on wheels. Eat while skating. Watch the broth glow.",
+    "source": "fictional"
+  },
+  {
+    "name": "Crypto Karaoke Confessional",
+    "type": "decentralized bar game",
+    "description": "You sing. The crowd rates you. The blockchain decides if you drink top shelf or water.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Mirage Mirage",
+    "type": "deception dinner",
+    "description": "A fake restaurant built inside a real restaurant that pretends to be another restaurant.",
+    "source": "fictional"
+  },
+  {
+    "name": "Dinner in the Void",
+    "type": "immersive blackbox meal",
+    "description": "Served in pitch black by whispering waiters. No forks. No escape until dessert.",
+    "source": "fictional"
+  },
+  {
+    "name": "High Stakes Pictionary Lounge",
+    "type": "game bar",
+    "description": "Draw terribly, win chips. If your team loses, your cocktail gets downgraded.",
+    "source": "fictional"
+  },
+  {
+    "name": "Psychic Drag Dinner",
+    "type": "queer cabaret",
+    "description": "Get a tarot reading with your entr\u00e9e and a roast with your dessert.",
+    "source": "fictional"
+  },
+  {
+    "name": "Best Friend",
+    "type": "Korean fusion restaurant",
+    "description": "Roy Choi\u2019s hip-hop blasted culinary mashup spot inside Park MGM.",
+    "source": "real"
+  },
+  {
+    "name": "Carbone",
+    "type": "Italian American fine dining",
+    "description": "Red-sauce Vegas glam with tableside Caesar, spicy rigatoni, and Rat Pack swagger.",
+    "source": "real"
+  },
+  {
+    "name": "Bazaar Meat by Jos\u00e9 Andr\u00e9s",
+    "type": "avant-garde steakhouse",
+    "description": "Experimental proteins, cotton candy foie gras, and maximalist dining energy.",
+    "source": "real"
+  },
+  {
+    "name": "Mayfair Supper Club",
+    "type": "live entertainment dinner",
+    "description": "Over-the-top lakeside supper with swing, sax, and seafood towers.",
+    "source": "real"
+  },
+  {
+    "name": "Superfrico",
+    "type": "psychedelic Italian",
+    "description": "Acid-hued rooms, stilt walkers, and pizza that may or may not talk back.",
+    "source": "real"
+  },
+  {
+    "name": "\u00e9 by Jos\u00e9 Andr\u00e9s",
+    "type": "hidden tasting menu",
+    "description": "Tiny 8-seat kitchen theater inside Jaleo. Liquid olives and surprise courses.",
+    "source": "real"
+  },
+  {
+    "name": "Estiatorio Milos",
+    "type": "Greek seafood",
+    "description": "Elegant, upscale fish flown in daily and grilled simply. Yes, the octopus is perfect.",
+    "source": "real"
+  }
+],
+    "long": [
+  {
+    "name": "The Eternal Slot",
+    "type": "endless casino game",
+    "description": "One machine. One bet. It never ends. You win when you forget why you came.",
+    "source": "fictional"
+  },
+  {
+    "name": "Rooftop Rodeo Soir\u00e9e",
+    "type": "mechanical bull gala",
+    "description": "Three hours of champagne, saddle chafing, and slow-motion line dancing under pink floodlights.",
+    "source": "fictional"
+  },
+  {
+    "name": "Blackout Buffet Ballet",
+    "type": "experimental dinner",
+    "description": "Dine in the dark while dancers interpret your food choices with interpretive swan movements.",
+    "source": "fictional"
+  },
+  {
+    "name": "Subterranean Champagne Labyrinth",
+    "type": "underground party maze",
+    "description": "45 rooms. No maps. Every bottle leads deeper. You find the DJ, you get to leave.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Simulation Suite",
+    "type": "VR social spiral",
+    "description": "Put on a headset, meet a simulated version of yourself. Try not to fall in love.",
+    "source": "fictional"
+  },
+  {
+    "name": "Glowfight Lounge",
+    "type": "UV combat bar",
+    "description": "Blacklight swordplay with marshmallow sabers. Each hit earns sips of edible glitter wine.",
+    "source": "fictional"
+  },
+  {
+    "name": "Ceiling Fan Cathedral",
+    "type": "ambient mega-club",
+    "description": "300 synchronized ceiling fans create hypnotic rhythm. Drones serve dry martinis mid-air.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Mirage Mirage Mirage",
+    "type": "recursive nightclub",
+    "description": "Each door opens to another version of the same club, slightly worse. You must escape by sunrise.",
+    "source": "fictional"
+  },
+  {
+    "name": "VIP Parking Garage Rave",
+    "type": "alt dance venue",
+    "description": "Top floor of a spiral garage. Bass echoes off concrete. Attendees arrive via Lyft Lux only.",
+    "source": "fictional"
+  },
+  {
+    "name": "The High Stakes Haircut",
+    "type": "barberclub hybrid",
+    "description": "You get a fade while gambling your drink limit on trivia rounds and old-school hip-hop lyrics.",
+    "source": "fictional"
+  },
+  {
+    "name": "Cirque de Filet",
+    "type": "dinner + circus",
+    "description": "Three-hour tasting menu punctuated by aerialists, knife juggling, and increasingly dramatic salmon plating.",
+    "source": "fictional"
+  },
+  {
+    "name": "Y2K Basement Revival",
+    "type": "throwback party",
+    "description": "Early 2000s fashion, flip phones, and choreographed dance breaks in a retro mall food court.",
+    "source": "fictional"
+  },
+  {
+    "name": "Truth or Tequila Arena",
+    "type": "intimate arena party",
+    "description": "The crowd decides your fate: shots or secrets. Everything's livestreamed to a hotel lobby.",
+    "source": "fictional"
+  },
+  {
+    "name": "XS Nightclub",
+    "type": "nightclub",
+    "description": "Encore\u2019s luxurious, gold-dripping party palace with headliner DJs and a pool.",
+    "source": "real"
+  },
+  {
+    "name": "Omnia",
+    "type": "mega-club",
+    "description": "Massive multi-room venue with kinetic chandeliers and open-til-dawn dancefloor.",
+    "source": "real"
+  },
+  {
+    "name": "Hakkasan",
+    "type": "multi-level club",
+    "description": "MGM Grand\u2019s top-tier EDM destination with laser heaven and table service armies.",
+    "source": "real"
+  },
+  {
+    "name": "Drai\u2019s Nightclub",
+    "type": "rooftop club",
+    "description": "High-energy rooftop club on the Strip with hip-hop focus and panoramic views.",
+    "source": "real"
+  },
+  {
+    "name": "Marquee",
+    "type": "themed nightclub",
+    "description": "Cosmopolitan\u2019s signature spot with theme rooms, deep beats, and electronic saturation.",
+    "source": "real"
+  },
+  {
+    "name": "Zouk",
+    "type": "futuristic club",
+    "description": "Tech-savvy dance space with floating orbs, rotating DJ booths, and full sensory overload.",
+    "source": "real"
+  },
+  {
+    "name": "The Mayfair Supper Club",
+    "type": "supper club show",
+    "description": "Lake Bellagio-front dining with rotating jazz, burlesque, and four-hour tasting menus.",
+    "source": "real"
+  }
+]
   },
   "Tokyo": {
     "short": [
       {
-        "name": "Shibuya Crossing",
-        "type": "attraction",
-        "description": "World's busiest pedestrian crossing with amazing people-watching.",
-        "duration": "30 minutes",
-        "source": "real"
-      }
+    "name": "Pixel Zen Capsule",
+    "type": "tech meditation pod",
+    "description": "Sit inside a glowing cube while a pixelated monk guides your breathing via glitchy haikus.",
+    "source": "fictional"
+  },
+  {
+    "name": "Karaoke Elevator Duel",
+    "type": "karaoke sprint",
+    "description": "Battle a stranger in a two-minute song-off as you ascend 22 floors in Shinjuku.",
+    "source": "fictional"
+  },
+  {
+    "name": "Sakura Smoke Lab",
+    "type": "sensory bar",
+    "description": "Inhale cherry blossom vapor while your cocktail evaporates in reverse.",
+    "source": "fictional"
+  },
+  {
+    "name": "Gacha Philosophy Club",
+    "type": "capsule salon",
+    "description": "Pop a gacha machine and debate whatever concept comes out for five minutes max.",
+    "source": "fictional"
+  },
+  {
+    "name": "Robot Tea Ceremony",
+    "type": "mecha culture event",
+    "description": "A perfectly imperfect tea ceremony hosted by a slightly glitchy service android.",
+    "source": "fictional"
+  },
+  {
+    "name": "Subway Haiku Slam",
+    "type": "train poetry contest",
+    "description": "Compete to write 5-7-5 verses during a one-stop metro ride. Winner gets a melon soda.",
+    "source": "fictional"
+  },
+  {
+    "name": "Neko Joust Lounge",
+    "type": "cat fencing bar",
+    "description": "Pet a sleepy cat while watching live mini-lance battles between plush toys and lasers.",
+    "source": "fictional"
+  },
+  {
+    "name": "Emoji Omikuji",
+    "type": "digital fortune booth",
+    "description": "Receive a divine emoji forecast and then explain its implications to a priest hologram.",
+    "source": "fictional"
+  },
+  {
+    "name": "Bento Speed Assembly",
+    "type": "culinary challenge",
+    "description": "Assemble a photogenic bento box in under 3 minutes while kawaii judges yell gently.",
+    "source": "fictional"
+  },
+  {
+    "name": "Otaku Whisper Cafe",
+    "type": "whisper-only cafe",
+    "description": "Order in a whisper, converse in a murmur, tip in stickers. Violators get glared at.",
+    "source": "fictional"
+  },
+  {
+    "name": "Yokai Flash Mob",
+    "type": "masked street event",
+    "description": "Join a pop-up monster parade through a convenience store. No questions allowed.",
+    "source": "fictional"
+  },
+  {
+    "name": "Bubblewrap Footpath",
+    "type": "ASMR walk",
+    "description": "Walk barefoot across 15 meters of bubblewrap while city noise fades into ambient J-pop.",
+    "source": "fictional"
+  },
+  {
+    "name": "Shibuya Glitch Booth",
+    "type": "AR photo experience",
+    "description": "Take a picture of your aura. Then take a picture of your future self. Then leave.",
+    "source": "fictional"
+  },
+  {
+    "name": "Trench",
+    "type": "speakeasy",
+    "description": "Absinthe-forward intimate bar in Ebisu with vintage vibes and incredible cocktails.",
+    "source": "real"
+  },
+  {
+    "name": "Gen Yamamoto",
+    "type": "tasting bar",
+    "description": "Seasonal fruit-based cocktail tasting menu in an ultra-minimalist setting.",
+    "source": "real"
+  },
+  {
+    "name": "Bar Benfiddich",
+    "type": "cocktail bar",
+    "description": "Inventive mixology and hand-ground herbs served like potions in a cozy nook.",
+    "source": "real"
+  },
+  {
+    "name": "High Five",
+    "type": "classic cocktail bar",
+    "description": "One of the world\u2019s best Ginza bars \u2014 no menu, just precision and trust.",
+    "source": "real"
+  },
+  {
+    "name": "TeamLab Planets Tokyo",
+    "type": "immersive art",
+    "description": "Surreal walk-through digital art installations. Can be done in under an hour if you rush.",
+    "source": "real"
+  },
+  {
+    "name": "Shibuya Sky",
+    "type": "rooftop view",
+    "description": "Panoramic sunset views over Tokyo with ambient music and skyline selfies.",
+    "source": "real"
+  },
+  {
+    "name": "Yoyogi Park Walk",
+    "type": "evening stroll",
+    "description": "Twilight walk through urban forest trails with lanterns, buskers, and peace.",
+    "source": "real"
+  }
     ],
-    "medium": [],
-    "long": []
+    "medium": [
+  {
+    "name": "Sushi from the Sky",
+    "type": "aerial dinner",
+    "description": "Dine suspended midair by crane while drones deliver nigiri and ambient whispers.",
+    "source": "fictional"
+  },
+  {
+    "name": "Emoji Kaiseki",
+    "type": "interactive tasting menu",
+    "description": "Every course is paired with a single emoji. You must decode the meaning to eat it.",
+    "source": "fictional"
+  },
+  {
+    "name": "VHS Jazz Spa",
+    "type": "retro bathing lounge",
+    "description": "Soak your feet in warm sake while VHS jazz tapes project on steamy walls.",
+    "source": "fictional"
+  },
+  {
+    "name": "Midnight Manga Banquet",
+    "type": "animated dinner",
+    "description": "A multi-course feast with food inspired by famous manga scenes and served by cosplayers.",
+    "source": "fictional"
+  },
+  {
+    "name": "Gachapon Gourmet Crawl",
+    "type": "randomized food tour",
+    "description": "Turn a capsule machine to decide your next bizarre food + drink combo location.",
+    "source": "fictional"
+  },
+  {
+    "name": "Bento Duel: Chef vs Robot",
+    "type": "live cooking battle",
+    "description": "Chefs face off against AI-powered rice printers while the crowd shouts support in haiku.",
+    "source": "fictional"
+  },
+  {
+    "name": "Shrine of 1,000 Vibes",
+    "type": "spiritual nightlife",
+    "description": "Wander a candlelit maze of micro bars themed by mood and lunar cycle.",
+    "source": "fictional"
+  },
+  {
+    "name": "Purikura Dinner Theater",
+    "type": "photo booth cabaret",
+    "description": "Order courses while trapped inside a glamor-filtered karaoke photo booth.",
+    "source": "fictional"
+  },
+  {
+    "name": "Otome Mystery Cafe",
+    "type": "narrative date sim bar",
+    "description": "You are the heroine. You choose your server\u2019s backstory. You must survive dinner.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Bento Metaverse",
+    "type": "AR dining simulation",
+    "description": "Every guest sees a different meal. Some can\u2019t use chopsticks unless they prove themselves.",
+    "source": "fictional"
+  },
+  {
+    "name": "Neon Silence Ceremony",
+    "type": "futurist tea ritual",
+    "description": "No talking. Just lighting cues, signal tones, and reactive drinkware.",
+    "source": "fictional"
+  },
+  {
+    "name": "Yokai Tasting Club",
+    "type": "spirit pairing dinner",
+    "description": "Each dish represents a Japanese ghost. The cocktails dare you to meet them.",
+    "source": "fictional"
+  },
+  {
+    "name": "Train Car Omakase",
+    "type": "mobile sushi ride",
+    "description": "You eat as the train loops Tokyo. Each course reveals a new personal truth.",
+    "source": "fictional"
+  },
+  {
+    "name": "Omakase Yui",
+    "type": "sushi omakase",
+    "description": "Premium chef\u2019s choice sushi spot where counter seating = immersive spectacle.",
+    "source": "real"
+  },
+  {
+    "name": "Afuri Ramen",
+    "type": "yuzu ramen shop",
+    "description": "Citrus-kissed ramen in a sleek, clean space with automated efficiency.",
+    "source": "real"
+  },
+  {
+    "name": "Ishikawa",
+    "type": "kaiseki fine dining",
+    "description": "Three Michelin stars, countless tiny details. Hidden in an alley. Magical.",
+    "source": "real"
+  },
+  {
+    "name": "Kyubey",
+    "type": "historic sushi counter",
+    "description": "Legendary Ginza sushi with tradition, intimacy, and incredible precision.",
+    "source": "real"
+  },
+  {
+    "name": "Teyandei",
+    "type": "warm izakaya",
+    "description": "Playful handwritten menus and cozy vibes in a Tokyo favorite with soul.",
+    "source": "real"
+  },
+  {
+    "name": "Super Potato Retro Arcade",
+    "type": "gaming bar",
+    "description": "Grab snacks, beers, and relive your pixelated glory on vintage consoles.",
+    "source": "real"
+  },
+  {
+    "name": "Tokyo Dome City Spa LaQua",
+    "type": "hot spring and hangout",
+    "description": "Open late for soaking, lounging, and forgetting you\u2019re in a megacity.",
+    "source": "real"
+  }
+],
+    "long": [
+  {
+    "name": "The Endless Izakaya",
+    "type": "neverending food crawl",
+    "description": "You stay seated. The staff changes. The lighting shifts. The night forgets its name.",
+    "source": "fictional"
+  },
+  {
+    "name": "Yokai Ramen Ritual",
+    "type": "haunted dining ceremony",
+    "description": "Eat 13 courses of ramen while actors in folklore costumes chant under flickering lanterns.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Capsule Hotel Casino",
+    "type": "micro-gambling lounge",
+    "description": "Every capsule is a different theme. You gamble with secrets, not chips.",
+    "source": "fictional"
+  },
+  {
+    "name": "Digital Shrine Bar Hop",
+    "type": "AR guided crawl",
+    "description": "Scan a QR code at each bar. Complete all 7 trials to unlock a cocktail from the gods.",
+    "source": "fictional"
+  },
+  {
+    "name": "Glitchwave Metro Party",
+    "type": "roaming club train",
+    "description": "A subway train that never stops. Every car is a new DJ, every station more surreal.",
+    "source": "fictional"
+  },
+  {
+    "name": "Kigurumi Battle Lounge",
+    "type": "costumed social arena",
+    "description": "Dress as your inner creature. Dance, duel, or nap in beanbags as judged by a plush deity.",
+    "source": "fictional"
+  },
+  {
+    "name": "Ghibli Noir Cabaret",
+    "type": "animated dinner theater",
+    "description": "A smoky reimagining of childhood dreams, served with miso martinis and jazz ghosts.",
+    "source": "fictional"
+  },
+  {
+    "name": "Hyper Shrine Sleepover",
+    "type": "overnight ritual",
+    "description": "Midnight tarot, omamori crafting, and dream journaling under synthetic moonlight.",
+    "source": "fictional"
+  },
+  {
+    "name": "Purikura Speed Love",
+    "type": "accelerated romance sim",
+    "description": "Each hour, you switch partners and print a new photo-booth memory. Plotlines get weird fast.",
+    "source": "fictional"
+  },
+  {
+    "name": "The Bento Gauntlet",
+    "type": "extreme dinner challenge",
+    "description": "Can you eat 12 tiny bentos while a panel of judges rates your chopstick etiquette live?",
+    "source": "fictional"
+  },
+  {
+    "name": "Whisper Karaoke Mansion",
+    "type": "whisper-only party",
+    "description": "Three floors of silent pop. Sing in a whisper or get escorted out by mime security.",
+    "source": "fictional"
+  },
+  {
+    "name": "Mirror Club 7",
+    "type": "narcissistic nightlife",
+    "description": "A techno club where every surface is reflective. The DJ remixes your heartbeat.",
+    "source": "fictional"
+  },
+  {
+    "name": "Emoji Spa Experience",
+    "type": "wellness parody",
+    "description": "Each hot spring pool is based on an emoji. Your soak is algorithmically matched to your soul.",
+    "source": "fictional"
+  },
+  {
+    "name": "Womb",
+    "type": "techno club",
+    "description": "Iconic four-floor Shibuya club with massive sound and visuals. Ends late (if ever).",
+    "source": "real"
+  },
+  {
+    "name": "Contact Tokyo",
+    "type": "underground club",
+    "description": "Basement venue for deep sounds, progressive vibes, and sunrise exits.",
+    "source": "real"
+  },
+  {
+    "name": "AgeHa",
+    "type": "mega-club",
+    "description": "Tokyo\u2019s biggest party complex with outdoor pool, multiple rooms, and ferry service.",
+    "source": "real"
+  },
+  {
+    "name": "VENT",
+    "type": "minimalist club",
+    "description": "Audiophile-friendly techno cave in Omotesando. No phones, no distractions, all sound.",
+    "source": "real"
+  },
+  {
+    "name": "Bonobo",
+    "type": "funky club/bar hybrid",
+    "description": "Two floors of vinyl, soul, and incense-smoke charm in a converted house.",
+    "source": "real"
+  },
+  {
+    "name": "Forestlimit",
+    "type": "experimental venue",
+    "description": "For the weirdos. Left-field performances, tiny crowd, cosmic after-midnight feels.",
+    "source": "real"
+  },
+  {
+    "name": "LaQua Spa at Tokyo Dome City",
+    "type": "night spa",
+    "description": "24-hour hot spring and lounge with food, pools, and robe-based wanderlust.",
+    "source": "real"
+  }
+]
   }
 }

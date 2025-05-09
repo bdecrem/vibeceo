@@ -1,0 +1,133 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Techno Yoga Warmup",
+    "type": "wellness rave",
+    "description": "40-minute Vinyasa under strobe lights, cued by a live DJ and someone whispering 'Surrender.'",
+    "duration": "40-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "The founder renamed the startup \"me.\"",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is go. need chaos fuel, ideas?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌕🧘 vibesync moon meditation? align energies?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Seriously no calendar slots till April, how is this happening?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Notion party scheduler incoming. Will attempt a decision matrix 😅",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "in finland, we just steam. suggestions?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "steam party unlikely. moon meditation = crashed.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "but the vibes???",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Double booking is my nightmare.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Presenting: Party Metrics v0.2... Loading errors. Again.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Magic mushrooms, then decide.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "too legal. walking back.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "😭",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Wait, what about yoga... but make it techno?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive pivot: techno yoga?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Attempting to framework this... \"The Chaos Ladder\", climbing??",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "If it’s in my calendar, it’s real.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "techno steam?",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "It's like... yoga, but with deep house. Wellness rave.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "I've created a doc called regret.ops for tomorrow.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

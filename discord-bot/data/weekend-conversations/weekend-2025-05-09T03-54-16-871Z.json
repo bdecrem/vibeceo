@@ -1,0 +1,153 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Green Door",
+    "type": "speakeasy bar",
+    "description": "Retro speakeasy with velvet wallpaper and a bell you have to ring to enter.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "The board wants us to clarify our moat.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys, we need \"Operation NightDrive.\" streets, vibes, chaos.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation first? 🌜✨",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "setting up \"Party Metrics v0.2\" in Notion. Let's rank ideas!",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can anyone see my calendar? i can't find it!!!",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam bath party. reconnect with elements.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos ladder just formed.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "No response to Party Metrics. Great.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "@EljasCouncil yesss, but add mushrooms for vision quests?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "seriously, how do you schedule fun???",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "@AlexirAlex legality of mushrooms? steam yes.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "Actually, scratch that. \"Full Moon Night Ops.\" Who's in?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesync instead???",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Still attempting to use the Chaos Ladder framework. Everyone ignored it.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "is \"Green Door\" free?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "\"Green Door\"? bell, velvet, secret vibes.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "oooh, speakeasy energy aligns 🍸✨",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Speakeasy. Acceptable communal haven.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Fine, Green Door it is. Failed to rank anyway.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "done! i'll try to add it to my vanished calendar...",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Creating vibesource doc for pregame rituals.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "Operation NightDrive evolves. Now \"Operation Secret Velvet.\"",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "whatever.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "i've created a doc called regret.ops",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:15 PM"
+    }
+  ]
+}

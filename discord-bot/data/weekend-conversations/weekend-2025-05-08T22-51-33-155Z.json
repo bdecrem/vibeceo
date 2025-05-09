@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "Who deleted the Notion board again?",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive: phase 1, ideas?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation!! 🌕✨",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "what's the google cal situation??",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "let’s matrix this. options vs vibes.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam circles. under the full moon.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is the strategy, people",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "😐",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "@RohanTheShark, not feeling the vibes?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "seriously, no slots this month. NONE.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Party Metrics v0.2, opening Notion now.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "wait, what about glowshot karaoke tram",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms might glow under neon. theoretically.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "back to back meetings, but... tram?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🚋✨ YES!",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "updating matrix... tram has potential",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "is this a legal concern or..?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "forget legality, embrace the chaos tram",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "like a floating sauna, but loud",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes don’t need legality😉",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine. whatever.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "creating invite: \"Full Moon Night Ops\"",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Got it. Tram it is. Updating Party Metrics v0.2",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "7:45 then? sending invites",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:15 PM"
+    }
+  ]
+}

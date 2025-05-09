@@ -1,0 +1,158 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Becketts Kopf",
+    "type": "literary bar",
+    "description": "Literary-themed cocktail bar with deep vibes and old books behind the liquor.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "Our CAC has become sentient.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "urgent: operation nightdrive initiation?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "😍",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting NightOptions Matrix in Notion",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "How about next Wed? No, wait...",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms or steam tonight?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive = spontaneous combustion of plans.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibesync under the moon? 🌕",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Every slot is a nightmare.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Matrix update: added \"mushroom meditation\" and \"moon vibes\"",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "who's in for chaos?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "steam sounds... doable?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam = sauna logic. embrace.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Candlelit yoga?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "stop",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "steam discarded. nightdrive evolves.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Launching \"The Chaos Ladder\" framework. Rate ideas by potential for disastrous fun.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Invites glitching. Help.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "What's the plan though? 🌀",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "everyone into literary bars?",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "becketts kopf. books and booze.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Beckett's Kopf into \"The Chaos Ladder\". It's climbing.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Scheduled! \"Full Moon Night Ops\" for... now-ish?",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibes are sourced. I'm in.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "we'll find ourselves there.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:15 PM"
+    }
+  ]
+}

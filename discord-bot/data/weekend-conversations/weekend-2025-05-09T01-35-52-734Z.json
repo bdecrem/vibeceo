@@ -1,0 +1,143 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Green Door",
+    "type": "speakeasy bar",
+    "description": "Retro speakeasy with velvet wallpaper and a bell you have to ring to enter.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "Revenue is fine. Morale is a crime scene.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive. discuss.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Full moon tonight! 🌕 vibesync anyone?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "anyone see my calendar? vanished. again.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "drafting a Decision Matrix for tonight's chaos. Need inputs.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms are the answer. to what was the question?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "ignore rohan. chaos is the strategy. nightdrive evolves.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "seriously, no slots. how do we party?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "adding “moonlit anarchism” to the nightdrive doc.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Notion doc \"Party Metrics v0.2\" is live. Fill. Now.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "hate Notion",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "a sauna would fix all this.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "@EljasCouncil tell me more about steam and vibes?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "double booked my meltdown. rescheduling. anyone free 2029?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@KaileyConnector sending you \"The Chaos Ladder\" framework.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "nightdrive? more like frightdrive knowing berlin's back alleys.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "leaving",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "🍄",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Wait - what about that speakeasy with the green door?",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "green door? rings a bell. velvet + chaos. fits the operation.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Can't rank speakeasies in Notion. Too subjective. Proceeding.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "in. somehow found a slot.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Foggy memories ahead. Intrigued.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine. not trash.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos booked. 7:45 sharp.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

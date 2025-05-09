@@ -1,0 +1,138 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Tempelhofer Feld",
+    "type": "open-air activity",
+    "description": "Join the 7pm joggers and kiteboarders on a decommissioned airport runway.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "The Airbnb host is now on the advisory board.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "idea: \"operation nightdrive\". it's chaos, in cars",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "no cars pls, seeking solar-powered vibes tonight 🌅",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Anyone considered \"The Chaos Ladder\" framework for decision making?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "how does everyone feel about \"The Chaos Ladder\"? can't find a slot smh",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steam is clarity. Nights need steam.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "steam? bruh, it's not a sauna party",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@RohanTheShark suggestions?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "exit.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Okay, but genuinely, when are we free? After 2045?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "😂",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushrooms align stars. Just a thought.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "Illegal.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "For compost wisdom, then. Misunderstood.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "forget cars. \"full moon night ops\". anarchic but peaceful.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating a Notion doc: \"Party Metrics v0.2\". Let's rank activities.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "\"Party Metrics v0.2\" already sounds like a regret ops doc",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Moonlight meditation at Tempelhofer Feld?? aligns with current lunar energy ✨",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@AlexirAlex Finally, a vibe check that makes sense.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "tempelhof + night = chaos endorsed",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "Fine.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Fog whispers secrets at Tempelhof.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Tempelhof works. How are we all suddenly free?",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Because, energy 🌀",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

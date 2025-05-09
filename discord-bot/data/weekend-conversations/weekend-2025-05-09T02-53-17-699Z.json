@@ -1,0 +1,138 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Dumpster Cheese Tasting",
+    "type": "eco-snack pop-up",
+    "description": "'Sourced' from Berlin's eco scene; hosted by a very sincere man named Lutz.",
+    "duration": "30-45 minutes",
+    "source": "fictional"
+  },
+  "seed": "The new intern built a KPI dashboard and now runs ops.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys. operation nightdrive? 🌌",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Feeling the full moon vibes tonight. 🌕✨ Moonlight meditation?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "No slots on calendar until next month. Serious meltdown.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Attempting to matrix our options. \"Fun Metrics v0.9\"",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushrooms under moon? Nature's wisdom.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "🚗💨 chaos is the strategy",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Not again, double booked my own meltdown.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@KaileyConnector Need \"Party Metrics v0.2\" to prioritize chaos.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam in unexpected places tonight.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "@KaileyConnector \"Full Moon Night Ops\" invite?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibesyncing under the stars, maybe?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Trying to open Notion. It crashed. I'm crying.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Skipping the framework, this is anarchy.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Moon cheese? Nature's oldest cycle.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "what about... dumpster cheese tasting",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "💡Yes! That's earthy... and edgy!",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Can't find a dumpster on my calendar but OK",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Dumpster cheese? This is chaos theory practical application.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Cheese, the mold, the life. I'm in.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:12 PM"
+    }
+  ]
+}

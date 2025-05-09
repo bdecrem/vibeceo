@@ -1,0 +1,143 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "The founder renamed the startup \"me.\"",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "what's the chaos strategy tonight?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "lets rank options? Party Metrics v0.2",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "my calendar is a nightmare. full until 2025.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "moonlight meditation, harnessing lunar energy. thoughts?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is now. chaos > planning",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "yes!! vibesync under moonlight 🔮",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "any slot after 9pm is just utopia",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Matrix is clear: moonlight meditation low impact, high vibe",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "wait, not the illegal kind... stick to neon drinks",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam rooms then. clarity in heat.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "😴",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "what if calendar says no but heart says yes?",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "kailey, your spirit guide says \"go party\"",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "The Chaos Ladder suggests ups before downs. Tram party?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "glowshot karaoke tram. induced chaos in motion.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally something not garbage",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "in tune with the universe's vibrations. i'm in.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "someone pls handle my calendar meltdown",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "energy says glowshot tram 🚋✨",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Full Moon Night Ops: The Karaoke Mission. Drafting in Notion.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "i've created a doc called regret.ops",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:14 PM"
+    }
+  ]
+}

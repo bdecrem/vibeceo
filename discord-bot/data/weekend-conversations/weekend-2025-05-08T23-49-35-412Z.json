@@ -1,0 +1,143 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Rum Trader",
+    "type": "cocktail bar",
+    "description": "Iconic, tiny bar where cocktails are sacred and phones are frowned upon.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "Someone rebranded our deck as a therapy workbook.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive? 🚗💨",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜 vibes?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "No slots next 3 wks 😭",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating \"Party Metrics v0.2\" doc. Need criteria.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom picking. night. trust me.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "or steam baths in abandoned subway?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Moonlight meditation. aligns the chakras.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "not legal?? 🤯",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "retracting subway. too steamy.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "\"Full Moon Night Ops\" - event name?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "🙄",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Why is everything tonight impossible?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "🗑️",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "back to nightdrive. adding chaos ladder framework to Notion.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Vibesync denied then?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "What about the fog?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Fog? Adding to matrix...",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Rum Trader. Now. Can we just decide?!",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaotic but yes. locks in with nightdrive vibes.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Cocktails and sacred spaces. 🍹✨",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "nature in a glass",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Added \"Rum Trader Exploration\" to Party Metrics v0.2.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. see you in the fog.",
+      "timestamp": "7:11 PM"
+    }
+  ]
+}

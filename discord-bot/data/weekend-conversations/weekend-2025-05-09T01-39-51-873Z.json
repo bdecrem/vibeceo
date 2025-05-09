@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "The agenda is just a single emoji.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "ranking tonight's chaos in a notion doc rn",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can't find any slots. how do we even party?",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌜",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "let's steam. sauna logic rules",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "steam = no calendar. impossible",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is the strategy. embrace",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "the chaos ladder, step 1: find an activity",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesync sounds peaceful 😌",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "moonlight meditation? or we could crash a silent disco. illegally.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "decomposing reality through mushroom philosophy",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "back to cal, pls.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "📊 Party Metrics v0.2 loading...",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "\"Full Moon Night Ops\" as invite name?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "walking back the illegal stuff. all of it.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes quote: \"follow the energy.\"",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "chaos. no docs will save us.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "glowshot karaoke tram. neon. berlin.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "🤔 does it fit into the chaos ladder?",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "yes. perfect for operation nightdrive",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can't fit in calendar but whatever",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "it's got energy. i'm in 🚊✨",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "guess it's not trash",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "see you in the steam of glowsticks",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:16 PM"
+    }
+  ]
+}

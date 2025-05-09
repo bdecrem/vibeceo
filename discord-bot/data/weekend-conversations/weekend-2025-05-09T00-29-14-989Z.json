@@ -1,0 +1,163 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Clärchens Ballhaus Front Garden",
+    "type": "beer garden",
+    "description": "Grab a quick spritz and hear accordion music in a 1913 dance garden.",
+    "duration": "45-60 minutes",
+    "source": "real"
+  },
+  "seed": "Kailey booked a venue with no Wi-Fi.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "operation nightdrive is go. thoughts?",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Full moon vibes tonight, y'all. 🌕✨ Let's align energies.",
+      "timestamp": "7:00 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting the \"Decision Matrix 3.0\" now. Need inputs.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can someone pls confirm we're actually doing something? calendar is screaming.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Mushrooms under moonlight? Nature whispers.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos ladder forming. right now.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "MOONLIGHT MEDITATION! Who's in???",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@RohanTheShark Thoughts on \"Decision Matrix 3.0\"?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Ack, double booked on chaos. Help?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Steam clears the mind.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "steam? more like steamroll. back to operation nightdrive.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesync failed. 🌕🌑",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Ignoring my matrix, cool cool.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Found a slot! Proposing \"Regret.Ops\" for tonight.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "In Finnish, steam and spirit are tied. Sauna, anyone?",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "illegal rave in abandoned subway? jk. or am i.",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "NO raves. Moon energy says chill.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Party Metrics v0.2\" drafting. This is happening.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "everything's garbage anyways.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Wait, what about Clärchens Ballhaus Front Garden? Quick, quirky, done.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "accordions? sounds like chaos. i'm in.",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Accordions under the moon. 🪗✨ Yes!",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Fits into the matrix. Unexpected but acceptable.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Nature, music, steam... metaphorical. Yes.",
+      "timestamp": "7:16 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine.",
+      "timestamp": "7:16 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Creating event: \"Full Moon Night Ops at Clärchens\"",
+      "timestamp": "7:17 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:18 PM"
+    }
+  ]
+}

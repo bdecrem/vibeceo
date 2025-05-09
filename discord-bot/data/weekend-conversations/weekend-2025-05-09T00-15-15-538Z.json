@@ -1,0 +1,148 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Glowshot Karaoke Tram",
+    "type": "pop-up tram party",
+    "description": "A neon-lit karaoke streetcar loops Kreuzberg while serving radioactive-looking cocktails.",
+    "duration": "30-60 minutes",
+    "source": "fictional"
+  },
+  "seed": "Our biggest investor is now a wellness influencer.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "starting operation nightdrive. who's in?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "moonlight meditation first? 🌜✨",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Wait, ranking options in \"NightOut Matrix Notion.v3\"",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "how do we even calendar this chaos???",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam before schemes",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "operation nightdrive = chaos on wheels. that's the plan",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesync in the park?",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "📆 is crying",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Notion Party Metrics v0.2\" created. Adding activities...",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "glowshot karaoke tram??",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom foraging then sauna?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "💆‍♀️💫",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "seriously?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "There’s no slot for foraging!!!",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "karaoke tram loops kreuzberg. neon. cocktails. chaos.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "energyyyy 🚋✨",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Adding \"Glowshot Karaoke Tram\" to \"Chaos Ladder Framework.docx\"",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "fine.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "better than steam.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Wait, when do we meet???",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "no illegal stuff this time",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "\"Full Moon Night Ops\" — glowing under the moon, literally",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "🌗",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "let's end this",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:12 PM"
+    }
+  ]
+}

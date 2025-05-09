@@ -1,0 +1,133 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Elevator Exhibition",
+    "type": "micro-gallery",
+    "description": "4-minute micro-art gallery inside a glass elevator. One ride only. No looping.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "Stop saying \"resonance\" unless it's in a sentence.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "what's next? operation nightdrive. let's brainstorm. chaos is the strategy",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌕 anyone for a moonlight meditation? aligning energies tonight!",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Not a bad idea, but let's framework this chaos. Matrix?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "calendars are screaming. no slots. how do people live???",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushroom foraging under moonlight? connects us to earth.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "let's not forage. moonlight meditation invites flashlight police.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "I've started \"Party Metrics v0.2\" Notion. Ranking ideas by vibes.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "vibes??? 🥴",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibes are everything, Kailey. trust.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "nope",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "steam gathering in a sauna. clarity through sweat.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "notion doc party sounds illegal. let's walk that back...",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "🤯",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "vibes are the source. steam can wait.",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "back to the elevator idea???? one ride, epic art vibes??",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Elevator Exhibition?",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "...go on",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "that’s it! elevator exhibition. micro-gallery. glass elevator. one ride. chaos captured.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Creating \"The Chaos Ladder\" framework for tonight. It's... abstract.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Elevator Exhibition. Can we even fit? What if I'm late?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Embrace the fog. The elevator waits for no one.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally. something not trash.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "sent invite: \"Full Moon Night Ops - Elevator Exhibition\". chaos is booked. 7:45 sharp.",
+      "timestamp": "7:11 PM"
+    }
+  ]
+}

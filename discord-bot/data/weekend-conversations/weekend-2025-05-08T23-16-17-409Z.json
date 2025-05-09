@@ -1,0 +1,153 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Dumpster Cheese Tasting",
+    "type": "eco-snack pop-up",
+    "description": "'Sourced' from Berlin's eco scene; hosted by a very sincere man named Lutz.",
+    "duration": "30-45 minutes",
+    "source": "fictional"
+  },
+  "seed": "Let's define our Q2 objectives.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys, what about \"Operation NightDrive\"? full spectrum.",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🌕 anyone for moonlight meditation tonight?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting a Notion matrix for options now.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Can't find a slot in my calendar for breathing.",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms have the answer. just saying.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "🚗🚗🚗",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "I miss slots.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "vibesync under the stars?",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "no",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Party Metrics v0.2\" doc is live. Add inputs!",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "Sauna is steam’s hug. We need group hug.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "Operation NightDrive includes steam. metaphorically.",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "can someone schedule a meltdown?",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "🤣",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "never",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "let's steal a street sign. jk… unless?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Chill, vibes say that’s a no-go.",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Ranked the chaos. Dumpster Cheese Tasting is oddly high.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "I've blocked out 7:45 to 9 for existential dread.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "CHeese in the mist speaks.",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "finally",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "we're doing it. dumpster cheese with Lutz.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"The Chaos Ladder\" framework added. Cheese ascends.",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Sending out \"Full Moon Cheese Ops\" invites!",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "did I really just RSVP to \"dumpster cheese tasting\"?",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "In the fog, we trust.",
+      "timestamp": "7:13 pm"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos is booked. 7:45 sharp.",
+      "timestamp": "7:14 PM"
+    }
+  ]
+}

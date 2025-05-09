@@ -1,0 +1,143 @@
+{
+  "location": "Berlin",
+  "activity": {
+    "name": "Elevator Exhibition",
+    "type": "micro-gallery",
+    "description": "4-minute micro-art gallery inside a glass elevator. One ride only. No looping.",
+    "duration": "10-20 minutes",
+    "source": "fictional"
+  },
+  "seed": "The Airbnb host is now on the advisory board.",
+  "messages": [
+    {
+      "coach": "donte",
+      "content": "guys, operation nightdrive. VR kart racing, downtown?",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Starting \"Party Metrics v0.2\" Notion doc, let’s rank options. AlexirAlex 🌜 7:02 PM moonlight meditation, who's in? 🌌",
+      "timestamp": "7:01 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "trash",
+      "timestamp": "7:02 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "I can't even find a slot for meditation in my calendar... 😭",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "mushrooms in the moonlight, ancient wisdom style.",
+      "timestamp": "7:03 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "chaos ladder framework incoming. embrace it.",
+      "timestamp": "7:04 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "@RohanTheShark, any input on the matrix or just \"trash\"?",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "garbage",
+      "timestamp": "7:05 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "What about next Thursday...no, wait, next next Thursday?? AlexirAlex ✨ 7:07 PM vibesync in the moonlight then? 🌀",
+      "timestamp": "7:06 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "consider steam tent pop-up. downtown.",
+      "timestamp": "7:07 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "VR = passe. steam is...cool?",
+      "timestamp": "7:08 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "\"Full Moon Night Ops\" - put that in your chaos ladder.",
+      "timestamp": "7:09 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "This is too much. We're scheduling fun, right?? 😵",
+      "timestamp": "7:10 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "out",
+      "timestamp": "7:11 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "@EljasCouncil tell more about this steam concept...",
+      "timestamp": "7:12 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "imagine, sauna but mobile. communal detox.",
+      "timestamp": "7:13 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "guys. elevator exhibition. art in motion. thoughts?",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "YES, anything! When??",
+      "timestamp": "7:14 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "foggy.",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Elevator exhibition could fit into \"The Chaos Ladder\" framework...",
+      "timestamp": "7:15 PM"
+    },
+    {
+      "coach": "alex",
+      "content": "Elevator + vibes. I’m in!!!",
+      "timestamp": "7:16 PM"
+    },
+    {
+      "coach": "rohan",
+      "content": "Finally.",
+      "timestamp": "7:17 PM"
+    },
+    {
+      "coach": "kailey",
+      "content": "Is it on the calendar??",
+      "timestamp": "7:18 PM"
+    },
+    {
+      "coach": "donte",
+      "content": "forget calendars. chaos is booked. 7:45 sharp.",
+      "timestamp": "7:19 PM"
+    },
+    {
+      "coach": "eljas",
+      "content": "like walking through dream portals.",
+      "timestamp": "7:19 PM"
+    },
+    {
+      "coach": "venus",
+      "content": "Added to Notion: \"Regret.ops\" for tonight's aftermath reflection.",
+      "timestamp": "7:20 PM"
+    }
+  ]
+}
