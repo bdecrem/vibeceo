@@ -57,7 +57,7 @@ function loadSchedule() {
 		
 		scheduleByHour = {};
 		for (const line of lines) {
-			const match = line.match(/^(\d{2}):(\d{2})\s+(\w+)$/);
+			const match = line.match(/^(\d{2}):(\d{2})(?:\s+(\w+))?$/);
 			if (match) {
 				const hour = parseInt(match[1], 10);
 				// Only accept 00 minutes for now
@@ -68,17 +68,15 @@ function loadSchedule() {
 					continue;
 				}
 				const service = match[3];
-				scheduleByHour[hour] = service as EventType;
+				if (service) {
+					scheduleByHour[hour] = service as EventType;
+				} else {
+					// Handle empty service (blank timeslot)
+					console.log(`[Scheduler] Empty timeslot for hour ${hour}`);
+				}
 			} else {
 				console.warn(`[Scheduler] Invalid schedule line: ${line}`);
 			}
-		}
-		if (Object.keys(scheduleByHour).length !== 24) {
-			console.warn(
-				`[Scheduler] Schedule should have 24 valid lines, found ${
-					Object.keys(scheduleByHour).length
-				}.`
-			);
 		}
 		console.log("[Scheduler] Schedule loaded:", scheduleByHour);
 	} catch (err) {
@@ -197,20 +195,24 @@ function startScheduler() {
 				Math.floor(minutesSinceStart / FAST_INTERVAL_MINUTES) % 24;
 			const serviceName = scheduleByHour[pseudoHour];
 			console.log(
-				`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName}'`
+				`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName || "NONE"}'`
 			);
-			runServiceWithMessages(channelId, serviceName)
-				.then(() =>
-					console.log(
-						`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`
+			if (serviceName) {
+				runServiceWithMessages(channelId, serviceName)
+					.then(() =>
+						console.log(
+							`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`
+						)
 					)
-				)
-				.catch((err) =>
-					console.error(
-						`[Scheduler] [FAST] Error running '${serviceName}':`,
-						err
-					)
-				);
+					.catch((err) =>
+						console.error(
+							`[Scheduler] [FAST] Error running '${serviceName}':`,
+							err
+						)
+					);
+			} else {
+				console.log(`[Scheduler] [FAST] No service scheduled for pseudo-hour ${pseudoHour}`);
+			}
 			setTimeout(fastTick, FAST_INTERVAL_MS);
 		}, 0);
 	} else {
@@ -220,20 +222,24 @@ function startScheduler() {
 			const hour = now.getHours();
 			const serviceName = scheduleByHour[hour];
 			console.log(
-				`[Scheduler] Hour ${hour}: scheduled service is '${serviceName}'`
+				`[Scheduler] Hour ${hour}: scheduled service is '${serviceName || "NONE"}'`
 			);
-			runServiceWithMessages(channelId, serviceName)
-				.then(() =>
-					console.log(
-						`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`
+			if (serviceName) {
+				runServiceWithMessages(channelId, serviceName)
+					.then(() =>
+						console.log(
+							`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`
+						)
 					)
-				)
-				.catch((err) =>
-					console.error(
-						`[Scheduler] Error running '${serviceName}':`,
-						err
-					)
-				);
+					.catch((err) =>
+						console.error(
+							`[Scheduler] Error running '${serviceName}':`,
+							err
+						)
+					);
+			} else {
+				console.log(`[Scheduler] No service scheduled for hour ${hour}`);
+			}
 		}
 
 		function msUntilNextHour() {

@@ -11,6 +11,7 @@ import { getWebhookUrls } from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
 import { TextChannel, Client } from "discord.js";
 import dotenv from "dotenv";
+import { cleanupStaffMeetings } from "./fileCleanup.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,6 +159,10 @@ async function postLatestMeetingToDiscord(client: Client) {
 		// Then get the latest meeting file
 		const latestMeetingPath = getLatestMeetingFile();
 		console.log("Reading meeting file from:", latestMeetingPath);
+
+		// Clean up old meeting files, keeping only the 3 most recent ones
+		const cleanupResult = cleanupStaffMeetings(3);
+		console.log(`File cleanup complete: kept ${cleanupResult.kept} files, deleted ${cleanupResult.deleted} files`);
 
 		// Read the meeting file
 		const latestMeeting = JSON.parse(
