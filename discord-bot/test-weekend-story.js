@@ -20,158 +20,272 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const testCase = {
-  city: "Berlin",
-  activity: {
-    name: "The Spree Plunge",
-    type: "river dip + espresso",
-    description:
-      "5-minute group plunge into the river, followed by espresso and synchronized screaming.",
-    duration: "30-60 minutes",
-    source: "fictional",
-  },
-  protagonist: {
-    name: "EljasCouncil",
-    agenda:
-      "He wants the group to take mushrooms tonight. He brought them. No one else knows. He plans to steer the evening into 'openness' without telling anyone why. Eljas should never sound poetic, wise, or literary. He’s weird, off, mumbly, never gives a straight answer, and always changes the subject."
-  },
-};
+// Load weekend activities data
+const weekendActivitiesPath = path.resolve(__dirname, "data", "weekend-activities.json");
+let weekendActivities = {};
+try {
+  weekendActivities = JSON.parse(fs.readFileSync(weekendActivitiesPath, "utf8"));
+  console.log("Successfully loaded weekend activities data");
+} catch (error) {
+  console.error("Error loading weekend activities:", error);
+  process.exit(1);
+}
 
-function buildWeekendStoryPrompt(city, activity, protagonist) {
+// Load weekend derailers data
+const weekendDerailersPath = path.resolve(__dirname, "data", "weekend-derailers.json");
+let weekendDerailers = {};
+try {
+  weekendDerailers = JSON.parse(fs.readFileSync(weekendDerailersPath, "utf8"));
+  console.log("Successfully loaded weekend derailers data");
+} catch (error) {
+  console.error("Error loading weekend derailers:", error);
+  process.exit(1);
+}
+
+// Function to determine the duration category based on available time
+function getDurationCategory() {
+  try {
+    // Read available time from environment variables (in minutes)
+    const availableTime = process.env.AVAILABLE_TIME_MINUTES ? 
+      parseInt(process.env.AVAILABLE_TIME_MINUTES, 10) : 60; // Default to 60 minutes if not specified
+    
+    console.log(`Available time: ${availableTime} minutes`);
+    
+    // Map available time to duration category
+    let duration;
+    if (availableTime < 90) {
+      duration = "short";  // Under 90 minutes
+    } else if (availableTime <= 180) {
+      duration = "medium"; // 1-3 hours
+    } else {
+      duration = "long";   // More than 3 hours
+    }
+    
+    console.log(`Selected duration category: ${duration} based on ${availableTime} minutes available`);
+    return duration;
+  } catch (error) {
+    console.error("Error determining duration category:", error);
+    return "medium"; // Default to medium if there's an error
+  }
+}
+
+// Function to get a random activity from the appropriate category
+function getRandomActivity(city = "Berlin") {
+  try {
+    const validCities = ["Berlin", "Vegas", "Tokyo"];
+    if (!validCities.includes(city)) {
+      console.warn(`Invalid city: ${city}. Using default city Berlin.`);
+      city = "Berlin";
+    }
+    
+    const duration = getDurationCategory();
+    
+    // Get activities for the specified city and duration
+    const activities = weekendActivities[city][duration];
+    
+    if (!activities || activities.length === 0) {
+      throw new Error(`No activities found for ${city}, ${duration}.`);
+    }
+    
+    // Select a random activity
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+    
+    console.log(`Selected activity in ${city} (${duration}): "${randomActivity.name}" - ${randomActivity.type}`);
+    
+    return randomActivity;
+  } catch (error) {
+    console.error("Error selecting random activity:", error);
+    return {
+      name: "Midnight Snack Crawl",
+      type: "food adventure",
+      description: "A late-night tour of the city's best street food vendors and hidden eateries.",
+      duration: "2-3 hours",
+      source: "fallback"
+    };
+  }
+}
+
+// Function to get a random derailer for a specific coach
+function getRandomDerailer(coachName) {
+  try {
+    const coaches = Object.keys(weekendDerailers);
+    
+    // Validate coach name or pick randomly
+    if (!coachName || !weekendDerailers[coachName]) {
+      coachName = coaches[Math.floor(Math.random() * coaches.length)];
+    }
+    
+    // Get derailers for the specified coach
+    const derailers = weekendDerailers[coachName];
+    
+    if (!derailers || derailers.length === 0) {
+      throw new Error(`No derailers found for ${coachName}.`);
+    }
+    
+    // Select a random derailer
+    const randomDerailer = derailers[Math.floor(Math.random() * derailers.length)];
+    
+    console.log(`Selected derailer for ${coachName}: "${randomDerailer}"`);
+    
+    return randomDerailer;
+  } catch (error) {
+    console.error("Error selecting weekend derailer:", error);
+    return "I just got a text about something interesting nearby. We should check it out.";
+  }
+}
+
+// Select random city, activity and coach/derailer
+const cities = ["Berlin", "Vegas", "Tokyo"];
+const city = cities[Math.floor(Math.random() * cities.length)];
+const activity = getRandomActivity(city);
+const coaches = Object.keys(weekendDerailers);
+const protagonist = coaches[Math.floor(Math.random() * coaches.length)];
+const derailerText = getRandomDerailer(protagonist);
+
+console.log(`Setting up story in ${city} with ${activity.name}`);
+console.log(`Protagonist: ${protagonist} with agenda: ${derailerText}`);
+
+// Build the prompt
+function buildWeekendStoryPrompt(city, activity, protagonist, derailerText) {
   return `
-Tonight, the coaches are in **${city}**. Their official plan:  
+Tonight, the coaches are in **${city}**, on a cloudy Friday night.
+
+Their official plan:  
 **"${activity.name}"** — ${activity.description}
 
 But one of them has other plans.
 
-🎭 **Protagonist**: ${protagonist.name}  
-🍄 **Hidden Agenda**: ${protagonist.agenda}
+🎭 **Protagonist**: ${protagonist}  
+🍄 **Hidden Agenda**: ${derailerText}
 
 ---
 
 ## STRUCTURE
 
-You are writing **Scenes 2–24** of a chaotic and emotionally strange weekend night.
+You are writing **exactly 23 scenes** — **Scene 2 through Scene 24**.
 
-- ✅ Scene 1 already happened: they made the plan
-- ✅ Scene 10: moment of confusion (Eljas seen with a guy, group is unsure)
-- ✅ Scene 24: Slack reflection, acknowledging that things didn't go according to plan
-
-### For Scenes 2–23:
-- ✅ Write an **INTRO** for every odd-numbered scene (3, 5, 7, 9…) and for Scene 10
-- At least one intro (between 5 and 9) must show the group on the way to the Spree plunge — on foot, in an Uber, or with towels, etc.
-- Scene 9 **must reinforce the belief** that the plunge is still happening (someone stretching, espresso mentioned, towels referenced)
-- Intros should:
-  - Move the night forward (they’re dressing, detouring, waiting, noticing)
-  - Include **one off, broken, or ambient weird detail**
-  - Avoid “funny” or “cute” weirdness (e.g., no animals doing clever things)
-  - Let things feel slightly *wrong* or *uncanny*, not clever
-  - Be short. 1–2 lines max. Never explain. Let silence do the work.
+Each scene must follow one of only three types:
 
 ---
 
-## SCENE 10 — SPECIAL INSTRUCTIONS
+### 1. **LIGHT STORY SCENES**  
+(Scenes: 2, 5, 6, 8, 9, 12, 15, 18)
 
-Scene 10 includes:
-- A short intro: "The group sees Eljas with a sketchy guy, exchanging something"
-- A chaotic **Slack conversation** (12–18 messages)
+Used for small moments of action or prep:
+- Getting ready  
+- Running late  
+- Transit weirdness  
+- Location mixups  
+- Someone disappearing
 
-### SLACK STYLE:
-DonteDisrupt 10:29 AM  
-lowercase chaos. no punctuation. start an "operation" with a name.
+**Format:**
+\`\`\`
+**SCENE [number] – LIGHT STORY:**  
+[Sentence 1: external action, short, direct.]  
+[Sentence 2: reaction, escalation, or distraction.]  
+**OUTRO:** [One sentence only. Slightly strange or unsettling.]
+\`\`\`
 
-RohanTheShark 10:29 AM  
-one to three words only. dismissive. lowercase.
-
-KaileyConnector 10:29 AM  
-calendar panic. double posting. losing it about scheduling.
-
-VenusStrikes 10:29 AM  
-creating a framework with version number (v0.2). notion docs.
-
-AlexirAlex 10:29 AM  
-energy vibe emoji spiritual tech nonsense. ✨🌀💫
-
-EljasCouncil 10:29 AM  
-weird muttering, deflections, distraction. never poetic or wise.
-
-### Scene 10 Requirements:
-- Coaches see Eljas with a sketchy guy exchanging something
-- They NEVER directly say what happened - talk around it
-- Include timestamp format with realistic clustering:
-  - Some messages at same minute (10:29 AM)
-  - Some with gaps (10:29 AM, 10:31 AM)
-  - Some in rapid sequence (10:32 AM, 10:32 AM)
-- Include ACTUAL structural elements from real Slack:
-  - At least 2 people double posting (same person twice in a row)
-  - At least 5 messages under 5 words
-  - 2+ emoji-only responses
-  - At least 3 messages that get completely ignored
-  - Two separate conversation threads happening simultaneously
-  - Completely lowercase text (except names)
-- MANDATORY character moments:
-  - Donte MUST create an "operation" with a name
-  - Venus MUST create a framework/doc with version number
-  - Kailey MUST panic about calendar/scheduling
-  - Rohan MUST use one-word dismissive responses
-  - Alex MUST overuse emojis
+**Rules:**
+- Max 2 sentences in the intro  
+- No exposition or internal thoughts  
+- No literary descriptions  
+- Use concrete behavior only
 
 ---
 
-## SCENE 24 — SPECIAL INSTRUCTIONS
+### 2. **AMBIENT SCENES**  
+(All remaining odd-numbered scenes)
 
-Scene 24 includes:
-- No intro
-- A full Slack-style postmortem
+Used only to set tone. No characters. No motion. Just vibe.
 
-### REQUIREMENTS:
-- Extremely disjointed, sleep-deprived, confused conversation
-- ACTUAL Slack format with realistic timestamps (9:42 AM, etc.)
-- Nobody clearly remembers what happened - fragmented memories only
-- Incomplete sentences, thoughts trail off
-- At least 40% of messages must be under 5 words
-- Messages that make no sense to others
-- Someone (Donte or Kailey) must **explicitly say** something like “we never did the plunge” or “the plunge didn’t happen.” No ambiguity.
-- Eljas must respond evasively to a mushroom-related comment. He doesn’t confirm or deny, but implies something strange.
-- Include at least three fictional docs/artifacts:
-  - "fog-ladder.notion.site"
-  - "gnome-sync deck" 
-  - "post-plunge metrics v0.2"
-- 100% lowercase except names
-- Timestamps all over the place (some bunched, some spread out)
+**Format:**
+\`\`\`
+**SCENE [number] – AMBIENT:**  
+It’s [time] in ${city}, where [brief weather-related feeling].  
+[One strange visual or sensory image — no characters.]  
+**OUTRO:** [One line that deepens the unease.]
+\`\`\`
 
-### MANDATORY character moments in Scene 24:
-- Donte talking about seeing impossible things
-- Venus creating multiple frameworks/docs to analyze the experience
-- Kailey confused about calendar/schedule disruption
-- Rohan threatening to quit the industry
-- Alex posting emoji combinations that make no sense
-- Eljas responding evasively to the mushroom thread
+**Rules:**
+- 2 lines total before the outro  
+- Must open with “It’s [time] in [city], where…”  
+- Must contain one unexplained detail or object  
+- Don’t write like a novel. This is a surveillance camera with a poet’s migraine.
 
 ---
 
-## COACH VOICES
+### 3. **CONVERSATION SCENES**
 
-DonteDisrupt – lowercase. “chaos ops,” “vibe metrics,” meme prophet.
-AlexirAlex – spiritual tech founder energy. “aura,” “vibe,” “ritual,” emoji abuse.
-RohanTheShark – hates everything. fewest words possible.
-VenusStrikes – corporate structure gremlin. constantly making docs, decks, and frameworks.
-KaileyConnector – panicked scheduler. never knows what’s happening. always behind.
-EljasCouncil – avoid poetic or forest-mystic energy. Instead, he mutters, changes the subject, distracts, forgets what he was saying, lies casually.
+#### **Scene 10 – DERAILMENT SLACK**
+
+Start with:
+> *The group sees ${protagonist} with a sketchy guy, exchanging something.*
+
+Then write a Slack conversation:
+- 10–16 lines  
+- All lowercase  
+- At least 2 emoji-only replies  
+- At least 3 ignored messages  
+- 2 separate subthreads  
+- Clustered timestamps (10:29 PM, 10:29 PM, 10:31 PM...)  
+- Max 15 words per message  
+- Include typos
+
+**Required coach moments:**
+- **Donte:** declares an “Operation [X]”  
+- **Venus:** builds or links a doc (e.g. fog-ladder.notion.site)  
+- **Kailey:** panics about the calendar  
+- **Rohan:** dismissive, minimal replies  
+- **Alex:** emoji nonsense  
+- **${protagonist}:** dodges, lies, changes topic, deflects
+
+**OUTRO:** 1 line confirming the plan is officially off-track.
+
+---
+
+#### **Scene 24 – POSTMORTEM SLACK**
+
+No intro — jump straight into Slack chat.
+
+**Format:**
+- Same as scene 10  
+- Everyone is tired, confused, emotionally threadbare  
+- Someone must say: *“we never did ${activity.name}”*  
+- ${protagonist} never confirms anything  
+- Include these 3 fictional docs:
+  - fog-ladder.notion.site  
+  - gnome-sync deck  
+  - post-${activity.name.toLowerCase().replace(/ /g, "-")}-metrics v0.2
+
+**Required beats:**
+- Donte saw something impossible  
+- Venus builds docs to analyze it  
+- Kailey lost the schedule  
+- Rohan wants out  
+- Alex posts emojis that break formatting  
+- ${protagonist} avoids saying what really happened
+
+**OUTRO:** Optional. End with a line that feels like fog.
 
 ---
 
 ## STYLE
-- Slack-style. Broken. Lowercase. Interruption-friendly. Typos welcome.
-- Do not explain anything. If something weird happens, it just happens.
-- Be funny without being *clever*. Be weird without being *wacky*.
-- Vibe: like a startup offsite that got hijacked by folklore and a guy who talks to bags of trail mix.
+
+- Short. Strange. Startup-surreal.  
+- Never over 2 lines in a scene intro  
+- Never explain weird things — let them exist  
+- No inner thoughts  
+- No exposition  
+- If you feel clever, start over  
+- Don’t describe — record
 
 ---
 
 Begin with:
-**SCENE 3 - INTRO:**
-(then 5, 7, 9, 10. Skip even-numbered scenes. Include full Slack convos for 10 and 24.)
+
+**SCENE 2 – LIGHT STORY:**  
+(The group is getting ready...)
   `;
 }
 
@@ -179,14 +293,15 @@ const messages = [
   {
     role: "system",
     content:
-      "You are a creative AI assistant who writes stylized, chaotic, on-brand Slack fiction. You mimic startup team culture with surreal interference. You are allergic to exposition."
+      "You are a creative AI assistant who generates structured content based on precise instructions. You excel at creating dialog, narrative scenes, and character-driven scenarios in the tech/startup world.",
   },
   {
     role: "user",
     content: buildWeekendStoryPrompt(
-      testCase.city,
-      testCase.activity,
-      testCase.protagonist
+      city,
+      activity,
+      protagonist,
+      derailerText
     ),
   },
 ];
@@ -204,7 +319,8 @@ async function getGPTResponse() {
     const response = completion.choices[0].message.content;
     console.log("Received response from GPT-4");
 
-    const rawFilePath = path.join(__dirname, "weekend_story_output.txt");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const rawFilePath = path.join(__dirname, `weekend_story_output-${timestamp}.txt`);
     fs.writeFileSync(rawFilePath, response, "utf8");
     console.log(`Saved raw response to ${rawFilePath}`);
 
