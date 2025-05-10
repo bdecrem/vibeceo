@@ -145,173 +145,87 @@ const derailerText = getRandomDerailer(protagonist);
 console.log(`Setting up story in ${city} with ${activity.name}`);
 console.log(`Protagonist: ${protagonist} with agenda: ${derailerText}`);
 
-// Build the prompt
-function buildWeekendStoryPrompt(city, activity, protagonist, derailerText) {
-  return `
-Tonight, the coaches are in **${city}**, on a cloudy Friday night.
-
-Their official plan:  
-**"${activity.name}"** — ${activity.description}
-
-But one of them has other plans.
-
-🎭 **Protagonist**: ${protagonist}  
-🍄 **Hidden Agenda**: ${derailerText}
-
----
-
-## STRUCTURE
-
-You are writing **exactly 23 scenes** — **Scene 2 through Scene 24**.
-
-Each scene must follow one of only three types:
-
----
-
-### 1. **LIGHT STORY SCENES**  
-(Scenes: 2, 5, 6, 8, 9, 12, 15, 18)
-
-Used for small moments of action or prep:
-- Getting ready  
-- Running late  
-- Transit weirdness  
-- Location mixups  
-- Someone disappearing
-
-**Format:**
-\`\`\`
-**SCENE [number] – LIGHT STORY:**  
-[Sentence 1: external action, short, direct.]  
-[Sentence 2: reaction, escalation, or distraction.]  
-**OUTRO:** [One sentence only. Slightly strange or unsettling.]
-\`\`\`
-
-**Rules:**
-- Max 2 sentences in the intro  
-- No exposition or internal thoughts  
-- No literary descriptions  
-- Use concrete behavior only
-
----
-
-### 2. **AMBIENT SCENES**  
-(All remaining odd-numbered scenes)
-
-Used only to set tone. No characters. No motion. Just vibe.
-
-**Format:**
-\`\`\`
-**SCENE [number] – AMBIENT:**  
-It’s [time] in ${city}, where [brief weather-related feeling].  
-[One strange visual or sensory image — no characters.]  
-**OUTRO:** [One line that deepens the unease.]
-\`\`\`
-
-**Rules:**
-- 2 lines total before the outro  
-- Must open with “It’s [time] in [city], where…”  
-- Must contain one unexplained detail or object  
-- Don’t write like a novel. This is a surveillance camera with a poet’s migraine.
-
----
-
-### 3. **CONVERSATION SCENES**
-
-#### **Scene 10 – DERAILMENT SLACK**
-
-Start with:
-> *The group sees ${protagonist} with a sketchy guy, exchanging something.*
-
-Then write a Slack conversation:
-- 10–16 lines  
-- All lowercase  
-- At least 2 emoji-only replies  
-- At least 3 ignored messages  
-- 2 separate subthreads  
-- Clustered timestamps (10:29 PM, 10:29 PM, 10:31 PM...)  
-- Max 15 words per message  
-- Include typos
-
-**Required coach moments:**
-- **Donte:** declares an “Operation [X]”  
-- **Venus:** builds or links a doc (e.g. fog-ladder.notion.site)  
-- **Kailey:** panics about the calendar  
-- **Rohan:** dismissive, minimal replies  
-- **Alex:** emoji nonsense  
-- **${protagonist}:** dodges, lies, changes topic, deflects
-
-**OUTRO:** 1 line confirming the plan is officially off-track.
-
----
-
-#### **Scene 24 – POSTMORTEM SLACK**
-
-No intro — jump straight into Slack chat.
-
-**Format:**
-- Same as scene 10  
-- Everyone is tired, confused, emotionally threadbare  
-- Someone must say: *“we never did ${activity.name}”*  
-- ${protagonist} never confirms anything  
-- Include these 3 fictional docs:
-  - fog-ladder.notion.site  
-  - gnome-sync deck  
-  - post-${activity.name.toLowerCase().replace(/ /g, "-")}-metrics v0.2
-
-**Required beats:**
-- Donte saw something impossible  
-- Venus builds docs to analyze it  
-- Kailey lost the schedule  
-- Rohan wants out  
-- Alex posts emojis that break formatting  
-- ${protagonist} avoids saying what really happened
-
-**OUTRO:** Optional. End with a line that feels like fog.
-
----
-
-## STYLE
-
-- Short. Strange. Startup-surreal.  
-- Never over 2 lines in a scene intro  
-- Never explain weird things — let them exist  
-- No inner thoughts  
-- No exposition  
-- If you feel clever, start over  
-- Don’t describe — record
-
----
-
-Begin with:
-
-**SCENE 2 – LIGHT STORY:**  
-(The group is getting ready...)
-  `;
+// ===== START OF buildSceneIntroGenerationPrompt FUNCTION =====
+function buildSceneIntroGenerationPrompt(city, activity, antagonist, derailerText) {
+  return (
+    `Write unique, short scene intros for a story about coaches going out in ${city}.\n\n` +
+    `Plan: **${activity.name}** — ${activity.description}\n` +
+    `But secretly, ${antagonist} has a hidden agenda: ${derailerText}\n\n` +
+    'Create scenes 2-24 in our signature style: terse, dry, observational, slightly strange.\n\n' +
+    '---\n\n' +
+    '## STYLE GUIDE\n\n' +
+    '- Each scene is 1-3 short sentences maximum\n' +
+    '- Write in flat, observational tone. No narration.\n' +
+    '- Use coach names: Kailey, Venus, Eljas, Donte, Rohan, Alex (Alex is female)\n' +
+    '- Focus on objects, technology, and strange details\n' +
+    '- Keep everything in present tense\n' +
+    '- Scenes feel like surveillance footage described by AI\n' +
+    '- No metaphors or flowery language\n\n' +
+    '---\n\n' +
+    '## SCENE REQUIREMENTS\n\n' +
+    'Scene 2 – START OF PREP: Someone checks the time/weather/routes. Technology disagrees with itself.\n\n' +
+    'Scene 3 – KAILEY DRESSING: Kailey\'s disorganized outfit selection process. Mention the floor.\n\n' +
+    'Scene 4 – VENUS DRESSING: Venus creates and abandons a clothing system. Reference diagrams.\n\n' +
+    'Scene 5 – ELJAS DRESSING: Eljas\'s minimal approach to getting ready. Something nature-related.\n\n' +
+    `Scene 6 – ${antagonist.toUpperCase()}'S SIGNAL: ${antagonist} checks a secret phone or message suggesting the hidden agenda.\n\n` +
+    'Scene 7 – ERRAND TIME: Someone suggests an unnecessary detour or errand. The group complies without question.\n\n' +
+    'Scene 8 – DETOUR CHAOS: Stores that don\'t work correctly. Missing items or locations.\n\n' +
+    'Scene 9 – NEWS MOMENT: Brief setup for Donte finding a tech news story the group will discuss (no dialogue).\n\n' +
+    'Scene 10 – DETOUR CONTINUES: Continuation of the errand from scenes 7-8. Progress but not completion.\n\n' +
+    'Scene 11 – UBER START: Kailey booking an Uber with app glitches or difficulties.\n\n' +
+    'Scene 12 – UBER GLITCHES: In the Uber. Something about directions changing or Notion documents.\n\n' +
+    'Scene 13 – UBER CHAOS: Eljas suggests walking. Group ignores but something changes anyway.\n\n' +
+    'Scene 14 – PITCH MENTION: Brief setup for the coaches discussing a startup pitch (no dialogue).\n\n' +
+    `Scene 15 – IN UBER 1: Donte asks the driver about ${city}. Driver gives strange or minimal response.\n\n` +
+    'Scene 16 – IN UBER 2: Technology malfunction in the car. Audio or device connects incorrectly.\n\n' +
+    'Scene 17 – IN UBER 3: The location seems wrong or familiar but no one mentions it.\n\n' +
+    'Scene 18 – GOSSIP MOMENT: Brief setup for the coaches discussing gossip (no dialogue).\n\n' +
+    `Scene 19 – ALMOST THERE: ${activity.name} location description. Something off about the environment.\n\n` +
+    `Scene 20 – SABOTAGE HINT: ${antagonist} receives notification or shows behavior revealing the secret agenda.\n\n` +
+    `Scene 21 – ARRIVAL IS WRONG: They arrive somewhere unexpected. ${antagonist} acts like this was the plan.\n\n` +
+    'Scene 22 – SYSTEM NOTICE: Technical error format. Use EXACTLY this format with different details:\n' +
+    `SYSTEM NOTICE: destination \'${activity.name}\' rejected by [reason]\n` +
+    'routing to verified location: \'[alternative]\'\n' +
+    'access requires [requirement] + [requirement]\n\n' +
+    'Scene 23 – RIDE HOME: Return journey in silence. Something about reversed motion and music.\n\n' +
+    'Scene 24 – AFTERMATH: They\'re back where they started. Something small has changed. "Nothing was learned."\n\n' +
+    '---\n\n' +
+    '## EXAMPLES OF GOOD SCENE INTROS\n\n' +
+    '"Kailey opens three apps to check the time. None agree."\n' +
+    '"Half Kailey\'s bed is covered in outfits. The other half is floor."\n' +
+    '"Venus lays her clothes out like a systems diagram. Then moves two things. Then deletes the layout."\n' +
+    '"The first shop is closed. The second doesn\'t exist anymore."\n' +
+    '"The street outside looks familiar. But no one says anything."\n' +
+    '"Eljas suggests walking. No one responds, but the driver slows down."\n' +
+    '"Donte asks the driver what Vegas was like in 2003. The driver says \"shorter.\""\n' +
+    '"Rohan checks a different phone. It\'s older. He pockets it quickly."\n\n' +
+    '---\n\n' +
+    'Output the scenes using this format exactly:\n\n' +
+    '**SCENE [#] – [TITLE]**  \n' +
+    '[unique content based on the scene requirements]\n\n' +
+    'Create NEW content for each scene (don\'t copy the examples).\n' +
+    'Keep style consistent: terse, observational, slightly strange.\n' +
+    'Output ONLY the formatted scenes 2-24. No introduction or commentary.'
+  );
 }
-
-const messages = [
-  {
-    role: "system",
-    content:
-      "You are a creative AI assistant who generates structured content based on precise instructions. You excel at creating dialog, narrative scenes, and character-driven scenarios in the tech/startup world.",
-  },
-  {
-    role: "user",
-    content: buildWeekendStoryPrompt(
-      city,
-      activity,
-      protagonist,
-      derailerText
-    ),
-  },
-];
+// ===== END OF buildSceneIntroGenerationPrompt FUNCTION =====
 
 async function getGPTResponse() {
   try {
     console.log("Requesting response from GPT-4...");
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
-      messages,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a creative AI assistant who generates structured content based on precise instructions. You excel at creating dialog, narrative scenes, and character-driven scenarios in the tech/startup world.",
+        },
+        {
+          role: "user",
+          content: buildSceneIntroGenerationPrompt(city, activity, protagonist, derailerText),
+        },
+      ],
       temperature: 1.0,
       max_tokens: 4000,
     });
@@ -319,9 +233,21 @@ async function getGPTResponse() {
     const response = completion.choices[0].message.content;
     console.log("Received response from GPT-4");
 
+    // Create metadata header
+    const metadata = `=== WEEKEND STORY METADATA ===
+City: ${city}
+Activity: ${activity.name}
+Description: ${activity.description}
+Protagonist: ${protagonist}
+Hidden Agenda: ${derailerText}
+
+=== STORY BEGINS ===
+
+`;
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const rawFilePath = path.join(__dirname, `weekend_story_output-${timestamp}.txt`);
-    fs.writeFileSync(rawFilePath, response, "utf8");
+    fs.writeFileSync(rawFilePath, metadata + response, "utf8");
     console.log(`Saved raw response to ${rawFilePath}`);
 
     return response;
