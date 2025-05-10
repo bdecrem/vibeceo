@@ -148,64 +148,62 @@ console.log(`Protagonist: ${protagonist} with agenda: ${derailerText}`);
 // ===== START OF buildSceneIntroGenerationPrompt FUNCTION =====
 function buildSceneIntroGenerationPrompt(city, activity, antagonist, derailerText) {
   return (
-    `Write unique, short scene intros for a story about coaches going out in ${city}.\n\n` +
-    `Plan: **${activity.name}** — ${activity.description}\n` +
-    `But secretly, ${antagonist} has a hidden agenda: ${derailerText}\n\n` +
-    'Create scenes 2-24 in our signature style: terse, dry, observational, slightly strange.\n\n' +
+    'Write short, original scene intros for a story about coaches navigating a failed night in ' + city + '.\n\n' +
+    'Planned activity: **' + activity.name + '** — ' + activity.description + '\n' +
+    'Secretly, ' + antagonist + ' has another plan: **' + derailerText + '**\n\n' +
+    'Write SCENES 2–24 in our signature tone: dry, behavioral, quietly strange.\n\n' +
     '---\n\n' +
-    '## STYLE GUIDE\n\n' +
-    '- Each scene is 1-3 short sentences maximum\n' +
-    '- Write in flat, observational tone. No narration.\n' +
-    '- Use coach names: Kailey, Venus, Eljas, Donte, Rohan, Alex (Alex is female)\n' +
-    '- Focus on objects, technology, and strange details\n' +
-    '- Keep everything in present tense\n' +
-    '- Scenes feel like surveillance footage described by AI\n' +
-    '- No metaphors or flowery language\n\n' +
+    '## STYLE RULES\n\n' +
+    '- Each scene is 1–3 short sentences\n' +
+    '- Present tense only\n' +
+    '- No dialogue, no quotation marks, no inner thoughts\n' +
+    '- No metaphors or “poetic” phrases — just behavior, objects, and glitches\n' +
+    '- Use only: Kailey, Venus, Eljas, Donte, Rohan, Alex (Alex is female)\n' +
+    '- Style = observational, flat, a little broken\n' +
+    '- Scenes feel like API logs of human motion under slight duress\n\n' +
     '---\n\n' +
-    '## SCENE REQUIREMENTS\n\n' +
-    'Scene 2 – START OF PREP: Someone checks the time/weather/routes. Technology disagrees with itself.\n\n' +
-    'Scene 3 – KAILEY DRESSING: Kailey\'s disorganized outfit selection process. Mention the floor.\n\n' +
-    'Scene 4 – VENUS DRESSING: Venus creates and abandons a clothing system. Reference diagrams.\n\n' +
-    'Scene 5 – ELJAS DRESSING: Eljas\'s minimal approach to getting ready. Something nature-related.\n\n' +
-    `Scene 6 – ${antagonist.toUpperCase()}'S SIGNAL: ${antagonist} checks a secret phone or message suggesting the hidden agenda.\n\n` +
-    'Scene 7 – ERRAND TIME: Someone suggests an unnecessary detour or errand. The group complies without question.\n\n' +
-    'Scene 8 – DETOUR CHAOS: Stores that don\'t work correctly. Missing items or locations.\n\n' +
-    'Scene 9 – NEWS MOMENT: Brief setup for Donte finding a tech news story the group will discuss (no dialogue).\n\n' +
-    'Scene 10 – DETOUR CONTINUES: Continuation of the errand from scenes 7-8. Progress but not completion.\n\n' +
-    'Scene 11 – UBER START: Kailey booking an Uber with app glitches or difficulties.\n\n' +
-    'Scene 12 – UBER GLITCHES: In the Uber. Something about directions changing or Notion documents.\n\n' +
-    'Scene 13 – UBER CHAOS: Eljas suggests walking. Group ignores but something changes anyway.\n\n' +
-    'Scene 14 – PITCH MENTION: Brief setup for the coaches discussing a startup pitch (no dialogue).\n\n' +
-    `Scene 15 – IN UBER 1: Donte asks the driver about ${city}. Driver gives strange or minimal response.\n\n` +
-    'Scene 16 – IN UBER 2: Technology malfunction in the car. Audio or device connects incorrectly.\n\n' +
-    'Scene 17 – IN UBER 3: The location seems wrong or familiar but no one mentions it.\n\n' +
-    'Scene 18 – GOSSIP MOMENT: Brief setup for the coaches discussing gossip (no dialogue).\n\n' +
-    `Scene 19 – ALMOST THERE: ${activity.name} location description. Something off about the environment.\n\n` +
-    `Scene 20 – SABOTAGE HINT: ${antagonist} receives notification or shows behavior revealing the secret agenda.\n\n` +
-    `Scene 21 – ARRIVAL IS WRONG: They arrive somewhere unexpected. ${antagonist} acts like this was the plan.\n\n` +
-    'Scene 22 – SYSTEM NOTICE: Technical error format. Use EXACTLY this format with different details:\n' +
-    `SYSTEM NOTICE: destination \'${activity.name}\' rejected by [reason]\n` +
+    '## SCENE MAP\n\n' +
+    'SCENE 2 – START OF PREP: someone checks time/weather across devices. Conflicting info.\n' +
+    'SCENE 3 – KAILEY DRESSING: her clothes are scattered. The floor is in use.\n' +
+    'SCENE 4 – VENUS DRESSING: a personal system is built and abandoned. Mention diagrams.\n' +
+    'SCENE 5 – ELJAS DRESSING: minimal choices, some natural interference.\n' +
+    'SCENE 6 – ' + antagonist.toUpperCase() + '\'S SIGNAL: secret phone or message. No reaction, but change implied.\n' +
+    'SCENE 7 – ERRAND TIME: unnecessary errand proposed. The group follows without discussion.\n' +
+    'SCENE 8 – DETOUR CHAOS: store or route failure. Something is missing.\n' +
+    'SCENE 9 – NEWS MOMENT: someone shows a screen. Others glance. Nothing happens.\n' +
+    'SCENE 10 – DETOUR CONTINUES: the errand drifts. Movement without outcome.\n' +
+    'SCENE 11 – UBER START: Kailey tries to book a car. Tech resists.\n' +
+    'SCENE 12 – UBER GLITCHES: driver or map behaves unpredictably.\n' +
+    'SCENE 13 – UBER CHAOS: Eljas suggests walking. Path shifts regardless.\n' +
+    'SCENE 14 – PITCH MOMENT: a startup is referenced. Screens appear. No judgment.\n' +
+    'SCENE 15 – IN UBER 1: Donte asks about ' + city + '. The response is incomplete.\n' +
+    'SCENE 16 – IN UBER 2: sound or media error. Audio plays incorrectly.\n' +
+    'SCENE 17 – IN UBER 3: repeated locations. No one reacts.\n' +
+    'SCENE 18 – GOSSIP MOMENT: devices pass a message. Light shifts. No expressions change.\n' +
+    'SCENE 19 – ALMOST THERE: the venue appears wrong. Nothing is confirmed.\n' +
+    'SCENE 20 – SABOTAGE HINT: ' + antagonist + '\'s phone updates. Course shifts. No comment.\n' +
+    'SCENE 21 – ARRIVAL IS WRONG: not the planned venue. ' + antagonist + ' leads without explanation.\n' +
+    'SCENE 22 – SYSTEM NOTICE:\n' +
+    'SYSTEM NOTICE: destination \'' + activity.name + '\' rejected by [reason]\n' +
     'routing to verified location: \'[alternative]\'\n' +
-    'access requires [requirement] + [requirement]\n\n' +
-    'Scene 23 – RIDE HOME: Return journey in silence. Something about reversed motion and music.\n\n' +
-    'Scene 24 – AFTERMATH: They\'re back where they started. Something small has changed. "Nothing was learned."\n\n' +
+    'access requires [requirement] + [requirement]\n' +
+    'SCENE 23 – RIDE HOME: return trip. Silent, reversed, vague.\n' +
+    'SCENE 24 – AFTERMATH: origin revisited. Something minor changed. Include the phrase: “Nothing was learned.”\n\n' +
     '---\n\n' +
-    '## EXAMPLES OF GOOD SCENE INTROS\n\n' +
-    '"Kailey opens three apps to check the time. None agree."\n' +
-    '"Half Kailey\'s bed is covered in outfits. The other half is floor."\n' +
-    '"Venus lays her clothes out like a systems diagram. Then moves two things. Then deletes the layout."\n' +
-    '"The first shop is closed. The second doesn\'t exist anymore."\n' +
-    '"The street outside looks familiar. But no one says anything."\n' +
-    '"Eljas suggests walking. No one responds, but the driver slows down."\n' +
-    '"Donte asks the driver what Vegas was like in 2003. The driver says \"shorter.\""\n' +
-    '"Rohan checks a different phone. It\'s older. He pockets it quickly."\n\n' +
+    '## TONE EXAMPLES\n\n' +
+    'Kailey opens three weather apps. Each says something different.\n' +
+    'Half the bed is covered in clothing. None of it is folded.\n' +
+    'Venus deletes her outfit diagram. Then draws a new one. Then deletes it.\n' +
+    'The first store is closed. The second is real but wrong.\n' +
+    'A screen shows a headline. No one blinks.\n' +
+    antagonist + '\'s phone lights up. They change direction. No one asks why.\n' +
+    'Through the window: diagrams, not ' + activity.name + '. ' + antagonist + ' walks inside.\n\n' +
     '---\n\n' +
-    'Output the scenes using this format exactly:\n\n' +
+    '## FORMAT\n\n' +
     '**SCENE [#] – [TITLE]**  \n' +
-    '[unique content based on the scene requirements]\n\n' +
-    'Create NEW content for each scene (don\'t copy the examples).\n' +
-    'Keep style consistent: terse, observational, slightly strange.\n' +
-    'Output ONLY the formatted scenes 2-24. No introduction or commentary.'
+    '[scene text]\n\n' +
+    'Write new content for each scene. Follow the scene map and style rules strictly.\n' +
+    'Output only SCENES 2–24, using the format above. No commentary, no explanation.'
   );
 }
 // ===== END OF buildSceneIntroGenerationPrompt FUNCTION =====
