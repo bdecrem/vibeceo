@@ -1,0 +1,611 @@
+{
+  "metadata": {
+    "generated": "2025-05-11T17:19:34.497Z",
+    "storyType": "weekend2",
+    "city": "Berlin",
+    "locationGoal": "Berghain",
+    "object": "metal drink token"
+  },
+  "scenes": [
+    {
+      "number": 1,
+      "intro": {
+        "time": "8:12 PM",
+        "location": "Berlin",
+        "behavior": "the streetlights are starting to blink"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Where exactly is the meet spot?",
+          "timestamp": "8:13 PM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "The document lacks specificity. Typical.",
+          "timestamp": "8:14 PM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "Just bring resilience.",
+          "timestamp": "8:15 PM"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 8:45 PM in Berlin, outfits clash with personal doubts."
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "This jacket computes wrong on me.",
+          "timestamp": "8:46 PM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "Mine feels like a UX mistake.",
+          "timestamp": "8:47 PM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Have you tried restarting your confidence?",
+          "timestamp": "8:48 PM"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 9:03 PM in Berlin, a metal token sits quietly on a coffee table."
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "That token wasn’t in the sprint plan.",
+          "timestamp": "9:04 PM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "It's an undocumented feature of tonight.",
+          "timestamp": "9:05 PM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Unscheduled. Unclaimed. Uncomfortable.",
+          "timestamp": "9:06 PM"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 9:20 PM in Berlin, Uber apps flicker with timing inconsistencies."
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "Our ETA is undefined.",
+          "timestamp": "9:21 PM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "Agile transportation seems broken tonight.",
+          "timestamp": "9:22 PM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Should have pivoted to walking.",
+          "timestamp": "9:23 PM"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 9:40 PM in Berlin, the token reappears in someone's pocket."
+      },
+      "conversation": [
+        {
+          "coach": "eljas_council",
+          "content": "Did anyone iterate on this token's user journey?",
+          "timestamp": "9:41 PM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "It’s product placement in its purest form.",
+          "timestamp": "9:42 PM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "I don’t recall signing off on this feature.",
+          "timestamp": "9:43 PM"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 10:05 PM in Berlin, the route changes unexpectedly."
+      },
+      "conversation": [
+        {
+          "coach": "rohan_pressure",
+          "content": "Our path just forked without consent.",
+          "timestamp": "10:06 PM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "We're experiencing technical difficulties with reality.",
+          "timestamp": "10:07 PM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Maybe it’s a hidden level.",
+          "timestamp": "10:08 PM"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 10:25 PM in Berlin, the same park slides by again."
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Feels like a loop function in nature.",
+          "timestamp": "10:26 PM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "This scenery needs debugging.",
+          "timestamp": "10:27 PM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "Or maybe we're stuck in a recursive call.",
+          "timestamp": "10:28 PM"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 11:00 PM in Berlin, they stand confused outside Berghain."
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "This wasn’t part of the product roadmap.",
+          "timestamp": "11:01 PM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "Our access permissions weren’t set correctly.",
+          "timestamp": "11:02 PM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "We failed the user acceptance test.",
+          "timestamp": "11:03 PM"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 11:30 PM in Berlin, individuals scatter towards uncertain afterplans."
+      },
+      "conversation": [
+        {
+          "coach": "eljas_council",
+          "content": "Where’s the debrief?",
+          "timestamp": "11:31 PM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "Skipping it. We're iterating on the move.",
+          "timestamp": "11:32 PM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Redirect to fallback locations?",
+          "timestamp": "11:33 PM"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 11:45 PM in Berlin, Rohan and Donte walk into a darkened gallery."
+      },
+      "conversation": [
+        {
+          "coach": "rohan_pressure",
+          "content": "This place is out of beta, right?",
+          "timestamp": "11:46 PM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "Feels like we're alpha testers tonight.",
+          "timestamp": "11:47 PM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "You're interacting with art outside the user manual.",
+          "timestamp": "11:48 PM"
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's midnight in Berlin, Venus and Eljas find solace on a cold curb."
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "Is this low-bandwidth interaction?",
+          "timestamp": "12:01 AM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Optimizing for human connection. Rare.",
+          "timestamp": "12:02 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "We're out of sync with the network.",
+          "timestamp": "12:03 AM"
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 12:15 AM in Berlin, Kailey attempts to use the token in a vending machine."
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Rejecting traditional currency models.",
+          "timestamp": "12:16 AM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "Are we disrupting the vending machine industry?",
+          "timestamp": "12:17 AM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "Or is it disrupting us?",
+          "timestamp": "12:18 AM"
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 12:30 AM in Berlin, the machine retaliates against the token."
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "Status: Refused.",
+          "timestamp": "12:31 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "A rejection without feedback. Standard.",
+          "timestamp": "12:32 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Failed transactions are still transactions.",
+          "timestamp": "12:33 AM"
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 12:45 AM in Berlin, Alex captures the moment in silence."
+      },
+      "conversation": [
+        {
+          "coach": "alex_actual",
+          "content": "Documenting null results for posterity.",
+          "timestamp": "12:46 AM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "Imagery without narrative.",
+          "timestamp": "12:47 AM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "A visual user story without user stories.",
+          "timestamp": "12:48 AM"
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 1:00 AM in Berlin, the group finds itself in an unnamed cafe."
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "This location wasn’t on our sprint board.",
+          "timestamp": "1:01 AM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "Unplanned meetings can foster innovation.",
+          "timestamp": "1:02 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "As long as the coffee compiles.",
+          "timestamp": "1:03 AM"
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 1:20 AM in Berlin, the air fills with everything but the topic of the token."
+      },
+      "conversation": [
+        {
+          "coach": "rohan_pressure",
+          "content": "Discussing anything but the elephant in the room.",
+          "timestamp": "1:21 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Elephants need not apply.",
+          "timestamp": "1:22 AM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "So, about those Q2 projections...",
+          "timestamp": "1:23 AM"
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 1:40 AM in Berlin, dashboards become metaphors for unspoken feelings."
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "My emotions are currently underperforming.",
+          "timestamp": "1:41 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "Need to adjust the sentiment analysis settings.",
+          "timestamp": "1:42 AM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Let's circle back to emotional KPIs later.",
+          "timestamp": "1:43 AM"
+        }
+      ]
+    },
+    {
+      "number": 18,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 2:00 AM in Berlin, the token unexpectedly settles a bill."
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "This token’s finally found its market fit.",
+          "timestamp": "2:01 AM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "An unexpected pivot to finance.",
+          "timestamp": "2:02 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Who’s leading this product launch?",
+          "timestamp": "2:03 AM"
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 2:20 AM in Berlin, Eljas suggests they take a walk."
+      },
+      "conversation": [
+        {
+          "coach": "eljas_council",
+          "content": "Shall we iterate on our location?",
+          "timestamp": "2:21 AM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "Walking is the new sprint meeting.",
+          "timestamp": "2:22 AM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Incremental steps towards nowhere.",
+          "timestamp": "2:23 AM"
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 2:40 AM in Berlin, the group walks in silence."
+      },
+      "conversation": [
+        {
+          "coach": "rohan_pressure",
+          "content": "This feels like a stand-up with no updates.",
+          "timestamp": "2:41 AM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "Agile in motion, objectives unknown.",
+          "timestamp": "2:42 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "Are we iterating or meandering?",
+          "timestamp": "2:43 AM"
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 3:00 AM in Berlin, the token is absent."
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "The token’s user story has ended.",
+          "timestamp": "3:01 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "Or has it transitioned to another phase?",
+          "timestamp": "3:02 AM"
+        },
+        {
+          "coach": "venusmetrics",
+          "content": "Maybe it's just refactoring its existence.",
+          "timestamp": "3:03 AM"
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 3:20 AM in Berlin, focus shifts momentarily skyward."
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "A bird executing a perfect pivot.",
+          "timestamp": "3:21 AM"
+        },
+        {
+          "coach": "rohan_pressure",
+          "content": "Nature’s own startup, scaling heights.",
+          "timestamp": "3:22 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "No need for market validation.",
+          "timestamp": "3:23 AM"
+        }
+      ]
+    },
+    {
+      "number": 23,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 3:40 AM in Berlin, full circle without resolution."
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "Our feedback loop is broken.",
+          "timestamp": "3:41 AM"
+        },
+        {
+          "coach": "kailey_sloan",
+          "content": "Iterating back to square one.",
+          "timestamp": "3:42 AM"
+        },
+        {
+          "coach": "eljas_council",
+          "content": "Remember to log this in our retrospective.",
+          "timestamp": "3:43 AM"
+        }
+      ]
+    },
+    {
+      "number": 24,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 4:00 AM in Berlin, the token stays as they go."
+      },
+      "conversation": [
+        {
+          "coach": "rohan_pressure",
+          "content": "Left behind like a forgotten log file.",
+          "timestamp": "4:01 AM"
+        },
+        {
+          "coach": "donte_declares",
+          "content": "Ghost users of the night.",
+          "timestamp": "4:02 AM"
+        },
+        {
+          "coach": "alex_actual",
+          "content": "End of session.",
+          "timestamp": "4:03 AM"
+        }
+      ]
+    }
+  ]
+}

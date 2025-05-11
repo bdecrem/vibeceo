@@ -1,0 +1,906 @@
+{
+  "metadata": {
+    "generated": "2025-05-11T17:15:27.921Z",
+    "storyType": "Weekend Story 2",
+    "city": "Berlin",
+    "locationGoal": "Berghain",
+    "object": "Metal drink token"
+  },
+  "scenes": [
+    {
+      "number": 1,
+      "intro": {
+        "time": "8:12 PM",
+        "location": "Berlin",
+        "behavior": "the streetlights are starting to blink.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Did we align on the destination?",
+          "timestamp": "8:13 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 8:14 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Just bring resilience.",
+          "timestamp": "8:15 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 8:16 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "We going through KPIs or the front door?",
+          "timestamp": "8:17 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 8:18 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "intro": {
+        "time": "8:45 PM",
+        "location": "Berlin",
+        "behavior": "someone's outfit squeaks suspiciously.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Trust in the process equals trust in the fabric.",
+          "timestamp": "8:46 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 8:47 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Outfits are minimum viable products.",
+          "timestamp": "8:48 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 8:49 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Is polyester a framework or a bug?",
+          "timestamp": "8:50 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 8:51 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "intro": {
+        "time": "9:03 PM",
+        "location": "Berlin",
+        "behavior": "the coffee table now has a mysterious addition.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Is this token agile or waterfall?",
+          "timestamp": "9:04 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 9:05 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "MVP of the night?",
+          "timestamp": "9:06 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 9:07 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Potentially disruptive if thrown.",
+          "timestamp": "9:08 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 9:09 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "intro": {
+        "time": "9:22 PM",
+        "location": "Berlin",
+        "behavior": "the Uber app cycles through existential dread.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "It's recalibrating our decision-making skills.",
+          "timestamp": "9:23 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 9:24 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Should've opted for the glitch fare.",
+          "timestamp": "9:25 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 9:26 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Ride-sharing but with alternate realities.",
+          "timestamp": "9:27 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 9:28 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "intro": {
+        "time": "9:35 PM",
+        "location": "Berlin",
+        "behavior": "the token finds its way into a pocket, uninvited.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "This isn't in my user story.",
+          "timestamp": "9:36 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 9:37 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "That's not scalable.",
+          "timestamp": "9:38 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 9:39 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Cross-platform compatibility?",
+          "timestamp": "9:40 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 9:41 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "intro": {
+        "time": "10:01 PM",
+        "location": "Berlin",
+        "behavior": "their route is mysteriously rerouted.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Our journey's pivoting hard.",
+          "timestamp": "10:02 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 10:03 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "This iteration lacks user feedback.",
+          "timestamp": "10:04 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 10:05 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Is this agile transportation?",
+          "timestamp": "10:06 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 10:07 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "intro": {
+        "time": "10:18 PM",
+        "location": "Berlin",
+        "behavior": "the park outside seems stuck on repeat.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Is reality glitching?",
+          "timestamp": "10:19 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 10:20 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Are we looping or learning?",
+          "timestamp": "10:21 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 10:22 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "A/B testing the scenery.",
+          "timestamp": "10:23 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 10:24 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "intro": {
+        "time": "11:00 PM",
+        "location": "Berlin",
+        "behavior": "the Berghain door refuses them without explanation.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Was our pitch weak?",
+          "timestamp": "11:01 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 11:02 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Maybe it's invite-only beta.",
+          "timestamp": "11:03 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 11:04 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Or our version is outdated.",
+          "timestamp": "11:05 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 11:06 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "intro": {
+        "time": "11:30 PM",
+        "location": "Berlin",
+        "behavior": "the group's cohesion flickers.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "We're decentralizing.",
+          "timestamp": "11:31 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 11:32 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Organic disbandment process.",
+          "timestamp": "11:33 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 11:34 PM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Is this the pivot point?",
+          "timestamp": "11:35 PM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 11:36 PM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's midnight in Berlin and Rohan and Donte find themselves in an eerie, closed gallery.**"
+      },
+      "conversation": [
+        {
+          "coach": "donte_declares",
+          "content": "This feels like a stealth mode project.",
+          "timestamp": "12:01 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'rohan_tech' 12:02 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "intro": {
+        "time": "12:15 AM",
+        "location": "Berlin",
+        "behavior": "Venus and Eljas share a silent camaraderie on the curb.**"
+      },
+      "conversation": [
+        {
+          "coach": "venusmetrics",
+          "content": "Our runway is this sidewalk.",
+          "timestamp": "12:16 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'eljas_found' 12:17 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "intro": {
+        "time": "unknown",
+        "location": "unknown",
+        "behavior": "It's 12:30 AM in Berlin, and Kailey attempts to integrate the token into a vending machine ecosystem.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Will it scale or jam?",
+          "timestamp": "12:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'eljas_found' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'rohan_tech' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 12:32 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "intro": {
+        "time": "12:45 AM",
+        "location": "Berlin",
+        "behavior": "the machine rejects the token with prejudice.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Low retention rate, then.",
+          "timestamp": "12:46 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'eljas_found' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'rohan_tech' -",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 12:47 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "intro": {
+        "time": "1:00 AM",
+        "location": "Berlin",
+        "behavior": "Alex captures a moment for an audience that doesn't exist.**"
+      },
+      "conversation": [
+        {
+          "coach": "alex_moves",
+          "content": "Engagement metrics are imaginary.",
+          "timestamp": "1:01 AM"
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "intro": {
+        "time": "1:30 AM",
+        "location": "Berlin",
+        "behavior": "an unnamed café hosts a fragmented reunion.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Is this a soft relaunch?",
+          "timestamp": "1:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 1:32 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Retention strategies needed.",
+          "timestamp": "1:33 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 1:34 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Need a better onboarding process.",
+          "timestamp": "1:35 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 1:36 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "intro": {
+        "time": "1:45 AM",
+        "location": "Berlin",
+        "behavior": "the token goes unacknowledged among them.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Discussing it would be off-brand.",
+          "timestamp": "1:46 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 1:47 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Let's backlog the topic.",
+          "timestamp": "1:48 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 1:49 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Deprioritize indefinitely.",
+          "timestamp": "1:50 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 1:51 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "intro": {
+        "time": "2:00 AM",
+        "location": "Berlin",
+        "behavior": "they discuss dashboards with a fervor usually reserved for romance.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Our hearts beat in KPI rhythms.",
+          "timestamp": "2:01 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 2:02 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Passion metrics are peaking.",
+          "timestamp": "2:03 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 2:04 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Are we tracking emotional churn?",
+          "timestamp": "2:05 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 2:06 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 18,
+      "intro": {
+        "time": "2:30 AM",
+        "location": "Berlin",
+        "behavior": "the token somehow settles the bill.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Token economics in action.",
+          "timestamp": "2:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 2:32 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "It's disrupting the payment space.",
+          "timestamp": "2:33 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 2:34 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "We should scale this.",
+          "timestamp": "2:35 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 2:36 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "intro": {
+        "time": "3:00 AM",
+        "location": "Berlin",
+        "behavior": "Eljas suggests a directionless walk.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "User journey without a map.",
+          "timestamp": "3:01 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 3:02 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Minimal viable exploration.",
+          "timestamp": "3:03 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 3:04 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Are we agile or just aimless?",
+          "timestamp": "3:05 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 3:06 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "intro": {
+        "time": "3:30 AM",
+        "location": "Berlin",
+        "behavior": "the walk becomes their roadmap.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Pivoting with every step.",
+          "timestamp": "3:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 3:32 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Iterating our trajectory.",
+          "timestamp": "3:33 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 3:34 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Let’s not scale too quickly.",
+          "timestamp": "3:35 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 3:36 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "intro": {
+        "time": "4:00 AM",
+        "location": "Berlin",
+        "behavior": "the token is neither here nor there.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Was it lost or a feature removal?",
+          "timestamp": "4:01 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 4:02 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Let's not version control it.",
+          "timestamp": "4:03 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 4:04 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Minimal documentation.",
+          "timestamp": "4:05 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 4:06 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "intro": {
+        "time": "4:30 AM",
+        "location": "Berlin",
+        "behavior": "something is taken to the sky, unnoticed.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Was that a feature or a bug?",
+          "timestamp": "4:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 4:32 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Outside our scope of observation.",
+          "timestamp": "4:33 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 4:34 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Let's call it an airborne prototype.",
+          "timestamp": "4:35 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 4:36 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 23,
+      "intro": {
+        "time": "5:00 AM",
+        "location": "Berlin",
+        "behavior": "the starting place feels both familiar and uncharted.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Full circle or just a loop?",
+          "timestamp": "5:01 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 5:02 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Revisiting our assumptions.",
+          "timestamp": "5:03 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 5:04 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Are we ready for scaling?",
+          "timestamp": "5:05 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 5:06 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    },
+    {
+      "number": 24,
+      "intro": {
+        "time": "5:30 AM",
+        "location": "Berlin",
+        "behavior": "the token's absence goes unremarked, but not unfelt.**"
+      },
+      "conversation": [
+        {
+          "coach": "kailey_sloan",
+          "content": "Unacknowledged doesn't mean unimportant.",
+          "timestamp": "5:31 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'venusmetrics' 5:32 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "eljas_found",
+          "content": "Its legacy is coded in silence.",
+          "timestamp": "5:33 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'donte_declares' 5:34 AM",
+          "timestamp": "unknown"
+        },
+        {
+          "coach": "rohan_tech",
+          "content": "Did we learn or unlearn?",
+          "timestamp": "5:35 AM"
+        },
+        {
+          "coach": "unknown",
+          "content": "'alex_moves' 5:36 AM",
+          "timestamp": "unknown"
+        }
+      ]
+    }
+  ]
+}
