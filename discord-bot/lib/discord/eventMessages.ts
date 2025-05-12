@@ -44,6 +44,10 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}The coaches are antsy, eager to make a plan for the night.",
 		outro: "After their chaotic planning session, the coaches settled on {activity}: a {activityType} featuring {activityDescription}"
 	},
+	weekendstory: {
+		intro: "{arrival}The coaches are about to embark on their weekend adventure.",
+		outro: "The weekend adventure has concluded. The coaches reflect silently on what just happened."
+	},
 } as const;
 
 // Keep original scene index for event system
