@@ -37,7 +37,7 @@ if (!fs.existsSync(storiesDir)) {
 function getLatestWeekendStoryFile(): string {
   const files = fs
     .readdirSync(storiesDir)
-    .filter((file) => file.startsWith("weekend2-story-") && file.endsWith(".json"))
+    .filter((file) => file.startsWith("weekend-story-") && file.endsWith(".json"))
     .map((file) => ({
       name: file,
       path: path.join(storiesDir, file),

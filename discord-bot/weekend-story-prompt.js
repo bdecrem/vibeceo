@@ -20,8 +20,70 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Function to generate a story arc
+function generateStoryArc() {
+  console.log("Generating story arc...");
+  
+  try {
+    const activitiesData = JSON.parse(fs.readFileSync(path.join(__dirname, "data/weekend-activities.json"), "utf8"));
+    const derailersData = JSON.parse(fs.readFileSync(path.join(__dirname, "data/weekend-derailers.json"), "utf8"));
+
+    const cities = Object.keys(activitiesData);
+    const city = cities[Math.floor(Math.random() * cities.length)];
+
+    const durations = Object.keys(activitiesData[city]);
+    const randomDuration = durations[Math.floor(Math.random() * durations.length)];
+    const activityPool = activitiesData[city][randomDuration];
+    const activity = activityPool[Math.floor(Math.random() * activityPool.length)];
+
+    const coaches = Object.keys(derailersData);
+    const coach = coaches[Math.floor(Math.random() * coaches.length)];
+    const derailments = derailersData[coach];
+    const derailment = derailments[Math.floor(Math.random() * derailments.length)];
+
+    // Lightly structured story arc
+    const beats = [
+      `Scene 1: The group agrees on ${activity.name}, but no one confirms the plan out loud.`,
+      `Scene 2: Everyone gets dressed, poorly.`,
+      `Scene 3: ${coach} starts dropping hints about 'another option.'`,
+      "Scene 4: The Uber arrives before they're ready.",
+      `Scene 5: ${coach} opens a second phone.`,
+      "Scene 6: The ride reroutes mysteriously.",
+      `Scene 7: The car passes a coworking space. ${coach} smiles.`,
+      `Scene 8: They arrive outside ${activity.name}. The line doesn't move.`,
+      `Scene 9: ${coach} says the phrase 'alternate venue.'`,
+      "Scene 10: Half the group follows. The rest don't ask why.",
+      "Scene 11: They enter a dark building with no signage.",
+      "Scene 12: The room has unexpected features and paper name tags.",
+      "Scene 13: Venus calls this a pivot.",
+      "Scene 14: Eljas attempts to leave but reappears at the snack table.",
+      "Scene 15: Kailey tries something new. The interface is aggressively confident.",
+      "Scene 16: Rohan refuses to participate. No one argues.",
+      "Scene 17: Someone wins a fake round. Applause is silent.",
+      `Scene 18: A surprise appears unprompted. It's ${coach}'s.`,
+      "Scene 19: Everyone claps except Alex.",
+      "Scene 20: The system logs them all out.",
+      `Scene 21: They walk home. No one mentions ${activity.name}.`,
+      "Scene 22: The streetlights glitch.",
+      "Scene 23: They end up back at the starting corner.",
+      "Scene 24: Kailey still has a memento. No one looks at it."
+    ];
+
+    return {
+      city,
+      plan: activity.name,
+      derailer: { coach, agenda: derailment },
+      beats,
+      activity  // Include the full activity object for metadata
+    };
+  } catch (error) {
+    console.error("Error generating story arc:", error);
+    throw error;
+  }
+}
+
 // Function to build the scene generation prompt
-function buildSceneGenerationPrompt() {
+function buildSceneGenerationPrompt(storyArc) {
   return `You are writing a 24-scene Advisors Foundry episode.
 
 Each scene includes two parts:
@@ -31,66 +93,35 @@ Each scene includes two parts:
 The coaches are work-obsessed, emotionally unreadable, and allergic to closure. They never say what they feel. Their messages are short, strange, and always slightly misaligned. The tone is observational, terse, dry, and startup-surreal.
 
 Scene intros should:
-- Open with the time and location ("It's 8:12 PM in Berlin and the streetlights are starting to blink")
-- Never explain what's happening — only show one physical or behavioral detail
-- Avoid narrative framing, metaphor, or emotional language
+- Begin with the time and city ("It's 8:12 PM in ${storyArc.city} and the streetlights are starting to blink")
+- Show only one physical or behavioral detail. No emotion, metaphor, or exposition.
 
 Conversations should:
-- Drift away from the setting, usually into founder logic, pitch brain, or deadpan nonsense
-- Contain no quotation marks
-- Include six coaches: Kailey, Venus, Eljas, Donte, Rohan, Alex (Alex is female)
+- Drift away from the setting (startup logic, pitch-speak, founder neurosis)
+- Contain no quotation marks or narration
+- Use exactly these names: Kailey, Venus, Eljas, Donte, Rohan, Alex (Alex is female)
+- Use these exact usernames: 'kailey_sloan', 'venusmetrics', 'eljas_council', 'donte_declares', 'rohan_pressure', 'alex_actual'
 - Sound like broken product managers in a blackout poetry workshop
 
-Use the story arc provided below to structure the emotional progression and key motifs. Do not reference it directly. Let it shape the behavior.
+Use the story arc below to structure tone, motif, and momentum. Do not refer to it directly. Let it shape atmosphere and action.
 
 ---
 
 STORY ARC:  
-{
-  "city": "Berlin",
-  "object": "a metal drink token no one brought",
-  "location_goal": "Berghain",
-  "beats": [
-    "Scene 1: The group agrees on Berghain but no one confirms it out loud.",
-    "Scene 2: Everyone gets dressed in outfits they don't trust.",
-    "Scene 3: A metal token appears on the coffee table. No one claims it.",
-    "Scene 4: Uber timing glitches.",
-    "Scene 5: The token reappears in someone's pocket.",
-    "Scene 6: They get rerouted.",
-    "Scene 7: A park passes by repeatedly.",
-    "Scene 8: They don't get in. No one says why.",
-    "Scene 9: They disperse.",
-    "Scene 10: Rohan and Donte wander into a closed gallery.",
-    "Scene 11: Venus and Eljas sit on a curb.",
-    "Scene 12: Kailey tries to return the token to a vending machine.",
-    "Scene 13: The machine spits it back out.",
-    "Scene 14: Alex takes a photo and posts nothing.",
-    "Scene 15: The group reconverges in a cafe they never named.",
-    "Scene 16: No one mentions the token.",
-    "Scene 17: They talk about dashboards like they're feelings.",
-    "Scene 18: Someone tries to pay with the token. It works.",
-    "Scene 19: Eljas proposes a walk.",
-    "Scene 20: They walk.",
-    "Scene 21: The token is lost. Or placed. Or left.",
-    "Scene 22: A bird takes something and flies off. No one tracks it.",
-    "Scene 23: They return to the block they started on.",
-    "Scene 24: They leave the token behind. No one mentions it."
-  ]
-}
+${JSON.stringify(storyArc, null, 2)}
 
 ---
 
 OUTPUT FORMATTING REQUIREMENTS:
-- Output exactly 24 scenes with consistent formatting
-- Each scene MUST be clearly marked with scene number: [SCENE:1] at the start and [/SCENE:1] at the end
-- Scene intros MUST follow the pattern: "It's [TIME] in [CITY] and [behavior]."
-- All coach usernames MUST be exactly: 'kailey_sloan', 'venusmetrics', 'eljas_council', 'donte_declares', 'rohan_pressure', 'alex_actual'
-- Messages MUST be formatted like: "> 'coach_username' [TIME]", then on the next line "> message content"
+- Output exactly 24 scenes
+- Each scene MUST be clearly marked with scene number: [SCENE:1] ... [/SCENE:1]
+- Each intro MUST begin with: "It's [TIME] in [CITY] and [behavior]"
+- Each message MUST follow: "> 'username' [TIME]", followed by "> message"
 
-Example of correct scene format:
+Example:
 
 [SCENE:1]
-**It's 8:12 PM in Berlin and the streetlights are starting to blink.**  
+**It's 8:12 PM in ${storyArc.city} and the streetlights are starting to blink.**  
 
 > 'kailey_sloan' 8:13 PM  
 > Where exactly is the meet spot?  
@@ -102,11 +133,20 @@ Example of correct scene format:
 > Just bring resilience.
 [/SCENE:1]
 
-Only output scenes 1 through 24. No summary. No commentary. The tone should be cold and controlled but lightly glitching.`;
+Only output scenes 1 through 24. No commentary. No summary. The tone should feel cold, restrained, and quietly surreal.`;
 }
 
+// Function to generate the story using GPT-4
 async function getGPTResponse() {
   try {
+    // First, generate a story arc
+    const storyArc = generateStoryArc();
+    console.log("Generated story arc for city:", storyArc.city);
+    console.log("Activity:", storyArc.plan);
+    console.log("Derailer coach:", storyArc.derailer.coach);
+    console.log("Derailer agenda:", storyArc.derailer.agenda);
+    
+    // Then use the story arc to generate the full story with GPT-4
     console.log("Requesting response from GPT-4...");
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
@@ -118,7 +158,7 @@ async function getGPTResponse() {
         },
         {
           role: "user",
-          content: buildSceneGenerationPrompt(),
+          content: buildSceneGenerationPrompt(storyArc),
         },
       ],
       temperature: 1.0,
@@ -130,20 +170,28 @@ async function getGPTResponse() {
 
     // Create metadata header
     const metadata = `=== WEEKEND STORY METADATA ===
-Story Type: weekend2
-City: Berlin
-Location Goal: Berghain
-Object: Metal drink token
+Story Type: weekend
+City: ${storyArc.city}
+Location Goal: ${storyArc.plan}
+Activity Type: ${storyArc.activity.type || 'Not specified'}
+Derailer: ${storyArc.derailer.coach}
+Derailer Agenda: ${storyArc.derailer.agenda}
 Generated: ${new Date().toISOString()}
 
 === STORY BEGINS ===
 
 `;
 
+    // Save the story with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const outputPath = path.join(__dirname, `weekend2_story_output-${timestamp}.txt`);
+    const outputPath = path.join(__dirname, `weekend_story_output-${timestamp}.txt`);
     fs.writeFileSync(outputPath, metadata + response, "utf8");
     console.log(`Saved story to ${outputPath}`);
+
+    // Also save the story arc for reference
+    const arcPath = path.join(__dirname, `weekend_story_arc-${timestamp}.json`);
+    fs.writeFileSync(arcPath, JSON.stringify(storyArc, null, 2), "utf8");
+    console.log(`Saved story arc to ${arcPath}`);
 
     // Parse the response and save structured JSON
     try {
@@ -152,15 +200,17 @@ Generated: ${new Date().toISOString()}
       
       // Parse story with metadata
       const parsedStory = parseWeekendStory(response, {
-        storyType: "weekend2",
-        city: "Berlin",
-        locationGoal: "Berghain",
-        object: "metal drink token",
+        storyType: "weekend",
+        city: storyArc.city,
+        locationGoal: storyArc.plan,
+        activityType: storyArc.activity.type || 'Not specified',
+        derailer: storyArc.derailer.coach,
+        derailerAgenda: storyArc.derailer.agenda,
         generated: new Date().toISOString()
       });
       
       // Save the structured JSON
-      const jsonPath = path.join(__dirname, `data/weekend-stories/weekend2-story-${timestamp}.json`);
+      const jsonPath = path.join(__dirname, `data/weekend-stories/weekend-story-${timestamp}.json`);
       fs.writeFileSync(jsonPath, JSON.stringify(parsedStory, null, 2), "utf8");
       console.log(`Saved structured JSON to ${jsonPath}`);
       
