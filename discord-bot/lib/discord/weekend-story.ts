@@ -11,6 +11,7 @@ import { getWebhookUrls } from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
 import { TextChannel, Client } from "discord.js";
 import dotenv from "dotenv";
+import { getLocationAndTime } from "./locationTime.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,7 +59,10 @@ async function generateNewWeekendStory(): Promise<string> {
     const scriptPath = path.join(process.cwd(), "weekend-story-prompt.js");
     console.log("Executing weekend story prompt script:", scriptPath);
 
-    exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+    // Pass current environment variables to the script, which will include FAST_SCHEDULE if set
+    const env = process.env;
+    
+    exec(`node ${scriptPath}`, { env }, (error, stdout, stderr) => {
       if (error) {
         console.error("Error executing weekend story prompt:", error);
         reject(error);
@@ -127,16 +131,8 @@ async function postWeekendStoryToDiscord(client: Client) {
       throw new Error("Weekend story channel not found");
     }
 
-    // Send intro message with story metadata
-    const now = new Date();
-    console.log("Sending intro message with weekend story");
-    await sendEventMessage(
-      channel,
-      "weekendstory",
-      true,
-      now.getUTCHours(),
-      now.getUTCMinutes()
-    );
+    // NOTE: Removed redundant intro message that was causing duplicate messages
+    // The intro message is already being sent by the scheduler or test script
     
     // Process each scene and post to Discord
     console.log(`Posting ${weekendStory.scenes.length} weekend story scenes...`);
@@ -148,8 +144,12 @@ async function postWeekendStoryToDiscord(client: Client) {
       try {
         console.log(`Processing scene ${scene.number}/${weekendStory.scenes.length}`);
         
-        // Post the scene intro as a regular message
-        const sceneIntro = `**It's ${scene.intro.time} in ${scene.intro.location} and ${scene.intro.behavior}.**`;
+        // Get current time from locationTime.js
+        const now = new Date();
+        const { location, formattedTime, ampm } = await getLocationAndTime(now.getUTCHours(), now.getUTCMinutes());
+        
+        // Post the scene intro with current time instead of GPT-generated time
+        const sceneIntro = `**It's ${formattedTime}${ampm} in ${location} and ${scene.intro.behavior}.**`;
         await channel.send(sceneIntro);
         await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
         
@@ -187,6 +187,7 @@ async function postWeekendStoryToDiscord(client: Client) {
     console.log(`Weekend story posting complete! Success: ${successCount}, Errors: ${errorCount}`);
 
     // Send outro message
+    const now = new Date();
     await sendEventMessage(
       channel,
       "weekendstory",

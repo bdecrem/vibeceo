@@ -20,20 +20,68 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Function to generate a story arc
-function generateStoryArc() {
-  console.log("Generating story arc...");
-  
+// Function to generate a random story arc
+async function generateStoryArc() {
   try {
-    const activitiesData = JSON.parse(fs.readFileSync(path.join(__dirname, "data/weekend-activities.json"), "utf8"));
-    const derailersData = JSON.parse(fs.readFileSync(path.join(__dirname, "data/weekend-derailers.json"), "utf8"));
+    // Load data files
+    const activitiesPath = path.join(__dirname, "data", "weekend-activities.json");
+    const derailersPath = path.join(__dirname, "data", "weekend-derailers.json");
+    
+    const activitiesData = JSON.parse(fs.readFileSync(activitiesPath, "utf8"));
+    const derailersData = JSON.parse(fs.readFileSync(derailersPath, "utf8"));
 
-    const cities = Object.keys(activitiesData);
-    const city = cities[Math.floor(Math.random() * cities.length)];
-
-    const durations = Object.keys(activitiesData[city]);
-    const randomDuration = durations[Math.floor(Math.random() * durations.length)];
-    const activityPool = activitiesData[city][randomDuration];
+    // Get the current location from locationTime.js
+    const { getLocationAndTime, isWeekend } = await import("./lib/discord/locationTime.js");
+    const now = new Date();
+    const gmtHour = now.getUTCHours();
+    const gmtMinutes = now.getUTCMinutes();
+    
+    const locationData = await getLocationAndTime(gmtHour, gmtMinutes);
+    
+    // Extract just the city name from the location (remove " office" or " penthouse" if present)
+    let city = locationData.location.split(' ')[0];
+    
+    // Make sure it's one of our cities in the activities data
+    if (!activitiesData[city]) {
+      // Fallback to a random city if the current location is not in our activities data
+      const availableCities = Object.keys(activitiesData);
+      city = availableCities[Math.floor(Math.random() * availableCities.length)];
+    }
+    
+    console.log(`Current location: ${locationData.location}, using city: ${city}`);
+    
+    // Determine activity duration based on FAST_SCHEDULE env var
+    // Default to "medium" if not set
+    let scheduleSetting = process.env.FAST_SCHEDULE || "1";
+    let durationCategory;
+    
+    // Convert to number
+    const scheduleSpeed = parseInt(scheduleSetting, 10);
+    
+    if (scheduleSpeed <= 1) {
+      // Fast schedule (1 or less) - use short activities
+      durationCategory = "short";
+      console.log("Fast schedule detected - using short activities");
+    } else if (scheduleSpeed >= 60) {
+      // Slow schedule (60 or more) - use long activities
+      durationCategory = "long";
+      console.log("Slow schedule detected - using long activities");
+    } else {
+      // Medium schedule - use medium activities
+      durationCategory = "medium";
+      console.log("Medium schedule detected - using medium activities");
+    }
+    
+    // Make sure the selected duration category exists for this city
+    if (!activitiesData[city][durationCategory]) {
+      console.log(`No ${durationCategory} activities found for ${city}, falling back to random duration`);
+      // Fallback to a random duration if the selected category doesn't exist
+      const durations = Object.keys(activitiesData[city]);
+      durationCategory = durations[Math.floor(Math.random() * durations.length)];
+    }
+    
+    // Select a random activity from the appropriate duration category
+    const activityPool = activitiesData[city][durationCategory];
     const activity = activityPool[Math.floor(Math.random() * activityPool.length)];
 
     const coaches = Object.keys(derailersData);
@@ -140,7 +188,7 @@ Only output scenes 1 through 24. No commentary. No summary. The tone should feel
 async function getGPTResponse() {
   try {
     // First, generate a story arc
-    const storyArc = generateStoryArc();
+    const storyArc = await generateStoryArc();
     console.log("Generated story arc for city:", storyArc.city);
     console.log("Activity:", storyArc.plan);
     console.log("Derailer coach:", storyArc.derailer.coach);
