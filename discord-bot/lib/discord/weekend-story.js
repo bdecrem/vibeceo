@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { initializeWebhooks, sendAsCharacter, cleanupWebhooks, } from "./webhooks.js";
 import { getWebhookUrls } from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
+import { getOutroForScene } from "../../data/weekend-story-outros.js";
 import dotenv from "dotenv";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -209,6 +210,24 @@ async function postWeekendStoryToDiscord(client) {
                     console.error(`Error sending message as ${coachName}:`, messageError);
                 }
             }
+            
+            // Add a scene outro based on the scene number
+            await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay
+            
+            // Extract activity info from metadata for the outro
+            const activityInfo = {
+                name: weekendStory.metadata.locationGoal,
+                description: `${weekendStory.metadata.activityType || 'unique location'} in ${weekendStory.metadata.city}`
+            };
+            
+            // Get the appropriate outro for this scene
+            const sceneOutro = getOutroForScene(nextSceneIndex, weekendStory.scenes.length, activityInfo);
+            
+            // Debug log for the outro
+            console.log(`Scene ${nextSceneIndex + 1} outro: "${sceneOutro}"`);
+            
+            // Send the outro as a regular message
+            await channel.send(`*${sceneOutro}*`);
             
             // Update the scene index for the next time
             updateSceneIndex(latestStoryPath, nextSceneIndex + 1, weekendStory.scenes.length);
