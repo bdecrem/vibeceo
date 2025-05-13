@@ -49,6 +49,21 @@ function resetSceneIndex(): void {
   console.log("Scene index reset to 0");
 }
 
+// Function to force a new weekend story arc on bot startup
+export async function resetWeekendStory(): Promise<void> {
+  console.log("Resetting weekend story on bot startup");
+  resetSceneIndex();
+  
+  try {
+    // Generate a new story
+    console.log("Generating new weekend story for bot startup...");
+    await generateNewWeekendStory();
+    console.log("New weekend story generated on bot startup");
+  } catch (error) {
+    console.error("Error generating new weekend story on bot startup:", error);
+  }
+}
+
 // Function to get the current scene index
 function getCurrentSceneData(): { storyFile: string; currentIndex: number; totalScenes: number; lastUpdated: string } {
   if (!fs.existsSync(sceneIndexFile)) {

@@ -23,11 +23,42 @@ const storiesDir = path.join(process.cwd(), "data", "weekend-stories");
 if (!fs.existsSync(storiesDir)) {
     fs.mkdirSync(storiesDir, { recursive: true });
 }
+
+// File to track the current scene index
+const sceneIndexFile = path.join(process.cwd(), "data", "weekend-stories", "current-scene-index.json");
+
+// Function to initialize or reset the scene index
+function resetSceneIndex() {
+  const data = {
+    storyFile: "",
+    currentIndex: 0,
+    totalScenes: 24,
+    lastUpdated: new Date().toISOString()
+  };
+  fs.writeFileSync(sceneIndexFile, JSON.stringify(data, null, 2), "utf8");
+  console.log("Scene index reset to 0");
+}
+
+// Function to force a new weekend story arc on bot startup
+export async function resetWeekendStory() {
+  console.log("Resetting weekend story on bot startup");
+  resetSceneIndex();
+  
+  try {
+    // Generate a new story
+    console.log("Generating new weekend story for bot startup...");
+    await generateNewWeekendStory();
+    console.log("New weekend story generated on bot startup");
+  } catch (error) {
+    console.error("Error generating new weekend story on bot startup:", error);
+  }
+}
+
 // Function to find the latest weekend story file
 function getLatestWeekendStoryFile() {
     const files = fs
         .readdirSync(storiesDir)
-        .filter((file) => file.startsWith("weekend2-story-") && file.endsWith(".json"))
+        .filter((file) => file.startsWith("weekend-story-") && file.endsWith(".json"))
         .map((file) => ({
         name: file,
         path: path.join(storiesDir, file),
