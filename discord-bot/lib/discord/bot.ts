@@ -7,6 +7,8 @@ import { generateEpisodeContext } from './episodeContext.js';
 import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
 import { EpisodeContext } from './episodeContext.js';
 import { createNewEpisode, addScene } from './episodeStorage.js';
+import { resetWeekendStory } from './weekend-story.js';
+import { isWeekend } from './locationTime.js';
 
 // Global variables to track bot state
 let isBotRunning = false;
@@ -52,6 +54,13 @@ client.once(Events.ClientReady, async (readyClient) => {
     console.log('Initializing story arc configuration...');
     initializeStoryArc();
     console.log('Story arc configuration initialized');
+    
+    // Reset weekend story if in weekend mode
+    if (isWeekend()) {
+      console.log('Bot is starting in weekend mode, resetting weekend story...');
+      await resetWeekendStory();
+      console.log('Weekend story reset complete');
+    }
     
     // Send theme immediately
     const channel = await client.channels.fetch('1354474492629618831');
