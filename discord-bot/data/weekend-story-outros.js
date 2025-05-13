@@ -16,29 +16,25 @@ export const midStoryOutros = [
 // Final scene outro (scene 24)
 export const finalSceneOutro = "Their weekend adventure has concluded. The coaches reflect silently on what just happened.";
 
-/**
- * Returns the appropriate outro for a given scene number
- */
+// Extremely simple outro selection function - guaranteed to work
 export function getOutroForScene(sceneIndex, totalScenes, activityInfo) {
-  // Convert to 1-based scene number
+  // Convert to 1-based scene number for clarity
   const sceneNumber = sceneIndex + 1;
   
-  // Scene 1: Activity intro
+  // Scene 1
   if (sceneNumber === 1) {
     const activityName = activityInfo?.name || 'their destination';
     const activityDescription = activityInfo?.description || 'place to spend their weekend';
-    
     return scene1OutroTemplate
       .replace('{activityName}', activityName)
       .replace('{activityDescription}', activityDescription);
   }
   
-  // Scene 24: Final outro
+  // Scene 24
   if (sceneNumber === 24) {
     return finalSceneOutro;
   }
   
-  // Scenes 2-23: Random mid-story outro
-  const randomIndex = Math.floor(Math.random() * midStoryOutros.length);
-  return midStoryOutros[randomIndex];
+  // All other scenes (2-23)
+  return midStoryOutros[Math.floor(Math.random() * midStoryOutros.length)];
 } 

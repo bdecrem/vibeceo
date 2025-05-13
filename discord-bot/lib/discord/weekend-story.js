@@ -148,6 +148,8 @@ async function postWeekendStoryToDiscord(client) {
         // Get current scene info
         const { currentIndex, storyFile, totalScenes } = getCurrentSceneInfo();
         
+        console.log(`Current scene info: index=${currentIndex}, totalScenes=${totalScenes}`);
+        
         // Check if we need to generate a new story
         let weekendStory;
         let latestStoryPath;
@@ -164,13 +166,25 @@ async function postWeekendStoryToDiscord(client) {
             // Read the weekend story file
             weekendStory = JSON.parse(fs.readFileSync(latestStoryPath, "utf8"));
             
-            // Update the scene index to start with scene 1
+            // Always start with scene 0 when we generate a new story
+            console.log("Resetting scene index to 0 for new story");
             updateSceneIndex(latestStoryPath, 0, weekendStory.scenes.length);
         } else {
             // Continue with existing story
             console.log(`Continuing existing story from ${storyFile}, scene ${currentIndex + 1}/${totalScenes}`);
-            latestStoryPath = storyFile;
-            weekendStory = JSON.parse(fs.readFileSync(storyFile, "utf8"));
+            try {
+                latestStoryPath = storyFile;
+                weekendStory = JSON.parse(fs.readFileSync(storyFile, "utf8"));
+            } catch (err) {
+                console.error(`Error reading story file ${storyFile}:`, err);
+                // If there's an error reading the file, force a new story generation
+                console.log("Error reading story file, generating new one...");
+                await generateNewWeekendStory();
+                latestStoryPath = getLatestWeekendStoryFile();
+                weekendStory = JSON.parse(fs.readFileSync(latestStoryPath, "utf8"));
+                // Reset to scene 0
+                updateSceneIndex(latestStoryPath, 0, weekendStory.scenes.length);
+            }
         }
         
         // Initialize webhooks
@@ -185,54 +199,61 @@ async function postWeekendStoryToDiscord(client) {
             throw new Error("Weekend story channel not found");
         }
         
-        // Process the next scene
+        // Get the current scene index from our state
         const nextSceneIndex = currentIndex;
+        console.log(`Processing scene ${nextSceneIndex + 1} out of ${totalScenes} total scenes`);
         
         if (nextSceneIndex < weekendStory.scenes.length) {
+            // Get the scene to display
             const scene = weekendStory.scenes[nextSceneIndex];
-            console.log(`Processing scene ${scene.number}/${weekendStory.scenes.length}`);
             
-            // Post the scene intro as a regular message
-            const sceneIntro = `**It's ${scene.intro.time} in ${scene.intro.location} and ${scene.intro.behavior}.**`;
-            await channel.send(sceneIntro);
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
-            
-            // Post each message in the conversation using the appropriate webhook
-            for (const message of scene.conversation) {
-                const coachName = mapCoachName(message.coach);
-                console.log(`Sending message as ${coachName}: ${message.content}`);
-                try {
-                    await sendAsCharacter(WEEKEND_STORY_CHANNEL_ID, coachName, message.content);
-                    // Add a short delay between messages to avoid rate limits
-                    await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay
+            try {
+                // POST THE SCENE INTRO
+                const sceneIntro = `**It's ${scene.intro.time} in ${scene.intro.location} and ${scene.intro.behavior}.**`;
+                await channel.send(sceneIntro);
+                await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+                
+                // POST THE CONVERSATION MESSAGES
+                for (const message of scene.conversation) {
+                    const coachName = mapCoachName(message.coach);
+                    console.log(`Sending message as ${coachName}: ${message.content}`);
+                    try {
+                        await sendAsCharacter(WEEKEND_STORY_CHANNEL_ID, coachName, message.content);
+                        await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay
+                    }
+                    catch (messageError) {
+                        console.error(`Error sending message as ${coachName}:`, messageError);
+                    }
                 }
-                catch (messageError) {
-                    console.error(`Error sending message as ${coachName}:`, messageError);
-                }
+                
+                // Delay before sending outro
+                await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay
+                
+                // Prepare activity info for outro
+                const activityInfo = {
+                    name: weekendStory.metadata.locationGoal || 'the event',
+                    description: weekendStory.metadata.activityDescription || 
+                      `${weekendStory.metadata.activityType || 'unique location'} in ${weekendStory.metadata.city}`
+                };
+                
+                // GET THE APPROPRIATE OUTRO
+                // This is a 0-indexed scene (0 = first scene, 23 = last scene in a 24-scene story)
+                const sceneOutro = getOutroForScene(nextSceneIndex, weekendStory.scenes.length, activityInfo);
+                
+                // Send the outro as a regular message
+                await channel.send(`*${sceneOutro}*`);
+                
+                // ONLY update the scene index AFTER the scene is fully posted
+                const nextIndex = nextSceneIndex + 1;
+                console.log(`Scene ${nextSceneIndex + 1} posted successfully, updating index to ${nextIndex}`);
+                updateSceneIndex(latestStoryPath, nextIndex, weekendStory.scenes.length);
+                
+                return true;
+            } catch (sceneError) {
+                console.error(`Error processing scene ${nextSceneIndex + 1}:`, sceneError);
+                // Don't update scene index on error to allow retry
+                return false;
             }
-            
-            // Add a scene outro based on the scene number
-            await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay
-            
-            // Extract activity info from metadata for the outro
-            const activityInfo = {
-                name: weekendStory.metadata.locationGoal,
-                description: `${weekendStory.metadata.activityType || 'unique location'} in ${weekendStory.metadata.city}`
-            };
-            
-            // Get the appropriate outro for this scene
-            const sceneOutro = getOutroForScene(nextSceneIndex, weekendStory.scenes.length, activityInfo);
-            
-            // Debug log for the outro
-            console.log(`Scene ${nextSceneIndex + 1} outro: "${sceneOutro}"`);
-            
-            // Send the outro as a regular message
-            await channel.send(`*${sceneOutro}*`);
-            
-            // Update the scene index for the next time
-            updateSceneIndex(latestStoryPath, nextSceneIndex + 1, weekendStory.scenes.length);
-            console.log(`Scene ${nextSceneIndex + 1}/${weekendStory.scenes.length} posted successfully`);
-            return true;
         } else {
             console.log("No more scenes to post, will generate new story on next call");
             return true;
