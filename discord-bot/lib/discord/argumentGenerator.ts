@@ -261,13 +261,13 @@ async function postConversation(channelId: string, client: Client, messages: Par
   }
 }
 
-// Main function to generate and post a status report
-export async function triggerStatusReport(channelId: string, client: Client): Promise<void> {
-  console.log(`[StatusReport] Starting status report generation...`);
+// Generic function to trigger any argument or conversation type
+export async function triggerArgument(promptId: string, channelId: string, client: Client): Promise<void> {
+  console.log(`[ArgumentGenerator] Starting generation for prompt '${promptId}'...`);
   
   try {
     // Generate conversation
-    const conversationText = await generateConversation("status-report");
+    const conversationText = await generateConversation(promptId);
     
     // Parse messages
     const messages = parseMessages(conversationText);
@@ -275,10 +275,15 @@ export async function triggerStatusReport(channelId: string, client: Client): Pr
     // Post to Discord
     await postConversation(channelId, client, messages);
     
-    console.log(`[StatusReport] Status report completed successfully`);
+    console.log(`[ArgumentGenerator] Prompt '${promptId}' completed successfully`);
   } catch (error) {
-    console.error(`[StatusReport] Error in status report:`, error);
+    console.error(`[ArgumentGenerator] Error generating for prompt '${promptId}':`, error);
   }
+}
+
+// For backward compatibility
+export async function triggerStatusReport(channelId: string, client: Client): Promise<void> {
+  return triggerArgument("status-report", channelId, client);
 }
 
 // If this module is run directly

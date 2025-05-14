@@ -7,7 +7,7 @@ import { triggerPitchChat } from "./pitch.js";
 import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { triggerWeekendStory } from "./weekend-story.js";
 import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
-import { triggerStatusReport } from "./statusReport.js";
+import { triggerStatusReport, triggerArgument } from "./argumentGenerator.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
