@@ -90,7 +90,7 @@ function extractSelectedSeed(output: string): { text: string; sentence_fragment:
 			console.log(`Found seed with category "${category}", text "${seedText}", fragment "${sentenceFragment}"`);
 			return {
 				text: seedText,
-				sentence_fragment: sentenceFragment
+				sentence_fragment: cleanFragmentText(sentenceFragment)
 			};
 		}
 		
@@ -115,7 +115,7 @@ function extractSelectedSeed(output: string): { text: string; sentence_fragment:
 									console.log("Found matching seed with fragment:", seed.sentence_fragment);
 									return {
 										text: seed.text,
-										sentence_fragment: seed.sentence_fragment
+										sentence_fragment: cleanFragmentText(seed.sentence_fragment)
 									};
 								}
 							}
@@ -132,7 +132,7 @@ function extractSelectedSeed(output: string): { text: string; sentence_fragment:
 			const fallbackFragment = seedText.replace(/^We/, "they").replace(/^I/, "someone").toLowerCase();
 			return {
 				text: seedText,
-				sentence_fragment: fallbackFragment
+				sentence_fragment: cleanFragmentText(fallbackFragment)
 			};
 		}
 		
@@ -142,6 +142,22 @@ function extractSelectedSeed(output: string): { text: string; sentence_fragment:
 		console.error("Error extracting selected seed:", error);
 		return null;
 	}
+}
+
+// Function to clean fragment text by properly handling escaped quotes and other special characters
+function cleanFragmentText(text: string): string {
+	if (!text) return text;
+	
+	// Replace escaped quotes with actual quotes (if they're still escaped in the string)
+	let cleaned = text.replace(/\\"/g, '"');
+	
+	// If there are any HTML-problematic characters, handle them
+	cleaned = cleaned.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+		
+	console.log(`Cleaned fragment text: "${text}" -> "${cleaned}"`);
+	return cleaned;
 }
 
 async function postLatestMeetingToDiscord(client: Client, useGeneralChannel: boolean = true) {
