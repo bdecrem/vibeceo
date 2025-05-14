@@ -6,6 +6,7 @@ import { triggerTmzChat } from "./tmz.js";
 import { triggerPitchChat } from "./pitch.js";
 import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { triggerWeekendStory } from "./weekend-story.js";
+import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -28,6 +29,7 @@ const serviceMap: Record<
 	waterheater: triggerWaterheaterChat,
 	weekendvibes: triggerWeekendVibesChat,
 	weekendstory: triggerWeekendStory,
+	simplestaffmeeting: triggerSimpleStaffMeeting,
 	// Add more services here as needed
 };
 
