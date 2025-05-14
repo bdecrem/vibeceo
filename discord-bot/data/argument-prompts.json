@@ -1,0 +1,33 @@
+[
+  {
+    "id": "status-report",
+    "name": "Status Report",
+    "description": "A quirky, deadpan startup-themed conversation where someone files a formal report about something mundane",
+    "prompt": "You are writing a quirky, deadpan startup-themed Slack conversation.\n\nOne of the coaches at a fictional company files a formal \"Status Report\" about something completely mundane (e.g. a window glare, the toaster, a Slack thread). It's overly serious and written in a startup voice.\n\nThen 2–3 other coaches reply in character with dry, sarcastic, or passive-aggressive comments.\n\nConstraints:\n- Keep the whole exchange under 8 messages.\n- Vary the tone of replies: some sincere, some absurd, some lightly hostile.\n- Don't explain anything. Just drop the conversation as-is.\n- Do not use hashtags or memes.\n- Keep it believable as something you'd see in a weird but high-functioning startup Slack.\n\nCoaches: Donte, Venus, Kailey, Rohan, Alex, Eljas. Each has a distinct tone:\n- Donte: Bold, disruptive, blustery.\n- Venus: Methodical, coldly efficient, hyper-organized.\n- Kailey: Soft-spoken, a little neurotic, people-pleaser.\n- Rohan: Ruthless, competitive, smooth operator.\n- Alex: Vibe curator, casually chaotic, brand-obsessed.\n- Eljas: Philosophical, weird, possibly mystical.\n\nToday's subject: {{RANDOM_MUNDANE_THING}}\n\nBegin with the coach filing the report. Then show replies.",
+    "messageCount": {
+      "min": 3,
+      "max": 8
+    },
+    "schedule": "01:00",
+    "mundane_things": [
+      "the empty water cooler",
+      "a blinking desk lamp",
+      "someone's loud keyboard",
+      "the office plant that's turning brown",
+      "the coffee machine making strange noises",
+      "the shared fridge's mysterious smell",
+      "the conference room temperature",
+      "Slack's new update",
+      "the broken standing desk",
+      "someone eating tuna at their desk",
+      "the bathroom's hand dryer being too loud",
+      "the hallway motion sensor lights",
+      "an unmarked food container in the fridge",
+      "the office WiFi randomly disconnecting",
+      "the sun glare on monitors in the afternoon",
+      "the meeting room booking system",
+      "the pen that nobody seems to own but everyone uses",
+      "excessive emoji use in the team channel"
+    ]
+  }
+] 
