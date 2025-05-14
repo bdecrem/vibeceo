@@ -1,7 +1,7 @@
-00:00 simplestaffmeeting
-01:00 statusreport
+00:00 contention
+01:00 contention
 02:00 watercooler
-03:00 watercooler
+03:00 unspokenrule
 04:00 watercooler
 05:00 tmzchat
 06:00 watercooler
@@ -16,7 +16,7 @@
 15:00 watercooler
 16:00 watercooler
 17:00 tmzchat
-18:00 watercooler
+18:00 simplestaffmeeting
 19:00 watercooler
 20:00 watercooler
 21:00 pitchchat

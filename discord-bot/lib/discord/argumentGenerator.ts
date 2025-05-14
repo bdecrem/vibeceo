@@ -179,88 +179,42 @@ async function generateConversation(promptId: string): Promise<string> {
 
 // Parse coach and message content from the generated text
 function parseMessages(text: string): ParsedMessage[] {
-  const lines = text.split("\n").filter(line => line.trim().length > 0);
+  console.log(`[Parser] Raw content sample: ${text.substring(0, 100)}...`);
+  
   const messages: ParsedMessage[] = [];
-  let currentCoach: string | null = null;
-  let currentContent: string = "";
   
-  console.log(`[Parser] Starting to parse ${lines.length} lines`);
+  // Updated pattern to match "**CoachName** message" format (no colon)
+  const coachPattern = /^\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Strikes|Alex)?)\*\*\s+/;
   
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  // Split text by double newlines to separate messages
+  const paragraphs = text.split(/\n\n+/);
+  console.log(`[Parser] Found ${paragraphs.length} paragraphs to parse`);
+  
+  for (let i = 0; i < paragraphs.length; i++) {
+    const paragraph = paragraphs[i];
+    console.log(`[Parser] Processing paragraph ${i}: ${paragraph.substring(0, 40)}...`);
     
-    // Pattern for "**CoachName:**" format
-    const coachStarsMatch = line.match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex|Strikes)?)\*\*\s*:?\s*(.*)$/);
-    
-    // Pattern for "Name: message" format
-    const coachColonMatch = line.match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/);
-    
-    if (coachStarsMatch) {
-      // If we were building a previous message, add it to the list
-      if (currentCoach && currentContent) {
-        messages.push({
-          coach: currentCoach,
-          content: currentContent.trim()
-        });
-      }
+    const match = paragraph.match(coachPattern);
+    if (match) {
+      const coachName = match[1];
+      // Remove the coach name prefix from the message
+      const content = paragraph.replace(coachPattern, '').trim();
       
-      // Extract coach name and any content on same line
-      const [_, coachName, sameLineContent] = coachStarsMatch;
-      
-      // Find the coach ID or use the original name
       const coachId = identifyCoach(coachName);
+      console.log(`[Parser] Found coach ${coachName} (${coachId}) with content: ${content.substring(0, 40)}...`);
       
-      currentCoach = coachId;
-      currentContent = sameLineContent.trim();
+      messages.push({
+        coach: coachId,
+        content: content
+      });
       
-      // If no content on the same line, collect content from subsequent lines
-      // until we hit the next coach
-      if (!currentContent && i < lines.length - 1) {
-        let nextLine = i + 1;
-        while (nextLine < lines.length && 
-               !lines[nextLine].match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex|Strikes)?)\*\*/) &&
-               !lines[nextLine].match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/)) {
-          currentContent += (currentContent ? " " : "") + lines[nextLine].trim();
-          nextLine++;
-        }
-        // Skip the lines we've already processed
-        i = nextLine - 1;
-      }
-    } 
-    else if (coachColonMatch) {
-      // If we were building a previous message, add it to the list
-      if (currentCoach && currentContent) {
-        messages.push({
-          coach: currentCoach,
-          content: currentContent.trim()
-        });
-      }
-      
-      // Extract coach name and content
-      const [_, coachName, content] = coachColonMatch;
-      
-      // Find the coach ID or use the original name
-      const coachId = identifyCoach(coachName);
-      
-      currentCoach = coachId;
-      currentContent = content.trim();
-    } 
-    else if (currentCoach) {
-      // If this line doesn't match a coach pattern but we have a current coach,
-      // add it to the current message content
-      currentContent += " " + line.trim();
+      console.log(`[Parser] Added message from ${coachId}: "${content.substring(0, 40)}..."`);
+    } else {
+      console.log(`[Parser] No match for paragraph: ${paragraph.substring(0, 40)}...`);
     }
   }
   
-  // Add the last message if we have one
-  if (currentCoach && currentContent) {
-    messages.push({
-      coach: currentCoach,
-      content: currentContent.trim()
-    });
-  }
-  
-  console.log(`[Parser] Parsed ${messages.length} messages`);
+  console.log(`[Parser] Parsed ${messages.length} messages total using paragraph method`);
   
   return messages;
 }
