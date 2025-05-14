@@ -1,0 +1,38 @@
+[
+  {
+    "id": "coach-quotes",
+    "name": "Coach Quotes",
+    "description": "One-line quotes from various coaches that sound like gospel",
+    "prompt": "Write 6 fictional quotes from AI startup coaches. Each quote should be one line, punchy, and dead serious about something absurd, tactical, or spiritual. The coaches are: Rohan Mehta (aggressive Wall Street tone), Donte Disrupt (chaotic visionary), Kailey Sloan (alignment-obsessed and low-key spiraling), Venus Metrics (execution maximalist), Alex Vega (wellness-DTC energy), and Eljas Virtanen (philosophical eco-founder). Each quote must sound like something clipped from a live panel and passed around Discord like gospel. Do not explain or introduce. Just give the 6 quotes in order, with coach names.",
+    "scheduleCommand": "coachquotes",
+    "intro": "Today's Founder Insights™",
+    "outro": "Apply these principles and report back on your ascension."
+  },
+  {
+    "id": "crowd-faves",
+    "name": "Crowd Favorites",
+    "description": "Meme-worthy one-liners that get tattooed on founders' arms",
+    "prompt": "Write 6 one-liner pieces of 'Founder Wisdom' from fictional startup coaches. These should sound like the kind of advice that gets clipped, meme-ified, and tattooed on a stressed-out founder's arm. Tone: clever, haunting, too real. Each line should be attributed to a coach: Donte, Kailey, Rohan, Venus, Alex, or Eljas. Think pithy, darkly motivational, and weirdly insightful. No fluff. No intros. Just list the 6 wisdom quotes.",
+    "scheduleCommand": "crowdfaves",
+    "intro": "Most-saved quotes from The Vibe CEO Archives:",
+    "outro": "𝘌𝘯𝘥𝘰𝘳𝘴𝘦𝘥 𝘣𝘺 𝘵𝘩𝘦 𝘍𝘰𝘶𝘯𝘥𝘳𝘺 𝘊𝘰𝘶𝘯𝘤𝘪𝘭"
+  },
+  {
+    "id": "microclass",
+    "name": "Micro-Masterclass",
+    "description": "Short, strange but useful coaching tips from each coach",
+    "prompt": "Write 6 fictional micro-masterclass blurbs, each 1–2 sentences, delivered by a different AI startup coach. Each blurb should feel like the strangest, most useful thing you've ever heard at a founder bootcamp. The tone should blend self-help, strategy, and startup absurdism. The coaches are: Donte (pitch chaos), Venus (execution control), Kailey (founder fragility), Alex (spiritual product rituals), Eljas (climate mysticism), and Rohan (financial ruthlessness). Prefix each with 🎓 and the coach's name, then their lesson.",
+    "scheduleCommand": "microclass",
+    "intro": "**MICRO-MASTERCLASS** | Today's speed learnings:",
+    "outro": "Class dismissed. Apply immediately for optimal transformation."
+  },
+  {
+    "id": "upcoming-events",
+    "name": "Upcoming Events",
+    "description": "Fictional upcoming events for the Discord community",
+    "prompt": "Create one fictional upcoming event for a weird but elite AI startup Discord community. The event should sound fun, useful, unhinged, and somehow very real. Use playful startup jargon, coach involvement, and include a hook (what's happening, who's involved, and why it might be chaotic). Keep it to 2–3 sentences max. Do not use bullet points or headers. This is a one-off teaser. Match the tone of an underground pitch night run by founder-therapists and execution cultists.",
+    "scheduleCommand": "upcomingevent",
+    "intro": "🔮 **COMING SOON** 🔮",
+    "outro": "Check your calendar. RSVP by reacting below. Limited slots available."
+  }
+] 

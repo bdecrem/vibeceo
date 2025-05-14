@@ -8,6 +8,7 @@ import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { triggerWeekendStory } from "./weekend-story.js";
 import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerStatusReport, triggerArgument, initializeCustomEventMessages } from "./argumentGenerator.js";
+import { coachQuotes, crowdFaves, microClass, upcomingEvent, initializeMicroEventMessages } from "./microPosts.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -21,7 +22,7 @@ const WEEKEND_SCHEDULE_PATH = path.join(process.cwd(), "data", "weekend-schedule
 // Service mapping
 const serviceMap: Record<
 	string,
-	(channelId: string, client: Client) => Promise<void>
+	(channelId: string, client: Client) => Promise<boolean | void>
 > = {
 	watercooler: triggerWatercoolerChat,
 	newschat: triggerNewsChat,
@@ -34,6 +35,10 @@ const serviceMap: Record<
 	statusreport: triggerStatusReport,
 	unspokenrule: (channelId: string, client: Client) => triggerArgument("unspoken-rule", channelId, client),
 	contention: (channelId: string, client: Client) => triggerArgument("contention-point", channelId, client),
+	coachquotes: coachQuotes,
+	crowdfaves: crowdFaves,
+	microclass: microClass,
+	upcomingevent: upcomingEvent,
 	// Add more services here as needed
 };
 
@@ -48,6 +53,9 @@ export function initializeScheduler(client: Client) {
 	
 	// Initialize custom event messages from argument prompts
 	initializeCustomEventMessages();
+	
+	// Initialize custom event messages from micro-posts prompts
+	initializeMicroEventMessages();
 	
 	loadSchedule();
 	startScheduler();
