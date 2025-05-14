@@ -1,6 +1,6 @@
 00:00 simplestaffmeeting
-01:00 waterheater
-02:00 watercooler
+01:00  
+02:00  
 03:00 watercooler
 04:00 watercooler
 05:00 tmzchat
