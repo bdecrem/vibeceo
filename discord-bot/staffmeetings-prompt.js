@@ -217,9 +217,20 @@ function parseMessage(line) {
 	// Skip empty lines
 	if (!line.trim()) return null;
 
-	// Improved regex to match the format: "CoachName Time AM/PM"
-	// This handles various formats like "CoachName 9:00 AM" or "CoachName 10:15 PM"
-	const headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
+	// Improved regex to match multiple timestamp formats:
+	// 1. "CoachName 9:00 AM" (original format)
+	// 2. "CoachName [9:00]" or "CoachName [09:00]" (bracket format)
+	// 3. "CoachName [9:00 AM]" (bracket with AM/PM)
+	// 4. "CoachName[ 8:40]" (bracket with spaces)
+	// This allows more flexible timestamp formats from GPT responses
+	
+	// Try standard format first: "CoachName 9:00 AM"
+	let headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
+	
+	if (!headerMatch) {
+		// Try bracket format with improved pattern to handle various spacing
+		headerMatch = line.match(/^(\w+)\s*\[\s*(\d{1,2}:\d{2})(?:\s*[AP]M)?\s*\]$/i);
+	}
 	
 	if (headerMatch) {
 		// This is a message header line
