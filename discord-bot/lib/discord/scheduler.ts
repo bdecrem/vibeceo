@@ -33,6 +33,7 @@ const serviceMap: Record<
 	simplestaffmeeting: triggerSimpleStaffMeeting,
 	statusreport: triggerStatusReport,
 	unspokenrule: (channelId: string, client: Client) => triggerArgument("unspoken-rule", channelId, client),
+	contention: (channelId: string, client: Client) => triggerArgument("contention-point", channelId, client),
 	// Add more services here as needed
 };
 
