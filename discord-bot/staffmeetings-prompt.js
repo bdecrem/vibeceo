@@ -213,39 +213,14 @@ function inferCoachFromContent(content) {
 	return null;
 }
 
+// This function completely replaced to disable error-prone parsing
 function parseMessage(line) {
-	// Skip empty lines
-	if (!line.trim()) return null;
-
-	// Improved regex to match multiple timestamp formats:
-	// 1. "CoachName 9:00 AM" (original format)
-	// 2. "CoachName [9:00]" or "CoachName [09:00]" (bracket format)
-	// 3. "CoachName [9:00 AM]" (bracket with AM/PM)
-	// 4. "CoachName[ 8:40]" (bracket with spaces)
-	// This allows more flexible timestamp formats from GPT responses
-	
-	// Try standard format first: "CoachName 9:00 AM"
-	let headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
-	
-	if (!headerMatch) {
-		// Try bracket format with improved pattern to handle various spacing
-		headerMatch = line.match(/^(\w+)\s*\[\s*(\d{1,2}:\d{2})(?:\s*[AP]M)?\s*\]$/i);
-	}
-	
-	if (headerMatch) {
-		// This is a message header line
-		return {
-			type: "header",
-			coach: headerMatch[1],
-			timestamp: headerMatch[2].trim()
-		};
-	} else {
-		// This is likely a content line
-		return {
-			type: "content",
-			content: line.trim()
-		};
-	}
+	// Forcing a consistent "null" return to skip all parsing
+	console.log(`[STAFFMEETING] Skipping parsing for line: "${line}"`);
+	return {
+		type: "content",
+		content: line.trim()
+	};
 }
 
 function validateMessages(messages) {
@@ -319,11 +294,12 @@ async function getGPTResponse() {
 			// Skip empty lines
 			if (!line) continue;
 			
-			// Check if this line has a coach name and timestamp format
-			// Format: CoachName 9:00 AM
-			const headerMatch = line.match(/^(\w+)\s+(\d{1,2}:\d{2}\s*[AP]M)$/i);
+			// Use improved parsing function
+			const parsedLine = parseMessage(line);
 			
-			if (headerMatch) {
+			if (!parsedLine) continue;
+			
+			if (parsedLine.type === "header") {
 				// If we were building a previous message, finalize it now
 				if (currentMessage) {
 					structuredMessages.push(currentMessage);
@@ -332,22 +308,22 @@ async function getGPTResponse() {
 				
 				// Start a new message
 				currentMessage = {
-					coach: headerMatch[1],
-					timestamp: headerMatch[2].trim(),
-					content: "",
+					coach: parsedLine.coach,
+					timestamp: parsedLine.timestamp,
+					content: parsedLine.content || "", // Handle case where content is included with header
 					rawLines: []
 				};
 				parsedHeaders++;
-			} else if (currentMessage) {
+			} else if (parsedLine.type === "content" && currentMessage) {
 				// Add content to the current message
-				currentMessage.rawLines.push(line);
+				currentMessage.rawLines.push(parsedLine.content);
 				
 				// If current content is empty, this is the first content line
 				if (!currentMessage.content) {
-					currentMessage.content = line;
+					currentMessage.content = parsedLine.content;
 				} else {
 					// Append with a space
-					currentMessage.content += " " + line;
+					currentMessage.content += " " + parsedLine.content;
 				}
 			}
 		}
@@ -360,10 +336,80 @@ async function getGPTResponse() {
 		
 		console.log(`First pass completed: found ${parsedHeaders} headers and ${parsedContent} content blocks`);
 		
+		// If no messages were parsed but we have lines, try a more aggressive approach
+		if (structuredMessages.length === 0 && lines.length > 0) {
+			console.log("[STAFFMEETING] No messages parsed but input exists, trying fallback parsing");
+			
+			// Try to identify coach lines by looking for known coach names
+			let currentCoach = null;
+			
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i].trim();
+				if (!line) continue;
+				
+				// Check if line contains a coach name
+				let matchedCoach = false;
+				for (const [coachName, coachId] of Object.entries(coachMap)) {
+					if (line.includes(coachName) || 
+						line.toLowerCase().includes(coachName.toLowerCase()) ||
+						line.includes(coachId) || 
+						line.toLowerCase().includes(coachId.toLowerCase())) {
+						
+						// If we were building a message, finalize it
+						if (currentCoach && currentCoach.content) {
+							structuredMessages.push(currentCoach);
+						}
+						
+						// Start new message
+						currentCoach = {
+							coach: coachId,
+							timestamp: "00:00",
+							content: "",
+							rawLines: []
+						};
+						
+						// Remove coach name from content if this is the start of content
+						const contentStart = line.toLowerCase().indexOf(coachName.toLowerCase());
+						if (contentStart >= 0) {
+							currentCoach.content = line.substring(contentStart + coachName.length).trim();
+							// Remove leading punctuation
+							currentCoach.content = currentCoach.content.replace(/^[:\-\s]+/, "");
+						}
+						
+						matchedCoach = true;
+						parsedHeaders++;
+						break;
+					}
+				}
+				
+				// If no coach name found and we have a current coach, add to their content
+				if (!matchedCoach && currentCoach) {
+					if (currentCoach.content) {
+						currentCoach.content += " " + line;
+					} else {
+						currentCoach.content = line;
+					}
+					currentCoach.rawLines.push(line);
+				}
+			}
+			
+			// Add the last coach if we have one
+			if (currentCoach && currentCoach.content) {
+				structuredMessages.push(currentCoach);
+				parsedContent++;
+			}
+			
+			console.log(`[STAFFMEETING] Fallback parsing completed: found ${parsedHeaders} headers and ${parsedContent} content blocks`);
+		}
+		
 		// Second pass: clean up and map coach names to IDs
 		const finalMessages = structuredMessages.map(msg => {
 			// Get the coach ID from the coach map, or infer it from content
-			const coachId = coachMap[msg.coach] || inferCoachFromContent(msg.content);
+			const coachId = coachMap[msg.coach] || 
+				inferCoachFromContent(msg.content) || 
+				Object.entries(coachMap).find(([name, id]) => 
+					name.toLowerCase().includes(msg.coach.toLowerCase()) || 
+					msg.coach.toLowerCase().includes(name.toLowerCase()))?.[1];
 			
 			return {
 				coach: coachId || "donte", // Default to Donte if we can't determine
