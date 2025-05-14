@@ -44,14 +44,6 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}The coaches are gathering for a quick staff meeting because {reason}.",
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
-	statusreport: {
-		intro: "{arrival}A rotating coach files a formal update on a problem no one asked for. Everything feels urgent. Nothing matters.",
-		outro: "Status acknowledged. No further action taken. Tune in tomorrow for the next minor crisis.",
-	},
-	unspokenrule: {
-		intro: "{arrival}The coaches are following a strange new protocol that nobody discussed. Somehow, everyone knows the rules.",
-		outro: "The unspoken rule continues to be observed. No explanation was offered, none was needed.",
-	},
 	weekendvibes: {
 		intro: "{arrival}The coaches are antsy, eager to make a plan for the night.",
 		outro: "After their chaotic planning session, the coaches settled on {activity}: a {activityType} featuring {activityDescription}"
@@ -70,7 +62,7 @@ let storyInfoSceneIndex = 0;
 
 export async function sendEventMessage(
 	channel: TextChannel,
-	eventType: keyof typeof EVENT_MESSAGES,
+	eventType: keyof typeof EVENT_MESSAGES | string,
 	isIntro: boolean,
 	gmtHour: number,
 	gmtMinutes: number,
@@ -88,7 +80,8 @@ export async function sendEventMessage(
 	} else if (eventType === 'waterheater') {
 		if (isIntro && selectedIncident) {
 			// Use the selected incident's intro
-			message = isIntro ? `{arrival}${selectedIncident.intro}` : EVENT_MESSAGES[eventType].outro;
+			message = isIntro ? `{arrival}${selectedIncident.intro}` : 
+			           EVENT_MESSAGES[eventType as keyof typeof EVENT_MESSAGES]?.outro || "That was... interesting. Let's get back to work now.";
 		} else {
 			// Generate dynamic bumper for waterheater events
 			const { text, prompt: generatedPrompt } = await generateWaterheaterBumper(isIntro);
@@ -96,7 +89,7 @@ export async function sendEventMessage(
 			prompt = generatedPrompt;
 		}
 	} else {
-		// Check if we have a custom message in the cache
+		// Check if we have a custom message in the cache FIRST
 		const eventTypeStr = eventType.toString();
 		if (customEventMessageCache[eventTypeStr]) {
 			// Use the custom intro/outro if available
@@ -105,11 +98,20 @@ export async function sendEventMessage(
 				: customEventMessageCache[eventTypeStr].outro;
 			
 			console.log(`[EventMessages] Using custom message for ${eventTypeStr}`);
-		} else {
+		} 
+		// Check if it's in the standard EVENT_MESSAGES
+		else if (eventType in EVENT_MESSAGES) {
 			// Use static messages for other event types
 			message = isIntro
-				? EVENT_MESSAGES[eventType].intro
-				: EVENT_MESSAGES[eventType].outro;
+				? EVENT_MESSAGES[eventType as keyof typeof EVENT_MESSAGES].intro
+				: EVENT_MESSAGES[eventType as keyof typeof EVENT_MESSAGES].outro;
+		}
+		// If not found anywhere, use a generic fallback
+		else {
+			console.warn(`[EventMessages] No message found for event type '${eventTypeStr}', using generic fallback`);
+			message = isIntro
+				? `{arrival}The coaches are having a conversation.`
+				: `The conversation has concluded.`;
 		}
 	}
 
