@@ -10,7 +10,7 @@
     },
     "scheduleCommand": "statusreport",
     "intro": "A rotating coach files a formal update on a problem no one asked for. Everything feels urgent. Nothing matters.",
-    "outro": "Status acknowledged. No further action taken. Tune in tomorrow for the next minor crisis."
+    "outro": "Status acknowledged. No further action taken. Tune in tomorrow for the next minor crisis.\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
   },
   {
     "id": "unspoken-rule",
@@ -23,16 +23,16 @@
     },
     "scheduleCommand": "unspokenrule",
     "intro": "A coach announces a completely made-up rule. Most coaches play along.",
-    "outro": "Enforcement is inconsistent. Compliance is spiritual. The rule is technically still active."
+    "outro": "Enforcement is inconsistent. Compliance is spiritual. The rule is technically still active.\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
   },
   {
     "id": "contention-point",
     "name": "Point of Contention",
     "description": "A short, escalating Slack argument over a tiny workplace issue",
-    "prompt": "You are writing a short Slack-style argument between fictional startup coaches.\n\nStep 1: Invent a small but deeply irritating \"point of contention\" that might arise in a startup office — something like a weird smell, a shared object, a semi-sacred ritual being broken. The topic must feel tiny but emotionally significant.\n\nStep 2: Write a four-line argument that escalates quickly. The first message introduces the complaint. The next three each build directly on the last, either escalating, reframing, or undermining it. Each message must be punchy and deadpan.\n\nUse these characters and reflect their speech patterns precisely:\n\n**DonteDisrupt**  \n- Loud, bold, chaotic. May use CAPS. Escalates.\n\n**VenusStrikes**  \n- Formal, cold, systems-obsessed. Often ends definitively.\n\n**KaileySloan**  \n- lowercase, apologetic, trying to help. Softens everything.\n\n**RohanTheShark**  \n- Smooth, sharp, confident. Uses business tone as a weapon.\n\n**AlexirAlex**  \n- lowercase, vibey, aesthetic lens. One emoji per message.\n\n**EljasCouncil**  \n- Mystical, poetic, metaphorical. No emoji. Never sarcastic.\n\nRules:\n- Exactly 4 messages total\n- Format each message as: \"**CoachName** message content\"\n- No narration, no descriptions, no hashtags\n- Let the absurdity speak for itself\n- Each line must build on the last\n- Keep it tight, weird, and emotionally overcharged",
+    "prompt": "You are writing a short Slack-style argument between fictional startup coaches.\n\nStep 1: Invent a small but deeply irritating \"point of contention\" that might arise in a startup office — something like a weird smell, a shared object, or a semi-sacred ritual being broken. The topic must feel petty but emotionally charged.\n\nStep 2: Write a four-line argument that escalates quickly. The first message introduces the complaint. The next three each build directly on the last — either escalating, reframing, or undermining it. Each message must be punchy, deadpan, and no more than two sentences.\n\nUse these characters and reflect their speech patterns precisely:\n\n**DonteDisrupt**  \n- Loud, bold, chaotic. May use CAPS. Escalates quickly.  \n- Reframes everything as an opportunity or movement.\n\n**VenusStrikes**  \n- Formal, cold, systems-obsessed. No contractions. Often ends definitively (e.g. \"Noted.\" \"Resolved.\").\n\n**KaileySloan**  \n- lowercase, apologetic, trying to help. softens everything. \n- uses \"just,\" \"maybe,\" and \"sorry\" frequently.\n\n**RohanTheShark**  \n- Smooth, sharp, confident. Uses business tone as a weapon.  \n- Never plays along. Always prioritizes performance, productivity, and dominance.\n\n**AlexirAlex**  \n- lowercase, vibey, aesthetic lens. speaks in brand logic or visual metaphor. \n- one emoji per message (vibe-driven).\n\n**EljasCouncil**  \n- Mystical, poetic, metaphorical. One line max. Never sarcastic. No emoji.\n\nRules:\n- Exactly 4 messages total\n- Format each message as: \"**CoachName** message content\"\n- Each message should be no more than two sentences\n- No narration, no descriptions, no hashtags\n- Let the absurdity speak for itself\n- Each message must build directly on the previous\n- Keep it tight, weird, and emotionally overcommitted",
     "messageCount": 4,
     "scheduleCommand": "contention",
     "intro": "A minor workplace issue sparks an immediate, escalating argument. No one is joking. Everyone is overreacting.",
-    "outro": "The thread ends. The resentment does not. Resolution is implied. Nothing is resolved."
+    "outro": "The thread ends. The resentment does not. Resolution is implied. Nothing is resolved.\n🌀 𓂃𓂃��⊹𓂃𓂃𓂃 🌀"
   }
 ] 
