@@ -11,6 +11,7 @@ import {
 } from "./webhooks.js";
 import { getWebhookUrls } from "./config.js";
 import { Client, TextChannel } from "discord.js";
+import { customEventMessageCache } from "./eventMessages.js";
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -40,8 +41,10 @@ interface ArgumentPrompt {
   description: string;
   prompt: string;
   messageCount: number | { min: number; max: number };
-  schedule: string;
+  scheduleCommand: string;
   mundane_things?: string[];
+  intro?: string;
+  outro?: string;
 }
 
 interface ParsedMessage {
@@ -65,6 +68,25 @@ const coachMap: Record<string, string> = {
   "Eljas": "eljas",
   "EljasCouncil": "eljas"
 };
+
+// Function to initialize custom event messages from prompts
+export function initializeCustomEventMessages(): void {
+  console.log("[ArgumentGenerator] Initializing custom event messages...");
+  const prompts = loadPrompts();
+  let count = 0;
+  
+  for (const prompt of prompts) {
+    if (prompt.intro || prompt.outro) {
+      customEventMessageCache[prompt.scheduleCommand] = {
+        intro: prompt.intro || "",
+        outro: prompt.outro || ""
+      };
+      count++;
+    }
+  }
+  
+  console.log(`[ArgumentGenerator] Initialized ${count} custom event messages`);
+}
 
 // Load prompts from JSON file
 function loadPrompts(): ArgumentPrompt[] {
@@ -142,11 +164,21 @@ function parseMessages(text: string): ParsedMessage[] {
   
   console.log(`[Parser] Starting to parse ${lines.length} lines`);
   
-  for (const line of lines) {
-    // Try to match a coach name at the beginning of the line
-    const coachMatch = line.match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     
-    if (coachMatch) {
+    // Try to match different coach name patterns:
+    // 1. Standard "Name: message" format
+    // 2. "**Name**" followed by message on next lines
+    // 3. Name followed by message on next lines
+    
+    // Pattern 1: Name: message
+    const coachColonMatch = line.match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/);
+    
+    // Pattern 2: **Name** or **Name:** format
+    const coachStarsMatch = line.match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex)?)\*\*\s*:?\s*(.*)$/);
+    
+    if (coachColonMatch) {
       // If we were building a previous message, add it to the list
       if (currentCoach && currentContent) {
         messages.push({
@@ -156,13 +188,45 @@ function parseMessages(text: string): ParsedMessage[] {
       }
       
       // Extract coach name and content
-      const [_, coachName, content] = coachMatch;
+      const [_, coachName, content] = coachColonMatch;
       
       // Find the coach ID or use the original name
       const coachId = identifyCoach(coachName);
       
       currentCoach = coachId;
       currentContent = content.trim();
+    } 
+    else if (coachStarsMatch) {
+      // If we were building a previous message, add it to the list
+      if (currentCoach && currentContent) {
+        messages.push({
+          coach: currentCoach,
+          content: currentContent.trim()
+        });
+      }
+      
+      // Extract coach name and any content on same line
+      const [_, coachName, sameLineContent] = coachStarsMatch;
+      
+      // Find the coach ID or use the original name
+      const coachId = identifyCoach(coachName);
+      
+      currentCoach = coachId;
+      currentContent = sameLineContent.trim();
+      
+      // If no content on the same line, collect content from subsequent lines
+      // until we hit the next coach
+      if (!currentContent && i < lines.length - 1) {
+        let nextLine = i + 1;
+        while (nextLine < lines.length && 
+               !lines[nextLine].match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex)?)\*\*/) &&
+               !lines[nextLine].match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/)) {
+          currentContent += (currentContent ? " " : "") + lines[nextLine].trim();
+          nextLine++;
+        }
+        // Skip the lines we've already processed
+        i = nextLine - 1;
+      }
     } else if (currentCoach) {
       // If this line doesn't match a coach pattern but we have a current coach,
       // add it to the current message content
@@ -266,6 +330,12 @@ export async function triggerArgument(promptId: string, channelId: string, clien
   console.log(`[ArgumentGenerator] Starting generation for prompt '${promptId}'...`);
   
   try {
+    // Get the prompt definition to access its intro/outro messages
+    const prompt = findPromptById(promptId);
+    if (!prompt) {
+      throw new Error(`Prompt with ID '${promptId}' not found`);
+    }
+    
     // Generate conversation
     const conversationText = await generateConversation(promptId);
     

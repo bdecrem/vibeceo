@@ -7,7 +7,7 @@ import { triggerPitchChat } from "./pitch.js";
 import { triggerWeekendVibesChat } from "./weekendvibes.js";
 import { triggerWeekendStory } from "./weekend-story.js";
 import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
-import { triggerStatusReport, triggerArgument } from "./argumentGenerator.js";
+import { triggerStatusReport, triggerArgument, initializeCustomEventMessages } from "./argumentGenerator.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -32,6 +32,7 @@ const serviceMap: Record<
 	weekendstory: triggerWeekendStory,
 	simplestaffmeeting: triggerSimpleStaffMeeting,
 	statusreport: triggerStatusReport,
+	unspokenrule: (channelId: string, client: Client) => triggerArgument("unspoken-rule", channelId, client),
 	// Add more services here as needed
 };
 
@@ -43,6 +44,10 @@ let discordClient: Client | null = null;
 // Initialize scheduler with Discord client
 export function initializeScheduler(client: Client) {
 	discordClient = client;
+	
+	// Initialize custom event messages from argument prompts
+	initializeCustomEventMessages();
+	
 	loadSchedule();
 	startScheduler();
 }
@@ -116,6 +121,19 @@ async function runServiceWithMessages(
 		console.error(`[Scheduler] Channel ${channelId} not found`);
 		return;
 	}
+
+	// Log the current EVENT_MESSAGES state
+	console.log(`[Scheduler Debug] EVENT_MESSAGES for ${serviceName} =`, 
+		typeof EVENT_MESSAGES[serviceName as keyof typeof EVENT_MESSAGES] === 'object' ? 
+		JSON.stringify(EVENT_MESSAGES[serviceName as keyof typeof EVENT_MESSAGES]) : 
+		'undefined');
+	
+	// Check custom message cache
+	const { customEventMessageCache } = await import('./eventMessages.js');
+	console.log(`[Scheduler Debug] customEventMessageCache for ${serviceName} =`,
+		customEventMessageCache[serviceName] ? 
+		JSON.stringify(customEventMessageCache[serviceName]) : 
+		'not in cache');
 
 	if (!(serviceName in EVENT_MESSAGES)) {
 		console.warn(
