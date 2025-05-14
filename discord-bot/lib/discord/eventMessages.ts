@@ -40,6 +40,10 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}The coaches are gathering for a quick staff meeting because {reason}.",
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
+	statusreport: {
+		intro: "{arrival}Time for the daily status report. The coaches seem unusually focused on minor details today.",
+		outro: "The status report has concluded. Some issues were raised, but nothing was actually resolved.",
+	},
 	weekendvibes: {
 		intro: "{arrival}The coaches are antsy, eager to make a plan for the night.",
 		outro: "After their chaotic planning session, the coaches settled on {activity}: a {activityType} featuring {activityDescription}"
