@@ -8,6 +8,10 @@ import { getLatestWeekendReason, getLatestWeekendActivity } from "./weekendvibes
 import path from "path";
 import fs from "fs";
 
+// Create a local cache for custom event messages
+// This will be populated by argumentGenerator.ts
+export const customEventMessageCache: Record<string, { intro: string; outro: string }> = {};
+
 export const EVENT_MESSAGES = {
 	watercooler: {
 		intro: "Hey everyone, time for a quick water cooler chat!",
@@ -41,8 +45,12 @@ export const EVENT_MESSAGES = {
 		outro: "The quick staff meeting has concluded. The coaches have returned to their duties.",
 	},
 	statusreport: {
-		intro: "{arrival}Time for the daily status report. The coaches seem unusually focused on minor details today.",
-		outro: "The status report has concluded. Some issues were raised, but nothing was actually resolved.",
+		intro: "{arrival}A rotating coach files a formal update on a problem no one asked for. Everything feels urgent. Nothing matters.",
+		outro: "Status acknowledged. No further action taken. Tune in tomorrow for the next minor crisis.",
+	},
+	unspokenrule: {
+		intro: "{arrival}The coaches are following a strange new protocol that nobody discussed. Somehow, everyone knows the rules.",
+		outro: "The unspoken rule continues to be observed. No explanation was offered, none was needed.",
 	},
 	weekendvibes: {
 		intro: "{arrival}The coaches are antsy, eager to make a plan for the night.",
@@ -88,10 +96,21 @@ export async function sendEventMessage(
 			prompt = generatedPrompt;
 		}
 	} else {
-		// Use static messages for other event types
-		message = isIntro
-			? EVENT_MESSAGES[eventType].intro
-			: EVENT_MESSAGES[eventType].outro;
+		// Check if we have a custom message in the cache
+		const eventTypeStr = eventType.toString();
+		if (customEventMessageCache[eventTypeStr]) {
+			// Use the custom intro/outro if available
+			message = isIntro
+				? `{arrival}${customEventMessageCache[eventTypeStr].intro}`
+				: customEventMessageCache[eventTypeStr].outro;
+			
+			console.log(`[EventMessages] Using custom message for ${eventTypeStr}`);
+		} else {
+			// Use static messages for other event types
+			message = isIntro
+				? EVENT_MESSAGES[eventType].intro
+				: EVENT_MESSAGES[eventType].outro;
+		}
 	}
 
 	if (isIntro) {
