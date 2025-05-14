@@ -122,22 +122,25 @@ async function runServiceWithMessages(
 		return;
 	}
 
-	// Log the current EVENT_MESSAGES state
-	console.log(`[Scheduler Debug] EVENT_MESSAGES for ${serviceName} =`, 
-		typeof EVENT_MESSAGES[serviceName as keyof typeof EVENT_MESSAGES] === 'object' ? 
-		JSON.stringify(EVENT_MESSAGES[serviceName as keyof typeof EVENT_MESSAGES]) : 
-		'undefined');
-	
 	// Check custom message cache
 	const { customEventMessageCache } = await import('./eventMessages.js');
+	
+	// Log the current message state for debugging
 	console.log(`[Scheduler Debug] customEventMessageCache for ${serviceName} =`,
 		customEventMessageCache[serviceName] ? 
 		JSON.stringify(customEventMessageCache[serviceName]) : 
 		'not in cache');
+	
+	console.log(`[Scheduler Debug] EVENT_MESSAGES has entry for ${serviceName} =`, 
+		serviceName in EVENT_MESSAGES);
 
-	if (!(serviceName in EVENT_MESSAGES)) {
+	// Check if we have messages for this service type in either source
+	const hasEventMessages = serviceName in EVENT_MESSAGES;
+	const hasCustomMessages = serviceName in customEventMessageCache;
+	
+	if (!hasEventMessages && !hasCustomMessages) {
 		console.warn(
-			`[Scheduler] No messages defined for service '${serviceName}'`
+			`[Scheduler] No messages defined for service '${serviceName}' in either EVENT_MESSAGES or customEventMessageCache`
 		);
 		return;
 	}
@@ -168,7 +171,7 @@ async function runServiceWithMessages(
 		if (shouldSendMessages) {
 			await sendEventMessage(
 				channel,
-				serviceName as EventType,
+				serviceName,
 				true,
 				gmtHour,
 				gmtMinutes,
@@ -195,7 +198,7 @@ async function runServiceWithMessages(
 		if (shouldSendMessages) {
 			await sendEventMessage(
 				channel,
-				serviceName as EventType,
+				serviceName,
 				false,
 				gmtHour,
 				gmtMinutes

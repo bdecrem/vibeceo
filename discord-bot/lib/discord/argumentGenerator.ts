@@ -75,14 +75,26 @@ export function initializeCustomEventMessages(): void {
   const prompts = loadPrompts();
   let count = 0;
   
+  if (prompts.length === 0) {
+    console.error("[ArgumentGenerator] Failed to load prompts from JSON file!");
+    return;
+  }
+  
   for (const prompt of prompts) {
-    if (prompt.intro || prompt.outro) {
-      customEventMessageCache[prompt.scheduleCommand] = {
-        intro: prompt.intro || "",
-        outro: prompt.outro || ""
-      };
-      count++;
+    if (!prompt.scheduleCommand) {
+      console.warn(`[ArgumentGenerator] Prompt '${prompt.id}' missing scheduleCommand, skipping.`);
+      continue;
     }
+    
+    // Add to custom event message cache even if intro/outro is empty
+    // This ensures all argument-based events are recognized
+    customEventMessageCache[prompt.scheduleCommand] = {
+      intro: prompt.intro || `The coaches are having a conversation about ${prompt.name.toLowerCase()}.`,
+      outro: prompt.outro || "The conversation has concluded."
+    };
+    
+    count++;
+    console.log(`[ArgumentGenerator] Registered event type: ${prompt.scheduleCommand}`);
   }
   
   console.log(`[ArgumentGenerator] Initialized ${count} custom event messages`);
@@ -92,10 +104,20 @@ export function initializeCustomEventMessages(): void {
 function loadPrompts(): ArgumentPrompt[] {
   try {
     const promptsPath = path.join(process.cwd(), "data", "argument-prompts.json");
+    console.log(`[ArgumentGenerator] Loading prompts from: ${promptsPath}`);
+    
+    if (!fs.existsSync(promptsPath)) {
+      console.error(`[ArgumentGenerator] Prompts file not found: ${promptsPath}`);
+      return [];
+    }
+    
     const data = fs.readFileSync(promptsPath, "utf8");
-    return JSON.parse(data);
+    const prompts = JSON.parse(data);
+    
+    console.log(`[ArgumentGenerator] Successfully loaded ${prompts.length} prompts`);
+    return prompts;
   } catch (error) {
-    console.error("Error loading prompts:", error);
+    console.error("[ArgumentGenerator] Error loading prompts:", error);
     return [];
   }
 }
@@ -167,36 +189,13 @@ function parseMessages(text: string): ParsedMessage[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Try to match different coach name patterns:
-    // 1. Standard "Name: message" format
-    // 2. "**Name**" followed by message on next lines
-    // 3. Name followed by message on next lines
+    // Pattern for "**CoachName:**" format
+    const coachStarsMatch = line.match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex|Strikes)?)\*\*\s*:?\s*(.*)$/);
     
-    // Pattern 1: Name: message
+    // Pattern for "Name: message" format
     const coachColonMatch = line.match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/);
     
-    // Pattern 2: **Name** or **Name:** format
-    const coachStarsMatch = line.match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex)?)\*\*\s*:?\s*(.*)$/);
-    
-    if (coachColonMatch) {
-      // If we were building a previous message, add it to the list
-      if (currentCoach && currentContent) {
-        messages.push({
-          coach: currentCoach,
-          content: currentContent.trim()
-        });
-      }
-      
-      // Extract coach name and content
-      const [_, coachName, content] = coachColonMatch;
-      
-      // Find the coach ID or use the original name
-      const coachId = identifyCoach(coachName);
-      
-      currentCoach = coachId;
-      currentContent = content.trim();
-    } 
-    else if (coachStarsMatch) {
+    if (coachStarsMatch) {
       // If we were building a previous message, add it to the list
       if (currentCoach && currentContent) {
         messages.push({
@@ -219,7 +218,7 @@ function parseMessages(text: string): ParsedMessage[] {
       if (!currentContent && i < lines.length - 1) {
         let nextLine = i + 1;
         while (nextLine < lines.length && 
-               !lines[nextLine].match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex)?)\*\*/) &&
+               !lines[nextLine].match(/^\s*\*\*([A-Za-z]+(?:TheShark|Disrupt|Sloan|Council|Alex|Strikes)?)\*\*/) &&
                !lines[nextLine].match(/^([A-Za-z]+)(?:\s*\d+:\d+\s*(?:AM|PM)?)?[:]\s*(.+)$/)) {
           currentContent += (currentContent ? " " : "") + lines[nextLine].trim();
           nextLine++;
@@ -227,7 +226,26 @@ function parseMessages(text: string): ParsedMessage[] {
         // Skip the lines we've already processed
         i = nextLine - 1;
       }
-    } else if (currentCoach) {
+    } 
+    else if (coachColonMatch) {
+      // If we were building a previous message, add it to the list
+      if (currentCoach && currentContent) {
+        messages.push({
+          coach: currentCoach,
+          content: currentContent.trim()
+        });
+      }
+      
+      // Extract coach name and content
+      const [_, coachName, content] = coachColonMatch;
+      
+      // Find the coach ID or use the original name
+      const coachId = identifyCoach(coachName);
+      
+      currentCoach = coachId;
+      currentContent = content.trim();
+    } 
+    else if (currentCoach) {
       // If this line doesn't match a coach pattern but we have a current coach,
       // add it to the current message content
       currentContent += " " + line.trim();
