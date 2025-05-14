@@ -2,7 +2,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import dotenv from "dotenv";
 import { Client, GatewayIntentBits } from "discord.js";
-import { triggerStatusReport } from "./lib/discord/argumentGenerator.js";
+import { triggerArgument } from "./lib/discord/argumentGenerator.js";
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,10 @@ if (result.error) {
 const GENERAL_CHANNEL_ID = "1354474492629618831";
 
 async function main() {
-  console.log("Starting Status Report test...");
+  // Get prompt ID from command line arguments
+  const promptId = process.argv[2] || "status-report";
+  
+  console.log(`Starting Argument Generator test for prompt '${promptId}'...`);
   
   // Initialize Discord client
   const client = new Client({
@@ -38,11 +41,11 @@ async function main() {
     console.log(`Logged in as ${client.user.tag}`);
     
     try {
-      // Trigger status report
-      console.log("Triggering status report...");
-      await triggerStatusReport(GENERAL_CHANNEL_ID, client);
+      // Trigger argument generation with the specified prompt ID
+      console.log(`Triggering argument generation for '${promptId}'...`);
+      await triggerArgument(promptId, GENERAL_CHANNEL_ID, client);
       
-      console.log("Status report completed");
+      console.log(`Argument generation for '${promptId}' completed`);
       
       // Allow time for messages to be sent before disconnecting
       setTimeout(() => {
