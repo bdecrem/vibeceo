@@ -141,15 +141,22 @@ async function runServiceWithMessages(
 			}
 		}
 
-		// Send intro message
-		await sendEventMessage(
-			channel,
-			serviceName as EventType,
-			true,
-			gmtHour,
-			gmtMinutes,
-			selectedIncident
-		);
+		// Skip intro/outro messages for simplestaffmeeting as they're handled in the service
+		const shouldSendMessages = serviceName !== 'simplestaffmeeting';
+		
+		// Send intro message (except for simplestaffmeeting)
+		if (shouldSendMessages) {
+			await sendEventMessage(
+				channel,
+				serviceName as EventType,
+				true,
+				gmtHour,
+				gmtMinutes,
+				selectedIncident
+			);
+		} else {
+			console.log(`[Scheduler] Skipping intro message for ${serviceName} (handled in service)`);
+		}
 
 		// If it's a waterheater event, trigger the chat
 		if (serviceName === 'waterheater') {
@@ -164,14 +171,18 @@ async function runServiceWithMessages(
 			}
 		}
 
-		// Send outro message
-		await sendEventMessage(
-			channel,
-			serviceName as EventType,
-			false,
-			gmtHour,
-			gmtMinutes
-		);
+		// Send outro message (except for simplestaffmeeting)
+		if (shouldSendMessages) {
+			await sendEventMessage(
+				channel,
+				serviceName as EventType,
+				false,
+				gmtHour,
+				gmtMinutes
+			);
+		} else {
+			console.log(`[Scheduler] Skipping outro message for ${serviceName} (handled in service)`);
+		}
 	} catch (err) {
 		console.error(`[Scheduler] Error running '${serviceName}':`, err);
 	}
