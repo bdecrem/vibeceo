@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "kailey",
-    "target": "alex",
-    "incident": "Her self-care checklist got roasted in a comment thread.",
+    "coach": "venus",
+    "target": "rohan",
+    "incident": "A VC called her \"too intense\" in a quote tweet.",
     "probability": 0.67,
     "intensity": {
       "morning": [
@@ -1074,7 +1074,7 @@
             ]
           }
         },
-        "context": "Venus Metrics is getting increasingly irritated by Rohan Mehta's approach to \"Her Asana board got duplicated by someone else.\"",
+        "context": "Venus Metrics is getting increasingly irritated by Rohan Mehta's approach to \"A VC called her \"too intense\" in a quote tweet.\"",
         "promptInjection": "You are Venus Metrics. Your irritation with Rohan Mehta's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
@@ -1093,7 +1093,7 @@
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"Her Asana board got duplicated by someone else.\" influences all interactions between Venus Metrics and Rohan Mehta",
+            "description": "The tension from the waterheater incident about \"A VC called her \"too intense\" in a quote tweet.\" influences all interactions between Venus Metrics and Rohan Mehta",
             "duration": "episode"
           }
         }
@@ -1854,6 +1854,68 @@
             "duration": "episode"
           }
         }
+      },
+      "getting_irritated_by_eljas": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Rohan Mehta is getting increasingly irritated by Eljas Virtanen's approach to \"His favorite podcast host roasted a quote he wrote.\"",
+        "promptInjection": "You are Rohan Mehta. Your irritation with Eljas Virtanen's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "rohan",
+            "eljas"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "rohan"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"His favorite podcast host roasted a quote he wrote.\" influences all interactions between Rohan Mehta and Eljas Virtanen",
+            "duration": "episode"
+          }
+        }
       }
     },
     "eljas": {
@@ -1895,11 +1957,10 @@
             ]
           }
         },
-        "context": "Eljas Virtanen is getting increasingly irritated by Alex Monroe's approach to \"His self-built app crashed during a team demo.\"",
+        "context": "Eljas Virtanen is getting increasingly irritated by Alex Monroe's approach to \"He got into a Slack fight about parking equity.\"",
         "promptInjection": "You are Eljas Virtanen. Your irritation with Alex Monroe's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
           "0.0": "you're completely calm and professional",
-          "0.4": "you're mildly frustrated by their approach",
           "0.6": "you're actively frustrated by their methods and approach",
           "1.0": "you're completely fed up with their methods and approach"
         },
@@ -1915,7 +1976,7 @@
           },
           "influence": {
             "type": "tension",
-            "description": "The tension from the waterheater incident about \"His self-built app crashed during a team demo.\" influences all interactions between Eljas Virtanen and Alex Monroe",
+            "description": "The tension from the waterheater incident about \"He got into a Slack fight about parking equity.\" influences all interactions between Eljas Virtanen and Alex Monroe",
             "duration": "episode"
           }
         }
