@@ -378,7 +378,12 @@ async function getGPTResponse(city = "Berlin") {
 		console.log("Received response from GPT-4");
 
 		// Save raw response for debugging
-		const rawFilePath = path.join(__dirname, "gpt_latest_response.txt");
+		const logsDir = path.join(__dirname, "logs");
+		// Ensure logs directory exists
+		if (!fs.existsSync(logsDir)) {
+			fs.mkdirSync(logsDir, { recursive: true });
+		}
+		const rawFilePath = path.join(logsDir, "gpt_latest_response.txt");
 		fs.writeFileSync(rawFilePath, response, "utf8");
 		console.log(`Saved raw response to ${rawFilePath}`);
 

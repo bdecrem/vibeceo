@@ -33,7 +33,7 @@ const testCase = {
   protagonist: {
     name: "EljasCouncil",
     agenda:
-      "He wants the group to take mushrooms tonight. He brought them. No one else knows. He plans to steer the evening into 'openness' without telling anyone why. Eljas should never sound poetic, wise, or literary. He’s weird, off, mumbly, never gives a straight answer, and always changes the subject."
+      "He wants the group to take mushrooms tonight. He brought them. No one else knows. He plans to steer the evening into 'openness' without telling anyone why. Eljas should never sound poetic, wise, or literary. He's weird, off, mumbly, never gives a straight answer, and always changes the subject."
   },
 };
 
@@ -61,9 +61,9 @@ You are writing **Scenes 2–24** of a chaotic and emotionally strange weekend n
 - ✅ Write an **INTRO** for every odd-numbered scene (3, 5, 7, 9…) and for Scene 10
 - At least one intro (between 5 and 9) must show the group on the way to the Spree plunge — on foot, in an Uber, or with towels, etc.
 - Intros should:
-  - Move the night forward (they’re dressing, detouring, waiting, noticing)
+  - Move the night forward (they're dressing, detouring, waiting, noticing)
   - Include **one off, broken, or ambient weird detail**
-  - Avoid “funny” or “cute” weirdness (e.g., no animals doing clever things)
+  - Avoid "funny" or "cute" weirdness (e.g., no animals doing clever things)
   - Let things feel slightly *wrong* or *uncanny*, not clever
   - Be short. 1–2 lines max. Never explain. Let silence do the work.
 
@@ -150,11 +150,11 @@ Scene 24 includes:
 
 ## COACH VOICES
 
-DonteDisrupt – lowercase. “chaos ops,” “vibe metrics,” meme prophet.
-AlexirAlex – spiritual tech founder energy. “aura,” “vibe,” “ritual,” emoji abuse.
+DonteDisrupt – lowercase. "chaos ops," "vibe metrics," meme prophet.
+AlexirAlex – spiritual tech founder energy. "aura," "vibe," "ritual," emoji abuse.
 RohanTheShark – hates everything. fewest words possible.
 VenusStrikes – corporate structure gremlin. constantly making docs, decks, and frameworks.
-KaileyConnector – panicked scheduler. never knows what’s happening. always behind.
+KaileyConnector – panicked scheduler. never knows what's happening. always behind.
 EljasCouncil – avoid poetic or forest-mystic energy. Instead, he mutters, changes the subject, distracts, forgets what he was saying, lies casually.
 
 ---
@@ -202,7 +202,12 @@ async function getGPTResponse() {
     const response = completion.choices[0].message.content;
     console.log("Received response from GPT-4");
 
-    const rawFilePath = path.join(__dirname, "weekend_story_output.txt");
+    const logsDir = path.join(__dirname, "..", "logs");
+    // Ensure logs directory exists
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    const rawFilePath = path.join(logsDir, "weekend_story_output.txt");
     fs.writeFileSync(rawFilePath, response, "utf8");
     console.log(`Saved raw response to ${rawFilePath}`);
 
