@@ -75,10 +75,11 @@ export function initializeMicroEventMessages() {
       continue;
     }
 
-    // Add to custom event message cache
+    // Add to custom event message cache - only if there are actual intro/outro values
+    // Don't set fallbacks anymore
     customEventMessageCache[prompt.scheduleCommand] = {
-      intro: prompt.intro || `The Foundry Heat with a ${prompt.name.toLowerCase()}.`,
-      outro: prompt.outro || "Stay tuned for more insights."
+      intro: prompt.intro,
+      outro: prompt.outro
     };
     count++;
     console.log(`[MicroPosts] Registered event type: ${prompt.scheduleCommand}`);
@@ -159,8 +160,18 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
 
     console.log(`[MicroPosts] Posting to Discord using FoundryHeat webhook`);
     
-    // Format the complete message with intro and outro
-    const formattedMessage = `${intro}\n\n${content}\n\n${outro}`;
+    // Format the message - only include intro/outro if they're not empty
+    let formattedMessage = content;
+    
+    // Add intro if it exists and isn't empty
+    if (intro && intro.trim() !== '') {
+      formattedMessage = `${intro}\n\n${formattedMessage}`;
+    }
+    
+    // Add outro if it exists and isn't empty
+    if (outro && outro.trim() !== '') {
+      formattedMessage = `${formattedMessage}\n\n${outro}`;
+    }
     
     // Send the message using the webhook
     // We need to check again to satisfy TypeScript
