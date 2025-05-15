@@ -42,6 +42,16 @@ function getAvatarUrl(characterName: string): string {
 	return avatarMap[characterName] || '';
 }
 
+// Map of coach IDs to their full handle names
+const coachHandleMap: { [key: string]: string } = {
+	'donte': 'DonteDisrupt',
+	'rohan': 'RohanTheShark',
+	'alex': 'AlexirAlex',
+	'eljas': 'EljasCouncil',
+	'venus': 'VenusStrikes',
+	'kailey': 'KaileyConnector'
+};
+
 // Send a message as a character
 export async function sendAsCharacter(
 	channelId: string,
@@ -99,12 +109,8 @@ export async function sendAsCharacter(
 		console.log(`[DEBUG-WEBHOOKS] Found webhook with key: ${webhookKey} for ${characterId} in channel ${channelId}, sending message...`);
 		console.log(`[DEBUG-WEBHOOKS] Message content: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
 		
-		// Format character name for display
-		let displayName = characterId.charAt(0).toUpperCase() + characterId.slice(1);
-		// Convert camelCase to separate words (e.g., "donteDisrupt" -> "Donte Disrupt")
-		if (displayName.match(/[A-Z]/g)) {
-			displayName = displayName.replace(/([A-Z])/g, ' $1').trim();
-		}
+		// Get the coach's full handle name
+		const displayName = coachHandleMap[normalizedCharId] || characterId;
 		
 		// CRITICAL: Ensure we're sending the actual message content
 		// Make sure content field contains the full message, not just timestamp
