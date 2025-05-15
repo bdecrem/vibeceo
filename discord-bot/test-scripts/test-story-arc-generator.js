@@ -98,7 +98,13 @@ function formatStoryArc(storyArc, index) {
 // Save story arcs to a file
 function saveStoryArcs(storyArcs) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outputPath = path.join(__dirname, `story_arcs_output-${timestamp}.txt`);
+  
+  const logsDir = path.join(__dirname, "..", "logs");
+  // Ensure logs directory exists
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+  const outputPath = path.join(logsDir, `story_arcs_output-${timestamp}.txt`);
   
   let content = `=== WEEKEND STORY ARCS ===\nGenerated: ${new Date().toISOString()}\nCount: ${storyArcs.length}\n\n`;
   

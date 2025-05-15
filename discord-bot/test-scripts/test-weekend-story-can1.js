@@ -60,8 +60,8 @@ You are writing **Scenes 2–24** of a chaotic and emotionally strange weekend n
 ### For Scenes 2–23:
 - ✅ Write an **INTRO** for every odd-numbered scene (3, 5, 7, 9…) and for Scene 10
 - Intros should:
-  - Move the night forward a little (they’re dressing, detouring, waiting, noticing)
-  - Include **one odd, offbeat, or unexplainable detail** (e.g., “a dog wearing socks,” “a flickering sign,” “someone selling hot air”)
+  - Move the night forward a little (they're dressing, detouring, waiting, noticing)
+  - Include **one odd, offbeat, or unexplainable detail** (e.g., "a dog wearing socks," "a flickering sign," "someone selling hot air")
   - Be short. 1–3 lines. Never explain the joke. Let weird things happen.
   - Tone should feel like *security camera meets startup recap*
 
@@ -149,11 +149,11 @@ Scene 24 includes:
 
 ## COACH VOICES
 
-DonteDisrupt – lowercase. “chaos ops,” “vibe metrics,” meme prophet.
-AlexirAlex – spiritual tech founder energy. “aura,” “vibe,” “ritual,” emoji abuse.
+DonteDisrupt – lowercase. "chaos ops," "vibe metrics," meme prophet.
+AlexirAlex – spiritual tech founder energy. "aura," "vibe," "ritual," emoji abuse.
 RohanTheShark – hates everything. fewest words possible.
 VenusStrikes – corporate structure gremlin. constantly making docs, decks, and frameworks.
-KaileyConnector – panicked scheduler. never knows what’s happening. always behind.
+KaileyConnector – panicked scheduler. never knows what's happening. always behind.
 EljasCouncil – compost logic oracle. poetic, drifty, says confusing stuff with confidence.
 
 ---
@@ -201,7 +201,12 @@ async function getGPTResponse() {
     const response = completion.choices[0].message.content;
     console.log("Received response from GPT-4");
 
-    const rawFilePath = path.join(__dirname, "weekend_story_output.txt");
+    const logsDir = path.join(__dirname, "..", "logs");
+    // Ensure logs directory exists
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    const rawFilePath = path.join(logsDir, "weekend_story_output.txt");
     fs.writeFileSync(rawFilePath, response, "utf8");
     console.log(`Saved raw response to ${rawFilePath}`);
 
