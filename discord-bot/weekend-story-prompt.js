@@ -232,12 +232,12 @@ Generated: ${new Date().toISOString()}
 
     // Save the story with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const outputPath = path.join(__dirname, `weekend_story_output-${timestamp}.txt`);
+    const outputPath = path.join(__dirname, "logs", `weekend_story_output-${timestamp}.txt`);
     fs.writeFileSync(outputPath, metadata + response, "utf8");
     console.log(`Saved story to ${outputPath}`);
 
     // Also save the story arc for reference
-    const arcPath = path.join(__dirname, `weekend_story_arc-${timestamp}.json`);
+    const arcPath = path.join(__dirname, "logs", `weekend_story_arc-${timestamp}.json`);
     fs.writeFileSync(arcPath, JSON.stringify(storyArc, null, 2), "utf8");
     console.log(`Saved story arc to ${arcPath}`);
 

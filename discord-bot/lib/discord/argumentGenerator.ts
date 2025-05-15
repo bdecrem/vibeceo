@@ -166,7 +166,7 @@ async function generateConversation(promptId: string): Promise<string> {
     console.log(`[${prompt.name}] Generated response (first 100 chars): ${response.substring(0, 100)}...`);
     
     // Save raw response for debugging
-    const rawFilePath = path.join(process.cwd(), `${promptId}_response_${new Date().toISOString().replace(/:/g, "-")}.txt`);
+    const rawFilePath = path.join(process.cwd(), "logs", `${promptId}_response_${new Date().toISOString().replace(/:/g, "-")}.txt`);
     fs.writeFileSync(rawFilePath, response, "utf8");
     console.log(`[${prompt.name}] Saved raw response to ${rawFilePath}`);
     
