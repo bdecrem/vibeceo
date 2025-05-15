@@ -1,6 +1,6 @@
-00:00 unspokenrule
-01:00 contention
-02:00 statusreport
+00:00 watercooler
+01:00 microclass
+02:00 upcomingevent
 03:00 unspokenrule
 04:00 contention
 05:00 statusreport
@@ -9,7 +9,7 @@
 08:00 watercooler
 09:00 pitchchat
 10:00 watercooler
-11:00 crowdfaves
+11:00 crowdfaves   
 12:00 unspokenrule
 13:00 newschat
 14:00 watercooler

@@ -2,7 +2,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import dotenv from "dotenv";
 import { Client, GatewayIntentBits } from "discord.js";
-import { triggerStatusReport } from "./lib/discord/argumentGenerator.js";
+import { triggerStatusReport } from "./dist/lib/discord/argumentGenerator.js";
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
