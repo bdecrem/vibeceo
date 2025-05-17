@@ -1310,16 +1310,21 @@ export function getCurrentScene(
 export function formatStoryInfo(
 	episodeContext: EpisodeContext,
 	episode: EpisodeScenes,
-	sceneIndex: number
+	sceneIndex: number,
+	overrideIrritation?: any
 ): string {
-	// Read currentIrritation from story-arcs.json
-	const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
-	let currentIrritation: any = null;
-	try {
-		const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
-		currentIrritation = storyArcs.currentIrritation;
-	} catch (e) {
-		return "No irritation data available.";
+	// Read currentIrritation from story-arcs.json or use provided override
+	let currentIrritation: any = overrideIrritation || null;
+	
+	// Only read from file if no override provided
+	if (!currentIrritation) {
+		const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+		try {
+			const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+			currentIrritation = storyArcs.currentIrritation;
+		} catch (e) {
+			return "No irritation data available.";
+		}
 	}
 
 	// Defensive type checks and name mapping

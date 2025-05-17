@@ -9,6 +9,8 @@ import { EpisodeContext } from './episodeContext.js';
 import { createNewEpisode, addScene } from './episodeStorage.js';
 import { resetWeekendStory } from './weekend-story.js';
 import { isWeekend } from './locationTime.js';
+import fs from 'fs';
+import path from 'path';
 
 // Global variables to track bot state
 let isBotRunning = false;
@@ -39,6 +41,122 @@ export function getCurrentStoryInfo() {
     currentScene: currentEpisode.generatedContent[currentSceneIndex],
     sceneIndex: currentSceneIndex
   };
+}
+
+// Automatically select a random coach and incident for the story arc
+export function generateRandomCoachIrritation() {
+  try {
+    console.log('=== GENERATING RANDOM COACH IRRITATION FOR NEW EPISODE ===');
+    
+    // Path to waterheater incidents file and the incidents directory
+    const waterheaterFile = path.join(process.cwd(), 'data', 'waterheater-incidents.ts');
+    const incidentsDir = path.join(process.cwd(), 'data');
+    
+    // First check if file exists
+    if (!fs.existsSync(waterheaterFile)) {
+      console.error('Waterheater incidents file not found:', waterheaterFile);
+      return;
+    }
+    
+    // Load waterheater incidents directly from the file
+    try {
+      // Read the file contents and parse the data
+      const waterheaterFileContent = fs.readFileSync(waterheaterFile, 'utf-8');
+      
+      // Extract the incidents data using regex (simple parser)
+      const coachesData = [];
+      const coachSections = waterheaterFileContent.match(/id: "(.*?)",\s*incidents: \[([\s\S]*?)\]/g);
+      
+      if (!coachSections) {
+        console.error('Could not parse waterheater incidents data');
+        return;
+      }
+      
+      for (const section of coachSections) {
+        const coachIdMatch = section.match(/id: "(.*?)"/);
+        if (coachIdMatch && coachIdMatch[1]) {
+          const coachId = coachIdMatch[1];
+          const incidentsMatches = section.match(/text: "(.*?)"/g);
+          
+          if (incidentsMatches) {
+            const incidents = incidentsMatches.map(match => {
+              const textMatch = match.match(/text: "(.*?)"/);
+              return { text: textMatch ? textMatch[1] : '' };
+            });
+            
+            coachesData.push({ id: coachId, incidents });
+          }
+        }
+      }
+      
+      // If no coaches were found, exit
+      if (coachesData.length === 0) {
+        console.error('No coach data found in waterheater incidents file');
+        return;
+      }
+      
+      // 1. Randomly select a coach
+      const selectedCoachIndex = Math.floor(Math.random() * coachesData.length);
+      const selectedCoach = coachesData[selectedCoachIndex].id;
+      const coachIncidents = coachesData[selectedCoachIndex];
+      
+      // 2. Randomly select another coach as target (not the same as selected coach)
+      const otherCoaches = coachesData.filter(c => c.id !== selectedCoach).map(c => c.id);
+      const selectedTarget = otherCoaches[Math.floor(Math.random() * otherCoaches.length)];
+      
+      // 3. Randomly select an incident for this coach
+      const incidents = coachIncidents.incidents;
+      const selectedIncident = incidents[Math.floor(Math.random() * incidents.length)];
+      
+      // 4. Update the story-arcs.json file
+      const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+      
+      // Check if the file exists, create with default data if not
+      if (!fs.existsSync(storyArcsPath)) {
+        const defaultData = { currentIrritation: {} };
+        fs.writeFileSync(storyArcsPath, JSON.stringify(defaultData, null, 2));
+      }
+      
+      // Read the existing data
+      const storyArcsData = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+      
+      // Set up intensity values (keep existing ones if present)
+      const intensity = storyArcsData.currentIrritation?.intensity || {
+        morning: [1, 2, 3, 4, 5, 6, 7, 8],
+        midday: [2, 3, 4, 5, 6, 7, 8, 9],
+        afternoon: [3, 4, 5, 6, 7, 8, 9, 10]
+      };
+      
+      // Update currentIrritation field
+      storyArcsData.currentIrritation = {
+        coach: selectedCoach,
+        target: selectedTarget,
+        incident: selectedIncident.text,
+        intensity
+      };
+      
+      // Write the updated data back to the file
+      fs.writeFileSync(storyArcsPath, JSON.stringify(storyArcsData, null, 2));
+      
+      console.log(`=== COACH IRRITATION UPDATED ===`);
+      console.log(`Coach: ${selectedCoach}`);
+      console.log(`Target: ${selectedTarget}`);
+      console.log(`Incident: ${selectedIncident.text}`);
+      console.log('=== COACH IRRITATION UPDATE COMPLETE ===');
+
+      // Return the updated data for possible use elsewhere
+      return {
+        coach: selectedCoach,
+        target: selectedTarget,
+        incident: selectedIncident.text
+      };
+    } catch (importError) {
+      console.error('Error processing waterheater incidents:', importError);
+    }
+  } catch (error) {
+    console.error('Error generating random coach irritation:', error);
+  }
+  return null;
 }
 
 // Initialize Discord client with necessary intents
@@ -167,6 +285,9 @@ export async function startBot() {
   isBotRunning = true;
   
   try {
+    // Generate a random coach irritation for this episode
+    generateRandomCoachIrritation();
+    
     // Validate configuration and get token
     const { token } = validateConfig();
     
