@@ -1,50 +1,83 @@
-// Test script for the new help command with coach irritation info
+// Test script to verify that the help command displays the current irritation data
+// Run with: node test-scripts/test-help-command.js
 
-// Import necessary modules
-import { formatStoryInfo } from '../dist/lib/discord/sceneFramework.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { formatStoryInfo } from '../dist/lib/discord/sceneFramework.js';
 
-// Main test function
-async function testHelpCommand() {
-  console.log("=== Testing Help Command with Coach Dynamics ===\n");
-  
-  try {
-    // Mock episode context (simplified)
-    const mockEpisode = {
-      generatedContent: Array(24).fill({
-        type: "scene",
-        coaches: ["donte", "kailey", "alex"]
-      }),
-      seeds: Array(24).fill({
-        location: "Los Angeles",
-        localTime: "12:30"
-      })
-    };
-    
-    const mockEpisodeContext = {
-      theme: "Test theme",
-      location: "Los Angeles"
-    };
-    
-    // Generate help output using the formatStoryInfo function
-    // This is the same function that the help command will use
-    const irritationInfo = formatStoryInfo(
-      mockEpisodeContext,
-      mockEpisode,
-      1 // Scene 1 (will show as scene: 02)
-    );
-    
-    // Display the formatted irritation info that would appear in !help
-    console.log("\n=== Current Coach Dynamics ===");
-    console.log(irritationInfo);
-    
-    console.log("\nThis is what will be appended to the !help command output");
-    
-  } catch (error) {
-    console.error("Error running test:", error);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Mock minimal versions of needed data for testing
+const mockEpisodeContext = {
+  date: new Date().toISOString(),
+  dayOfWeek: 'Monday',
+  startTime: new Date().toISOString(),
+  durationMinutes: 480,
+  theme: 'Test Theme',
+  arc: {
+    arcSummary: 'Test Arc',
+    toneKeywords: ['test'],
+    motifs: ['test']
+  },
+  locationTimeline: ['Office']
+};
+
+const mockEpisode = {
+  seeds: [],
+  generatedContent: {
+    0: {
+      index: 0,
+      type: 'watercooler',
+      location: 'Test Location',
+      intro: 'Test intro',
+      outro: 'Test outro',
+      coaches: ['alex', 'rohan'],
+      gptPrompt: {
+        introPrompt: '',
+        outroPrompt: ''
+      },
+      gptResponse: {
+        intro: '',
+        outro: ''
+      }
+    }
+  },
+  metadata: {
+    startTime: new Date().toISOString(),
+    unitDuration: 20,
+    activeArcs: [],
+    activeFlags: new Set()
   }
+};
+
+async function runTest() {
+  console.log('=== STARTING HELP COMMAND TEST ===');
+  
+  // Read the current irritation data from story-arcs.json
+  console.log('Reading current irritation data from file...');
+  const storyArcsPath = path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json');
+  const initialData = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+  console.log('Current coach irritation:', initialData.currentIrritation);
+  
+  // Test formatting the story info from file
+  console.log('\nFormatting story info from file (this is what !help will show)...');
+  const formattedInfo = formatStoryInfo(mockEpisodeContext, mockEpisode, 0);
+  console.log('Formatted output:\n', formattedInfo);
+  
+  // Verify that the formatted output matches what's in the file
+  if (formattedInfo.includes(initialData.currentIrritation.incident)) {
+    console.log('\n✅ TEST PASSED: Help command shows the current irritation from the file');
+  } else {
+    console.log('\n❌ TEST FAILED: Help command does not show the current irritation');
+    console.log('Expected to find incident:', initialData.currentIrritation.incident);
+    console.log('In formatted output:', formattedInfo);
+  }
+  
+  console.log('\n=== HELP COMMAND TEST COMPLETE ===');
 }
 
-// Run the test
-testHelpCommand(); 
+runTest().catch(err => {
+  console.error('Test failed with error:', err);
+  process.exit(1);
+}); 

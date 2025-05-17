@@ -18,7 +18,7 @@ import { scheduler } from "./timer.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { getNextMessage, handleAdminCommand } from "./adminCommands.js";
-import { getCurrentStoryInfo } from './bot.js';
+import { getCurrentStoryInfo, generateRandomCoachIrritation } from './bot.js';
 import { formatStoryInfo } from './sceneFramework.js';
 import {
 	getRandomCharactersWithPairConfig,
@@ -1124,17 +1124,67 @@ export async function handleMessage(message: Message): Promise<void> {
 					const storyInfo = getCurrentStoryInfo();
 					let irritationInfo = "";
 					
-					if (storyInfo) {
-						// Format the irritation info using the existing function
-						const storyContext = formatStoryInfo(
-							storyInfo.episodeContext, 
-							storyInfo.currentEpisode, 
-							storyInfo.sceneIndex
-						);
+					if (storyInfo && storyInfo.currentEpisode && storyInfo.currentEpisode.generatedContent[0]) {
+						// Get the first scene intro - it contains the information about what's happening
+						const firstSceneIntro = storyInfo.currentEpisode.generatedContent[0].intro;
 						
-						// Add to help message if we have data
-						if (storyContext && !storyContext.includes("No irritation data available")) {
-							irritationInfo = "\n\n=== Current Coach Dynamics ===\n" + storyContext;
+						// Extract the coach names using a simple parsing approach
+						// First scene intro is typically formatted like:
+						// "It's 9:04pm at their London office, where clear sky stretches overhead. During an important call, Kailey's affirmation wallpaper started glitching."
+						let coachName = "";
+						let incident = "";
+						
+						// Look for common patterns to identify coaches
+						const coaches = ['Kailey', 'Alex', 'Rohan', 'Venus', 'Eljas', 'Donte'];
+						for (const coach of coaches) {
+							if (firstSceneIntro.includes(coach + "'s") || firstSceneIntro.includes(coach + ' ')) {
+								coachName = coach;
+								
+								// Extract the incident - everything after the coach name
+								const coachIndex = firstSceneIntro.indexOf(coach);
+								if (coachIndex > 0) {
+									const afterCoach = firstSceneIntro.substring(coachIndex + coach.length);
+									// Look for the incident part - usually after "where" or ". "
+									const parts = afterCoach.split('. ');
+									if (parts.length > 1) {
+										incident = parts[1];
+									} else {
+										incident = afterCoach;
+									}
+									break;
+								}
+							}
+						}
+						
+						// Identify the target coach (usually the one responding critically in the first exchange)
+						let targetCoach = "";
+						if (storyInfo.currentEpisode.generatedContent[0].conversation) {
+							// Look at second message which is usually a response to the first coach
+							const secondMsg = storyInfo.currentEpisode.generatedContent[0].conversation[1];
+							if (secondMsg) {
+								targetCoach = secondMsg.coach;
+							}
+						}
+						
+						// Format the irritation info - similar to existing style
+						if (coachName && incident) {
+							const sceneNum = (storyInfo.sceneIndex + 1).toString().padStart(2, '0');
+							const intensity = "2"; // Default value
+							
+							// Get pronoun based on coach name
+							const genderPronouns: Record<string, string> = {
+								'alex': 'She',
+								'rohan': 'He', 
+								'eljas': 'He',
+								'venus': 'She',
+								'kailey': 'She',
+								'donte': 'He'
+							};
+							
+							const pronoun = genderPronouns[coachName.toLowerCase()] || 'They';
+							const targetName = targetCoach ? ceos.find(c => c.id === targetCoach)?.name.split(' ')[0] || targetCoach : '';
+							
+							irritationInfo = `\n\n=== Current Coach Dynamics ===\n${coachName} had a rough one: ${incident}\n\n${pronoun}'s still a little salty with ${targetName || 'someone'} after bringing it up in chat and not loving how the convo went.\n\nscene: ${sceneNum} intensity: ${intensity}`;
 						}
 					}
 					
