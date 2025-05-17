@@ -35,16 +35,77 @@ async function generateArc(context: {
   console.log('=== GENERATING ARC ===');
   console.log('Input context:', context);
   
-  // Load story arcs
-  const storyArcs = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'story-themes', 'story-arcs.json'), 'utf-8'));
-  const selectedArc = storyArcs.storyArcs.donte.getting_irritated_by_kailey;
-  
-  return {
-    theme: selectedArc.context,
-    arcSummary: `A day of ${selectedArc.promptAttribute} and its effects.`,
-    toneKeywords: [selectedArc.promptAttribute, "unfocused", "distracted"],
-    motifs: ["unfinished tasks", "lost train of thought", "wandering mind"]
-  };
+  try {
+    // Ensure the story-themes directory exists
+    const storyArcsDir = path.join(process.cwd(), 'data', 'story-themes');
+    if (!fs.existsSync(storyArcsDir)) {
+      fs.mkdirSync(storyArcsDir, { recursive: true });
+    }
+    
+    // Path to the story arcs file
+    const storyArcsPath = path.join(storyArcsDir, 'story-arcs.json');
+    
+    // Check if the file exists
+    if (!fs.existsSync(storyArcsPath)) {
+      // Create a default story arc file if it doesn't exist
+      const defaultStoryArcs = {
+        currentIrritation: {
+          coach: "kailey",
+          target: "donte",
+          incident: "typo in presentation",
+          intensity: {
+            morning: [1, 2, 3, 4, 5, 6, 7, 8],
+            midday: [2, 3, 4, 5, 6, 7, 8, 9],
+            afternoon: [3, 4, 5, 6, 7, 8, 9, 10]
+          }
+        },
+        storyArcs: {
+          donte: {
+            getting_irritated_by_kailey: {
+              context: "Workplace distractions",
+              promptAttribute: "distraction"
+            }
+          }
+        }
+      };
+      
+      fs.writeFileSync(storyArcsPath, JSON.stringify(defaultStoryArcs, null, 2));
+      console.log('Created default story arcs file:', storyArcsPath);
+    }
+    
+    // Load story arcs
+    const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, 'utf-8'));
+    
+    // Use currentIrritation data if available, otherwise use a fallback
+    let arcTheme = "Workplace dynamics";
+    let arcAttribute = "interaction";
+    
+    if (storyArcs.currentIrritation) {
+      const { coach, target, incident } = storyArcs.currentIrritation;
+      arcTheme = `${coach} reacting to ${target}'s ${incident}`;
+      arcAttribute = incident;
+    } else if (storyArcs.storyArcs?.donte?.getting_irritated_by_kailey) {
+      // Fallback to the original static path if it exists
+      arcTheme = storyArcs.storyArcs.donte.getting_irritated_by_kailey.context;
+      arcAttribute = storyArcs.storyArcs.donte.getting_irritated_by_kailey.promptAttribute;
+    }
+    
+    return {
+      theme: arcTheme,
+      arcSummary: `A day of ${arcAttribute} and its effects.`,
+      toneKeywords: [arcAttribute, "unfocused", "distracted"],
+      motifs: ["unfinished tasks", "lost train of thought", "wandering mind"]
+    };
+  } catch (error) {
+    console.error('Error generating arc:', error);
+    // Return a default arc in case of error
+    return {
+      theme: "Office life",
+      arcSummary: "A typical day at the office with its ups and downs.",
+      toneKeywords: ["professional", "casual", "office"],
+      motifs: ["meetings", "conversations", "work tasks"]
+    };
+  }
 }
 
 export async function generateEpisodeContext(
