@@ -66,3 +66,5 @@ next-env.d.ts
 /discord-bot/experiments-codex/
 /discord-bot/experiments-claude/
 
+# Generated JS files from TypeScript
+/discord-bot/lib/discord/*.js
