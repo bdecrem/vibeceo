@@ -60,3 +60,9 @@ next-env.d.ts
 /logs/
 /discord-bot/logs/
 
+# Experiment folders
+/discord-bot/experiments-*/
+/discord-bot/experiments-chatgpt/
+/discord-bot/experiments-codex/
+/discord-bot/experiments-claude/
+
