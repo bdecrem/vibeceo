@@ -69,18 +69,19 @@ export function initializeMicroEventMessages() {
     return;
   }
 
+  // Set TheAF to only show the location/time/weather with no additional text
   for (const prompt of prompts) {
     if (!prompt.scheduleCommand) {
       console.warn(`[MicroPosts] Prompt '${prompt.id}' missing scheduleCommand, skipping.`);
       continue;
     }
 
-    // Add to custom event message cache - only if there are actual intro/outro values
-    // Don't set fallbacks anymore
+    // ONLY the simplified arrival message for TheAF - just location, time, weather
     customEventMessageCache[prompt.scheduleCommand] = {
-      intro: prompt.intro,
-      outro: prompt.outro
+      intro: "{simplifiedArrival}",
+      outro: "" // Empty outro
     };
+    
     count++;
     console.log(`[MicroPosts] Registered event type: ${prompt.scheduleCommand}`);
   }
@@ -137,7 +138,7 @@ async function generatePost(promptId: string): Promise<string> {
     console.log(`[${prompt.name}] Generated response (first 100 chars): ${response.substring(0, 100)}...`);
     
     // Save raw response for debugging
-    const rawFilePath = path.join(process.cwd(), `${promptId}_response_${new Date().toISOString().replace(/:/g, "-")}.txt`);
+    const rawFilePath = path.join(process.cwd(), "logs", `${promptId}_response_${new Date().toISOString().replace(/:/g, "-")}.txt`);
     fs.writeFileSync(rawFilePath, response, "utf8");
     console.log(`[${prompt.name}] Saved raw response to ${rawFilePath}`);
     
@@ -160,29 +161,27 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
 
     console.log(`[MicroPosts] Posting to Discord using FoundryHeat webhook`);
     
-    // Format the message - only include intro/outro if they're not empty
+    // Include the intro from JSON and the outro with emojis
     let formattedMessage = content;
     
-    // Add intro if it exists and isn't empty
+    // Add intro if it exists
     if (intro && intro.trim() !== '') {
-      formattedMessage = `${intro}\n\n${formattedMessage}`;
+      formattedMessage = `${intro}\n${formattedMessage}`;
     }
     
-    // Add outro if it exists and isn't empty
+    // ADD BACK THE OUTRO with emoji/line as shown in the attached image
     if (outro && outro.trim() !== '') {
-      formattedMessage = `${formattedMessage}\n\n${outro}`;
+      formattedMessage = `${formattedMessage}${outro}`;
     }
     
     // Send the message using the webhook
-    // We need to check again to satisfy TypeScript
     if (!foundryHeatWebhook) {
       throw new Error("Webhook is null after initialization");
     }
     
     await foundryHeatWebhook.send({
       content: formattedMessage,
-      username: "The Foundry Heat",
-      // You can customize avatar_url if needed
+      username: "Foundry Heat",
     });
     
     console.log(`[MicroPosts] Successfully posted to Discord`);

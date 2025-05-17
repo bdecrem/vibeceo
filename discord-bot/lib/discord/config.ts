@@ -66,6 +66,46 @@ export function getWebhookUrls() {
     webhookUrls['staff_kailey'] = process.env.STAFF_WEBHOOK_URL_KAILEY;
   }
   
+  // The Lounge channel webhooks
+  if (process.env.LOUNGE_WEBHOOK_URL_DONTE) {
+    webhookUrls['lounge_donte'] = process.env.LOUNGE_WEBHOOK_URL_DONTE;
+  }
+  if (process.env.LOUNGE_WEBHOOK_URL_ALEX) {
+    webhookUrls['lounge_alex'] = process.env.LOUNGE_WEBHOOK_URL_ALEX;
+  }
+  if (process.env.LOUNGE_WEBHOOK_URL_ROHAN) {
+    webhookUrls['lounge_rohan'] = process.env.LOUNGE_WEBHOOK_URL_ROHAN;
+  }
+  if (process.env.LOUNGE_WEBHOOK_URL_VENUS) {
+    webhookUrls['lounge_venus'] = process.env.LOUNGE_WEBHOOK_URL_VENUS;
+  }
+  if (process.env.LOUNGE_WEBHOOK_URL_ELJAS) {
+    webhookUrls['lounge_eljas'] = process.env.LOUNGE_WEBHOOK_URL_ELJAS;
+  }
+  if (process.env.LOUNGE_WEBHOOK_URL_KAILEY) {
+    webhookUrls['lounge_kailey'] = process.env.LOUNGE_WEBHOOK_URL_KAILEY;
+  }
+  
+  // Pitch channel webhooks
+  if (process.env.PITCH_WEBHOOK_URL_DONTE) {
+    webhookUrls['pitch_donte'] = process.env.PITCH_WEBHOOK_URL_DONTE;
+  }
+  if (process.env.PITCH_WEBHOOK_URL_ALEX) {
+    webhookUrls['pitch_alex'] = process.env.PITCH_WEBHOOK_URL_ALEX;
+  }
+  if (process.env.PITCH_WEBHOOK_URL_ROHAN) {
+    webhookUrls['pitch_rohan'] = process.env.PITCH_WEBHOOK_URL_ROHAN;
+  }
+  if (process.env.PITCH_WEBHOOK_URL_VENUS) {
+    webhookUrls['pitch_venus'] = process.env.PITCH_WEBHOOK_URL_VENUS;
+  }
+  if (process.env.PITCH_WEBHOOK_URL_ELJAS) {
+    webhookUrls['pitch_eljas'] = process.env.PITCH_WEBHOOK_URL_ELJAS;
+  }
+  if (process.env.PITCH_WEBHOOK_URL_KAILEY) {
+    webhookUrls['pitch_kailey'] = process.env.PITCH_WEBHOOK_URL_KAILEY;
+  }
+  
   return webhookUrls;
 }
 

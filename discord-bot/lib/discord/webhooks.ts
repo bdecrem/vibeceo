@@ -1,4 +1,5 @@
 import { WebhookClient } from "discord.js";
+import { GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID } from "./bot.js";
 
 // Store webhook clients for each channel
 export const channelWebhooks = new Map<string, Map<string, WebhookClient>>();
@@ -29,17 +30,13 @@ export async function initializeWebhooks(
 	});
 }
 
+// Get avatar URL for a given character
 function getAvatarUrl(characterName: string): string {
-	// Map character names to their avatar URLs
-	const avatarMap: { [key: string]: string } = {
-		'Donte': 'https://i.imgur.com/example1.png',
-		'Rohan': 'https://i.imgur.com/example2.png',
-		'Alex': 'https://i.imgur.com/example3.png',
-		'Eljas': 'https://i.imgur.com/example4.png',
-		'Venus': 'https://i.imgur.com/example5.png',
-		'Kailey': 'https://i.imgur.com/example6.png'
-	};
-	return avatarMap[characterName] || '';
+	// Base URL for Discord avatar images
+	const baseUrl = "https://cdn.discordapp.com/avatars/";
+
+	// Default avatar if no match is found
+	return "https://i.imgur.com/6GHG6PX.png";
 }
 
 // Map of coach IDs to their full handle names
@@ -70,17 +67,50 @@ export async function sendAsCharacter(
 		// Normalize character ID for case insensitivity
 		const normalizedCharId = characterId.toLowerCase().trim();
 		
-		// Possible webhook keys to check (general_*, staff_* and just the character ID)
-		const possibleKeys = [
-			`general_${normalizedCharId}`,
-			`general_${characterId}`,
-			normalizedCharId,
-			characterId
-		];
+		// Possible webhook keys to check, based on channel
+		const possibleKeys: string[] = [];
 		
-		// If we're in staff meetings channel, prioritize staff webhooks
-		if (channelId === "1369356692428423240") {
-			possibleKeys.unshift(`staff_${normalizedCharId}`, `staff_${characterId}`);
+		// Determine which channel type we're in
+		if (channelId === GENERAL_CHANNEL_ID) {
+			// Staff meetings channel (#general)
+			possibleKeys.push(
+				`general_${normalizedCharId}`,
+				`general_${characterId}`,
+				`staff_${normalizedCharId}`,
+				`staff_${characterId}`,
+				normalizedCharId,  // Also try without prefix as fallback
+				characterId
+			);
+		} else if (channelId === THELOUNGE_CHANNEL_ID) {
+			// The Lounge channel
+			possibleKeys.push(
+				`lounge_${normalizedCharId}`,
+				`lounge_${characterId}`,
+				normalizedCharId,  // Also try without prefix as fallback
+				characterId
+			);
+		} else if (channelId === PITCH_CHANNEL_ID) {
+			// The Pitch channel
+			possibleKeys.push(
+				`pitch_${normalizedCharId}`,
+				`pitch_${characterId}`,
+				normalizedCharId,  // Also try without prefix as fallback
+				characterId
+			);
+		} else {
+			// Fallback - try all possible prefixes
+			possibleKeys.push(
+				`general_${normalizedCharId}`,
+				`general_${characterId}`,
+				`staff_${normalizedCharId}`,
+				`staff_${characterId}`,
+				`lounge_${normalizedCharId}`,
+				`lounge_${characterId}`,
+				`pitch_${normalizedCharId}`,
+				`pitch_${characterId}`,
+				normalizedCharId,
+				characterId
+			);
 		}
 		
 		console.log(`[DEBUG-WEBHOOKS] Looking for webhook with possible keys: ${JSON.stringify(possibleKeys)}`);
