@@ -73,3 +73,9 @@ next-env.d.ts
 /discord-bot/data/weekend-conversations/*.json
 # Nested discord-bot folder (mistake in project structure)
 /discord-bot/discord-bot/
+# Backup files
+*.bak.*
+*.bak
+*.backup
+*-backup
+*.working-backup
