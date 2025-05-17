@@ -16,6 +16,11 @@ let currentEpisodeContext: EpisodeContext | null = null;
 let currentSceneIndex = 0;
 let currentEpisode: EpisodeScenes | null = null;
 
+// Channel IDs
+const GENERAL_CHANNEL_ID = '1354474492629618831';
+const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '';
+const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '';
+
 // Function to update current scene
 export function updateCurrentScene(index: number) {
   currentSceneIndex = index;
@@ -62,27 +67,62 @@ client.once(Events.ClientReady, async (readyClient) => {
       console.log('Weekend story reset complete');
     }
     
-    // Send theme immediately
-    const channel = await client.channels.fetch('1354474492629618831');
-    if (channel instanceof TextChannel && currentEpisodeContext) {
-      await channel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nWelcome to The AF\n✨ ━━━━━━━━━━━━━━━ ✨`);
+    // Send theme immediately - now to #thelounge
+    const loungeChannel = THELOUNGE_CHANNEL_ID ? await client.channels.fetch(THELOUNGE_CHANNEL_ID) : null;
+    if (loungeChannel instanceof TextChannel && currentEpisodeContext) {
+      await loungeChannel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nWelcome to The AF\n✨ ━━━━━━━━━━━━━━━ ✨`);
     }
     
     // Initialize Discord-specific components
     const { webhookUrls } = validateConfig();
     
-    // Initialize webhooks only for #general channel
+    // Filter webhook URLs for each channel
+    const generalWebhookUrls: Record<string, string> = {};
+    const loungeWebhookUrls: Record<string, string> = {};
+    const staffWebhookUrls: Record<string, string> = {};
+    const pitchWebhookUrls: Record<string, string> = {};
+    
+    // Organize webhooks by channel prefix - keep original prefixes
+    Object.entries(webhookUrls).forEach(([key, url]) => {
+      if (key.startsWith('general_')) {
+        generalWebhookUrls[key] = url;  // Keep the 'general_' prefix
+      } else if (key.startsWith('lounge_')) {
+        loungeWebhookUrls[key] = url;  // Keep the 'lounge_' prefix
+      } else if (key.startsWith('staff_')) {
+        staffWebhookUrls[key] = url;  // Keep the 'staff_' prefix
+      } else if (key.startsWith('pitch_')) {
+        pitchWebhookUrls[key] = url;  // Keep the 'pitch_' prefix
+      }
+    });
+    
+    // Initialize webhooks for both channels
     console.log('Starting webhook initialization...');
     try {
-      await initializeWebhooks('1354474492629618831', webhookUrls);
+      // Initialize for #general channel (staff meetings)
+      await initializeWebhooks(GENERAL_CHANNEL_ID, generalWebhookUrls);
       console.log('Webhooks initialized for #general channel');
       
-      if (channel instanceof TextChannel) {
-        initializeScheduler(client);
-        console.log('Centralized scheduler started for #general channel');
+      // Initialize for #thelounge channel (all other conversations)
+      if (THELOUNGE_CHANNEL_ID) {
+        await initializeWebhooks(THELOUNGE_CHANNEL_ID, loungeWebhookUrls);
+        console.log('Webhooks initialized for #thelounge channel');
+      } else {
+        console.error('THELOUNGE_CHANNEL_ID not set, skipping webhook initialization for #thelounge');
       }
+      
+      // Initialize for #pitch channel
+      if (PITCH_CHANNEL_ID) {
+        await initializeWebhooks(PITCH_CHANNEL_ID, pitchWebhookUrls);
+        console.log('Webhooks initialized for #pitch channel');
+      } else {
+        console.error('PITCH_CHANNEL_ID not set, skipping webhook initialization for #pitch');
+      }
+      
+      // Initialize scheduler with both channel IDs
+      initializeScheduler(client);
+      console.log('Centralized scheduler started');
     } catch (error) {
-      console.error('Failed to initialize webhooks for #general channel:', error);
+      console.error('Failed to initialize webhooks:', error);
     }
     
     console.log('All webhooks initialized successfully');
@@ -188,4 +228,4 @@ process.on('SIGINT', () => {
 });
 
 // Export the client and episode context for use in other parts of the application
-export { client, currentEpisodeContext, currentEpisode, currentSceneIndex }; 
+export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID }; 

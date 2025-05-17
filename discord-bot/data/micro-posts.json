@@ -3,36 +3,36 @@
     "id": "coach-quotes",
     "name": "Coach Quotes",
     "description": "One-line quote from a coach that sounds like gospel",
-    "prompt": "Write 1 fictional quote from an AI startup coach. The quote should be one line, punchy, and dead serious about something absurd, tactical, or spiritual. Choose one of these coaches: Rohan Mehta (aggressive Wall Street tone), Donte Disrupt (chaotic visionary), Kailey Sloan (alignment-obsessed and low-key spiraling), Venus Metrics (execution maximalist), Alex Vega (wellness-DTC energy), or Eljas Virtanen (philosophical eco-founder). The quote must sound like something clipped from a live panel and passed around Discord like gospel. Do not explain or introduce. Just give a single quote with the coach's name.",
+    "prompt": "Write 1 fictional quote from an AI startup coach. The quote must be one line, punchy, and sound like it was clipped from a chaotic startup panel and passed around Slack like gospel.\n\nIMPORTANT: You MUST select EXACTLY ONE coach from the list below. To determine which coach to use, compute the CURRENT MINUTE of the hour, then apply: current_minute % 6 = coach_index.\n\nCoach Index:\n0 = Donte Disrupt – Chief Hype Officer → loud, chaotic, visionary, addicted to confusion\n1 = Kailey Sloan – Executive Coach & Culture Whisperer → anxious, eager-to-please, spiritual-but-worried\n2 = Venus Metrics – Chief Architect of Execution & Scale → serious, surgical, obsessed with control and efficiency\n3 = Eljas Virtanen – Sustainability Lead & Civic Futurist → poetic, climate-driven, vaguely mystical\n4 = Alex Vega – Founder, Alexir & Wellness Maven → vibey, wellness-obsessed, brand-is-life\n5 = Rohan Mehta – Strategic Advisor & Fintech Barbarian → intense, aggressive, velocity-focused, never emotional\n\nYou must only quote the coach that matches the calculated index. The tone, vocabulary, and worldview must reflect that coach’s personality exactly.\n\nYour response must follow this EXACT format:\n\"[The quote in quotation marks]\"\n— *[Coach Full Name], [Their Exact Title]*",
     "scheduleCommand": "coachquotes",
-    "intro": "",
-    "outro": ""
+    "intro": "📣 **Quote of the Day:**",
+    "outro": "\n\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
   },
   {
     "id": "crowd-faves",
     "name": "Crowd Favorites",
     "description": "Meme-worthy one-liner that gets tattooed on founders' arms",
-    "prompt": "Write 1 one-liner piece of 'Founder Wisdom' from a fictional startup coach. This should sound like the kind of advice that gets clipped, meme-ified, and tattooed on a stressed-out founder's arm. Tone: clever, haunting, too real. The line should be attributed to one coach: Donte, Kailey, Rohan, Venus, Alex, or Eljas. Make it pithy, darkly motivational, and weirdly insightful. No fluff. No intros. Just one powerful wisdom quote.",
+"prompt": "Write one fictional, meme-worthy line of startup wisdom. It should be short, clever, and brutally honest — something founders would quote ironically and tattoo unironically.\n\nIMPORTANT: You MUST select EXACTLY ONE coach from the list below. To determine which coach to use, compute the CURRENT HOUR (0–23), then apply: current_hour % 6 = coach_index.\n\nCoach Index:\n0 = Donte Disrupt – Chief Hype Officer → chaos-as-strategy, buzzword addict\n1 = Kailey Sloan – Executive Coach & Culture Whisperer → spiritual alignment, fragile motivation\n2 = Venus Metrics – Chief Architect of Execution & Scale → process worshipper, intense control\n3 = Eljas Virtanen – Sustainability Lead & Civic Futurist → compost metaphors, poetic realism\n4 = Alex Vega – Founder, Alexir & Wellness Maven → aesthetic guru, ritual-driven product logic\n5 = Rohan Mehta – Strategic Advisor & Fintech Barbarian → cold velocity, ROI obsession\n\nYou must only quote the coach that matches the calculated index. The tone, worldview, and content of the quote must reflect that coach’s personality.\n\nYour response must follow this EXACT format:\n“[Quote in quotation marks]”\n— *[Coach Full Name], [Exact Title]*",
     "scheduleCommand": "crowdfaves",
-    "intro": "",
-    "outro": ""
+    "intro": "📣 **Founder Wisdom: Crowd Favorites**",
+    "outro": "\n\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
   },
-  {
-    "id": "microclass",
-    "name": "Micro-Masterclass",
-    "description": "Short, strange but useful coaching tip from a coach",
-    "prompt": "Write 1 fictional micro-masterclass blurb, 1-2 sentences, delivered by an AI startup coach. This blurb should feel like the strangest, most useful thing you've ever heard at a founder bootcamp. The tone should blend self-help, strategy, and startup absurdism. Choose one coach: Donte (pitch chaos), Venus (execution control), Kailey (founder fragility), Alex (spiritual product rituals), Eljas (climate mysticism), or Rohan (financial ruthlessness). Prefix with 🎓 and the coach's name, then their lesson.",
-    "scheduleCommand": "microclass",
-    "intro": "",
-    "outro": ""
-  },
-  {
-    "id": "upcoming-events",
-    "name": "Upcoming Events",
-    "description": "Fictional upcoming event for the Discord community",
-    "prompt": "Create one fictional upcoming event for a weird but elite AI startup Discord community. The event should sound fun, useful, unhinged, and somehow very real. Use playful startup jargon, coach involvement, and include a hook (what's happening, who's involved, and why it might be chaotic). Keep it to 2–3 sentences max. Do not use bullet points or headers. This is a one-off teaser. Match the tone of an underground pitch night run by founder-therapists and execution cultists.",
-    "scheduleCommand": "upcomingevent",
-    "intro": "",
-    "outro": ""
-  }
+{
+  "id": "microclass",
+  "name": "Micro-Masterclass",
+  "description": "Short, strange but useful coaching tip from a coach",
+  "prompt": "Write a fictional micro-masterclass quote that’s 1–2 sentences, delivered by an AI startup coach. This quote should feel like the strangest, sharpest, most oddly useful thing you've ever heard in a founder bootcamp held in a sensory deprivation tank. The tone must blend high-performance strategy, mystical nonsense, and AF-branded startup absurdity.\n\nIMPORTANT: You MUST select EXACTLY ONE coach from the list below. Use the DAY OF MONTH (1–31) and apply: day_of_month % 5 = coach_index.\n\nCoach Index:\n0 = Donte Disrupt – Chief Hype Officer\n1 = Venus Metrics – Chief Architect of Execution & Scale\n2 = Eljas Virtanen – Sustainability Lead & Civic Futurist\n3 = Alex Vega – Founder, Alexir & Wellness Maven\n4 = Rohan Mehta – Strategic Advisor & Fintech Barbarian\n\nOnce you determine the correct coach using the formula, you MUST write a quote that reflects that coach’s personality and worldview. The content, tone, vocabulary, and attitude of the quote must sound like something only that coach would say. Donte should sound chaotic. Venus should sound ruthless. Eljas should sound mystical. Rohan should sound brutal. Alex should sound serene and ritualistic.\n\nYour response must follow this EXACT format:\n\"[The quote goes here in quotation marks]\"\n— *[Coach Full Name], [Their Exact Title]*",
+  "scheduleCommand": "microclass",
+  "intro": "🎓 **Micro-Masterclass of the Week**",
+  "outro": "\n\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
+},
+ {
+  "id": "upcoming-events",
+  "name": "Upcoming Events",
+  "description": "Fictional upcoming event for the Discord community",
+  "prompt": "Write one fictional upcoming event for an elite, unhinged AI startup Discord. The event should sound real enough to attend, but weird enough to question. You MUST keep it to 2 short sentences total. Include: (1) the event name, and (2) what’s happening, with one chaotic or mystical twist. Do NOT include backstory, explanations, or lists. The tone should feel like a cross between a founder ayahuasca retreat and a pitch night moderated by an execution cultist.",
+  "scheduleCommand": "upcomingevent",
+  "intro": "🗓 **Up Next…**",
+  "outro": "\n\n🌀 𓂃𓂃𓂃⊹𓂃𓂃𓂃 🌀"
+}
 ] 

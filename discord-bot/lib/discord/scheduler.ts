@@ -10,37 +10,83 @@ import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerStatusReport, triggerArgument, initializeCustomEventMessages } from "./argumentGenerator.js";
 import { coachQuotes, crowdFaves, microClass, upcomingEvent, initializeMicroEventMessages } from "./microPosts.js";
 import { Client, TextChannel } from "discord.js";
-import { sendEventMessage, EVENT_MESSAGES } from "./eventMessages.js";
+import { sendEventMessage, EVENT_MESSAGES, customEventMessageCache } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
 import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
 import { isWeekend } from "./locationTime.js";
+import { GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID } from "./bot.js";
 
 // Path to the schedule files
 const WEEKDAY_SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
 const WEEKEND_SCHEDULE_PATH = path.join(process.cwd(), "data", "weekend-schedule.txt");
+
+// Define the micropost services list
+const MICROPOST_SERVICES = [
+	'coachquotes',
+	'crowdfaves',
+	'microclass',
+	'upcomingevent'
+];
+
+// Wrapper function to ensure service functions use the correct channel ID
+function channelRedirectWrapper(
+	serviceFn: (channelId: string, client: Client, ...args: any[]) => Promise<any>,
+	serviceName: string
+) {
+	return async (channelId: string, client: Client, ...args: any[]) => {
+		// Get the correct channel ID for this service
+		const targetChannelId = getChannelForService(serviceName);
+		console.log(`[Scheduler] Redirecting ${serviceName} from ${channelId} to ${targetChannelId}`);
+		
+		// Call the original function with the correct channel ID
+		return serviceFn(targetChannelId, client, ...args);
+	};
+}
 
 // Service mapping
 const serviceMap: Record<
 	string,
 	(channelId: string, client: Client) => Promise<boolean | void>
 > = {
-	watercooler: triggerWatercoolerChat,
-	newschat: triggerNewsChat,
-	tmzchat: triggerTmzChat,
-	pitchchat: triggerPitchChat,
-	waterheater: triggerWaterheaterChat,
-	weekendvibes: triggerWeekendVibesChat,
-	weekendstory: triggerWeekendStory,
-	simplestaffmeeting: triggerSimpleStaffMeeting,
-	statusreport: triggerStatusReport,
-	unspokenrule: (channelId: string, client: Client) => triggerArgument("unspoken-rule", channelId, client),
-	contention: (channelId: string, client: Client) => triggerArgument("contention-point", channelId, client),
-	coachquotes: coachQuotes,
-	crowdfaves: crowdFaves,
-	microclass: microClass,
-	upcomingevent: upcomingEvent,
+	watercooler: channelRedirectWrapper(triggerWatercoolerChat, 'watercooler'),
+	newschat: channelRedirectWrapper(triggerNewsChat, 'newschat'),
+	tmzchat: channelRedirectWrapper(triggerTmzChat, 'tmzchat'),
+	pitchchat: channelRedirectWrapper(triggerPitchChat, 'pitchchat'),
+	pitch: channelRedirectWrapper(triggerPitchChat, 'pitch'),
+	waterheater: channelRedirectWrapper(triggerWaterheaterChat, 'waterheater'),
+	weekendvibes: channelRedirectWrapper(triggerWeekendVibesChat, 'weekendvibes'),
+	weekendstory: channelRedirectWrapper(triggerWeekendStory, 'weekendstory'),
+	simplestaffmeeting: channelRedirectWrapper(triggerSimpleStaffMeeting, 'simplestaffmeeting'),
+	statusreport: channelRedirectWrapper(triggerStatusReport, 'statusreport'),
+	unspokenrule: channelRedirectWrapper(
+		(channelId: string, client: Client) => triggerArgument("unspoken-rule", channelId, client),
+		'unspokenrule'
+	),
+	contention: channelRedirectWrapper(
+		(channelId: string, client: Client) => triggerArgument("contention-point", channelId, client),
+		'contention'
+	),
+	coachquotes: channelRedirectWrapper(coachQuotes, 'coachquotes'),
+	crowdfaves: channelRedirectWrapper(crowdFaves, 'crowdfaves'),
+	microclass: channelRedirectWrapper(microClass, 'microclass'),
+	upcomingevent: channelRedirectWrapper(upcomingEvent, 'upcomingevent'),
 	// Add more services here as needed
 };
+
+// List of services that should be sent to the staff meetings channel
+const STAFF_MEETING_SERVICES = [
+    'simplestaffmeeting', 
+    'coachquotes',
+    'crowdfaves',
+    'microclass',
+    'upcomingevent'
+];
+
+// List of services that should be sent to the pitch channel
+const PITCH_SERVICES = [
+    'pitchchat',
+    'pitch'
+];
 
 type EventType = keyof typeof EVENT_MESSAGES;
 
@@ -116,6 +162,36 @@ fs.watchFile(WEEKEND_SCHEDULE_PATH, (curr, prev) => {
 	loadSchedule();
 });
 
+// Helper function to determine which channel to use for a service
+export function getChannelForService(serviceName: string): string {
+    // If special channels are not set, fall back to GENERAL_CHANNEL_ID
+    if (!THELOUNGE_CHANNEL_ID && !PITCH_CHANNEL_ID) {
+        console.log(`[Scheduler] Special channel IDs not set, using GENERAL_CHANNEL_ID for ${serviceName}`);
+        return GENERAL_CHANNEL_ID;
+    }
+    
+    // Use GENERAL_CHANNEL_ID for staff meeting services
+    if (STAFF_MEETING_SERVICES.includes(serviceName)) {
+        console.log(`[Scheduler] Using general channel for staff meeting service: ${serviceName}`);
+        return GENERAL_CHANNEL_ID;
+    }
+    
+    // Use PITCH_CHANNEL_ID for pitch services
+    if (PITCH_SERVICES.includes(serviceName) && PITCH_CHANNEL_ID) {
+        console.log(`[Scheduler] Using pitch channel for pitch service: ${serviceName}`);
+        return PITCH_CHANNEL_ID;
+    }
+    
+    // Use THELOUNGE_CHANNEL_ID for all other services
+    if (THELOUNGE_CHANNEL_ID) {
+        console.log(`[Scheduler] Using lounge channel for service: ${serviceName}`);
+        return THELOUNGE_CHANNEL_ID;
+    }
+    
+    // Default fallback
+    return GENERAL_CHANNEL_ID;
+}
+
 async function runServiceWithMessages(
 	channelId: string,
 	serviceName: string
@@ -125,9 +201,13 @@ async function runServiceWithMessages(
 		return;
 	}
 
-	const channel = discordClient.channels.cache.get(channelId) as TextChannel;
+    // Determine which channel to use (original channelId is ignored)
+    const targetChannelId = getChannelForService(serviceName);
+    console.log(`[Scheduler] Service ${serviceName} directed to channel ${targetChannelId}`);
+    
+	const channel = discordClient.channels.cache.get(targetChannelId) as TextChannel;
 	if (!channel) {
-		console.error(`[Scheduler] Channel ${channelId} not found`);
+		console.error(`[Scheduler] Channel ${targetChannelId} not found`);
 		return;
 	}
 
@@ -151,7 +231,13 @@ async function runServiceWithMessages(
 		console.warn(
 			`[Scheduler] No messages defined for service '${serviceName}' in either EVENT_MESSAGES or customEventMessageCache`
 		);
-		return;
+		
+		// Don't return early for pitch services - they can run without event messages
+		if (PITCH_SERVICES.includes(serviceName)) {
+			console.log(`[Scheduler] Continuing with pitch service '${serviceName}' despite missing event messages`);
+		} else {
+			return;
+		}
 	}
 
 	try {
@@ -197,28 +283,38 @@ async function runServiceWithMessages(
 			// Run the actual service for non-waterheater events
 			const serviceFn = serviceMap[serviceName];
 			if (serviceFn) {
-				await serviceFn(channelId, discordClient);
+				await serviceFn(channel.id, discordClient);
 			} else {
-				console.warn(`[Scheduler] No service mapped for '${serviceName}'`);
+				console.error(`[Scheduler] No service handler for '${serviceName}'`);
 			}
 		}
 
-		// Send outro message (except for simplestaffmeeting)
+		// If we haven't returned early (due to running a service),
+		// and we're supposed to send messages for this service, send an outro
 		if (shouldSendMessages) {
-			await sendEventMessage(
-				channel,
-				serviceName,
-				false,
-				gmtHour,
-				gmtMinutes
-			);
+			// Skip outro for pitch services and ALL micropost services
+			if (PITCH_SERVICES.includes(serviceName) || MICROPOST_SERVICES.includes(serviceName)) {
+				console.log(`[Scheduler] Skipping outro message for ${serviceName}`);
+			} else {
+				await sendEventMessage(
+					channel,
+					serviceName,
+					false,
+					gmtHour,
+					gmtMinutes,
+					selectedIncident
+				);
+			}
 		} else {
 			console.log(`[Scheduler] Skipping outro message for ${serviceName} (handled in service)`);
 		}
 	} catch (err) {
-		console.error(`[Scheduler] Error running '${serviceName}':`, err);
+		console.error(`[Scheduler] Error running service '${serviceName}':`, err);
 	}
 }
+
+// Export this function for testing
+export { runServiceWithMessages, loadSchedule };
 
 function startScheduler() {
 	if (!discordClient) {
@@ -230,7 +326,6 @@ function startScheduler() {
 	const FAST_INTERVAL_MINUTES = parseInt(process.env.FAST_SCHEDULE || "60");
 	const FAST_INTERVAL_MS = FAST_INTERVAL_MINUTES * 60 * 1000;
 	const START_TIME = Date.now();
-	const channelId = process.env.DISCORD_CHANNEL_ID!;
 
 	if (FAST_MODE) {
 		console.log(
@@ -245,7 +340,7 @@ function startScheduler() {
 				`[Scheduler] [FAST] Pseudo-hour ${pseudoHour}: scheduled service is '${serviceName || "NONE"}'`
 			);
 			if (serviceName) {
-				runServiceWithMessages(channelId, serviceName)
+				runServiceWithMessages("dummy-channel-id", serviceName)
 					.then(() =>
 						console.log(
 							`[Scheduler] [FAST] Successfully ran '${serviceName}' for pseudo-hour ${pseudoHour}`
@@ -262,7 +357,8 @@ function startScheduler() {
 			}
 			setTimeout(fastTick, FAST_INTERVAL_MS);
 		}, 0);
-	} else {
+	}
+	else {
 		console.log("[Scheduler] NORMAL MODE: 1 hour = 1 hour");
 		function runScheduledService() {
 			const now = new Date();
@@ -272,7 +368,7 @@ function startScheduler() {
 				`[Scheduler] Hour ${hour}: scheduled service is '${serviceName || "NONE"}'`
 			);
 			if (serviceName) {
-				runServiceWithMessages(channelId, serviceName)
+				runServiceWithMessages("dummy-channel-id", serviceName)
 					.then(() =>
 						console.log(
 							`[Scheduler] Successfully ran '${serviceName}' for hour ${hour}`
@@ -309,6 +405,3 @@ function startScheduler() {
 		}, msUntilNextHour());
 	}
 }
-
-// Export for testing
-export { loadSchedule, runServiceWithMessages };

@@ -7,6 +7,7 @@ import {
 	setActiveCharacter,
 	handleCharacterInteraction,
 	formatCharacterList,
+	getActiveCharacter,
 } from "./characters.js";
 import { initializeWebhooks, sendAsCharacter } from "./webhooks.js";
 import { generateCharacterResponse } from "./ai.js";
@@ -17,8 +18,8 @@ import { scheduler } from "./timer.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
 import { getNextMessage, handleAdminCommand } from "./adminCommands.js";
-import { getCurrentStoryInfo } from "./bot.js";
-import { validateStoryInfo, formatStoryInfo } from "./sceneFramework.js";
+import { getCurrentStoryInfo } from './bot.js';
+import { formatStoryInfo } from './sceneFramework.js';
 import {
 	getRandomCharactersWithPairConfig,
 	setWatercoolerPairConfig,
@@ -30,6 +31,8 @@ import { sendEventMessage } from "./eventMessages.js";
 import { getWatercoolerPairConfig } from "./characterPairs.js";
 import { triggerStaffMeeting } from "./staffMeeting.js";
 import { COACH_DISCORD_HANDLES } from './coachHandles.js';
+import { DISCORD_CONFIG } from "./config.js";
+import OpenAI from "openai";
 
 // Message deduplication system
 class MessageDeduplication {
@@ -1091,5 +1094,178 @@ export function initializeScheduledTasks(channelId: string, client: Client) {
 }
 
 export async function handleMessage(message: Message): Promise<void> {
-	// Implementation of handleMessage function
+	try {
+		// First, check if the message has already been processed
+		const isDuplicate = await messageDedup.isMessageProcessed(message.id);
+		if (isDuplicate) {
+			console.log(`Skipping duplicate message: ${message.id}`);
+			return;
+		}
+
+		// If message is a command (starts with !), handle it directly
+		if (message.content.startsWith(PREFIX)) {
+			try {
+				// Handle the help command directly here
+				if (message.content.toLowerCase() === '!help') {
+					const commands = {
+						"!help": "Show this help message",
+						"!character list": "List all available characters",
+						"!character select [name]": "Select a character to talk to",
+						"!discuss-news": "Start a new discussion about current tech news",
+						"!group-chat [char1] [char2] [char3]": "Start a group discussion with 3 characters",
+						"!pitch [your idea]": "Present your business idea to all coaches for feedback and voting",
+					};
+					
+					const helpText = Object.entries(commands)
+						.map(([cmd, desc]) => `${cmd}: ${desc}`)
+						.join("\n");
+					
+					// Get current story info
+					const storyInfo = getCurrentStoryInfo();
+					let irritationInfo = "";
+					
+					if (storyInfo) {
+						// Format the irritation info using the existing function
+						const storyContext = formatStoryInfo(
+							storyInfo.episodeContext, 
+							storyInfo.currentEpisode, 
+							storyInfo.sceneIndex
+						);
+						
+						// Add to help message if we have data
+						if (storyContext && !storyContext.includes("No irritation data available")) {
+							irritationInfo = "\n\n=== Current Coach Dynamics ===\n" + storyContext;
+						}
+					}
+					
+					await message.reply(`Available commands:\n${helpText}${irritationInfo}`);
+					return;
+				}
+				
+				// Parse the command and arguments
+				const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
+				const command = args.shift()?.toLowerCase();
+				
+				// FEATURE 2: Character commands
+				if (command === 'character' && args.length > 0) {
+					const subcommand = args.shift()?.toLowerCase();
+					if (subcommand === 'list') {
+						const characterList = formatCharacterList();
+						await message.reply(characterList);
+						return;
+					} else if (subcommand === 'select') {
+						const characterName = args.join(' ');
+						const character = getCharacter(characterName);
+						if (character) {
+							const selectedCharacter = setActiveCharacter(message.channelId, character.id);
+							if (selectedCharacter) {
+								await handleCharacterInteraction(message);
+							}
+						} else {
+							await message.reply(`Character "${characterName}" not found.`);
+						}
+						return;
+					}
+				}
+				
+				// FEATURE 3: Discuss-news command
+				else if (command === 'discuss-news') {
+					await message.reply("Starting news discussion...");
+					await triggerNewsChat(message.channelId, message.client);
+					return;
+				}
+				
+				// FEATURE 4: Group-chat command
+				else if (command === 'group-chat') {
+					const groupMembers = args
+						.map(name => getCharacter(name)?.id)
+						.filter((id): id is string => id !== undefined);
+					
+					if (groupMembers.length >= 3) {
+						const groupChat: GroupChatState = {
+							participants: groupMembers,
+							topic: undefined,
+							isDiscussing: false,
+							messageCount: {},
+							conversationHistory: []
+						};
+						activeGroupChats.set(message.channelId, groupChat);
+						await message.reply("Starting group chat. Please provide a topic to discuss.");
+						await handleGroupChat(message, groupChat);
+						return;
+					} else {
+						await message.reply('You need to specify at least 3 characters for a group chat.');
+						return;
+					}
+				}
+				
+				// FEATURE 5: Pitch command
+				else if (command === 'pitch') {
+					const idea = args.join(' ');
+					if (idea.trim()) {
+						await handlePitchCommand(message, idea);
+					} else {
+						await message.reply('Please provide an idea to pitch. Example: !pitch An app that helps people find local events');
+					}
+					return;
+				}
+				
+				// Unknown command
+				else {
+					await message.reply("Unknown command. Type !help to see available commands.");
+					return;
+				}
+			} catch (error) {
+				console.error("Error handling command:", error);
+				await message.reply("Sorry, there was an error processing your command.");
+				return;
+			}
+		}
+
+		// Handle admin commands
+		const isAdmin = Object.values(COACH_DISCORD_HANDLES).some(handle => handle === message.author.tag);
+		if (isAdmin && (message.content.startsWith('!admin') || message.content.startsWith('!help-admin'))) {
+			await handleAdminCommand(message);
+			return;
+		}
+
+		// FEATURE 1: Natural language triggers ("hey donte")
+		const content = message.content.toLowerCase();
+		for (const trigger of NATURAL_TRIGGERS) {
+			if (content.startsWith(trigger)) {
+				const words = content.split(' ');
+				if (words.length >= 2) {
+					const potentialCharacterId = words[1];
+					const character = getCharacter(potentialCharacterId);
+					if (character) {
+						console.log(`Natural trigger detected: ${trigger} ${potentialCharacterId}`);
+						const selectedCharacter = setActiveCharacter(message.channelId, character.id);
+						if (selectedCharacter) {
+							await handleCharacterInteraction(message);
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		// Check for active group chat or active character
+		const groupChat = activeGroupChats.get(message.channelId);
+		if (groupChat) {
+			await handleGroupChat(message, groupChat);
+			return;
+		}
+		
+		// Check for individual character interaction
+		const activeCharacter = getActiveCharacter(message.channelId);
+		if (activeCharacter) {
+			await handleCharacterInteraction(message);
+			return;
+		}
+
+		// If no other handlers matched, just log the message
+		console.log(`Received non-command message: ${message.content.substring(0, 50)}...`);
+	} catch (error) {
+		console.error("Error in handleMessage:", error);
+	}
 }
