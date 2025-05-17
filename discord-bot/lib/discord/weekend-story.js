@@ -2,8 +2,9 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { initializeWebhooks, sendAsCharacter, cleanupWebhooks, } from "./webhooks.js";
-import { getWebhookUrls } from "./config.js";
+import { initializeWebhooks, sendAsCharacter } from "./webhooks.js";
+// Import config as a namespace instead of named import
+import * as config from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
 import { getOutroForScene } from "../../data/weekend-story-outros.js";
 import dotenv from "dotenv";
@@ -189,8 +190,8 @@ async function postWeekendStoryToDiscord(client) {
         
         // Initialize webhooks
         console.log("Initializing webhooks...");
-        const webhookUrls = getWebhookUrls();
-        cleanupWebhooks(WEEKEND_STORY_CHANNEL_ID);
+        const webhookUrls = config.getWebhookUrls();
+        // Note: cleanupWebhooks was removed as it's not available
         await initializeWebhooks(WEEKEND_STORY_CHANNEL_ID, webhookUrls);
         
         // Get the channel for sending event messages
