@@ -71,3 +71,5 @@ next-env.d.ts
 # Generated weekend story files
 /discord-bot/data/weekend-stories/*.json
 /discord-bot/data/weekend-conversations/*.json
+# Nested discord-bot folder (mistake in project structure)
+/discord-bot/discord-bot/
