@@ -68,3 +68,6 @@ next-env.d.ts
 
 # Generated JS files from TypeScript
 /discord-bot/lib/discord/*.js
+# Generated weekend story files
+/discord-bot/data/weekend-stories/*.json
+/discord-bot/data/weekend-conversations/*.json
