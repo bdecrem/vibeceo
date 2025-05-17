@@ -15,6 +15,7 @@ import pLimit from "p-limit";
 import { validateSceneSeeds } from "./validateSceneSeeds.js";
 import { getStoryContext } from './handlers.js';
 import path from "path";
+import { postSystemAnnouncement } from "./systemAnnouncement.js";
 
 interface CoachInfo {
 	id: string;
@@ -1206,6 +1207,21 @@ export async function playEpisode(
 		const playback = await playScene(scene, channel, episodeContext);
 		scenePlaybacks.push(playback);
 
+		// Post system announcement every 6 scenes (after scenes 5, 11, 17, 23)
+		if (i === 5 || i === 11 || i === 17 || i === 23) {
+			console.log(`\n\n******************************************************************`);
+			console.log(`***** SCENE ${i} FINISHED - CHECKING IF SYSTEM ANNOUNCEMENT NEEDED *****`);
+			console.log(`***** SYSTEM ANNOUNCEMENT TRIGGER POINT REACHED *****`);
+			console.log(`******************************************************************\n\n`);
+			try {
+				console.log(`Posting system announcement after scene ${i}...`);
+				await postSystemAnnouncement(channel.client, i);
+				console.log(`System announcement after scene ${i} attempt completed`);
+			} catch (error) {
+				console.error(`ERROR: System announcement after scene ${i} failed:`, error);
+			}
+		}
+
 		// If scene failed, log it but continue with next scene
 		if (playback.status === "failed") {
 			console.error(`Scene ${i} failed to play: ${playback.error}`);
@@ -1314,12 +1330,26 @@ export function formatStoryInfo(
 	const coach = ceos.find(c => c.id === coachId);
 	const target = ceos.find(c => c.id === targetId);
 
-	const coachName = coach?.name || (coachId ? coachId.charAt(0).toUpperCase() + coachId.slice(1) : "Unknown");
-	const targetName = target?.name || (targetId ? targetId.charAt(0).toUpperCase() + targetId.slice(1) : "Unknown");
+	// Use first names only
+	const coachName = coach?.name?.split(' ')[0] || (coachId ? coachId.charAt(0).toUpperCase() + coachId.slice(1) : "Unknown");
+	const targetName = target?.name?.split(' ')[0] || (targetId ? targetId.charAt(0).toUpperCase() + targetId.slice(1) : "Unknown");
 
 	if (!coachName || !incident || !targetName) {
 		return "No irritation data available.";
 	}
+
+	// Gender-specific pronouns based on coach ID
+	const genderPronouns: Record<string, string> = {
+		'alex': 'She',
+		'rohan': 'He',
+		'eljas': 'He',
+		'venus': 'She',
+		'kailey': 'She',
+		'donte': 'He'
+	};
+	
+	// Get the proper pronoun, defaulting to "They" if coach not found
+	const pronoun = genderPronouns[coachId] || 'They';
 
 	// Calculate intensity for this scene, using watercooler logic
 	let intensity = '?';
@@ -1336,10 +1366,11 @@ export function formatStoryInfo(
 		}
 	}
 
+	// Format scene number with leading zero when needed
 	const sceneNum = (sceneIndex + 1).toString().padStart(2, '0');
 
-	return `${coachName} dealt with an issue: ${incident}.
-${coachName} is irritated with ${targetName} because of an exchange that happened early in the episode.\n\nscene: ${sceneNum} intensity: ${intensity}`;
+	// Use the correct gender pronoun in the casual format
+	return `${coachName} had a rough one: ${incident}\n\n${pronoun}'s still a little salty with ${targetName} after bringing it up in chat and not loving how the convo went.\n\nscene: ${sceneNum} intensity: ${intensity}`;
 }
 
 // Helper function to validate story info data

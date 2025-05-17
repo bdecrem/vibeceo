@@ -3,14 +3,23 @@ import { getLocationAndTime } from "./locationTime.js";
 import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
 import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
-import { updateCurrentScene } from "./bot.js";
+import { updateCurrentScene, client } from "./bot.js";
 import { getLatestWeekendReason, getLatestWeekendActivity } from "./weekendvibes.js";
+import { postSystemAnnouncement } from "./systemAnnouncement.js";
 import path from "path";
 import fs from "fs";
 
 // Create a local cache for custom event messages
 // This will be populated by argumentGenerator.ts
 export const customEventMessageCache: Record<string, { intro: string; outro: string }> = {};
+
+// List of micropost services that should use simplified arrival format
+const MICROPOST_SERVICES = [
+	'coachquotes',
+	'crowdfaves',
+	'microclass',
+	'upcomingevent'
+];
 
 export const EVENT_MESSAGES = {
 	watercooler: {
@@ -35,6 +44,26 @@ export const EVENT_MESSAGES = {
 		intro: "{arrival}A pitch came in and they are gathering in the Board room.",
 		outro:
 			"The Board room has emptied out. These folks need to clean up after themselves.",
+	},
+	pitch: {
+		intro: "{arrival}The coaches are gathering to review an exciting new pitch.",
+		outro: "The coaches have finished their pitch review and are heading out.",
+	},
+	coachquotes: {
+		intro: "{simplifiedArrival}The coaches are discussing their favorite quotes.",
+		outro: "The quote discussion has concluded."
+	},
+	crowdfaves: {
+		intro: "{simplifiedArrival}The coaches are talking about community favorites.",
+		outro: "The coaches have finished discussing community favorites."
+	},
+	microclass: {
+		intro: "{simplifiedArrival}A mini learning session is about to begin.",
+		outro: "The micro-learning session has concluded."
+	},
+	upcomingevent: {
+		intro: "{simplifiedArrival}The coaches are discussing upcoming events.",
+		outro: "The event discussion has wrapped up."
 	},
 	staffmeeting: {
 		intro: "Hey everyone, time for a quick staff meeting because {reason}.",
@@ -93,11 +122,17 @@ export async function sendEventMessage(
 		const eventTypeStr = eventType.toString();
 		if (customEventMessageCache[eventTypeStr]) {
 			// Use the custom intro/outro if available
+			// Make sure we don't prepend {arrival} for micropost services
+			// as their format already has {simplifiedArrival}
+			const isInMicropostServices = MICROPOST_SERVICES.includes(eventTypeStr);
+			
 			message = isIntro
-				? `{arrival}${customEventMessageCache[eventTypeStr].intro}`
+				? isInMicropostServices 
+					? customEventMessageCache[eventTypeStr].intro  // Don't add {arrival} for microposts
+					: `{arrival}${customEventMessageCache[eventTypeStr].intro}`  // Add {arrival} for non-microposts
 				: customEventMessageCache[eventTypeStr].outro;
 			
-			console.log(`[EventMessages] Using custom message for ${eventTypeStr}`);
+			console.log(`[EventMessages] Using custom message for ${eventTypeStr} (micropost: ${isInMicropostServices})`);
 		} 
 		// Check if it's in the standard EVENT_MESSAGES
 		else if (eventType in EVENT_MESSAGES) {
@@ -122,23 +157,35 @@ export async function sendEventMessage(
 		);
 		const { location, formattedTime, ampm, isNewLocation, weather, weatherEmoji } = locationTime;
 		
-		// Determine the correct preposition based on location
-		let cityText = '';
-		if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo')) {
-			// For weekend cities, use "in [City]"
+		let arrivalText = ''; // Declare arrivalText here to fix scope issue
+		
+		// Check if it's a micropost service that needs simplified arrival format
+		if (MICROPOST_SERVICES.includes(eventType as string) && message.includes("{simplifiedArrival}")) {
 			// Extract just the city name without "office" or "penthouse"
 			const cityName = location.replace(' office', '').replace(' penthouse', '');
-			cityText = `in ${cityName}`;
+			// Format exactly as requested - just location, time, and weather emoji
+			const simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
+			message = message.replace("{simplifiedArrival}", simplifiedArrival);
 		} else {
-			// For office locations, use "at their [Location]"
-			cityText = `at their ${location}`;
+			// Regular arrival message format for non-micropost services
+			// Determine the correct preposition based on location
+			let cityText = '';
+			if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo')) {
+				// For weekend cities, use "in [City]"
+				// Extract just the city name without "office" or "penthouse"
+				const cityName = location.replace(' office', '').replace(' penthouse', '');
+				cityText = `in ${cityName}`;
+			} else {
+				// For office locations, use "at their [Location]"
+				cityText = `at their ${location}`;
+			}
+			
+			arrivalText = isNewLocation
+				? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `
+				: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `;
+			
+			message = message.replace("{arrival}", arrivalText);
 		}
-		
-		const arrivalText = isNewLocation
-			? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `
-			: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `;
-		
-		message = message.replace("{arrival}", arrivalText);
 		
 		// Replace {location} placeholder for weekendvibes
 		if (eventType === 'weekendvibes') {
@@ -210,6 +257,17 @@ export async function sendEventMessage(
 			// Update the story info scene index in bot.ts
 			updateCurrentScene(storyInfoSceneIndex);
 			
+			// Trigger system announcement for specific scene indexes
+			if (storyInfoSceneIndex === 5 || storyInfoSceneIndex === 11 || 
+				storyInfoSceneIndex === 17 || storyInfoSceneIndex === 23) {
+				try {
+					console.log(`Triggering system announcement after scene ${storyInfoSceneIndex}`);
+					await postSystemAnnouncement(client, storyInfoSceneIndex);
+				} catch (error) {
+					console.error(`Error posting system announcement for scene ${storyInfoSceneIndex}:`, error);
+				}
+			}
+			
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({
 				index: currentSceneIndex,
@@ -238,5 +296,8 @@ export async function sendEventMessage(
 	}
 
 	// Send the message to the target channel
-	await targetChannel.send(message);
+	// Skip sending if it's an empty outro (for microposts)
+	if (!(!isIntro && MICROPOST_SERVICES.includes(eventType as string) && message.trim() === "")) {
+		await targetChannel.send(message);
+	}
 }
