@@ -7,7 +7,6 @@ import { generateEpisodeContext } from './episodeContext.js';
 import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
 import { EpisodeContext } from './episodeContext.js';
 import { createNewEpisode, addScene } from './episodeStorage.js';
-import { resetWeekendStory } from './weekend-story.js';
 import { isWeekend } from './locationTime.js';
 import fs from 'fs';
 import path from 'path';
@@ -178,12 +177,13 @@ client.once(Events.ClientReady, async (readyClient) => {
     initializeStoryArc();
     console.log('Story arc configuration initialized');
     
+    // DISABLED: Old weekend story system - we now use simple weekend mode with scheduler
     // Reset weekend story if in weekend mode
-    if (isWeekend()) {
-      console.log('Bot is starting in weekend mode, resetting weekend story...');
-      await resetWeekendStory();
-      console.log('Weekend story reset complete');
-    }
+    // if (isWeekend()) {
+    //   console.log('Bot is starting in weekend mode, resetting weekend story...');
+    //   await resetWeekendStory();
+    //   console.log('Weekend story reset complete');
+    // }
     
     // Send theme immediately - now to #thelounge
     const loungeChannel = THELOUNGE_CHANNEL_ID ? await client.channels.fetch(THELOUNGE_CHANNEL_ID) : null;
