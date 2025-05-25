@@ -106,20 +106,23 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localMinutes = gmtMinutes;
         }
     } else {
-        // Use weekday schedule
-        if (laHour >= 16 || laHour < 1) {
+        // Use weekday schedule - CORRECTED TIMES
+        if (laHour >= 9 && laHour < 19) {
+            // 9am-7pm PT: Los Angeles
             location = "Los Angeles office";
             localTime = laHour;
             localMinutes = gmtMinutes;
         }
-        else if (laHour >= 1 && laHour < 8) {
+        else if (laHour >= 19 || laHour < 3) {
+            // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
             location = "Singapore penthouse";
-            localTime = (laHour + 15) % 24; // LA + 15 hours
+            localTime = (laHour + 15) % 24; // LA + 15 hours (Singapore is GMT+8)
             localMinutes = gmtMinutes;
         }
         else {
+            // 3am-9am PT: London
             location = "London office";
-            localTime = (laHour + 8) % 24; // LA + 8 hours
+            localTime = (laHour + 8) % 24; // LA + 8 hours (London is GMT+1)
             localMinutes = gmtMinutes;
         }
     }

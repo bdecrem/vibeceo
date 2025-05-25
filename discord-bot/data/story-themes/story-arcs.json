@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "rohan",
-    "target": "eljas",
-    "incident": "He asked for feedback and immediately regretted it.",
+    "coach": "eljas",
+    "target": "donte",
+    "incident": "His compost bin overflowed mid-Zoom.",
     "intensity": {
       "morning": [
         1,
@@ -92,6 +92,70 @@
           "speakingOrder": {
             "first": "any",
             "second": "donte"
+          }
+        }
+      }
+    },
+    "kailey": {
+      "getting_irritated_by_rohan": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Kailey Calm is getting increasingly irritated by Rohan Mehta's approach to \"Her self-care checklist got roasted in a comment thread.\"",
+        "promptInjection": "You are Kailey Calm. Your irritation with Rohan Mehta's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "kailey",
+            "rohan"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "kailey"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"Her self-care checklist got roasted in a comment thread.\" influences all interactions between Kailey Calm and Rohan Mehta",
+            "duration": "episode"
           }
         }
       }
