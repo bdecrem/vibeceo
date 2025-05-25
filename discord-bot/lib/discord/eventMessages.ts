@@ -173,25 +173,21 @@ export async function sendEventMessage(
 				const today = new Date().getDay();
 				const dayName = days[today];
 				
-				// Format the standard time and location info
-				const timeLocationInfo = `It's ${formattedTime}${ampm} in ${cityName} where ${weather} ${weatherEmoji} stretches overhead.`;
-				
-				// Array of weekend coach activities
-				const weekendActivities = [
-					"The coaches are comparing rideshare horror stories while waiting for cars.",
-					"The coaches are debating the merits of various cocktail lounges.",
-					"The coaches are drafting pitch decks on cocktail napkins.",
-					"The coaches are explaining startups to confused bartenders.",
-					"The coaches are planning their next venue over drinks.",
-					"The coaches are scrolling dating apps collectively, offering unsolicited feedback."
+				// Format the special weekend messages for Foundry Heat - nightlife edition
+				const weekendFormats = [
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and "strategy" now means picking the next bar. 🍸 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and everyone's arguing about who's covering the Uber. 🚕 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and the pitch decks have stains from cocktail napkins. 🥃 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and someone's insisting the club promoter is a potential investor. 💃 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and expense reports will be creative fiction tomorrow. 💸 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and they're explaining "product-market fit" to a bartender. 🍹 ${weatherEmoji}`
 				];
 				
-				// Select a random activity
-				const randomIndex = Math.floor(Math.random() * weekendActivities.length);
-				const selectedActivity = weekendActivities[randomIndex];
+				// Select a random weekend format
+				const formatIndex = Math.floor(Math.random() * weekendFormats.length);
 				
-				// Combine time/location with activity
-				simplifiedArrival = `${timeLocationInfo} ${selectedActivity}`;
+				// Use the special weekend format
+				simplifiedArrival = weekendFormats[formatIndex];
 			} else {
 				// Regular format
 				simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
