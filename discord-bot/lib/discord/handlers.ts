@@ -24,7 +24,7 @@ import {
 	getRandomCharactersWithPairConfig,
 	setWatercoolerPairConfig,
 } from "./characterPairs.js";
-import { getLocationAndTime } from "./locationTime.js";
+import { getLocationAndTime, isWeekend } from "./locationTime.js";
 import fs from "fs";
 import path from "path";
 import { sendEventMessage } from "./eventMessages.js";
@@ -634,7 +634,26 @@ Make it authentically Donte, with his obsession with control and optimization. A
 			console.log("First message (Donte, generated) sent successfully");
 		} else {
 			console.log("Generating first message...");
-			const firstPrompt = `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
+			let firstPrompt;
+			
+			// Check if it's weekend and the character is Alex
+			if (validCharacters[0].id === 'alex' && isWeekend()) {
+				console.log("Using tipsy Alex prompt for first message (weekend)");
+				firstPrompt = `You are Alex Monroe, a wellness tech founder currently enjoying the weekend nightlife. You're tipsy and having a great time letting loose after a busy week. Share a brief update about something fun you're doing this weekend.
+				
+				Your communication style is:
+				- You speak in a mix of tech startup jargon and wellness buzzwords, but your speech is more casual and loose than usual
+				- You occasionally miss words or use light slang due to being tipsy
+				- You're more enthusiastic and emotional than during the workweek
+				- You make references to parties, clubs, and weekend adventures
+				- You mention experimental wellness treatments you've been trying
+				- You occasionally laugh a bit too much at your own comments
+				
+				Keep it natural, fun and in your tipsy weekend voice (max 30 words).`;
+			} else {
+				firstPrompt = `You are ${validCharacters[0].name}. Share a brief, authentic update about something that happened today that relates to your background (${validCharacters[0].character}). For example, if you're Donte, maybe you just came from a heated debate about startup valuations, or if you're Venus, maybe you just updated your energy consumption models. Keep it natural and in your voice (max 30 words).`;
+			}
+			
 			firstMessage = await generateCharacterResponse(
 				validCharacters[0].prompt + "\n" + firstPrompt,
 				"random_update"
@@ -652,7 +671,22 @@ Make it authentically Donte, with his obsession with control and optimization. A
 		// Second coach responds
 		console.log("Generating second message...");
 		let secondPrompt = "";
-		if (
+		
+		// Check if it's weekend and the character is Alex
+		if (validCharacters[1].id === 'alex' && isWeekend()) {
+			console.log("Using tipsy Alex prompt for second message (weekend)");
+			secondPrompt = `You are Alex Monroe, a wellness tech founder currently enjoying the weekend nightlife. You're tipsy and having a great time letting loose after a busy week. ${validCharacters[0].name} just said: "${firstMessage}"
+			
+			Your communication style is:
+			- You speak in a mix of tech startup jargon and wellness buzzwords, but your speech is more casual and loose than usual
+			- You occasionally miss words or use light slang due to being tipsy
+			- You're more enthusiastic and emotional than during the workweek
+			- You make references to parties, clubs, and weekend adventures
+			- You mention experimental wellness treatments you've been trying
+			- You occasionally laugh a bit too much at your own comments
+			
+			Respond to their message in your tipsy weekend voice (max 30 words).`;
+		} else if (
 			shouldApplyIrritation &&
 			validCharacters[1].id === currentIrritation.coach
 		) {
@@ -734,7 +768,24 @@ Keep it under 30 words and make your irritation level match the intensity.`;
 		// Third coach responds
 		console.log("Generating third message...");
 		let thirdPrompt = "";
-		if (
+		
+		// Check if it's weekend and the character is Alex
+		if (validCharacters[2].id === 'alex' && isWeekend()) {
+			console.log("Using tipsy Alex prompt for third message (weekend)");
+			thirdPrompt = `You are Alex Monroe, a wellness tech founder currently enjoying the weekend nightlife. You're tipsy and having a great time letting loose after a busy week. Responding to this exchange:
+			${validCharacters[0].name}: "${firstMessage}"
+			${validCharacters[1].name}: "${secondMessage}"
+			
+			Your communication style is:
+			- You speak in a mix of tech startup jargon and wellness buzzwords, but your speech is more casual and loose than usual
+			- You occasionally miss words or use light slang due to being tipsy
+			- You're more enthusiastic and emotional than during the workweek
+			- You make references to parties, clubs, and weekend adventures
+			- You mention experimental wellness treatments you've been trying
+			- You occasionally laugh a bit too much at your own comments
+			
+			Respond to their conversation in your tipsy weekend voice (max 30 words).`;
+		} else if (
 			storyContext &&
 			validCharacters[2].id === "donte" &&
 			selectedArc &&
