@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: embeddings-service
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MODEL_NAME
+        value: all-MiniLM-L6-v2
+      - key: EMBEDDING_DIMENSION
+        value: 384
+      - key: MAX_BATCH_SIZE
+        value: 32
+      - key: API_PORT
+        value: 8000 
