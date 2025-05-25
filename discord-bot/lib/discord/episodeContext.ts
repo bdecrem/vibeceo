@@ -178,11 +178,14 @@ export async function generateEpisodeContext(
 function generateLocationTimeline(hours: number): string[] {
   const timeline: string[] = [];
   for (let i = 0; i < hours; i++) {
-    if (i >= 16 || i < 1) {
+    if (i >= 9 && i < 19) {
+      // 9am-7pm PT: Los Angeles
       timeline.push('Los Angeles');
-    } else if (i >= 1 && i < 8) {
+    } else if (i >= 19 || i < 3) {
+      // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
       timeline.push('Singapore');
     } else {
+      // 3am-9am PT: London
       timeline.push('London');
     }
   }
