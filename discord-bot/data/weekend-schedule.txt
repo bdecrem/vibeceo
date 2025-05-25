@@ -1,24 +1,28 @@
-00:00 weekendstory
-01:00 weekendstory
-02:00 weekendstory
-03:00 weekendstory
-04:00 weekendstory
-05:00 weekendstory
-06:00 weekendstory
-07:00 coachquotes
-08:00 weekendstory
-09:00 weekendstory
-10:00 weekendstory
-11:00 crowdfaves
-12:00 weekendstory
-13:00 weekendstory
-14:00 weekendstory
-15:00 microclass
-16:00 weekendstory
-17:00 weekendstory
-18:00 weekendstory
-19:00 weekendstory
-20:00 upcomingevent
-21:00 weekendstory
-22:00 weekendstory
-23:00 weekendstory
+# WEEKEND SCHEDULE - SIMPLE MODE
+# Only alextipsy runs during weekend blocks
+# Weekend: Friday 6pm PT → Monday 9am SGT
+
+00:00 alextipsy
+01:00 alextipsy
+02:00 alextipsy
+03:00 alextipsy
+04:00 alextipsy
+05:00 alextipsy
+06:00 alextipsy
+07:00 alextipsy
+08:00 alextipsy
+09:00 alextipsy
+10:00 alextipsy
+11:00 alextipsy
+12:00 alextipsy
+13:00 alextipsy
+14:00 alextipsy
+15:00 alextipsy
+16:00 alextipsy
+17:00 alextipsy
+18:00 alextipsy
+19:00 alextipsy
+20:00 alextipsy
+21:00 alextipsy
+22:00 alextipsy
+23:00 alextipsy

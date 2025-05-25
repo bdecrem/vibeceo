@@ -12,22 +12,20 @@ interface LocationAndTime {
     weatherEmoji: string;
 }
 
-// Weekend schedule blocks
+// Weekend schedule blocks - UPDATED TO MATCH PROVIDED SCHEDULE
 const weekendBlocks = [
-    { startHour: 18, location: "Vegas", duration: 8 },    // Fri 6pm
-    { startHour: 2, location: "Tokyo", duration: 8 },     // Sat 2am
-    { startHour: 10, location: "Berlin", duration: 8 },   // Sat 10am
-    { startHour: 18, location: "Vegas", duration: 8 },    // Sat 6pm
-    { startHour: 2, location: "Tokyo", duration: 8 },     // Sun 2am
-    { startHour: 10, location: "Berlin", duration: 8 }    // Sun 10am
+    { startHour: 18, location: "Vegas", duration: 8 },    // Block 1: Fri 6pm-2am PT
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Block 2: Sat 2am PT = Sat 6pm JST
+    { startHour: 10, location: "Berlin", duration: 8 },   // Block 3: Sat 10am PT = Sat 6pm CET
+    { startHour: 18, location: "Vegas", duration: 8 },    // Block 4: Sat 6pm-2am PT
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Block 5: Sun 2am PT = Sun 6pm JST
+    { startHour: 10, location: "Berlin", duration: 8 }    // Block 6: Sun 10am PT = Sun 6pm CET
 ];
 
 export function isWeekend(): boolean {
-    // WEEKEND MODE DISABLED
-    console.log('[LocationTime] Weekend mode disabled');
-    return false;
+    // WEEKEND MODE ENABLED
+    console.log('[LocationTime] Checking weekend mode...');
     
-    /*
     // Get current date in LA timezone (UTC-7)
     const now = new Date();
     // Convert to LA time (GMT-7)
@@ -35,29 +33,33 @@ export function isWeekend(): boolean {
     const laHour = (utcHour - 7 + 24) % 24;
     const day = now.getUTCDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
     
-    // TESTING: Include Wednesday, Thursday in weekend
-    // Weekend starts Wednesday 6pm LA time
-    if (day === 3 && laHour >= 18) {
-        return true;
-    }
-    
-    // All day Thursday is weekend (for testing)
-    if (day === 4) {
+    // Weekend starts Friday 6pm PT (18:00 LA time)
+    if (day === 5 && laHour >= 18) {
+        console.log('[LocationTime] Weekend mode: Friday evening - ACTIVE');
         return true;
     }
     
     // All day Saturday is weekend
     if (day === 6) {
+        console.log('[LocationTime] Weekend mode: Saturday - ACTIVE');
         return true;
     }
     
-    // Weekend ends Sunday 6pm LA time
-    if (day === 0 && laHour < 18) {
+    // All day Sunday is weekend  
+    if (day === 0) {
+        console.log('[LocationTime] Weekend mode: Sunday - ACTIVE');
         return true;
     }
     
+    // Weekend ends Monday 9am SGT = Monday 1am UTC = Sunday 6pm PT
+    // So weekend continues until Monday 1am UTC
+    if (day === 1 && now.getUTCHours() < 1) {
+        console.log('[LocationTime] Weekend mode: Monday early morning - ACTIVE');
+        return true;
+    }
+    
+    console.log('[LocationTime] Weekend mode: DISABLED');
     return false;
-    */
 }
 
 function getWeekendLocation(laHour: number): string {
