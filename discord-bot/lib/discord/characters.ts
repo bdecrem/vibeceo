@@ -2,6 +2,8 @@ import { Message, TextChannel, ThreadChannel } from "discord.js";
 import { ceos } from "../../data/ceos.js";
 import { generateCharacterResponse } from "./ai.js";
 import { sendAsCharacter } from "./webhooks.js";
+import { isWeekend } from "./locationTime.js";
+
 
 // We'll define the CEO type here since we can't use the import
 interface CEO {
@@ -101,9 +103,27 @@ export async function handleCharacterInteraction(
 			: message.content;
 
 		console.log("Generating AI response for character:", character.id); // Debug log
+		
+		// Check if it's Alex and weekend mode is active
+		let prompt = character.prompt;
+		if (character.id === 'alex' && isWeekend()) {
+			// Use the tipsy Alex prompt during weekends
+			console.log("Using weekend tipsy Alex prompt");
+			prompt = `You are Alex Monroe, a wellness tech founder currently enjoying the weekend nightlife. You're tipsy and having a great time letting loose after a busy week. Your communication style is:
+- You speak in a mix of tech startup jargon and wellness buzzwords, but your speech is more casual and loose than usual
+- You occasionally miss words or use light slang due to being tipsy
+- You're more enthusiastic and emotional than during the workweek
+- You make references to parties, clubs, and weekend adventures
+- You mention experimental wellness treatments you've been trying
+- You occasionally laugh a bit too much at your own comments
+- You still give solid advice but it's wrapped in a more carefree, weekend vibe
+
+Keep responses concise and maintain your character's weekend tipsy voice.`;
+		}
+		
 		// Generate AI response using character's prompt
 		const response = await generateCharacterResponse(
-			character.prompt,
+			prompt,
 			userMessage
 		);
 		console.log("Generated response:", response.substring(0, 50) + "..."); // Debug log

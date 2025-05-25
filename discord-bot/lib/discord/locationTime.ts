@@ -16,10 +16,10 @@ interface LocationAndTime {
 const weekendBlocks = [
     { startHour: 18, location: "Vegas", duration: 8 },    // Block 1: Fri 6pm-2am PT
     { startHour: 2, location: "Tokyo", duration: 8 },     // Block 2: Sat 2am PT = Sat 6pm JST
-    { startHour: 10, location: "Berlin", duration: 8 },   // Block 3: Sat 10am PT = Sat 6pm CET
+    { startHour: 10, location: "Paris", duration: 8 },    // Block 3: Sat 10am PT = Sat 7pm CET (Paris)
     { startHour: 18, location: "Vegas", duration: 8 },    // Block 4: Sat 6pm-2am PT
     { startHour: 2, location: "Tokyo", duration: 8 },     // Block 5: Sun 2am PT = Sun 6pm JST
-    { startHour: 10, location: "Berlin", duration: 8 }    // Block 6: Sun 10am PT = Sun 6pm CET
+    { startHour: 10, location: "Paris", duration: 8 }     // Block 6: Sun 10am PT = Sun 7pm CET (Paris)
 ];
 
 export function isWeekend(): boolean {
@@ -100,6 +100,10 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localMinutes = gmtMinutes;
                 break;
             case "Berlin":
+                localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
+                localMinutes = gmtMinutes;
+                break;
+            case "Paris":
                 localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
                 localMinutes = gmtMinutes;
                 break;
