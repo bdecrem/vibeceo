@@ -1,6 +1,6 @@
-import { TextChannel } from "discord.js";
-import { getLocationAndTime } from "./locationTime.js";
-import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
+import { TextChannel } from 'discord.js';
+import { getLocationAndTime, isWeekend } from './locationTime.js';
+import { generateWatercoolerBumper } from './watercoolerPrompts.js';
 import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
 import { updateCurrentScene, client } from "./bot.js";
@@ -164,14 +164,44 @@ export async function sendEventMessage(
 		if (MICROPOST_SERVICES.includes(eventType as string) && message.includes("{simplifiedArrival}")) {
 			// Extract just the city name without "office" or "penthouse"
 			const cityName = location.replace(' office', '').replace(' penthouse', '');
-			// Format exactly as requested - just location, time, and weather emoji
-			const simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
+			
+			// Check if it's the weekend to use a different format
+			let simplifiedArrival;
+			if (isWeekend()) {
+				// Get current day of week
+				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+				const today = new Date().getDay();
+				const dayName = days[today];
+				
+				// Format the standard time and location info
+				const timeLocationInfo = `It's ${formattedTime}${ampm} in ${cityName} where ${weather} ${weatherEmoji} stretches overhead.`;
+				
+				// Array of weekend coach activities
+				const weekendActivities = [
+					"The coaches are comparing rideshare horror stories while waiting for cars.",
+					"The coaches are debating the merits of various cocktail lounges.",
+					"The coaches are drafting pitch decks on cocktail napkins.",
+					"The coaches are explaining startups to confused bartenders.",
+					"The coaches are planning their next venue over drinks.",
+					"The coaches are scrolling dating apps collectively, offering unsolicited feedback."
+				];
+				
+				// Select a random activity
+				const randomIndex = Math.floor(Math.random() * weekendActivities.length);
+				const selectedActivity = weekendActivities[randomIndex];
+				
+				// Combine time/location with activity
+				simplifiedArrival = `${timeLocationInfo} ${selectedActivity}`;
+			} else {
+				// Regular format
+				simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
+			}
 			message = message.replace("{simplifiedArrival}", simplifiedArrival);
 		} else {
 			// Regular arrival message format for non-micropost services
 			// Determine the correct preposition based on location
 			let cityText = '';
-			if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo')) {
+			if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo') || location.includes('Paris')) {
 				// For weekend cities, use "in [City]"
 				// Extract just the city name without "office" or "penthouse"
 				const cityName = location.replace(' office', '').replace(' penthouse', '');
