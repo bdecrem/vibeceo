@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "eljas",
-    "target": "donte",
-    "incident": "His compost bin overflowed mid-Zoom.",
+    "coach": "kailey",
+    "target": "alex",
+    "incident": "She hit inbox zero and immediately panicked.",
     "intensity": {
       "morning": [
         1,
@@ -155,6 +155,70 @@
           "influence": {
             "type": "tension",
             "description": "The tension from the waterheater incident about \"Her self-care checklist got roasted in a comment thread.\" influences all interactions between Kailey Calm and Rohan Mehta",
+            "duration": "episode"
+          }
+        }
+      }
+    },
+    "venus": {
+      "getting_irritated_by_alex": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Venus Metrics is getting increasingly irritated by Alex Monroe's approach to \"She misspelled \"execution\" in a shared deck.\"",
+        "promptInjection": "You are Venus Metrics. Your irritation with Alex Monroe's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "venus",
+            "alex"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "venus"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"She misspelled \"execution\" in a shared deck.\" influences all interactions between Venus Metrics and Alex Monroe",
             "duration": "episode"
           }
         }
