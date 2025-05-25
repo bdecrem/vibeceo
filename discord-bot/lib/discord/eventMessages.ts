@@ -18,7 +18,8 @@ const MICROPOST_SERVICES = [
 	'coachquotes',
 	'crowdfaves',
 	'microclass',
-	'upcomingevent'
+	'upcomingevent',
+	'alextipsy'
 ];
 
 export const EVENT_MESSAGES = {

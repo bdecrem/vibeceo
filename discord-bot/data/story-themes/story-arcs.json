@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "alex",
-    "target": "venus",
-    "incident": "Her sound bath livestream glitched… and looped.",
+    "coach": "rohan",
+    "target": "eljas",
+    "incident": "He asked for feedback and immediately regretted it.",
     "intensity": {
       "morning": [
         1,
@@ -34,6 +34,67 @@
         9,
         10
       ]
+    }
+  },
+  "storyArcs": {
+    "donte": {
+      "getting_irritated_by_kailey": {
+        "promptAttribute": "engagement",
+        "progression": {
+          "startLevel": 0,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0.1,
+              0.2,
+              0.3,
+              0.4,
+              0.5,
+              0.6,
+              0.7
+            ],
+            "midday": [
+              0.8,
+              0.9,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Donte is getting increasingly distracted and disengaged during conversations",
+        "promptInjection": "You are Donte. Your engagement level is at {level} (where 0 is fully engaged and 1 is completely distracted). {context}",
+        "levelContexts": {
+          "0.0": "you're fully focused and engaged",
+          "0.6": "you're starting to zone out and lose focus",
+          "1.0": "you're completely distracted and not paying attention"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "donte",
+            "kailey"
+          ],
+          "probability": 0,
+          "speakingOrder": {
+            "first": "any",
+            "second": "donte"
+          }
+        }
+      }
     }
   }
 }
