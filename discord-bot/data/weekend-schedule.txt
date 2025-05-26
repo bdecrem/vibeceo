@@ -1,8 +1,4 @@
-# WEEKEND SCHEDULE - SIMPLE MODE
-# Only alextipsy runs during weekend blocks
-# Weekend: Friday 6pm PT → Monday 9am SGT
-
-00:00 alextipsy
+00:00 pitch
 01:00 watercooler
 02:00 crowdfaves
 03:00 watercooler
