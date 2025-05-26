@@ -9,6 +9,7 @@ import { triggerWeekendStory } from "./weekend-story.js";
 import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerStatusReport, triggerArgument, initializeCustomEventMessages } from "./argumentGenerator.js";
 import { coachQuotes, crowdFaves, microClass, upcomingEvent, initializeMicroEventMessages } from "./microPosts.js";
+import { alexTipsyDispatch, initializeWeekendMicroEventMessages } from "./weekendMicroPosts.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES, customEventMessageCache } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -25,7 +26,8 @@ const MICROPOST_SERVICES = [
 	'coachquotes',
 	'crowdfaves',
 	'microclass',
-	'upcomingevent'
+	'upcomingevent',
+	'alextipsy'
 ];
 
 // Wrapper function to ensure service functions use the correct channel ID
@@ -70,6 +72,7 @@ const serviceMap: Record<
 	crowdfaves: channelRedirectWrapper(crowdFaves, 'crowdfaves'),
 	microclass: channelRedirectWrapper(microClass, 'microclass'),
 	upcomingevent: channelRedirectWrapper(upcomingEvent, 'upcomingevent'),
+	alextipsy: channelRedirectWrapper(alexTipsyDispatch, 'alextipsy'),
 	// Add more services here as needed
 };
 
@@ -79,7 +82,8 @@ const STAFF_MEETING_SERVICES = [
     'coachquotes',
     'crowdfaves',
     'microclass',
-    'upcomingevent'
+    'upcomingevent',
+    'alextipsy'
 ];
 
 // List of services that should be sent to the pitch channel
@@ -102,6 +106,9 @@ export function initializeScheduler(client: Client) {
 	
 	// Initialize custom event messages from micro-posts prompts
 	initializeMicroEventMessages();
+	
+	// Initialize custom event messages from weekend micro-posts prompts
+	initializeWeekendMicroEventMessages();
 	
 	loadSchedule();
 	startScheduler();

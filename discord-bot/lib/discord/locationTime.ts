@@ -12,22 +12,20 @@ interface LocationAndTime {
     weatherEmoji: string;
 }
 
-// Weekend schedule blocks
+// Weekend schedule blocks - UPDATED TO MATCH PROVIDED SCHEDULE
 const weekendBlocks = [
-    { startHour: 18, location: "Vegas", duration: 8 },    // Fri 6pm
-    { startHour: 2, location: "Tokyo", duration: 8 },     // Sat 2am
-    { startHour: 10, location: "Berlin", duration: 8 },   // Sat 10am
-    { startHour: 18, location: "Vegas", duration: 8 },    // Sat 6pm
-    { startHour: 2, location: "Tokyo", duration: 8 },     // Sun 2am
-    { startHour: 10, location: "Berlin", duration: 8 }    // Sun 10am
+    { startHour: 18, location: "Vegas", duration: 8 },    // Block 1: Fri 6pm-2am PT
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Block 2: Sat 2am PT = Sat 6pm JST
+    { startHour: 10, location: "Paris", duration: 8 },    // Block 3: Sat 10am PT = Sat 7pm CET (Paris)
+    { startHour: 18, location: "Vegas", duration: 8 },    // Block 4: Sat 6pm-2am PT
+    { startHour: 2, location: "Tokyo", duration: 8 },     // Block 5: Sun 2am PT = Sun 6pm JST
+    { startHour: 10, location: "Paris", duration: 8 }     // Block 6: Sun 10am PT = Sun 7pm CET (Paris)
 ];
 
 export function isWeekend(): boolean {
-    // WEEKEND MODE DISABLED
-    console.log('[LocationTime] Weekend mode disabled');
-    return false;
+    // WEEKEND MODE ENABLED
+    console.log('[LocationTime] Checking weekend mode...');
     
-    /*
     // Get current date in LA timezone (UTC-7)
     const now = new Date();
     // Convert to LA time (GMT-7)
@@ -35,29 +33,39 @@ export function isWeekend(): boolean {
     const laHour = (utcHour - 7 + 24) % 24;
     const day = now.getUTCDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
     
-    // TESTING: Include Wednesday, Thursday in weekend
-    // Weekend starts Wednesday 6pm LA time
-    if (day === 3 && laHour >= 18) {
-        return true;
-    }
-    
-    // All day Thursday is weekend (for testing)
-    if (day === 4) {
+    // Weekend starts Friday 6pm PT (18:00 LA time)
+    if (day === 5 && laHour >= 18) {
+        console.log('[LocationTime] Weekend mode: Friday evening - ACTIVE');
         return true;
     }
     
     // All day Saturday is weekend
     if (day === 6) {
+        console.log('[LocationTime] Weekend mode: Saturday - ACTIVE');
         return true;
     }
     
-    // Weekend ends Sunday 6pm LA time
-    if (day === 0 && laHour < 18) {
+    // All day Sunday is weekend  
+    if (day === 0) {
+        console.log('[LocationTime] Weekend mode: Sunday - ACTIVE');
         return true;
     }
     
+    // TEMPORARY TESTING: Include all of Monday in weekend mode
+    // Weekend will now end Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
+    if (day === 1) {
+        console.log('[LocationTime] Weekend mode: Monday ALL DAY - ACTIVE (TESTING)');
+        return true;
+    }
+    
+    // End weekend Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
+    if (day === 2 && now.getUTCHours() < 1) {
+        console.log('[LocationTime] Weekend mode: Tuesday early morning - ACTIVE (TESTING)');
+        return true;
+    }
+    
+    console.log('[LocationTime] Weekend mode: DISABLED');
     return false;
-    */
 }
 
 function getWeekendLocation(laHour: number): string {
@@ -101,25 +109,32 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
                 localMinutes = gmtMinutes;
                 break;
+            case "Paris":
+                localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
+                localMinutes = gmtMinutes;
+                break;
             default:
                 localTime = laHour;
                 localMinutes = gmtMinutes;
         }
     } else {
-        // Use weekday schedule
-        if (laHour >= 16 || laHour < 1) {
+        // Use weekday schedule - CORRECTED TIMES
+        if (laHour >= 9 && laHour < 19) {
+            // 9am-7pm PT: Los Angeles
             location = "Los Angeles office";
             localTime = laHour;
             localMinutes = gmtMinutes;
         }
-        else if (laHour >= 1 && laHour < 8) {
+        else if (laHour >= 19 || laHour < 3) {
+            // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
             location = "Singapore penthouse";
-            localTime = (laHour + 15) % 24; // LA + 15 hours
+            localTime = (laHour + 15) % 24; // LA + 15 hours (Singapore is GMT+8)
             localMinutes = gmtMinutes;
         }
         else {
+            // 3am-9am PT: London
             location = "London office";
-            localTime = (laHour + 8) % 24; // LA + 8 hours
+            localTime = (laHour + 8) % 24; // LA + 8 hours (London is GMT+1)
             localMinutes = gmtMinutes;
         }
     }

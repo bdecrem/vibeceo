@@ -11,6 +11,7 @@ const locationCoordinates: Record<string, { lat: number; lon: number }> = {
   "Vegas": { lat: 36.1699, lon: -115.1398 },  // Las Vegas coordinates
   "Tokyo": { lat: 35.6762, lon: 139.6503 },
   "Berlin": { lat: 52.5200, lon: 13.4050 },
+  "Paris": { lat: 48.8566, lon: 2.3522 },  // Paris coordinates
   
   // Fallback to Los Angeles if location not found
   "default": { lat: 34.0522, lon: -118.2437 }

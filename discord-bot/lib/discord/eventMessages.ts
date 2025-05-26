@@ -1,6 +1,6 @@
-import { TextChannel } from "discord.js";
-import { getLocationAndTime } from "./locationTime.js";
-import { generateWatercoolerBumper } from "./watercoolerPrompts.js";
+import { TextChannel } from 'discord.js';
+import { getLocationAndTime, isWeekend } from './locationTime.js';
+import { generateWatercoolerBumper } from './watercoolerPrompts.js';
 import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
 import { addScene, getCurrentEpisode } from "./episodeStorage.js";
 import { updateCurrentScene, client } from "./bot.js";
@@ -18,7 +18,8 @@ const MICROPOST_SERVICES = [
 	'coachquotes',
 	'crowdfaves',
 	'microclass',
-	'upcomingevent'
+	'upcomingevent',
+	'alextipsy'
 ];
 
 export const EVENT_MESSAGES = {
@@ -163,14 +164,40 @@ export async function sendEventMessage(
 		if (MICROPOST_SERVICES.includes(eventType as string) && message.includes("{simplifiedArrival}")) {
 			// Extract just the city name without "office" or "penthouse"
 			const cityName = location.replace(' office', '').replace(' penthouse', '');
-			// Format exactly as requested - just location, time, and weather emoji
-			const simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
+			
+			// Check if it's the weekend to use a different format
+			let simplifiedArrival;
+			if (isWeekend()) {
+				// Get current day of week
+				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+				const today = new Date().getDay();
+				const dayName = days[today];
+				
+				// Format the special weekend messages for Foundry Heat - nightlife edition
+				const weekendFormats = [
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and "strategy" now means picking the next bar. 🍸 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and everyone's arguing about who's covering the Uber. 🚕 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and the pitch decks have stains from cocktail napkins. 🥃 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and someone's insisting the club promoter is a potential investor. 💃 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and expense reports will be creative fiction tomorrow. 💸 ${weatherEmoji}`,
+					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and they're explaining "product-market fit" to a bartender. 🍹 ${weatherEmoji}`
+				];
+				
+				// Select a random weekend format
+				const formatIndex = Math.floor(Math.random() * weekendFormats.length);
+				
+				// Use the special weekend format
+				simplifiedArrival = weekendFormats[formatIndex];
+			} else {
+				// Regular format
+				simplifiedArrival = `The coaches are in ${cityName} where it's ${formattedTime}${ampm}. ${weatherEmoji}`;
+			}
 			message = message.replace("{simplifiedArrival}", simplifiedArrival);
 		} else {
 			// Regular arrival message format for non-micropost services
 			// Determine the correct preposition based on location
 			let cityText = '';
-			if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo')) {
+			if (location.includes('Berlin') || location.includes('Vegas') || location.includes('Tokyo') || location.includes('Paris')) {
 				// For weekend cities, use "in [City]"
 				// Extract just the city name without "office" or "penthouse"
 				const cityName = location.replace(' office', '').replace(' penthouse', '');

@@ -2,6 +2,7 @@ import { Client, TextChannel } from 'discord.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ceos } from '../../data/ceos.js';
+import { isWeekend, getLocationAndTime } from './locationTime.js';
 
 /**
  * Post system announcement to the general channel
@@ -89,13 +90,37 @@ export async function postSystemAnnouncement(
       }
     }
     
-    // Format the announcement with the system update
-    const announcement = `📢 **The AF System Update**
+    // Get current GMT time for location and time information
+    const now = new Date();
+    const gmtHour = now.getUTCHours();
+    const gmtMinutes = now.getUTCMinutes();
+    
+    // Get location and time information
+    const locationInfo = await getLocationAndTime(gmtHour, gmtMinutes);
+    const locationString = `The coaches are in ${locationInfo.location} where it's ${locationInfo.formattedTime}${locationInfo.ampm}. ${locationInfo.weatherEmoji}`;
+    
+    // Check if it's weekend to decide which announcement to use
+    let announcement;
+    
+    if (isWeekend()) {
+      // Weekend announcement - more casual and fun
+      announcement = `📢 **The AF Weekend Update**
+It's the weekend. The coaches are vibing. Alex is probably tipsy — say "hey Alex" to get her talking. Meanwhile, over in #thelounge, the crew's out and about, dropping stray thoughts as they roam the city.
+
+Type !help to join the weekend chaos, pitch your $B idea, or summon a coach (if they're not mid-dance).
+
+Cheers to the weekend. 🥂`;
+    } else {
+      // Regular weekday announcement
+      announcement = `📢 **The AF System Update**
 Welcome to the AF. Over in #thelounge: Someone started mocking ${coachName}'s ${incident}. ${pronoun}'s still salty with ${targetName} after bringing it up in chat and not loving how the convo went.
 
 Type !help to see just how triggered ${lowerPronoun} is—and for how to pitch your $B idea, summon a coach, or stir more chaos.
 
-Carry on accordingly. 🌀`;
+Carry on accordingly. 🌀
+
+${locationString}`;
+    }
     
     console.log(`Sending announcement: ${announcement}`);
     

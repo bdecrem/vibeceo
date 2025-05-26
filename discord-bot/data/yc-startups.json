@@ -1,0 +1,94 @@
+{
+  "startups": [
+    {
+      "name": "Cohesive",
+      "shortPitch": "The agentic CRM for blue collar businesses like janitorial, pressure washing, landscaping, HVAC, and pest control that fully automates sales and marketing outreach to local businesses and property owners.",
+      "longPitch": "Cohesive is the agentic CRM for blue collar businesses like janitorial, pressure washing, landscaping, HVAC, and pest control. The platform fully automates sales and marketing outreach to local businesses and property owners in the service area, helping local service businesses grow even while servicing clients in the field. Founded by a former founding engineer at Starlight and Microsoft ML engineer, alongside a co-founder dedicated to serving blue collar businesses.",
+      "founderInfo": "Founder 1: Former founding engineer at Starlight (South Park Commons fintech) and former ML engineer at Microsoft. Builder at heart. Founder 2: Building Cohesive, the agentic CRM for blue collar businesses",
+      "url": "https://getcohesiveai.com/",
+      "batch": "Spring 2025",
+      "revealText": "Cohesive was funded by Y Combinator in Spring 2025. Check them out at https://getcohesiveai.com/"
+    },
+    {
+      "name": "Docket",
+      "shortPitch": "AI agents that let you write end-to-end QA tests in plain English and keep them up to date automatically, powered by real user sessions.",
+      "longPitch": "Docket lets you write end-to-end tests in plain English and keeps them up to date automatically—powered by real user sessions. Founded by former engineers from Stripe, Brex, Citadel, and Patreon, Docket is revolutionizing the future of software testing to make it more accessible and reliable.",
+      "founderInfo": "Founder 1: Building the future of software testing. Ex-engineer at Stripe and Brex. Founder 2: Building the future of software testing. Previously Quant SWE at Citadel & Growth at Patreon.",
+      "url": "https://docketqa.com/",
+      "batch": "Spring 2025",
+      "revealText": "Docket was funded by Y Combinator in Spring 2025. Check them out at https://docketqa.com/"
+    },
+    {
+      "name": "Daxa",
+      "shortPitch": "An AI Product Manager that watches thousands of session replays and listens to customer feedback in real time to boost revenue and retention.",
+      "longPitch": "Daxa is an AI Product Manager that watches thousands of your session replays and listens to your customer feedback channels in real time — helping you pinpoint application issues before users churn and plan features that maximize conversion. Founded by former UChicago CS & Economics graduate and a Penn graduate who worked at Google, Daxa helps combat the problem where issues in your product don't make it to a support ticket until dozens of users have experienced it by watching users interact directly with your product and notifying you in real time via Slack or email.",
+      "founderInfo": "Founder 1: Co-Founder @ Valora | UChicago CS & Economics. Founder 2: Co-Founder, CEO @ Valora | Previously: Penn, Google",
+      "url": "https://www.getdaxa.com/",
+      "batch": "Spring 2025",
+      "revealText": "Daxa was funded by Y Combinator in Spring 2025. Check them out at https://www.getdaxa.com/"
+    },
+    {
+      "name": "SAVA Robotics",
+      "shortPitch": "A Sheet Metal Super Factory rebuilding manufacturing from the ground up with fully integrated systems that eliminate skilled operators while delivering superior speed, quality, and economics.",
+      "longPitch": "SAVA is rebuilding sheet metal manufacturing from the ground up. From Ford Trucks to NASA Space Shuttles, sheet metal is the cornerstone of American Manufacturing - but the industry runs on 30-year-old technology and a shrinking workforce. Founded by former high school robotics competitors and Georgia Tech robotics lab members, SAVA is building a fully integrated manufacturing system that eliminates skilled operators while delivering superior speed, quality, and economics. They're already reducing customer iteration cycles from 5-6 days to 1-2 days for companies like Pave Robotics and Zipline.",
+      "founderInfo": "Founder 1: I have designed next-gen battery manufacturing solutions, built AI wearables for dementia patients, and printed NFC chips for BMW & Lamborghini. The future of manufacturing requires intelligent robots, and I get to build it. Founder 2: Building the next generation of manufacturing workforce",
+      "url": "https://www.savarobotics.com/",
+      "batch": "Spring 2025",
+      "revealText": "SAVA Robotics was funded by Y Combinator in Spring 2025. Check them out at https://www.savarobotics.com/"
+    },
+    {
+      "name": "Godela",
+      "shortPitch": "An AI-powered physics engine that gives engineers faster, cheaper alternatives to simulations and physical prototypes with no setup and instant results.",
+      "longPitch": "Godela is an AI-powered physics engine that gives engineers faster, cheaper replacement to simulations and physical prototypes. Founded by researchers from Harvard and Stanford with experience at Intel, Apple, and Google, Godela allows every experiment you want to run to be modeled using AI with no setup and no wait - just ask and get simulation quality results.",
+      "founderInfo": "Founder 1: Researched physics-driven optimization at Harvard and generative models for fluid mechanics at Stanford. Built surrogate models for semiconductor manufacturing at Intel. Now building Godela - giving engineers and scientists their own AI model for physics. Founder 2: Built laptops and iPads at Apple. Built AI products for Google. Now building Godela—AI that models the physical world, for engineers and scientists everywhere",
+      "url": "http://godela.ai/",
+      "batch": "Spring 2025",
+      "revealText": "Godela was funded by Y Combinator in Spring 2025. Check them out at http://godela.ai/"
+    },
+    {
+      "name": "BitPatrol",
+      "shortPitch": "Cutting-edge AI secret detection that works in real time to protect organizations from high-impact data breaches caused by exposed credentials.",
+      "longPitch": "BitPatrol provides secret detection that actually works by leveraging cutting-edge AI to detect exposed credentials in real time and protect your organization from high-impact data breaches. Founded by an ex-Stripe, Tesla, and Lyft engineer, BitPatrol is addressing the critical security challenge of credential exposure that other solutions fail to solve effectively.",
+      "founderInfo": "Founder 1: Building BitPatrol — AI-powered secret detection that actually works. ex-Stripe, Tesla, Lyft.",
+      "url": "https://www.bitpatrol.io/",
+      "batch": "Spring 2025",
+      "revealText": "BitPatrol was funded by Y Combinator in Spring 2025. Check them out at https://www.bitpatrol.io/"
+    },
+    {
+      "name": "Aegis",
+      "shortPitch": "An all-in-one platform that helps healthcare providers recover lost revenue by automating insurance denial appeals from intake to resolution.",
+      "longPitch": "Aegis is the all-in-one platform that helps healthcare providers recover lost revenue by automating insurance denial appeals—from intake to resolution. Built for billing teams, healthcare providers and hospitals by former CS/AI experts from Carnegie Mellon University, Aegis is tackling one of healthcare's most frustrating revenue leakage problems.",
+      "founderInfo": "Founder 1: Formerly CS/AI at CMU. Currently building AI to help healthcare providers fight insurance denials. Founder 2: Studied Computer Science and Information Systems at Carnegie Mellon University. Currently engaged with Aegis.",
+      "url": "https://aegishealth.us/",
+      "batch": "Spring 2025",
+      "revealText": "Aegis was funded by Y Combinator in Spring 2025. Check them out at https://aegishealth.us/"
+    },
+    {
+      "name": "Cascade Space",
+      "shortPitch": "A turn-key communications system for lunar and deep space missions that maximizes uptime and reduces spacecraft iteration cycles from weeks to hours.",
+      "longPitch": "Cascade Space is building a turn-key communications system for lunar and deep space missions. Their ground station network and integrated software tools work together to maximize uptime and availability, while reducing spacecraft iteration cycles from weeks to hours. Founded by Jacob Portukalian, architect of comms systems at SpaceX, Tyvak, and Astra, along with deep generalist Arlen who brings technical and leadership experience from aerospace, consumer goods, communications, and energy industries.",
+      "founderInfo": "Founder 1: Arlen is a deep generalist who thrives at the interfaces between hardware, software/firmware, product, and business. He brings a wealth of technical and leadership experience, not only from the aerospace industry, but also from consumer goods, communications, and energy. Founder 2: Cascade was founded by Jacob Portukalian, architect of comms systems at SpaceX, Tyvak, and Astra. He has assembled a team of elite space engineers to scale communications infrastructure for the next generation of space exploration companies.",
+      "url": "https://cascade.space/",
+      "batch": "Spring 2025",
+      "revealText": "Cascade Space was funded by Y Combinator in Spring 2025. Check them out at https://cascade.space/"
+    },
+    {
+      "name": "Blueshoe",
+      "shortPitch": "The first AI worker for law firm operations that puts back office tasks on autopilot, starting with automated, end-to-end invoice-to-cash processes.",
+      "longPitch": "Blueshoe puts law firm back office operations on autopilot starting with automated, end-to-end invoice-to-cash. Founded by a Harvard Law grad and former computer science adjunct faculty member, Blueshoe addresses the $100B+ of revenue trapped in slow, manual and error-prone decisions and document workflows in U.S. law firms, building next-gen back office infrastructure that's reliable, transparent and free of human bottlenecks.",
+      "founderInfo": "Founder 1: Founder & CEO of Blueshoe. Harvard Law grad; former strategy consultant. Founder 2: Founder and CTO of Blueshoe (X25). Previously computer science adjunct faculty, research assistant and Google engineer. I enjoy long walks on the Beach (Street) in Boston.",
+      "url": "https://blueshoe.com/",
+      "batch": "Spring 2025",
+      "revealText": "Blueshoe was funded by Y Combinator in Spring 2025. Check them out at https://blueshoe.com/"
+    },
+    {
+      "name": "Sieve",
+      "shortPitch": "AI + human review to solve data cleaning for hedge funds and investment firms, accessible via API or Excel, delivering clean, reliable data wherever they already work.",
+      "longPitch": "Sieve solves data cleaning for hedge funds and investment firms by delivering clean, reliable data wherever they already work - via APIs for devs and Excel for analysts. Founded by former Citadel, McKinsey, Bain, and MIT professionals, Sieve replaces manual review processes with an API that integrates directly into existing data pipelines, along with an Excel integration that lets analysts pull data from any source into their models with just a URL, solving the last mile problem of data accuracy through integrated expert reviewers.",
+      "founderInfo": "Founder 1: Nicole is co-founder and CEO of sieve, which is solving data cleaning for hedge funds and investment firms. She previously worked at Citadel across Equity Quant Research, Global Trading, and Data Science groups, was a management consultant at McKinsey, and developed cancer detection algorithms at the Broad Institute. Founder 2: Savannah is CTO & Co-founder of sieve! Previously she worked at Bain where she spent the majority of her time in the private equity group, and did an externship at a pre-seed start up which she helped grow from 0 revenue to $10M ARR during her 6 months with the company. Prior to that, she did applied ML research at MIT's Environmental Solutions Initiative and studied CS at MIT.",
+      "url": "https://usesieve.com/",
+      "batch": "Spring 2025",
+      "revealText": "Sieve was funded by Y Combinator in Spring 2025. Check them out at https://usesieve.com/"
+    }
+  ]
+}
