@@ -11,7 +11,11 @@ import { getRandomYCStartup, YCStartup } from './ycStartups.js';
 type PitchState = {
   idea: string;
   round: number;
-  responses: { character: string; message: string }[];
+  responses: { 
+    character: string; 
+    message: string; 
+    id?: string; // Unique ID to prevent duplicates 
+  }[];
   votes: Record<string, string>;
   isActive: boolean;
   isYCStartup?: boolean;
@@ -354,24 +358,71 @@ Now add your own weird or funny take. Be playful, absurd, or poetic. Max 15 word
       response = rohanResponses[Math.floor(Math.random() * rohanResponses.length)];
     } else {
       // Normal response generation for other cases
-      response = await generateCharacterResponse(
-        nextCharacter.prompt + '\n' + contextPrompt, 
-        state.idea,
-        maxWords
-      );
-      
-      // Clean up the response - remove any surrounding quotes
-      response = response.trim().replace(/^["']|["']$/g, '');
+      try {
+        // Generate response with clear instructions
+        const prompt = `${nextCharacter.prompt}\n${contextPrompt}\n\n` +
+          `IMPORTANT: Your response MUST be complete and under ${maxWords} words. ` +
+          `Do not include any quotes in your response. ` +
+          `End your response naturally with proper punctuation.`;
+          
+        response = await generateCharacterResponse(prompt, state.idea, maxWords);
+        
+        // Clean up the response
+        response = response
+          .trim()
+          // Remove all quotes first
+          .replace(/["']/g, '')  
+          // Replace any remaining quotes that might be in different formats
+          .replace(/[“”‘’]/g, '')
+          // Clean up any double spaces that might have been created
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // Ensure the response isn't empty after cleaning
+        if (!response) {
+          response = "I don't have a response for that.";
+        }
+        
+        // Ensure the response ends with proper punctuation
+        if (!/[.!?]$/.test(response)) {
+          // Find the last complete sentence
+          const sentences = response.match(/[^.!?]*[.!?]/g);
+          if (sentences && sentences.length > 0) {
+            response = sentences.join(' ').trim();
+          } else {
+            // If no complete sentences, just add a period
+            response = response + '.';
+          }
+        }
+      } catch (error) {
+        console.error(`[PITCH ERROR] Error generating response for ${nextCharacter.name}:`, error);
+        response = "I'm having trouble thinking of a response right now.";
+      }
     }
     
     // Verify word count (skip for Rohan's one-word/emoji responses)
     if (!(state.isShortIdea && state.round === 2 && nextCharacter.name === 'Rohan Mehta')) {
       const wordCount = response.trim().split(/\s+/).length;
       console.log(`[PITCH DEBUG] Response word count: ${wordCount}/${maxWords}`);
+      
+      // Ensure we're not duplicating the same response
+      const lastResponse = state.responses
+        .slice()
+        .reverse()
+        .find(r => r.character === nextCharacter.id);
+        
+      if (lastResponse && lastResponse.message === response) {
+        console.log(`[PITCH DEBUG] Duplicate response detected for ${nextCharacter.name}, generating alternative`);
+        response = response.endsWith('.') ? "Another thought: " + response : response + " And another thing...";
+      }
     }
     
-    // Store the response
-    state.responses.push({ character: nextCharacter.id, message: response });
+    // Store the response with a unique ID to prevent duplicates
+    state.responses.push({ 
+      character: nextCharacter.id, 
+      message: response,
+      id: Date.now().toString() // Add unique ID to prevent duplicates
+    });
     console.log(`[PITCH DEBUG] Sending message as ${nextCharacter.name} to channel ${channelId}`);
     await sendAsCharacter(channelId, nextCharacter.id, response);
     console.log(`[PITCH DEBUG] Message sent successfully`);
@@ -412,17 +463,43 @@ async function startVoting(channelId: string): Promise<void> {
       );
       
       // Clean up the vote message
-      vote = vote.trim().replace(/^["']|["']$/g, '');
+      vote = vote
+        .trim()
+        .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+        .replace(/\s+/g, ' ')  // Collapse multiple spaces
+        .trim();
       
-      // Ensure the vote starts with INVEST or PASS
-      const votePrefix = vote.toUpperCase().startsWith('INVEST') ? 'INVEST' : 
-                        vote.toUpperCase().startsWith('PASS') ? 'PASS' : '';
+      // Extract the vote type (INVEST or PASS)
+      let voteType = '';
+      if (vote.toUpperCase().includes('INVEST')) {
+        voteType = 'INVEST';
+      } else if (vote.toUpperCase().includes('PASS')) {
+        voteType = 'PASS';
+      } else {
+        // Default to PASS if no clear vote type found
+        voteType = 'PASS';
+      }
       
-      // Clean up the rest of the message
-      const voteMessage = vote.replace(/^(INVEST|PASS)[\s:]+/i, '').trim();
+      // Clean up the message, removing any duplicate vote types and extra spaces
+      let cleanMessage = vote
+        .replace(/^(INVEST|PASS)[\s:]*/i, '')  // Remove vote type from start
+        .replace(/\b(INVEST|PASS)\b/gi, '')    // Remove any other occurrences of vote type
+        // Clean up punctuation
+        .replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g, '')  // Remove all punctuation
+        .replace(/\s+/g, ' ')                  // Collapse multiple spaces
+        .trim()
+        // Capitalize first letter
+        .replace(/^\w/, (c) => c.toUpperCase());
+      
+      // If we removed everything, add a default message
+      if (!cleanMessage) {
+        cleanMessage = voteType === 'INVEST' 
+          ? 'This has potential!' 
+          : 'Not feeling it.';
+      }
       
       // Format the final vote message
-      const finalVote = votePrefix ? `${votePrefix}: ${voteMessage}` : vote;
+      const finalVote = `${voteType}: ${cleanMessage}`;
       
       state.votes[character.id] = finalVote;
       await sendAsCharacter(channelId, character.id, `🗳️ ${finalVote}`);
