@@ -237,8 +237,16 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   console.log(`[PITCH DEBUG] Round ${state.round}: ${currentRoundResponses.length}/${characters.length} characters have responded`);
   console.log(`[PITCH DEBUG] Current responses:`, currentRoundResponses.map(r => r.character));
 
+  // Calculate expected response count (fewer in round 2 of short pitches)
+  let expectedResponses = characters.length;
+  if (state.isShortIdea && state.round === 2) {
+    // Subtract Kailey and Venus
+    expectedResponses = characters.length - 2;
+    console.log(`[PITCH DEBUG] Adjusted expected responses for round 2 short pitch: ${expectedResponses}`);
+  }
+
   // Check if round is complete
-  if (currentRoundResponses.length === characters.length) {
+  if (currentRoundResponses.length >= expectedResponses) {
     if (state.round === 2) {
       // All rounds complete, start voting
       console.log(`[PITCH DEBUG] All rounds complete, starting voting phase`);
@@ -256,8 +264,14 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   // Get the last speaker
   const lastSpeaker = state.responses[state.responses.length - 1]?.character;
   
-  // Find characters who haven't spoken in this round
+  // Skip Kailey and Venus in round 2 of short pitches
   const availableCharacters = characters.filter(char => {
+    // Skip if this is round 2 of a short pitch and character is Kailey or Venus
+    if (state.isShortIdea && state.round === 2 && ['kailey', 'venus'].includes(char.id)) {
+      console.log(`[PITCH DEBUG] Skipping ${char.name} in round 2 of short pitch`);
+      return false;
+    }
+    
     const hasSpokenInRound = currentRoundResponses.some(r => r.character === char.id);
     console.log(`[PITCH DEBUG] Character ${char.name} (${char.id}) has spoken in round ${state.round}: ${hasSpokenInRound}`);
     return !hasSpokenInRound;
