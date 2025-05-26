@@ -16,6 +16,7 @@ type PitchState = {
   isActive: boolean;
   isYCStartup?: boolean;
   ycStartupData?: YCStartup;
+  isShortIdea: boolean; // true if idea is < 10 words
 };
 
 const activePitches = new Map<string, PitchState>();
@@ -88,6 +89,7 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
     await textChannel.send(`Starting scheduled pitch discussion for: "${idea}"\nEach coach will give two rounds of feedback, followed by voting.`);
     console.log(`[PITCH DEBUG] Sent initial pitch message to channel`);
     
+    const shortIdea = isShortIdea(idea);
     const state: PitchState = {
       idea,
       round: 1,
@@ -95,7 +97,8 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
       votes: {},
       isActive: true,
       isYCStartup: useYCStartup && !!ycStartupData,
-      ycStartupData
+      ycStartupData,
+      isShortIdea: shortIdea
     };
     
     activePitches.set(targetChannelId, state);
@@ -116,6 +119,10 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
   }
 }
 
+function isShortIdea(idea: string): boolean {
+  return idea.trim().split(/\s+/).length < 10;
+}
+
 export async function handlePitchCommand(message: any, idea: string): Promise<void> {
   // For manual commands, use the PITCH_CHANNEL_ID if available
   const targetChannelId = PITCH_CHANNEL_ID || message.channelId;
@@ -125,12 +132,15 @@ export async function handlePitchCommand(message: any, idea: string): Promise<vo
     return;
   }
   
+  const shortIdea = isShortIdea(idea);
+  console.log(`[PITCH DEBUG] Short pitch detected: ${shortIdea} for idea: "${idea}" (${idea.trim().split(/\s+/).length} words)`);
   const state: PitchState = {
     idea,
     round: 1,
     responses: [],
     votes: {},
-    isActive: true
+    isActive: true,
+    isShortIdea: shortIdea
   };
   
   activePitches.set(targetChannelId, state);
@@ -182,7 +192,8 @@ export async function handlePitchYCCommand(message: any): Promise<void> {
     votes: {},
     isActive: true,
     isYCStartup: true,
-    ycStartupData
+    ycStartupData,
+    isShortIdea: isShortIdea(idea)
   };
   
   activePitches.set(targetChannelId, state);
@@ -220,10 +231,11 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   console.log(`[PITCH DEBUG] Found ${characters.length} characters for discussion`);
   
   // Get responses for current round
-  const currentRoundResponses = state.responses.filter(r => 
-    state.responses.filter(x => x.character === r.character).length === state.round
+  const currentRoundResponses = state.responses.filter((_, index) => 
+    Math.floor(index / characters.length) === state.round - 1
   );
   console.log(`[PITCH DEBUG] Round ${state.round}: ${currentRoundResponses.length}/${characters.length} characters have responded`);
+  console.log(`[PITCH DEBUG] Current responses:`, currentRoundResponses.map(r => r.character));
 
   // Check if round is complete
   if (currentRoundResponses.length === characters.length) {
@@ -245,9 +257,11 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   const lastSpeaker = state.responses[state.responses.length - 1]?.character;
   
   // Find characters who haven't spoken in this round
-  const availableCharacters = characters.filter(char => 
-    !currentRoundResponses.some(r => r.character === char.id)
-  );
+  const availableCharacters = characters.filter(char => {
+    const hasSpokenInRound = currentRoundResponses.some(r => r.character === char.id);
+    console.log(`[PITCH DEBUG] Character ${char.name} (${char.id}) has spoken in round ${state.round}: ${hasSpokenInRound}`);
+    return !hasSpokenInRound;
+  });
 
   // If no available characters, something went wrong
   if (availableCharacters.length === 0) {
@@ -262,19 +276,87 @@ async function continuePitchDiscussion(channelId: string): Promise<void> {
   }
   console.log(`[PITCH DEBUG] Selected ${nextCharacter.name} to speak next`);
 
-  // Generate response
-  const contextPrompt = state.round === 1 
-    ? `You are ${nextCharacter.name}. A founder has pitched their business idea: "${state.idea}". 
-       Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice.
-       Focus on a single specific aspect of the idea.`
-    : `You are ${nextCharacter.name}. Continue the discussion about: "${state.idea}".
-       Previous comments in this round:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
-       Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character.
-       Focus on a different aspect than what others have mentioned.`;
+  // Generate response based on whether it's a short or long idea
+  console.log(`[PITCH DEBUG] Generating response. isShortIdea: ${state.isShortIdea}, round: ${state.round}, idea: "${state.idea}"`);
+  let contextPrompt: string;
+  
+  if (state.isShortIdea) {
+    console.log(`[PITCH DEBUG] Short pitch mode active for: "${state.idea}"`);
+    // Short idea prompts (for ideas < 10 words)
+    if (state.round === 1) {
+      // Round 1: Chaotic, fun responses for short ideas
+      // Add emoji requirement for Alex in round 1
+      const emojiRequirement = nextCharacter.id === 'alex' ? ' USE AT LEAST 3 EMOJIS. This is required.' : '';
+      
+      contextPrompt = `You are ${nextCharacter.name}. A founder pitched: "${state.idea}". 
+
+This is a short pitch (under 10 words). Keep it fun and chaotic. Stay in character but be playful.${emojiRequirement} Max 20 words.`;
+    } else {
+      // Special handling for Alex in short mode - require emojis
+      const alexEnhancement = nextCharacter.id === 'alex' ? 
+        ' YOU MUST USE AT LEAST 3 EMOJIS IN YOUR RESPONSE. This is required. Choose from: 🚀✨💡🔥💯👏🤔💭💬💭📈📱💻🍃🧘‍♀️' : '';
+      
+      contextPrompt = `You are ${nextCharacter.name}. Short pitch: "${state.idea}"
+
+Previous comments:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
+
+Add your take (max 15 words). Be playful and in character.${alexEnhancement}`;
+    }
+  } else { // Long idea handling remains the same
+    // Long idea prompts (for ideas >= 10 words)
+    if (state.isShortIdea) {
+      contextPrompt = state.round === 1
+        ? `You are ${nextCharacter.name}. A founder has pitched their business idea: "${state.idea}".
+           
+This pitch is under 10 words — it's probably a joke, a vibe, or chaos bait. So skip the serious feedback. Stay in character, but go wild: spiral, joke, riff, be weird. No analysis. Max 20 words.`
+        : `You are ${nextCharacter.name}. The pitch is: "${state.idea}".
+
+This one's short, strange, or chaotic. Earlier comments:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: ${r.message}`).join('\n')}
+
+Now add your own weird or funny take. Be playful, absurd, or poetic. Max 15 words.`;
+    } else {
+      contextPrompt = state.round === 1 
+        ? `You are ${nextCharacter.name}. A founder has pitched their business idea: "${state.idea}". 
+           Give a brief, focused reaction (max 50 words). Be constructive but honest, speaking in your unique voice.
+           Focus on a single specific aspect of the idea.`
+        : `You are ${nextCharacter.name}. Continue the discussion about: "${state.idea}".
+           Previous comments in this round:\n${currentRoundResponses.map(r => `${getCharacter(r.character)?.name}: ${r.message}`).join('\n')}
+           Give a brief, focused follow-up comment (max 50 words). React to others' points while staying in character.
+           Focus on a different aspect than what others have mentioned.`;
+    }
+  }
 
   try {
     console.log(`[PITCH DEBUG] Generating response for ${nextCharacter.name}`);
-    const response = await generateCharacterResponse(nextCharacter.prompt + '\n' + contextPrompt, state.idea);
+    const maxWords = state.isShortIdea ? (state.round === 1 ? 20 : 15) : 50;
+    let response: string;
+    
+    // Special handling for Rohan in round 2 of short pitches
+    if (state.isShortIdea && state.round === 2 && nextCharacter.name === 'Rohan Mehta') {
+      const rohanResponses = [
+        '🤯', 'Bruh.', 'LOL', 'Nope.', 'Yikes', '🔥', 'Wut.', 'LMAO', 'Sigh...', 'Oof.',
+        'Nah.', 'Yup.', 'Hmm.', 'Sure.', 'Wild.', 'Yikes.', 'LOL', 'WTF', 'lol', 'k.'
+      ];
+      response = rohanResponses[Math.floor(Math.random() * rohanResponses.length)];
+    } else {
+      // Normal response generation for other cases
+      response = await generateCharacterResponse(
+        nextCharacter.prompt + '\n' + contextPrompt, 
+        state.idea,
+        maxWords
+      );
+      
+      // Clean up the response - remove any surrounding quotes
+      response = response.trim().replace(/^["']|["']$/g, '');
+    }
+    
+    // Verify word count (skip for Rohan's one-word/emoji responses)
+    if (!(state.isShortIdea && state.round === 2 && nextCharacter.name === 'Rohan Mehta')) {
+      const wordCount = response.trim().split(/\s+/).length;
+      console.log(`[PITCH DEBUG] Response word count: ${wordCount}/${maxWords}`);
+    }
+    
+    // Store the response
     state.responses.push({ character: nextCharacter.id, message: response });
     console.log(`[PITCH DEBUG] Sending message as ${nextCharacter.name} to channel ${channelId}`);
     await sendAsCharacter(channelId, nextCharacter.id, response);
@@ -296,16 +378,40 @@ async function startVoting(channelId: string): Promise<void> {
 
   const characters = getCharacters();
   
-  // Generate votes
+  // Generate votes - for short ideas, make it more fun and less serious
   for (const character of characters) {
-    const votePrompt = `You are ${character.name}. After discussing this business idea: "${state.idea}"
-      Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: "${r.message}"`).join('\n')}
-      Vote either INVEST or PASS, with a very brief reason (10 words max).`;
+    const votePrompt = state.isShortIdea
+      ? `You are ${character.name}. After this chaotic discussion about the short idea: "${state.idea}"
+         Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: ${r.message}`).join('\n')}
+         This is clearly not a serious pitch, so let's have fun with the voting. Vote either INVEST (if this chaotic energy deserves funding) or PASS (if it's too much even for you). Add a funny one-liner (max 15 words).`
+      : `You are ${character.name}. After discussing this business idea: "${state.idea}"
+         Discussion history:\n${state.responses.map(r => `${getCharacter(r.character)?.name}: ${r.message}`).join('\n')}
+         Vote either INVEST or PASS, with a very brief reason (10 words max).`;
     
     try {
-      const vote = await generateCharacterResponse(character.prompt + '\n' + votePrompt, state.idea);
-      state.votes[character.id] = vote;
-      await sendAsCharacter(channelId, character.id, `🗳️ ${vote}`);
+      // Enforce 15-word limit for short pitches, 10 for long ones
+      const maxWords = state.isShortIdea ? 15 : 10;
+      let vote = await generateCharacterResponse(
+        character.prompt + '\n' + votePrompt, 
+        state.idea,
+        maxWords
+      );
+      
+      // Clean up the vote message
+      vote = vote.trim().replace(/^["']|["']$/g, '');
+      
+      // Ensure the vote starts with INVEST or PASS
+      const votePrefix = vote.toUpperCase().startsWith('INVEST') ? 'INVEST' : 
+                        vote.toUpperCase().startsWith('PASS') ? 'PASS' : '';
+      
+      // Clean up the rest of the message
+      const voteMessage = vote.replace(/^(INVEST|PASS)[\s:]+/i, '').trim();
+      
+      // Format the final vote message
+      const finalVote = votePrefix ? `${votePrefix}: ${voteMessage}` : vote;
+      
+      state.votes[character.id] = finalVote;
+      await sendAsCharacter(channelId, character.id, `🗳️ ${finalVote}`);
       // Add a small delay between votes
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
