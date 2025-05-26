@@ -51,10 +51,16 @@ export function isWeekend(): boolean {
         return true;
     }
     
-    // Weekend ends Monday 9am SGT = Monday 1am UTC = Sunday 6pm PT
-    // So weekend continues until Monday 1am UTC
-    if (day === 1 && now.getUTCHours() < 1) {
-        console.log('[LocationTime] Weekend mode: Monday early morning - ACTIVE');
+    // TEMPORARY TESTING: Include all of Monday in weekend mode
+    // Weekend will now end Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
+    if (day === 1) {
+        console.log('[LocationTime] Weekend mode: Monday ALL DAY - ACTIVE (TESTING)');
+        return true;
+    }
+    
+    // End weekend Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
+    if (day === 2 && now.getUTCHours() < 1) {
+        console.log('[LocationTime] Weekend mode: Tuesday early morning - ACTIVE (TESTING)');
         return true;
     }
     

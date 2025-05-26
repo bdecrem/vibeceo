@@ -24,6 +24,7 @@ interface WeekendMicroPostPrompt {
   scheduleCommand: string;
   intro: string;
   outro: string;
+  businessStates?: string[];
 }
 
 // Load environment variables from .env.local
@@ -149,14 +150,21 @@ async function generateWeekendPost(promptId: string): Promise<string> {
     const tone = prompt.emotionalTones[Math.floor(Math.random() * prompt.emotionalTones.length)];
     const detail = prompt.microDetails[Math.floor(Math.random() * prompt.microDetails.length)];
     const character = prompt.characters[Math.floor(Math.random() * prompt.characters.length)];
+    
+    // Check if business states exist in the prompt and use them if available
+    let businessState = "";
+    if (prompt.businessStates && prompt.businessStates.length > 0) {
+      businessState = prompt.businessStates[Math.floor(Math.random() * prompt.businessStates.length)];
+    }
 
     const userPrompt = `
-Setting: ${setting}
-Emotional tone: ${tone}
-Product: ${detail}
-Character: ${character}
+Location: ${setting}
+Character to mention: ${character}
+${businessState ? `Business context: ${businessState}\n` : ""}
+${detail ? `Product: ${detail}\n` : ""}
+${tone ? `Emotional tone: ${tone}\n` : ""}
 
-Write one tipsy weekend dispatch from Alex Vega. Follow all voice requirements.
+Write ONE tipsy Alex tweet. NO quotation marks. Cut every unnecessary word. End sharp.
 `;
 
     const completion = await together.chat.completions.create({
@@ -166,8 +174,8 @@ Write one tipsy weekend dispatch from Alex Vega. Follow all voice requirements.
         { role: "user", content: userPrompt.trim() }
       ],
       stream: false,
-      temperature: 0.9,
-      max_tokens: 150,
+      temperature: 0.88,
+      max_tokens: 50,  // Reduced to force brevity as specified in the new prompt
       top_p: 0.95,
       frequency_penalty: 0.4,
       presence_penalty: 0.4,
