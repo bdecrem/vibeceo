@@ -1,0 +1,40 @@
+{
+  "name": "vibeceo-sms-bot",
+  "version": "1.0.0",
+  "description": "SMS bot for VibeCEO",
+  "main": "dist/src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/src/index.js",
+    "dev": "npm run build && npm run start",
+    "build": "rimraf dist && tsc",
+    "start:prod": "NODE_ENV=production node dist/src/index.js",
+    "start:dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run dev'",
+    "test:sms": "npm run build && node dist/scripts/test-sms-flow.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.9.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "ioredis": "^5.6.0",
+    "luxon": "^3.6.1",
+    "openai": "^4.100.0",
+    "p-limit": "^6.2.0",
+    "twilio": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/luxon": "^3.6.2",
+    "@types/node": "^20.11.0",
+    "nodemon": "^3.0.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.3.3"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -5,6 +5,7 @@ import { generateCharacterResponse } from './ai.js';
 import fs from 'fs';
 import path from 'path';
 import { PITCH_CHANNEL_ID } from './bot.js';
+import { getRandomYCStartup, YCStartup } from './ycStartups.js';
 
 // Track active pitch discussions by channel
 type PitchState = {
@@ -13,6 +14,8 @@ type PitchState = {
   responses: { character: string; message: string }[];
   votes: Record<string, string>;
   isActive: boolean;
+  isYCStartup?: boolean;
+  ycStartupData?: YCStartup;
 };
 
 const activePitches = new Map<string, PitchState>();
@@ -49,8 +52,28 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
       return;
     }
     
-    const idea = getRandomPitchIdea();
-    console.log(`[PITCH DEBUG] Generated pitch idea: "${idea}"`);
+    // Randomly choose between fictional and YC startup pitches (50/50 chance)
+    const useYCStartup = Math.random() < 0.5;
+    let idea: string;
+    let ycStartupData: YCStartup | undefined;
+    
+    if (useYCStartup) {
+      // Use a YC startup pitch
+      const startupData = getRandomYCStartup();
+      if (!startupData) {
+        // Fall back to fictional if no YC data is available
+        idea = getRandomPitchIdea();
+        console.log(`[PITCH DEBUG] No YC startup data available, using fictional pitch: "${idea}"`);
+      } else {
+        ycStartupData = startupData;
+        idea = startupData.shortPitch;
+        console.log(`[PITCH DEBUG] Using YC startup pitch: "${idea}" (${startupData.name})`);
+      }
+    } else {
+      // Use a fictional pitch idea
+      idea = getRandomPitchIdea();
+      console.log(`[PITCH DEBUG] Using fictional pitch: "${idea}"`);
+    }
     
     // Make sure we're getting the correct channel
     console.log(`[PITCH DEBUG] Fetching channel: ${targetChannelId}`);
@@ -70,7 +93,9 @@ export async function triggerPitchChat(channelId: string, client: Client): Promi
       round: 1,
       responses: [],
       votes: {},
-      isActive: true
+      isActive: true,
+      isYCStartup: useYCStartup && !!ycStartupData,
+      ycStartupData
     };
     
     activePitches.set(targetChannelId, state);
@@ -120,6 +145,58 @@ export async function handlePitchCommand(message: any, idea: string): Promise<vo
       const pitchChannel = await message.client.channels.fetch(PITCH_CHANNEL_ID) as TextChannel;
       if (pitchChannel) {
         await pitchChannel.send(`Starting pitch discussion for: "${idea}"\nRequested by ${message.author.username}.\nEach coach will give two rounds of feedback, followed by voting.`);
+      }
+    } catch (err) {
+      console.error(`Error notifying pitch channel:`, err);
+    }
+  }
+  
+  // Start the first round
+  await continuePitchDiscussion(targetChannelId);
+}
+
+// Add the new YC-specific pitch command
+export async function handlePitchYCCommand(message: any): Promise<void> {
+  // For manual commands, use the PITCH_CHANNEL_ID if available
+  const targetChannelId = PITCH_CHANNEL_ID || message.channelId;
+  
+  if (activePitches.has(targetChannelId)) {
+    await message.reply('There is already an active pitch discussion in the pitch channel. Please wait for it to finish.');
+    return;
+  }
+  
+  // Get a YC startup
+  const ycStartupData = getRandomYCStartup();
+  if (!ycStartupData) {
+    await message.reply('Sorry, I couldn\'t find any YC startup data. Please try again later.');
+    return;
+  }
+  
+  // Use the long pitch for the dedicated YC command
+  const idea = ycStartupData.longPitch;
+  
+  const state: PitchState = {
+    idea,
+    round: 1,
+    responses: [],
+    votes: {},
+    isActive: true,
+    isYCStartup: true,
+    ycStartupData
+  };
+  
+  activePitches.set(targetChannelId, state);
+  
+  // Acknowledge the pitch
+  await message.reply(`Starting YC startup pitch discussion for: "${idea}" in the pitch channel.\nEach coach will give two rounds of feedback, followed by voting.`);
+  
+  // If we have a dedicated pitch channel and it's different from the current channel,
+  // also send a notification in the pitch channel
+  if (PITCH_CHANNEL_ID && PITCH_CHANNEL_ID !== message.channelId) {
+    try {
+      const pitchChannel = await message.client.channels.fetch(PITCH_CHANNEL_ID) as TextChannel;
+      if (pitchChannel) {
+        await pitchChannel.send(`Starting YC startup pitch discussion for: "${idea}"\nRequested by ${message.author.username}.\nEach coach will give two rounds of feedback, followed by voting.`);
       }
     } catch (err) {
       console.error(`Error notifying pitch channel:`, err);
@@ -248,6 +325,13 @@ ${investCount > passCount ? '✨ The coaches would invest!' : '🤔 The coaches 
 
   // Use the first character to announce results
   await sendAsCharacter(channelId, characters[0].id, resultMessage);
+  
+  // If this was a YC startup, reveal the information
+  if (state.isYCStartup && state.ycStartupData) {
+    // Add a small delay before the reveal
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await sendAsCharacter(channelId, characters[0].id, state.ycStartupData.revealText);
+  }
   
   // Send outro message
   try {
