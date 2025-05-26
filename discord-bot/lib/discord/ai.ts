@@ -34,12 +34,19 @@ export async function generateCharacterResponse(
 		// Calculate max tokens based on word count (roughly 1.33 tokens per word + buffer)
 		const maxTokens = maxWords ? Math.ceil(maxWords * 1.5) : parseInt(process.env.OPENAI_MAX_TOKENS || "1000");
 
+		// Add clearer instructions about word limits
+		const systemPrompt = maxWords 
+			? `${prompt}\n\nIMPORTANT: Your response MUST be ${maxWords} words or less. ` +
+			  `Count your words carefully and make sure to END YOUR RESPONSE WITH A COMPLETE SENTENCE. ` +
+			  `If you reach the word limit, finish your current thought and end with proper punctuation.`
+			: prompt;
+
 		const response = await openai.chat.completions.create({
 			model: process.env.OPENAI_MODEL || "gpt-3.5-turbo",
 			messages: [
 				{
 					role: "system",
-					content: prompt + (maxWords ? `\n\nIMPORTANT: Your response MUST be ${maxWords} words or less. This is a strict requirement.` : ''),
+					content: systemPrompt,
 				},
 				{
 					role: "user",
@@ -48,6 +55,7 @@ export async function generateCharacterResponse(
 			],
 			max_tokens: maxTokens,
 			temperature: 0.7,
+			stop: ["\n"], // Stop at newlines to prevent awkward cuts
 		});
 
 		const content = response.choices[0].message.content || "Sorry, I could not generate a response.";
