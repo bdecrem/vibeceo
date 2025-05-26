@@ -13,7 +13,7 @@ import { initializeWebhooks, sendAsCharacter } from "./webhooks.js";
 import { generateCharacterResponse } from "./ai.js";
 import { WebhookClient } from "discord.js";
 import IORedis from "ioredis";
-import { handlePitchCommand } from "./pitch.js";
+import { handlePitchCommand, handlePitchYCCommand } from "./pitch.js";
 import { scheduler } from "./timer.js";
 import { triggerNewsChat } from "./news.js";
 import { triggerTmzChat } from "./tmz.js";
@@ -1165,6 +1165,7 @@ export async function handleMessage(message: Message): Promise<void> {
 						"!discuss-news": "Start a new discussion about current tech news",
 						"!group-chat [char1] [char2] [char3]": "Start a group discussion with 3 characters",
 						"!pitch [your idea]": "Present your business idea to all coaches for feedback and voting",
+						"!pitch-yc": "Present a real Y Combinator-funded startup to coaches for feedback and voting",
 					};
 					
 					const helpText = Object.entries(commands)
@@ -1308,6 +1309,12 @@ export async function handleMessage(message: Message): Promise<void> {
 					} else {
 						await message.reply('Please provide an idea to pitch. Example: !pitch An app that helps people find local events');
 					}
+					return;
+				}
+				
+				// FEATURE 5.1: YC Startup Pitch command
+				else if (command === 'pitch-yc') {
+					await handlePitchYCCommand(message);
 					return;
 				}
 				
