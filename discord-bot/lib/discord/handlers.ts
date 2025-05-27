@@ -818,7 +818,14 @@ Keep it under 30 words and make your irritation level match the intensity.`;
 		await sendAsCharacter(channelId, validCharacters[2].id, thirdMessage);
 		console.log("Third message sent successfully");
 
-		console.log("Watercooler chat completed successfully");
+		// Send outro message indicating coaches have scattered
+		if (client) {
+			const channel = await client.channels.fetch(channelId);
+			if (channel && (channel instanceof TextChannel)) {
+				await channel.send("The coaches have scattered.");
+			}
+		}
+		console.log("Watercooler chat completed with outro message");
 	} catch (error) {
 		console.error("Error in watercooler chat:", error);
 		throw error;
