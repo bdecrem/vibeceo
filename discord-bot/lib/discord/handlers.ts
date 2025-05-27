@@ -34,6 +34,89 @@ import { COACH_DISCORD_HANDLES } from './coachHandles.js';
 import { DISCORD_CONFIG } from "./config.js";
 import OpenAI from "openai";
 
+// Helper function to safely get current coach irritation data from story-arcs.json
+function getCurrentIrritationInfo(): string {
+	try {
+		// Path to story-arcs.json
+		const storyArcsPath = path.join(process.cwd(), "data", "story-themes", "story-arcs.json");
+		
+		// Check if file exists
+		if (!fs.existsSync(storyArcsPath)) {
+			console.error("[getCurrentIrritationInfo] story-arcs.json not found");
+			return "";
+		}
+		
+		// Read and parse the file
+		const storyArcs = JSON.parse(fs.readFileSync(storyArcsPath, "utf-8"));
+		
+		// Extract current irritation data
+		if (!storyArcs.currentIrritation) {
+			console.log("[getCurrentIrritationInfo] No current irritation data found");
+			return "";
+		}
+		
+		// Extract coach, target, and incident information
+		const coachId = storyArcs.currentIrritation.coach;
+		const targetId = storyArcs.currentIrritation.target;
+		const incident = storyArcs.currentIrritation.incident;
+		
+		// Get coach names from ceos data
+		const coach = ceos.find(c => c.id === coachId);
+		const target = ceos.find(c => c.id === targetId);
+		
+		if (!coach || !target) {
+			console.error(`[getCurrentIrritationInfo] Coach or target not found: ${coachId}, ${targetId}`);
+			return "";
+		}
+		
+		// Get first names
+		const coachName = coach.name.split(' ')[0];
+		const targetName = target.name.split(' ')[0];
+		
+		// Get appropriate pronoun
+		const genderPronouns: Record<string, string> = {
+			'alex': 'She',
+			'rohan': 'He',
+			'eljas': 'He',
+			'venus': 'She',
+			'kailey': 'She',
+			'donte': 'He'
+		};
+		
+		const pronoun = genderPronouns[coachId] || 'They';
+		
+		// Get current scene and intensity
+		const storyInfo = getCurrentStoryInfo();
+		let sceneNum = "03";
+		let intensity = "2";
+		
+		if (storyInfo) {
+			sceneNum = (storyInfo.sceneIndex + 1).toString().padStart(2, '0');
+			
+			// Try to get intensity from the irritation data
+			const intensityData = storyArcs.currentIrritation.intensity;
+			if (intensityData) {
+				let timeOfDay: 'morning' | 'midday' | 'afternoon';
+				if (storyInfo.sceneIndex < 8) timeOfDay = 'morning';
+				else if (storyInfo.sceneIndex < 16) timeOfDay = 'midday';
+				else timeOfDay = 'afternoon';
+				
+				const idx = storyInfo.sceneIndex % 8;
+				if (intensityData[timeOfDay] && intensityData[timeOfDay][idx]) {
+					intensity = intensityData[timeOfDay][idx].toString();
+				}
+			}
+		}
+		
+		// Format the irritation info
+		return `\n\n=== Current Coach Dynamics ===\n${coachName} had a rough one: ${incident}\n\n${pronoun}'s still a little salty with ${targetName} after bringing it up in chat and not loving how the convo went.\n\nscene: ${sceneNum} intensity: ${intensity}`;
+		
+	} catch (error) {
+		console.error("[getCurrentIrritationInfo] Error getting irritation data:", error);
+		return "";
+	}
+}
+
 // Message deduplication system
 class MessageDeduplication {
 	private redis: IORedis | null = null;
@@ -1172,73 +1255,8 @@ export async function handleMessage(message: Message): Promise<void> {
 						.map(([cmd, desc]) => `${cmd}: ${desc}`)
 						.join("\n");
 					
-					// Get current story info
-					const storyInfo = getCurrentStoryInfo();
-					let irritationInfo = "";
-					
-					if (storyInfo && storyInfo.currentEpisode && storyInfo.currentEpisode.generatedContent[0]) {
-						// Get the first scene intro - it contains the information about what's happening
-						const firstSceneIntro = storyInfo.currentEpisode.generatedContent[0].intro;
-						
-						// Extract the coach names using a simple parsing approach
-						// First scene intro is typically formatted like:
-						// "It's 9:04pm at their London office, where clear sky stretches overhead. During an important call, Kailey's affirmation wallpaper started glitching."
-						let coachName = "";
-						let incident = "";
-						
-						// Look for common patterns to identify coaches
-						const coaches = ['Kailey', 'Alex', 'Rohan', 'Venus', 'Eljas', 'Donte'];
-						for (const coach of coaches) {
-							if (firstSceneIntro.includes(coach + "'s") || firstSceneIntro.includes(coach + ' ')) {
-								coachName = coach;
-								
-								// Extract the incident - everything after the coach name
-								const coachIndex = firstSceneIntro.indexOf(coach);
-								if (coachIndex > 0) {
-									const afterCoach = firstSceneIntro.substring(coachIndex + coach.length);
-									// Look for the incident part - usually after "where" or ". "
-									const parts = afterCoach.split('. ');
-									if (parts.length > 1) {
-										incident = parts[1];
-									} else {
-										incident = afterCoach;
-									}
-									break;
-								}
-							}
-						}
-						
-						// Identify the target coach (usually the one responding critically in the first exchange)
-						let targetCoach = "";
-						if (storyInfo.currentEpisode.generatedContent[0].conversation) {
-							// Look at second message which is usually a response to the first coach
-							const secondMsg = storyInfo.currentEpisode.generatedContent[0].conversation[1];
-							if (secondMsg) {
-								targetCoach = secondMsg.coach;
-							}
-						}
-						
-						// Format the irritation info - similar to existing style
-						if (coachName && incident) {
-							const sceneNum = (storyInfo.sceneIndex + 1).toString().padStart(2, '0');
-							const intensity = "2"; // Default value
-							
-							// Get pronoun based on coach name
-							const genderPronouns: Record<string, string> = {
-								'alex': 'She',
-								'rohan': 'He', 
-								'eljas': 'He',
-								'venus': 'She',
-								'kailey': 'She',
-								'donte': 'He'
-							};
-							
-							const pronoun = genderPronouns[coachName.toLowerCase()] || 'They';
-							const targetName = targetCoach ? ceos.find(c => c.id === targetCoach)?.name.split(' ')[0] || targetCoach : '';
-							
-							irritationInfo = `\n\n=== Current Coach Dynamics ===\n${coachName} had a rough one: ${incident}\n\n${pronoun}'s still a little salty with ${targetName || 'someone'} after bringing it up in chat and not loving how the convo went.\n\nscene: ${sceneNum} intensity: ${intensity}`;
-						}
-					}
+					// Get current irritation info from story-arcs.json
+					const irritationInfo = getCurrentIrritationInfo();
 					
 					await message.reply(`Available commands:\n${helpText}${irritationInfo}`);
 					return;
