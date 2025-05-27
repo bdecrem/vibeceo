@@ -296,8 +296,8 @@ export default function Home() {
             </a>
           </div>
           <div className="flex-1 text-center">
-            <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
-              Join the Discord
+            <a href="https://app.textmagic.com/widget/subscribe/4ad8a3661d37a6a" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
+              SMS BOT OPT-IN
             </a>
           </div>
           <div className="flex-1 text-right">
