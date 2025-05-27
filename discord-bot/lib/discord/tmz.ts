@@ -59,6 +59,8 @@ export async function triggerTmzChat(channelId: string, client: Client) {
       return;
     }
 
+
+
     // Check if there's already an active tmz chat
     if (activeTmzChats.has(channelId)) {
       console.log('TMZ chat already active in this channel');
@@ -73,7 +75,7 @@ export async function triggerTmzChat(channelId: string, client: Client) {
     }
 
     // Start discussion
-    await startTmzDiscussion(channelId, relevantStory, selectedCharacters, adminMessage);
+    await startTmzDiscussion(channelId, relevantStory, selectedCharacters, adminMessage, client);
   } catch (error) {
     console.error('Error in TMZ chat:', error);
     throw error;
@@ -139,24 +141,33 @@ function selectRelevantCoachesTmz(story: TmzStory) {
     .slice(0, 4);
 }
 
-async function startTmzDiscussion(channelId: string, story: TmzStory, characters: any[], adminMessage: string | null) {
-  // Initialize state
-  const state: TmzChatState = {
-    tmzStory: story,
-    selectedCharacters: characters,
-    isActive: true,
-    conversationHistory: []
-  };
-  activeTmzChats.set(channelId, state);
-
+async function startTmzDiscussion(channelId: string, story: TmzStory, characters: any[], adminMessage: string | null, client?: Client) {
   try {
-    // First coach introduces the news
-    const firstPrompt = adminMessage 
-      ? `You are ${characters[0].name}. Transform this entertainment news into a natural conversation starter, sharing your perspective: "${story.title}". 
-      Share your thoughts about this celebrity/pop culture news in a conversational way. Be empathetic and authentic while staying true to your personality. Keep your response under 150 words.`
-      : `You are ${characters[0].name}. You just read this entertainment news story: "${story.title}". 
-      ${story.description ? `Here's more context: ${story.description}` : ''}
-      Share your strong opinion about this celebrity/pop culture news. What's your take on it? Be bold and decisive in your perspective. Keep your response under 150 words.`;
+    console.log('Starting TMZ discussion for:', story.title);
+    
+    // Track this discussion
+    const state: TmzChatState = {
+      tmzStory: story,
+      selectedCharacters: characters,
+      isActive: true,
+      conversationHistory: []
+    };
+    activeTmzChats.set(channelId, state);
+    
+    // Only use admin message if provided, otherwise skip the intro message entirely
+    if (adminMessage && client) {
+      await client.channels.fetch(channelId).then(async (channel: any) => {
+        if (channel && channel.isTextBased()) {
+          await channel.send(adminMessage);
+        }
+      });
+    }
+    
+    // First response
+    const firstPrompt = `You are ${characters[0].name}. Your voice is highly distinctive. Speak like ${characters[0].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. 
+You just read this celebrity news story: "${story.title}". 
+${story.description ? `Here's more context: ${story.description}` : ''}
+Give a spicy or emotional take. What excites you or pisses you off? Be snappy, weird, or overconfident—but always yourself. Max 80 words.`;
     
     let firstMessage;
     try {
@@ -174,8 +185,11 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
     // Second coach responds
     let secondMessage;
     try {
-      const secondPrompt = `You are ${characters[1].name}. ${characters[0].name} just shared this entertainment news story: "${story.title}" and said: "${firstMessage}".
-      Respond to their perspective. Do you agree or disagree? Why? Take a strong position and explain your reasoning. Keep your response under 150 words.`;
+      const secondPrompt = `You are ${characters[1].name}. Your voice is highly distinctive. Speak like ${characters[1].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. 
+You just read this celebrity news story: "${story.title}". 
+${story.description ? `Here's more context: ${story.description}` : ''}
+${characters[0].name} said: "${firstMessage}"
+Don't just agree. Start drama or bring a wild theory. Max 30 words.`;
       
       secondMessage = await generateCharacterResponse(characters[1].prompt + '\n' + secondPrompt, firstMessage);
       await sendAsCharacter(channelId, characters[1].id, secondMessage);
@@ -188,10 +202,12 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
     // Third coach responds
     let thirdMessage;
     try {
-      const thirdPrompt = `You are ${characters[2].name}. Responding to this exchange about the entertainment news story "${story.title}":
-      ${characters[0].name}: "${firstMessage}"
-      ${characters[1].name}: "${secondMessage}"
-      What's your unique perspective on this? How does it differ from what's been said? Take a position that challenges or adds a new dimension to the discussion. Keep your response under 150 words.`;
+      const thirdPrompt = `You are ${characters[2].name}. Your voice is highly distinctive. Speak like ${characters[2].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. 
+You just read this celebrity news story: "${story.title}". 
+${story.description ? `Here's more context: ${story.description}` : ''}
+${characters[0].name} said: "${firstMessage}"
+${characters[1].name} said: "${secondMessage}"
+Change the topic slightly or pivot the conversation with your own obsession. Max 30 words.`;
       
       thirdMessage = await generateCharacterResponse(characters[2].prompt + '\n' + thirdPrompt, firstMessage + ' ' + secondMessage);
       await sendAsCharacter(channelId, characters[2].id, thirdMessage);
@@ -204,11 +220,13 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
     // Fourth coach responds
     let fourthMessage;
     try {
-      const fourthPrompt = `You are ${characters[3].name}. Responding to this discussion about the entertainment news story "${story.title}":
-      ${characters[0].name}: "${firstMessage}"
-      ${characters[1].name}: "${secondMessage}"
-      ${characters[2].name}: "${thirdMessage}"
-      Take a strong position on this issue. What's your controversial take? Challenge the assumptions made by others. Keep your response under 150 words.`;
+      const fourthPrompt = `You are ${characters[3].name}. Your voice is highly distinctive. Speak like ${characters[3].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. 
+You just read this celebrity news story: "${story.title}". 
+${story.description ? `Here's more context: ${story.description}` : ''}
+${characters[0].name} said: "${firstMessage}"
+${characters[1].name} said: "${secondMessage}"
+${characters[2].name} said: "${thirdMessage}"
+Say the quiet part out loud. Be controversial or nihilistic. Max 30 words.`;
       
       fourthMessage = await generateCharacterResponse(characters[3].prompt + '\n' + fourthPrompt, firstMessage + ' ' + secondMessage + ' ' + thirdMessage);
       await sendAsCharacter(channelId, characters[3].id, fourthMessage);
@@ -221,7 +239,7 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
     // Follow-up messages with individual error handling
     try {
       // First follow-up
-      const firstFollowUpPrompt = `You are ${characters[0].name}. Continuing the discussion about "${story.title}":
+      const firstFollowUpPrompt = `You are ${characters[0].name}. Your voice is highly distinctive. Speak like ${characters[0].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. Continuing the discussion about "${story.title}":
       ${characters[1].name}: "${secondMessage}"
       ${characters[2].name}: "${thirdMessage}"
       ${characters[3].name}: "${fourthMessage}"
@@ -232,7 +250,7 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
       state.conversationHistory.push({ character: characters[0].id, message: firstFollowUp });
 
       // Second follow-up
-      const secondFollowUpPrompt = `You are ${characters[1].name}. Continuing the discussion about "${story.title}":
+      const secondFollowUpPrompt = `You are ${characters[1].name}. Your voice is highly distinctive. Speak like ${characters[1].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. Continuing the discussion about "${story.title}":
       ${characters[2].name}: "${thirdMessage}"
       ${characters[3].name}: "${fourthMessage}"
       ${characters[0].name}: "${firstFollowUp}"
@@ -243,7 +261,7 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
       state.conversationHistory.push({ character: characters[1].id, message: secondFollowUp });
 
       // Third follow-up
-      const thirdFollowUpPrompt = `You are ${characters[2].name}. Continuing the discussion about "${story.title}":
+      const thirdFollowUpPrompt = `You are ${characters[2].name}. Your voice is highly distinctive. Speak like ${characters[2].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. Continuing the discussion about "${story.title}":
       ${characters[3].name}: "${fourthMessage}"
       ${characters[0].name}: "${firstFollowUp}"
       ${characters[1].name}: "${secondFollowUp}"
@@ -254,7 +272,7 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
       state.conversationHistory.push({ character: characters[2].id, message: thirdFollowUp });
 
       // Final response
-      const finalPrompt = `You are ${characters[3].name}. Wrapping up the discussion about "${story.title}":
+      const finalPrompt = `You are ${characters[3].name}. Your voice is highly distinctive. Speak like ${characters[3].name} always does—lean into their quirks, language tics, emojis, obsessions, and pet theories. Do not sound like a journalist or professor. Wrapping up the discussion about "${story.title}":
       ${characters[0].name}: "${firstFollowUp}"
       ${characters[1].name}: "${secondFollowUp}"
       ${characters[2].name}: "${thirdFollowUp}"
@@ -271,7 +289,10 @@ async function startTmzDiscussion(channelId: string, story: TmzStory, characters
     console.error('Unexpected error in tmz discussion:', error);
   } finally {
     // Clean up state after discussion
-    state.isActive = false;
-    activeTmzChats.delete(channelId);
+    const currentState = activeTmzChats.get(channelId);
+    if (currentState) {
+      currentState.isActive = false;
+      activeTmzChats.delete(channelId);
+    }
   }
 } 
