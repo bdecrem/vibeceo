@@ -22,6 +22,13 @@ const GENERAL_CHANNEL_ID = '1354474492629618831';
 const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '';
 const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '';
 
+// Debug channel IDs on startup
+console.log('=== CHANNEL ID DEBUG ===');
+console.log('GENERAL_CHANNEL_ID:', GENERAL_CHANNEL_ID);
+console.log('THELOUNGE_CHANNEL_ID:', THELOUNGE_CHANNEL_ID || 'not set');
+console.log('PITCH_CHANNEL_ID:', PITCH_CHANNEL_ID || 'not set');
+console.log('========================');
+
 // Function to update current scene
 export function updateCurrentScene(index: number) {
   currentSceneIndex = index;
