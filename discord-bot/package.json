@@ -5,7 +5,7 @@
 	"main": "dist/discord-bot/scripts/start-discord-bot.js",
 	"type": "module",
 	"scripts": {
-		"start": "node dist/scripts/start-discord-bot.js",
+		"start": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
 		"dev": "npm run build && npm run start",
 		"build": "rimraf dist && tsc",
 		"start:prod": "NODE_ENV=production node dist/scripts/start-discord-bot.js",
