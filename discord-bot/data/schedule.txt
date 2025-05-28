@@ -1,5 +1,5 @@
-00:00 watercooler
-01:00 waterheater
+00:00 waterheater
+01:00 watercooler
 02:00 coachquotes
 03:00 simplestaffmeeting
 04:00 upcomingevent
