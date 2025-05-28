@@ -1,5 +1,11 @@
 import { WebhookClient } from "discord.js";
-import { GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID } from "./bot.js";
+
+// Define channel IDs directly with environment variables to avoid circular dependencies
+// Use the same fallback values as in other modules for consistency
+const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
+const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '1372624901961420931';
+const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '1372625148938813550';
+const STAFFMEETINGS_CHANNEL_ID = process.env.STAFFMEETINGS_CHANNEL_ID || '1369356692428423240';
 
 // Store webhook clients for each channel
 export const channelWebhooks = new Map<string, Map<string, WebhookClient>>();
