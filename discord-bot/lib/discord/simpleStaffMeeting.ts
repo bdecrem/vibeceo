@@ -11,20 +11,14 @@ import {
 import { getWebhookUrls } from "./config.js";
 import { sendEventMessage } from "./eventMessages.js";
 import { TextChannel, Client } from "discord.js";
-import dotenv from "dotenv";
+import { loadEnvironment } from "./env-loader.js";
 import { cleanupStaffMeetings } from "./fileCleanup.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env.local
-const envPath = path.resolve(process.cwd(), ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-	console.error("Error loading .env.local:", result.error);
-	process.exit(1);
-}
+// Load environment variables
+loadEnvironment();
 
 // Staff meetings channel ID
 const STAFF_MEETINGS_CHANNEL_ID = "1369356692428423240";
