@@ -28,6 +28,8 @@ console.log('=== CHANNEL ID DEBUG ===');
 console.log('GENERAL_CHANNEL_ID:', GENERAL_CHANNEL_ID);
 console.log('THELOUNGE_CHANNEL_ID:', THELOUNGE_CHANNEL_ID || 'not set');
 console.log('PITCH_CHANNEL_ID:', PITCH_CHANNEL_ID || 'not set');
+console.log('Raw env PITCH_CHANNEL_ID:', process.env.PITCH_CHANNEL_ID || 'not set');
+console.log('All env vars with PITCH:', Object.keys(process.env).filter(k => k.includes('PITCH')));
 console.log('========================');
 
 // Function to update current scene
