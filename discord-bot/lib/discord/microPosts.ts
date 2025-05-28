@@ -21,13 +21,17 @@ interface MicroPostPrompt {
   outro: string;
 }
 
-// Load environment variables from .env.local
-const envPath = path.resolve(process.cwd(), ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Error loading .env.local:", result.error);
-  process.exit(1);
+// Load environment variables from .env.local only in development
+if (process.env.NODE_ENV !== "production") {
+	const envPath = path.resolve(process.cwd(), ".env.local");
+	console.log("Loading environment from:", envPath);
+	const result = dotenv.config({ path: envPath });
+	if (result.error) {
+		console.error("Error loading .env.local:", result.error);
+		process.exit(1);
+	}
+} else {
+	console.log("Production environment detected, using Railway environment variables");
 }
 
 // Initialize OpenAI

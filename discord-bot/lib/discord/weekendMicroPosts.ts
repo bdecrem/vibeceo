@@ -28,13 +28,17 @@ interface WeekendMicroPostPrompt {
   businessStates?: string[];
 }
 
-// Load environment variables from .env.local
-const envPath = path.resolve(process.cwd(), ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Error loading .env.local:", result.error);
-  // Don't exit during import - just log the error
+// Load environment variables from .env.local only in development
+if (process.env.NODE_ENV !== "production") {
+  const envPath = path.resolve(process.cwd(), ".env.local");
+  console.log("Loading environment from:", envPath);
+  const result = dotenv.config({ path: envPath });
+  if (result.error) {
+    console.error("Error loading .env.local:", result.error);
+    // Don't exit during import - just log the error
+  }
+} else {
+  console.log("Production environment detected, using Railway environment variables");
 }
 
 // Initialize Together.ai (will be null if no API key)
