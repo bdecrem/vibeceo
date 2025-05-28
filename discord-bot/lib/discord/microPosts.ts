@@ -21,14 +21,9 @@ interface MicroPostPrompt {
   outro: string;
 }
 
-// Load environment variables from .env.local
-const envPath = path.resolve(process.cwd(), ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Error loading .env.local:", result.error);
-  process.exit(1);
-}
+// Load environment variables using centralized loader
+import { loadEnvironment } from './env-loader.js';
+loadEnvironment();
 
 // Initialize OpenAI
 const openai = new OpenAI({
