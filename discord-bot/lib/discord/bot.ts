@@ -210,16 +210,23 @@ client.once(Events.ClientReady, async (readyClient) => {
     const staffWebhookUrls: Record<string, string> = {};
     const pitchWebhookUrls: Record<string, string> = {};
     
-    // Organize webhooks by channel prefix - keep original prefixes
+    // Organize webhooks by channel prefix - use general webhooks for all channels since Railway only provides general ones
     Object.entries(webhookUrls).forEach(([key, url]) => {
       if (key.startsWith('general_')) {
-        generalWebhookUrls[key] = url;  // Keep the 'general_' prefix
+        // Use general webhooks for the general channel
+        generalWebhookUrls[key] = url;
+        
+        // Also create lounge, staff, and pitch versions using the same URLs
+        const characterName = key.replace('general_', '');
+        loungeWebhookUrls[`lounge_${characterName}`] = url;
+        staffWebhookUrls[`staff_${characterName}`] = url;
+        pitchWebhookUrls[`pitch_${characterName}`] = url;
       } else if (key.startsWith('lounge_')) {
-        loungeWebhookUrls[key] = url;  // Keep the 'lounge_' prefix
+        loungeWebhookUrls[key] = url;
       } else if (key.startsWith('staff_')) {
-        staffWebhookUrls[key] = url;  // Keep the 'staff_' prefix
+        staffWebhookUrls[key] = url;
       } else if (key.startsWith('pitch_')) {
-        pitchWebhookUrls[key] = url;  // Keep the 'pitch_' prefix
+        pitchWebhookUrls[key] = url;
       }
     });
     
