@@ -31,7 +31,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Import channel IDs from bot.ts instead of hardcoding
-import { GENERAL_CHANNEL_ID, STAFF_MEETINGS_CHANNEL_ID } from './bot.js';
+import { GENERAL_CHANNEL_ID, STAFFMEETINGS_CHANNEL_ID } from './bot.js';
 
 // Ensure staff-meetings directory exists
 const meetingsDir = path.join(process.cwd(), "data", "staff-meetings");
@@ -184,7 +184,7 @@ async function postLatestMeetingToDiscord(client: Client, useGeneralChannel: boo
 		}
 
 		// Select which channel to use
-		const targetChannelId = useGeneralChannel ? GENERAL_CHANNEL_ID : STAFF_MEETINGS_CHANNEL_ID;
+		const targetChannelId = useGeneralChannel ? GENERAL_CHANNEL_ID : STAFFMEETINGS_CHANNEL_ID;
 		console.log(`[STAFF MEETING] Using channel ID: ${targetChannelId} (${useGeneralChannel ? 'general' : 'staff'} channel)`);
 
 		// Clean up old meeting files, keeping only the 3 most recent ones
