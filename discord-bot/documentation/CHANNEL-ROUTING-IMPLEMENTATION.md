@@ -1,60 +1,82 @@
-# Channel Routing Implementation
+# Channel Routing and Configuration Implementation
 
 ## Overview
-This implementation moves coach conversations and bot posts from #general to #thelounge, while keeping staff meetings and microposts in the #general channel. This document outlines the changes made to achieve this.
+This document outlines the implementation details for how the Discord bot handles environment variables, loads configuration for channel IDs and webhook URLs, and routes messages and activities to specific channels like #general, #thelounge, #pitch, and #staffmeetings.
 
-## Changes Made
+## Changes Made (Recent Major Update)
+
+The system has undergone a significant refactor in how environment variables are defined and how configuration is loaded and validated. This has led to a more robust and clear setup.
 
 ### 1. Environment Variables
-- Added support for `LOUNGE_WEBHOOK_URL_*` environment variables for each coach
-- Added new `THELOUNGE_CHANNEL_ID` environment variable
+The way channel IDs and webhook URLs are defined has been standardized. All required variables **must** be set in the environment. Hardcoded fallbacks have been removed.
+
+**Required Channel ID Variables:**
+*   `GENERAL_CHANNEL_ID`: The ID for the #general channel.
+*   `THELOUNGE_CHANNEL_ID`: The ID for the #thelounge channel.
+*   `PITCH_CHANNEL_ID`: The ID for the #pitch channel.
+*   `STAFFMEETINGS_CHANNEL_ID`: The ID for the #staffmeetings channel.
+
+**Required Webhook URL Variables:**
+Webhook URLs now follow a strict `CHANNELNAME_CHARACTERNAME_WEBHOOK_URL` format. For each of the 6 characters (Donte, Alex, Rohan, Venus, Eljas, Kailey) and for each of the 4 channels mentioned above, a specific webhook URL must be provided. This means a total of 24 webhook URL environment variables are required.
+
+*Examples:*
+*   `GENERAL_DONTE_WEBHOOK_URL=...`
+*   `THELOUNGE_ALEX_WEBHOOK_URL=...`
+*   `PITCH_ROHAN_WEBHOOK_URL=...`
+*   `STAFFMEETINGS_VENUS_WEBHOOK_URL=...`
+*   `(and so on for all character-channel combinations)`
+
+**Deprecated Formats:**
+Older formats like `WEBHOOK_URL_DONTE` or `LOUNGE_WEBHOOK_URL_DONTE` are no longer used.
 
 ### 2. Webhook Configuration (`config.ts`)
-- Added support for parsing and storing lounge webhook URLs
-- Maintained backwards compatibility with existing general and staff webhook URLs
+-   `config.ts` is responsible for loading all required channel IDs and webhook URLs from the environment variables.
+-   It parses the `CHANNELNAME_CHARACTERNAME_WEBHOOK_URL` variables and organizes them into a structured map: `webhookUrls[channelType][characterName]`. For example, `webhookUrls.general.donte` would hold Donte's webhook URL for the #general channel.
+-   **Stricter Validation**: The `validateConfig()` function now ensures that `DISCORD_BOT_TOKEN`, all 4 channel IDs, and all 24 webhook URLs are present and correctly named in the environment. If any of these are missing, the bot will log a comprehensive error and refuse to start.
 
 ### 3. Bot Initialization (`bot.ts`)
-- Added constant for channel IDs (`GENERAL_CHANNEL_ID` and `THELOUNGE_CHANNEL_ID`)
-- Modified webhook initialization to organize webhooks by channel type
-  - Preserves webhook URL prefixes (`general_`, `lounge_`, `staff_`) for proper lookup
-- Updated welcome message to send to #thelounge instead of #general
-- Added separate initialization for each channel's webhooks
+-   `bot.ts` now calls `validateConfig()` from `config.ts` at startup to get the Discord token, the map of channel IDs, and the structured map of webhook URLs.
+-   It no longer contains any hardcoded fallback channel IDs.
+-   The previous incorrect behavior of copying general webhooks to other channels (if specific ones weren't found) has been removed.
+-   `initializeWebhooks` (from `webhooks.ts`) is now called with the distinct and appropriate set of character webhooks for each specific channel (e.g., `initializeWebhooks(channelIds.thelounge, webhookUrls.thelounge)`).
 
 ### 4. Scheduler Updates (`scheduler.ts`)
-- Added a helper function `getChannelForService` that routes each service to the appropriate channel
-- Defined `STAFF_MEETING_SERVICES` list to specify which services should go to #general
-  - Added micropost services (coachquotes, crowdfaves, microclass, upcomingevent) to this list
-- Modified `runServiceWithMessages` to determine the target channel dynamically
-- Updated channel targeting in all scheduler functions
-- Implemented a `channelRedirectWrapper` function to ensure service functions use the correct channel ID
+- This section remains largely the same in its core logic.
+- Added a helper function `getChannelForService` that routes each service to the appropriate channel.
+- Defined `STAFF_MEETING_SERVICES` list to specify which services should go to #general.
+- Micropost services (coachquotes, crowdfaves, microclass, upcomingevent) are also routed to #general.
+- Modified `runServiceWithMessages` to determine the target channel dynamically based on `getChannelForService`.
+- Implemented a `channelRedirectWrapper` function to ensure service functions use the correct channel ID.
 
 ### 5. Webhook Logic (`webhooks.ts`)
-- Updated `sendAsCharacter` to support #thelounge webhooks
-- Implemented channel-specific webhook key determination
+-   `initializeWebhooks(channelId, characterWebhookUrls)` now expects the `characterWebhookUrls` parameter to be a simple map of character names to their URLs for that specific channel (e.g., `{ donte: "url1", alex: "url2" }`). It stores these in a per-channel map accessible by the simple character name.
+-   `sendAsCharacter(channelId, characterId, message)` has been greatly simplified. It now performs a direct lookup for the character's webhook.
+    -   It takes the `channelId` and the simple `characterId` (e.g., "donte").
+    -   It retrieves the map of webhooks for the given `channelId`.
+    -   It then directly looks up the `WebhookClient` using the (normalized) `characterId` from that map.
+    -   The complex `possibleKeys` logic and attempts to find webhooks using various prefixed keys are completely gone.
 
 ### 6. Testing
-- Created a test script (`test-scripts/test-channel-routing.js`) to verify routing behavior
+- The test script (`test-scripts/test-channel-routing.js`) should be updated or reviewed to ensure it aligns with the new environment variable requirements if it's used for local testing.
 
-## How the Routing Works
+## How the Routing Works (Service to Channel)
 
-1. Each scheduled event in the bot is classified:
-   - Staff meetings go to #general
-   - Microposts (coachquotes, crowdfaves, microclass, upcomingevent) go to #general
-   - All other activities (watercooler, news, etc.) go to #thelounge
+The core logic for routing *scheduled services* to different channels remains:
 
-2. When any message needs to be sent, the system:
-   - Determines which channel it should go to using `getChannelForService`
-   - Wraps service functions to ensure they send messages to the correct channel using `channelRedirectWrapper`
-   - Selects the appropriate webhook based on the channel and character
-   - Sends the message to the correct channel
+1.  Each scheduled event/service in the bot is classified:
+    *   Staff meetings are intended for `#staffmeetings`.
+    *   Microposts (coachquotes, crowdfaves, microclass, upcomingevent) are intended for `#general`.
+    *   All other activities (watercooler, news, etc.) are intended for `#thelounge`.
+    *   Pitches and related discussions are for `#pitch`.
 
-3. Webhook selection logic:
-   - For #general: Uses `general_*` or `staff_*` webhook prefixes
-   - For #thelounge: Uses `lounge_*` webhook prefixes
+2.  When any message needs to be sent by a scheduled service, the system:
+    *   Determines which channel it should go to using `getChannelForService` (in `scheduler.ts`).
+    *   Wraps service functions (using `channelRedirectWrapper`) to ensure they send messages to the correct channel ID obtained from `getChannelForService`.
+    *   `sendAsCharacter` (in `webhooks.ts`) then selects the appropriate webhook based on the (now correct) `channelId` and the `characterId`.
 
 ## Service Function Redirection
 
-A key part of the implementation is the `channelRedirectWrapper` function that ensures all service functions use the correct channel ID:
+The `channelRedirectWrapper` function in `scheduler.ts` remains crucial for ensuring service functions use the correct channel ID for their output:
 
 ```typescript
 function channelRedirectWrapper(
@@ -63,94 +85,100 @@ function channelRedirectWrapper(
 ) {
     return async (channelId: string, client: Client, ...args: any[]) => {
         // Get the correct channel ID for this service
-        const targetChannelId = getChannelForService(serviceName);
-        console.log(`[Scheduler] Redirecting ${serviceName} from ${channelId} to ${targetChannelId}`);
+        const targetChannelId = getChannelForService(serviceName); // e.g., get 'thelounge' ID
+        console.log(`[Scheduler] Redirecting ${serviceName} from default/scheduled ${channelId} to ${targetChannelId}`);
         
-        // Call the original function with the correct channel ID
+        // Call the original function with the correct target channel ID
         return serviceFn(targetChannelId, client, ...args);
     };
 }
 ```
+This wrapper intercepts service function calls and ensures they use the channel ID determined by `getChannelForService`.
 
-This wrapper intercepts service function calls and ensures they use the channel ID determined by `getChannelForService`, regardless of the channel ID passed to them by the scheduler.
+## Webhook Environment Variable and Configuration Flow
 
-## Webhook Prefix Handling
+The previous "Webhook Prefix Handling" is now better described as an end-to-end flow:
 
-It's important to maintain the webhook prefixes throughout the system:
+1.  **Environment Variables**: Webhook URLs are defined in the environment using the strict `CHANNELNAME_CHARACTERNAME_WEBHOOK_URL` format (e.g., `THELOUNGE_DONTE_WEBHOOK_URL`). Channel IDs are also defined (e.g., `THELOUNGE_CHANNEL_ID`).
 
-1. In `config.ts`, webhooks are defined with prefixes:
-   ```
-   LOUNGE_WEBHOOK_URL_DONTE -> 'lounge_donte'
-   ```
+2.  **Configuration Loading (`config.ts`)**:
+    *   `validateConfig()` reads these environment variables.
+    *   It populates a `channelIds` map: `{ general: "id1", thelounge: "id2", ... }`.
+    *   It populates a structured `webhookUrls` map:
+        ```typescript
+        {
+          general: {
+            donte: "url_general_donte",
+            alex: "url_general_alex",
+            // ...
+          },
+          thelounge: {
+            donte: "url_thelounge_donte",
+            alex: "url_thelounge_alex",
+            // ...
+          },
+          // ... and so on for pitch, staffmeetings
+        }
+        ```
 
-2. In `bot.ts`, these prefixes are preserved when organizing webhooks:
-   ```typescript
-   Object.entries(webhookUrls).forEach(([key, url]) => {
-     if (key.startsWith('lounge_')) {
-       loungeWebhookUrls[key] = url;  // Keep the 'lounge_' prefix
-     }
-   });
-   ```
+3.  **Bot Initialization (`bot.ts`)**:
+    *   `bot.ts` receives the `channelIds` and `webhookUrls` maps from `validateConfig()`.
+    *   For each channel, it calls `initializeWebhooks` from `webhooks.ts`. For example:
+        `await initializeWebhooks(channelIds.thelounge, webhookUrls.thelounge);`
+        Here, `webhookUrls.thelounge` would be `{ donte: "url_thelounge_donte", alex: "url_thelounge_alex", ... }`.
 
-3. In `webhooks.ts`, lookup is done using the same prefixes:
-   ```typescript
-   if (channelId === THELOUNGE_CHANNEL_ID) {
-     possibleKeys.push(
-       `lounge_${normalizedCharId}`,
-       `lounge_${characterId}`
-     );
-   }
-   ```
+4.  **Webhook Initialization (`webhooks.ts`)**:
+    *   `initializeWebhooks(channelId, characterUrls)` receives the specific channel's ID and its map of character webhooks.
+    *   It stores these webhooks in `channelWebhooks` (a `Map<string, Map<string, WebhookClient>>`). The outer map is keyed by `channelId`, and the inner map is keyed by the simple `characterName` (e.g., "donte").
 
-This ensures that webhooks are correctly found when messages are sent to each channel.
+5.  **Sending a Message (`webhooks.ts`)**:
+    *   `sendAsCharacter(channelId, characterId, message)` uses the `channelId` to get the inner map of character webhooks for that channel.
+    *   It then uses the (normalized) `characterId` (e.g., "donte") to directly retrieve the specific `WebhookClient` from that inner map.
 
-## Required Environment Variables
+This new flow ensures a clear and direct path from environment variable definition to webhook usage, eliminating the ambiguity of the old prefix-based system.
 
-Make sure these environment variables are set:
+## Required Environment Variables (Summary)
+
+Ensure these environment variables are set in your deployment environment (e.g., Railway):
+
 ```
-# General channel webhooks
-GENERAL_WEBHOOK_URL_DONTE=...
-GENERAL_WEBHOOK_URL_ALEX=...
-GENERAL_WEBHOOK_URL_ROHAN=...
-GENERAL_WEBHOOK_URL_VENUS=...
-GENERAL_WEBHOOK_URL_ELJAS=...
-GENERAL_WEBHOOK_URL_KAILEY=...
+# Discord Bot Token
+DISCORD_BOT_TOKEN=your_bot_token_here
 
-# Staff meetings channel webhooks
-STAFF_WEBHOOK_URL_DONTE=...
-STAFF_WEBHOOK_URL_ALEX=...
-STAFF_WEBHOOK_URL_ROHAN=...
-STAFF_WEBHOOK_URL_VENUS=...
-STAFF_WEBHOOK_URL_ELJAS=...
-STAFF_WEBHOOK_URL_KAILEY=...
-
-# The Lounge channel webhooks
-LOUNGE_WEBHOOK_URL_DONTE=...
-LOUNGE_WEBHOOK_URL_ALEX=...
-LOUNGE_WEBHOOK_URL_ROHAN=...
-LOUNGE_WEBHOOK_URL_VENUS=...
-LOUNGE_WEBHOOK_URL_ELJAS=...
-LOUNGE_WEBHOOK_URL_KAILEY=...
-
-# Channel IDs
+# Channel IDs (Must be set)
+GENERAL_CHANNEL_ID=...
 THELOUNGE_CHANNEL_ID=...
-# GENERAL_CHANNEL_ID is hardcoded as 1354474492629618831
+PITCH_CHANNEL_ID=...
+STAFFMEETINGS_CHANNEL_ID=...
+
+# Standardized Webhook URLs (All 24 must be set)
+# Format: CHANNELNAME_CHARACTERNAME_WEBHOOK_URL
+
+# Examples for GENERAL channel
+GENERAL_DONTE_WEBHOOK_URL=...
+GENERAL_ALEX_WEBHOOK_URL=...
+# ... (for Rohan, Venus, Eljas, Kailey in GENERAL)
+
+# Examples for THELOUNGE channel
+THELOUNGE_DONTE_WEBHOOK_URL=...
+THELOUNGE_ALEX_WEBHOOK_URL=...
+# ... (for Rohan, Venus, Eljas, Kailey in THELOUNGE)
+
+# Examples for PITCH channel
+PITCH_DONTE_WEBHOOK_URL=...
+PITCH_ALEX_WEBHOOK_URL=...
+# ... (for Rohan, Venus, Eljas, Kailey in PITCH)
+
+# Examples for STAFFMEETINGS channel
+STAFFMEETINGS_DONTE_WEBHOOK_URL=...
+STAFFMEETINGS_ALEX_WEBHOOK_URL=...
+# ... (for Rohan, Venus, Eljas, Kailey in STAFFMEETINGS)
 ```
 
 ## Testing the Implementation
-
-1. Set the required environment variables
-2. Run the debug script:
-   ```
-   ./start-debug.sh
-   ```
-3. Verify the routing logic outputs:
-   - Staff meetings go to #general
-   - Microposts go to #general
-   - Watercooler conversations go to #thelounge
+1.  Ensure all 29 required environment variables (token, 4 channel IDs, 24 webhook URLs) are correctly set.
+2.  Start the bot. Check startup logs for any errors from `validateConfig()`.
+3.  Verify that scheduled activities and commands requiring character impersonation occur in the correct channels.
 
 ## Fallback Behavior
-
-If `THELOUNGE_CHANNEL_ID` is not set:
-- All activities will fall back to #general
-- A warning will be logged 
+There is no longer fallback behavior for missing channel IDs or webhook URLs. If any of क्वrequired environment variables are not set, `validateConfig()` will throw an error, and the bot will not start. This ensures a more predictable and correctly configured deployment.

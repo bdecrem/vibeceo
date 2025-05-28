@@ -1,11 +1,6 @@
 import { WebhookClient } from "discord.js";
 
-// Define channel IDs directly with environment variables to avoid circular dependencies
-// Use the same fallback values as in other modules for consistency
-const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
-const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '1372624901961420931';
-const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '1372625148938813550';
-const STAFFMEETINGS_CHANNEL_ID = process.env.STAFFMEETINGS_CHANNEL_ID || '1369356692428423240';
+// Channel IDs are now passed as parameters, originating from validated configuration.
 
 // Store webhook clients for each channel
 export const channelWebhooks = new Map<string, Map<string, WebhookClient>>();
@@ -13,34 +8,38 @@ export const channelWebhooks = new Map<string, Map<string, WebhookClient>>();
 // Initialize webhooks for a channel
 export async function initializeWebhooks(
 	channelId: string,
-	webhookUrls: Record<string, string>
+	characterWebhookUrls: Record<string, string> // e.g., { donte: "url1", alex: "url2" }
 ) {
-	console.log("[DEBUG-WEBHOOKS] Initializing webhooks for channel:", channelId);
-	console.log("[DEBUG-WEBHOOKS] Available webhook URLs:", Object.keys(webhookUrls));
+	console.log(`[WEBHOOKS] Initializing webhooks for channel: ${channelId}`);
+	console.log(`[WEBHOOKS] Provided character webhook URLs:`, Object.keys(characterWebhookUrls));
 
 	// Clean up any existing webhooks for this channel
 	cleanupWebhooks(channelId);
 
 	const webhooks = new Map<string, WebhookClient>();
 
-	for (const [characterId, url] of Object.entries(webhookUrls)) {
-		console.log(`[DEBUG-WEBHOOKS] Creating webhook client for ${characterId} in channel ${channelId}, URL: ${url.substring(0, 20)}...`);
-		webhooks.set(characterId, new WebhookClient({ url }));
+	for (const [characterKey, url] of Object.entries(characterWebhookUrls)) {
+		// characterKey here is already the simple name, e.g., "donte", "alex"
+		const normalizedCharacterKey = characterKey.toLowerCase().trim(); // Ensure consistency
+		console.log(`[WEBHOOKS] Creating webhook client for character '${normalizedCharacterKey}' in channel ${channelId}`);
+		try {
+			webhooks.set(normalizedCharacterKey, new WebhookClient({ url }));
+		} catch (error) {
+			console.error(`[WEBHOOKS] Failed to create webhook client for ${normalizedCharacterKey} in channel ${channelId} with URL ${url}:`, error);
+		}
 	}
 
 	channelWebhooks.set(channelId, webhooks);
-	console.log("[DEBUG-WEBHOOKS] Webhooks initialized for channel:", channelId);
-	console.log("[DEBUG-WEBHOOKS] Current webhook map state:", {
-		channels: Array.from(channelWebhooks.keys()),
-		webhooks: Array.from(webhooks.keys())
+	console.log(`[WEBHOOKS] Webhooks initialized for channel: ${channelId}. ${webhooks.size} webhooks loaded.`);
+	console.log(`[WEBHOOKS] Current webhook map state for channel ${channelId}:`, {
+		characters: Array.from(webhooks.keys())
 	});
 }
 
-// Get avatar URL for a given character
+// Get avatar URL for a given character (remains unchanged, but not used by sendAsCharacter directly)
 function getAvatarUrl(characterName: string): string {
 	// Base URL for Discord avatar images
 	const baseUrl = "https://cdn.discordapp.com/avatars/";
-
 	// Default avatar if no match is found
 	return "https://i.imgur.com/6GHG6PX.png";
 }
@@ -58,121 +57,54 @@ const coachHandleMap: { [key: string]: string } = {
 // Send a message as a character
 export async function sendAsCharacter(
 	channelId: string,
-	characterId: string,
+	characterId: string, // This should be the simple character name, e.g., "donte"
 	message: string
 ): Promise<void> {
 	try {
-		console.log(`[DEBUG-WEBHOOKS] Attempting to send message as ${characterId} (normalized: ${characterId.toLowerCase()}) to channel ${channelId}`);
-		
-		// Debug current state of webhook map
-		console.log(`[DEBUG-WEBHOOKS] Current webhook map state:`, {
-			channels: Array.from(channelWebhooks.keys()),
-			webhooks: Array.from(channelWebhooks.get(channelId)?.keys() || [])
-		});
-		
-		// Normalize character ID for case insensitivity
 		const normalizedCharId = characterId.toLowerCase().trim();
+		console.log(`[WEBHOOKS] Attempting to send message as '${normalizedCharId}' to channel ${channelId}`);
 		
-		// Possible webhook keys to check, based on channel
-		const possibleKeys: string[] = [];
-		
-		// Determine which channel type we're in
-		if (channelId === GENERAL_CHANNEL_ID) {
-			// Staff meetings channel (#general)
-			possibleKeys.push(
-				`general_${normalizedCharId}`,
-				`general_${characterId}`,
-				`staff_${normalizedCharId}`,
-				`staff_${characterId}`,
-				normalizedCharId,  // Also try without prefix as fallback
-				characterId
-			);
-		} else if (channelId === THELOUNGE_CHANNEL_ID) {
-			// The Lounge channel
-			possibleKeys.push(
-				`lounge_${normalizedCharId}`,
-				`lounge_${characterId}`,
-				normalizedCharId,  // Also try without prefix as fallback
-				characterId
-			);
-		} else if (channelId === PITCH_CHANNEL_ID) {
-			// The Pitch channel
-			possibleKeys.push(
-				`pitch_${normalizedCharId}`,
-				`pitch_${characterId}`,
-				normalizedCharId,  // Also try without prefix as fallback
-				characterId
-			);
-		} else {
-			// Fallback - try all possible prefixes
-			possibleKeys.push(
-				`general_${normalizedCharId}`,
-				`general_${characterId}`,
-				`staff_${normalizedCharId}`,
-				`staff_${characterId}`,
-				`lounge_${normalizedCharId}`,
-				`lounge_${characterId}`,
-				`pitch_${normalizedCharId}`,
-				`pitch_${characterId}`,
-				normalizedCharId,
-				characterId
-			);
-		}
-		
-		console.log(`[DEBUG-WEBHOOKS] Looking for webhook with possible keys: ${JSON.stringify(possibleKeys)}`);
-		
-		const webhooks = channelWebhooks.get(channelId);
-		if (!webhooks) {
+		const webhooksForChannel = channelWebhooks.get(channelId);
+		if (!webhooksForChannel) {
+			console.error(`[WEBHOOKS] No webhooks initialized for channel ${channelId}. Available channels: ${Array.from(channelWebhooks.keys()).join(', ')}`);
 			throw new Error(`No webhooks initialized for channel ${channelId}`);
 		}
 		
-		// Find a matching webhook
-		let webhookKey: string | undefined;
-		let webhook: WebhookClient | undefined;
-		
-		for (const key of possibleKeys) {
-			if (webhooks.has(key)) {
-				webhookKey = key;
-				webhook = webhooks.get(key);
-				break;
-			}
-		}
-		
+		const webhook = webhooksForChannel.get(normalizedCharId);
 		if (!webhook) {
-			throw new Error(`No webhook found for character ${characterId} in channel ${channelId}`);
+			console.error(`[WEBHOOKS] No webhook found for character '${normalizedCharId}' in channel ${channelId}. Available characters in this channel: ${Array.from(webhooksForChannel.keys()).join(', ')}`);
+			throw new Error(`No webhook found for character '${normalizedCharId}' in channel ${channelId}`);
 		}
 		
-		console.log(`[DEBUG-WEBHOOKS] Found webhook with key: ${webhookKey} for ${characterId} in channel ${channelId}, sending message...`);
-		console.log(`[DEBUG-WEBHOOKS] Message content: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+		console.log(`[WEBHOOKS] Found webhook for '${normalizedCharId}' in channel ${channelId}. Sending message...`);
+		console.log(`[WEBHOOKS] Message content: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
 		
-		// Get the coach's full handle name
-		const displayName = coachHandleMap[normalizedCharId] || characterId;
+		const displayName = coachHandleMap[normalizedCharId] || characterId; // Fallback to original characterId if not in map
 		
-		// CRITICAL: Ensure we're sending the actual message content
-		// Make sure content field contains the full message, not just timestamp
 		await webhook.send({
 			content: message,
 			username: displayName
+			// avatarURL: getAvatarUrl(normalizedCharId) // Optional: if you have specific avatar URLs per character
 		});
 		
-		console.log(`[DEBUG-WEBHOOKS] Successfully sent message as ${characterId} to channel ${channelId}`);
+		console.log(`[WEBHOOKS] Successfully sent message as '${normalizedCharId}' to channel ${channelId}`);
 	} catch (error) {
-		console.error(`[DEBUG-WEBHOOKS] Error sending message as ${characterId}:`, error);
-		throw error;
+		console.error(`[WEBHOOKS] Error sending message as '${characterId}' (normalized: '${characterId.toLowerCase().trim()}') in channel ${channelId}:`, error);
+		throw error; // Re-throw to allow caller to handle
 	}
 }
 
 // Clean up webhooks for a channel
 export function cleanupWebhooks(channelId: string) {
-	console.log(`[DEBUG-WEBHOOKS] Cleaning up webhooks for channel ${channelId}`);
+	console.log(`[WEBHOOKS] Cleaning up webhooks for channel ${channelId}`);
 	const webhooks = channelWebhooks.get(channelId);
 	if (webhooks) {
 		for (const webhook of webhooks.values()) {
 			webhook.destroy();
 		}
 		channelWebhooks.delete(channelId);
-		console.log(`[DEBUG-WEBHOOKS] Cleaned up webhooks for channel ${channelId}`);
+		console.log(`[WEBHOOKS] Cleaned up webhooks for channel ${channelId}`);
 	} else {
-		console.log(`[DEBUG-WEBHOOKS] No webhooks found to clean up for channel ${channelId}`);
+		console.log(`[WEBHOOKS] No webhooks found to clean up for channel ${channelId}`);
 	}
 }

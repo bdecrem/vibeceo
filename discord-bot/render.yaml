@@ -12,23 +12,95 @@ services:
       - render.yaml
       - .renderignore
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: DISCORD_BOT_TOKEN
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      # Channel IDs - Must be set in Railway UI
+      - key: GENERAL_CHANNEL_ID
+        sync: false # Must be set in Railway: ID for the #general channel
+      - key: THELOUNGE_CHANNEL_ID
+        sync: false # Must be set in Railway: ID for the #thelounge channel
+      - key: PITCH_CHANNEL_ID
+        sync: false # Must be set in Railway: ID for the #pitch channel
+      - key: STAFFMEETINGS_CHANNEL_ID
+        sync: false # Must be set in Railway: ID for the #staffmeetings channel
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: gpt-3.5-turbo
       - key: OPENAI_MAX_TOKENS
         value: "1000"
-      - key: WEBHOOK_URL_DONTE
-        sync: false
-      - key: WEBHOOK_URL_ALEX
-        sync: false
-      - key: WEBHOOK_URL_ROHAN
-        sync: false
-      - key: WEBHOOK_URL_VENUS
-        sync: false
-      - key: WEBHOOK_URL_ELJAS
-        sync: false
-      - key: WEBHOOK_URL_KAILEY
-        sync: false 
+
+      # Deprecated Webhook URLs - to be replaced by channel-specific webhooks below
+      # - key: WEBHOOK_URL_DONTE
+      #   sync: false
+      # - key: WEBHOOK_URL_ALEX
+      #   sync: false
+      # - key: WEBHOOK_URL_ROHAN
+      #   sync: false
+      # - key: WEBHOOK_URL_VENUS
+      #   sync: false
+      # - key: WEBHOOK_URL_ELJAS
+      #   sync: false
+      # - key: WEBHOOK_URL_KAILEY
+      #   sync: false
+
+      # New Standardized Webhook URLs - Must be set in Railway UI
+      # General Channel Webhooks
+      - key: GENERAL_DONTE_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Donte in #general
+      - key: GENERAL_ALEX_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Alex in #general
+      - key: GENERAL_ROHAN_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Rohan in #general
+      - key: GENERAL_VENUS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Venus in #general
+      - key: GENERAL_ELJAS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Eljas in #general
+      - key: GENERAL_KAILEY_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Kailey in #general
+
+      # TheLounge Channel Webhooks
+      - key: THELOUNGE_DONTE_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Donte in #thelounge
+      - key: THELOUNGE_ALEX_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Alex in #thelounge
+      - key: THELOUNGE_ROHAN_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Rohan in #thelounge
+      - key: THELOUNGE_VENUS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Venus in #thelounge
+      - key: THELOUNGE_ELJAS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Eljas in #thelounge
+      - key: THELOUNGE_KAILEY_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Kailey in #thelounge
+
+      # Pitch Channel Webhooks
+      - key: PITCH_DONTE_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Donte in #pitch
+      - key: PITCH_ALEX_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Alex in #pitch
+      - key: PITCH_ROHAN_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Rohan in #pitch
+      - key: PITCH_VENUS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Venus in #pitch
+      - key: PITCH_ELJAS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Eljas in #pitch
+      - key: PITCH_KAILEY_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Kailey in #pitch
+
+      # StaffMeetings Channel Webhooks
+      - key: STAFFMEETINGS_DONTE_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Donte in #staffmeetings
+      - key: STAFFMEETINGS_ALEX_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Alex in #staffmeetings
+      - key: STAFFMEETINGS_ROHAN_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Rohan in #staffmeetings
+      - key: STAFFMEETINGS_VENUS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Venus in #staffmeetings
+      - key: STAFFMEETINGS_ELJAS_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Eljas in #staffmeetings
+      - key: STAFFMEETINGS_KAILEY_WEBHOOK_URL
+        sync: false # Must be set in Railway: Webhook URL for Kailey in #staffmeetings

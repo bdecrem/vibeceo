@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, TextChannel, Message } from 'discord.js';
 import { handleMessage, initializeScheduledTasks, initializeStoryArc } from './handlers.js';
 import { initializeWebhooks, sendAsCharacter } from './webhooks.js';
-import { validateConfig } from './config.js';
+import { validateConfig, ValidatedConfig } from './config.js'; // Corrected import path and added ValidatedConfig
 import { initializeScheduler } from './scheduler.js';
 import { generateEpisodeContext } from './episodeContext.js';
 import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
@@ -17,21 +17,7 @@ let currentEpisodeContext: EpisodeContext | null = null;
 let currentSceneIndex = 0;
 let currentEpisode: EpisodeScenes | null = null;
 
-// Channel IDs - Read from environment variables with specific hardcoded fallbacks for Railway
-const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
-const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '1372624901961420931';
-const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '1372625148938813550';
-const STAFFMEETINGS_CHANNEL_ID = process.env.STAFFMEETINGS_CHANNEL_ID || '1369356692428423240';
-
-// Debug channel IDs on startup
-console.log('=== CHANNEL ID DEBUG ===');
-console.log('GENERAL_CHANNEL_ID:', GENERAL_CHANNEL_ID);
-console.log('THELOUNGE_CHANNEL_ID:', THELOUNGE_CHANNEL_ID || 'not set');
-console.log('PITCH_CHANNEL_ID:', PITCH_CHANNEL_ID || 'not set');
-console.log('STAFFMEETINGS_CHANNEL_ID:', STAFFMEETINGS_CHANNEL_ID || 'not set');
-console.log('Raw env PITCH_CHANNEL_ID:', process.env.PITCH_CHANNEL_ID || 'not set');
-console.log('All env vars with PITCH:', Object.keys(process.env).filter(k => k.includes('PITCH')));
-console.log('========================');
+// Channel IDs are now loaded and validated by config.ts
 
 // Function to update current scene
 export function updateCurrentScene(index: number) {
@@ -188,92 +174,98 @@ client.once(Events.ClientReady, async (readyClient) => {
     initializeStoryArc();
     console.log('Story arc configuration initialized');
     
-    // DISABLED: Old weekend story system - we now use simple weekend mode with scheduler
-    // Reset weekend story if in weekend mode
-    // if (isWeekend()) {
-    //   console.log('Bot is starting in weekend mode, resetting weekend story...');
-    //   await resetWeekendStory();
-    //   console.log('Weekend story reset complete');
-    // }
-    
-    // Send theme immediately - now to #thelounge
-    const loungeChannel = THELOUNGE_CHANNEL_ID ? await client.channels.fetch(THELOUNGE_CHANNEL_ID) : null;
-    if (loungeChannel instanceof TextChannel && currentEpisodeContext) {
-      await loungeChannel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nWelcome to The AF\n✨ ━━━━━━━━━━━━━━━ ✨`);
+    // Validate configuration and get token, webhook URLs, and channel IDs
+    const validatedConfig = validateConfig(); // Call once and store
+    const { webhookUrls, channelIds } = validatedConfig;
+
+    // Send theme immediately to #thelounge
+    if (channelIds.thelounge) {
+        try {
+            const loungeChannel = await client.channels.fetch(channelIds.thelounge);
+            if (loungeChannel instanceof TextChannel) { // currentEpisodeContext might not be initialized here yet
+                await loungeChannel.send(`✨ ━━━━━━━━━━━━━━━ ✨\nWelcome to The AF\n✨ ━━━━━━━━━━━━━━━ ✨`);
+            } else {
+                console.error('#thelounge channel is not a text channel or could not be fetched.');
+            }
+        } catch (error) {
+            console.error('Failed to fetch #thelounge channel or send welcome message:', error);
+        }
+    } else {
+        console.error('THELOUNGE_CHANNEL_ID not found in validated config.');
     }
     
-    // Initialize Discord-specific components
-    const { webhookUrls } = validateConfig();
-    
-    // Filter webhook URLs for each channel
-    const generalWebhookUrls: Record<string, string> = {};
-    const loungeWebhookUrls: Record<string, string> = {};
-    const staffWebhookUrls: Record<string, string> = {};
-    const pitchWebhookUrls: Record<string, string> = {};
-    const staffmeetingsWebhookUrls: Record<string, string> = {};
-    
-    // Organize webhooks by channel prefix - use general webhooks for all channels since Railway only provides general ones
-    Object.entries(webhookUrls).forEach(([key, url]) => {
-      if (key.startsWith('general_')) {
-        // Use general webhooks for the general channel
-        generalWebhookUrls[key] = url;
-        
-        // Also create lounge, staff, pitch, and staffmeetings versions using the same URLs
-        const characterName = key.replace('general_', '');
-        loungeWebhookUrls[`lounge_${characterName}`] = url;
-        staffWebhookUrls[`staff_${characterName}`] = url;
-        pitchWebhookUrls[`pitch_${characterName}`] = url;
-        staffmeetingsWebhookUrls[`staffmeetings_${characterName}`] = url;
-      } else if (key.startsWith('lounge_')) {
-        loungeWebhookUrls[key] = url;
-      } else if (key.startsWith('staff_')) {
-        staffWebhookUrls[key] = url;
-      } else if (key.startsWith('pitch_')) {
-        pitchWebhookUrls[key] = url;
-      } else if (key.startsWith('staffmeetings_')) {
-        staffmeetingsWebhookUrls[key] = url;
-      }
-    });
-    
-    // Initialize webhooks for both channels
+    // Initialize webhooks for all channels
     console.log('Starting webhook initialization...');
     try {
-      // Initialize for #general channel (staff meetings)
-      await initializeWebhooks(GENERAL_CHANNEL_ID, generalWebhookUrls);
-      console.log('Webhooks initialized for #general channel');
+      // Initialize for #general channel
+      if (channelIds.general && webhookUrls.general) {
+        await initializeWebhooks(channelIds.general, webhookUrls.general);
+        console.log('Webhooks initialized for #general channel');
+      } else {
+        console.error('GENERAL_CHANNEL_ID or its webhooks not set, skipping webhook initialization for #general');
+      }
       
-      // Initialize for #thelounge channel (all other conversations)
-      if (THELOUNGE_CHANNEL_ID) {
-        await initializeWebhooks(THELOUNGE_CHANNEL_ID, loungeWebhookUrls);
+      // Initialize for #thelounge channel
+      if (channelIds.thelounge && webhookUrls.thelounge) {
+        await initializeWebhooks(channelIds.thelounge, webhookUrls.thelounge);
         console.log('Webhooks initialized for #thelounge channel');
       } else {
-        console.error('THELOUNGE_CHANNEL_ID not set, skipping webhook initialization for #thelounge');
+        console.error('THELOUNGE_CHANNEL_ID or its webhooks not set, skipping webhook initialization for #thelounge');
       }
       
       // Initialize for #pitch channel
-      if (PITCH_CHANNEL_ID) {
-        await initializeWebhooks(PITCH_CHANNEL_ID, pitchWebhookUrls);
+      if (channelIds.pitch && webhookUrls.pitch) {
+        await initializeWebhooks(channelIds.pitch, webhookUrls.pitch);
         console.log('Webhooks initialized for #pitch channel');
       } else {
-        console.error('PITCH_CHANNEL_ID not set, skipping webhook initialization for #pitch');
+        console.error('PITCH_CHANNEL_ID or its webhooks not set, skipping webhook initialization for #pitch');
       }
       
       // Initialize for #staffmeetings channel
-      if (STAFFMEETINGS_CHANNEL_ID) {
-        await initializeWebhooks(STAFFMEETINGS_CHANNEL_ID, staffmeetingsWebhookUrls);
+      if (channelIds.staffmeetings && webhookUrls.staffmeetings) {
+        await initializeWebhooks(channelIds.staffmeetings, webhookUrls.staffmeetings);
         console.log('Webhooks initialized for #staffmeetings channel');
       } else {
-        console.error('STAFFMEETINGS_CHANNEL_ID not set, skipping webhook initialization for #staffmeetings');
+        console.error('STAFFMEETINGS_CHANNEL_ID or its webhooks not set, skipping webhook initialization for #staffmeetings');
       }
       
-      // Initialize scheduler with both channel IDs
-      initializeScheduler(client);
+      // Initialize scheduler with client (it will get channel IDs from config itself or be passed them)
+      initializeScheduler(client); // Assuming scheduler is updated to use validatedConfig or passed channelIds
       console.log('Centralized scheduler started');
     } catch (error) {
       console.error('Failed to initialize webhooks:', error);
     }
     
-    console.log('All webhooks initialized successfully');
+    // === Suggested Diagnostic Logging Start ===
+    console.log('[BOT_INIT] === Effective Channel Configuration ===');
+    const channelTypeDisplayNames: Record<string, string> = {
+      general: "General",
+      thelounge: "The Lounge",
+      pitch: "Pitch",
+      staffmeetings: "Staff Meetings"
+    };
+
+    for (const channelType of Object.keys(channelIds).sort()) {
+      const channelId = channelIds[channelType];
+      const displayName = channelTypeDisplayNames[channelType] || channelType;
+      console.log(`[BOT_INIT] ${displayName} Channel ID: ${channelId || 'Not Set'}`);
+      if (webhookUrls[channelType] && channelId) {
+        const loadedCharacterWebhooks = Object.keys(webhookUrls[channelType]).sort();
+        if (loadedCharacterWebhooks.length > 0) {
+          console.log(`[BOT_INIT]   Webhooks loaded for: ${loadedCharacterWebhooks.join(', ')}`);
+        } else {
+          console.log(`[BOT_INIT]   No webhooks loaded for this channel despite Channel ID being set.`);
+        }
+      } else if (channelId) {
+        console.log(`[BOT_INIT]   Channel ID is set, but no webhook configuration found for this channel type.`);
+      } else {
+        console.log(`[BOT_INIT]   Channel ID not set for this channel type.`);
+      }
+    }
+    console.log('[BOT_INIT] =====================================');
+    // === Suggested Diagnostic Logging End ===
+
+    console.log('All webhooks initialized successfully (for configured channels)');
     console.log('Discord bot started successfully');
   } catch (error) {
     console.error('Error during bot initialization:', error);
@@ -319,7 +311,7 @@ export async function startBot() {
     generateRandomCoachIrritation();
     
     // Validate configuration and get token
-    const { token } = validateConfig();
+    const { token } = validateConfig(); // token is used for login, webhookUrls & channelIds used in ClientReady
     
     // Initialize story arc first
     console.log('=== INITIALIZING STORY ARC ===');
@@ -379,4 +371,5 @@ process.on('SIGINT', () => {
 });
 
 // Export the client and episode context for use in other parts of the application
-export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID, STAFFMEETINGS_CHANNEL_ID }; 
+// Removed old channel ID constants from export
+export { client, currentEpisodeContext, currentEpisode, currentSceneIndex };
