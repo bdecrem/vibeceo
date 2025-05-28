@@ -111,15 +111,29 @@ export function getWebhookUrls() {
 
 // Environment variable validation
 export function validateConfig() {
+  console.log('=== VALIDATING CONFIG ===');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) {
     throw new Error('DISCORD_BOT_TOKEN is not set in environment variables');
   }
+  console.log('✅ DISCORD_BOT_TOKEN found');
+  
+  // Debug: Check if any webhook environment variables exist
+  const allEnvVars = Object.keys(process.env).filter(key => key.includes('WEBHOOK'));
+  console.log('All webhook-related env vars found:', allEnvVars);
   
   const webhookUrls = getWebhookUrls();
+  console.log('Webhook URLs found:', Object.keys(webhookUrls));
+  console.log('Total webhook URLs:', Object.keys(webhookUrls).length);
+  
   if (Object.keys(webhookUrls).length === 0) {
+    console.error('❌ No webhook URLs found in environment variables');
+    console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('WEBHOOK')));
     throw new Error('No webhook URLs configured in environment variables');
   }
   
+  console.log('✅ Config validation successful');
   return { token, webhookUrls };
 } 
