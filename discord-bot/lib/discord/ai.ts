@@ -1,13 +1,13 @@
 import OpenAI from "openai";
-import { config } from "dotenv";
+import { loadEnvironment } from "./env-loader.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env.local in project root
-config({ path: path.resolve(process.cwd(), ".env.local") });
+// Load environment variables
+loadEnvironment();
 
 if (!process.env.OPENAI_API_KEY) {
 	throw new Error("OPENAI_API_KEY is not set in environment variables");

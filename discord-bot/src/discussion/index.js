@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import { loadEnvironment } from "../lib/discord/env-loader.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebhookClient } from "discord.js";
@@ -8,8 +8,8 @@ import { getDiscussionCEO } from "../../data/discord-ceos-augmentations.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+// Load environment variables
+loadEnvironment();
 
 // Coach personalities and their webhook clients
 const coaches = {
