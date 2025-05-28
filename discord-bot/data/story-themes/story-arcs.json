@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "eljas",
-    "target": "alex",
-    "incident": "His livestream got flagged for \\",
+    "coach": "alex",
+    "target": "venus",
+    "incident": "She cried during a founder onboarding and didn't mute.",
     "intensity": {
       "morning": [
         1,
@@ -39,30 +39,30 @@
   "storyArcs": {
     "donte": {
       "getting_irritated_by_kailey": {
-        "promptAttribute": "engagement",
+        "promptAttribute": "tension",
         "progression": {
-          "startLevel": 0,
+          "startLevel": 0.6,
           "endLevel": 1,
           "scenes": {
             "morning": [
               0,
-              0.1,
-              0.2,
-              0.3,
-              0.4,
-              0.5,
-              0.6,
-              0.7
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
             ],
             "midday": [
-              0.8,
-              0.9,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
             ],
             "afternoon": [
               1,
@@ -76,22 +76,27 @@
             ]
           }
         },
-        "context": "Donte is getting increasingly distracted and disengaged during conversations",
-        "promptInjection": "You are Donte. Your engagement level is at {level} (where 0 is fully engaged and 1 is completely distracted). {context}",
+        "context": "Donte Disrupt is getting increasingly irritated by Kailey Calm's approach to \"His mic glitched during a high-stakes call.\"",
+        "promptInjection": "You are Donte Disrupt. Your irritation with Kailey Calm's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
         "levelContexts": {
-          "0.0": "you're fully focused and engaged",
-          "0.6": "you're starting to zone out and lose focus",
-          "1.0": "you're completely distracted and not paying attention"
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
         },
         "watercoolerPresence": {
           "requiredCharacters": [
             "donte",
             "kailey"
           ],
-          "probability": 0,
+          "probability": 0.66,
           "speakingOrder": {
             "first": "any",
             "second": "donte"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"His mic glitched during a high-stakes call.\" influences all interactions between Donte Disrupt and Kailey Calm",
+            "duration": "episode"
           }
         }
       }
@@ -281,6 +286,70 @@
           "influence": {
             "type": "tension",
             "description": "The tension from the waterheater incident about \"Her automation kicked everyone off a project board.\" influences all interactions between Venus Metrics and Kailey Calm",
+            "duration": "episode"
+          }
+        }
+      }
+    },
+    "rohan": {
+      "getting_irritated_by_alex": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Rohan Mehta is getting increasingly irritated by Alex Monroe's approach to \"He changed his Zoom background and no one noticed.\"",
+        "promptInjection": "You are Rohan Mehta. Your irritation with Alex Monroe's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "rohan",
+            "alex"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "rohan"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"He changed his Zoom background and no one noticed.\" influences all interactions between Rohan Mehta and Alex Monroe",
             "duration": "episode"
           }
         }
