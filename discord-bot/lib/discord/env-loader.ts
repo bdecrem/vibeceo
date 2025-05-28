@@ -39,9 +39,15 @@ export function loadEnvironment() {
     }
   }
   
+  // Support both DISCORD_TOKEN and DISCORD_BOT_TOKEN for backward compatibility
+  if (process.env.DISCORD_BOT_TOKEN && !process.env.DISCORD_TOKEN) {
+    process.env.DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
+    console.log('Using DISCORD_BOT_TOKEN as DISCORD_TOKEN');
+  }
+
   // For production, ensure required variables are set
   if (env === 'production') {
-    const requiredVars = ['DISCORD_TOKEN', 'DISCORD_CLIENT_ID'];
+    const requiredVars = ['DISCORD_BOT_TOKEN', 'DISCORD_CLIENT_ID'];
     const missingVars = requiredVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
