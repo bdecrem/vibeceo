@@ -171,6 +171,13 @@ fs.watchFile(WEEKEND_SCHEDULE_PATH, (curr, prev) => {
 
 // Helper function to determine which channel to use for a service
 export function getChannelForService(serviceName: string): string {
+    console.log(`[Scheduler DEBUG] Channel routing for service: ${serviceName}`);
+    console.log(`[Scheduler DEBUG] THELOUNGE_CHANNEL_ID: ${THELOUNGE_CHANNEL_ID || 'not set'}`);
+    console.log(`[Scheduler DEBUG] PITCH_CHANNEL_ID: ${PITCH_CHANNEL_ID || 'not set'}`);
+    console.log(`[Scheduler DEBUG] GENERAL_CHANNEL_ID: ${GENERAL_CHANNEL_ID}`);
+    console.log(`[Scheduler DEBUG] Is pitch service: ${PITCH_SERVICES.includes(serviceName)}`);
+    console.log(`[Scheduler DEBUG] PITCH_SERVICES array: ${JSON.stringify(PITCH_SERVICES)}`);
+    
     // If special channels are not set, fall back to GENERAL_CHANNEL_ID
     if (!THELOUNGE_CHANNEL_ID && !PITCH_CHANNEL_ID) {
         console.log(`[Scheduler] Special channel IDs not set, using GENERAL_CHANNEL_ID for ${serviceName}`);
@@ -185,17 +192,18 @@ export function getChannelForService(serviceName: string): string {
     
     // Use PITCH_CHANNEL_ID for pitch services
     if (PITCH_SERVICES.includes(serviceName) && PITCH_CHANNEL_ID) {
-        console.log(`[Scheduler] Using pitch channel for pitch service: ${serviceName}`);
+        console.log(`[Scheduler] Using pitch channel for pitch service: ${serviceName} -> ${PITCH_CHANNEL_ID}`);
         return PITCH_CHANNEL_ID;
     }
     
     // Use THELOUNGE_CHANNEL_ID for all other services
     if (THELOUNGE_CHANNEL_ID) {
-        console.log(`[Scheduler] Using lounge channel for service: ${serviceName}`);
+        console.log(`[Scheduler] Using lounge channel for service: ${serviceName} -> ${THELOUNGE_CHANNEL_ID}`);
         return THELOUNGE_CHANNEL_ID;
     }
     
     // Default fallback
+    console.log(`[Scheduler] Using fallback GENERAL_CHANNEL_ID for service: ${serviceName} -> ${GENERAL_CHANNEL_ID}`);
     return GENERAL_CHANNEL_ID;
 }
 
