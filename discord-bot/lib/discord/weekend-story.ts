@@ -29,8 +29,11 @@ if (process.env.NODE_ENV !== "production") {
 	console.log("Production environment detected, using Railway environment variables");
 }
 
+// Import channel IDs from bot.ts instead of hardcoding
+import { GENERAL_CHANNEL_ID } from './bot.js';
+
 // Use the general channel for weekend stories
-const WEEKEND_STORY_CHANNEL_ID = "1354474492629618831"; // Same as GENERAL_CHANNEL_ID
+const WEEKEND_STORY_CHANNEL_ID = GENERAL_CHANNEL_ID;
 
 // Ensure weekend-stories directory exists
 const storiesDir = path.join(process.cwd(), "data", "weekend-stories");

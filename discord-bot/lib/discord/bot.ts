@@ -17,10 +17,18 @@ let currentEpisodeContext: EpisodeContext | null = null;
 let currentSceneIndex = 0;
 let currentEpisode: EpisodeScenes | null = null;
 
-// Channel IDs
-const GENERAL_CHANNEL_ID = '1354474492629618831';
+// Channel IDs - Read all from environment variables with fallbacks for backward compatibility
+const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
 const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '';
 const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '';
+const STAFF_MEETINGS_CHANNEL_ID = process.env.STAFF_MEETINGS_CHANNEL_ID || '';
+
+// Log channel configuration for debugging
+console.log('Channel configuration:');
+console.log(`- GENERAL_CHANNEL_ID: ${GENERAL_CHANNEL_ID}`);
+console.log(`- THELOUNGE_CHANNEL_ID: ${THELOUNGE_CHANNEL_ID}`);
+console.log(`- PITCH_CHANNEL_ID: ${PITCH_CHANNEL_ID}`);
+console.log(`- STAFF_MEETINGS_CHANNEL_ID: ${STAFF_MEETINGS_CHANNEL_ID}`);
 
 // Function to update current scene
 export function updateCurrentScene(index: number) {
@@ -349,4 +357,4 @@ process.on('SIGINT', () => {
 });
 
 // Export the client and episode context for use in other parts of the application
-export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID }; 
+export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID, STAFF_MEETINGS_CHANNEL_ID }; 

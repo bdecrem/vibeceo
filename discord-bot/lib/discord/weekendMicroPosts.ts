@@ -55,8 +55,8 @@ try {
   console.error("[WeekendMicroPosts] Error initializing Together.ai:", error);
 }
 
-// Primary Discord channel ID (General)
-const GENERAL_CHANNEL_ID = "1354474492629618831";
+// Import channel IDs from bot.ts instead of hardcoding
+import { GENERAL_CHANNEL_ID } from './bot.js';
 
 // The FoundryHeat webhook for posting to General
 let foundryHeatWebhook: WebhookClient | null = null;

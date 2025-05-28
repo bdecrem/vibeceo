@@ -35,8 +35,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Primary Discord channel ID
-const GENERAL_CHANNEL_ID = "1354474492629618831";
+// Import channel IDs from bot.ts instead of hardcoding
+import { GENERAL_CHANNEL_ID } from './bot.js';
 
 // Define interfaces
 interface ArgumentPrompt {

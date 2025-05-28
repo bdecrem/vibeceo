@@ -30,10 +30,8 @@ if (process.env.NODE_ENV !== "production") {
 	console.log("Production environment detected, using Railway environment variables");
 }
 
-// Staff meetings channel ID
-const STAFF_MEETINGS_CHANNEL_ID = "1369356692428423240";
-// General channel ID (for fallback)
-const GENERAL_CHANNEL_ID = "1354474492629618831";
+// Import channel IDs from bot.ts instead of hardcoding
+import { GENERAL_CHANNEL_ID, STAFF_MEETINGS_CHANNEL_ID } from './bot.js';
 
 // Ensure staff-meetings directory exists
 const meetingsDir = path.join(process.cwd(), "data", "staff-meetings");
