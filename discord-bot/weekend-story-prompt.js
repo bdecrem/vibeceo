@@ -3,18 +3,13 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import { loadEnvironment } from "./lib/discord/env-loader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables
-const envPath = path.resolve(__dirname, ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Error loading .env.local:", result.error);
-  process.exit(1);
-}
+loadEnvironment();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

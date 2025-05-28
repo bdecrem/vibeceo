@@ -2,9 +2,11 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+// import { generatePromptVariations, testPrompt, analyzeResults, optimizePrompt } from '../lib/discord/ai.js';
+import { loadEnvironment } from '../lib/discord/env-loader.ts';
 
-// Load .env.local instead of .env
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// Load environment variables
+loadEnvironment();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
