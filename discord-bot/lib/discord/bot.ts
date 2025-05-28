@@ -19,9 +19,9 @@ let currentEpisode: EpisodeScenes | null = null;
 
 // Channel IDs
 const GENERAL_CHANNEL_ID = '1354474492629618831';
-const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '';
-// Try multiple environment variable names for pitch channel
-const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || process.env.PITCHCHANNEL_ID || process.env.PITCH_ID || '1372625148938813550';
+// Hardcode fallbacks since Railway isn't loading these env vars properly
+const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '1372624901961420931';
+const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '1372625148938813550';
 
 // Debug channel IDs on startup
 console.log('=== CHANNEL ID DEBUG ===');
