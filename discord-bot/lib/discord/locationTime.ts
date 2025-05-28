@@ -23,6 +23,12 @@ const weekendBlocks = [
 ];
 
 export function isWeekend(): boolean {
+    // Check for weekend mode override first
+    if (process.env.WEEKEND_MODE_OVERRIDE === 'ON') {
+        console.log('[LocationTime] Weekend mode override is ON - forcing weekend mode');
+        return true;
+    }
+    
     // WEEKEND MODE ENABLED
     console.log('[LocationTime] Checking weekend mode...');
     
