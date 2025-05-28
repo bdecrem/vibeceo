@@ -22,12 +22,14 @@ const GENERAL_CHANNEL_ID = '1354474492629618831';
 // Hardcode fallbacks since Railway isn't loading these env vars properly
 const THELOUNGE_CHANNEL_ID = process.env.THELOUNGE_CHANNEL_ID || '1372624901961420931';
 const PITCH_CHANNEL_ID = process.env.PITCH_CHANNEL_ID || '1372625148938813550';
+const STAFFMEETINGS_CHANNEL_ID = process.env.STAFFMEETINGS_CHANNEL_ID || '1369356692428423240';
 
 // Debug channel IDs on startup
 console.log('=== CHANNEL ID DEBUG ===');
 console.log('GENERAL_CHANNEL_ID:', GENERAL_CHANNEL_ID);
 console.log('THELOUNGE_CHANNEL_ID:', THELOUNGE_CHANNEL_ID || 'not set');
 console.log('PITCH_CHANNEL_ID:', PITCH_CHANNEL_ID || 'not set');
+console.log('STAFFMEETINGS_CHANNEL_ID:', STAFFMEETINGS_CHANNEL_ID || 'not set');
 console.log('Raw env PITCH_CHANNEL_ID:', process.env.PITCH_CHANNEL_ID || 'not set');
 console.log('All env vars with PITCH:', Object.keys(process.env).filter(k => k.includes('PITCH')));
 console.log('========================');
@@ -209,6 +211,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     const loungeWebhookUrls: Record<string, string> = {};
     const staffWebhookUrls: Record<string, string> = {};
     const pitchWebhookUrls: Record<string, string> = {};
+    const staffmeetingsWebhookUrls: Record<string, string> = {};
     
     // Organize webhooks by channel prefix - use general webhooks for all channels since Railway only provides general ones
     Object.entries(webhookUrls).forEach(([key, url]) => {
@@ -216,17 +219,20 @@ client.once(Events.ClientReady, async (readyClient) => {
         // Use general webhooks for the general channel
         generalWebhookUrls[key] = url;
         
-        // Also create lounge, staff, and pitch versions using the same URLs
+        // Also create lounge, staff, pitch, and staffmeetings versions using the same URLs
         const characterName = key.replace('general_', '');
         loungeWebhookUrls[`lounge_${characterName}`] = url;
         staffWebhookUrls[`staff_${characterName}`] = url;
         pitchWebhookUrls[`pitch_${characterName}`] = url;
+        staffmeetingsWebhookUrls[`staffmeetings_${characterName}`] = url;
       } else if (key.startsWith('lounge_')) {
         loungeWebhookUrls[key] = url;
       } else if (key.startsWith('staff_')) {
         staffWebhookUrls[key] = url;
       } else if (key.startsWith('pitch_')) {
         pitchWebhookUrls[key] = url;
+      } else if (key.startsWith('staffmeetings_')) {
+        staffmeetingsWebhookUrls[key] = url;
       }
     });
     
@@ -251,6 +257,14 @@ client.once(Events.ClientReady, async (readyClient) => {
         console.log('Webhooks initialized for #pitch channel');
       } else {
         console.error('PITCH_CHANNEL_ID not set, skipping webhook initialization for #pitch');
+      }
+      
+      // Initialize for #staffmeetings channel
+      if (STAFFMEETINGS_CHANNEL_ID) {
+        await initializeWebhooks(STAFFMEETINGS_CHANNEL_ID, staffmeetingsWebhookUrls);
+        console.log('Webhooks initialized for #staffmeetings channel');
+      } else {
+        console.error('STAFFMEETINGS_CHANNEL_ID not set, skipping webhook initialization for #staffmeetings');
       }
       
       // Initialize scheduler with both channel IDs
@@ -366,4 +380,4 @@ process.on('SIGINT', () => {
 });
 
 // Export the client and episode context for use in other parts of the application
-export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID }; 
+export { client, currentEpisodeContext, currentEpisode, currentSceneIndex, GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID, STAFFMEETINGS_CHANNEL_ID }; 
