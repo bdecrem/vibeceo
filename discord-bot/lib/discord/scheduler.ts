@@ -15,7 +15,7 @@ import { sendEventMessage, EVENT_MESSAGES, customEventMessageCache } from "./eve
 import { ceos, CEO } from "../../data/ceos.js";
 import { waterheaterIncidents } from "../../data/waterheater-incidents.js";
 import { isWeekend } from "./locationTime.js";
-import { GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID } from "./bot.js";
+import { GENERAL_CHANNEL_ID, THELOUNGE_CHANNEL_ID, PITCH_CHANNEL_ID, STAFFMEETINGS_CHANNEL_ID } from "./bot.js";
 
 // Path to the schedule files
 const WEEKDAY_SCHEDULE_PATH = path.join(process.cwd(), "data", "schedule.txt");
@@ -171,31 +171,38 @@ fs.watchFile(WEEKEND_SCHEDULE_PATH, (curr, prev) => {
 
 // Helper function to determine which channel to use for a service
 export function getChannelForService(serviceName: string): string {
-    // If special channels are not set, fall back to GENERAL_CHANNEL_ID
-    if (!THELOUNGE_CHANNEL_ID && !PITCH_CHANNEL_ID) {
-        console.log(`[Scheduler] Special channel IDs not set, using GENERAL_CHANNEL_ID for ${serviceName}`);
-        return GENERAL_CHANNEL_ID;
-    }
-    
-    // Use GENERAL_CHANNEL_ID for staff meeting services
-    if (STAFF_MEETING_SERVICES.includes(serviceName)) {
-        console.log(`[Scheduler] Using general channel for staff meeting service: ${serviceName}`);
-        return GENERAL_CHANNEL_ID;
-    }
+    console.log(`[Scheduler DEBUG] Channel routing for service: ${serviceName}`);
+    console.log(`[Scheduler DEBUG] THELOUNGE_CHANNEL_ID: ${THELOUNGE_CHANNEL_ID || 'not set'}`);
+    console.log(`[Scheduler DEBUG] PITCH_CHANNEL_ID: ${PITCH_CHANNEL_ID || 'not set'}`);
+    console.log(`[Scheduler DEBUG] STAFFMEETINGS_CHANNEL_ID: ${STAFFMEETINGS_CHANNEL_ID || 'not set'}`);
+    console.log(`[Scheduler DEBUG] GENERAL_CHANNEL_ID: ${GENERAL_CHANNEL_ID}`);
     
     // Use PITCH_CHANNEL_ID for pitch services
     if (PITCH_SERVICES.includes(serviceName) && PITCH_CHANNEL_ID) {
-        console.log(`[Scheduler] Using pitch channel for pitch service: ${serviceName}`);
+        console.log(`[Scheduler] Using pitch channel for pitch service: ${serviceName} -> ${PITCH_CHANNEL_ID}`);
         return PITCH_CHANNEL_ID;
+    }
+    
+    // Use STAFFMEETINGS_CHANNEL_ID for staff meeting services (except microposts)
+    if (serviceName === 'simplestaffmeeting' && STAFFMEETINGS_CHANNEL_ID) {
+        console.log(`[Scheduler] Using staffmeetings channel for staff meeting: ${serviceName} -> ${STAFFMEETINGS_CHANNEL_ID}`);
+        return STAFFMEETINGS_CHANNEL_ID;
+    }
+    
+    // Use GENERAL_CHANNEL_ID for micropost services
+    if (MICROPOST_SERVICES.includes(serviceName)) {
+        console.log(`[Scheduler] Using general channel for micropost service: ${serviceName} -> ${GENERAL_CHANNEL_ID}`);
+        return GENERAL_CHANNEL_ID;
     }
     
     // Use THELOUNGE_CHANNEL_ID for all other services
     if (THELOUNGE_CHANNEL_ID) {
-        console.log(`[Scheduler] Using lounge channel for service: ${serviceName}`);
+        console.log(`[Scheduler] Using lounge channel for service: ${serviceName} -> ${THELOUNGE_CHANNEL_ID}`);
         return THELOUNGE_CHANNEL_ID;
     }
     
     // Default fallback
+    console.log(`[Scheduler] Using fallback GENERAL_CHANNEL_ID for service: ${serviceName} -> ${GENERAL_CHANNEL_ID}`);
     return GENERAL_CHANNEL_ID;
 }
 

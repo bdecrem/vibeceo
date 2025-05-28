@@ -26,24 +26,24 @@ export function getWebhookUrls() {
   const webhookUrls: Record<string, string> = {};
   
   // Load webhook URLs from environment variables
-  // General channel webhooks
-  if (process.env.GENERAL_WEBHOOK_URL_DONTE) {
-    webhookUrls['general_donte'] = process.env.GENERAL_WEBHOOK_URL_DONTE;
+  // General channel webhooks - check both prefixed and non-prefixed versions
+  if (process.env.GENERAL_WEBHOOK_URL_DONTE || process.env.WEBHOOK_URL_DONTE) {
+    webhookUrls['general_donte'] = process.env.GENERAL_WEBHOOK_URL_DONTE || process.env.WEBHOOK_URL_DONTE!;
   }
-  if (process.env.GENERAL_WEBHOOK_URL_ALEX) {
-    webhookUrls['general_alex'] = process.env.GENERAL_WEBHOOK_URL_ALEX;
+  if (process.env.GENERAL_WEBHOOK_URL_ALEX || process.env.WEBHOOK_URL_ALEX) {
+    webhookUrls['general_alex'] = process.env.GENERAL_WEBHOOK_URL_ALEX || process.env.WEBHOOK_URL_ALEX!;
   }
-  if (process.env.GENERAL_WEBHOOK_URL_ROHAN) {
-    webhookUrls['general_rohan'] = process.env.GENERAL_WEBHOOK_URL_ROHAN;
+  if (process.env.GENERAL_WEBHOOK_URL_ROHAN || process.env.WEBHOOK_URL_ROHAN) {
+    webhookUrls['general_rohan'] = process.env.GENERAL_WEBHOOK_URL_ROHAN || process.env.WEBHOOK_URL_ROHAN!;
   }
-  if (process.env.GENERAL_WEBHOOK_URL_VENUS) {
-    webhookUrls['general_venus'] = process.env.GENERAL_WEBHOOK_URL_VENUS;
+  if (process.env.GENERAL_WEBHOOK_URL_VENUS || process.env.WEBHOOK_URL_VENUS) {
+    webhookUrls['general_venus'] = process.env.GENERAL_WEBHOOK_URL_VENUS || process.env.WEBHOOK_URL_VENUS!;
   }
-  if (process.env.GENERAL_WEBHOOK_URL_ELJAS) {
-    webhookUrls['general_eljas'] = process.env.GENERAL_WEBHOOK_URL_ELJAS;
+  if (process.env.GENERAL_WEBHOOK_URL_ELJAS || process.env.WEBHOOK_URL_ELJAS) {
+    webhookUrls['general_eljas'] = process.env.GENERAL_WEBHOOK_URL_ELJAS || process.env.WEBHOOK_URL_ELJAS!;
   }
-  if (process.env.GENERAL_WEBHOOK_URL_KAILEY) {
-    webhookUrls['general_kailey'] = process.env.GENERAL_WEBHOOK_URL_KAILEY;
+  if (process.env.GENERAL_WEBHOOK_URL_KAILEY || process.env.WEBHOOK_URL_KAILEY) {
+    webhookUrls['general_kailey'] = process.env.GENERAL_WEBHOOK_URL_KAILEY || process.env.WEBHOOK_URL_KAILEY!;
   }
 
   // Staff meetings channel webhooks
@@ -111,15 +111,29 @@ export function getWebhookUrls() {
 
 // Environment variable validation
 export function validateConfig() {
+  console.log('=== VALIDATING CONFIG ===');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) {
     throw new Error('DISCORD_BOT_TOKEN is not set in environment variables');
   }
+  console.log('✅ DISCORD_BOT_TOKEN found');
+  
+  // Debug: Check if any webhook environment variables exist
+  const allEnvVars = Object.keys(process.env).filter(key => key.includes('WEBHOOK'));
+  console.log('All webhook-related env vars found:', allEnvVars);
   
   const webhookUrls = getWebhookUrls();
+  console.log('Webhook URLs found:', Object.keys(webhookUrls));
+  console.log('Total webhook URLs:', Object.keys(webhookUrls).length);
+  
   if (Object.keys(webhookUrls).length === 0) {
+    console.error('❌ No webhook URLs found in environment variables');
+    console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('WEBHOOK')));
     throw new Error('No webhook URLs configured in environment variables');
   }
   
+  console.log('✅ Config validation successful');
   return { token, webhookUrls };
 } 
