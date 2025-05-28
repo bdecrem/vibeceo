@@ -3,8 +3,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Together from "together-ai";
 import dotenv from "dotenv";
-import { TextChannel, Client, WebhookClient } from "discord.js";
+import { WebhookClient, Client, TextChannel } from 'discord.js';
 import { customEventMessageCache } from "./eventMessages.js";
+import { isWeekend, getLocationAndTime } from './locationTime.js';
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -56,19 +57,41 @@ const GENERAL_CHANNEL_ID = "1354474492629618831";
 // The FoundryHeat webhook for posting to General
 let foundryHeatWebhook: WebhookClient | null = null;
 
-// Initialize webhook
-function initializeFoundryHeatWebhook() {
-  if (!process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT) {
-    console.error("[WeekendMicroPosts] Missing GENERAL_WEBHOOK_URL_FOUNDRYHEAT in .env.local");
-    return false;
-  }
+// Initialize the Alexir VIP webhook for cross-posting
+let alexirVipWebhook: WebhookClient | null = null;
 
+// Initialize the FoundryHeat webhook client
+function initializeFoundryHeatWebhook(): boolean {
   try {
-    foundryHeatWebhook = new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT });
+    const webhookUrl = process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT;
+    if (!webhookUrl) {
+      console.error("[WeekendMicroPosts] FoundryHeat webhook URL not found in environment variables");
+      return false;
+    }
+    
+    foundryHeatWebhook = new WebhookClient({ url: webhookUrl });
     console.log("[WeekendMicroPosts] FoundryHeat webhook initialized successfully");
     return true;
   } catch (error) {
     console.error("[WeekendMicroPosts] Error initializing FoundryHeat webhook:", error);
+    return false;
+  }
+}
+
+// Initialize the Alexir VIP webhook client
+function initializeAlexirVipWebhook(): boolean {
+  try {
+    const webhookUrl = process.env.ALEXIR_VIP_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.error("[WeekendMicroPosts] Alexir VIP webhook URL not found in environment variables");
+      return false;
+    }
+    
+    alexirVipWebhook = new WebhookClient({ url: webhookUrl });
+    console.log("[WeekendMicroPosts] Alexir VIP webhook initialized successfully");
+    return true;
+  } catch (error) {
+    console.error("[WeekendMicroPosts] Error initializing Alexir VIP webhook:", error);
     return false;
   }
 }
@@ -231,6 +254,31 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
       username: "Foundry Heat",
     });
     
+    // Check if this is an Alex Tipsy message and cross-post to the Alexir VIP channel
+    const isAlexTipsy = promptId.toLowerCase().includes('alex-tipsy');
+    if (isAlexTipsy) {
+      console.log(`[WeekendMicroPosts] Cross-posting Alex Tipsy message to Alexir VIP channel`);
+      
+      // Initialize Alexir VIP webhook if not already done
+      if (!alexirVipWebhook) {
+        if (!initializeAlexirVipWebhook()) {
+          console.error("Failed to initialize Alexir VIP webhook for cross-posting");
+          // Continue even if cross-posting fails
+        }
+      }
+      
+      // Check if webhook is initialized and send the message
+      if (alexirVipWebhook) {
+        // Cross-post the Alex message to VIP channel (TheAF intro is now handled by eventMessages.ts)
+        await alexirVipWebhook.send({
+          content: formattedMessage,
+          username: "Foundry Heat",
+        });
+        
+        console.log(`[WeekendMicroPosts] Successfully cross-posted to Alexir VIP channel`);
+      }
+    }
+    
     console.log(`[WeekendMicroPosts] Successfully posted to Discord`);
     return true;
   } catch (error) {
@@ -240,8 +288,14 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
 }
 
 // Main function to trigger the generation and posting of a weekend micro-post
+// Store the Discord client for cross-posting
+let discordClient: Client | null = null;
+
 export async function triggerWeekendMicroPost(promptId: string, channelId: string, client: Client): Promise<boolean> {
   console.log(`[WeekendMicroPosts] Starting generation for prompt '${promptId}'...`);
+  
+  // Store the client for later use with cross-posting
+  discordClient = client;
   
   try {
     // Get the prompt definition to access its intro/outro messages

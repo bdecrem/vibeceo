@@ -33,38 +33,15 @@ export function isWeekend(): boolean {
     const laHour = (utcHour - 7 + 24) % 24;
     const day = now.getUTCDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
     
+    // Check for weekend mode override from environment variables
+    if (process.env.WEEKEND_MODE_OVERRIDE?.toLowerCase() === 'on') return true;
     // Weekend starts Friday 6pm PT (18:00 LA time)
-    if (day === 5 && laHour >= 18) {
-        console.log('[LocationTime] Weekend mode: Friday evening - ACTIVE');
-        return true;
-    }
-    
+    if (day === 5 && laHour >= 18) return true;
     // All day Saturday is weekend
-    if (day === 6) {
-        console.log('[LocationTime] Weekend mode: Saturday - ACTIVE');
-        return true;
-    }
+    if (day === 6) return true;
+    // All day Sunday is weekend
+    if (day === 0) return true;
     
-    // All day Sunday is weekend  
-    if (day === 0) {
-        console.log('[LocationTime] Weekend mode: Sunday - ACTIVE');
-        return true;
-    }
-    
-    // TEMPORARY TESTING: Include all of Monday in weekend mode
-    // Weekend will now end Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
-    if (day === 1) {
-        console.log('[LocationTime] Weekend mode: Monday ALL DAY - ACTIVE (TESTING)');
-        return true;
-    }
-    
-    // End weekend Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
-    if (day === 2 && now.getUTCHours() < 1) {
-        console.log('[LocationTime] Weekend mode: Tuesday early morning - ACTIVE (TESTING)');
-        return true;
-    }
-    
-    console.log('[LocationTime] Weekend mode: DISABLED');
     return false;
 }
 

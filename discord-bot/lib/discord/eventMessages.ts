@@ -90,6 +90,9 @@ let currentSceneIndex = 0;
 // Add new scene index for story info display
 let storyInfoSceneIndex = 0;
 
+// Alexir VIP channel ID for cross-posting
+const ALEXIR_VIP_CHANNEL_ID = '1376959208263520287';
+
 export async function sendEventMessage(
 	channel: TextChannel,
 	eventType: keyof typeof EVENT_MESSAGES | string,
@@ -326,5 +329,25 @@ export async function sendEventMessage(
 	// Skip sending if it's an empty outro (for microposts)
 	if (!(!isIntro && MICROPOST_SERVICES.includes(eventType as string) && message.trim() === "")) {
 		await targetChannel.send(message);
+		
+		// Cross-post TheAF intro message to Alexir VIP channel for Tipsy Alex events
+		if (isIntro && eventType === 'alextipsy') {
+			try {
+				console.log(`[EventMessages] Cross-posting TheAF intro message to Alexir VIP channel for alextipsy event`);
+				
+				// Get the Alexir VIP channel
+				const vipChannel = await channel.client.channels.fetch(ALEXIR_VIP_CHANNEL_ID) as TextChannel;
+				if (vipChannel) {
+					// Send the same TheAF message to the VIP channel
+					await vipChannel.send(message);
+					console.log(`[EventMessages] Successfully cross-posted TheAF intro to Alexir VIP channel`);
+				} else {
+					console.error(`[EventMessages] Could not find Alexir VIP channel with ID: ${ALEXIR_VIP_CHANNEL_ID}`);
+				}
+			} catch (error) {
+				console.error(`[EventMessages] Error cross-posting TheAF intro to Alexir VIP channel:`, error);
+				// Continue execution even if cross-posting fails
+			}
+		}
 	}
 }
