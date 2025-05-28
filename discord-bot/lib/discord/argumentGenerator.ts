@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
-import dotenv from "dotenv";
+import { loadEnvironment } from "./env-loader.js";
 import {
   initializeWebhooks,
   sendAsCharacter,
@@ -12,19 +12,14 @@ import {
 import { getWebhookUrls } from "./config.js";
 import { Client, TextChannel } from "discord.js";
 import { customEventMessageCache } from "./eventMessages.js";
+import { getDiscussionCEO } from "../../data/discord-ceos-augmentations.js";
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env.local
-const envPath = path.resolve(process.cwd(), ".env.local");
-console.log("Loading environment from:", envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Error loading .env.local:", result.error);
-  process.exit(1);
-}
+// Load environment variables
+loadEnvironment();
 
 // Initialize OpenAI
 const openai = new OpenAI({
