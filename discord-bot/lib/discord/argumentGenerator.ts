@@ -35,8 +35,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Import channel IDs from bot.ts instead of hardcoding
-import { GENERAL_CHANNEL_ID } from './bot.js';
+// Read channel ID from environment variable with fallback instead of importing from bot.js
+// This avoids circular dependencies
+const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
 
 // Define interfaces
 interface ArgumentPrompt {

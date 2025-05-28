@@ -29,11 +29,9 @@ if (process.env.NODE_ENV !== "production") {
 	console.log("Production environment detected, using Railway environment variables");
 }
 
-// Import channel IDs from bot.ts instead of hardcoding
-import { GENERAL_CHANNEL_ID } from './bot.js';
-
-// Use the general channel for weekend stories
-const WEEKEND_STORY_CHANNEL_ID = GENERAL_CHANNEL_ID;
+// Read channel ID from environment variable with fallback instead of importing from bot.js
+// This avoids circular dependencies
+const WEEKEND_STORY_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID || '1354474492629618831';
 
 // Ensure weekend-stories directory exists
 const storiesDir = path.join(process.cwd(), "data", "weekend-stories");
