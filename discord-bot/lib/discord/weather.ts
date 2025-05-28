@@ -61,7 +61,7 @@ export async function getWeatherForCity(locationName: string): Promise<string> {
       throw new Error(`Weather API error: ${response.status} ${response.statusText}. Response: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { weather: Array<{ main: string; description: string }> };
     console.log(`Weather data received for ${locationName}: ${data.weather[0].main} (${data.weather[0].description})`);
     return data.weather[0].description.toLowerCase();
   } catch (error) {

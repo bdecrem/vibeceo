@@ -1,5 +1,5 @@
 import { startBot } from "../lib/discord/bot.js";
-import dotenv from "dotenv";
+import { loadEnvironment } from "../lib/discord/env-loader.js";
 import "./health-check.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,16 +14,8 @@ const nodeFlags = isProduction
 	? "--experimental-specifier-resolution=node"
 	: "";
 
-// Load environment variables from .env.local
-if (!isProduction) {
-	const envPath = path.resolve(__dirname, "../../.env.local");
-	console.log("Loading environment from:", envPath);
-	const result = dotenv.config({ path: envPath });
-	if (result.error) {
-		console.error("Error loading .env.local:", result.error);
-		process.exit(1);
-	}
-}
+// Load environment variables
+loadEnvironment();
 
 // Check if another instance is already running
 if (process.env.BOT_INSTANCE_ID) {

@@ -47,8 +47,13 @@ export async function getHolidaysForDateAndCity(cityName: string, date: Date): P
       throw new Error(`Holiday API error: ${response.statusText}`);
     }
 
-    const data: HolidayResponse = await response.json();
-    return data.response.holidays?.map((holiday: Holiday) => holiday.name) || [];
+    const data: HolidayResponse = await response.json() as HolidayResponse;
+    
+    if (!data.response || !data.response.holidays || data.response.holidays.length === 0) {
+      return [];
+    }
+
+    return data.response.holidays.map((holiday: Holiday) => holiday.name);
   } catch (error) {
     console.error(`Error fetching holidays for ${cityName}:`, error);
     return []; // return empty array on error

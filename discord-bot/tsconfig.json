@@ -1,19 +1,32 @@
 {
 	"compilerOptions": {
-		"target": "ES2020",
-		"module": "ES2020",
-		"moduleResolution": "node",
-		"esModuleInterop": true,
 		"outDir": "./dist",
 		"rootDir": "./",
 		"strict": true,
+		"module": "esnext",
+		"target": "es2020",
+		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"baseUrl": ".",
-		"allowJs": true,
+		"moduleResolution": "node",
+		"allowJs": false,
+		"checkJs": false,
 		"resolveJsonModule": true,
+		"typeRoots": ["./node_modules/@types", "../node_modules/@types"],
+		"lib": ["es2020"],
 		"noEmit": false
 	},
-	"include": ["scripts/**/*", "lib/discord/**/*", "src/**/*", "data/**/*"],
-	"exclude": ["node_modules", "dist"]
+	"include": [
+		"lib/**/*.ts",
+		"scripts/**/*.ts",
+		"src/**/*.ts",
+		"data/**/*.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"scripts/prompt-optimizer.ts",
+		"scripts/test-prompt.ts",
+		"**/*.js"
+	]
 }

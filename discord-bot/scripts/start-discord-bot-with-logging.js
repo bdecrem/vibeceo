@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { startBot } from "../lib/discord/bot.js";
+import { loadEnvironment } from "../lib/discord/env-loader.js";
 import dotenv from "dotenv";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -46,6 +47,11 @@ const isProduction = process.env.NODE_ENV === "production";
 if (!isProduction) {
 	dotenv.config({ path: ".env.local" });
 }
+
+const logStream = fs.createWriteStream(logFile, { flags: "a" });
+
+// Load environment variables
+loadEnvironment();
 
 // Start the bot
 startBot().catch((error) => {
