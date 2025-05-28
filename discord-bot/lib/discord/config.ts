@@ -25,6 +25,19 @@ export const DISCORD_CONFIG = {
 export function getWebhookUrls() {
   const webhookUrls: Record<string, string> = {};
   
+  // Debug: Log all environment variable names in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log('=== DEBUG: AVAILABLE ENVIRONMENT VARIABLES ===');
+    const envVars = Object.keys(process.env).sort();
+    console.log('Total env vars:', envVars.length);
+    console.log('Environment variable names:', envVars.join(', '));
+    
+    // Look for webhook-related variables
+    const webhookVars = envVars.filter(key => key.includes('WEBHOOK'));
+    console.log('=== DEBUG: WEBHOOK-RELATED VARIABLES ===');
+    console.log('Webhook variables:', webhookVars.join(', '));
+  }
+  
   // Load webhook URLs from environment variables
   // General channel webhooks
   if (process.env.GENERAL_WEBHOOK_URL_DONTE) {
@@ -117,7 +130,12 @@ export function validateConfig() {
   }
   
   const webhookUrls = getWebhookUrls();
+  console.log('=== DEBUG: WEBHOOK URLS FOUND ===');
+  console.log('Found webhook URLs:', Object.keys(webhookUrls));
+  
   if (Object.keys(webhookUrls).length === 0) {
+    console.log('=== ERROR: NO WEBHOOK URLS FOUND ===');
+    console.log('This could indicate environment variables are not being correctly loaded or named');
     throw new Error('No webhook URLs configured in environment variables');
   }
   
