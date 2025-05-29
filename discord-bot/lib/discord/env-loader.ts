@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,45 +16,47 @@ const __dirname = path.dirname(__filename);
  * 5. .env
  */
 export function loadEnvironment() {
-  // Don't override existing environment variables
-  const envConfig = dotenv.config({ override: false });
-  
-  const env = process.env.NODE_ENV || 'development';
-  const isTest = env === 'test';
-  
-  // Define the possible .env file paths in order of precedence
-  const envFilePaths = [
-    env !== 'production' && path.resolve(process.cwd(), `.env.${env}.local`),
-    !isTest && path.resolve(process.cwd(), '.env.local'),
-    path.resolve(process.cwd(), `.env.${env}`),
-    path.resolve(process.cwd(), '.env')
-  ].filter(Boolean);
-  
-  // Load the first existing .env file
-  for (const envPath of envFilePaths) {
-    if (envPath && fs.existsSync(envPath)) {
-      console.log(`Loading environment from ${path.basename(envPath)}`);
-      dotenv.config({ path: envPath });
-      break;
-    }
-  }
-  
-  // Support both DISCORD_TOKEN and DISCORD_BOT_TOKEN for backward compatibility
-  if (process.env.DISCORD_BOT_TOKEN && !process.env.DISCORD_TOKEN) {
-    process.env.DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
-    console.log('Using DISCORD_BOT_TOKEN as DISCORD_TOKEN');
-  }
+	// Don't override existing environment variables
+	const envConfig = dotenv.config({ override: false });
 
-  // For production, ensure required variables are set
-  if (env === 'production') {
-    const requiredVars = ['DISCORD_BOT_TOKEN', 'DISCORD_CLIENT_ID'];
-    const missingVars = requiredVars.filter(varName => !process.env[varName]);
-    
-    if (missingVars.length > 0) {
-      console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
-      if (process.env.NODE_ENV !== 'test') {
-        process.exit(1);
-      }
-    }
-  }
-} 
+	const env = process.env.NODE_ENV || "development";
+	const isTest = env === "test";
+
+	// Define the possible .env file paths in order of precedence
+	const envFilePaths = [
+		env !== "production" && path.resolve(process.cwd(), `.env.${env}.local`),
+		!isTest && path.resolve(process.cwd(), ".env.local"),
+		path.resolve(process.cwd(), `.env.${env}`),
+		path.resolve(process.cwd(), ".env"),
+	].filter(Boolean);
+
+	// Load the first existing .env file
+	for (const envPath of envFilePaths) {
+		if (envPath && fs.existsSync(envPath)) {
+			console.log(`Loading environment from ${path.basename(envPath)}`);
+			dotenv.config({ path: envPath });
+			break;
+		}
+	}
+
+	// Support both DISCORD_TOKEN and DISCORD_BOT_TOKEN for backward compatibility
+	if (process.env.DISCORD_BOT_TOKEN && !process.env.DISCORD_TOKEN) {
+		process.env.DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
+		console.log("Using DISCORD_BOT_TOKEN as DISCORD_TOKEN");
+	}
+
+	// For production, ensure required variables are set
+	if (env === "production") {
+		const requiredVars = ["DISCORD_BOT_TOKEN"];
+		const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+
+		if (missingVars.length > 0) {
+			console.error(
+				`Missing required environment variables: ${missingVars.join(", ")}`
+			);
+			if (process.env.NODE_ENV !== "test") {
+				process.exit(1);
+			}
+		}
+	}
+}
