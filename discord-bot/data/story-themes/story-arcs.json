@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "alex",
-    "target": "kailey",
-    "incident": "She cried during a founder onboarding and didn't mute.",
+    "coach": "eljas",
+    "target": "venus",
+    "incident": "His self-built app crashed during a team demo.",
     "intensity": {
       "morning": [
         1,
@@ -351,6 +351,68 @@
             "duration": "episode"
           }
         }
+      },
+      "getting_irritated_by_donte": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Venus Metrics is getting increasingly irritated by Donte Disrupt's approach to \"She forgot to eat for 36 hours and called it \"streamlining.\"\"",
+        "promptInjection": "You are Venus Metrics. Your irritation with Donte Disrupt's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "venus",
+            "donte"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "venus"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"She forgot to eat for 36 hours and called it \"streamlining.\"\" influences all interactions between Venus Metrics and Donte Disrupt",
+            "duration": "episode"
+          }
+        }
       }
     },
     "rohan": {
@@ -538,6 +600,70 @@
           "influence": {
             "type": "tension",
             "description": "The tension from the waterheater incident about \"She uploaded a voice memo meant to be private.\" influences all interactions between Alex Monroe and Kailey Calm",
+            "duration": "episode"
+          }
+        }
+      }
+    },
+    "eljas": {
+      "getting_irritated_by_venus": {
+        "promptAttribute": "tension",
+        "progression": {
+          "startLevel": 0.6,
+          "endLevel": 1,
+          "scenes": {
+            "morning": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "midday": [
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6,
+              0.6
+            ],
+            "afternoon": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "context": "Eljas Virtanen is getting increasingly irritated by Venus Metrics's approach to \"His self-built app crashed during a team demo.\"",
+        "promptInjection": "You are Eljas Virtanen. Your irritation with Venus Metrics's approach is at level {level} (where 0 is calm and 1 is extremely irritated). This should influence how you respond to them - at this level, {context}",
+        "levelContexts": {
+          "0.0": "you're completely calm and professional",
+          "0.6": "you're actively frustrated by their methods and approach",
+          "1.0": "you're completely fed up with their methods and approach"
+        },
+        "watercoolerPresence": {
+          "requiredCharacters": [
+            "eljas",
+            "venus"
+          ],
+          "probability": 0.66,
+          "speakingOrder": {
+            "first": "any",
+            "second": "eljas"
+          },
+          "influence": {
+            "type": "tension",
+            "description": "The tension from the waterheater incident about \"His self-built app crashed during a team demo.\" influences all interactions between Eljas Virtanen and Venus Metrics",
             "duration": "episode"
           }
         }
