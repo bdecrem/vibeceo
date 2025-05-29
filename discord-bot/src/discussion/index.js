@@ -15,32 +15,32 @@ loadEnvironment();
 const coaches = {
 	donte: {
 		name: "Donte",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_DONTE }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_DONTE }),
 		...getDiscussionCEO("donte"),
 	},
 	alex: {
 		name: "Alex",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_ALEX }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_ALEX }),
 		...getDiscussionCEO("alex"),
 	},
 	rohan: {
 		name: "Rohan",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_ROHAN }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_ROHAN }),
 		...getDiscussionCEO("rohan"),
 	},
 	venus: {
 		name: "Venus",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_VENUS }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_VENUS }),
 		...getDiscussionCEO("venus"),
 	},
 	eljas: {
 		name: "Eljas",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_ELJAS }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_ELJAS }),
 		...getDiscussionCEO("eljas"),
 	},
 	kailey: {
 		name: "Kailey",
-		webhook: new WebhookClient({ url: process.env.WEBHOOK_URL_KAILEY }),
+		webhook: new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_KAILEY }),
 		...getDiscussionCEO("kailey"),
 	},
 };
@@ -108,9 +108,10 @@ function generateCoachResponse(coach, topic, previousSpeaker, previousPoint) {
 				"Look, I appreciate your input, but...",
 				"I need to be honest here, your approach is...",
 				"Can we try to be a bit more practical about this?",
-				"I'm not sure I agree with your perspective on this..."
+				"I'm not sure I agree with your perspective on this...",
 			];
-			response += annoyedPhrases[Math.floor(Math.random() * annoyedPhrases.length)] + " ";
+			response +=
+				annoyedPhrases[Math.floor(Math.random() * annoyedPhrases.length)] + " ";
 		}
 	}
 
@@ -217,23 +218,25 @@ export async function startDiscussion(newsStory) {
 
 	// Get all coaches
 	const coachIds = Object.keys(coaches);
-	
+
 	// 1. WE pick the first coach and their issue
 	// For now, hardcoding Alex with matcha tea issue as an example
 	// TODO: This should be configurable by the admin/system
-	const firstCoach = 'alex';
-	const firstCoachIssue = "Hey team! 🍵 I just got a bad batch of matcha tea. What do you think about this quality issue?";
-	
+	const firstCoach = "alex";
+	const firstCoachIssue =
+		"Hey team! 🍵 I just got a bad batch of matcha tea. What do you think about this quality issue?";
+
 	// 2. System randomly picks 2 more coaches
-	const otherCoaches = coachIds.filter(coach => coach !== firstCoach);
+	const otherCoaches = coachIds.filter((coach) => coach !== firstCoach);
 	const shuffled = otherCoaches.sort(() => 0.5 - Math.random());
 	const [coach2, coach3] = shuffled.slice(0, 2);
-	
+
 	// 3. System randomly decides who annoys who among the 3 coaches
 	const allThree = [firstCoach, coach2, coach3];
 	const annoyedCoach = allThree[Math.floor(Math.random() * allThree.length)];
-	const remainingCoaches = allThree.filter(coach => coach !== annoyedCoach);
-	const annoyingCoach = remainingCoaches[Math.floor(Math.random() * remainingCoaches.length)];
+	const remainingCoaches = allThree.filter((coach) => coach !== annoyedCoach);
+	const annoyingCoach =
+		remainingCoaches[Math.floor(Math.random() * remainingCoaches.length)];
 
 	try {
 		await coaches[firstCoach].webhook.send({
