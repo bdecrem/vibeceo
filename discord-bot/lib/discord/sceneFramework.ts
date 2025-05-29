@@ -904,42 +904,28 @@ async function logSceneContent(
 export async function generateFullEpisode(
 	episodeContext: EpisodeContext
 ): Promise<EpisodeScenes> {
-	console.log("=== GENERATING FULL EPISODE ===");
+	console.log("=== GENERATING FULL EPISODE FRAMEWORK ONLY ===");
 	console.log("Episode Context:", {
 		date: episodeContext.date,
 		theme: episodeContext.theme,
 		startTime: episodeContext.startTime,
 	});
 
+	// Generate the scene framework (seeds and structure) without content
 	const framework = await generateSceneFramework(episodeContext);
 	console.log(
 		"Scene Framework generated with",
 		framework.seeds.length,
-		"scenes"
+		"scenes (no content generation)"
 	);
 
-	// Initialize rate limiter - limit to 5 concurrent requests
-	const limit = pLimit(5);
+	// Skip content generation for optimization
+	// The generatedContent object remains empty, but the framework structure is preserved
+	// This maintains currentSceneIndex functionality while saving 48-72 GPT calls
+	console.log("Scene content generation skipped for optimization");
+	console.log("Note: Admin commands viewing scene text will show empty content");
 
-	// Generate content for each scene in parallel with rate limiting
-	const contentPromises = framework.seeds.map((seed) =>
-		limit(async () => {
-			console.log(`Generating content for scene ${seed.index}`);
-			const content = await generateSceneContent(seed, episodeContext);
-			console.log(`Scene ${seed.index} content generated`);
-			return { index: seed.index, content };
-		})
-	);
-
-	// Wait for all scenes to be generated
-	const results = await Promise.all(contentPromises);
-
-	// Assign generated content to framework
-	results.forEach(({ index, content }: { index: number; content: any }) => {
-		framework.generatedContent[index] = content;
-	});
-
-	console.log("=== FULL EPISODE GENERATION COMPLETE ===");
+	console.log("=== OPTIMIZED EPISODE FRAMEWORK COMPLETE ===");
 	return framework;
 }
 
