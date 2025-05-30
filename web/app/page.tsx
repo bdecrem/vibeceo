@@ -298,8 +298,8 @@ export default function Home() {
             </a>
           </div>
           <div className="flex-1 text-center">
-            <a href="https://app.textmagic.com/widget/subscribe/4ad8a3661d37a6a" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
-              SMS BOT OPT-IN
+            <a href="https://www.thefoundry.biz" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
+              The AF is a project of The Foundry
             </a>
           </div>
           <div className="flex-1 text-right">
