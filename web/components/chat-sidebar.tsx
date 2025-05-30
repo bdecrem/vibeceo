@@ -10,7 +10,7 @@ const orderedCoaches = [
 	{ id: "rohan", name: "Rohan Mehta" },
 	{ id: "eljas", name: "Eljas Virtanen" },
 	{ id: "venus", name: "Venus Metrics" },
-	{ id: "kailey", name: "Kailey Calm" },
+	{ id: "kailey", name: "Kailey Sloan" },
 ];
 
 export default function ChatSidebar() {

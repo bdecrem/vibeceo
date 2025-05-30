@@ -163,7 +163,7 @@ export default function CoachesPage() {
             },
             {
               id: 'kailey',
-              name: 'Kailey Calm',
+              name: 'Kailey Sloan',
               title: 'Strategic Alignment Officer',
               image: '/images/coach-3.jpeg',
               quote: "While others are chasing the next shiny object, I help founders find clarity in chaos. My approach combines ruthless prioritization with strategic patience. I'll help you identify which fires are worth letting burn.",
@@ -180,23 +180,6 @@ export default function CoachesPage() {
                 { icon: Clock, text: "75-min strategic sessions" },
                 { icon: Zap, text: "Focus architect" },
                 { icon: Target, text: "Decision framework expert" }
-              ]
-            },
-            {
-              id: 'alice',
-              name: 'Alice Logic',
-              title: 'Technical Translation Expert',
-              image: '/images/coach-4.jpeg',
-              quote: "Most founders can't tell the difference between AI, ML, and a fancy IF statement. I bridge the gap between technical possibilities and business realities. I'll help you understand what your engineers are actually building.",
-              bio: [
-                "As a former CTO of three startups, Alice has seen every flavor of technical confusion and over-promise. She specializes in translating between engineer-speak and founder-speak, helping both sides understand what's actually possible with current technology.",
-                "Her pragmatic approach to technical assessment has saved countless startups from building solutions in search of problems. She excels at helping non-technical founders understand their technical stack without getting lost in the details."
-              ],
-              stats: [
-                { icon: Code, text: "Former CTO of 3 startups" },
-                { icon: Clock, text: "60-min technical reviews" },
-                { icon: Lightbulb, text: "Tech-to-business translator" },
-                { icon: Target, text: "AI reality checker" }
               ]
             }
           ].map((coach) => (
@@ -272,21 +255,7 @@ export default function CoachesPage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-[#f7fafa] p-6 rounded-lg shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">How do coaching sessions work?</h3>
-              <p className="text-gray-700">
-                Our coaching sessions are conducted via video call and last between 60-90 minutes depending on the
-                coach. You'll receive a calendar invite with a link after booking.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </main>
   )
 } 
