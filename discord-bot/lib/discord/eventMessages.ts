@@ -208,8 +208,8 @@ export async function sendEventMessage(
 			}
 			
 			arrivalText = isNewLocation
-				? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `
-				: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} stretches overhead. `;
+				? `It's ${formattedTime}${ampm} and the coaches have just arrived ${cityText}, where ${weather} ${weatherEmoji} ${weather.endsWith('s') ? 'stretch' : 'stretches'} overhead. `
+				: `It's ${formattedTime}${ampm} ${cityText}, where ${weather} ${weatherEmoji} ${weather.endsWith('s') ? 'stretch' : 'stretches'} overhead. `;
 			
 			message = message.replace("{arrival}", arrivalText);
 		}
