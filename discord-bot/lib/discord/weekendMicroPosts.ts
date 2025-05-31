@@ -35,11 +35,14 @@ loadEnvironment();
 let together: Together | null = null;
 try {
   if (process.env.TOGETHER_API_KEY) {
+    console.log('[WeekendMicroPosts] Found TOGETHER_API_KEY, initializing Together.ai');
     together = new Together({
       apiKey: process.env.TOGETHER_API_KEY,
     });
+    console.log('[WeekendMicroPosts] Together.ai initialized successfully');
   } else {
-    console.warn("[WeekendMicroPosts] TOGETHER_API_KEY not found - weekend microPosts will not work");
+    const envSource = process.env.NODE_ENV === 'production' ? 'Railway environment' : '.env.local';
+    console.warn(`[WeekendMicroPosts] TOGETHER_API_KEY not found in ${envSource} - weekend microPosts will not work`);
   }
 } catch (error) {
   console.error("[WeekendMicroPosts] Error initializing Together.ai:", error);
@@ -54,7 +57,8 @@ let foundryHeatWebhook: WebhookClient | null = null;
 // Initialize webhook
 function initializeFoundryHeatWebhook() {
   if (!process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT) {
-    console.error("[WeekendMicroPosts] Missing GENERAL_WEBHOOK_URL_FOUNDRYHEAT in .env.local");
+    const envSource = process.env.NODE_ENV === 'production' ? 'Railway environment' : '.env.local';
+    console.error(`[WeekendMicroPosts] Missing GENERAL_WEBHOOK_URL_FOUNDRYHEAT in ${envSource}`);
     return false;
   }
 
@@ -134,7 +138,8 @@ async function generateWeekendPost(promptId: string): Promise<string> {
   }
 
   if (!together) {
-    throw new Error("Together.ai not initialized - check TOGETHER_API_KEY in .env.local");
+    const envSource = process.env.NODE_ENV === 'production' ? 'Railway environment' : '.env.local';
+    throw new Error(`Together.ai not initialized - check TOGETHER_API_KEY in ${envSource}`);
   }
 
   try {
