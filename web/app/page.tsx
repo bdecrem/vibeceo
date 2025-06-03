@@ -139,15 +139,14 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="bg-pink-500 text-white text-center py-2 font-bold">
-        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
-          💡 Join the Discord to pitch your idea to the coaches!
-        </a>
-      </div>
-
       {/* Coaches Section */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto">
+      <section className="bg-white">
+        <div className="bg-pink-500 text-white text-center py-2 font-bold">
+          <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
+            💡 Join the Discord to pitch your idea to the coaches!
+          </a>
+        </div>
+        <div className="container mx-auto py-16">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
             Meet Your <span className="text-[#40e0d0]">Definitely Human</span> Coaches
           </h2>
