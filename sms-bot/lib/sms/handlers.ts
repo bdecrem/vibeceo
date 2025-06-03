@@ -1,7 +1,113 @@
-import type { Twilio } from 'twilio';
-import type { TwilioClient } from './webhooks.js';
-import { generateAiResponse } from './ai.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { SMS_CONFIG } from './config.js';
+import { generateAiResponse } from './ai.js';
+import type { TwilioClient } from './webhooks.js';
+import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, confirmSubscriber } from '../subscribers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load inspirations data
+let inspirationsData: any = null;
+let dayTrackerPath: string = '';
+
+function loadInspirationsData() {
+  if (!inspirationsData) {
+    try {
+      const inspirationsPath = path.join(__dirname, '../../../data/af_daily_inspirations.json');
+      inspirationsData = JSON.parse(fs.readFileSync(inspirationsPath, 'utf8'));
+      dayTrackerPath = path.join(__dirname, '../../../data/day-tracker.json');
+      console.log(`Loaded ${inspirationsData.length} inspirations from ${inspirationsPath}`);
+    } catch (error) {
+      console.error('Error loading inspirations data:', error);
+      // Fallback data so the system doesn't crash
+      inspirationsData = [{
+        text: "Today's vibe: Pre-product. Post-delusion. Keep building.",
+        coach: "Donte"
+      }];
+      console.log('Using fallback inspiration data');
+    }
+  }
+  return inspirationsData;
+}
+
+interface DayTracker {
+  startDate: string;
+  currentDay: number;
+}
+
+// Load day tracker data
+function loadDayTracker(): DayTracker {
+  try {
+    if (!dayTrackerPath) {
+      loadInspirationsData(); // This sets dayTrackerPath
+    }
+    return JSON.parse(fs.readFileSync(dayTrackerPath, 'utf8'));
+  } catch {
+    // If file doesn't exist, create it with default values
+    const defaultTracker: DayTracker = {
+      startDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      currentDay: 1
+    };
+    saveDayTracker(defaultTracker);
+    return defaultTracker;
+  }
+}
+
+function saveDayTracker(tracker: DayTracker): void {
+  if (!dayTrackerPath) {
+    loadInspirationsData(); // This sets dayTrackerPath
+  }
+  fs.writeFileSync(dayTrackerPath, JSON.stringify(tracker, null, 2));
+}
+
+function getCurrentDay(): number {
+  const data = loadInspirationsData();
+  const tracker = loadDayTracker();
+  const startDate = new Date(tracker.startDate);
+  const currentDate = new Date();
+  
+  // Calculate days since start date
+  const timeDiff = currentDate.getTime() - startDate.getTime();
+  const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+  
+  // Calculate current day (1-based, cycles through available inspirations)
+  const calculatedDay = (daysDiff % data.length) + 1;
+  
+  // Update tracker if day has changed
+  if (calculatedDay !== tracker.currentDay) {
+    tracker.currentDay = calculatedDay;
+    saveDayTracker(tracker);
+  }
+  
+  return calculatedDay;
+}
+
+// Make these functions available for the broadcast script
+export function getTodaysInspiration() {
+  const data = loadInspirationsData();
+  const currentDay = getCurrentDay();
+  const inspirationIndex = currentDay - 1; // Convert to 0-based index
+  const inspiration = data[inspirationIndex];
+  
+  return {
+    day: currentDay,
+    inspiration: inspiration
+  };
+}
+
+export function formatDailyMessage(inspiration: any): string {
+  // Get current date in "Month Day" format
+  const currentDate = new Date();
+  const dateString = currentDate.toLocaleDateString('en-US', { 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.coach}\n\n🌀 Text MORE for one extra line of chaos.`;
+}
 
 // Define types for conversation messages
 type UserMessage = { role: 'user'; content: string };
@@ -12,6 +118,55 @@ type ConversationMessage = UserMessage | AssistantMessage | SystemMessage;
 // In-memory conversation store
 const conversationStore = new Map<string, ConversationMessage[]>();
 
+// Load coach data
+interface CEO {
+  id: string;
+  name: string;
+  prompt: string;
+  character: string;
+  style: string;
+  image: string;
+}
+
+console.log('=== STARTUP: Loading coach data ===');
+const coachDataPath = path.join(process.cwd(), 'data', 'coaches.json');
+console.log('Loading from:', coachDataPath);
+console.log('File exists:', fs.existsSync(coachDataPath));
+const coachData = JSON.parse(fs.readFileSync(coachDataPath, 'utf8')) as { ceos: CEO[] };
+console.log('Loaded coach data:', coachData);
+console.log('=== STARTUP: Coach data loaded ===');
+
+// Track active conversations
+interface ActiveConversation {
+  coachName: string;
+  lastInteraction: Date;
+}
+
+const activeConversations = new Map<string, ActiveConversation>();
+
+// Check if user is in active conversation
+function getActiveConversation(phoneNumber: string): ActiveConversation | null {
+  const conversation = activeConversations.get(phoneNumber);
+  if (!conversation) return null;
+  
+  // If last interaction was more than 30 minutes ago, end conversation
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+  if (conversation.lastInteraction < thirtyMinutesAgo) {
+    activeConversations.delete(phoneNumber);
+    return null;
+  }
+  
+  return conversation;
+}
+
+// Update active conversation
+function updateActiveConversation(phoneNumber: string, coachName: string) {
+  activeConversations.set(phoneNumber, {
+    coachName,
+    lastInteraction: new Date()
+  });
+}
+
 /**
  * Initialize message handlers
  */
@@ -20,40 +175,348 @@ export async function initializeMessageHandlers(): Promise<void> {
   return Promise.resolve();
 }
 
+// Get conversation history for a specific coach
+function getCoachConversationHistory(phoneNumber: string, coachName: string): ConversationMessage[] {
+  const key = `${phoneNumber}-${coachName}`;
+  
+  // Create new conversation history if it doesn't exist
+  if (!conversationStore.has(key)) {
+    const coachProfile = coachData.ceos.find((c: CEO) => c.name.toLowerCase().includes(coachName.toLowerCase()));
+    if (!coachProfile) {
+      return [];
+    }
+    
+    conversationStore.set(key, [
+      { role: 'system', content: coachProfile.prompt }
+    ]);
+  }
+  
+  return conversationStore.get(key) || [];
+}
+
+// Save conversation history for a specific coach
+function saveCoachConversationHistory(
+  phoneNumber: string,
+  coachName: string,
+  history: ConversationMessage[]
+): void {
+  const key = `${phoneNumber}-${coachName}`;
+  
+  // Trim conversation to prevent unlimited growth
+  const maxMessages = SMS_CONFIG.MAX_CONVERSATION_LENGTH * 2;
+  if (history.length > maxMessages) {
+    // Keep the system message and most recent messages
+    const systemMessage = history.find(msg => msg.role === 'system');
+    const recentMessages = history.slice(-maxMessages);
+    
+    if (systemMessage && !recentMessages.some(msg => msg.role === 'system')) {
+      history = [systemMessage, ...recentMessages];
+    } else {
+      history = recentMessages;
+    }
+  }
+  
+  conversationStore.set(key, history);
+}
+
+// Add debug function to check ceos data
+function debugCoachData(coachName: string) {
+  console.log('DEBUG - Available coaches:', coachData.ceos.length || 0);
+  console.log('DEBUG - Coach data:', coachData.ceos.map(c => ({ id: c.id, name: c.name })));
+  console.log('DEBUG - Looking for coach:', coachName);
+}
+
+// Handle coach conversation
+async function handleCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
+  console.log('=== COACH CONVERSATION START ===');
+  console.log('Input:', { coach, message });
+  console.log('Available coaches:', coachData.ceos);
+  
+  // First try exact match (case insensitive)
+  const searchName = coach.toLowerCase();
+  console.log('Searching for:', searchName);
+  
+  let coachProfile = coachData.ceos.find((c: CEO) => {
+    const firstName = c.name.toLowerCase().split(' ')[0];
+    console.log('Checking against:', { name: c.name, firstName, id: c.id });
+    return firstName === searchName || c.id.toLowerCase() === searchName;
+  });
+  
+  if (!coachProfile) {
+    console.log('No exact match found');
+    return false;
+  }
+
+  console.log('Found coach:', coachProfile);
+  console.log('=== COACH CONVERSATION MATCHED ===');
+
+  try {
+    // Get existing conversation history
+    const conversationHistory = getCoachConversationHistory(from, coachProfile.name);
+    
+    // Add user's message to history
+    conversationHistory.push({ role: 'user', content: message });
+    
+    // Generate response using the coach's personality
+    const response = await generateAiResponse(conversationHistory);
+    
+    // Add AI response to history
+    conversationHistory.push({ role: 'assistant', content: response });
+    
+    // Save updated conversation history
+    saveCoachConversationHistory(from, coachProfile.name, conversationHistory);
+    
+    // Send the response
+    await sendSmsResponse(from, response, twilioClient);
+    console.log(`Coach ${coachProfile.name} responded to ${from}`);
+    return true;
+  } catch (error) {
+    console.error(`Error in coach conversation with ${coachProfile.name}:`, error);
+    return false;
+  }
+}
+
 /**
  * Handle incoming SMS message
  * @param from Sender's phone number
  * @param body Message content
  * @param twilioClient Twilio client for sending responses
  */
-export async function handleIncomingSms(
-  from: string, 
-  body: string, 
-  twilioClient: TwilioClient
-): Promise<void> {
+export async function processIncomingSms(from: string, body: string, twilioClient: TwilioClient): Promise<void> {
   console.log(`Received SMS from ${from}: ${body}`);
   
   try {
-    // Get conversation history
-    const conversationHistory = getConversationHistory(from);
+    const message = body.trim();
+    const messageUpper = message.toUpperCase();
     
-    // Add user message to history
-    conversationHistory.push({ role: 'user', content: body });
+    // Always check for system commands first
+    if (messageUpper === 'COMMANDS' || messageUpper === 'HELP' || messageUpper === 'INFO') {
+      console.log(`Sending COMMANDS response to ${from}`);
+      await sendSmsResponse(
+        from,
+        'Available commands:\n• TODAY - Get today\'s inspiration\n• INSPIRE - Get random inspiration\n• MORE - Extra line of chaos\n• START - Subscribe to updates\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"',
+        twilioClient
+      );
+      return;
+    }
     
-    // Generate AI response
-    const aiResponse = await generateAiResponse(conversationHistory);
+    if (messageUpper === 'STOP') {
+      console.log('Processing STOP command...');
+      const success = await unsubscribeUser(from);
+      if (success) {
+        await sendSmsResponse(from, SMS_CONFIG.STOP_RESPONSE, twilioClient);
+      }
+      activeConversations.delete(from);  // End any active conversation
+      return;
+    }
     
-    // Add AI response to history
-    conversationHistory.push({ role: 'assistant', content: aiResponse });
+    // Check for new coach conversation
+    const heyCoachMatch = message.match(/^(hey|hi|hello)\s+(\w+)/i);
+    if (heyCoachMatch) {
+      console.log('Message match:', heyCoachMatch);
+      const coachName = heyCoachMatch[2];
+      const userMessage = message.slice(heyCoachMatch[0].length).trim() || "Hi";
+      
+      const handled = await handleCoachConversation(coachName, userMessage, twilioClient, from);
+      if (handled) {
+        updateActiveConversation(from, coachName);
+        return;
+      }
+    }
     
-    // Save updated conversation history
-    saveConversationHistory(from, conversationHistory);
+    // Check for active conversation
+    const activeConversation = getActiveConversation(from);
+    if (activeConversation) {
+      console.log(`Continuing conversation with ${activeConversation.coachName}`);
+      const handled = await handleCoachConversation(activeConversation.coachName, message, twilioClient, from);
+      if (handled) {
+        updateActiveConversation(from, activeConversation.coachName);
+        return;
+      }
+    }
     
-    // Send response back to user
-    await sendSmsResponse(from, aiResponse, twilioClient);
+    // If we get here, either no active conversation or failed to handle
+    // Continue with other command processing...
+    
+    // Update last message date in database
+    console.log('Updating last message date...');
+    await updateLastMessageDate(from);
+    console.log('Last message date updated successfully');
+    
+    // Handle TEST command - simple test command
+    if (messageUpper === 'TEST') {
+      console.log(`Sending TEST response to ${from}`);
+      try {
+        await sendSmsResponse(
+          from,
+          'Hello world! 🌍',
+          twilioClient
+        );
+        console.log(`Successfully sent TEST response to ${from}`);
+      } catch (error) {
+        console.error(`Error sending TEST response: ${error}`);
+      }
+      return;
+    }
+    
+    // Handle TODAY command - send today's scheduled inspiration
+    if (messageUpper === 'TODAY') {
+      console.log(`Sending TODAY response to ${from}`);
+      try {
+        const todaysData = getTodaysInspiration();
+        const responseText = formatDailyMessage(todaysData.inspiration);
+        
+        await sendSmsResponse(
+          from,
+          responseText,
+          twilioClient
+        );
+        console.log(`Successfully sent TODAY response to ${from}: Day ${todaysData.day}`);
+      } catch (error) {
+        console.error(`Error sending TODAY response: ${error}`);
+      }
+      return;
+    }
+    
+    // Handle INSPIRE command - send random daily inspiration
+    if (messageUpper === 'INSPIRE') {
+      console.log(`Sending INSPIRE response to ${from}`);
+      try {
+        // Pick a random inspiration from the array
+        const data = loadInspirationsData();
+        const randomIndex = Math.floor(Math.random() * data.length);
+        const inspiration = data[randomIndex];
+        
+        const responseText = formatDailyMessage(inspiration);
+        
+        await sendSmsResponse(
+          from,
+          responseText,
+          twilioClient
+        );
+        console.log(`Successfully sent INSPIRE response to ${from}: "${inspiration.text.substring(0, 50)}..."`);
+      } catch (error) {
+        console.error(`Error sending INSPIRE response: ${error}`);
+      }
+      return;
+    }
+    
+    // Handle MORE command - send an extra line of chaos
+    if (messageUpper === 'MORE') {
+      console.log(`Sending MORE response to ${from}`);
+      try {
+        // Use the actual inspirations data
+        const data = loadInspirationsData();
+        const randomIndex = Math.floor(Math.random() * data.length);
+        const chaosLine = data[randomIndex];
+        
+        const responseText = formatDailyMessage(chaosLine);
+        
+        await sendSmsResponse(
+          from,
+          responseText,
+          twilioClient
+        );
+        console.log(`Successfully sent MORE response to ${from}: "${chaosLine.text}"`);
+      } catch (error) {
+        console.error(`Error sending MORE response: ${error}`);
+      }
+      return;
+    }
+    
+    // Handle YES confirmation responses
+    if (messageUpper === 'YES') {
+      console.log('Processing YES confirmation...');
+      const success = await confirmSubscriber(from);
+      if (success) {
+        // Send welcome/confirmation message first
+        await sendSmsResponse(
+          from,
+          "You're in. Founders spiral. We just put it in writing.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
+          twilioClient
+        );
+        
+        // Then send today's inspiration message
+        try {
+          const todaysData = getTodaysInspiration();
+          const todaysMessage = formatDailyMessage(todaysData.inspiration);
+          
+          await sendSmsResponse(
+            from,
+            todaysMessage,
+            twilioClient
+          );
+          console.log(`Successfully sent welcome + today's message to new subscriber ${from}: Day ${todaysData.day}`);
+        } catch (error) {
+          console.error(`Error sending today's message to new subscriber: ${error}`);
+        }
+      } else {
+        await sendSmsResponse(
+          from,
+          "We couldn't process your confirmation. Please try again or contact support if the issue persists.",
+          twilioClient
+        );
+      }
+      return;
+    }
+    
+    if (messageUpper === 'START' || messageUpper === 'UNSTOP') {
+      console.log('Processing START/UNSTOP command...');
+      const success = await resubscribeUser(from);
+      if (success) {
+        await sendSmsResponse(
+          from,
+          SMS_CONFIG.START_RESPONSE,
+          twilioClient
+        );
+      } else {
+        await sendSmsResponse(
+          from,
+          "We couldn't process your request. Please try again later.",
+          twilioClient
+        );
+      }
+      await sendSmsResponse(
+        from,
+        'Welcome back! You are now subscribed to The Foundry updates.',
+        twilioClient
+      );
+      
+      return;
+    }
+    
+    // Check subscriber status before processing other commands
+    console.log('Checking subscriber status...');
+    const subscriber = await getSubscriber(from);
+    console.log('Subscriber lookup result:', subscriber);
+
+    if (!subscriber || subscriber.unsubscribed) {
+      console.log('User not subscribed or unsubscribed, sending subscription prompt');
+      await sendSmsResponse(
+        from,
+        'You are not currently subscribed to The Foundry updates. Reply START to subscribe.',
+        twilioClient
+      );
+      return;
+    }
+    
+    console.log('User is valid subscriber, updating last message date...');
+    // Update last message date
+    await updateLastMessageDate(from);
+    console.log('Sending default response...');
+    
+    // Send a simple default response for any non-command message
+    await sendSmsResponse(
+      from,
+      'For help with AdvisorsFoundry, text INFO. Available commands: START, STOP, YES to confirm.',
+      twilioClient
+    );
+    
+    console.log('Default response sent successfully');
     
   } catch (error) {
     console.error('Error handling SMS message:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     await sendSmsResponse(
       from, 
       'Sorry, I encountered an error processing your message. Please try again later.', 
