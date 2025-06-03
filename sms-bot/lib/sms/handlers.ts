@@ -447,7 +447,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         // Send welcome/confirmation message first
         await sendSmsResponse(
           from,
-          "You're in. Founders spiral. We just put it in writing.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
+          "You’re in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
           twilioClient
         );
         

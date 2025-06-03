@@ -74,67 +74,62 @@ export default function SmsOptIn() {
           className="w-full max-w-md bg-[#40e0d0] rounded-xl shadow-md overflow-hidden"
         >
           <div className="p-8">
-            <div className="text-center mb-8">
-              <motion.div 
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring' }}
-                className="inline-block mb-4"
-              >
-                <div className="w-40 h-16 relative">
-                  <img
-                    src="/logo.png"
-                    alt="Advisors Foundry Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </motion.div>
-              <h1 className="text-3xl font-bold text-black mb-2">
-                Get Daily Texts from AF
-              </h1>
-              <p className="text-black">Startup wisdom. Spirals. Possibly threats.</p>
-            </div>
-
             {isSuccess ? (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center"
               >
-                <div className="w-40 h-16 relative mx-auto mb-8">
-                  <Image
-                    src="/logo.png"
-                    alt="Advisors Foundry Logo"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
+                <h1 className="text-3xl font-bold text-black mb-2">
+                  You just signed up for daily startup chaos… via SMS. Bold move.
+                </h1>
+                <p className="text-black mb-8">
+                  Check your phone. A tiny text-based oracle is on its way.
+                </p>
                 <div className="w-16 h-16 bg-[#1a3d3d] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#40e0d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-3xl font-bold text-black mb-3">You're In!</h3>
-                <p className="text-black text-lg mb-8">Check your phone for a confirmation message.</p>
+                <p className="text-black text-lg mb-8">Carrier pigeons were busy.</p>
                 <Link href="/">
                   <button className="bg-[#1a3d3d] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#1a3d3d]/90 transition-all duration-300">
-                    Return to Homepage
+                    Back to Reality
                   </button>
                 </Link>
               </motion.div>
             ) : (
               <>
+                <div className="text-center mb-8">
+                  <motion.div 
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring' }}
+                    className="inline-block mb-4"
+                  >
+                    <div className="w-40 h-16 relative">
+                      <img
+                        src="/logo.png"
+                        alt="Advisors Foundry Logo"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </motion.div>
+                  <h1 className="text-3xl font-bold text-black mb-2">
+                    Get Daily Texts from AF
+                  </h1>
+                  <p className="text-black">Startup wisdom. Spirals. Possibly threats.</p>
+                </div>
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold text-black mb-4">
                       Craving one unhinged line of founder truth each morning?
                     </h2>
                     <p className="text-black mb-6">
-                      Sign up to get SMS messages from Advisors Foundry —
-                      featuring daily insights from your favorite algorithmic startup coaches.
+                      We’re delivering startup wisdom via SMS like it’s 2006. No apps. No portals. Just raw, unhinged advice… on your phone.
                     </p>
                     <p className="text-black">
-                      No fluff. Just vibes, delusions, and legally distinct advice.
+                      Welcome to the lowest-tech way to level up.
                     </p>
                   </div>
                   <div>
@@ -165,7 +160,7 @@ export default function SmsOptIn() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label htmlFor="consent" className="text-black">
-                        I agree to receive daily SMS messages from AF. Message & data rates may apply. Reply STOP to ghost us.
+                        I agree to receive daily SMS spiral fuel like it’s still T9.
                       </label>
                     </div>
                   </div>

@@ -63,7 +63,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <div className="bg-[#40e0d0] text-[#1a3d3d] text-center py-2 font-bold">
         <a href="/sms-optin">
-          💬 Your therapist ghosted. We text back. Get founder affirmations via SMS.
+          💬 Your therapist ghosted. We text back. Get founder affirmations via SMS. Yes, actual texts.
         </a>
       </div>
 
