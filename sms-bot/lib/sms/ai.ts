@@ -6,13 +6,18 @@ import { SMS_CONFIG } from './config.js';
 let openaiClient: OpenAI | null = null;
 let anthropicClient: Anthropic | null = null;
 
-// Initialize AI clients based on available API keys
-if (process.env.OPENAI_API_KEY) {
-  openaiClient = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+// Initialize OpenAI client
+export function initializeAI() {
+  if (!openaiClient && process.env.OPENAI_API_KEY) {
+    console.log('Initializing OpenAI client...');
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+    console.log('OpenAI client initialized');
+  }
 }
 
+// Initialize AI clients based on available API keys
 if (process.env.ANTHROPIC_API_KEY) {
   anthropicClient = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
@@ -33,17 +38,26 @@ type ConversationMessage = UserMessage | AssistantMessage | SystemMessage;
 export async function generateAiResponse(
   conversationHistory: ConversationMessage[]
 ): Promise<string> {
-  // Prioritize using Anthropic if available
-  if (anthropicClient) {
-    return generateClaudeResponse(conversationHistory);
+  if (!openaiClient) {
+    initializeAI();
+    if (!openaiClient) {
+      throw new Error('OpenAI client not configured. Please set OPENAI_API_KEY');
+    }
   }
-  
-  // Fall back to OpenAI if available
-  if (openaiClient) {
-    return generateOpenAIResponse(conversationHistory);
+
+  try {
+    const completion = await openaiClient.chat.completions.create({
+      model: 'gpt-4o-2024-05-13',
+      messages: conversationHistory,
+      max_tokens: 150,  // Keep responses concise for SMS
+      temperature: 0.9  // Higher temperature for more creative coach responses
+    });
+
+    return completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+  } catch (error) {
+    console.error('Error generating AI response:', error);
+    throw error;
   }
-  
-  throw new Error('No AI service configured. Please set ANTHROPIC_API_KEY or OPENAI_API_KEY');
 }
 
 /**

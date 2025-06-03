@@ -31,6 +31,9 @@ import { sendEventMessage } from "./eventMessages.js";
 import { getWatercoolerPairConfig } from "./characterPairs.js";
 import { triggerStaffMeeting } from "./staffMeeting.js";
 import { COACH_DISCORD_HANDLES } from './coachHandles.js';
+import { triggerWeekendMicroPost } from './weekendMicroPosts.js';
+import { triggerSimpleStaffMeeting } from './simpleStaffMeeting.js';
+import { startForRealConversation, handleForRealMessage, endForRealConversation } from './forreal.js';
 import { DISCORD_CONFIG } from "./config.js";
 import OpenAI from "openai";
 
@@ -1247,6 +1250,7 @@ export async function handleMessage(message: Message): Promise<void> {
 						"!character select [name]": "Select a character to talk to",
 						"!discuss-news": "Start a new discussion about current tech news",
 						"!group-chat [char1] [char2] [char3]": "Start a group discussion with 3 characters",
+						"!forreal [coach1] [coach2] [coach3] [topic]": "Start a serious board meeting with 3 coaches about an optional business topic",
 						"!pitch [your idea]": "Present your business idea to all coaches for feedback and voting",
 						"!pitch-yc": "Present a real Y Combinator-funded startup to coaches for feedback and voting",
 					};
@@ -1336,6 +1340,32 @@ export async function handleMessage(message: Message): Promise<void> {
 					return;
 				}
 				
+				// FEATURE 6: ForReal serious board meeting
+				else if (command === 'forreal') {
+					console.log('[ForReal] Command detected:', args);
+					
+					// Need at least 3 coaches
+					if (args.length < 3) {
+						await message.reply('Please specify 3 coaches and an optional topic. Example: !forreal donte alex rohan [topic]');
+						return;
+					}
+					
+					const coaches = args.slice(0, 3);
+					console.log('[ForReal] Coaches:', coaches);
+					
+					// Everything after the first 3 arguments is considered part of the topic
+					const topic = args.length > 3 ? args.slice(3).join(' ') : undefined;
+					console.log('[ForReal] Topic:', topic);
+					
+					try {
+						await startForRealConversation(message.channelId, message.client, coaches, topic);
+					} catch (error) {
+						console.error('[ForReal] Error starting conversation:', error);
+						await message.reply('Error starting ForReal conversation. Please try again.');
+					}
+					return;
+				}
+				
 				// Unknown command
 				else {
 					await message.reply("Unknown command. Type !help to see available commands.");
@@ -1375,7 +1405,14 @@ export async function handleMessage(message: Message): Promise<void> {
 			}
 		}
 
-		// Check for active group chat or active character
+		// Check for active ForReal conversation
+		const forRealResult = await handleForRealMessage(message);
+		if (forRealResult) {
+			// Message already processed by ForReal handler
+			return;
+		}
+
+		// Check for active group chat
 		const groupChat = activeGroupChats.get(message.channelId);
 		if (groupChat) {
 			await handleGroupChat(message, groupChat);
