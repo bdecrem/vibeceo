@@ -61,9 +61,9 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col">
-      <div className="bg-pink-500 text-white text-center py-2 font-bold">
-        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
-          💡 Join the Discord to pitch your idea to the coaches!
+      <div className="bg-[#40e0d0] text-[#1a3d3d] text-center py-2 font-bold">
+        <a href="/sms-optin">
+          💬 Your therapist ghosted. We text back. Get founder affirmations via SMS.
         </a>
       </div>
 
@@ -138,6 +138,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <div className="bg-pink-500 text-white text-center py-2 font-bold">
+        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
+          💡 Join the Discord to pitch your idea to the coaches!
+        </a>
+      </div>
 
       {/* Coaches Section */}
       <section className="bg-white py-16">
