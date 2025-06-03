@@ -16,16 +16,16 @@ let dayTrackerPath: string = '';
 function loadInspirationsData() {
   if (!inspirationsData) {
     try {
-      const inspirationsPath = path.join(__dirname, '../../../data/af_daily_inspirations.json');
+      const inspirationsPath = path.join(process.cwd(), 'data', 'af_daily_inspirations.json');
       inspirationsData = JSON.parse(fs.readFileSync(inspirationsPath, 'utf8'));
-      dayTrackerPath = path.join(__dirname, '../../../data/day-tracker.json');
+      dayTrackerPath = path.join(process.cwd(), 'data', 'day-tracker.json');
       console.log(`Loaded ${inspirationsData.length} inspirations from ${inspirationsPath}`);
     } catch (error) {
       console.error('Error loading inspirations data:', error);
       // Fallback data so the system doesn't crash
       inspirationsData = [{
         text: "Today's vibe: Pre-product. Post-delusion. Keep building.",
-        coach: "Donte"
+        author: "Donte"
       }];
       console.log('Using fallback inspiration data');
     }
@@ -106,7 +106,7 @@ export function formatDailyMessage(inspiration: any): string {
     day: 'numeric' 
   });
   
-  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.coach}\n\n🌀 Text MORE for one extra line of chaos.`;
+  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.author}\n\n🌀 Text MORE for one extra line of chaos.`;
 }
 
 // Define types for conversation messages
@@ -144,15 +144,22 @@ interface ActiveConversation {
 
 const activeConversations = new Map<string, ActiveConversation>();
 
+// Clear conversation state
+function endConversation(phoneNumber: string) {
+  console.log(`Ending conversation for ${phoneNumber}`);
+  activeConversations.delete(phoneNumber);
+}
+
 // Check if user is in active conversation
 function getActiveConversation(phoneNumber: string): ActiveConversation | null {
   const conversation = activeConversations.get(phoneNumber);
   if (!conversation) return null;
   
-  // If last interaction was more than 30 minutes ago, end conversation
-  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-  if (conversation.lastInteraction < thirtyMinutesAgo) {
-    activeConversations.delete(phoneNumber);
+  // If last interaction was more than 15 minutes ago, end conversation
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  if (conversation.lastInteraction < fifteenMinutesAgo) {
+    console.log(`Conversation timed out for ${phoneNumber}`);
+    endConversation(phoneNumber);
     return null;
   }
   
@@ -161,6 +168,7 @@ function getActiveConversation(phoneNumber: string): ActiveConversation | null {
 
 // Update active conversation
 function updateActiveConversation(phoneNumber: string, coachName: string) {
+  console.log(`Updating conversation state for ${phoneNumber} with coach ${coachName}`);
   activeConversations.set(phoneNumber, {
     coachName,
     lastInteraction: new Date()
@@ -289,12 +297,19 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     const message = body.trim();
     const messageUpper = message.toUpperCase();
     
+    // Check for commands that should end the conversation
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'INSPIRE', 'MORE'];
+    if (commandsThatEndConversation.includes(messageUpper)) {
+      console.log(`Command ${messageUpper} received - ending any active conversation`);
+      endConversation(from);
+    }
+    
     // Always check for system commands first
     if (messageUpper === 'COMMANDS' || messageUpper === 'HELP' || messageUpper === 'INFO') {
       console.log(`Sending COMMANDS response to ${from}`);
       await sendSmsResponse(
         from,
-        'Available commands:\n• TODAY - Get today\'s inspiration\n• INSPIRE - Get random inspiration\n• MORE - Extra line of chaos\n• START - Subscribe to updates\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"',
+        'Available commands:\n• TODAY - Get today\'s inspiration\n• INSPIRE - Get random inspiration\n• MORE - Extra line of chaos\n• START - Subscribe to updates\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nNote: Using any command will end your current coach conversation.',
         twilioClient
       );
       return;
