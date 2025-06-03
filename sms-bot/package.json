@@ -10,10 +10,16 @@
     "build": "rimraf dist && tsc",
     "start:prod": "NODE_ENV=production node dist/src/index.js",
     "start:dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run dev'",
-    "test:sms": "npm run build && node dist/scripts/test-sms-flow.js"
+    "test:sms": "npm run build && node dist/scripts/test-sms-flow.js",
+    "test:twilio": "npm run build && node dist/scripts/test-twilio.js",
+    "test:supabase": "npm run build && node dist/scripts/test-supabase.js",
+    "broadcast": "npm run build && node dist/scripts/broadcast-sms.js",
+    "send-confirmations": "npm run build && node dist/scripts/send-confirmation-sms.js",
+    "delete-subscriber": "npm run build && node dist/scripts/delete-subscriber.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@supabase/supabase-js": "^2.49.9",
     "axios": "^1.9.0",
     "body-parser": "^1.20.2",
     "dotenv": "^16.5.0",

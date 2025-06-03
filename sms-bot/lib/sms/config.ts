@@ -15,7 +15,11 @@ If you don't know something, be honest about it.`,
   MAX_SMS_LENGTH: 1600, // Maximum SMS message length
   
   // Response configuration
-  RESPONSE_TIMEOUT: 15000, // 15 seconds timeout for AI responses
+  RESPONSE_TIMEOUT: 15000, // 15 seconds timeout for AI responses,
+  
+  // Standard responses for subscription management
+  STOP_RESPONSE: 'You have been unsubscribed from The Foundry updates. Reply START to resubscribe.',
+  START_RESPONSE: 'Welcome back! You are now subscribed to The Foundry updates.'
 };
 
 /**

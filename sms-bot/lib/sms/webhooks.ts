@@ -1,13 +1,13 @@
 import { Application, Request, Response } from 'express';
-import twilio from 'twilio';
+import twilio, { Twilio } from 'twilio';
 import { validateEnvVariables } from './config.js';
-import { handleIncomingSms } from './handlers.js';
+import { processIncomingSms } from './handlers.js';
 
 // Export Twilio client type for use in handlers
-export type TwilioClient = twilio.Twilio;
+export type TwilioClient = Twilio;
 
 // Initialize Twilio client
-let twilioClient: twilio.Twilio | null = null;
+let twilioClient: Twilio | null = null;
 
 /**
  * Setup Twilio webhooks on Express server
@@ -21,7 +21,7 @@ export function setupTwilioWebhooks(app: Application): void {
   }
   
   // Initialize Twilio client
-  twilioClient = new twilio.Twilio(
+  twilioClient = twilio(
     process.env.TWILIO_ACCOUNT_SID as string,
     process.env.TWILIO_AUTH_TOKEN as string
   );
@@ -43,7 +43,7 @@ export function setupTwilioWebhooks(app: Application): void {
       }
       
       // Process in background to avoid webhook timeout
-      void handleIncomingSms(From, Body, twilioClient);
+      void processIncomingSms(From, Body, twilioClient);
       
       // Respond to Twilio with empty TwiML to avoid auto-response
       res.set('Content-Type', 'text/xml');
@@ -61,4 +61,15 @@ export function setupTwilioWebhooks(app: Application): void {
   });
   
   console.log('Twilio webhooks configured successfully');
+}
+
+export function initializeTwilioClient(): TwilioClient {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    throw new Error('Missing required Twilio environment variables');
+  }
+  
+  return twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
 }
