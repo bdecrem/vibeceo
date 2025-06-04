@@ -80,6 +80,28 @@ function getCurrentDay(): number {
   return calculatedDay;
 }
 
+// Skip to the next day's inspiration (QA feature for early access users)
+// Returns the new inspiration
+export function skipToNextInspiration(): { day: number, inspiration: any } {
+  const data = loadInspirationsData();
+  const tracker = loadDayTracker();
+  
+  // Increment the current day, wrapping around if we reach the end
+  tracker.currentDay = (tracker.currentDay % data.length) + 1;
+  
+  // Save the updated tracker
+  saveDayTracker(tracker);
+  
+  // Return the new inspiration
+  const inspirationIndex = tracker.currentDay - 1; // Convert to 0-based index
+  const inspiration = data[inspirationIndex];
+  
+  return {
+    day: tracker.currentDay,
+    inspiration: inspiration
+  };
+}
+
 // Make these functions available for the broadcast script
 export function getTodaysInspiration() {
   const data = loadInspirationsData();
@@ -491,6 +513,34 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         'Welcome back! You are now subscribed to The Foundry updates.',
         twilioClient
       );
+      
+      return;
+    }
+    
+    // Handle SKIP command for early access users (QA feature)
+    if (messageUpper === 'SKIP') {
+      console.log('Processing SKIP command...');
+      
+      // Check if the user has early access privileges
+      const subscriber = await getSubscriber(from);
+      
+      if (subscriber && subscriber.receive_early) {
+        // User has early access, process the skip command
+        const newInspiration = skipToNextInspiration();
+        const messageText = formatDailyMessage(newInspiration.inspiration);
+        
+        await sendSmsResponse(
+          from,
+          `✅ Skipped to next inspiration (Day ${newInspiration.day}):\n\n${messageText}`,
+          twilioClient
+        );
+        
+        console.log(`User ${from} with early access skipped to day ${newInspiration.day}`); 
+      } else {
+        // User doesn't have early access, ignore the command
+        console.log(`User ${from} attempted to use SKIP command without early access privileges`); 
+        // Send no response to avoid revealing the feature to non-early access users
+      }
       
       return;
     }

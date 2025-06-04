@@ -37,6 +37,7 @@ export type SMSSubscriber = {
   last_message_date?: string;
   unsubscribed?: boolean;
   confirmed?: boolean;
+  receive_early?: boolean;
 }
 
 // Initialize Supabase client
