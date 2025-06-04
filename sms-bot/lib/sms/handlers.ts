@@ -21,13 +21,8 @@ function loadInspirationsData() {
       dayTrackerPath = path.join(process.cwd(), 'data', 'day-tracker.json');
       console.log(`Loaded ${inspirationsData.length} inspirations from ${inspirationsPath}`);
     } catch (error) {
-      console.error('Error loading inspirations data:', error);
-      // Fallback data so the system doesn't crash
-      inspirationsData = [{
-        text: "Today's vibe: Pre-product. Post-delusion. Keep building.",
-        author: "Donte"
-      }];
-      console.log('Using fallback inspiration data');
+      console.error('ERROR: Cannot load daily inspirations file:', error);
+      throw new Error('Daily inspirations file is missing or corrupted. Please check the file: af_daily_inspirations.json');
     }
   }
   return inspirationsData;

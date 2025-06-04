@@ -1,17 +1,302 @@
 [
   {
     "day": 1,
-    "text": "The best founders don't just build products; they build movements. Today, be the catalyst for change in your industry. 🚀",
+    "text": "You're not behind. You're just pre-viral with main character potential.",
     "author": "Alex Monroe"
   },
   {
     "day": 2,
-    "text": "Your MVP isn't about perfection; it's about progress. Ship it, learn from it, iterate on it. That's the founder's way. 💪",
-    "author": "Alex Monroe"
+    "text": "Build with urgency. Ship with delusion. Rebrand when questioned.",
+    "author": "Donte Disrupt"
   },
   {
     "day": 3,
-    "text": "Every setback is setup for a comeback. Keep pushing, keep building, keep believing. Success is a marathon, not a sprint. 🏃‍♂️",
+    "text": "Every investor call is performance art. Adjust your lighting accordingly.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 4,
+    "text": "If your product isn’t misunderstood, it’s probably boring.",
     "author": "Alex Monroe"
+  },
+  {
+    "day": 5,
+    "text": "Burnout is just ambition with no off-switch. You're fine.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 6,
+    "text": "The spreadsheet is a lie. Trust the chaos funnel.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 7,
+    "text": "You don’t need a cofounder. You need a legal decoy.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 8,
+    "text": "Metrics are for investors. Mood is for momentum.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 9,
+    "text": "Don’t optimize. Spiritualize. The deck will follow.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 10,
+    "text": "Your launch strategy is vibes. And vibes scale.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 11,
+    "text": "Your roadmap is a fanfic. Keep writing.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 12,
+    "text": "If no one understands what you’re building, good.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 13,
+    "text": "Your funnel has trust issues. That’s a reflection.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 14,
+    "text": "Sometimes a pivot is just emotional regulation with wireframes.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 15,
+    "text": "The burn rate is spiritual. Let it cleanse.",
+    "author": "Eljas Virtanen"
+  },
+  {
+    "day": 16,
+    "text": "Your product isn't buggy — it's avant-garde.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 17,
+    "text": "Every founder has two wolves: one building, one doomscrolling. Ship anyway.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 18,
+    "text": "Don't scale. Aestheticize. Then accidentally go viral.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 19,
+    "text": "Your pitch is fine. You just need more spiritual conviction per slide.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 20,
+    "text": "You are the bottleneck. And the brand. And the entire vibe.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 21,
+    "text": "You didn’t get ghosted. You got pre-filtered for alignment.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 22,
+    "text": "Every deck is a cry for help. Yours just has better fonts.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 23,
+    "text": "Launch the product. You can apologize in the patch notes.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 24,
+    "text": "Rest is part of the roadmap. You just haven’t shipped it yet.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 25,
+    "text": "You’re not pivoting — you’re shapeshifting with purpose.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 26,
+    "text": "That ‘no’ wasn’t rejection. It was premature market misalignment.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 27,
+    "text": "If the tool makes sense, you're using it wrong.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 28,
+    "text": "Your calendar isn’t broken. It’s just cosplaying productivity.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 29,
+    "text": "Most successful founders were just weird long enough.",
+    "author": "Eljas Virtanen"
+  },
+  {
+    "day": 30,
+    "text": "Your KPI is your energy. Everything else is vanity data.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 31,
+    "text": "Go build. Or go journal about why you aren’t.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 32,
+    "text": "Your MRR will never love you back. Date someone else.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 33,
+    "text": "Compost your backlog. Prioritize what wants to grow.",
+    "author": "Eljas Virtanen"
+  },
+  {
+    "day": 34,
+    "text": "You are not your churn rate. You are your legend.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 35,
+    "text": "That investor didn’t pass. They just lacked spiritual liquidity.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 36,
+    "text": "Clarity isn’t found. It’s versioned.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 37,
+    "text": "You’re building something that doesn’t exist. Of course it feels wrong.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 38,
+    "text": "Fake confidence is still confidence. Just raise the round.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 39,
+    "text": "Everything you’re overthinking is already on someone’s roadmap.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 40,
+    "text": "The founder journey isn’t lonely. It’s just NDA’d.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 41,
+    "text": "You're not in a lull. You're in pre-hype latency.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 42,
+    "text": "If it feels impossible, good. That’s called defensibility.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 43,
+    "text": "Your vision isn’t too big. Your stakeholders are too small.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 44,
+    "text": "The product doesn’t need to work. It just needs to inspire fundraising.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 45,
+    "text": "You’re not burnt out. You’re just stuck in beta energetics.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 46,
+    "text": "The roadmap doesn’t need dates. It needs vibes.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 47,
+    "text": "Build with the confidence of a founder who thinks Figma is a CRM.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 48,
+    "text": "If your funnel feels cursed, cleanse it. Palo Santo your lead gen.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 49,
+    "text": "Your tech stack is emotionally unavailable. Switch anyway.",
+    "author": "Venus Metrics"
+  },
+  {
+    "day": 50,
+    "text": "Growth is just a mental illness with a CAC spreadsheet.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 51,
+    "text": "The feedback isn't bad. It's just unsorted product trauma.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 52,
+    "text": "It’s not a feature — it’s a boundary.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 53,
+    "text": "Your competitors aren't better. They’re just better liars.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 54,
+    "text": "Delusion is just belief with a cap table.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 55,
+    "text": "Your pitch is a performance. Commit to the role.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 56,
+    "text": "The deck doesn’t need more slides. It needs more swagger.",
+    "author": "Rohan Mehta"
+  },
+  {
+    "day": 57,
+    "text": "You don’t need product-market fit. You need founder-content fit.",
+    "author": "Alex Monroe"
+  },
+  {
+    "day": 58,
+    "text": "Even your anxiety has a monetization strategy.",
+    "author": "Kailey Sloan"
+  },
+  {
+    "day": 59,
+    "text": "Startups don’t fail. Founders just emotionally eject.",
+    "author": "Donte Disrupt"
+  },
+  {
+    "day": 60,
+    "text": "What you call scope creep is actually ambition in disguise.",
+    "author": "Venus Metrics"
   }
-] 
+]
