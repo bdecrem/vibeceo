@@ -53,7 +53,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
       <div className="bg-gradient-to-br from-[#1a2937] to-[#1d4352] text-white rounded-3xl w-full max-w-xl mx-4 relative overflow-hidden border border-white/10">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
+          className="absolute top-3 right-3 text-white/70 hover:text-white transition-colors z-10"
         >
           <X className="h-6 w-6" />
         </button>
@@ -88,7 +88,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
                   Craving one unhinged line of founder truth each morning?
                 </h3>
                 <p className="text-[#40e0d0] text-base md:text-lg">
-                  Welcome to the lowest-tech way to level up.
+                  We're delivering startup wisdom via SMS like it's 2006. Welcome to the lowest-tech way to level up.
                 </p>
               </div>
 
@@ -146,14 +146,15 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               <div className="text-center space-y-2 md:space-y-4 text-gray-300">
                 <p className="text-xs md:text-sm">
                   ✈️ SMS only works if you're US-based and emotionally unwell.<br />
-                  Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">Join the mailing list</a> for weekly startup spirals.
+                  Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">Join the mailing list</a>
+                  <span className="hidden md:inline"> for weekly startup spirals.</span>
                 </p>
                 <p className="text-xs">
                   By subscribing, you agree to our{' '}
                   <a href="https://thefoundry.biz/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">
                     Privacy Policy
                   </a>.
-                  We promise never to spam you. Only spiral responsibly.
+                  <span className="hidden md:inline">We promise never to spam you. Only spiral responsibly.</span>
                 </p>
               </div>
             </div>
