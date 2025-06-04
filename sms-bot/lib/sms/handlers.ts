@@ -512,6 +512,11 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           responseText,
           twilioClient
         );
+        
+        // Update last_message_date but NOT last_inspiration_date
+        // This ensures the MORE command doesn't prevent daily inspirations
+        await updateLastMessageDate(from);
+        
         console.log(`Successfully sent MORE response to ${from}: "${chaosLine.text}"`);
       } catch (error) {
         console.error(`Error sending MORE response: ${error}`);
