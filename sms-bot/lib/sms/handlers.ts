@@ -177,7 +177,10 @@ export function formatDailyMessage(inspiration: any): string {
   const messageIndex = (currentDay - 1) % messages.length;
   const marketingMessage = messages[messageIndex].message;
   
-  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.author}\n\n${marketingMessage}`;
+  // Prepend the swirl emoji (🌀) to the marketing message
+  const formattedMarketingMessage = `🌀 ${marketingMessage}`;
+  
+  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.author}\n\n${formattedMarketingMessage}`;
 }
 
 // Define types for conversation messages
