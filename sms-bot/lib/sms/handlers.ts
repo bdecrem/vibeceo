@@ -168,13 +168,19 @@ export function formatDailyMessage(inspiration: any): string {
     day: 'numeric' 
   });
   
-  // Get the current day and use it to select a marketing message
-  // This ensures we cycle through marketing messages in order
-  const currentDay = getCurrentDay();
+  // Get marketing messages
   const messages = loadMarketingMessages();
   
-  // Calculate which marketing message to use (cycling through 0 to messages.length-1)
-  const messageIndex = (currentDay - 1) % messages.length;
+  // Calculate which marketing message to use based on day of year
+  // This ensures we cycle through marketing messages every 7 days
+  // independently of the daily inspiration cycle (which is 60 days)
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - startOfYear.getTime();
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  // Get the message for today (cycling through 0 to 6)
+  const messageIndex = dayOfYear % messages.length;
   const marketingMessage = messages[messageIndex].message;
   
   // Prepend the swirl emoji (🌀) to the marketing message
