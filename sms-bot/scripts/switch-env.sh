@@ -44,7 +44,7 @@ fi
 
 PHONE_SID=$TWILIO_PHONE_SID
 echo "✅ Using phone SID: $PHONE_SID"
-NGROK_URL="https://f38433ab7cd7.ngrok.app"               # Your current ngrok URL
+NGROK_URL="https://theaf-sms.ngrok.io"               # Your permanent ngrok URL
 PRODUCTION_URL="https://smsbot-production.up.railway.app" # Your Railway URL
 
 # Check if environment argument is provided
@@ -108,8 +108,8 @@ if [ "$UPDATE_SUPABASE" = true ]; then
   # Check if we got a valid response
   if [[ $HOOKS_RESPONSE == *"id"* ]]; then
     echo "Found webhooks! Looking for subscriber webhook..."
-    # This is a simplistic approach - it will attempt to update any webhook with 'subscriber' in the name
-    HOOK_ID=$(echo $HOOKS_RESPONSE | grep -o '"id":[0-9]*.*"name":"[^"]*subscriber[^"]*"' | grep -o '"id":[0-9]*' | grep -o '[0-9]*' | head -1)
+    # Look for webhooks with the new-subscriber endpoint in their URL
+    HOOK_ID=$(echo $HOOKS_RESPONSE | grep -o '"id":[0-9]*.*"url":"[^"]*webhooks/new-subscriber[^"]*"' | grep -o '"id":[0-9]*' | grep -o '[0-9]*' | head -1)
     
     if [ ! -z "$HOOK_ID" ]; then
       echo "Found subscriber webhook with ID: $HOOK_ID"
