@@ -107,15 +107,15 @@ export default function Home() {
               Algorithmically optimized advice that sounds just human enough to be legally distinct from actual humans.
             </p>
             <div className="pt-4 md:pt-6 flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
-              <Link href="/coaches">
-                <Button className="w-full sm:w-auto bg-[#40e0d0] hover:bg-[#40e0d0]/90 text-white px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide">
+              <Link href="/coaches" className="w-full sm:w-auto">
+                <Button className="w-full bg-[#40e0d0] hover:bg-[#40e0d0]/90 text-white px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide">
                   Get Started <span className="ml-2">→</span>
                 </Button>
               </Link>
               <Button 
                 variant="outline"
                 onClick={() => setIsSmsModalOpen(true)}
-                className="w-full sm:w-auto border border-[#40e0d0]/30 bg-transparent text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
+                className="w-full bg-transparent border border-[#40e0d0]/30 text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
               >
                 SMS Updates <MessageSquare className="ml-2 h-5 w-5 inline-flex" />
               </Button>
@@ -237,7 +237,7 @@ export default function Home() {
         <section className="bg-[#e6faf8] py-16">
           <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
-            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-4 md:px-12">
+            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-0 md:px-12">
               <button 
                 onClick={handlePrev}
                 className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
@@ -246,7 +246,7 @@ export default function Home() {
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <div className="relative w-full overflow-hidden" style={{ height: '220px' }}>
+              <div className="relative w-full overflow-hidden" style={{ height: '280px' }}>
                 <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentSlide}
@@ -279,7 +279,7 @@ export default function Home() {
                         }
                       }
                     }}
-                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y"
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-[95vw] md:w-full absolute top-0 left-1/2 -translate-x-1/2 touch-pan-y"
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
@@ -290,7 +290,7 @@ export default function Home() {
                         <p className="text-sm text-[#40e0d0]">{slides[currentSlide].title}</p>
                       </div>
                     </div>
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 text-base md:text-lg">
                       {slides[currentSlide].text}
                     </p>
                   </motion.div>

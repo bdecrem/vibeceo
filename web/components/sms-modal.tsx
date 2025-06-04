@@ -58,45 +58,42 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
           <X className="h-6 w-6" />
         </button>
 
-        <div className="p-6 md:p-12">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+        <div className="p-4 md:p-6">
+          <div className="text-center mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
               Get Daily Texts from AF
             </h2>
-            <p className="text-[#40e0d0] text-xl">Startup wisdom. Spirals. Possibly threats.</p>
+            <p className="text-[#40e0d0] text-base md:text-xl">Startup wisdom. Spirals. Possibly threats.</p>
           </div>
 
           {isSuccess ? (
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-3">
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
                 You just signed up for daily startup chaos… via SMS. Bold move.
               </h3>
-              <p className="text-[#40e0d0] mb-8 italic text-lg">
+              <p className="text-[#40e0d0] mb-6 md:mb-8 italic text-base md:text-lg">
                 Your phone is now a vessel. Prepare for bangers.
               </p>
               <button
                 onClick={onClose}
-                className="bg-[#40e0d0] text-[#1a2937] px-8 py-4 rounded-full font-medium hover:bg-[#40e0d0]/90 transition-all duration-300"
+                className="bg-[#40e0d0] text-[#1a2937] px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-[#40e0d0]/90 transition-all duration-300"
               >
                 Close
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-4">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-4">
                   Craving one unhinged line of founder truth each morning?
                 </h3>
-                <p className="text-gray-300 text-lg leading-relaxed mb-2 hidden md:block">
-                  We're delivering startup wisdom via SMS like it's 2006. No apps. No portals. Just raw, unhinged advice… on your phone.
-                </p>
-                <p className="text-[#40e0d0] text-lg">
+                <p className="text-[#40e0d0] text-base md:text-lg">
                   Welcome to the lowest-tech way to level up.
                 </p>
               </div>
 
               <div>
-                <label htmlFor="phone-modal" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="phone-modal" className="block text-sm font-medium text-gray-300 mb-1 md:mb-2">
                   Your Phone Number
                 </label>
                 <input
@@ -105,12 +102,12 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="(555) 123-4567"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#40e0d0] focus:border-transparent backdrop-blur-sm"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 md:py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#40e0d0] focus:border-transparent backdrop-blur-sm"
                 />
               </div>
 
               <div className="flex items-start">
-                <div className="flex items-center h-5">
+                <div className="flex items-center h-4 md:h-5">
                   <input
                     id="consent-modal"
                     type="checkbox"
@@ -119,7 +116,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
                     className="h-4 w-4 text-[#40e0d0] border-white/20 rounded focus:ring-[#40e0d0] bg-white/5"
                   />
                 </div>
-                <label htmlFor="consent-modal" className="ml-3 text-sm text-gray-300">
+                <label htmlFor="consent-modal" className="ml-3 text-xs md:text-sm text-gray-300">
                   I agree to receive daily SMS spiral fuel like it's still T9.
                 </label>
               </div>
@@ -127,7 +124,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               <button
                 onClick={handleSubmit}
                 disabled={!phone || !consent || isSubmitting}
-                className={`w-full py-4 px-8 rounded-full font-medium transition-all duration-300 ${
+                className={`w-full py-3 md:py-4 px-6 md:px-8 rounded-full font-medium transition-all duration-300 ${
                   !phone || !consent || isSubmitting
                     ? 'bg-white/10 text-white/50 cursor-not-allowed'
                     : 'bg-[#40e0d0] hover:bg-[#40e0d0]/90 text-[#1a2937]'
@@ -146,8 +143,8 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
                 )}
               </button>
 
-              <div className="text-center text-sm space-y-4 text-gray-300">
-                <p>
+              <div className="text-center space-y-2 md:space-y-4 text-gray-300">
+                <p className="text-xs md:text-sm">
                   ✈️ SMS only works if you're US-based and emotionally unwell.<br />
                   Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">Join the mailing list</a> for weekly startup spirals.
                 </p>
