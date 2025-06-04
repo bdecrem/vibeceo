@@ -222,7 +222,7 @@ export default function CoachesPage() {
                       src={coach.image} 
                       alt={coach.name} 
                       fill 
-                      className="object-contain md:object-cover md:object-[center_top]" 
+                      className="object-cover object-[center_top]" 
                       priority 
                     />
                   </div>
