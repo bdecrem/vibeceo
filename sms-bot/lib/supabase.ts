@@ -35,6 +35,7 @@ export type SMSSubscriber = {
   opt_in_date?: string;
   consent_given: boolean;
   last_message_date?: string;
+  last_inspiration_date?: string; // Timestamp of last sent daily inspiration
   unsubscribed?: boolean;
   confirmed?: boolean;
   receive_early?: boolean;

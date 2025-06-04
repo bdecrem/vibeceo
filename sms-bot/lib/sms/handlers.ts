@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
-import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, confirmSubscriber } from '../subscribers.js';
+import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber } from '../subscribers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -500,8 +500,9 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           const correctDayData = getInspirationForNewSubscriber(signupDate);
           const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
           
-          // Track this message time to prevent duplicate sends
+          // Track this message time to prevent duplicate sends (regular message + inspiration tracking)
           await updateLastMessageDate(from, signupDate);
+          await updateLastInspirationDate(from, signupDate);
           
           await sendSmsResponse(
             from,

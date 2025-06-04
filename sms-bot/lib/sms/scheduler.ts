@@ -1,5 +1,5 @@
 import { getTodaysInspiration, formatDailyMessage } from './handlers.js';
-import { getActiveSubscribers, getSubscriber } from '../subscribers.js';
+import { getActiveSubscribers, getSubscriber, updateLastInspirationDate } from '../subscribers.js';
 import type { TwilioClient } from './webhooks.js';
 
 // Function to check if it's time to send (9am PT for regular, 7am PT for early)
@@ -63,14 +63,14 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         for (const subscriber of earlySubscribers) {
           try {
-            // Check when this subscriber last received a message
+            // Check when this subscriber last received a daily inspiration
             const fullSubscriber = await getSubscriber(subscriber.phone_number);
-            const lastMessageDate = fullSubscriber?.last_message_date ? new Date(fullSubscriber.last_message_date) : null;
+            const lastInspirationDate = fullSubscriber?.last_inspiration_date ? new Date(fullSubscriber.last_inspiration_date) : null;
             const now = new Date();
             
-            // Skip if they received a message less than 3 hours ago
-            if (lastMessageDate && (now.getTime() - lastMessageDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
-              console.log(`Skipping early message to ${subscriber.phone_number} - received previous message too recently`);
+            // Skip if they received a daily inspiration less than 3 hours ago
+            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+              console.log(`Skipping early message to ${subscriber.phone_number} - received previous inspiration too recently`);
               earlySkippedCount++;
               continue;
             }
@@ -80,6 +80,10 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
               to: subscriber.phone_number,
               from: process.env.TWILIO_PHONE_NUMBER
             });
+            
+            // Update the last inspiration date
+            await updateLastInspirationDate(subscriber.phone_number);
+            
             earlySuccessCount++;
             console.log(`Successfully sent early message to ${subscriber.phone_number}`);
             
@@ -125,14 +129,14 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         for (const subscriber of regularSubscribers) {
           try {
-            // Check when this subscriber last received a message
+            // Check when this subscriber last received a daily inspiration
             const fullSubscriber = await getSubscriber(subscriber.phone_number);
-            const lastMessageDate = fullSubscriber?.last_message_date ? new Date(fullSubscriber.last_message_date) : null;
+            const lastInspirationDate = fullSubscriber?.last_inspiration_date ? new Date(fullSubscriber.last_inspiration_date) : null;
             const now = new Date();
             
-            // Skip if they received a message less than 3 hours ago
-            if (lastMessageDate && (now.getTime() - lastMessageDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
-              console.log(`Skipping message to ${subscriber.phone_number} - received previous message too recently`);
+            // Skip if they received a daily inspiration less than 3 hours ago
+            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+              console.log(`Skipping message to ${subscriber.phone_number} - received previous inspiration too recently`);
               skippedCount++;
               continue;
             }
@@ -142,6 +146,10 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
               to: subscriber.phone_number,
               from: process.env.TWILIO_PHONE_NUMBER
             });
+            
+            // Update the last inspiration date
+            await updateLastInspirationDate(subscriber.phone_number);
+            
             successCount++;
             console.log(`Successfully sent to ${subscriber.phone_number}`);
             

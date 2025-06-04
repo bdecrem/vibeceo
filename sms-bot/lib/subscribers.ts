@@ -152,6 +152,30 @@ export async function updateLastMessageDate(phoneNumber: string, date: Date = ne
 }
 
 /**
+ * Update the last_inspiration_date for a subscriber
+ * This tracks when the last daily inspiration was sent, separately from regular chat messages
+ * @param phoneNumber The phone number of the subscriber
+ * @param date Optional custom date to set as last_inspiration_date, defaults to current time
+ */
+export async function updateLastInspirationDate(phoneNumber: string, date: Date = new Date()): Promise<void> {
+  try {
+    // Normalize the phone number first
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+    
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update({ last_inspiration_date: date.toISOString() })
+      .eq('phone_number', normalizedNumber);
+      
+    if (error) {
+      console.error('Error updating last inspiration date:', error);
+    }
+  } catch (error) {
+    console.error('Error in updateLastInspirationDate:', error);
+  }
+}
+
+/**
  * Confirm a subscriber who replied YES to the confirmation message
  */
 export async function confirmSubscriber(phoneNumber: string): Promise<boolean> {
