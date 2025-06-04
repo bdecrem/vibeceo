@@ -14,9 +14,9 @@ export default function SmsOptIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || !consent) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch('/api/sms-subscribe', {
         method: 'POST',
@@ -28,13 +28,13 @@ export default function SmsOptIn() {
           consentGiven: consent
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to subscribe');
       }
-      
+
       setIsSuccess(true);
     } catch (error) {
       console.error('Error subscribing:', error);
@@ -46,7 +46,6 @@ export default function SmsOptIn() {
 
   return (
     <div className="min-h-screen bg-[#1a3d3d] flex flex-col">
-      {/* Header/navigation */}
       <nav className="container mx-auto py-6">
         <div className="flex items-center gap-2">
           <Link href="/">
@@ -65,7 +64,7 @@ export default function SmsOptIn() {
           </Link>
         </div>
       </nav>
-      
+
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -83,15 +82,14 @@ export default function SmsOptIn() {
                 <h1 className="text-3xl font-bold text-black mb-2">
                   You just signed up for daily startup chaos… via SMS. Bold move.
                 </h1>
-                <p className="text-black mb-8">
-                  Check your phone. A tiny text-based oracle is on its way.
+                <p className="text-black mb-8 italic">
+                  Your phone is now a vessel. Prepare for bangers.
                 </p>
                 <div className="w-16 h-16 bg-[#1a3d3d] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#40e0d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-black text-lg mb-8">Carrier pigeons were busy.</p>
                 <Link href="/">
                   <button className="bg-[#1a3d3d] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#1a3d3d]/90 transition-all duration-300">
                     Back to Reality
@@ -122,7 +120,7 @@ export default function SmsOptIn() {
                 </div>
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-semibold text-black mb-4">
+                    <h2 className="text-2xl font-semibold text-black mb-4">
                       Craving one unhinged line of founder truth each morning?
                     </h2>
                     <p className="text-black mb-6">
@@ -190,14 +188,25 @@ export default function SmsOptIn() {
                   </motion.button>
                 </div>
 
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4 mb-2 text-center"
+                >
+                  <p className="text-sm text-[#1a3d3d] font-medium leading-snug">
+                    ✈️ SMS is US-only. Emotionally unwell is optional.<br />
+                    🌍 Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#1a3d3d]/80">Join the mailing list</a> for weekly startup spirals.
+                  </p>
+                </motion.div>
+
                 <div className="mt-6 border-t border-[#1a3d3d]/10 pt-6">
-                  <p className="text-xs text-center text-black">
+                  <p className="text-xs text-center text-black font-medium tracking-tight">
                     By subscribing, you agree to our{' '}
-                    <a href="https://thefoundry.biz/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#1a3d3d] hover:underline">
+                    <a href="https://thefoundry.biz/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#1a3d3d] font-semibold hover:underline">
                       Privacy Policy
-                    </a>
-                    . We promise never to spam you.{' '}
-                    Only spiral responsibly.
+                    </a>.
+                    We promise never to spam you. Only spiral responsibly.
                   </p>
                 </div>
               </>
