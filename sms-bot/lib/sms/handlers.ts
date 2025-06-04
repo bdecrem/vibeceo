@@ -389,7 +389,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       console.log(`Sending COMMANDS response to ${from}`);
       await sendSmsResponse(
         from,
-        'Available commands:\n• TODAY - Get today\'s inspiration\n• INSPIRE - Get random inspiration\n• MORE - Extra line of chaos\n• START - Subscribe to updates\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nNote: Using any command will end your current coach conversation.',
+        'Available commands:\n• MORE - Extra line of chaos\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nNote: Using any command will end your current coach conversation.',
         twilioClient
       );
       return;
