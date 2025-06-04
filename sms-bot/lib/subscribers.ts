@@ -130,15 +130,17 @@ export async function resubscribeUser(phoneNumber: string): Promise<boolean> {
 
 /**
  * Update the last_message_date for a subscriber
+ * @param phoneNumber The phone number of the subscriber
+ * @param date Optional custom date to set as last_message_date, defaults to current time
  */
-export async function updateLastMessageDate(phoneNumber: string): Promise<void> {
+export async function updateLastMessageDate(phoneNumber: string, date: Date = new Date()): Promise<void> {
   try {
     // Normalize the phone number first
     const normalizedNumber = normalizePhoneNumber(phoneNumber);
     
     const { error } = await supabase
       .from('sms_subscribers')
-      .update({ last_message_date: new Date().toISOString() })
+      .update({ last_message_date: date.toISOString() })
       .eq('phone_number', normalizedNumber);
       
     if (error) {

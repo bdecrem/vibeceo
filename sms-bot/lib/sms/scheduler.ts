@@ -1,5 +1,5 @@
 import { getTodaysInspiration, formatDailyMessage } from './handlers.js';
-import { getActiveSubscribers } from '../subscribers.js';
+import { getActiveSubscribers, getSubscriber } from '../subscribers.js';
 import type { TwilioClient } from './webhooks.js';
 
 // Function to check if it's time to send (9am PT for regular, 7am PT for early)
@@ -25,8 +25,12 @@ function getNextSendTime(isEarly: boolean = false): Date {
   return pt;
 }
 
-let lastRegularSendDate: string | null = null;
-let lastEarlySendDate: string | null = null;
+// Keep track of the last send dates to avoid duplicate sends
+let lastEarlySendDate: string = '';
+let lastRegularSendDate: string = '';
+
+// Minimum time between messages in milliseconds (3 hours)
+const MIN_TIME_BETWEEN_MESSAGES: number = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
 
 export async function startDailyScheduler(twilioClient: TwilioClient) {
   console.log('Starting daily message scheduler...');
@@ -55,9 +59,22 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         // Send to each early subscriber
         let earlySuccessCount = 0;
         let earlyFailureCount = 0;
+        let earlySkippedCount = 0;
         
         for (const subscriber of earlySubscribers) {
           try {
+            // Check when this subscriber last received a message
+            const fullSubscriber = await getSubscriber(subscriber.phone_number);
+            const lastMessageDate = fullSubscriber?.last_message_date ? new Date(fullSubscriber.last_message_date) : null;
+            const now = new Date();
+            
+            // Skip if they received a message less than 3 hours ago
+            if (lastMessageDate && (now.getTime() - lastMessageDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+              console.log(`Skipping early message to ${subscriber.phone_number} - received previous message too recently`);
+              earlySkippedCount++;
+              continue;
+            }
+            
             await twilioClient.messages.create({
               body: messageText,
               to: subscriber.phone_number,
@@ -74,7 +91,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
           }
         }
         
-        console.log(`Early broadcast complete. Success: ${earlySuccessCount}, Failures: ${earlyFailureCount}`);
+        console.log(`Early broadcast complete. Success: ${earlySuccessCount}, Failures: ${earlyFailureCount}, Skipped: ${earlySkippedCount}`);
         
         // Mark as sent for today
         lastEarlySendDate = todayPT;
@@ -104,9 +121,22 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         // Send to each regular subscriber
         let successCount = 0;
         let failureCount = 0;
+        let skippedCount = 0;
         
         for (const subscriber of regularSubscribers) {
           try {
+            // Check when this subscriber last received a message
+            const fullSubscriber = await getSubscriber(subscriber.phone_number);
+            const lastMessageDate = fullSubscriber?.last_message_date ? new Date(fullSubscriber.last_message_date) : null;
+            const now = new Date();
+            
+            // Skip if they received a message less than 3 hours ago
+            if (lastMessageDate && (now.getTime() - lastMessageDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+              console.log(`Skipping message to ${subscriber.phone_number} - received previous message too recently`);
+              skippedCount++;
+              continue;
+            }
+            
             await twilioClient.messages.create({
               body: messageText,
               to: subscriber.phone_number,
@@ -123,7 +153,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
           }
         }
         
-        console.log(`Regular broadcast complete. Success: ${successCount}, Failures: ${failureCount}`);
+        console.log(`Regular broadcast complete. Success: ${successCount}, Failures: ${failureCount}, Skipped: ${skippedCount}`);
         
         // Mark as sent for today
         lastRegularSendDate = todayPT;
