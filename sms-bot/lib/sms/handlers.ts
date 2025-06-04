@@ -9,12 +9,13 @@ import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate,
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load inspirations data
-let inspirationsData: any = null;
+// Global cache for inspirations data, marketing messages, and day tracker
+let inspirationsData: any[] = [];
+let marketingMessages: any[] = [];
 let dayTrackerPath: string = '';
 
 function loadInspirationsData() {
-  if (!inspirationsData) {
+  if (!inspirationsData.length) {
     try {
       const inspirationsPath = path.join(process.cwd(), 'data', 'af_daily_inspirations.json');
       inspirationsData = JSON.parse(fs.readFileSync(inspirationsPath, 'utf8'));
@@ -26,6 +27,25 @@ function loadInspirationsData() {
     }
   }
   return inspirationsData;
+}
+
+/**
+ * Loads marketing messages from the JSON file
+ * These are the messages that appear at the bottom of daily inspirations
+ */
+function loadMarketingMessages() {
+  if (!marketingMessages || marketingMessages.length === 0) {
+    try {
+      const marketingPath = path.join(process.cwd(), 'data', 'marketing_messages.json');
+      marketingMessages = JSON.parse(fs.readFileSync(marketingPath, 'utf8'));
+      console.log(`Loaded ${marketingMessages.length} marketing messages from ${marketingPath}`);
+    } catch (error) {
+      console.error('ERROR: Cannot load marketing messages file:', error);
+      // Use a default message if file is missing
+      marketingMessages = [{ message: "👋 Text MORE for one extra line of chaos." }];
+    }
+  }
+  return marketingMessages;
 }
 
 interface DayTracker {
@@ -148,7 +168,16 @@ export function formatDailyMessage(inspiration: any): string {
     day: 'numeric' 
   });
   
-  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.author}\n\n🌀 Text MORE for one extra line of chaos.`;
+  // Get the current day and use it to select a marketing message
+  // This ensures we cycle through marketing messages in order
+  const currentDay = getCurrentDay();
+  const messages = loadMarketingMessages();
+  
+  // Calculate which marketing message to use (cycling through 0 to messages.length-1)
+  const messageIndex = (currentDay - 1) % messages.length;
+  const marketingMessage = messages[messageIndex].message;
+  
+  return `AF Daily — ${dateString}\n💬 "${inspiration.text}"\n— ${inspiration.author}\n\n${marketingMessage}`;
 }
 
 // Define types for conversation messages
