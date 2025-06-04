@@ -169,7 +169,7 @@ export default function Home() {
                     src="/images/coach-1.jpeg" 
                     alt="Startup Coach" 
                     fill 
-                    className="object-contain md:object-cover" 
+                    className="object-cover object-[center_top]" 
                     priority 
                   />
                 </div>
@@ -199,7 +199,7 @@ export default function Home() {
                     src="/images/coach-5.png" 
                     alt="Alex Monroe" 
                     fill 
-                    className="object-contain md:object-cover" 
+                    className="object-cover md:object-cover object-[center_top]" 
                     priority 
                   />
                 </div>
