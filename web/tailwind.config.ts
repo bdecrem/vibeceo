@@ -11,6 +11,9 @@ const config = {
   ],
   prefix: "",
   theme: {
+    fontFamily: {
+      sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+    },
     container: {
       center: true,
       padding: "2rem",
