@@ -115,6 +115,31 @@ export function getTodaysInspiration() {
   };
 }
 
+/**
+ * Get the correct day's inspiration for new subscribers based on subscription date
+ * @param signupDate Date when user signed up
+ * @returns The correct day's inspiration for the new subscriber
+ */
+export function getInspirationForNewSubscriber(signupDate: Date = new Date()) {
+  const data = loadInspirationsData();
+  const tracker = loadDayTracker();
+  const startDate = new Date(tracker.startDate);
+  
+  // Calculate days since start date based on signup date
+  const timeDiff = signupDate.getTime() - startDate.getTime();
+  const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+  
+  // Calculate correct day (1-based, cycles through available inspirations)
+  const correctDay = Math.max(1, (daysDiff % data.length) + 1);
+  const inspirationIndex = correctDay - 1; // Convert to 0-based index
+  const inspiration = data[inspirationIndex];
+  
+  return {
+    day: correctDay,
+    inspiration: inspiration
+  };
+}
+
 export function formatDailyMessage(inspiration: any): string {
   // Get current date in "Month Day" format
   const currentDate = new Date();
@@ -464,23 +489,28 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         // Send welcome/confirmation message first
         await sendSmsResponse(
           from,
-          "You’re in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
+          "You're in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
           twilioClient
         );
         
-        // Then send today's inspiration message
+        // Then send the correct day's inspiration message based on signup date
         try {
-          const todaysData = getTodaysInspiration();
-          const todaysMessage = formatDailyMessage(todaysData.inspiration);
+          // Use the signup date (now) to determine the correct day's message
+          const signupDate = new Date();
+          const correctDayData = getInspirationForNewSubscriber(signupDate);
+          const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
+          
+          // Track this message time to prevent duplicate sends
+          await updateLastMessageDate(from, signupDate);
           
           await sendSmsResponse(
             from,
-            todaysMessage,
+            inspirationMessage,
             twilioClient
           );
-          console.log(`Successfully sent welcome + today's message to new subscriber ${from}: Day ${todaysData.day}`);
+          console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${from} (correct day based on signup date)`);
         } catch (error) {
-          console.error(`Error sending today's message to new subscriber: ${error}`);
+          console.error(`Error sending message to new subscriber: ${error}`);
         }
       } else {
         await sendSmsResponse(
