@@ -268,18 +268,21 @@ export default function Home() {
                     }}
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={1}
-                    onDragEnd={(e, { offset, velocity }) => {
-                      const swipe = offset.x;
-                      if (Math.abs(velocity.x) > 20 || Math.abs(swipe) > 50) {
-                        if (swipe < 0) {
-                          handleNext();
-                        } else {
-                          handlePrev();
-                        }
+                    dragElastic={0.3}
+                    dragSnapToOrigin
+                    onDragEnd={(e, info) => {
+                      const threshold = 50;
+                      if (info.offset.x > threshold) {
+                        handlePrev();
+                      } else if (info.offset.x < -threshold) {
+                        handleNext();
                       }
                     }}
-                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y"
+                    onClick={(e) => {
+                      // Prevent click events from interfering with drag
+                      e.stopPropagation();
+                    }}
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y cursor-grab active:cursor-grabbing"
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
