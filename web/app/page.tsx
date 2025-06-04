@@ -117,7 +117,7 @@ export default function Home() {
                 onClick={() => setIsSmsModalOpen(true)}
                 className="w-full sm:w-auto border border-[#40e0d0]/30 bg-transparent text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
               >
-                SMS Updates <MessageSquare className="ml-2 h-5 w-5" />
+                SMS Updates <MessageSquare className="ml-2 h-5 w-5 inline-flex" />
               </Button>
             </div>
           </div>
@@ -237,10 +237,10 @@ export default function Home() {
         <section className="bg-[#e6faf8] py-16">
           <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
-            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-12">
+            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-4 md:px-12">
               <button 
                 onClick={handlePrev}
-                className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
                 aria-label="Previous slide"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -266,7 +266,20 @@ export default function Home() {
                       x: { type: "spring", stiffness: 300, damping: 30 },
                       opacity: { duration: 0.2 }
                     }}
-                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-8 w-full absolute top-0 left-0"
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={1}
+                    onDragEnd={(e, { offset, velocity }) => {
+                      const swipe = offset.x;
+                      if (Math.abs(velocity.x) > 20 || Math.abs(swipe) > 50) {
+                        if (swipe < 0) {
+                          handleNext();
+                        } else {
+                          handlePrev();
+                        }
+                      }
+                    }}
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y"
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
@@ -286,7 +299,7 @@ export default function Home() {
 
               <button 
                 onClick={handleNext}
-                className="absolute -right-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                className="absolute -right-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
                 aria-label="Next slide"
               >
                 <ChevronRight className="h-6 w-6" />
