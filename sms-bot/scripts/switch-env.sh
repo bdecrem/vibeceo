@@ -44,7 +44,7 @@ fi
 
 PHONE_SID=$TWILIO_PHONE_SID
 echo "✅ Using phone SID: $PHONE_SID"
-NGROK_URL="https://theaf-sms.ngrok.io"               # Your permanent ngrok URL
+NGROK_URL="https://f38433ab7cd7.ngrok.app"               # Your current ngrok URL
 PRODUCTION_URL="https://smsbot-production.up.railway.app" # Your Railway URL
 
 # Check if environment argument is provided
