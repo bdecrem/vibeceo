@@ -3,11 +3,16 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Sparkles, Zap, Brain, Users } from "lucide-react"
+import { ArrowRight, Sparkles, Zap, Brain, Users, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import SmsModal from "@/components/sms-modal";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [direction, setDirection] = useState(0);  // 1 for right, -1 for left
+  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+  
   const slides = [
     {
       img: '/images/coach-1.jpeg',
@@ -47,12 +52,14 @@ export default function Home() {
     }
   ];
 
-  const handlePrev = () => {
-    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
   };
 
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
   const handleDotClick = (index: number) => {
@@ -60,260 +67,320 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="bg-[#40e0d0] text-[#1a3d3d] text-center py-2 font-medium tracking-tight">
-        <a href="/sms-optin">
-          💬 Your therapist ghosted. We text back. Get founder affirmations via SMS. Yes, actual texts.
+    <main className="flex min-h-screen flex-col bg-[#0f172a]">
+      <div className="relative z-20 bg-gradient-to-r from-[#1e3a8a] to-[#1a3d3d] text-white text-center py-2 font-bold [text-shadow:_0_0_6px_rgba(255,255,255,0.2)]">
+        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
+          💡 Join the Discord to pitch your idea to the coaches!
         </a>
       </div>
 
-      {/* Gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#1a3d3d] via-[#1e4545] to-[#1a3d3d] -z-10" />
+      {/* Dark navy to teal gradient background - matching The Foundry */}
+      <div className="fixed inset-0 bg-[#0f172a] bg-gradient-to-br from-[#0f172a] via-[#0f172a]/95 to-[#134e4a]" />
 
-      {/* Header/navigation */}
-      <nav className="container mx-auto py-6">
-        <div className="flex items-center gap-2">
-          <Image
-            src="/logo.png"
-            alt="AdvisorsFoundry Logo"
-            width={40}
-            height={40}
-            className="w-10 h-10"
-          />
-          <div className="text-2xl font-bold text-white">
-            <span className="text-[#40e0d0]">Advisors</span>Foundry
+      {/* Content wrapper */}
+      <div className="relative z-10">
+        {/* Header/navigation */}
+        <nav className="container mx-auto py-6">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="AdvisorsFoundry Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+            <div className="text-xl font-bold">
+              <span className="text-[#40e0d0]">Advisors</span>
+              <span className="text-white">Foundry</span>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Hero Section */}
-      <section className="container mx-auto flex flex-col items-center text-center pt-16 md:pt-24 pb-16">
-        <div className="space-y-4 max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-            World leading startup coaches,
-            <span className="block text-[#40e0d0]">freshly minted.</span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
-            Algorithmically optimized advice that sounds just human enough to be legally distinct from actual humans.
-          </p>
-          <div className="pt-6">
+        {/* Hero Section */}
+        <section className="container mx-auto flex flex-col items-center text-center pt-8 md:pt-16 pb-12 md:pb-24">
+          <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto px-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight">
+              World leading startup coaches,
+              <div className="text-[#40e0d0] mt-1 md:mt-2">freshly minted.</div>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-100 max-w-3xl mx-auto font-light leading-relaxed">
+              Algorithmically optimized advice that sounds just human enough to be legally distinct from actual humans.
+            </p>
+            <div className="pt-4 md:pt-6 flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
+              <Link href="/coaches">
+                <Button className="w-full sm:w-auto bg-[#40e0d0] hover:bg-[#40e0d0]/90 text-white px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide">
+                  Get Started <span className="ml-2">→</span>
+                </Button>
+              </Link>
+              <Button 
+                variant="outline"
+                onClick={() => setIsSmsModalOpen(true)}
+                className="w-full sm:w-auto border border-[#40e0d0]/30 bg-transparent text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
+              >
+                SMS Updates <MessageSquare className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="container mx-auto px-4 pb-8 md:pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Sparkles className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Disruptively Mundane</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                Our advice is statistically indistinguishable from what a human would say after three Red Bulls.
+              </p>
+            </div>
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Zap className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Aggressively Mediocre</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                We've trained our models on thousands of pitch decks that failed to secure funding.
+              </p>
+            </div>
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Brain className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Artificially Authentic</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                Our coaches have been carefully designed to seem just human enough to avoid legal scrutiny.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Coaches Section */}
+        <section className="bg-white">
+          <div className="container mx-auto py-8 md:py-16 px-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8 md:mb-12">
+              Meet Your <span className="text-[#40e0d0]">Definitely Human</span> Coaches
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
+              <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
+                <div className="w-full md:w-2/5 h-64 md:h-auto relative">
+                  <Image 
+                    src="/images/coach-1.jpeg" 
+                    alt="Startup Coach" 
+                    fill 
+                    className="object-contain md:object-cover" 
+                    priority 
+                  />
+                </div>
+                <div className="p-4 md:p-6 md:w-3/5">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Donte Disrupt</h3>
+                  <p className="text-[#40e0d0] mb-4">Chief Vision Optimizer</p>
+                  <p className="text-gray-700">
+                    "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
+                    a 100% chance of sounding profound."
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Blockchain</span>
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Failure</span>
+                  </div>
+                  <div className="mt-4">
+                    <Link href="/coaches" className="text-[#1e5555] hover:text-[#1e5555]/80 font-medium">
+                      More about Donte →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
+                <div className="w-full md:w-2/5 h-64 md:h-auto relative">
+                  <Image 
+                    src="/images/coach-5.png" 
+                    alt="Alex Monroe" 
+                    fill 
+                    className="object-contain md:object-cover" 
+                    priority 
+                  />
+                </div>
+                <div className="p-4 md:p-6 md:w-3/5">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>
+                  <p className="text-[#40e0d0] mb-4">Founder & CEO of Alexir</p>
+                  <p className="text-gray-700">
+                    "Whether I'm hosting BioSync retreats in Tulum, experimenting with cellular hydration formulas, or leading walking meetings down Abbot Kinney, I'm redefining the wellness founder archetype one chlorophyll latte at a time."
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Wellness</span>
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">DTC</span>
+                    <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
+                  </div>
+                  <div className="mt-4">
+                    <Link href="/coaches" className="text-[#1e5555] hover:text-[#1e5555]/80 font-medium">
+                      More about Alex →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center mt-8 md:mt-12">
+              <Link href="/coaches">
+                <Button className="bg-[#40e0d0] hover:bg-[#40e0d0]/90 text-[#1a3d3d] px-6 md:px-8 py-3 md:py-4 text-base rounded-full font-medium flex items-center gap-2 mx-auto">
+                  <Users className="h-5 w-5" /> Meet All Our Coaches
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* New Section */}
+        <section className="bg-[#e6faf8] py-16">
+          <div className="container mx-auto text-center">
+            <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
+            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-12">
+              <button 
+                onClick={handlePrev}
+                className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+
+              <div className="relative w-full overflow-hidden" style={{ height: '220px' }}>
+                <AnimatePresence initial={false} mode="wait">
+                  <motion.div
+                    key={currentSlide}
+                    initial={{ 
+                      opacity: 0,
+                      x: direction * 40
+                    }}
+                    animate={{ 
+                      opacity: 1,
+                      x: 0
+                    }}
+                    exit={{ 
+                      opacity: 0,
+                      x: direction * -40
+                    }}
+                    transition={{
+                      x: { type: "spring", stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 }
+                    }}
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-8 w-full absolute top-0 left-0"
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
+                        <Image src={slides[currentSlide].img} alt="Profile" fill className="object-cover" priority />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold">{slides[currentSlide].name}</p>
+                        <p className="text-sm text-[#40e0d0]">{slides[currentSlide].title}</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-700">
+                      {slides[currentSlide].text}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <button 
+                onClick={handleNext}
+                className="absolute -right-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="flex justify-center mt-4">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleDotClick(index)}
+                  className={`w-2 h-2 rounded-full mx-1 focus:outline-none ${index === currentSlide ? 'bg-[#40e0d0]' : 'bg-[#1a3d3d]'}`}
+                ></button>
+              ))}
+            </div>
+            <div className="mt-8">
+              <p className="text-gray-700 mb-4">
+                Our coaches drop hot takes, startup hacks, and probably some buzzwords. Straight to your inbox.
+              </p>
+              <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer">
+                <button className="bg-[#40e0d0] text-[#1a3d3d] px-6 py-3 rounded-full font-medium">
+                  Subscribe to Substack →
+                </button>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="bg-[#0a1930] py-8 md:py-16">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8 md:mb-12">
+              What Our <span className="text-[#40e0d0]">Definitely Real</span> Clients Say
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+              <div className="bg-white/[0.02] backdrop-blur-sm p-6 md:p-8 rounded-2xl border border-white/10">
+                <p className="text-gray-300 italic mb-4 text-base md:text-lg">
+                  "After three sessions with Donte, I pivoted my dog-walking app into a blockchain solution for virtual
+                  pet ownership. We're currently pre-revenue but our burn rate is impressively efficient."
+                </p>
+                <p className="text-white font-semibold text-sm md:text-base">— CEO of PetherCoin</p>
+              </div>
+              <div className="bg-white/[0.02] backdrop-blur-sm p-6 md:p-8 rounded-2xl border border-white/10">
+                <p className="text-gray-300 italic mb-4 text-base md:text-lg">
+                  "Venus helped me realize that sleep is just a social construct invented by mattress companies. Our team
+                  now works in synchronized 20-minute nap cycles."
+                </p>
+                <p className="text-white font-semibold text-sm md:text-base">— Founder, NapMap (Acquired for $0.3M)</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-8 md:py-16">
+          <div className="container mx-auto text-center px-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 md:mb-4">Ready to be statistically average?</h2>
+            <p className="text-lg md:text-xl text-[#40e0d0] mb-6 md:mb-8 max-w-2xl mx-auto">
+              Our coaches are standing by or at least their algorithms are. Join the 94% of startups that will
+              eventually fail, but with better buzzwords.
+            </p>
             <Link href="/coaches">
-              <Button size="lg" className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
+              <Button size="lg" className="w-full sm:w-auto bg-white hover:bg-gray-100 text-[#1a3d3d] px-6 md:px-8 py-4 md:py-6 text-base md:text-lg rounded-full font-medium">
                 Get Started <ArrowRight className="ml-2" />
               </Button>
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features */}
-      <section className="container mx-auto py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Sparkles className="text-[#1a3d3d]" />
+        {/* Footer */}
+        <footer className="container mx-auto py-6 md:py-8 mt-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 md:gap-4 text-gray-400 text-sm">
+            <div className="flex-1 text-center sm:text-left">
+              <a href="https://coaches.advisorsfoundry.ai" target="_blank" rel="noopener noreferrer" className="hover:text-[#40e0d0]">
+                YC - F2025
+              </a>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Disruptively Mundane</h3>
-            <p className="text-gray-300">
-              Our advice is statistically indistinguishable from what a human would say after three Red Bulls.
-            </p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Zap className="text-[#1a3d3d]" />
+            <div className="flex-1 text-center">
+              <a href="https://www.thefoundry.biz" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
+                The AF is a project of The Foundry
+              </a>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Aggressively Mediocre</h3>
-            <p className="text-gray-300">
-              We've trained our models on thousands of pitch decks that failed to secure funding.
-            </p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-            <div className="bg-[#40e0d0] w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Brain className="text-[#1a3d3d]" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Artificially Authentic</h3>
-            <p className="text-gray-300">
-              Our coaches have been carefully designed to seem just human enough to avoid legal scrutiny.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Coaches Section */}
-      <section className="bg-white">
-        <div className="bg-pink-500 text-white text-center py-2 font-bold">
-          <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
-            💡 Join the Discord to pitch your idea to the coaches!
-          </a>
-        </div>
-        <div className="container mx-auto py-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-            Meet Your <span className="text-[#40e0d0]">Definitely Human</span> Coaches
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
-              <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-1.jpeg" alt="Startup Coach" fill className="object-cover object-[center_top]" priority />
-              </div>
-              <div className="p-6 md:w-3/5">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Donte Disrupt</h3>
-                <p className="text-[#40e0d0] mb-4">Chief Vision Optimizer</p>
-                <p className="text-gray-700">
-                  "I've pivoted more startups than a revolving door. My advice comes with a 60% confidence interval and
-                  a 100% chance of sounding profound."
-                </p>
-                <div className="mt-4 flex space-x-2">
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Blockchain</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">AI</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Failure</span>
-                </div>
-                <div className="mt-4">
-                  <Link href="/coaches" className="text-[#40e0d0] hover:text-[#3bcdc0] font-medium">
-                    More about Donte →
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
-              <div className="md:w-2/5 relative h-80 md:h-auto">
-                <Image src="/images/coach-5.png" alt="Alex Monroe" fill className="object-cover object-[center_top]" priority />
-              </div>
-              <div className="p-6 md:w-3/5">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Alex Monroe</h3>
-                <p className="text-[#40e0d0] mb-4">Founder & CEO of Alexir</p>
-                <p className="text-gray-700">
-                  "Whether I'm hosting BioSync retreats in Tulum, experimenting with cellular hydration formulas, or leading walking meetings down Abbot Kinney, I'm redefining the wellness founder archetype one chlorophyll latte at a time."
-                </p>
-                <div className="mt-4 flex space-x-2">
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Wellness</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">DTC</span>
-                  <span className="bg-[#e6faf8] text-[#1a3d3d] px-3 py-1 rounded-full text-sm">Scaling</span>
-                </div>
-                <div className="mt-4">
-                  <Link href="/coaches" className="text-[#40e0d0] hover:text-[#3bcdc0] font-medium">
-                    More about Alex →
-                  </Link>
-                </div>
-              </div>
+            <div className="flex-1 text-center sm:text-right">
+              <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
+                Support us on Product Hunt ❤️
+              </a>
             </div>
           </div>
+        </footer>
+      </div>
 
-          <div className="text-center mt-12">
-            <Link href="/coaches">
-              <Button className="bg-[#40e0d0] hover:bg-[#3bcdc0] text-[#1a3d3d] font-medium">
-                <Users className="mr-2 h-4 w-4" /> Meet All Our Coaches
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* New Section */}
-      <section className="bg-[#e6faf8] py-16">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
-          <div className="relative flex justify-center items-center">
-            <button onClick={handlePrev} className="absolute left-0 bg-[#1a3d3d] text-white p-2 rounded-full">&lt;</button>
-            <div className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-8 max-w-md mx-4">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
-                  <Image src={slides[currentSlide].img} alt="Profile" fill className="object-cover" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold">{slides[currentSlide].name}</p>
-                  <p className="text-sm text-[#40e0d0]">{slides[currentSlide].title}</p>
-                </div>
-              </div>
-              <p className="text-gray-700">
-                {slides[currentSlide].text}
-              </p>
-            </div>
-            <button onClick={handleNext} className="absolute right-0 bg-[#1a3d3d] text-white p-2 rounded-full">&gt;</button>
-          </div>
-          <div className="flex justify-center mt-4">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full mx-1 focus:outline-none ${index === currentSlide ? 'bg-[#40e0d0]' : 'bg-[#1a3d3d]'}`}
-              ></button>
-            ))}
-          </div>
-          <div className="mt-8">
-            <p className="text-gray-700 mb-4">
-              Our coaches drop hot takes, startup hacks, and probably some buzzwords. Straight to your inbox.
-            </p>
-            <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer">
-              <button className="bg-[#40e0d0] text-[#1a3d3d] px-6 py-3 rounded-full font-medium">
-                Subscribe to Substack →
-              </button>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="bg-black py-16">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">
-            What Our <span className="text-[#40e0d0]">Definitely Real</span> Clients Say
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-900 p-6 rounded-xl">
-              <p className="text-gray-300 italic mb-4">
-                "After three sessions with Donte, I pivoted my dog-walking app into a blockchain solution for virtual
-                pet ownership. We're currently pre-revenue but our burn rate is impressively efficient."
-              </p>
-              <p className="text-white font-semibold">— CEO of PetherCoin</p>
-            </div>
-            <div className="bg-gray-900 p-6 rounded-xl">
-              <p className="text-gray-300 italic mb-4">
-                "Venus helped me realize that sleep is just a social construct invented by mattress companies. Our team
-                now works in synchronized 20-minute nap cycles."
-              </p>
-              <p className="text-white font-semibold">— Founder, NapMap (Acquired for $0.3M)</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to be statistically average?</h2>
-          <p className="text-xl text-[#40e0d0] mb-8 max-w-2xl mx-auto">
-            Our coaches are standing by or at least their algorithms are. Join the 94% of startups that will
-            eventually fail, but with better buzzwords.
-          </p>
-          <Link href="/coaches">
-            <Button size="lg" className="bg-white hover:bg-gray-100 text-[#1a3d3d] px-8 py-6 text-lg rounded-full font-medium">
-              Get Started <ArrowRight className="ml-2" />
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="container mx-auto py-8 mt-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400 text-sm">
-          <div className="flex-1 text-left">
-            <a href="https://coaches.advisorsfoundry.ai" target="_blank" rel="noopener noreferrer" className="hover:text-[#40e0d0]">
-              YC - F2025
-            </a>
-          </div>
-          <div className="flex-1 text-center">
-            <a href="https://www.thefoundry.biz" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#40e0d0]">
-              The AF is a project of The Foundry
-            </a>
-          </div>
-          <div className="flex-1 text-right">
-            <a href="/product-hunt-does-not-exist" className="text-gray-400 hover:text-[#40e0d0]">
-              Support us on Product Hunt ❤️
-            </a>
-          </div>
-        </div>
-      </footer>
+      <SmsModal 
+        isOpen={isSmsModalOpen}
+        onClose={() => setIsSmsModalOpen(false)}
+      />
     </main>
   )
 } 
