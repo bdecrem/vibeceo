@@ -164,12 +164,12 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
               <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
-                <div className="w-full md:w-2/5 h-64 md:h-auto relative">
+                <div className="w-full md:w-2/5 h-96 md:h-auto relative">
                   <Image 
                     src="/images/coach-1.jpeg" 
                     alt="Startup Coach" 
                     fill 
-                    className="object-cover object-[center_top]" 
+                    className="object-cover" 
                     priority 
                   />
                 </div>
@@ -194,12 +194,12 @@ export default function Home() {
               </div>
 
               <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
-                <div className="w-full md:w-2/5 h-64 md:h-auto relative">
+                <div className="w-full md:w-2/5 h-96 md:h-auto relative">
                   <Image 
                     src="/images/coach-5.png" 
                     alt="Alex Monroe" 
                     fill 
-                    className="object-cover md:object-cover object-[center_top]" 
+                    className="object-cover" 
                     priority 
                   />
                 </div>
