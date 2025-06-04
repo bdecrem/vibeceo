@@ -53,24 +53,14 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
       <div className="bg-gradient-to-br from-[#1a2937] to-[#1d4352] text-white rounded-3xl w-full max-w-xl mx-4 relative overflow-hidden border border-white/10">
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10"
+          className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
         >
           <X className="h-6 w-6" />
         </button>
 
-        <div className="p-12">
-          <div className="text-center mb-12">
-            <div className="inline-block mb-6">
-              <div className="w-20 h-20 relative mx-auto">
-                <Image
-                  src="/logo.png"
-                  alt="Advisors Foundry Logo"
-                  fill
-                  className="object-contain brightness-200"
-                />
-              </div>
-            </div>
-            <h2 className="text-4xl font-bold text-white mb-3">
+        <div className="p-6 md:p-12">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
               Get Daily Texts from AF
             </h2>
             <p className="text-[#40e0d0] text-xl">Startup wisdom. Spirals. Possibly threats.</p>
@@ -92,12 +82,12 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               </button>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-white mb-4">
                   Craving one unhinged line of founder truth each morning?
                 </h3>
-                <p className="text-gray-300 text-lg leading-relaxed mb-2">
+                <p className="text-gray-300 text-lg leading-relaxed mb-2 hidden md:block">
                   We're delivering startup wisdom via SMS like it's 2006. No apps. No portals. Just raw, unhinged advice… on your phone.
                 </p>
                 <p className="text-[#40e0d0] text-lg">
