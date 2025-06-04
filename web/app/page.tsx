@@ -237,7 +237,7 @@ export default function Home() {
         <section className="bg-[#e6faf8] py-16">
           <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
-            <div className="relative flex justify-center items-center max-w-2xl mx-auto px-0 md:px-12">
+            <div className="relative flex justify-center items-center max-w-2xl mx-auto">
               <button 
                 onClick={handlePrev}
                 className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
@@ -246,7 +246,7 @@ export default function Home() {
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <div className="relative w-full overflow-hidden" style={{ height: '280px' }}>
+              <div className="relative w-full overflow-hidden px-4 md:px-12" style={{ height: '280px' }}>
                 <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentSlide}
@@ -279,7 +279,7 @@ export default function Home() {
                         }
                       }
                     }}
-                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-[95vw] md:w-full absolute top-0 left-1/2 -translate-x-1/2 touch-pan-y"
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-lg p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y"
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
