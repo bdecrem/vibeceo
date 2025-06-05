@@ -239,7 +239,7 @@ export default function Home() {
         <section className="bg-[#e6faf8] py-16">
           <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold text-[#1a3d3d] mb-8">🚀 Get Smarter-ish, Weekly</h2>
-            <div className="relative flex justify-center items-center max-w-xl mx-auto">
+            <div className="relative flex justify-center items-center max-w-[640px] mx-auto">
               <button 
                 onClick={handlePrev}
                 className="absolute -left-6 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-12 h-12 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
