@@ -1,4 +1,4 @@
-import { TextChannel } from 'discord.js';
+import { TextChannel, Client, WebhookClient } from 'discord.js';
 import { getLocationAndTime, isWeekend } from './locationTime.js';
 import { generateWatercoolerBumper } from './watercoolerPrompts.js';
 import { generateWaterheaterBumper } from "./waterheaterPrompts.js";
@@ -8,6 +8,7 @@ import { getLatestWeekendReason, getLatestWeekendActivity } from "./weekendvibes
 import { postSystemAnnouncement } from "./systemAnnouncement.js";
 import path from "path";
 import fs from "fs";
+import { getWebhookUrls } from './config.js';
 
 // Create a local cache for custom event messages
 // This will be populated by argumentGenerator.ts
@@ -89,6 +90,29 @@ let currentSceneIndex = 0;
 
 // Add new scene index for story info display
 let storyInfoSceneIndex = 0;
+
+// Initialize Alexir VIP webhook for cross-posting
+let alexirVipWebhook: WebhookClient | null = null;
+
+// Initialize the webhook once
+function initAlexirVipWebhook() {
+  if (alexirVipWebhook) return true;
+  
+  try {
+    const webhookUrls = getWebhookUrls();
+    if (webhookUrls['alexir_vip']) {
+      alexirVipWebhook = new WebhookClient({ url: webhookUrls['alexir_vip'] });
+      console.log(`[EventMessages] Successfully initialized Alexir VIP webhook for cross-posting`);
+      return true;
+    } else {
+      console.warn(`[EventMessages] Alexir VIP webhook URL not available. Check environment variables.`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`[EventMessages] Error initializing Alexir VIP webhook:`, error);
+    return false;
+  }
+}
 
 export async function sendEventMessage(
 	channel: TextChannel,
@@ -325,6 +349,31 @@ export async function sendEventMessage(
 	// Send the message to the target channel
 	// Skip sending if it's an empty outro (for microposts)
 	if (!(!isIntro && MICROPOST_SERVICES.includes(eventType as string) && message.trim() === "")) {
+		// Send to the main channel
 		await targetChannel.send(message);
+		
+		// Cross-post to Alexir VIP webhook if this is the intro message for alextipsy event
+		if (isIntro && eventType === 'alextipsy') {
+			try {
+				// Initialize webhook if needed
+				if (!alexirVipWebhook) {
+					initAlexirVipWebhook();
+				}
+				
+				// Cross-post to Alexir VIP webhook if available
+				if (alexirVipWebhook) {
+					await alexirVipWebhook.send({
+						content: message,
+						username: "TheAF"
+					});
+					console.log(`[EventMessages] Cross-posted alextipsy TheAF message to Alexir VIP channel`);
+				} else {
+					console.warn(`[EventMessages] Could not cross-post TheAF message - Alexir VIP webhook unavailable`);
+				}
+			} catch (error) {
+				console.error(`[EventMessages] Error cross-posting to Alexir VIP:`, error);
+				// Don't throw - we still consider the main message send successful
+			}
+		}
 	}
 }
