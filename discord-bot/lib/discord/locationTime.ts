@@ -113,35 +113,36 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localDay = days[laDay];
                 break;
             case "Tokyo": {
-                // Tokyo is UTC+9, LA is UTC-7, so Tokyo is 16 hours ahead of LA
-                localTime = (laHour + 16) % 24; // LA + 16 hours (GMT+9)
-                localMinutes = gmtMinutes;
+                // Tokyo is UTC+9
+                // Create a date object using the GMT inputs
+                const utcNow = new Date(); 
+                utcNow.setUTCHours(gmtHour);
+                utcNow.setUTCMinutes(gmtMinutes);
                 
-                // Simple and direct day calculation based on the time difference
-                // If it's past 8AM in LA, it's already tomorrow in Tokyo (because 8AM LA = midnight Tokyo)
-                let tokyoDay;
-                if (laHour >= 8) {
-                    // After or at 8am LA time, it's the next day in Tokyo
-                    tokyoDay = (laDay + 1) % 7;
-                } else {
-                    // Between midnight and 8am LA time, it's the same day in Tokyo
-                    tokyoDay = laDay;
-                }
+                // Create a new date for Tokyo by adding 9 hours to UTC
+                const tokyoDate = new Date(utcNow);
+                tokyoDate.setUTCHours(tokyoDate.getUTCHours() + 9);
                 
+                // Get Tokyo's hours, minutes, and day directly from the date object
+                localTime = tokyoDate.getUTCHours();
+                localMinutes = tokyoDate.getUTCMinutes();
+                
+                // Get Tokyo's day of week (0-6, where 0 is Sunday)
                 localDay = days[tokyoDay];
-                console.log(`[LocationTime] LA day: ${days[laDay]}, Tokyo day: ${localDay} (using 8AM LA threshold)`);
-                console.log(`[LocationTime] LA time: ${laHour}:${localMinutes}, Tokyo time: ${localTime}:${localMinutes}`);
+                console.log(`[LocationTime] UTC input: ${gmtHour}:${gmtMinutes}, Tokyo time: ${localTime}:${localMinutes}, day: ${localDay}`);
                 break;
             }
             case "Paris": {
-                localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
-                localMinutes = gmtMinutes;
-                // If local time < LA time, we've crossed into next day
-                let parisDay = laDay;
-                if (localTime < laHour) {
-                    parisDay = (laDay + 1) % 7;
-                }
+                const utc = new Date();
+                utc.setUTCHours(gmtHour);
+                utc.setUTCMinutes(gmtMinutes);
+                // Add 2 hours for Paris (GMT+2)
+                const localDate = new Date(utc.getTime() + 2 * 60 * 60 * 1000);
+                localTime = localDate.getUTCHours();
+                localMinutes = localDate.getUTCMinutes();
+                const parisDay = localDate.getUTCDay();
                 localDay = days[parisDay];
+                console.log(`[LocationTime] UTC input: ${gmtHour}:${gmtMinutes}, Paris time: ${localTime}:${localMinutes}, day: ${localDay}`);
                 break;
             }
             default:
@@ -161,7 +162,14 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
         else if (laHour >= 19 || laHour < 3) {
             // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
             location = "Singapore penthouse";
-            localTime = (laHour + 15) % 24; // LA + 15 hours (Singapore is GMT+8)
+            const utc = new Date();
+            utc.setUTCHours(gmtHour);
+            utc.setUTCMinutes(gmtMinutes);
+            // Add 8 hours for Singapore (GMT+8)
+            const localDate = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+            localTime = localDate.getUTCHours();
+            localMinutes = localDate.getUTCMinutes();
+            const singaporeDay = localDate.getUTCDay();
             localMinutes = gmtMinutes;
             
             // Calculate Singapore day
