@@ -61,7 +61,7 @@ export async function generateAiResponse(
 
   try {
     const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-4o-2024-05-13',
+      model: 'gpt-4o-mini',
       messages: conversationHistory,
       max_tokens: 150,  // Keep responses concise for SMS
       temperature: 0.9  // Higher temperature for more creative coach responses
