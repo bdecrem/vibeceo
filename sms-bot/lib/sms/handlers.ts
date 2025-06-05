@@ -101,13 +101,23 @@ function getCurrentDay(): number {
 }
 
 // Skip to the next day's inspiration (QA feature for early access users)
+// MODERATION ACTION: This globally advances the startDate so ALL users skip the current day
 // Returns the new inspiration
 export function skipToNextInspiration(): { day: number, inspiration: any } {
   const data = loadInspirationsData();
   const tracker = loadDayTracker();
   
-  // Increment the current day, wrapping around if we reach the end
-  tracker.currentDay = (tracker.currentDay % data.length) + 1;
+  // CRITICAL: Advance the startDate by one day to make the skip global and permanent
+  // This ensures that when getCurrentDay() recalculates, it naturally lands on the next day
+  const currentStartDate = new Date(tracker.startDate);
+  currentStartDate.setDate(currentStartDate.getDate() + 1);
+  tracker.startDate = currentStartDate.toISOString().split('T')[0]; // Update to new start date
+  
+  // Recalculate the current day based on the new start date
+  const currentDate = new Date();
+  const timeDiff = currentDate.getTime() - currentStartDate.getTime();
+  const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+  tracker.currentDay = (daysDiff % data.length) + 1;
   
   // Save the updated tracker
   saveDayTracker(tracker);
@@ -115,6 +125,8 @@ export function skipToNextInspiration(): { day: number, inspiration: any } {
   // Return the new inspiration
   const inspirationIndex = tracker.currentDay - 1; // Convert to 0-based index
   const inspiration = data[inspirationIndex];
+  
+  console.log(`SKIP: Advanced global startDate to ${tracker.startDate}, now on Day ${tracker.currentDay}`);
   
   return {
     day: tracker.currentDay,
