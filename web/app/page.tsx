@@ -112,13 +112,15 @@ export default function Home() {
                   Get Started <span className="ml-2">→</span>
                 </Button>
               </Link>
-              <Button 
-                variant="outline"
-                onClick={() => setIsSmsModalOpen(true)}
-                className="w-full bg-transparent border border-[#40e0d0]/30 text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
-              >
-                SMS Updates <MessageSquare className="ml-2 h-5 w-5 inline-flex" />
-              </Button>
+              <div className="w-full sm:w-auto">
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsSmsModalOpen(true)}
+                  className="w-full bg-transparent border border-[#40e0d0]/30 text-[#40e0d0] hover:text-[#40e0d0] hover:bg-[#40e0d0]/10 hover:border-[#40e0d0]/50 px-6 md:px-10 py-4 md:py-5 text-base md:text-lg rounded-full font-semibold tracking-wide transition-all duration-300"
+                >
+                  SMS Updates <MessageSquare className="ml-2 h-5 w-5 inline-flex" />
+                </Button>
+              </div>
             </div>
           </div>
         </section>
