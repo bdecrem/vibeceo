@@ -187,16 +187,24 @@ export async function sendEventMessage(
 		// Check if it's a micropost service that needs simplified arrival format
 		if (MICROPOST_SERVICES.includes(eventType as string) && message.includes("{simplifiedArrival}")) {
 			// Extract just the city name without "office" or "penthouse"
-			const cityName = location.replace(' office', '').replace(' penthouse', '');
+			let cityName = location.replace(' office', '').replace(' penthouse', '');
+			let dayName;
+			
+			// SPECIAL CASE: For alextipsy events, always use Tokyo and Friday
+			if (eventType === 'alextipsy') {
+				cityName = 'Tokyo';
+				dayName = 'Friday';
+				console.log(`[EventMessages] Using HARDCODED location/day for alextipsy: Tokyo/Friday`);
+			} else {
+				// Normal day calculation for other events
+				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+				const today = new Date().getDay();
+				dayName = days[today];
+			}
 			
 			// Check if it's the weekend to use a different format
 			let simplifiedArrival;
 			if (isWeekend()) {
-				// Get current day of week
-				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-				const today = new Date().getDay();
-				const dayName = days[today];
-				
 				// Format the special weekend messages for Foundry Heat - nightlife edition
 				const weekendFormats = [
 					`The coaches are in ${cityName} where it's ${formattedTime}${ampm} on ${dayName} and "strategy" now means picking the next bar. 🍸 ${weatherEmoji}`,
