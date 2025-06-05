@@ -113,22 +113,24 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localDay = days[laDay];
                 break;
             case "Tokyo": {
+                // Tokyo is UTC+9, LA is UTC-7, so Tokyo is 16 hours ahead of LA
                 localTime = (laHour + 16) % 24; // LA + 16 hours (GMT+9)
                 localMinutes = gmtMinutes;
                 
-                // Tokyo is always a day ahead when LA is after 8am or before midnight
-                // This is because 8am LA = midnight Tokyo, which starts a new day
-                let tokyoDay;
-                if (laHour >= 8) {
-                    // After 8am in LA, it's already the next day in Tokyo
-                    tokyoDay = (laDay + 1) % 7;
-                } else {
-                    // Between midnight and 8am LA, it's the same day in Tokyo
-                    tokyoDay = laDay;
-                }
+                // Calculate Tokyo's day based on UTC timestamp directly
+                // Create a Date object for the current time
+                const nowUtc = new Date();
+                
+                // Create a new date for Tokyo (UTC+9)
+                const tokyoDate = new Date(nowUtc.getTime());
+                tokyoDate.setHours(tokyoDate.getHours() + 9); // UTC+9
+                
+                // Get Tokyo's day of week (0-6, where 0 is Sunday)
+                const tokyoDay = tokyoDate.getDay();
                 
                 localDay = days[tokyoDay];
-                console.log(`[LocationTime] LA: ${days[laDay]} ${laHour}:${localMinutes}, Tokyo: ${localDay} ${localTime}:${localMinutes}`);
+                console.log(`[LocationTime] LA day: ${days[laDay]}, Tokyo day: ${localDay} (direct calculation)`);
+                console.log(`[LocationTime] LA time: ${laHour}:${localMinutes}, Tokyo time: ${localTime}:${localMinutes}`);
                 break;
             }
             case "Paris": {
