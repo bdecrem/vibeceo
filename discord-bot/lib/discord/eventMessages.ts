@@ -189,12 +189,29 @@ export async function sendEventMessage(
 			// Extract just the city name without "office" or "penthouse"
 			let cityName = location.replace(' office', '').replace(' penthouse', '');
 			let dayName;
+			let useCustomTime = false;
+			let customTime = "";
+			let customAmPm = "";
 			
 			// SPECIAL CASE: For alextipsy events, always use Tokyo and Friday
 			if (eventType === 'alextipsy') {
 				cityName = 'Tokyo';
 				dayName = 'Friday';
-				console.log(`[EventMessages] Using HARDCODED location/day for alextipsy: Tokyo/Friday`);
+				
+				// Calculate proper Tokyo time (UTC+9)
+				const nowInLA = new Date();
+				// Tokyo is 16 hours ahead of LA
+				const tokyoHour = (nowInLA.getHours() + 16) % 24;
+				const tokyoMinute = nowInLA.getMinutes();
+				
+				// Format time in 12-hour format with AM/PM
+				let hour12 = tokyoHour % 12;
+				if (hour12 === 0) hour12 = 12; // 0 should display as 12 in 12-hour format
+				customTime = `${hour12}:${tokyoMinute.toString().padStart(2, '0')}`;
+				customAmPm = tokyoHour >= 12 ? "pm" : "am";
+				useCustomTime = true;
+				
+				console.log(`[EventMessages] Using HARDCODED location/day/time for alextipsy: Tokyo/Friday/${customTime}${customAmPm}`);
 			} else {
 				// Normal day calculation for other events
 				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -363,22 +380,12 @@ export async function sendEventMessage(
 		// Cross-post to Alexir VIP webhook if this is the intro message for alextipsy event
 		if (isIntro && eventType === 'alextipsy') {
 			try {
-				// Initialize webhook if needed
-				if (!alexirVipWebhook) {
-					initAlexirVipWebhook();
-				}
-				
-				// Cross-post to Alexir VIP webhook if available
-				if (alexirVipWebhook) {
-					await alexirVipWebhook.send({
-						content: message,
-						username: "TheAF",
-						avatarURL: "https://cdn.discordapp.com/avatars/1121864207613673573/1c69e5ca1a86ba0b1db41f3a6305fb87.webp"
-					});
-					console.log(`[EventMessages] Cross-posted alextipsy TheAF message to Alexir VIP channel`);
-				} else {
-					console.warn(`[EventMessages] Could not cross-post TheAF message - Alexir VIP webhook unavailable`);
-				}
+				// Use sendAsCharacter to ensure correct avatar and logic
+				const alexirVipConfessionChannelId = channel.id;
+				await import('./webhooks.js').then(({ sendAsCharacter }) =>
+					sendAsCharacter(alexirVipConfessionChannelId, 'alex', message)
+				);
+				console.log(`[EventMessages] Cross-posted alextipsy TheAF message to Alexir VIP channel using sendAsCharacter`);
 			} catch (error) {
 				console.error(`[EventMessages] Error cross-posting to Alexir VIP:`, error);
 				// Don't throw - we still consider the main message send successful
