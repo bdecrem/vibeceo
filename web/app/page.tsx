@@ -248,7 +248,7 @@ export default function Home() {
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <div className="relative w-full overflow-hidden px-4 md:px-8" style={{ height: '240px' }}>
+              <div className="relative w-full overflow-visible px-4">
                 <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentSlide}
@@ -284,7 +284,7 @@ export default function Home() {
                       // Prevent click events from interfering with drag
                       e.stopPropagation();
                     }}
-                    className="bg-white text-[#1a3d3d] shadow-lg rounded-2xl p-6 md:p-8 w-full absolute top-0 left-0 touch-pan-y cursor-grab active:cursor-grabbing"
+                    className="bg-white text-[#1a3d3d] shadow-lg rounded-2xl p-6 md:p-8 w-full relative touch-pan-y cursor-grab active:cursor-grabbing min-h-[200px]"
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
