@@ -364,7 +364,8 @@ export async function sendEventMessage(
 				if (alexirVipWebhook) {
 					await alexirVipWebhook.send({
 						content: message,
-						username: "TheAF"
+						username: "TheAF",
+						avatarURL: "https://cdn.discordapp.com/avatars/1121864207613673573/1c69e5ca1a86ba0b1db41f3a6305fb87.webp"
 					});
 					console.log(`[EventMessages] Cross-posted alextipsy TheAF message to Alexir VIP channel`);
 				} else {

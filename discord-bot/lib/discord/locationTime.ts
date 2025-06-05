@@ -117,19 +117,19 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localTime = (laHour + 16) % 24; // LA + 16 hours (GMT+9)
                 localMinutes = gmtMinutes;
                 
-                // Calculate Tokyo's day based on UTC timestamp directly
-                // Create a Date object for the current time
-                const nowUtc = new Date();
-                
-                // Create a new date for Tokyo (UTC+9)
-                const tokyoDate = new Date(nowUtc.getTime());
-                tokyoDate.setHours(tokyoDate.getHours() + 9); // UTC+9
-                
-                // Get Tokyo's day of week (0-6, where 0 is Sunday)
-                const tokyoDay = tokyoDate.getDay();
+                // Simple and direct day calculation based on the time difference
+                // If it's past 8AM in LA, it's already tomorrow in Tokyo (because 8AM LA = midnight Tokyo)
+                let tokyoDay;
+                if (laHour >= 8) {
+                    // After or at 8am LA time, it's the next day in Tokyo
+                    tokyoDay = (laDay + 1) % 7;
+                } else {
+                    // Between midnight and 8am LA time, it's the same day in Tokyo
+                    tokyoDay = laDay;
+                }
                 
                 localDay = days[tokyoDay];
-                console.log(`[LocationTime] LA day: ${days[laDay]}, Tokyo day: ${localDay} (direct calculation)`);
+                console.log(`[LocationTime] LA day: ${days[laDay]}, Tokyo day: ${localDay} (using 8AM LA threshold)`);
                 console.log(`[LocationTime] LA time: ${laHour}:${localMinutes}, Tokyo time: ${localTime}:${localMinutes}`);
                 break;
             }
