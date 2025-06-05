@@ -45,12 +45,19 @@ type ConversationMessage = UserMessage | AssistantMessage | SystemMessage;
 export async function generateAiResponse(
   conversationHistory: ConversationMessage[]
 ): Promise<string> {
+  console.log('DEBUG: generateAiResponse called');
+  console.log('DEBUG: conversationHistory length:', conversationHistory.length);
+  
   if (!openaiClient) {
+    console.log('DEBUG: openaiClient is null, calling initializeAI');
     initializeAI();
     if (!openaiClient) {
+      console.log('DEBUG: openaiClient still null after initializeAI');
       throw new Error('OpenAI client not configured. Please set OPENAI_API_KEY');
     }
   }
+  
+  console.log('DEBUG: openaiClient exists, making API call');
 
   try {
     const completion = await openaiClient.chat.completions.create({
@@ -60,9 +67,13 @@ export async function generateAiResponse(
       temperature: 0.9  // Higher temperature for more creative coach responses
     });
 
-    return completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    console.log('DEBUG: OpenAI API call successful');
+    const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    console.log('DEBUG: Generated response length:', response.length);
+    return response;
   } catch (error) {
-    console.error('Error generating AI response:', error);
+    console.error('DEBUG: Error generating AI response:', error);
+    console.error('DEBUG: Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 }
