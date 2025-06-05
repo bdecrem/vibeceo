@@ -56,9 +56,11 @@ next-env.d.ts
 /discord-bot/data/episodes/
 /discord-bot/data/staff-meetings/
 
-# ignore Logs
-/logs/
-/discord-bot/logs/
+# ignore Logs but keep directories
+/logs/*
+!/logs/.gitkeep
+/discord-bot/logs/*
+!/discord-bot/logs/.gitkeep
 
 # Experiment folders
 /discord-bot/experiments-*/
