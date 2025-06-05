@@ -72,3 +72,5 @@ npm run test:sms
 - `lib/sms/webhooks.ts`: Twilio webhook integration
 - `lib/sms/ai.ts`: AI integration (OpenAI/Anthropic)
 - `lib/sms/config.ts`: Configuration settings
+
+Last updated: 2025-06-04 19:30 (restored working version)
