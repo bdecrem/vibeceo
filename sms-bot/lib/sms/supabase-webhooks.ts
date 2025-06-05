@@ -15,7 +15,7 @@ export type TwilioClient = twilio.Twilio;
  */
 export function setupSupabaseWebhooks(app: Application, twilioClient: TwilioClient): void {
   // Webhook endpoint for new subscribers
-  app.post('/webhooks/new-subscriber', async (req: Request, res: Response) => {
+  app.post('/api/webhooks/new-subscriber', async (req: Request, res: Response) => {
     try {
       console.log('Received webhook for new subscriber:', req.body);
       
@@ -52,7 +52,7 @@ export function setupSupabaseWebhooks(app: Application, twilioClient: TwilioClie
   });
   
   // Setup validation endpoint (useful for testing webhook connection)
-  app.get('/webhooks/new-subscriber', (req: Request, res: Response) => {
+  app.get('/api/webhooks/new-subscriber', (req: Request, res: Response) => {
     res.status(200).send('New Subscriber Webhook endpoint is active');
   });
   
