@@ -8,12 +8,19 @@ let anthropicClient: Anthropic | null = null;
 
 // Initialize OpenAI client
 export function initializeAI() {
+  console.log('DEBUG: initializeAI called');
+  console.log('DEBUG: OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+  console.log('DEBUG: OPENAI_API_KEY length:', process.env.OPENAI_API_KEY?.length || 0);
+  console.log('DEBUG: openaiClient is null:', openaiClient === null);
+  
   if (!openaiClient && process.env.OPENAI_API_KEY) {
     console.log('Initializing OpenAI client...');
     openaiClient = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
     console.log('OpenAI client initialized');
+  } else {
+    console.log('DEBUG: OpenAI client NOT initialized - missing API key or client already exists');
   }
 }
 
