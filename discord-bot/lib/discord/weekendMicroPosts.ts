@@ -274,9 +274,9 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
       try {
         await alexirVipWebhook.send({
           content: formattedMessage,
-          username: "Foundry Heat",
+          username: "Foundry Heat"
         });
-        console.log(`[WeekendMicroPosts] Successfully cross-posted to Alexir VIP confession channel`);
+        console.log(`[WeekendMicroPosts] Successfully cross-posted to Alexir VIP confession channel with custom avatar`);
       } catch (crossPostError) {
         console.error(`[WeekendMicroPosts] Error cross-posting to Alexir VIP channel:`, crossPostError);
         // Don't throw the error, we still consider the post successful if it went to the main channel
