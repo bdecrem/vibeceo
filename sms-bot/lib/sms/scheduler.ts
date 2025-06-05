@@ -52,16 +52,16 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         // Get all active subscribers
         const allSubscribers = await getActiveSubscribers();
         
-        // Filter for subscribers with receive_early flag
-        const earlySubscribers = allSubscribers.filter(sub => sub.receive_early === true);
-        console.log(`Found ${earlySubscribers.length} early subscribers`);
+            // Filter for admin users (early message delivery)
+    const adminSubscribers = allSubscribers.filter(sub => sub.is_admin === true);
+        console.log(`Found ${adminSubscribers.length} admin subscribers`);
         
-        // Send to each early subscriber
+        // Send to each admin subscriber
         let earlySuccessCount = 0;
         let earlyFailureCount = 0;
         let earlySkippedCount = 0;
         
-        for (const subscriber of earlySubscribers) {
+        for (const subscriber of adminSubscribers) {
           try {
             // Check when this subscriber last received a daily inspiration
             const fullSubscriber = await getSubscriber(subscriber.phone_number);
@@ -117,9 +117,9 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         // Get active subscribers
         const allSubscribers = await getActiveSubscribers();
         
-        // Filter out subscribers who should have already received the early message
-        // This prevents double-sending to early subscribers
-        const regularSubscribers = allSubscribers.filter(sub => !sub.receive_early);
+        // Filter out admin users who should have already received the early message
+        // This prevents double-sending to admin subscribers
+        const regularSubscribers = allSubscribers.filter(sub => !sub.is_admin);
         console.log(`Found ${regularSubscribers.length} regular subscribers`);
         
         // Send to each regular subscriber

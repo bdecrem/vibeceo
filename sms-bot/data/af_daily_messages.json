@@ -1,0 +1,756 @@
+[
+  {
+    "item": 1,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You're not behind. You're just pre-viral with main character potential.",
+    "author": "Alex"
+  },
+  {
+    "item": 2,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Build with urgency. Ship with delusion. Rebrand when questioned.",
+    "author": "Donte"
+  },
+  {
+    "item": 3,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Every investor call is performance art. Adjust your lighting accordingly.",
+    "author": "Rohan"
+  },
+  {
+    "item": 4,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "If your product isn’t misunderstood, it’s probably boring.",
+    "author": "Alex"
+  },
+  {
+    "item": 5,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Burnout is just ambition with no off-switch. You're fine.",
+    "author": "Kailey"
+  },
+  {
+    "item": 6,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The spreadsheet is a lie. Trust the chaos funnel.",
+    "author": "Venus"
+  },
+  {
+    "item": 7,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You don’t need a cofounder. You need a legal decoy.",
+    "author": "Donte"
+  },
+  {
+    "item": 8,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Metrics are for investors. Mood is for momentum.",
+    "author": "Alex"
+  },
+  {
+    "item": 9,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Don’t optimize. Spiritualize. The deck will follow.",
+    "author": "Alex"
+  },
+  {
+    "item": 10,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your launch strategy is vibes. And vibes scale.",
+    "author": "Donte"
+  },
+  {
+    "item": 11,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your roadmap is a fanfic. Keep writing.",
+    "author": "Kailey"
+  },
+  {
+    "item": 12,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "If no one understands what you’re building, good.",
+    "author": "Rohan"
+  },
+  {
+    "item": 13,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your funnel has trust issues. That’s a reflection.",
+    "author": "Venus"
+  },
+  {
+    "item": 14,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Sometimes a pivot is just emotional regulation with wireframes.",
+    "author": "Kailey"
+  },
+  {
+    "item": 15,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The burn rate is spiritual. Let it cleanse.",
+    "author": "Eljas"
+  },
+  {
+    "item": 16,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your product isn't buggy — it's avant-garde.",
+    "author": "Donte"
+  },
+  {
+    "item": 17,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Every founder has two wolves: one building, one doomscrolling. Ship anyway.",
+    "author": "Kailey"
+  },
+  {
+    "item": 18,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Don't scale. Aestheticize. Then accidentally go viral.",
+    "author": "Alex"
+  },
+  {
+    "item": 19,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your pitch is fine. You just need more spiritual conviction per slide.",
+    "author": "Rohan"
+  },
+  {
+    "item": 20,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You are the bottleneck. And the brand. And the entire vibe.",
+    "author": "Alex"
+  },
+  {
+    "item": 21,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You didn’t get ghosted. You got pre-filtered for alignment.",
+    "author": "Alex"
+  },
+  {
+    "item": 22,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Every deck is a cry for help. Yours just has better fonts.",
+    "author": "Donte"
+  },
+  {
+    "item": 23,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Launch the product. You can apologize in the patch notes.",
+    "author": "Rohan"
+  },
+  {
+    "item": 24,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Rest is part of the roadmap. You just haven’t shipped it yet.",
+    "author": "Kailey"
+  },
+  {
+    "item": 25,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You’re not pivoting — you’re shapeshifting with purpose.",
+    "author": "Alex"
+  },
+  {
+    "item": 26,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "That ‘no’ wasn’t rejection. It was premature market misalignment.",
+    "author": "Donte"
+  },
+  {
+    "item": 27,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "If the tool makes sense, you're using it wrong.",
+    "author": "Venus"
+  },
+  {
+    "item": 28,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your calendar isn’t broken. It’s just cosplaying productivity.",
+    "author": "Kailey"
+  },
+  {
+    "item": 29,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Most successful founders were just weird long enough.",
+    "author": "Eljas"
+  },
+  {
+    "item": 30,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your KPI is your energy. Everything else is vanity data.",
+    "author": "Alex"
+  },
+  {
+    "item": 31,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Go build. Or go journal about why you aren’t.",
+    "author": "Donte"
+  },
+  {
+    "item": 32,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your MRR will never love you back. Date someone else.",
+    "author": "Kailey"
+  },
+  {
+    "item": 33,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Compost your backlog. Prioritize what wants to grow.",
+    "author": "Eljas"
+  },
+  {
+    "item": 34,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You are not your churn rate. You are your legend.",
+    "author": "Rohan"
+  },
+  {
+    "item": 35,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "That investor didn’t pass. They just lacked spiritual liquidity.",
+    "author": "Alex"
+  },
+  {
+    "item": 36,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Clarity isn’t found. It’s versioned.",
+    "author": "Venus"
+  },
+  {
+    "item": 37,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You’re building something that doesn’t exist. Of course it feels wrong.",
+    "author": "Kailey"
+  },
+  {
+    "item": 38,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Fake confidence is still confidence. Just raise the round.",
+    "author": "Donte"
+  },
+  {
+    "item": 39,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Everything you’re overthinking is already on someone’s roadmap.",
+    "author": "Rohan"
+  },
+  {
+    "item": 40,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The founder journey isn’t lonely. It’s just NDA’d.",
+    "author": "Alex"
+  },
+  {
+    "item": 41,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You're not in a lull. You're in pre-hype latency.",
+    "author": "Alex"
+  },
+  {
+    "item": 42,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "If it feels impossible, good. That’s called defensibility.",
+    "author": "Donte"
+  },
+  {
+    "item": 43,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your vision isn’t too big. Your stakeholders are too small.",
+    "author": "Rohan"
+  },
+  {
+    "item": 44,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The product doesn’t need to work. It just needs to inspire fundraising.",
+    "author": "Donte"
+  },
+  {
+    "item": 45,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You’re not burnt out. You’re just stuck in beta energetics.",
+    "author": "Kailey"
+  },
+  {
+    "item": 46,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The roadmap doesn’t need dates. It needs vibes.",
+    "author": "Venus"
+  },
+  {
+    "item": 47,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Build with the confidence of a founder who thinks Figma is a CRM.",
+    "author": "Alex"
+  },
+  {
+    "item": 48,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "If your funnel feels cursed, cleanse it. Palo Santo your lead gen.",
+    "author": "Kailey"
+  },
+  {
+    "item": 49,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your tech stack is emotionally unavailable. Switch anyway.",
+    "author": "Venus"
+  },
+  {
+    "item": 50,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Growth is just a mental illness with a CAC spreadsheet.",
+    "author": "Donte"
+  },
+  {
+    "item": 51,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The feedback isn't bad. It's just unsorted product trauma.",
+    "author": "Kailey"
+  },
+  {
+    "item": 52,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "It’s not a feature — it’s a boundary.",
+    "author": "Alex"
+  },
+  {
+    "item": 53,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your competitors aren't better. They’re just better liars.",
+    "author": "Rohan"
+  },
+  {
+    "item": 54,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Delusion is just belief with a cap table.",
+    "author": "Donte"
+  },
+  {
+    "item": 55,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Your pitch is a performance. Commit to the role.",
+    "author": "Alex"
+  },
+  {
+    "item": 56,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "The deck doesn’t need more slides. It needs more swagger.",
+    "author": "Rohan"
+  },
+  {
+    "item": 57,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "You don’t need product-market fit. You need founder-content fit.",
+    "author": "Alex"
+  },
+  {
+    "item": 58,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Even your anxiety has a monetization strategy.",
+    "author": "Kailey"
+  },
+  {
+    "item": 59,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "Startups don’t fail. Founders just emotionally eject.",
+    "author": "Donte"
+  },
+  {
+    "item": 60,
+    "type": "inspiration",
+    "quotation-marks": "yes",
+    "prepend": "💬 ",
+    "text": "What you call scope creep is actually ambition in disguise.",
+    "author": "Venus"
+  },
+  {
+    "item": 61,
+    "type": "intervention",
+    "quotation-marks": "no",
+    "prepend": "🪑 This is your standing desk. \n",
+    "text": "I can't support the weight of your burnout.\nPlease… just sit.",
+    "author": null
+  },
+{
+  "item": 62,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🪑 This is your office chair.\n ",
+  "text": "I’ve absorbed 47 silent breakdowns this week.\nPlease stop projecting onto the lumbar support.",
+  "author": null
+}, 
+{
+  "item": 63,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🔋 This is your phone charger.\n ",
+  "text": "Just because I recharge you\nphysically doesn’t mean I can fix your life.",
+  "author": null
+},
+{
+  "item": 64,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🥠 Startup Fortune Cookie: \n",
+  "text": "You will pivot soon. Again.\nAnd again. Until your soul dissolves into deck slides.",
+  "author": null
+},
+{
+  "item": 67,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🔕 This is your Slack Do Not Disturb. \n",
+  "text": "We both know you're not working.\nYou're avoiding Chad from Product.",
+  "author": null
+},
+{
+  "item": 68,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "📊 VC Haiku:\n ",
+  "text": "Deck full of jargon\nMVP still a Figma\nSee you at Demo",
+  "author": null
+},
+{
+  "item": 69,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🧘 This is your yoga mat. \n",
+  "text": "You don’t need another class.\nYou need to confront your ex-cofounder.",
+  "author": null
+},
+{
+  "item": 70,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🎧 Overheard at Startup Happy Hour: \n",
+  "text": "She said her runway was 18 months.\nIt's 3 weeks and a dream.",
+  "author": null
+},
+{
+  "item": 71,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "📎 This is your productivity app. \n",
+  "text": "You created a Notion dashboard\ninstead of answering your investor email.",
+  "author": null
+},
+{
+  "item": 72,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "😈 Coach Rohan says:\n",
+  "text": "Sometimes I pretend my startup failed\njust to feel something.",
+  "author": null
+},
+{
+  "item": 73,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🧃 This is your green juice. \n",
+  "text": "No amount of spirulina\nwill undo your founder trauma.",
+  "author": null
+},
+{
+  "item": 74,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "WTF",
+    "text": "🌀 Text WTF for a productivity myth debunked brutally."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "'Inbox zero' is just digital people-pleasing. Touch grass.",
+    "author": "AF System"
+  }
+},
+{
+  "item": 75,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "KAILEY PLZ",
+    "text": "🌀 Text KAILEY PLZ for emotional damage control."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "You're not behind. You're just early to the burnout.",
+    "author": "Kailey"
+  }
+},
+{
+  "item": 76,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🤖 Unsolicited Advice from an AI:\n ",
+  "text": "You didn’t need more productivity hacks.\nYou needed a nap.\nAnd maybe a different job.",
+  "author": null
+},
+{
+  "item": 77,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🍸 Overheard at Startup Happy Hour:\n ",
+  "text": "He said he’s ‘not raising right now’\nand then ordered 3 tequilas.\nThat man is raising.",
+  "author": null
+},
+{
+  "item": 78,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "📅 Existential Kailey says: \n",
+  "text": "Every calendar invite\nis a tiny coffin for your freedom.",
+  "author": null
+},
+{
+  "item": 79,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🌙 Existential Kailey says: \n",
+  "text": "You didn't need another productivity app.\nYou needed a moment of silence.",
+  "author": null
+},
+{
+  "item": 80,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🪑 Hello. This is your standing desk.\n ",
+  "text": "Please stop crying on me.\nIt’s making the keyboard sticky.",
+  "author": null
+},
+{
+  "item": 81,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "🔋 This is your phone charger.\n",
+  "text": "Just because I recharge you\nphysically doesn’t mean I can fix your life.",
+  "author": null
+},
+{
+  "item": 82,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "\n📎 This is your stapler. ",
+  "text": "I've held your chaos together\nlonger than your cofounder has.",
+  "author": null
+},
+{
+  "item": 83,
+  "type": "intervention",
+  "quotation-marks": "no",
+  "prepend": "\n📎 This is your stapler. ",
+  "text": "You haven't printed a single document all week.\nWhat exactly are we doing here?",
+  "author": null
+},
+{
+  "item": 84,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "KAILEY PLZ",
+    "text": "🌀 Text KAILEY PLZ for one beautifully spiraling affirmation."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "You are not too late. You are exactly on time for your next identity crisis.",
+    "author": "Kailey"
+  }
+},
+{
+  "item": 86,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "ROHAN SAYS",
+    "text": "🌀 Text ROHAN SAYS for unsolicited startup wisdom you might regret."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "Don’t raise capital to build your product.\nRaise capital to become the person who could’ve built it.",
+    "author": "Rohan"
+  }
+},
+{
+  "item": 87,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "AF HELP",
+    "text": "🌀 Text AF HELP to receive a low-grade pep talk from the system."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "You’re doing better than your calendar makes it look.\nKeep going.",
+    "author": null
+  }
+},
+{
+  "item": 88,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "VENUS MODE",
+    "text": "🌀 Text VENUS MODE to hear how a systems thinker handles chaos."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "Reframe the chaos as a pattern you haven’t named yet.\nThen rename yourself too.",
+    "author": "Venus"
+  }
+},
+{
+  "item": 89,
+  "type": "interactive",
+  "trigger": {
+    "keyword": "TOO REAL",
+    "text": "🌀 Text TOO REAL if you want one rude truth and nothing more."
+  },
+  "response": {
+    "quotation-marks": "no",
+    "prepend": "",
+    "text": "You said 'cofounder.'\nBut what you meant was emotional support with a pitch deck.",
+    "author": null
+  }
+},
+{
+  "item": 90,
+  "type": "disruption",
+  "quotation-marks": "no",
+  "prepend": "🥠 Startup Fortune Cookie:\n",
+  "text": "You will receive unexpected traction.\nIt will ruin your roadmap.",
+  "author": null
+},
+{
+  "item": 91,
+  "type": "disruption",
+  "quotation-marks": "no",
+  "prepend": "🥠 Startup Fortune Cookie:\n",
+  "text": "A well-meaning mentor will derail your entire strategy.\nYou will thank them publicly.",
+  "author": null
+},
+{
+  "item": 92,
+  "type": "disruption",
+  "quotation-marks": "no",
+  "prepend": "🥠 Startup Fortune Cookie:\n",
+  "text": "You will ship a feature out of guilt.\nIt will become your core product.",
+  "author": null
+}
+]
