@@ -242,13 +242,13 @@ export default function Home() {
             <div className="relative flex justify-center items-center max-w-2xl mx-auto">
               <button 
                 onClick={handlePrev}
-                className="absolute -left-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                className="absolute -left-6 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-12 h-12 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
                 aria-label="Previous slide"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
 
-              <div className="relative w-full overflow-hidden px-4 md:px-12" style={{ height: '280px' }}>
+              <div className="relative w-full overflow-hidden px-4 md:px-16" style={{ height: '280px' }}>
                 <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentSlide}
@@ -304,7 +304,7 @@ export default function Home() {
 
               <button 
                 onClick={handleNext}
-                className="absolute -right-2 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
+                className="absolute -right-6 top-1/2 -translate-y-1/2 bg-[#1a2937]/80 hover:bg-[#1a2937]/90 backdrop-blur-sm text-white/90 w-12 h-12 rounded-full hidden md:flex items-center justify-center transition-all duration-200 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] z-10"
                 aria-label="Next slide"
               >
                 <ChevronRight className="h-6 w-6" />
