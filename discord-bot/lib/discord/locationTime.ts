@@ -10,6 +10,7 @@ interface LocationAndTime {
     isNewLocation: boolean;
     weather: string;
     weatherEmoji: string;
+    localDay: string;
 }
 
 // Weekend schedule blocks - UPDATED TO MATCH PROVIDED SCHEDULE
@@ -57,18 +58,7 @@ export function isWeekend(): boolean {
         return true;
     }
     
-    // TEMPORARY TESTING: Include all of Monday in weekend mode
-    // Weekend will now end Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
-    if (day === 1) {
-        console.log('[LocationTime] Weekend mode: Monday ALL DAY - ACTIVE (TESTING)');
-        return true;
-    }
-    
-    // End weekend Tuesday 9am SGT = Tuesday 1am UTC = Monday 6pm PT
-    if (day === 2 && now.getUTCHours() < 1) {
-        console.log('[LocationTime] Weekend mode: Tuesday early morning - ACTIVE (TESTING)');
-        return true;
-    }
+    // Weekend mode only active Friday evening through Sunday
     
     console.log('[LocationTime] Weekend mode: DISABLED');
     return false;
@@ -93,35 +83,69 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
     let location: string;
     let localTime: number;
     let localMinutes: number;
+    let localDay: string;
 
+    // Get current date in UTC
+    const now = new Date();
+    const utcDay = now.getUTCDay(); // 0 is Sunday, 6 is Saturday
+    
+    // Days of the week for display
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
     // Convert GMT to LA time (GMT-7 during daylight saving time)
     const laHour = (gmtHour - 7 + 24) % 24;
+    
+    // Calculate LA day (may be different from UTC day if crossing midnight)
+    let laDay = utcDay;
+    if (gmtHour < 7) { // If it's before 7am GMT, it's still the previous day in LA
+        laDay = (utcDay + 6) % 7; // Subtract 1 day, handle wrap around
+    }
 
     if (isWeekend()) {
         // Use weekend schedule
         location = getWeekendLocation(laHour);
         
-        // Calculate local time based on location
+        // Calculate local time and day based on location
         switch (location) {
             case "Vegas":
                 localTime = laHour; // Same as LA time
                 localMinutes = gmtMinutes;
+                localDay = days[laDay];
                 break;
-            case "Tokyo":
+            case "Tokyo": {
                 localTime = (laHour + 16) % 24; // LA + 16 hours (GMT+9)
                 localMinutes = gmtMinutes;
+                
+                // Tokyo is always a day ahead when LA is after 8am or before midnight
+                // This is because 8am LA = midnight Tokyo, which starts a new day
+                let tokyoDay;
+                if (laHour >= 8) {
+                    // After 8am in LA, it's already the next day in Tokyo
+                    tokyoDay = (laDay + 1) % 7;
+                } else {
+                    // Between midnight and 8am LA, it's the same day in Tokyo
+                    tokyoDay = laDay;
+                }
+                
+                localDay = days[tokyoDay];
+                console.log(`[LocationTime] LA: ${days[laDay]} ${laHour}:${localMinutes}, Tokyo: ${localDay} ${localTime}:${localMinutes}`);
                 break;
-            case "Berlin":
+            }
+            case "Paris": {
                 localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
                 localMinutes = gmtMinutes;
+                // If local time < LA time, we've crossed into next day
+                let parisDay = laDay;
+                if (localTime < laHour) {
+                    parisDay = (laDay + 1) % 7;
+                }
+                localDay = days[parisDay];
                 break;
-            case "Paris":
-                localTime = (laHour + 9) % 24; // LA + 9 hours (GMT+2)
-                localMinutes = gmtMinutes;
-                break;
+            }
             default:
                 localTime = laHour;
                 localMinutes = gmtMinutes;
+                localDay = days[laDay];
         }
     } else {
         // Use weekday schedule - CORRECTED TIMES
@@ -130,18 +154,33 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
             location = "Los Angeles office";
             localTime = laHour;
             localMinutes = gmtMinutes;
+            localDay = days[laDay];
         }
         else if (laHour >= 19 || laHour < 3) {
             // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
             location = "Singapore penthouse";
             localTime = (laHour + 15) % 24; // LA + 15 hours (Singapore is GMT+8)
             localMinutes = gmtMinutes;
+            
+            // Calculate Singapore day
+            let singaporeDay = laDay;
+            if (localTime < laHour) {
+                singaporeDay = (laDay + 1) % 7; // Next day in Singapore
+            }
+            localDay = days[singaporeDay];
         }
         else {
             // 3am-9am PT: London
             location = "London office";
             localTime = (laHour + 8) % 24; // LA + 8 hours (London is GMT+1)
             localMinutes = gmtMinutes;
+            
+            // Calculate London day
+            let londonDay = laDay;
+            if (localTime < laHour) {
+                londonDay = (laDay + 1) % 7; // Next day in London
+            }
+            localDay = days[londonDay];
         }
     }
 
@@ -163,6 +202,7 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
         ampm,
         isNewLocation,
         weather,
-        weatherEmoji
+        weatherEmoji,
+        localDay
     };
 }
