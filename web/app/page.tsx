@@ -7,6 +7,7 @@ import { ArrowRight, Sparkles, Zap, Brain, Users, MessageSquare, ChevronLeft, Ch
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmsModal from "@/components/sms-modal";
+import SmsBanner from "@/components/sms-banner";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -68,11 +69,8 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#0f172a]">
-      <div className="relative z-20 bg-gradient-to-r from-[#1e3a8a] to-[#1a3d3d] text-white text-center py-2 font-bold [text-shadow:_0_0_6px_rgba(255,255,255,0.2)]">
-        <a href="https://discord.gg/RPTHWHgJhm" target="_blank" rel="noopener noreferrer">
-          💡 Join the Discord to pitch your idea to the coaches!
-        </a>
-      </div>
+      {/* SMS Banner flush left, rounded right */}
+      <SmsBanner onSignupClick={() => setIsSmsModalOpen(true)} />
 
       {/* Dark navy to teal gradient background - matching The Foundry */}
       <div className="fixed inset-0 bg-[#0f172a] bg-gradient-to-br from-[#0f172a] via-[#0f172a]/95 to-[#134e4a]" />
