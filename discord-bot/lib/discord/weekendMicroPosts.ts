@@ -5,6 +5,7 @@ import Together from "together-ai";
 import dotenv from "dotenv";
 import { TextChannel, Client, WebhookClient } from "discord.js";
 import { customEventMessageCache } from "./eventMessages.js";
+import { getWebhookUrls } from "./config.js";
 
 // Set up file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -51,30 +52,65 @@ try {
 // Primary Discord channel ID (General)
 const GENERAL_CHANNEL_ID = "1354474492629618831";
 
-// The FoundryHeat webhook for posting to General
+// Variables to hold webhook clients
 let foundryHeatWebhook: WebhookClient | null = null;
+let alexirVipWebhook: WebhookClient | null = null;
 
-// Initialize webhook
-function initializeFoundryHeatWebhook() {
-  if (!process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT) {
+// Initialize webhooks from config
+function initializeWebhooks() {
+  const webhookUrls = getWebhookUrls();
+  const errors = [];
+  
+  // Get FoundryHeat webhook URL
+  if (webhookUrls['general_foundryheat'] || process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT) {
+    try {
+      const webhookUrl = webhookUrls['general_foundryheat'] || process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT;
+      if (webhookUrl) {
+        foundryHeatWebhook = new WebhookClient({ url: webhookUrl });
+        console.log("[WeekendMicroPosts] FoundryHeat webhook initialized successfully");
+      } else {
+        throw new Error("FoundryHeat webhook URL is undefined");
+      }
+    } catch (error) {
+      console.error("[WeekendMicroPosts] Error initializing FoundryHeat webhook:", error);
+      errors.push('FoundryHeat webhook initialization failed');
+    }
+  } else {
     const envSource = process.env.NODE_ENV === 'production' ? 'Railway environment' : '.env.local';
-    console.error(`[WeekendMicroPosts] Missing GENERAL_WEBHOOK_URL_FOUNDRYHEAT in ${envSource}`);
-    return false;
+    console.error(`[WeekendMicroPosts] Missing FoundryHeat webhook URL in ${envSource}`);
+    errors.push('FoundryHeat webhook URL not found');
   }
-
-  try {
-    foundryHeatWebhook = new WebhookClient({ url: process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT });
-    console.log("[WeekendMicroPosts] FoundryHeat webhook initialized successfully");
-    return true;
-  } catch (error) {
-    console.error("[WeekendMicroPosts] Error initializing FoundryHeat webhook:", error);
-    return false;
+  
+  // Get Alexir VIP webhook URL for cross-posting
+  if (webhookUrls['alexir_vip'] || process.env.ALEXIR_VIP_WEBHOOK_URL) {
+    try {
+      const webhookUrl = webhookUrls['alexir_vip'] || process.env.ALEXIR_VIP_WEBHOOK_URL;
+      if (webhookUrl) {
+        alexirVipWebhook = new WebhookClient({ url: webhookUrl });
+        console.log("[WeekendMicroPosts] Alexir VIP webhook initialized successfully");
+      } else {
+        throw new Error("Alexir VIP webhook URL is undefined");
+      }
+    } catch (error) {
+      console.error("[WeekendMicroPosts] Error initializing Alexir VIP webhook:", error);
+      // This is not critical - we can still post to the main channel
+    }
+  } else {
+    const envSource = process.env.NODE_ENV === 'production' ? 'Railway environment' : '.env.local';
+    console.warn(`[WeekendMicroPosts] Missing Alexir VIP webhook URL in ${envSource} - cross-posting will be disabled`);
   }
+  
+  // Return success if at least FoundryHeat webhook was initialized
+  return foundryHeatWebhook !== null;
 }
 
 // Function to initialize custom event messages from prompts
 export function initializeWeekendMicroEventMessages() {
   console.log("[WeekendMicroPosts] Initializing custom event messages...");
+  
+  // Pre-initialize webhooks to catch any issues early
+  initializeWebhooks();
+  
   const prompts = loadWeekendPrompts();
   let count = 0;
 
@@ -196,17 +232,17 @@ Write ONE tipsy Alex tweet. NO quotation marks. Cut every unnecessary word. End 
   }
 }
 
-// Post the generated content to Discord using FoundryHeat webhook
+// Post the generated content to Discord using FoundryHeat webhook and cross-post to Alexir VIP channel
 async function postToDiscord(promptId: string, content: string, intro: string, outro: string): Promise<boolean> {
   try {
-    // Initialize webhook if not already done
+    // Initialize webhooks if not already done
     if (!foundryHeatWebhook) {
-      if (!initializeFoundryHeatWebhook()) {
-        throw new Error("Failed to initialize FoundryHeat webhook");
+      if (!initializeWebhooks()) {
+        throw new Error("Failed to initialize webhooks");
       }
     }
 
-    console.log(`[WeekendMicroPosts] Posting to Discord using FoundryHeat webhook`);
+    console.log(`[WeekendMicroPosts] Preparing message for Discord webhooks`);
     
     // Include the intro from JSON and the outro with emojis
     let formattedMessage = content;
@@ -221,9 +257,9 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
       formattedMessage = `${formattedMessage}${outro}`;
     }
     
-    // Send the message using the webhook
+    // Send the message using the main webhook
     if (!foundryHeatWebhook) {
-      throw new Error("Webhook is null after initialization");
+      throw new Error("FoundryHeat webhook is null after initialization");
     }
     
     await foundryHeatWebhook.send({
@@ -231,7 +267,24 @@ async function postToDiscord(promptId: string, content: string, intro: string, o
       username: "Foundry Heat",
     });
     
-    console.log(`[WeekendMicroPosts] Successfully posted to Discord`);
+    console.log(`[WeekendMicroPosts] Successfully posted to main Discord channel`);
+    
+    // Cross-post to Alexir VIP channel if this is an alex-tipsy-dispatch message
+    if (promptId === "alex-tipsy-dispatch" && alexirVipWebhook) {
+      try {
+        await alexirVipWebhook.send({
+          content: formattedMessage,
+          username: "Foundry Heat",
+        });
+        console.log(`[WeekendMicroPosts] Successfully cross-posted to Alexir VIP confession channel`);
+      } catch (crossPostError) {
+        console.error(`[WeekendMicroPosts] Error cross-posting to Alexir VIP channel:`, crossPostError);
+        // Don't throw the error, we still consider the post successful if it went to the main channel
+      }
+    } else if (promptId === "alex-tipsy-dispatch" && !alexirVipWebhook) {
+      console.warn(`[WeekendMicroPosts] Alexir VIP webhook not available for cross-posting. Check ALEXIR_VIP_WEBHOOK_URL in environment variables.`);
+    }
+    
     return true;
   } catch (error) {
     console.error(`[WeekendMicroPosts] Error posting to Discord:`, error);

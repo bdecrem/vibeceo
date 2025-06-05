@@ -119,6 +119,14 @@ export function getWebhookUrls() {
     webhookUrls['pitch_kailey'] = process.env.PITCH_WEBHOOK_URL_KAILEY;
   }
   
+  // Alexir VIP webhook for cross-posting
+  if (process.env.ALEXIR_VIP_WEBHOOK_URL) {
+    webhookUrls['alexir_vip'] = process.env.ALEXIR_VIP_WEBHOOK_URL;
+    console.log('[Config] Found Alexir VIP webhook URL for cross-posting');
+  } else if (process.env.NODE_ENV === 'production') {
+    console.warn('[Config] ALEXIR_VIP_WEBHOOK_URL not found in production environment');
+  }
+  
   return webhookUrls;
 }
 
