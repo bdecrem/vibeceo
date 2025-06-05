@@ -38,7 +38,7 @@ export type SMSSubscriber = {
   last_inspiration_date?: string; // Timestamp of last sent daily inspiration
   unsubscribed?: boolean;
   confirmed?: boolean;
-  receive_early?: boolean;
+  is_admin?: boolean;
 }
 
 // Initialize Supabase client
