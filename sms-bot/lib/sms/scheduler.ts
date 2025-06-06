@@ -1,6 +1,8 @@
 import { getTodaysInspiration, formatDailyMessage } from './handlers.js';
 import { getActiveSubscribers, getSubscriber, updateLastInspirationDate } from '../subscribers.js';
 import type { TwilioClient } from './webhooks.js';
+import twilio from 'twilio';
+import { sendTestEmail, sendToSendGridList } from '../email/sendgrid.js';
 
 // Function to check if it's time to send (weekend: 12pm/10am PT, weekday: 9am/7am PT)
 function isTimeToSend(isEarly: boolean = false): boolean {
@@ -241,6 +243,26 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         }
         
         console.log(`Regular broadcast complete. Success: ${successCount}, Failures: ${failureCount}, Skipped: ${skippedCount}`);
+        
+        // After SMS broadcast completes, send email broadcast
+        if (successCount > 0) {
+          console.log('\n📧 === EMAIL BROADCAST (9am PT) ===');
+          try {
+            // Send the same approved message via email to SendGrid list
+            console.log('📧 Sending daily insight to email subscribers...');
+            
+            const emailResult = await sendToSendGridList(messageText);
+            if (emailResult.success) {
+              console.log(`📧 Email broadcast successful! Message ID: ${emailResult.messageId}`);
+            } else {
+              console.log('📧 Email broadcast failed');
+            }
+          } catch (emailError) {
+            console.error('📧 Email broadcast error:', emailError);
+          }
+        } else {
+          console.log('📧 Skipping email broadcast - no SMS messages were sent successfully');
+        }
         
         // Mark as sent for today
         lastRegularSendDate = todayPT;
