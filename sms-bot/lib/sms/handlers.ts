@@ -460,22 +460,45 @@ function formatInspirationMessage(message: any): string {
 }
 
 function formatInterventionMessage(message: any): string {
-  // Interventions are more standalone and don't need date headers or marketing messages
+  // Get current date in "Month Day" format
+  const currentDate = new Date();
+  const dateString = currentDate.toLocaleDateString('en-US', { 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  // Build the message text
   let messageText = message.prepend || '';
   
-  // Add quotes if specified (though most interventions don't use quotes)
+  // Add quotes if specified
   if (message['quotation-marks'] === 'yes') {
     messageText += `"${message.text}"`;
   } else {
     messageText += message.text;
   }
   
-  // Add author if provided (most interventions don't have authors)
+  // Add author if provided
   if (message.author) {
     messageText += `\n— ${message.author}`;
   }
   
-  return messageText;
+  // Get marketing messages for interventions (same as inspirations)
+  const messages = loadMarketingMessages();
+  
+  // Calculate which marketing message to use based on day of year
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - startOfYear.getTime();
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  // Get the message for today (cycling through marketing messages)
+  const messageIndex = dayOfYear % messages.length;
+  const marketingMessage = messages[messageIndex].message;
+  
+  // Prepend the swirl emoji to the marketing message
+  const formattedMarketingMessage = `🌀 ${marketingMessage}`;
+  
+  return `AF Daily — ${dateString}\n\n${messageText}\n\n${formattedMarketingMessage}`;
 }
 
 function formatInteractiveMessage(message: any): string {
