@@ -49,8 +49,8 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-      <div className="bg-gradient-to-br from-[#1a2937] to-[#1d4352] text-white rounded-3xl w-full max-w-xl mx-4 relative overflow-hidden border border-white/10">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-start justify-center pt-24 md:pt-36 z-50">
+      <div className="w-full max-w-md rounded-2xl p-8 bg-[#1a2937] text-white shadow-2xl mt-12 mx-4 relative overflow-hidden border border-white/10">
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 text-white/70 hover:text-white transition-colors z-10"
@@ -58,12 +58,12 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
           <X className="h-6 w-6" />
         </button>
 
-        <div className="p-4 md:p-6">
+        <div>
           <div className="text-center mb-6 md:mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
               Get Daily Texts from AF
             </h2>
-            <p className="text-[#40e0d0] text-base md:text-xl">Startup wisdom. Spirals. Possibly threats.</p>
+            <p className="text-[#7dd3fc] text-base md:text-xl">Startup wisdom. Spirals. Possibly threats.</p>
           </div>
 
           {isSuccess ? (
@@ -71,7 +71,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
                 You just signed up for daily startup chaos… via SMS. Bold move.
               </h3>
-              <p className="text-[#40e0d0] mb-6 md:mb-8 italic text-base md:text-lg">
+              <p className="text-[#7dd3fc] mb-6 md:mb-8 italic text-base md:text-lg">
                 Your phone is now a vessel. Prepare for bangers.
               </p>
               <button
@@ -87,7 +87,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-4">
                   Craving one unhinged line of founder truth each morning?
                 </h3>
-                <p className="text-[#40e0d0] text-base md:text-lg">
+                <p className="text-[#7dd3fc] text-base md:text-lg">
                   We're delivering startup wisdom via SMS like it's 2006. Welcome to the lowest-tech way to level up.
                 </p>
               </div>
@@ -146,12 +146,11 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               <div className="text-center space-y-2 md:space-y-4 text-gray-300">
                 <p className="text-xs md:text-sm">
                   ✈️ SMS only works if you're US-based and emotionally unwell.<br />
-                  Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">Join the mailing list</a>
-                  <span className="hidden md:inline"> for weekly startup spirals.</span>
+                  Not in the US? <a href="https://cdn.forms-content-1.sg-form.com/f348d1a4-4304-11f0-b649-8e824612f419" target="_blank" rel="noopener noreferrer" className="text-[#7dd3fc] hover:text-[#7dd3fc]/80">Get the daily chaos via email instead.</a>
                 </p>
                 <p className="text-xs">
                   By subscribing, you agree to our{' '}
-                  <a href="https://thefoundry.biz/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#40e0d0] hover:text-[#40e0d0]/80">
+                  <a href="https://thefoundry.biz/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#7dd3fc] hover:text-[#7dd3fc]/80">
                     Privacy Policy
                   </a>.
                   <span className="hidden md:inline">We promise never to spam you. Only spiral responsibly.</span>
