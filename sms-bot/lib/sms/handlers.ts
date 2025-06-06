@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
-import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber } from '../subscribers.js';
+import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers } from '../subscribers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -180,10 +180,34 @@ function getRandomMessageForToday(date: string = new Date().toISOString().split(
   const data = loadInspirationsData();
   const usageTracker = loadUsageTracker();
   
-  // Filter to include inspiration, intervention, interactive, and disruption types
-  const availableMessages = data.filter(item => 
-    item.type === 'inspiration' || item.type === 'intervention' || item.type === 'interactive' || item.type === 'disruption'
-  );
+  // Check weekend mode - either forced via env var or actual Pacific Time weekend
+  const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+  let isWeekendMode = false;
+  
+  if (weekendOverride === 'ON') {
+    isWeekendMode = true;
+    console.log('Weekend mode: FORCED ON via WEEKEND_MODE_SMS_OVERRIDE');
+  } else if (weekendOverride === 'OFF') {
+    isWeekendMode = false;
+    console.log('Weekend mode: FORCED OFF via WEEKEND_MODE_SMS_OVERRIDE');
+  } else {
+    // Check actual Pacific Time weekend
+    const pacificTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      weekday: 'short'
+    }).format(new Date());
+    isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+    console.log(`Weekend mode: ${isWeekendMode ? 'ON' : 'OFF'} (Pacific Time: ${pacificTime})`);
+  }
+  
+  let availableMessages;
+  if (isWeekendMode) {
+    // Weekend mode: ONLY use type: weekend
+    availableMessages = data.filter(item => item.type === 'weekend');
+  } else {
+    // Weekday mode: use everything EXCEPT type: weekend
+    availableMessages = data.filter(item => item.type !== 'weekend');
+  }
   
   // Check if we already selected a message for today
   if (usageTracker.daily_selections[date]) {
@@ -280,6 +304,74 @@ function getCurrentDay(): number {
   };
 }
 
+// ADD COMMAND FUNCTIONS
+
+// Find the next available item number in the JSON file
+function getNextItemNumber(): number {
+  const data = loadInspirationsData();
+  const maxItem = Math.max(...data.map(item => item.item));
+  return maxItem + 1;
+}
+
+// Add a new item to the JSON file
+function addItemToFile(itemData: any): { success: boolean, itemId?: number, error?: string } {
+  try {
+    const data = loadInspirationsData();
+    const newItemId = getNextItemNumber();
+    
+    // Replace the item number with auto-incremented one
+    const newItem = { ...itemData, item: newItemId };
+    
+    // Add to data array
+    data.push(newItem);
+    
+    // Write back to file
+    const filePath = path.join(process.cwd(), 'data', 'af_daily_messages.json');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    
+    // Clear cached data to force reload
+    inspirationsData = [];
+    
+    console.log(`Successfully added item ${newItemId} to af_daily_messages.json`);
+    return { success: true, itemId: newItemId };
+  } catch (error) {
+    console.error('Error adding item to file:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+// Validate JSON structure for ADD command
+function validateAddJson(jsonData: any): { valid: boolean, error?: string } {
+  try {
+    // Required fields
+    if (!jsonData.type) return { valid: false, error: 'Missing required field: type' };
+    
+    // Valid types
+    const validTypes = ['inspiration', 'intervention', 'interactive', 'disruption', 'weekend'];
+    if (!validTypes.includes(jsonData.type)) {
+      return { valid: false, error: `Invalid type. Must be one of: ${validTypes.join(', ')}` };
+    }
+    
+    // Type-specific validation
+    if (jsonData.type === 'interactive') {
+      // Interactive type needs trigger and response structures (NO top-level text)
+      if (!jsonData.trigger || !jsonData.trigger.keyword || !jsonData.trigger.text) {
+        return { valid: false, error: 'Interactive type requires trigger.keyword and trigger.text' };
+      }
+      if (!jsonData.response || !jsonData.response.text) {
+        return { valid: false, error: 'Interactive type requires response.text' };
+      }
+    } else {
+      // Other types need top-level text field
+      if (!jsonData.text) return { valid: false, error: 'Missing required field: text' };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    return { valid: false, error: 'Invalid JSON structure' };
+  }
+}
+
 // Make these functions available for the broadcast script
 export function getTodaysInspiration() {
   const today = new Date().toISOString().split('T')[0];
@@ -317,6 +409,8 @@ export function formatDailyMessage(message: any): string {
     return formatInteractiveMessage(message);
   } else if (message.type === 'disruption') {
     return formatDisruptionMessage(message);
+  } else if (message.type === 'weekend') {
+    return formatWeekendMessage(message);
   }
   
   // Fallback for unknown types
@@ -451,6 +545,43 @@ function formatDisruptionMessage(message: any): string {
   return `AF Daily — Disruption Alert\n\n${messageText}\n\n${formattedMarketingMessage}`;
 }
 
+function formatWeekendMessage(message: any): string {
+  // Weekend messages use "AF Weekend 🥂" header with intro/outro structure
+  let result = `AF Weekend 🥂`;
+  
+  // Add intro if provided
+  if (message.intro) {
+    result += `\n${message.intro}`;
+  }
+  
+  // Add blank line before main content
+  result += `\n`;
+  
+  // Build the message text with prepend and quotes
+  let messageText = message.prepend || '';
+  
+  // Add quotes if specified
+  if (message['quotation-marks'] === 'yes') {
+    messageText += `"${message.text}"`;
+  } else {
+    messageText += message.text;
+  }
+  
+  result += `\n${messageText}`;
+  
+  // Add author if provided
+  if (message.author) {
+    result += `\n— ${message.author}`;
+  }
+  
+  // Add outro if provided
+  if (message.outro) {
+    result += `\n\n${message.outro}`;
+  }
+  
+  return result;
+}
+
 // Define types for conversation messages
 type UserMessage = { role: 'user'; content: string };
 type AssistantMessage = { role: 'assistant'; content: string };
@@ -485,6 +616,15 @@ interface ActiveConversation {
 }
 
 const activeConversations = new Map<string, ActiveConversation>();
+
+// Track pending broadcasts for ADD command workflow
+interface PendingBroadcast {
+  itemId: number;
+  messageData: any;
+  timestamp: Date;
+}
+
+const pendingBroadcasts = new Map<string, PendingBroadcast>();
 
 // Clear conversation state
 function endConversation(phoneNumber: string) {
@@ -640,8 +780,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     const messageUpper = message.toUpperCase();
     
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'INSPIRE', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -657,7 +797,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nNote: Using any command will end your current coach conversation.';
       
       if (isAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast';
       }
       
       await sendSmsResponse(from, helpText, twilioClient);
@@ -767,6 +907,131 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
     
+    // Check for ADD command - add new content to database
+    if (message.match(/^ADD\s+\{/i)) {
+      console.log(`Processing ADD command from ${from}`);
+      
+      // Check if user is admin
+      const subscriber = await getSubscriber(from);
+      if (!subscriber || !subscriber.is_admin) {
+        console.log(`User ${from} attempted ADD command without admin privileges`);
+        // Silent ignore - don't reveal admin features to non-admin users
+        return;
+      }
+      
+      try {
+        // Extract JSON from message
+        const jsonString = message.substring(4).trim(); // Remove "ADD " prefix
+        const jsonData = JSON.parse(jsonString);
+        
+        // Validate JSON structure
+        const validation = validateAddJson(jsonData);
+        if (!validation.valid) {
+          await sendSmsResponse(
+            from,
+            `❌ ADD FAILED: ${validation.error}`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Add to file
+        const result = addItemToFile(jsonData);
+        if (!result.success) {
+          await sendSmsResponse(
+            from,
+            `❌ ADD FAILED: ${result.error}`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create message object with new item ID for preview
+        const previewMessage = { ...jsonData, item: result.itemId };
+        const formattedPreview = formatDailyMessage(previewMessage);
+        
+        // Store pending broadcast state
+        pendingBroadcasts.set(from, {
+          itemId: result.itemId!,
+          messageData: previewMessage,
+          timestamp: new Date()
+        });
+        
+        // Send preview with broadcast options
+        await sendSmsResponse(
+          from,
+          `✅ Item ${result.itemId} added to database:\n\n${formattedPreview}\n\nSend to ALL subscribers NOW?\nReply SEND to broadcast or SAVE to keep for later.`,
+          twilioClient
+        );
+        
+        console.log(`Admin ${from} added item ${result.itemId}, awaiting broadcast decision`);
+      } catch (error) {
+        console.error(`Error processing ADD command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ ADD FAILED: Invalid JSON format`,
+          twilioClient
+        );
+      }
+      
+      return;
+    }
+    
+    // Check for SEND/SAVE responses to ADD command
+    if ((messageUpper === 'SEND' || messageUpper === 'SAVE') && pendingBroadcasts.has(from)) {
+      console.log(`Processing ${messageUpper} response for pending broadcast from ${from}`);
+      
+      const pendingBroadcast = pendingBroadcasts.get(from)!;
+      pendingBroadcasts.delete(from); // Clear pending state
+      
+      if (messageUpper === 'SEND') {
+        try {
+          // Get all active subscribers
+          const subscribers = await getActiveSubscribers();
+          const formattedMessage = formatDailyMessage(pendingBroadcast.messageData);
+          
+          // Send to all subscribers
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const subscriber of subscribers) {
+            try {
+              await sendSmsResponse(subscriber.phone_number, formattedMessage, twilioClient);
+              successCount++;
+            } catch (error) {
+              console.error(`Failed to send to ${subscriber.phone_number}:`, error);
+              failCount++;
+            }
+          }
+          
+          await sendSmsResponse(
+            from,
+            `📤 BROADCAST COMPLETE: Item ${pendingBroadcast.itemId} sent to ${successCount} subscribers${failCount > 0 ? ` (${failCount} failed)` : ''}.`,
+            twilioClient
+          );
+          
+          console.log(`Broadcast complete: ${successCount} sent, ${failCount} failed`);
+        } catch (error) {
+          console.error(`Error broadcasting message: ${error}`);
+          await sendSmsResponse(
+            from,
+            `❌ BROADCAST FAILED: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            twilioClient
+          );
+        }
+      } else {
+        // SAVE - just confirm
+        await sendSmsResponse(
+          from,
+          `📋 Item ${pendingBroadcast.itemId} saved for later. Available in daily rotation.`,
+          twilioClient
+        );
+        console.log(`Admin ${from} chose to save item ${pendingBroadcast.itemId} for later`);
+      }
+      
+      return;
+    }
+    
     // Check for new coach conversation
     const heyCoachMatch = message.match(/^(hey|hi|hello)\s+(\w+)/i);
     if (heyCoachMatch) {
@@ -835,46 +1100,44 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
     
-    // Handle INSPIRE command - send random daily message
-    if (messageUpper === 'INSPIRE') {
-      console.log(`Sending INSPIRE response to ${from}`);
-      try {
-        // Pick a random message from available types
-        const data = loadInspirationsData();
-        const availableMessages = data.filter(item => 
-          item.type === 'inspiration' || item.type === 'intervention' || item.type === 'interactive' || item.type === 'disruption'
-        );
-        const randomIndex = Math.floor(Math.random() * availableMessages.length);
-        const message = availableMessages[randomIndex];
-        
-        const responseText = formatDailyMessage(message);
-        
-        await sendSmsResponse(
-          from,
-          responseText,
-          twilioClient
-        );
-        console.log(`Successfully sent INSPIRE response to ${from}: "${message.text.substring(0, 50)}..."`);
-      } catch (error) {
-        console.error(`Error sending INSPIRE response: ${error}`);
-      }
-      return;
-    }
+
     
     // Handle MORE command - send an extra line of chaos
     if (messageUpper === 'MORE') {
       console.log(`Sending MORE response to ${from}`);
       try {
-        // Use the actual messages data
+        // Use the actual messages data with weekend filtering
         const data = loadInspirationsData();
-        const availableMessages = data.filter(item => 
-          item.type === 'inspiration' || item.type === 'intervention' || item.type === 'interactive' || item.type === 'disruption'
-        );
+        
+        // Check weekend mode for MORE command
+        const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+        let isWeekendMode = false;
+        
+        if (weekendOverride === 'ON') {
+          isWeekendMode = true;
+        } else if (weekendOverride === 'OFF') {
+          isWeekendMode = false;
+        } else {
+          const pacificTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Los_Angeles',
+            weekday: 'short'
+          }).format(new Date());
+          isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+        }
+        
+        let availableMessages;
+        if (isWeekendMode) {
+          // Weekend mode: ONLY use type: weekend
+          availableMessages = data.filter(item => item.type === 'weekend');
+        } else {
+          // Weekday mode: use everything EXCEPT type: weekend
+          availableMessages = data.filter(item => item.type !== 'weekend');
+        }
         const randomIndex = Math.floor(Math.random() * availableMessages.length);
         const chaosLine = availableMessages[randomIndex];
         
-        // Always use inspiration formatting for MORE command to get proper header/footer
-        const responseText = formatInspirationMessage(chaosLine);
+        // Use daily message formatting for MORE command to get proper formatting (weekend, disruption, etc.)
+        const responseText = formatDailyMessage(chaosLine);
         
         await sendSmsResponse(
           from,

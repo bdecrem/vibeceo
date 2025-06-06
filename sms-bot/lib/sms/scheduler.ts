@@ -2,19 +2,66 @@ import { getTodaysInspiration, formatDailyMessage } from './handlers.js';
 import { getActiveSubscribers, getSubscriber, updateLastInspirationDate } from '../subscribers.js';
 import type { TwilioClient } from './webhooks.js';
 
-// Function to check if it's time to send (9am PT for regular, 7am PT for early)
+// Function to check if it's time to send (weekend: 12pm/10am PT, weekday: 9am/7am PT)
 function isTimeToSend(isEarly: boolean = false): boolean {
   const now = new Date();
   const pt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-  return (isEarly ? pt.getHours() === 7 : pt.getHours() === 9) && pt.getMinutes() === 0;
+  
+  // Check weekend mode
+  const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+  let isWeekendMode = false;
+  
+  if (weekendOverride === 'ON') {
+    isWeekendMode = true;
+  } else if (weekendOverride === 'OFF') {
+    isWeekendMode = false;
+  } else {
+    const pacificTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      weekday: 'short'
+    }).format(new Date());
+    isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+  }
+  
+  // Set target hours based on weekend mode
+  let targetHour;
+  if (isWeekendMode) {
+    targetHour = isEarly ? 10 : 12; // Weekend: 10am PT (early), 12pm PT (regular)
+  } else {
+    targetHour = isEarly ? 7 : 9;   // Weekday: 7am PT (early), 9am PT (regular)
+  }
+  
+  return pt.getHours() === targetHour && pt.getMinutes() === 0;
 }
 
-// Function to get next send time (9am PT for regular, 7am PT for early)
+// Function to get next send time (weekend: 12pm/10am PT, weekday: 9am/7am PT)
 function getNextSendTime(isEarly: boolean = false): Date {
   const now = new Date();
   const pt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
   
-  const targetHour = isEarly ? 7 : 9;
+  // Check weekend mode for next send calculation
+  const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+  let isWeekendMode = false;
+  
+  if (weekendOverride === 'ON') {
+    isWeekendMode = true;
+  } else if (weekendOverride === 'OFF') {
+    isWeekendMode = false;
+  } else {
+    const pacificTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      weekday: 'short'
+    }).format(new Date());
+    isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+  }
+  
+  // Set target hours based on weekend mode
+  let targetHour;
+  if (isWeekendMode) {
+    targetHour = isEarly ? 10 : 12; // Weekend: 10am PT (early), 12pm PT (regular)
+  } else {
+    targetHour = isEarly ? 7 : 9;   // Weekday: 7am PT (early), 9am PT (regular)
+  }
   
   // If it's already past target hour PT today, schedule for tomorrow
   if (pt.getHours() >= targetHour) {
@@ -41,9 +88,25 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
       const now = new Date();
       const todayPT = now.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
       
-      // Process early subscribers (7am PT)
+      // Process early subscribers (weekday: 7am PT, weekend: 10am PT)
       if (isTimeToSend(true) && lastEarlySendDate !== todayPT) {
-        console.log('Starting early daily broadcast (7am PT)...');
+        const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+        let isWeekendMode = false;
+        
+        if (weekendOverride === 'ON') {
+          isWeekendMode = true;
+        } else if (weekendOverride === 'OFF') {
+          isWeekendMode = false;
+        } else {
+          const pacificTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Los_Angeles',
+            weekday: 'short'
+          }).format(new Date());
+          isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+        }
+        
+        const earlyTime = isWeekendMode ? '10am PT' : '7am PT';
+        console.log(`Starting early daily broadcast (${earlyTime})...`);
         
         // Get today's message
         const todaysData = getTodaysInspiration();
@@ -105,10 +168,26 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         console.log(`Next early broadcast scheduled for: ${nextEarlySend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
       }
       
-      // Process regular subscribers (9am PT)
+      // Process regular subscribers (weekday: 9am PT, weekend: 12pm PT)
       // Only send to those who haven't received an early message
       if (isTimeToSend() && lastRegularSendDate !== todayPT) {
-        console.log('Starting regular daily broadcast (9am PT)...');
+        const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+        let isWeekendMode = false;
+        
+        if (weekendOverride === 'ON') {
+          isWeekendMode = true;
+        } else if (weekendOverride === 'OFF') {
+          isWeekendMode = false;
+        } else {
+          const pacificTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Los_Angeles',
+            weekday: 'short'
+          }).format(new Date());
+          isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+        }
+        
+        const regularTime = isWeekendMode ? '12pm PT' : '9am PT';
+        console.log(`Starting regular daily broadcast (${regularTime})...`);
         
         // Get today's message
         const todaysData = getTodaysInspiration();
@@ -176,9 +255,27 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
   }, 60000); // Check every minute
   
   // Log initial next send times
+  const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+  let isWeekendMode = false;
+  
+  if (weekendOverride === 'ON') {
+    isWeekendMode = true;
+  } else if (weekendOverride === 'OFF') {
+    isWeekendMode = false;
+  } else {
+    const pacificTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      weekday: 'short'
+    }).format(new Date());
+    isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+  }
+  
+  const earlyTime = isWeekendMode ? '10am PT' : '7am PT';
+  const regularTime = isWeekendMode ? '12pm PT' : '9am PT';
+  
   const nextEarlySend = getNextSendTime(true);
-  console.log(`First early broadcast (7am PT) scheduled for: ${nextEarlySend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
+  console.log(`First early broadcast (${earlyTime}) scheduled for: ${nextEarlySend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
   
   const nextRegularSend = getNextSendTime();
-  console.log(`First regular broadcast (9am PT) scheduled for: ${nextRegularSend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
+  console.log(`First regular broadcast (${regularTime}) scheduled for: ${nextRegularSend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
 } 
