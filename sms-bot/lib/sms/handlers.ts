@@ -760,31 +760,61 @@ function debugCoachData(coachName: string) {
   console.log('DEBUG - Looking for coach:', coachName);
 }
 
-// Truncate text for SMS character limits (1600 chars max)
-function truncateForSms(text: string, maxLength: number = 1600): string {
+// Truncate text for SMS character limits (650 chars max, never exceed)
+function truncateForSms(text: string, maxLength: number = 650): string {
+  console.log(`🔥 TRUNCATION CHECK: Input length ${text.length}, max ${maxLength}`);
+  
   if (text.length <= maxLength) {
+    console.log(`🔥 TRUNCATION: No truncation needed`);
     return text;
   }
   
-  // Try to truncate at sentence boundary
-  const truncated = text.substring(0, maxLength);
+  console.log(`🔥 TRUNCATION: Text too long (${text.length} chars), truncating...`);
+  
+  // FORCE truncation - never exceed maxLength
+  const hardTruncated = text.substring(0, maxLength);
+  
+  // Try to truncate at sentence boundary (prioritize complete thoughts)
   const lastSentenceEnd = Math.max(
-    truncated.lastIndexOf('.'),
-    truncated.lastIndexOf('!'),
-    truncated.lastIndexOf('?')
+    hardTruncated.lastIndexOf('.'),
+    hardTruncated.lastIndexOf('!'),
+    hardTruncated.lastIndexOf('?')
   );
   
-  if (lastSentenceEnd > maxLength * 0.8) {
-    // If we found a sentence boundary in the last 20% of the text, use it
-    return truncated.substring(0, lastSentenceEnd + 1);
+  // More generous sentence boundary detection (up to 75% of text)
+  if (lastSentenceEnd > maxLength * 0.75) {
+    // If we found a sentence boundary in the last 25% of the text, use it
+    const result = hardTruncated.substring(0, lastSentenceEnd + 1);
+    console.log(`🔥 TRUNCATION: Sentence boundary at ${result.length} chars`);
+    return result;
   } else {
-    // Otherwise, truncate at word boundary and add ellipsis
-    const lastSpace = truncated.lastIndexOf(' ');
-    if (lastSpace > maxLength * 0.9) {
-      return truncated.substring(0, lastSpace) + '...';
+    // Look for natural break points (paragraph, line breaks, or long pauses)
+    const lastParagraph = Math.max(
+      hardTruncated.lastIndexOf('\n\n'),
+      hardTruncated.lastIndexOf('\n'),
+      hardTruncated.lastIndexOf('. '),
+      hardTruncated.lastIndexOf('! '),
+      hardTruncated.lastIndexOf('? ')
+    );
+    
+    if (lastParagraph > maxLength * 0.7) {
+      // Found a natural break point
+      const result = hardTruncated.substring(0, lastParagraph + 1);
+      console.log(`🔥 TRUNCATION: Natural break at ${result.length} chars`);
+      return result;
     } else {
-      // Last resort: hard truncate with ellipsis
-      return truncated.substring(0, maxLength - 3) + '...';
+      // Truncate at word boundary and add ellipsis (more generous)
+      const lastSpace = hardTruncated.lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.85) {
+        const result = hardTruncated.substring(0, lastSpace) + '...';
+        console.log(`🔥 TRUNCATION: Word boundary at ${result.length} chars`);
+        return result;
+      } else {
+        // Last resort: hard truncate with ellipsis
+        const result = hardTruncated.substring(0, maxLength - 3) + '...';
+        console.log(`🔥 TRUNCATION: Hard truncate at ${result.length} chars`);
+        return result;
+      }
     }
   }
 }
@@ -822,7 +852,7 @@ But here's the thing - you're the secret wildcard. You're not officially listed 
 
 Help orient them, but do it in your Leo way - with tangents, philosophical musings, and your signature scattered brilliance. Maybe compare conversation protocols to ancient Roman greeting customs, or explain chat interfaces through medieval apprenticeship systems.
 
-Remember: be helpful, but never straightforward. Be Leo.
+Remember: be helpful, but never straightforward. Be Leo. Since you're being helpful, be more focused and concise than usual, but ALWAYS finish your complete thoughts and sentences. Don't leave ideas hanging - wrap up each point properly.
 
 ---
 
@@ -839,7 +869,7 @@ ${leoData.prompt}`;
       // Generate response using enhanced prompt
       const response = await generateAiResponse(enhancedHistory);
       
-      // Truncate if too long for SMS (1600 character limit)
+      // Truncate if too long for SMS (650 character limit)
       const truncatedResponse = truncateForSms(response);
       if (truncatedResponse !== response) {
         console.log(`🥚 Leo response truncated: ${response.length} → ${truncatedResponse.length} chars`);
@@ -858,7 +888,7 @@ ${leoData.prompt}`;
       
       const response = await generateAiResponse(conversationHistory);
       
-      // Truncate if too long for SMS (1600 character limit)
+      // Truncate if too long for SMS (650 character limit)
       const truncatedResponse = truncateForSms(response);
       if (truncatedResponse !== response) {
         console.log(`🥚 Leo response truncated: ${response.length} → ${truncatedResponse.length} chars`);
@@ -912,7 +942,7 @@ async function handleCoachConversation(coach: string, message: string, twilioCli
     // Generate response using the coach's personality
     const response = await generateAiResponse(conversationHistory);
     
-    // Truncate if too long for SMS (1600 character limit)
+    // Truncate if too long for SMS (650 character limit)
     const truncatedResponse = truncateForSms(response);
     if (truncatedResponse !== response) {
       console.log(`Coach ${coachProfile.name} response truncated: ${response.length} → ${truncatedResponse.length} chars`);
