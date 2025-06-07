@@ -646,8 +646,8 @@ function formatWeekendMessage(message: any): string {
     marketingMessage = `Text MORE for one extra sip of weekend wisdom.`;
   }
   
-  // Always add the ✨ emoji prefix for weekend marketing messages
-  result += `\n\n✨ ${marketingMessage}`;
+  // Always add the 🥂 emoji prefix for weekend marketing messages
+  result += `\n\n🥂 ${marketingMessage}`;
   
   return result;
 }
