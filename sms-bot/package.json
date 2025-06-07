@@ -14,6 +14,7 @@
     "test:list": "npm run build && node dist/scripts/test-list-broadcast.js",
     "test:twilio": "npm run build && node dist/scripts/test-twilio.js",
     "test:supabase": "npm run build && node dist/scripts/test-supabase.js",
+    "test:email-webhook": "npm run build && node dist/scripts/test-email-webhook.js",
     "broadcast:sms": "npm run build && node dist/scripts/broadcast-sms.js",
     "broadcast:all": "npm run build && node dist/scripts/broadcast-sms-and-email.js",
     "send-confirmations": "npm run build && node dist/scripts/send-confirmation-sms.js",

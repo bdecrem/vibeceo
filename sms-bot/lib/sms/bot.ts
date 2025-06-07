@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import twilio from 'twilio';
 import { setupTwilioWebhooks } from './webhooks.js';
 import { setupSupabaseWebhooks } from './supabase-webhooks.js';
+import { setupEmailWebhooks } from './email-webhooks.js';
 import { initializeMessageHandlers } from './handlers.js';
 import { SMS_CONFIG } from './config.js';
 import { startDailyScheduler } from './scheduler.js';
@@ -40,6 +41,9 @@ export async function startSmsBot(): Promise<void> {
   
   // Setup Supabase webhooks
   setupSupabaseWebhooks(server, twilioClient);
+  
+  // Setup Email webhooks
+  setupEmailWebhooks(server);
   
   // Health check endpoint
   server.get('/health', (req, res) => {
