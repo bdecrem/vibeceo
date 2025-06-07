@@ -10,6 +10,7 @@ import { triggerSimpleStaffMeeting } from "./simpleStaffMeeting.js";
 import { triggerStatusReport, triggerArgument, initializeCustomEventMessages } from "./argumentGenerator.js";
 import { coachQuotes, crowdFaves, microClass, upcomingEvent, initializeMicroEventMessages } from "./microPosts.js";
 import { alexTipsyDispatch, initializeWeekendMicroEventMessages } from "./weekendMicroPosts.js";
+import { alexTipsyDispatchV2, crowdFavesV2, coachQuotesV2, microClassV2, upcomingEventV2 } from "./weekendMicroPosts-v2.js";
 import { Client, TextChannel } from "discord.js";
 import { sendEventMessage, EVENT_MESSAGES, customEventMessageCache } from "./eventMessages.js";
 import { ceos, CEO } from "../../data/ceos.js";
@@ -27,7 +28,12 @@ const MICROPOST_SERVICES = [
 	'crowdfaves',
 	'microclass',
 	'upcomingevent',
-	'alextipsy'
+	'alextipsy',
+	'coachquotes-v2',
+	'crowdfaves-v2',
+	'microclass-v2',
+	'upcomingevent-v2',
+	'alextipsy-v2'
 ];
 
 // Wrapper function to ensure service functions use the correct channel ID
@@ -73,6 +79,12 @@ const serviceMap: Record<
 	microclass: channelRedirectWrapper(microClass, 'microclass'),
 	upcomingevent: channelRedirectWrapper(upcomingEvent, 'upcomingevent'),
 	alextipsy: channelRedirectWrapper(alexTipsyDispatch, 'alextipsy'),
+	// V2 micropost services using new DiscordMessenger system
+	'coachquotes-v2': channelRedirectWrapper(coachQuotesV2, 'coachquotes-v2'),
+	'crowdfaves-v2': channelRedirectWrapper(crowdFavesV2, 'crowdfaves-v2'),
+	'microclass-v2': channelRedirectWrapper(microClassV2, 'microclass-v2'),
+	'upcomingevent-v2': channelRedirectWrapper(upcomingEventV2, 'upcomingevent-v2'),
+	'alextipsy-v2': channelRedirectWrapper(alexTipsyDispatchV2, 'alextipsy-v2'),
 	// Add more services here as needed
 };
 
@@ -83,7 +95,12 @@ const STAFF_MEETING_SERVICES = [
     'crowdfaves',
     'microclass',
     'upcomingevent',
-    'alextipsy'
+    'alextipsy',
+    'coachquotes-v2',
+    'crowdfaves-v2',
+    'microclass-v2',
+    'upcomingevent-v2',
+    'alextipsy-v2'
 ];
 
 // List of services that should be sent to the pitch channel

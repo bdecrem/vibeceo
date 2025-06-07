@@ -34,6 +34,7 @@ import { COACH_DISCORD_HANDLES } from './coachHandles.js';
 import { triggerWeekendMicroPost } from './weekendMicroPosts.js';
 import { triggerSimpleStaffMeeting } from './simpleStaffMeeting.js';
 import { startForRealConversation, handleForRealMessage, endForRealConversation } from './forreal.js';
+import { triggerWeekendMicroPostV2 } from './weekendMicroPosts-v2.js';
 import { DISCORD_CONFIG } from "./config.js";
 import OpenAI from "openai";
 
@@ -1253,6 +1254,7 @@ export async function handleMessage(message: Message): Promise<void> {
 						"!forreal [coach1] [coach2] [coach3] [topic]": "Start a serious board meeting with 3 coaches about an optional business topic",
 						"!pitch [your idea]": "Present your business idea to all coaches for feedback and voting",
 						"!pitch-yc": "Present a real Y Combinator-funded startup to coaches for feedback and voting",
+						"!test-weekendmp-v2": "Test the new v2 weekend micropost system (random type)",
 					};
 					
 					const helpText = Object.entries(commands)
@@ -1362,6 +1364,30 @@ export async function handleMessage(message: Message): Promise<void> {
 					} catch (error) {
 						console.error('[ForReal] Error starting conversation:', error);
 						await message.reply('Error starting ForReal conversation. Please try again.');
+					}
+					return;
+				}
+				
+				// FEATURE 7: Test Weekend MicroPost v2 system
+				else if (command === 'test-weekendmp-v2') {
+					console.log('[WeekendMP-v2] Test command detected');
+					
+					try {
+						// For now, v2 system only supports alextipsy (weekend-micro-posts.json)
+						// TODO: Extend to support other types from micro-posts.json
+						const micropostType = 'alextipsy';
+						const promptId = 'alex-tipsy-dispatch';
+						
+						const success = await triggerWeekendMicroPostV2(promptId, message.channelId, message.client);
+						
+						if (success) {
+							console.log(`[WeekendMP-v2] Test completed successfully for type: ${micropostType}`);
+						} else {
+							await message.reply(`❌ Weekend MicroPost v2 test failed for type: ${micropostType}. Check logs for details.`);
+						}
+					} catch (error) {
+						console.error('[WeekendMP-v2] Error testing v2 system:', error);
+						await message.reply('❌ Error testing Weekend MicroPost v2 system. Check logs for details.');
 					}
 					return;
 				}
