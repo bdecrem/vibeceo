@@ -36,6 +36,16 @@ const MICROPOST_SERVICES = [
 	'alextipsy-v2'
 ];
 
+// Define services that handle their own intro/outro messages (should not get scheduler messages)
+const SELF_CONTAINED_SERVICES = [
+	'simplestaffmeeting',
+	'coachquotes-v2',
+	'crowdfaves-v2', 
+	'microclass-v2',
+	'upcomingevent-v2',
+	'alextipsy-v2'
+];
+
 // Wrapper function to ensure service functions use the correct channel ID
 function channelRedirectWrapper(
 	serviceFn: (channelId: string, client: Client, ...args: any[]) => Promise<any>,
@@ -283,10 +293,10 @@ async function runServiceWithMessages(
 			}
 		}
 
-		// Skip intro/outro messages for simplestaffmeeting as they're handled in the service
-		const shouldSendMessages = serviceName !== 'simplestaffmeeting';
+		// Skip intro/outro messages for self-contained services (they handle their own messaging)
+		const shouldSendMessages = !SELF_CONTAINED_SERVICES.includes(serviceName);
 		
-		// Send intro message (except for simplestaffmeeting)
+		// Send intro message (except for self-contained services)
 		if (shouldSendMessages) {
 			await sendEventMessage(
 				channel,
@@ -297,7 +307,7 @@ async function runServiceWithMessages(
 				selectedIncident
 			);
 		} else {
-			console.log(`[Scheduler] Skipping intro message for ${serviceName} (handled in service)`);
+			console.log(`[Scheduler] Skipping intro message for ${serviceName} (self-contained service)`);
 		}
 
 		// If it's a waterheater event, trigger the chat
@@ -330,7 +340,7 @@ async function runServiceWithMessages(
 				);
 			}
 		} else {
-			console.log(`[Scheduler] Skipping outro message for ${serviceName} (handled in service)`);
+			console.log(`[Scheduler] Skipping outro message for ${serviceName} (self-contained service)`);
 		}
 	} catch (err) {
 		console.error(`[Scheduler] Error running service '${serviceName}':`, err);
