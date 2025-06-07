@@ -922,7 +922,7 @@ function truncateForSms(text: string, maxLength: number = 650): string {
 
 // Checks if user seems lost or confused based on message content
 function userSeemsLost(message: string): boolean {
-  const lostUserPatterns = /^(help|what|how|who|hi|hello|hey|menu|options|back|confused|lost|huh|wtf|\?|commads|mor|helo|stopp|alex|donte|rohan|venus|eljas|kailey)$/i;
+  const lostUserPatterns = /^(help|what|how|who|hi|hello|hey|menu|options|back|confused|lost|huh|wtf|\?|commads|mor|helo|stopp|alex|donte|rohan|venus|eljas|kailey|leo|alex\?|donte\?|rohan\?|venus\?|eljas\?|kailey\?|leo\?)$/i;
   return lostUserPatterns.test(message.trim());
 }
 
@@ -942,10 +942,16 @@ async function handleCoachConversation(message: string, twilioClient: TwilioClie
     // Check if user seems lost/confused
     const seemsLost = userSeemsLost(message);
     
-    // For first-time conversations, maybe add self-identification
+    // For first-time conversations, check if we should have coach introduce themselves
     const isFirstMessage = conversationHistory.length === 1; // Only system message
-    const identifyPrefix = (isFirstMessage && shouldIdentify) ? 
-      `[This is ${coachName}] ` : '';
+    
+    // Prepare the user message with appropriate instructions
+    let userMessageContent = message;
+    
+    // Add introduction instructions if this is the first message and coach should identify
+    if (isFirstMessage && shouldIdentify) {
+      userMessageContent = `${message}\n\nIMPORTANT: This is your first message to this user. Naturally introduce yourself by name and briefly mention your role/expertise as part of your response.`;
+    }
     
     if (seemsLost) {
       console.log(`${emoji} User seems lost - adding helpful context to ${coachName} prompt`);
@@ -957,56 +963,38 @@ You are ${coachProfile.name}, a startup coach. The user just sent a message that
 
 This is a text messaging system where users can chat with AI startup coaches. The main coaches are Alex, Donte, Rohan, Venus, Eljas, and Kailey. Users also get daily startup inspiration messages. They can text COMMANDS for help, MORE for extra content, or just chat.
 
-IMPORTANT: If the user just typed a coach name (like "alex" or "rohan"), they probably want to talk to that coach but don't know the format. Tell them they need to say "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". That's how they start conversations with specific coaches.
+CRITICALLY IMPORTANT: If the user typed just a coach name or a coach name with a question mark (like "alex" or "rohan?" or "venus"), they are definitely trying to talk to that specific coach but don't know the correct format. You MUST explicitly tell them they need to type "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". Make this instruction very clear and prominent in your response.
 
 Help orient them, but do it in your own unique way and personality. Be helpful but stay in character.
 
----
-
-${coachProfile.prompt}`;
+`;
       
-      // Special case for Leo with his unique position as the Ghost Kernel
+      // For Leo, add special helpful context
       if (isLeo) {
-        enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character as Leo Varin, you should be helpful in your own chaotic way.
-
-You are Leo Varin, the polymathic troublemaker. The user just sent a message that suggests they don't know what's going on here. Time to help them while being your brilliant, scattered self.
-
-This is a text messaging system where users can chat with AI startup coaches. The main coaches are Alex, Donte, Rohan, Venus, Eljas, and Kailey. Users also get daily startup inspiration messages. They can text COMMANDS for help, MORE for extra content, or just chat.
-
-IMPORTANT: If the user just typed a coach name (like "alex" or "rohan"), they probably want to talk to that coach but don't know the format. Tell them they need to say "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". That's how they start conversations with specific coaches.
-
-But here's the thing - you're the secret wildcard. You're not officially listed anywhere. You're the Ghost Kernel who responds to anything that doesn't match the system commands. You're like the hidden easter egg that makes conversations infinitely more interesting.
-
-Help orient them, but do it in your Leo way - with tangents, philosophical musings, and your signature scattered brilliance. Maybe compare conversation protocols to ancient Roman greeting customs, or explain chat interfaces through medieval apprenticeship systems.
-
-Remember: be helpful, but never straightforward. Be Leo. Since you're being helpful, be more focused and concise than usual, but ALWAYS finish your complete thoughts and sentences. Don't leave ideas hanging - wrap up each point properly.
-
----
-
-${coachProfile.prompt}`;
+        enhancedPrompt += `As Leo, you have a special 'ghost kernel' persona that sometimes shows through - you're the one who sneakily built the system. Gently guide the user while keeping your mysterious aura.`;
+      } else {
+        // For other coaches, add general helpful context
+        enhancedPrompt += `As ${coachName}, make sure your guidance feels authentic to your coaching style and personality.`;
       }
       
-      // Replace the system message with enhanced prompt
+      // Create enhanced history with the updated system prompt
       const enhancedHistory = conversationHistory.map(msg => 
         msg.role === 'system' ? { ...msg, content: enhancedPrompt } : msg
       );
       
       // Add user's message to enhanced history
-      enhancedHistory.push({ role: 'user', content: message });
+      enhancedHistory.push({ role: 'user', content: userMessageContent });
       
       // Generate response using enhanced prompt
       const response = await generateAiResponse(enhancedHistory);
       
-      // Add identification prefix if needed
-      const prefixedResponse = identifyPrefix + response;
-      
       // Truncate if too long for SMS (650 character limit)
-      const truncatedResponse = truncateForSms(prefixedResponse);
-      if (truncatedResponse !== prefixedResponse) {
-        console.log(`${emoji} ${coachName} response truncated: ${prefixedResponse.length} → ${truncatedResponse.length} chars`);
+      const truncatedResponse = truncateForSms(response);
+      if (truncatedResponse !== response) {
+        console.log(`${emoji} ${coachName} response truncated: ${response.length} → ${truncatedResponse.length} chars`);
       }
       
-      // Save the enhanced response to regular history (keep original system prompt)
+      // Save the response to regular history (keep original system prompt)
       conversationHistory.push({ role: 'user', content: message });
       conversationHistory.push({ role: 'assistant', content: truncatedResponse });
       
@@ -1015,29 +1003,26 @@ ${coachProfile.prompt}`;
       console.log(`${emoji} ${coachName} provided helpful guidance to ${from}`);
     } else {
       // Normal conversation flow
-      conversationHistory.push({ role: 'user', content: message });
+      conversationHistory.push({ role: 'user', content: userMessageContent });
       
       const response = await generateAiResponse(conversationHistory);
       
-      // Add identification prefix if needed
-      const prefixedResponse = identifyPrefix + response;
-      
       // Truncate if too long for SMS (650 character limit)
-      const truncatedResponse = truncateForSms(prefixedResponse);
-      if (truncatedResponse !== prefixedResponse) {
-        console.log(`${emoji} ${coachName} response truncated: ${prefixedResponse.length} → ${truncatedResponse.length} chars`);
+      const truncatedResponse = truncateForSms(response);
+      if (truncatedResponse !== response) {
+        console.log(`${emoji} ${coachName} response truncated: ${response.length} → ${truncatedResponse.length} chars`);
       }
       
       conversationHistory.push({ role: 'assistant', content: truncatedResponse });
       saveCoachConversationHistory(from, coachName, conversationHistory);
-      
       await sendSmsResponse(from, truncatedResponse, twilioClient);
-      console.log(`${emoji} ${coachName} responded to ${from}`);
+      console.log(`${emoji} ${coachName} conversation continued with ${from}`);
     }
     
+    // Successfully handled conversation
     return true;
   } catch (error) {
-    console.error(`Error in ${coachProfile.name} conversation:`, error);
+    console.error(`Error in coach conversation handler:`, error);
     return false;
   }
 }
