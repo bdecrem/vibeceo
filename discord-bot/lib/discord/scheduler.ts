@@ -147,7 +147,7 @@ function loadSchedule() {
 		
 		scheduleByHour = {};
 		for (const line of lines) {
-			const match = line.match(/^(\d{2}):(\d{2})(?:\s+(\w+))?$/);
+			const match = line.match(/^(\d{2}):(\d{2})(?:\s+([\w-]+))?$/);
 			if (match) {
 				const hour = parseInt(match[1], 10);
 				// Only accept 00 minutes for now
