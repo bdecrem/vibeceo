@@ -1047,6 +1047,8 @@ async function handleDefaultConversation(message: string, twilioClient: TwilioCl
     
     if (useLeo && leoData) {
       console.log('🎲 Randomly selected Leo (40% chance) for default response');
+      // Set Leo as the active conversation before handling the message
+      updateActiveConversation(from, 'Leo Varin');
       return await handleCoachConversation(message, twilioClient, from, leoData, shouldIdentify);
     } else {
       // Get available coaches excluding Leo
@@ -1064,6 +1066,8 @@ async function handleDefaultConversation(message: string, twilioClient: TwilioCl
       const selectedCoach = regularCoaches[randomIndex];
       
       console.log(`🎲 Randomly selected ${selectedCoach.name} for default response`);
+      // Set the selected coach as the active conversation before handling the message
+      updateActiveConversation(from, selectedCoach.name);
       return await handleCoachConversation(message, twilioClient, from, selectedCoach, shouldIdentify);
     }
   } catch (error) {
