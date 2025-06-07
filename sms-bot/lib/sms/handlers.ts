@@ -464,7 +464,7 @@ function formatInspirationMessage(message: any): string {
       }
       
       if (isWeekendMode) {
-        marketingMessage = '✨ Text "Hey Alex" to chat — fair warning, she\'s had two mimosas and is spiritually unsupervised.';
+        marketingMessage = 'Text "Hey Alex" to chat — fair warning, she\'s had two mimosas and is spiritually unsupervised.';
       } else {
         marketingMessage = `Text Hey ${message.author} to chat with ${message.author}.`;
       }
@@ -483,8 +483,8 @@ function formatInspirationMessage(message: any): string {
     marketingMessage = messages[messageIndex].message;
   }
   
-  // Format the marketing message (no emoji prefix for author-based messages)
-  const formattedMarketingMessage = message.author ? marketingMessage : `🌀 ${marketingMessage}`;
+  // Always add the 🌀 emoji prefix for all weekday marketing messages
+  const formattedMarketingMessage = `🌀 ${marketingMessage}`;
   
   return `AF Daily — ${dateString}\n${messageText}\n\n${formattedMarketingMessage}`;
 }
@@ -627,20 +627,27 @@ function formatWeekendMessage(message: any): string {
     result += `\n— ${message.author}`;
   }
   
-  // Check if this is Alex on weekend and add special marketing message
+  // Determine the marketing message content
+  let marketingMessage;
+  
   if (message.author && message.author.toLowerCase().includes('alex')) {
-    // Weekend Alex gets special tipsy marketing message (we know it's weekend because type="weekend")
-    result += `\n\n✨ Text "Hey Alex" to chat — fair warning, she's had two mimosas and is spiritually unsupervised.`;
+    // Weekend Alex gets special tipsy marketing message
+    marketingMessage = `Text "Hey Alex" to chat — fair warning, she's had two mimosas and is spiritually unsupervised.`;
   } else if (message.author) {
     // Other authors get standard marketing message
-    result += `\n\nText Hey ${message.author} to chat with ${message.author}.`;
+    marketingMessage = `Text Hey ${message.author} to chat with ${message.author}.`;
   } else if (message.outro) {
     // Use the outro if provided and no author-specific message
+    // Don't modify the outro - it already has its own formatting & emoji
     result += `\n\n${message.outro}`;
+    return result;
   } else {
     // Fallback to a generic weekend message
-    result += `\n\n🥂 Text MORE for one extra sip of weekend wisdom.`;
+    marketingMessage = `Text MORE for one extra sip of weekend wisdom.`;
   }
+  
+  // Always add the ✨ emoji prefix for weekend marketing messages
+  result += `\n\n✨ ${marketingMessage}`;
   
   return result;
 }
