@@ -128,7 +128,7 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
                 localMinutes = tokyoDate.getUTCMinutes();
                 
                 // Get Tokyo's day of week (0-6, where 0 is Sunday)
-                localDay = days[tokyoDay];
+                localDay = days[tokyoDate.getUTCDay()];
                 console.log(`[LocationTime] UTC input: ${gmtHour}:${gmtMinutes}, Tokyo time: ${localTime}:${localMinutes}, day: ${localDay}`);
                 break;
             }
@@ -169,14 +169,9 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
             const localDate = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
             localTime = localDate.getUTCHours();
             localMinutes = localDate.getUTCMinutes();
-            const singaporeDay = localDate.getUTCDay();
-            localMinutes = gmtMinutes;
             
             // Calculate Singapore day
-            let singaporeDay = laDay;
-            if (localTime < laHour) {
-                singaporeDay = (laDay + 1) % 7; // Next day in Singapore
-            }
+            const singaporeDay = localDate.getUTCDay();
             localDay = days[singaporeDay];
         }
         else {
