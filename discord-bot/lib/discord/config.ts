@@ -58,6 +58,14 @@ export function getWebhookUrls() {
   if (process.env.GENERAL_WEBHOOK_URL_KAILEY) {
     webhookUrls['general_kailey'] = process.env.GENERAL_WEBHOOK_URL_KAILEY;
   }
+  
+  // FoundryHeat webhook for microposts
+  if (process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT) {
+    webhookUrls['general_foundryheat'] = process.env.GENERAL_WEBHOOK_URL_FOUNDRYHEAT;
+    console.log('[Config] Found FoundryHeat webhook URL for microposts');
+  } else if (process.env.NODE_ENV === 'production') {
+    console.warn('[Config] GENERAL_WEBHOOK_URL_FOUNDRYHEAT not found in production environment');
+  }
 
   // Staff meetings channel webhooks
   if (process.env.STAFF_WEBHOOK_URL_DONTE) {
