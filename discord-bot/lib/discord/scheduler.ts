@@ -256,9 +256,9 @@ async function runServiceWithMessages(
 			`[Scheduler] No messages defined for service '${serviceName}' in either EVENT_MESSAGES or customEventMessageCache`
 		);
 		
-		// Don't return early for pitch services - they can run without event messages
-		if (PITCH_SERVICES.includes(serviceName)) {
-			console.log(`[Scheduler] Continuing with pitch service '${serviceName}' despite missing event messages`);
+		// Don't return early for pitch services and micropost services - they can run without event messages
+		if (PITCH_SERVICES.includes(serviceName) || MICROPOST_SERVICES.includes(serviceName)) {
+			console.log(`[Scheduler] Continuing with service '${serviceName}' despite missing event messages (self-contained)`);
 		} else {
 			return;
 		}
