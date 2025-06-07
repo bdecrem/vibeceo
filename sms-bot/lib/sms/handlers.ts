@@ -1660,9 +1660,34 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     console.log('User is valid subscriber, updating last message date...');
     // Update last message date
     await updateLastMessageDate(from);
-    console.log('🎲 Using sophisticated coach selection for default response...');
     
-    // Use our sophisticated coach selection logic (40% Leo, 60% other coaches)
+    // Check for active conversation first, before deciding to use a random coach
+    const existingConversation = getActiveConversation(from);
+    if (existingConversation && existingConversation.coachName) {
+      console.log(`🔄 Continuing existing conversation with ${existingConversation.coachName}`);
+      
+      // Continue the existing conversation with the same coach
+      if (existingConversation.coachName === 'Leo Varin') {
+        const handled = await handleLeoConversation(message, twilioClient, from);
+        if (handled) {
+          updateActiveConversation(from, existingConversation.coachName);
+          return;
+        }
+      } else {
+        // For other coaches
+        const coachProfile = coachData.ceos.find((c: CEO) => c.name === existingConversation.coachName);
+        if (coachProfile) {
+          const handled = await handleCoachConversation(message, twilioClient, from, coachProfile, false); // No need to identify again
+          if (handled) {
+            updateActiveConversation(from, existingConversation.coachName);
+            return;
+          }
+        }
+      }
+    }
+    
+    // No active conversation - use sophisticated coach selection logic (40% Leo, 60% other coaches)
+    console.log('🎲 Using sophisticated coach selection for default response...');
     const handled = await handleDefaultConversation(message, twilioClient, from);
     if (handled) {
       // Note: The random coach and active conversation are set inside handleDefaultConversation
