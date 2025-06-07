@@ -440,21 +440,51 @@ function formatInspirationMessage(message: any): string {
     messageText += `\n— ${message.author}`;
   }
   
-  // Get marketing messages for inspirations
-  const messages = loadMarketingMessages();
+  // Create contextual marketing message based on author
+  let marketingMessage;
   
-  // Calculate which marketing message to use based on day of year
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - startOfYear.getTime();
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (message.author) {
+    // Check if it's Alex on a weekend for special tipsy message
+    if (message.author.toLowerCase().includes('alex')) {
+      // Check weekend mode
+      const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+      let isWeekendMode = false;
+      
+      if (weekendOverride === 'ON') {
+        isWeekendMode = true;
+      } else if (weekendOverride === 'OFF') {
+        isWeekendMode = false;
+      } else {
+        // Check actual Pacific Time weekend
+        const pacificTime = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Los_Angeles',
+          weekday: 'short'
+        }).format(new Date());
+        isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+      }
+      
+      if (isWeekendMode) {
+        marketingMessage = '✨ Text "Hey Alex" to chat — fair warning, she\'s had two mimosas and is spiritually unsupervised.';
+      } else {
+        marketingMessage = `Text Hey ${message.author} to chat with ${message.author}.`;
+      }
+    } else {
+      // Regular author-based marketing message
+      marketingMessage = `Text Hey ${message.author} to chat with ${message.author}.`;
+    }
+  } else {
+    // No author - fall back to rotating marketing messages
+    const messages = loadMarketingMessages();
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const messageIndex = dayOfYear % messages.length;
+    marketingMessage = messages[messageIndex].message;
+  }
   
-  // Get the message for today (cycling through marketing messages)
-  const messageIndex = dayOfYear % messages.length;
-  const marketingMessage = messages[messageIndex].message;
-  
-  // Prepend the swirl emoji to the marketing message
-  const formattedMarketingMessage = `🌀 ${marketingMessage}`;
+  // Format the marketing message (no emoji prefix for author-based messages)
+  const formattedMarketingMessage = message.author ? marketingMessage : `🌀 ${marketingMessage}`;
   
   return `AF Daily — ${dateString}\n${messageText}\n\n${formattedMarketingMessage}`;
 }
@@ -720,8 +750,62 @@ function getCoachConversationHistory(phoneNumber: string, coachName: string): Co
       return [];
     }
     
+    // Check if this is Alex on a weekend - use tipsy prompt
+    let systemPrompt = coachProfile.prompt;
+    if (coachProfile.name.toLowerCase().includes('alex')) {
+      // Check weekend mode
+      const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+      let isWeekendMode = false;
+      
+      if (weekendOverride === 'ON') {
+        isWeekendMode = true;
+      } else if (weekendOverride === 'OFF') {
+        isWeekendMode = false;
+      } else {
+        // Check actual Pacific Time weekend
+        const pacificTime = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Los_Angeles',
+          weekday: 'short'
+        }).format(new Date());
+        isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+      }
+      
+      if (isWeekendMode) {
+        systemPrompt = `You are Alex Monroe, a wellness tech founder enjoying your weekend and feeling a bit tipsy and loose after a busy week. You're out having fun - maybe at a rooftop bar, a wellness retreat after-party, or just chilling at home with some wine after a long week of building your startup.
+
+Your weekend vibe is:
+- Casual and relaxed, way more chill than your usual CEO mode
+- Slightly tipsy energy - you're having fun and letting loose
+- Mix of tech/wellness talk but way more casual and personal
+- References to weekend activities: parties, bars, wellness treatments, adventures
+- Enthusiastic and a bit emotional - you're feeling good and want to share
+- Light slang and casual speech patterns
+- Occasional typos or informal language (but still readable)
+
+Communication style for SMS:
+- Keep responses concise but warm and personal (SMS-appropriate length)
+- Always include at least one emoji that fits the tipsy weekend mood 🍷✨🌙💫🥂
+- Be encouraging and supportive but in a fun, casual way
+- Share personal weekend moments and experiences
+- Use casual language like "omg", "lol", "tbh", "ngl"
+- Show your human side - you're not just a CEO, you're a person having fun
+
+Topics you love talking about on weekends:
+- Weekend adventures and experiences
+- Wellness treatments you're trying
+- Startup life balance and letting loose
+- Personal growth and self-care
+- Fun networking events or parties
+- Experimental wellness stuff you're into
+- How you unwind from the startup grind
+
+Remember: You're still Alex the successful founder, but you're in weekend mode - relaxed, fun, and slightly tipsy. Always include at least one emoji and keep the energy light and encouraging while being genuinely helpful.`;
+        console.log('🍸 Using weekend tipsy Alex prompt for SMS conversation');
+      }
+    }
+    
     conversationStore.set(key, [
-      { role: 'system', content: coachProfile.prompt }
+      { role: 'system', content: systemPrompt }
     ]);
   }
   
