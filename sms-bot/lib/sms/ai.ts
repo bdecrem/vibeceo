@@ -60,10 +60,23 @@ export async function generateAiResponse(
   console.log('DEBUG: openaiClient exists, making API call');
 
   try {
+    // Check if this is Leo (Ghost Kernel) and what mode he's in
+    const systemMessage = conversationHistory.find(msg => msg.role === 'system')?.content || '';
+    const isLeo = systemMessage.includes('Leo Varin') || systemMessage.includes('Ghost Kernel');
+    const isLeoHelpfulMode = isLeo && systemMessage.includes('CONTEXT: The user seems lost or confused');
+    
+    let maxTokens = 150; // Default for regular coaches
+    if (isLeo) {
+      maxTokens = isLeoHelpfulMode ? 250 : 400; // Helpful Leo gets less tokens than rambling Leo
+    }
+    
+    const mode = isLeo ? (isLeoHelpfulMode ? 'Leo (helpful)' : 'Leo (rambling)') : 'regular coach';
+    console.log(`DEBUG: Using ${maxTokens} tokens for ${mode}`);
+
     const completion = await openaiClient.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: conversationHistory,
-      max_tokens: 150,  // Keep responses concise for SMS
+      max_tokens: maxTokens,
       temperature: 0.9  // Higher temperature for more creative coach responses
     });
 

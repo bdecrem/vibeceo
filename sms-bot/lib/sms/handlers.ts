@@ -630,6 +630,18 @@ console.log('Loading from:', coachDataPath);
 console.log('File exists:', fs.existsSync(coachDataPath));
 const coachData = JSON.parse(fs.readFileSync(coachDataPath, 'utf8')) as { ceos: CEO[] };
 console.log('Loaded coach data:', coachData);
+
+// Load Leo's data separately (easter egg coach)
+const leoDataPath = path.join(process.cwd(), 'data', 'leo.json');
+let leoData: CEO | null = null;
+try {
+  if (fs.existsSync(leoDataPath)) {
+    leoData = JSON.parse(fs.readFileSync(leoDataPath, 'utf8')) as CEO;
+    console.log('🥚 Easter egg coach loaded: Leo Varin');
+  }
+} catch (error) {
+  console.warn('Failed to load Leo data:', error);
+}
 console.log('=== STARTUP: Coach data loaded ===');
 
 // Track active conversations
@@ -694,7 +706,16 @@ function getCoachConversationHistory(phoneNumber: string, coachName: string): Co
   
   // Create new conversation history if it doesn't exist
   if (!conversationStore.has(key)) {
-    const coachProfile = coachData.ceos.find((c: CEO) => c.name.toLowerCase().includes(coachName.toLowerCase()));
+    let coachProfile: CEO | undefined;
+    
+    // Check if this is Leo first
+    if (leoData && coachName.toLowerCase().includes('leo')) {
+      coachProfile = leoData;
+    } else {
+      // Check regular coaches
+      coachProfile = coachData.ceos.find((c: CEO) => c.name.toLowerCase().includes(coachName.toLowerCase()));
+    }
+    
     if (!coachProfile) {
       return [];
     }
@@ -739,6 +760,124 @@ function debugCoachData(coachName: string) {
   console.log('DEBUG - Looking for coach:', coachName);
 }
 
+// Truncate text for SMS character limits (1600 chars max)
+function truncateForSms(text: string, maxLength: number = 1600): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  
+  // Try to truncate at sentence boundary
+  const truncated = text.substring(0, maxLength);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('.'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?')
+  );
+  
+  if (lastSentenceEnd > maxLength * 0.8) {
+    // If we found a sentence boundary in the last 20% of the text, use it
+    return truncated.substring(0, lastSentenceEnd + 1);
+  } else {
+    // Otherwise, truncate at word boundary and add ellipsis
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.9) {
+      return truncated.substring(0, lastSpace) + '...';
+    } else {
+      // Last resort: hard truncate with ellipsis
+      return truncated.substring(0, maxLength - 3) + '...';
+    }
+  }
+}
+
+// Handle Leo conversation (easter egg coach)
+async function handleLeoConversation(message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
+  if (!leoData) {
+    console.log('Leo data not available');
+    return false;
+  }
+
+  console.log('🥚 === LEO CONVERSATION START ===');
+  console.log('Input:', { message });
+  
+  try {
+    // Check if user seems lost/confused
+    const lostUserPatterns = /^(help|what|how|who|hi|hello|hey|menu|options|back|confused|lost|huh|wtf|\?|commads|mor|helo|stopp|alex|donte|rohan|venus|eljas|kailey)$/i;
+    const seemsLost = lostUserPatterns.test(message.trim());
+    
+    // Get existing conversation history for Leo
+    const conversationHistory = getCoachConversationHistory(from, leoData.name);
+    
+    // If user seems lost, enhance Leo's prompt with helpful context
+    if (seemsLost) {
+      console.log('🥚 User seems lost - adding helpful context to Leo prompt');
+      const enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character as Leo Varin, you should be helpful in your own chaotic way.
+
+You are Leo Varin, the polymathic troublemaker. The user just sent a message that suggests they don't know what's going on here. Time to help them while being your brilliant, scattered self.
+
+This is a text messaging system where users can chat with AI startup coaches. The main coaches are Alex, Donte, Rohan, Venus, Eljas, and Kailey. Users also get daily startup inspiration messages. They can text COMMANDS for help, MORE for extra content, or just chat.
+
+IMPORTANT: If the user just typed a coach name (like "alex" or "rohan"), they probably want to talk to that coach but don't know the format. Tell them they need to say "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". That's how they start conversations with specific coaches.
+
+But here's the thing - you're the secret wildcard. You're not officially listed anywhere. You're the Ghost Kernel who responds to anything that doesn't match the system commands. You're like the hidden easter egg that makes conversations infinitely more interesting.
+
+Help orient them, but do it in your Leo way - with tangents, philosophical musings, and your signature scattered brilliance. Maybe compare conversation protocols to ancient Roman greeting customs, or explain chat interfaces through medieval apprenticeship systems.
+
+Remember: be helpful, but never straightforward. Be Leo.
+
+---
+
+${leoData.prompt}`;
+      
+      // Replace the system message with enhanced prompt
+      const enhancedHistory = conversationHistory.map(msg => 
+        msg.role === 'system' ? { ...msg, content: enhancedPrompt } : msg
+      );
+      
+      // Add user's message to enhanced history
+      enhancedHistory.push({ role: 'user', content: message });
+      
+      // Generate response using enhanced prompt
+      const response = await generateAiResponse(enhancedHistory);
+      
+      // Truncate if too long for SMS (1600 character limit)
+      const truncatedResponse = truncateForSms(response);
+      if (truncatedResponse !== response) {
+        console.log(`🥚 Leo response truncated: ${response.length} → ${truncatedResponse.length} chars`);
+      }
+      
+      // Save the enhanced response to regular history (keep original system prompt)
+      conversationHistory.push({ role: 'user', content: message });
+      conversationHistory.push({ role: 'assistant', content: truncatedResponse });
+      
+      saveCoachConversationHistory(from, leoData.name, conversationHistory);
+      await sendSmsResponse(from, truncatedResponse, twilioClient);
+      console.log(`🥚 Leo provided helpful guidance to ${from}`);
+    } else {
+      // Normal Leo conversation flow
+      conversationHistory.push({ role: 'user', content: message });
+      
+      const response = await generateAiResponse(conversationHistory);
+      
+      // Truncate if too long for SMS (1600 character limit)
+      const truncatedResponse = truncateForSms(response);
+      if (truncatedResponse !== response) {
+        console.log(`🥚 Leo response truncated: ${response.length} → ${truncatedResponse.length} chars`);
+      }
+      
+      conversationHistory.push({ role: 'assistant', content: truncatedResponse });
+      saveCoachConversationHistory(from, leoData.name, conversationHistory);
+      
+      await sendSmsResponse(from, truncatedResponse, twilioClient);
+      console.log(`🥚 Leo Varin responded to ${from}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`🥚 Error in Leo conversation:`, error);
+    return false;
+  }
+}
+
 // Handle coach conversation
 async function handleCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   console.log('=== COACH CONVERSATION START ===');
@@ -773,14 +912,20 @@ async function handleCoachConversation(coach: string, message: string, twilioCli
     // Generate response using the coach's personality
     const response = await generateAiResponse(conversationHistory);
     
+    // Truncate if too long for SMS (1600 character limit)
+    const truncatedResponse = truncateForSms(response);
+    if (truncatedResponse !== response) {
+      console.log(`Coach ${coachProfile.name} response truncated: ${response.length} → ${truncatedResponse.length} chars`);
+    }
+    
     // Add AI response to history
-    conversationHistory.push({ role: 'assistant', content: response });
+    conversationHistory.push({ role: 'assistant', content: truncatedResponse });
     
     // Save updated conversation history
     saveCoachConversationHistory(from, coachProfile.name, conversationHistory);
     
     // Send the response
-    await sendSmsResponse(from, response, twilioClient);
+    await sendSmsResponse(from, truncatedResponse, twilioClient);
     console.log(`Coach ${coachProfile.name} responded to ${from}`);
     return true;
   } catch (error) {
@@ -1055,6 +1200,19 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
     
+    // Check for Leo easter egg first (hey leo, hi leo)
+    const heyLeoMatch = message.match(/^(hey|hi|hello)\s+(leo)/i);
+    if (heyLeoMatch) {
+      console.log('🥚 Leo easter egg detected!');
+      const userMessage = message.slice(heyLeoMatch[0].length).trim() || "Hi";
+      
+      const handled = await handleLeoConversation(userMessage, twilioClient, from);
+      if (handled) {
+        updateActiveConversation(from, 'Leo Varin');
+        return;
+      }
+    }
+    
     // Check for new coach conversation
     const heyCoachMatch = message.match(/^(hey|hi|hello)\s+(\w+)/i);
     if (heyCoachMatch) {
@@ -1073,10 +1231,22 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     const activeConversation = getActiveConversation(from);
     if (activeConversation) {
       console.log(`Continuing conversation with ${activeConversation.coachName}`);
-      const handled = await handleCoachConversation(activeConversation.coachName, message, twilioClient, from);
-      if (handled) {
-        updateActiveConversation(from, activeConversation.coachName);
-        return;
+      
+      // Check if active conversation is with Leo
+      if (activeConversation.coachName === 'Leo Varin') {
+        console.log('🥚 Continuing Leo conversation');
+        const handled = await handleLeoConversation(message, twilioClient, from);
+        if (handled) {
+          updateActiveConversation(from, activeConversation.coachName);
+          return;
+        }
+      } else {
+        // Regular coach conversation
+        const handled = await handleCoachConversation(activeConversation.coachName, message, twilioClient, from);
+        if (handled) {
+          updateActiveConversation(from, activeConversation.coachName);
+          return;
+        }
       }
     }
     
@@ -1292,16 +1462,22 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     console.log('User is valid subscriber, updating last message date...');
     // Update last message date
     await updateLastMessageDate(from);
-    console.log('Sending default response...');
+    console.log('Sending to Leo as default response...');
     
-    // Send a simple default response for any non-command message
-    await sendSmsResponse(
-      from,
-      'For help with AdvisorsFoundry, text INFO. Available commands: START, STOP, YES to confirm.',
-      twilioClient
-    );
-    
-    console.log('Default response sent successfully');
+    // Send undefined commands to Leo (easter egg default behavior)
+    const handled = await handleLeoConversation(message, twilioClient, from);
+    if (handled) {
+      updateActiveConversation(from, 'Leo Varin');
+      console.log('🥚 Leo handled undefined command as default response');
+    } else {
+      // Fallback if Leo fails
+      await sendSmsResponse(
+        from,
+        'For help with AdvisorsFoundry, text INFO. Available commands: START, STOP, YES to confirm.',
+        twilioClient
+      );
+      console.log('Fallback response sent (Leo failed)');
+    }
     
   } catch (error) {
     console.error('Error handling SMS message:', error);
