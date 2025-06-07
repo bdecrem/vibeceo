@@ -308,33 +308,47 @@ function formatMessageAsHtml(message: string): string {
   // Clean up quotes if present
   messageContent = messageContent.replace(/^["'""]|["'""]$/g, '');
   
+  // Convert line breaks to HTML breaks and add quote marks
+  const quotedContent = `"${messageContent.replace(/\n/g, '<br>')}"`;
+  
+  // Random motivational no-reply messages
+  const noReplyMessages = [
+    "Can't text back? Just whisper your reply into your iced coffee and trust the algorithm.",
+    "There's no reply button here. Just mutter something inspirational and hope the startup gods are listening.",
+    "No need to reply. Just vibe, hydrate, and wait for your next delusion drop.",
+    "No response needed. Just nod solemnly and pretend you understood the assignment.",
+    "You can't reply to this email, but you can always pivot spiritually.",
+    "There's no reply function. Just toast the chaos and carry on.",
+    "Replies are closed. Journal about it and launch a product.",
+    "Texting back won't work. Telepathically align with your pitch deck instead.",
+    "No reply necessary — your aura's been updated.",
+    "Silence is golden. Or at least Series A adjacent."
+  ];
+  
+  // Pick a random no-reply message
+  const randomMessage = noReplyMessages[Math.floor(Math.random() * noReplyMessages.length)];
+  
   return `
-<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9f9fc; color: #111; max-width: 600px; margin: auto; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0;">
-  <div style="text-align: center; font-size: 12px; letter-spacing: 1px; color: #777; text-transform: uppercase; margin-bottom: 16px;">
-    AF Daily — ${today}
+  <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 24px; background-color: #fffaf5; color: #1a1a1a; max-width: 600px; margin: auto;">
+    <h2 style="margin-bottom: 4px;">${today}</h2>
+    <p style="margin-top: 0; color: #666;">A toast to your temporary delusion</p>
+
+    <div style="margin: 24px 0; padding: 16px 20px; background-color: #fff3e0; border-radius: 12px;">
+      <p style="font-size: 18px; margin: 0; line-height: 1.4; color: #333;">AF Weekend 🥂<br>
+      ☀️ Welcome to your regularly scheduled reality break.<br><br>
+      🌞 ${quotedContent}</p>
+      ${attribution ? `<p style="margin: 8px 0 0 0; font-size: 18px; color: #333;">— ${attribution}</p>` : ''}
+    </div>
+
+    <p>${randomMessage}</p>
+
+    <hr style="margin: 32px 0; border: none; border-top: 1px solid #ddd;" />
+
+    <p style="font-size: 14px;">
+      Still hungry for founder chaos? Subscribe to our <a href="https://advisorsfoundry.substack.com" style="color: #ff6600; text-decoration: none;">Substack</a> before we pivot to selling protein powder.
+    </p>
+
+    <p style="font-size: 12px; color: #888;">advisorsfoundry.ai — <a href="mailto:bot@advisorsfoundry.ai?subject=Unsubscribe" style="color: #888;">Unsubscribe</a></p>
   </div>
-
-  <div style="font-size: 20px; line-height: 1.6; font-weight: 600; color: #111; text-align: center; padding: 0 10px;">
-    💬 "${messageContent}"
-  </div>
-
-  ${attribution ? `<div style="text-align: center; font-size: 14px; color: #555; margin-top: 12px;">
-    — ${attribution}
-  </div>` : ''}
-
-  <hr style="margin: 28px 0; border: none; border-top: 1px solid #eee;" />
-
-  <div style="font-size: 14px; line-height: 1.6; color: #444; text-align: center;">
-    Cracked open by <strong>Advisors Foundry</strong>, your startup's favorite reality distortion field.<br><br>
-    Still hungry for founder chaos?<br>
-    Subscribe to the Substack before we pivot to selling protein powder:<br>
-    <strong>→ <a href="https://advisorsfoundry.substack.com" style="color: #00b3a4; text-decoration: none;">advisorsfoundry.substack.com</a></strong>
-  </div>
-
-  <div style="margin-top: 32px; font-size: 12px; color: #aaa; text-align: center;">
-    <a href="https://advisorsfoundry.ai" style="color: #00b3a4; text-decoration: none;">advisorsfoundry.ai</a><br>
-    Want out? <a href="mailto:bot@advisorsfoundry.ai?subject=Unsubscribe" style="color: #999; text-decoration: none;">Click here to unsubscribe</a>.
-  </div>
-</div>
   `;
 }

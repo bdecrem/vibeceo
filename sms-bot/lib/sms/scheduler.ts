@@ -162,6 +162,26 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         console.log(`Early broadcast complete. Success: ${earlySuccessCount}, Failures: ${earlyFailureCount}, Skipped: ${earlySkippedCount}`);
         
+        // After early SMS broadcast completes, send admin email preview
+        if (earlySuccessCount > 0) {
+          console.log(`\n📧 === ADMIN EMAIL PREVIEW (${earlyTime}) ===`);
+          try {
+            // Send the same message as a preview email to admin
+            console.log('📧 Sending admin preview email to bdecrem@gmail.com...');
+            
+            const adminEmailResult = await sendTestEmail(messageText, 'bdecrem@gmail.com');
+            if (adminEmailResult.success) {
+              console.log(`📧 Admin email preview sent successfully! Message ID: ${adminEmailResult.messageId}`);
+            } else {
+              console.log('📧 Admin email preview failed');
+            }
+          } catch (emailError) {
+            console.error('📧 Admin email preview error:', emailError);
+          }
+        } else {
+          console.log('📧 Skipping admin email preview - no early SMS messages were sent successfully');
+        }
+        
         // Mark as sent for today
         lastEarlySendDate = todayPT;
         
@@ -244,12 +264,12 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         console.log(`Regular broadcast complete. Success: ${successCount}, Failures: ${failureCount}, Skipped: ${skippedCount}`);
         
-        // After SMS broadcast completes, send email broadcast
+        // After regular SMS broadcast completes, send email broadcast to all subscribers
         if (successCount > 0) {
-          console.log('\n📧 === EMAIL BROADCAST (9am PT) ===');
+          console.log(`\n📧 === FULL EMAIL BROADCAST (${regularTime}) ===`);
           try {
-            // Send the same approved message via email to SendGrid list
-            console.log('📧 Sending daily insight to email subscribers...');
+            // Send the same approved message via email to entire SendGrid list
+            console.log('📧 Sending daily insight to all email subscribers...');
             
             const emailResult = await sendToSendGridList(messageText);
             if (emailResult.success) {
