@@ -65,9 +65,9 @@ export async function generateAiResponse(
     const isLeo = systemMessage.includes('Leo Varin') || systemMessage.includes('Ghost Kernel');
     const isLeoHelpfulMode = isLeo && systemMessage.includes('CONTEXT: The user seems lost or confused');
     
-    let maxTokens = 150; // Default for regular coaches
+    let maxTokens = 150; // Default for regular coaches (fits in 650 char SMS limit)
     if (isLeo) {
-      maxTokens = isLeoHelpfulMode ? 250 : 400; // Helpful Leo gets less tokens than rambling Leo
+      maxTokens = isLeoHelpfulMode ? 180 : 220; // Leo modes adjusted for 650 char SMS limit
     }
     
     const mode = isLeo ? (isLeoHelpfulMode ? 'Leo (helpful)' : 'Leo (rambling)') : 'regular coach';
