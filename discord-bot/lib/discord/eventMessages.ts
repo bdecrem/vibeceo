@@ -193,31 +193,10 @@ export async function sendEventMessage(
 			let customTime = "";
 			let customAmPm = "";
 			
-			// SPECIAL CASE: For alextipsy events, always use Tokyo and Friday
-			if (eventType === 'alextipsy') {
-				cityName = 'Tokyo';
-				dayName = 'Friday';
-				
-				// Calculate proper Tokyo time (UTC+9)
-				const nowInLA = new Date();
-				// Tokyo is 16 hours ahead of LA
-				const tokyoHour = (nowInLA.getHours() + 16) % 24;
-				const tokyoMinute = nowInLA.getMinutes();
-				
-				// Format time in 12-hour format with AM/PM
-				let hour12 = tokyoHour % 12;
-				if (hour12 === 0) hour12 = 12; // 0 should display as 12 in 12-hour format
-				customTime = `${hour12}:${tokyoMinute.toString().padStart(2, '0')}`;
-				customAmPm = tokyoHour >= 12 ? "pm" : "am";
-				useCustomTime = true;
-				
-				console.log(`[EventMessages] Using HARDCODED location/day/time for alextipsy: Tokyo/Friday/${customTime}${customAmPm}`);
-			} else {
-				// Normal day calculation for other events
-				const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-				const today = new Date().getDay();
-				dayName = days[today];
-			}
+			// Normal day calculation for all events
+			const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+			const today = new Date().getDay();
+			dayName = days[today];
 			
 			// Check if it's the weekend to use a different format
 			let simplifiedArrival;
@@ -376,20 +355,5 @@ export async function sendEventMessage(
 	if (!(!isIntro && MICROPOST_SERVICES.includes(eventType as string) && message.trim() === "")) {
 		// Send to the main channel
 		await targetChannel.send(message);
-		
-		// Cross-post to Alexir VIP webhook if this is the intro message for alextipsy event
-		if (isIntro && eventType === 'alextipsy') {
-			try {
-				// Use sendAsCharacter to ensure correct avatar and logic
-				const alexirVipConfessionChannelId = channel.id;
-				await import('./webhooks.js').then(({ sendAsCharacter }) =>
-					sendAsCharacter(alexirVipConfessionChannelId, 'alex', message)
-				);
-				console.log(`[EventMessages] Cross-posted alextipsy TheAF message to Alexir VIP channel using sendAsCharacter`);
-			} catch (error) {
-				console.error(`[EventMessages] Error cross-posting to Alexir VIP:`, error);
-				// Don't throw - we still consider the main message send successful
-			}
-		}
 	}
 }
