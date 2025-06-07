@@ -627,9 +627,19 @@ function formatWeekendMessage(message: any): string {
     result += `\n— ${message.author}`;
   }
   
-  // Add outro if provided
-  if (message.outro) {
+  // Check if this is Alex on weekend and add special marketing message
+  if (message.author && message.author.toLowerCase().includes('alex')) {
+    // Weekend Alex gets special tipsy marketing message (we know it's weekend because type="weekend")
+    result += `\n\n✨ Text "Hey Alex" to chat — fair warning, she's had two mimosas and is spiritually unsupervised.`;
+  } else if (message.author) {
+    // Other authors get standard marketing message
+    result += `\n\nText Hey ${message.author} to chat with ${message.author}.`;
+  } else if (message.outro) {
+    // Use the outro if provided and no author-specific message
     result += `\n\n${message.outro}`;
+  } else {
+    // Fallback to a generic weekend message
+    result += `\n\n🥂 Text MORE for one extra sip of weekend wisdom.`;
   }
   
   return result;
