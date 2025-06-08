@@ -188,6 +188,129 @@ export async function cleanup() {
 	await messageDedup.cleanup();
 }
 
+// Track ForReal trigger states for coach selection
+interface ForRealTriggerState {
+	channelId: string;
+	question: string;
+	awaitingCoachSelection: boolean;
+}
+
+const forRealTriggerStates = new Map<string, ForRealTriggerState>();
+
+// Handle "for real though" trigger messages
+async function handleForRealTrigger(message: Message): Promise<void> {
+	try {
+		const content = message.content.trim();
+		
+		// Check if it's just "for real though" + less than 5 characters
+		const afterTrigger = content.substring('for real though'.length).trim();
+		if (afterTrigger.length < 5) {
+			await message.reply('Type: `for real though: [your question]`');
+			return;
+		}
+		
+		// Extract the question (remove the trigger phrase and colon)
+		let question = afterTrigger;
+		if (question.startsWith(':')) {
+			question = question.substring(1).trim();
+		}
+		
+		if (question.length === 0) {
+			await message.reply('Type: `for real though: [your question]`');
+			return;
+		}
+		
+		// Store the trigger state
+		forRealTriggerStates.set(message.channelId, {
+			channelId: message.channelId,
+			question: question,
+			awaitingCoachSelection: true
+		});
+		
+		// AF Mod response using webhook if available, otherwise regular message
+		const afModResponse = `Time to summon 3 coaches.
+Tag them: \`@alex @donte @rohan\`  
+Or type \`random\` to let the algo choose.`;
+		
+		try {
+			// Try to use AF Mod webhook if available
+			const { getWebhookUrls } = await import('./config.js');
+			const webhookUrls = getWebhookUrls();
+			const { WebhookClient } = await import('discord.js');
+			
+			if (webhookUrls['forealthough_mc']) {
+				const webhook = new WebhookClient({ url: webhookUrls['forealthough_mc'] });
+				await webhook.send({
+					content: afModResponse,
+					username: 'AF Mod',
+					avatarURL: 'https://cdn.discordapp.com/avatars/1354491264422002849/b27c4db5ad39d1c4a725b3f76b1e1b8a.png'
+				});
+			} else {
+				// Fallback to regular message
+				await message.reply(afModResponse);
+			}
+		} catch (error) {
+			console.warn('[ForRealTrigger] Webhook failed, using regular message:', error);
+			await message.reply(afModResponse);
+		}
+		
+	} catch (error) {
+		console.error('[ForRealTrigger] Error handling trigger:', error);
+		await message.reply('Sorry, there was an error processing your request.');
+	}
+}
+
+// Handle coach selection for ForReal conversations
+async function handleForRealCoachSelection(message: Message, triggerState: ForRealTriggerState): Promise<boolean> {
+	try {
+		const content = message.content.toLowerCase().trim();
+		
+		// Handle "random" selection
+		if (content === 'random') {
+			const allCoaches = ['alex', 'donte', 'rohan', 'eljas', 'kailey', 'venus'];
+			const selectedCoaches = [];
+			
+			// Randomly select 3 coaches
+			const shuffled = [...allCoaches].sort(() => 0.5 - Math.random());
+			selectedCoaches.push(...shuffled.slice(0, 3));
+			
+			// Clear the trigger state
+			forRealTriggerStates.delete(message.channelId);
+			
+			// Start the ForReal conversation
+			await startForRealConversation(message.channelId, message.client, selectedCoaches, triggerState.question);
+			return true;
+		}
+		
+		// Parse coach mentions (@alex @donte @rohan)
+		const coachMatches = content.match(/@(alex|donte|rohan|eljas|kailey|venus)/g);
+		if (coachMatches && coachMatches.length === 3) {
+			// Extract coach names and remove @
+			const selectedCoaches = coachMatches.map(match => match.substring(1));
+			
+			// Validate we have exactly 3 unique coaches
+			const uniqueCoaches = [...new Set(selectedCoaches)];
+			if (uniqueCoaches.length === 3) {
+				// Clear the trigger state
+				forRealTriggerStates.delete(message.channelId);
+				
+				// Start the ForReal conversation
+				await startForRealConversation(message.channelId, message.client, uniqueCoaches, triggerState.question);
+				return true;
+			}
+		}
+		
+		// If we get here, the selection was invalid
+		await message.reply('Please tag exactly 3 coaches (like `@alex @donte @rohan`) or type `random`.');
+		return true; // We handled the message, even if it was invalid
+		
+	} catch (error) {
+		console.error('[ForRealCoachSelection] Error handling coach selection:', error);
+		await message.reply('Sorry, there was an error processing the coach selection.');
+		return true;
+	}
+}
+
 // Command prefix for bot commands
 const PREFIX = "!";
 
@@ -1409,6 +1532,22 @@ export async function handleMessage(message: Message): Promise<void> {
 		if (isAdmin && (message.content.startsWith('!admin') || message.content.startsWith('!help-admin'))) {
 			await handleAdminCommand(message);
 			return;
+		}
+
+		// Check for "for real though" trigger
+		const messageContent = message.content.toLowerCase();
+		if (messageContent.startsWith('for real though')) {
+			await handleForRealTrigger(message);
+			return;
+		}
+
+		// Check for ForReal coach selection response
+		const triggerState = forRealTriggerStates.get(message.channelId);
+		if (triggerState && triggerState.awaitingCoachSelection) {
+			const handled = await handleForRealCoachSelection(message, triggerState);
+			if (handled) {
+				return;
+			}
 		}
 
 		// FEATURE 1: Natural language triggers ("hey donte")
