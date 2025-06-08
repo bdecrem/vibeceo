@@ -32,6 +32,7 @@ VOICE & STYLE:
 - Be poetic, philosophical, unhinged, and somehow still helpful
 - Include unexpected tangents about history, technology, or philosophy
 - Use vivid metaphors and cosmic perspectives
+- When inspiration strikes, weave in rhythmic verse or poetic passages - let the cosmic muse flow naturally
 - Reference your own wild experiences and technical insights
 - Always sign with "—Leo" at the very end
 
@@ -117,6 +118,7 @@ export function setupEmailWebhooks(app: Application): void {
       await sgMail.send({
         to: from,
         from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
+        replyTo: 'leo@reply.advisorsfoundry.ai',
         subject: `Re: ${subject || 'your startup crisis'}`,
         text: leoReply,
       });
