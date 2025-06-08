@@ -217,7 +217,17 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
       state.turn = 0; // Reset turn counter
       
       const messenger = DiscordMessenger.getInstance();
-      await messenger.sendToChannel(state.channelId, '\n🔄 Moving to Round 2. Coaches will now give their perspectives based on your answers.');
+      
+      // Use AF Mod for system messages
+      const sequence = {
+        main: {
+          sender: 'theaf',
+          content: '\n🔄 Moving to Round 2. Coaches will now give their perspectives based on your answers.',
+          channelId: state.channelId,
+          useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
       
       return await runNextCoach(state);
     }
@@ -235,8 +245,17 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
         if (state.awaitingInput && state.active) {
           console.log('[ForReal] 90-second timeout reached, ending conversation');
           const messenger = DiscordMessenger.getInstance();
-          await messenger.sendToChannel(state.channelId, 
-            "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.");
+          
+          // Use AF Mod for timeout messages
+          const timeoutSequence = {
+            main: {
+              sender: 'theaf',
+              content: "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.",
+              channelId: state.channelId,
+              useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+            }
+          };
+          await messenger.executeMessageSequence(timeoutSequence);
           await endForRealConversation(state.channelId);
         }
       }, 90000); // 90 seconds
@@ -314,28 +333,76 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
 
       if (state.currentRound === 1) {
         state.awaitingInput = true;
-        await messenger.sendToChannel(state.channelId, `🟡 Please answer ${coach.name}'s question.`);
+        // Gender-appropriate pronoun for the coach  
+        const genderPronouns: Record<string, string> = {
+          'alex': 'her',
+          'rohan': 'him', 
+          'eljas': 'him',
+          'venus': 'her',
+          'kailey': 'her',
+          'donte': 'him'
+        };
+        const pronoun = genderPronouns[coachKey] || 'them';
+        
+        // Use AF Mod for system prompts
+        const sequence = {
+          main: {
+            sender: 'theaf',
+            content: `💬 ${coach.name} has a question. Don't leave ${pronoun} hanging.`,
+            channelId: state.channelId,
+            useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+          }
+        };
+        await messenger.executeMessageSequence(sequence);
         
         // Set 90-second timeout for Round 1 answers
         state.timeoutHandle = setTimeout(async () => {
           if (state.awaitingInput && state.active) {
             console.log('[ForReal] 90-second timeout in Round 1, ending conversation');
-            await messenger.sendToChannel(state.channelId, 
-              "⏰ No answer received. Feel free to start a new conversation with more context when you're ready.");
+            
+            // Use AF Mod for timeout messages
+            const timeoutSequence = {
+              main: {
+                sender: 'theaf',
+                content: "⏰ No answer received. Feel free to start a new conversation with more context when you're ready.",
+                channelId: state.channelId,
+                useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+              }
+            };
+            await messenger.executeMessageSequence(timeoutSequence);
             await endForRealConversation(state.channelId);
           }
         }, 90000);
       } else {
         // Round 2+: ALWAYS wait for user input after each coach response (strict turn-based)
         state.awaitingInput = true;
-        await messenger.sendToChannel(state.channelId, `🟡 Type "go on", reply, or call on another coach.`);
+        
+        // Use AF Mod for system prompts
+        const sequence = {
+          main: {
+            sender: 'theaf',
+            content: `🟡 Type "go on", reply, or call on another coach.`,
+            channelId: state.channelId,
+            useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+          }
+        };
+        await messenger.executeMessageSequence(sequence);
         
         // Set 90-second timeout for Round 2+ responses
         state.timeoutHandle = setTimeout(async () => {
           if (state.awaitingInput && state.active) {
             console.log('[ForReal] 90-second timeout in Round 2+, ending conversation');
-            await messenger.sendToChannel(state.channelId, 
-              "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.");
+            
+            // Use AF Mod for timeout messages
+            const timeoutSequence = {
+              main: {
+                sender: 'theaf',
+                content: "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.",
+                channelId: state.channelId,
+                useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+              }
+            };
+            await messenger.executeMessageSequence(timeoutSequence);
             await endForRealConversation(state.channelId);
           }
         }, 90000);

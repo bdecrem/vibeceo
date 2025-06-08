@@ -536,7 +536,7 @@ export class DiscordMessenger {
         name: 'AF Mod',
         username: 'AFMod',
         avatarUrl: 'https://cdn.discordapp.com/avatars/1381280877245497595/7def7316030ef6594a30499d231ec67f.webp',
-        webhookEnvVar: 'FOREALTHOUGH_MC_WEBHOOK_URL'
+        webhookEnvVar: 'FORREAL_WEBHOOK_MC'
       }
     };
     
