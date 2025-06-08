@@ -53,6 +53,9 @@ export function setupEmailWebhooks(app: Application): void {
   // Webhook endpoint for inbound emails (SendGrid Parse Webhook)
   app.post('/parse-inbound', async (req: Request, res: Response) => {
     try {
+      // Debug: Log the entire payload to see what SendGrid is sending
+      console.log('🔍 DEBUG: Full SendGrid payload:', JSON.stringify(req.body, null, 2));
+      
       const { from, subject, text } = req.body;
 
       if (!from) {
