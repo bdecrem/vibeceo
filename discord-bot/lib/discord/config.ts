@@ -135,6 +135,14 @@ export function getWebhookUrls() {
     console.warn('[Config] ALEXIR_VIP_WEBHOOK_URL not found in production environment');
   }
   
+  // ForReal MC webhook for system announcements  
+  if (process.env.FOREALTHOUGH_MC_WEBHOOK_URL) {
+    webhookUrls['forealthough_mc'] = process.env.FOREALTHOUGH_MC_WEBHOOK_URL;
+    console.log('[Config] Found ForReal MC webhook URL for system announcements');
+  } else if (process.env.NODE_ENV === 'production') {
+    console.warn('[Config] FOREALTHOUGH_MC_WEBHOOK_URL not found in production environment');
+  }
+  
   return webhookUrls;
 }
 
