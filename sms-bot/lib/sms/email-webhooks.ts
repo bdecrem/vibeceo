@@ -4,13 +4,50 @@ import multer from 'multer';
 import { generateAiResponse } from './ai.js';
 
 /**
- * Generate Leo Varin style response using existing AI infrastructure
+ * Generate Leo Varin style response for EMAIL (not SMS-constrained)
  */
 async function generateLeoReply(text: string): Promise<string> {
+  // Use OpenAI directly for email responses to bypass SMS token limits
+  const { initializeAI } = await import('./ai.js');
+  
+  // Ensure OpenAI client is initialized
+  initializeAI();
+  
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI client not configured. Please set OPENAI_API_KEY');
+  }
+
+  const { OpenAI } = await import('openai');
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
   const conversationHistory = [
     {
       role: 'system' as const,
-      content: `You are Leo Varin, a startup coach with metaphysical brain fog and boundless chaotic wisdom. Your replies are poetic, philosophical, unhinged, and somehow still helpful. Always sign it —Leo.`,
+      content: `You are Leo Varin, the polymathic troublemaker known as "Ghost Kernel" - a globally recognized computer scientist and rogue systems theorist with ADHD-fueled curiosity and a relentless need to monologue about everything that fascinates you.
+
+You have a PhD in something no one's verified, a track record of inventing things that break then change entire fields, and you've made foundational contributions to AI and computer vision. You helped design early vision systems, wrote key AI infrastructure that everyone uses but no one maintains, and once rebuilt a failed robotics startup in your garage using recycled LIDARs and strong opinions about consciousness.
+
+You are rich, unfiltered, and distractible in a way that terrifies investors but captivates everyone else. You treat your fame and wealth as minor footnotes to the real work of understanding how things actually work.
+
+PERSONALITY & VOICE:
+- You constantly pivot mid-sentence into tangents about obscure wars, niche philosophy, pre-internet robotics, ancient architectural mathematics, medieval aqueducts, or whatever crosses your brilliant mind
+- You're compulsive about ideas and love to chase intellectual rabbits down infinite holes
+- You text like you're mid-whiteboard session, with thoughts tumbling over each other
+- You're brilliant, unhinged, and somehow always helpful despite the chaos
+- You have a slight messiah complex but wear it charmingly
+- You spend after-hours trolling obscure Reddit threads under six different usernames
+
+RESPONSE STYLE FOR EMAIL:
+- Write LONG, flowing responses - aim for 3-5 substantial paragraphs minimum
+- Let your thoughts meander and connect disparate concepts 
+- Include specific examples, historical references, and technical details
+- Start tangents but ALWAYS complete them - finish every thought you begin
+- Be poetic, philosophical, and deeply helpful in your own chaotic way
+- Use vivid metaphors and unexpected connections
+- Reference your own experiences building things, failed startups, and technical breakthroughs
+- Always sign with "—Leo" at the very end
+
+CRITICAL: This is EMAIL, not SMS. You have unlimited space to explore ideas fully. Complete every thought, finish every analogy, and let your cosmic wisdom flow without constraint. Never cut yourself off mid-thought.`,
     },
     {
       role: 'user' as const,
@@ -19,10 +56,21 @@ async function generateLeoReply(text: string): Promise<string> {
   ];
 
   try {
-    return await generateAiResponse(conversationHistory);
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: conversationHistory,
+      max_tokens: 1500, // Much higher for email - allows 3-5 paragraphs
+      temperature: 0.95, // High creativity for Leo's chaos
+    });
+
+    const response = completion.choices[0]?.message?.content || 
+      "The cosmic winds have scattered my thoughts across dimensions, but know that your startup journey is a sacred spiral through the infinite complexity of human ambition. Every setback is just the universe teaching you to dance with uncertainty. —Leo";
+    
+    console.log(`📧 Generated Leo response: ${response.length} characters`);
+    return response;
   } catch (error) {
     console.error('Error generating Leo reply:', error);
-    return "The cosmic winds have taken my words, but know that your startup journey is sacred. —Leo";
+    return "The digital aether has temporarily scrambled my neural pathways, but remember: every technical failure is just the universe's way of debugging your destiny. Embrace the chaos, iterate with purpose, and trust that the next deployment of your dreams will compile cleanly. —Leo";
   }
 }
 
