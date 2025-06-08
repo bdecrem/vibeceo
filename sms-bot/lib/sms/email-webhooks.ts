@@ -128,7 +128,7 @@ export function setupEmailWebhooks(app: Application): void {
       // Send reply via SendGrid
       await sgMail.send({
         to: from,
-        from: 'leo@advisorsfoundry.ai',
+        from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
         subject: `Re: ${subject || 'your startup crisis'}`,
         text: leoReply,
       });
