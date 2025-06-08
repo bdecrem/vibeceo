@@ -205,7 +205,20 @@ async function handleForRealTrigger(message: Message): Promise<void> {
 		// Check if it's just "for real though" + less than 5 characters
 		const afterTrigger = content.substring('for real though'.length).trim();
 		if (afterTrigger.length < 5) {
-			await message.reply('Type: `for real though: [your question]`');
+			// Use DiscordMessenger with AF Mod ChannelMC
+			const { DiscordMessenger } = await import('./discordMessenger.js');
+			const messenger = DiscordMessenger.getInstance();
+			messenger.setDiscordClient(message.client);
+			
+			const sequence = {
+				main: {
+					sender: 'theaf',
+					content: 'Type: `for real though: [your question]`',
+					channelId: message.channelId,
+					useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+				}
+			};
+			await messenger.executeMessageSequence(sequence);
 			return;
 		}
 		
@@ -216,7 +229,20 @@ async function handleForRealTrigger(message: Message): Promise<void> {
 		}
 		
 		if (question.length === 0) {
-			await message.reply('Type: `for real though: [your question]`');
+			// Use DiscordMessenger with AF Mod ChannelMC
+			const { DiscordMessenger } = await import('./discordMessenger.js');
+			const messenger = DiscordMessenger.getInstance();
+			messenger.setDiscordClient(message.client);
+			
+			const sequence = {
+				main: {
+					sender: 'theaf',
+					content: 'Type: `for real though: [your question]`',
+					channelId: message.channelId,
+					useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+				}
+			};
+			await messenger.executeMessageSequence(sequence);
 			return;
 		}
 		
@@ -227,36 +253,65 @@ async function handleForRealTrigger(message: Message): Promise<void> {
 			awaitingCoachSelection: true
 		});
 		
-		// AF Mod response using webhook if available, otherwise regular message
+		// Use DiscordMessenger protocol to send AF Mod response
 		const afModResponse = `Time to summon 3 coaches.
 Tag them: \`@alex @donte @rohan\`  
 Or type \`random\` to let the algo choose.`;
 		
 		try {
-			// Try to use AF Mod webhook if available
-			const { getWebhookUrls } = await import('./config.js');
-			const webhookUrls = getWebhookUrls();
-			const { WebhookClient } = await import('discord.js');
+			// Import DiscordMessenger
+			const { DiscordMessenger } = await import('./discordMessenger.js');
+			const messenger = DiscordMessenger.getInstance();
+			messenger.setDiscordClient(message.client);
 			
-			if (webhookUrls['forealthough_mc']) {
-				const webhook = new WebhookClient({ url: webhookUrls['forealthough_mc'] });
-				await webhook.send({
+			// Use DiscordMessenger protocol with AF Mod ChannelMC
+			const sequence = {
+				main: {
+					sender: 'theaf',
 					content: afModResponse,
-					username: 'AF Mod',
-					avatarURL: 'https://cdn.discordapp.com/avatars/1354491264422002849/b27c4db5ad39d1c4a725b3f76b1e1b8a.png'
-				});
-			} else {
-				// Fallback to regular message
-				await message.reply(afModResponse);
+					channelId: message.channelId,
+					useChannelMC: 'forealthough-mc'  // Use AF Mod webhook instead of TheAF
+				}
+			};
+			
+			const success = await messenger.executeMessageSequence(sequence);
+			if (!success) {
+				console.warn('[ForRealTrigger] DiscordMessenger failed, using fallback');
+				// Fallback to regular channel message
+				const channel = await message.client.channels.fetch(message.channelId);
+				if (channel?.isTextBased() && 'send' in channel) {
+					await channel.send(afModResponse);
+				}
 			}
 		} catch (error) {
-			console.warn('[ForRealTrigger] Webhook failed, using regular message:', error);
-			await message.reply(afModResponse);
+			console.warn('[ForRealTrigger] DiscordMessenger error, using fallback:', error);
+			// Fallback to regular channel message
+			const channel = await message.client.channels.fetch(message.channelId);
+			if (channel?.isTextBased() && 'send' in channel) {
+				await channel.send(afModResponse);
+			}
 		}
 		
 	} catch (error) {
 		console.error('[ForRealTrigger] Error handling trigger:', error);
-		await message.reply('Sorry, there was an error processing your request.');
+		// Use DiscordMessenger with AF Mod ChannelMC for error response
+		try {
+			const { DiscordMessenger } = await import('./discordMessenger.js');
+			const messenger = DiscordMessenger.getInstance();
+			messenger.setDiscordClient(message.client);
+			
+			const sequence = {
+				main: {
+					sender: 'theaf',
+					content: 'Sorry, there was an error processing your request.',
+					channelId: message.channelId,
+					useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+				}
+			};
+			await messenger.executeMessageSequence(sequence);
+		} catch (fallbackError) {
+			console.error('[ForRealTrigger] Fallback error:', fallbackError);
+		}
 	}
 }
 
@@ -300,13 +355,43 @@ async function handleForRealCoachSelection(message: Message, triggerState: ForRe
 			}
 		}
 		
-		// If we get here, the selection was invalid
-		await message.reply('Please tag exactly 3 coaches (like `@alex @donte @rohan`) or type `random`.');
+		// If we get here, the selection was invalid  
+		// Use DiscordMessenger with AF Mod ChannelMC for system response
+		const { DiscordMessenger } = await import('./discordMessenger.js');
+		const messenger = DiscordMessenger.getInstance();
+		messenger.setDiscordClient(message.client);
+		
+		const sequence = {
+			main: {
+				sender: 'theaf',
+				content: 'Please tag exactly 3 coaches (like `@alex @donte @rohan`) or type `random`.',
+				channelId: message.channelId,
+				useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+			}
+		};
+		await messenger.executeMessageSequence(sequence);
 		return true; // We handled the message, even if it was invalid
 		
 	} catch (error) {
 		console.error('[ForRealCoachSelection] Error handling coach selection:', error);
-		await message.reply('Sorry, there was an error processing the coach selection.');
+		// Use DiscordMessenger with AF Mod ChannelMC for error response
+		try {
+			const { DiscordMessenger } = await import('./discordMessenger.js');
+			const messenger = DiscordMessenger.getInstance();
+			messenger.setDiscordClient(message.client);
+			
+			const sequence = {
+				main: {
+					sender: 'theaf',
+					content: 'Sorry, there was an error processing the coach selection.',
+					channelId: message.channelId,
+					useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+				}
+			};
+			await messenger.executeMessageSequence(sequence);
+		} catch (fallbackError) {
+			console.error('[ForRealCoachSelection] Fallback error:', fallbackError);
+		}
 		return true;
 	}
 }
