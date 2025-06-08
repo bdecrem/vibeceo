@@ -58,6 +58,7 @@ export async function sendBroadcastEmailToList(message: string, listId?: string)
     // Create the email content
     const emailContent = {
       from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
+      replyTo: 'daily@reply.advisorsfoundry.ai',
       subject: 'AF Daily — One Line to Unravel You',
       content: [
         {
@@ -103,6 +104,7 @@ export async function sendTestEmail(message: string, recipientEmail: string) {
     const msg = {
       to: recipientEmail,
       from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
+      replyTo: 'daily@reply.advisorsfoundry.ai',
       subject: 'AF Daily — One Line to Unravel You',
       text: formatMessageAsText(message),
       html: formatMessageAsHtml(message),
@@ -203,6 +205,7 @@ async function sendToListContacts(message: string, listId: string): Promise<{suc
           const msg = {
             to: email,
             from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
+            replyTo: 'daily@reply.advisorsfoundry.ai',
             subject: 'AF Daily — One Line to Unravel You',
             text: textContent,
             html: htmlContent,
