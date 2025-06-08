@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import sgMail from '@sendgrid/mail';
+import multer from 'multer';
 import { generateAiResponse } from './ai.js';
 
 /**
@@ -50,10 +51,15 @@ export function setupEmailWebhooks(app: Application): void {
   // Initialize SendGrid
   sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
+  // Configure multer for handling multipart/form-data from SendGrid
+  const upload = multer({ storage: multer.memoryStorage() });
+
   // Webhook endpoint for inbound emails (SendGrid Parse Webhook)
-  app.post('/parse-inbound', async (req: Request, res: Response) => {
+  app.post('/parse-inbound', upload.any(), async (req: Request, res: Response) => {
     try {
-      // Debug: Log the entire payload to see what SendGrid is sending
+      // Debug: Log request details
+      console.log('🔍 DEBUG: Content-Type:', req.get('Content-Type'));
+      console.log('🔍 DEBUG: Headers:', JSON.stringify(req.headers, null, 2));
       console.log('🔍 DEBUG: Full SendGrid payload:', JSON.stringify(req.body, null, 2));
       
       const { from, subject, text } = req.body;
