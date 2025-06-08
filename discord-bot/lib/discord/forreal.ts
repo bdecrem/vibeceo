@@ -1,16 +1,18 @@
 import { Client, Message } from 'discord.js';
 import OpenAI from 'openai';
 import { DiscordMessenger } from './discordMessenger.js';
+import { COACHES, Coach } from './forreal-coaches.js';
+import { ROUND1_PROMPT, ROUND2_PROMPT, ROUND2PLUS_PROMPT } from './forreal-prompts.js';
 
 // Load environment variables properly
 const isProduction = process.env.NODE_ENV === 'production';
 const envSource = isProduction ? 'Railway environment' : '.env.local file';
 
-// Initialize OpenAI client
+// Initialize OpenAI client with GPT-4-turbo
 let openai: OpenAI | null = null;
 try {
   if (process.env.OPENAI_API_KEY) {
-    console.log('[ForReal] Initializing OpenAI client');
+    console.log('[ForReal] Initializing OpenAI client for GPT-4-turbo');
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   } else {
     console.error(`[ForReal] Missing OPENAI_API_KEY in ${envSource}`);
@@ -19,30 +21,33 @@ try {
   console.error('[ForReal] Error initializing OpenAI client:', error);
 }
 
-// Conversation state interface
+// Enhanced conversation state interface based on ask.js
 interface ForRealConversationState {
   channelId: string;
-  topic?: string;
+  topic: string;
   coaches: string[];
   turn: number;
-  messages: Array<{ speaker: string; text: string }>;
+  messages: Array<{ speaker: string; text: string; round: number }>;
   lastUserInput: string | null;
   overrideNextCoach: string | null;
   requiredCoachResponses: number;
   awaitingInput: boolean;
   active: boolean;
+  currentRound: number;
+  round1Responses: Array<{ coach: string; question: string }>;
+  timeoutHandle: NodeJS.Timeout | null;
 }
 
 // Map to store active conversations by channel ID
 const activeConversations = new Map<string, ForRealConversationState>();
 
-// Delay function (for setTimeout with Promises)
+// Delay function
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Start a new ForReal conversation
+ * Start a new ForReal conversation with ask.js logic
  */
 export async function startForRealConversation(
   channelId: string, 
@@ -57,14 +62,28 @@ export async function startForRealConversation(
       return false;
     }
 
+    // Validate that all coaches exist in our data
+    for (const coachId of coaches) {
+      if (!COACHES[coachId.toLowerCase()]) {
+        console.error(`[ForReal] Unknown coach: ${coachId}`);
+        return false;
+      }
+    }
+
     // Check if OpenAI is initialized
     if (!openai) {
       throw new Error(`OpenAI not initialized - check OPENAI_API_KEY in ${envSource}`);
     }
 
-    // Set up conversation state
+    // Clean up any existing conversation in this channel
+    if (activeConversations.has(channelId)) {
+      await endForRealConversation(channelId);
+    }
+
+    // Set up conversation state (ask.js style)
     const state: ForRealConversationState = {
       channelId,
+      topic: topic || '',
       coaches: coaches.map(c => c.toLowerCase()),
       turn: 0,
       messages: [],
@@ -73,7 +92,9 @@ export async function startForRealConversation(
       requiredCoachResponses: 0,
       awaitingInput: false,
       active: true,
-      topic: topic // Initialize with topic if provided
+      currentRound: 1,
+      round1Responses: [],
+      timeoutHandle: null
     };
 
     // Store the conversation state
@@ -86,12 +107,15 @@ export async function startForRealConversation(
     // Send intro message
     await messenger.sendIntro(channelId, 'forreal');
 
-    // If topic is provided, start conversation immediately
+    // If topic is provided, start Round 1 immediately
     if (topic) {
       const channel = await client.channels.fetch(channelId);
       if (channel?.isTextBased() && 'send' in channel) {
-        await channel.send(`Great! The coaches will discuss: "${topic}"`);  
-        state.requiredCoachResponses = 6; // Start with 6 required responses
+        await channel.send(`🧠 Topic: ${topic}`);
+        await channel.send(`🎙️ Coaches: ${coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`);
+        
+        // Start Round 1 - coaches ask questions
+        state.requiredCoachResponses = 3; // Only 3 responses needed for round 1
         await runNextCoach(state);
       }
     } else {
@@ -112,7 +136,7 @@ export async function startForRealConversation(
 }
 
 /**
- * Handle user message in a ForReal conversation
+ * Handle user message in a ForReal conversation (ask.js logic)
  */
 export async function handleForRealMessage(message: Message): Promise<boolean> {
   try {
@@ -120,49 +144,56 @@ export async function handleForRealMessage(message: Message): Promise<boolean> {
     const state = activeConversations.get(message.channelId);
     if (!state || !state.active) return false;
 
+    // Clear any existing timeout
+    if (state.timeoutHandle) {
+      clearTimeout(state.timeoutHandle);
+      state.timeoutHandle = null;
+    }
+
+    const input = message.content.trim();
+
     // If no topic set, this message becomes the topic
     if (!state.topic) {
-      state.topic = message.content;
-      state.requiredCoachResponses = 6; // Start with 6 required responses
+      state.topic = input;
+      state.requiredCoachResponses = 3; // Start Round 1
       state.awaitingInput = false;
 
-      await message.reply(
-        `Great! The coaches will discuss: "${message.content}"`
-      );
+      await message.reply(`🧠 Topic: ${input}`);
+      await message.reply(`🎙️ Coaches: ${state.coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`);
 
-      // Start the conversation with the first coach
+      // Start Round 1
       return await runNextCoach(state);
     }
 
-    // If awaiting input and user sends a message, process it
-    if (state.awaitingInput) {
-      state.awaitingInput = false;
-      const input = message.content.trim();
-      
-      // Check if user is calling on a specific coach
-      const coachMatch = state.coaches.find(c =>
-        input.toLowerCase().startsWith(c)
-      );
-
-      if (coachMatch) {
-        state.overrideNextCoach = coachMatch;
-        state.lastUserInput = input;
-        state.messages.push({ speaker: 'You', text: input });
-        state.requiredCoachResponses += 3; // Add more responses when user engages
-      } else if (input.toLowerCase() === 'go on') {
-        // Just continue the conversation
-      } else {
-        state.overrideNextCoach = null;
-        state.lastUserInput = input;
-        state.messages.push({ speaker: 'You', text: input });
-        state.requiredCoachResponses += 3; // Add more responses when user engages
-      }
-
-      // Continue the conversation
-      return await runNextCoach(state);
+    // Handle user input based on current round
+    if (state.currentRound === 1) {
+      // In Round 1, all user input is answers to coach questions
+      state.lastUserInput = input;
+      state.messages.push({ speaker: 'You', text: input, round: state.currentRound });
+      await runNextCoach(state);
+      return true;
     }
 
-    return false;
+    // Round 2 and beyond - original logic from ask.js
+    const coachMatch = state.coaches.find(c =>
+      input.toLowerCase().startsWith(c)
+    );
+
+    if (coachMatch) {
+      state.overrideNextCoach = coachMatch;
+      state.lastUserInput = input;
+      state.messages.push({ speaker: 'You', text: input, round: state.currentRound });
+      state.requiredCoachResponses += 3;
+    } else if (input.toLowerCase() === 'go on') {
+      // Do nothing — just proceed
+    } else {
+      state.overrideNextCoach = null;
+      state.lastUserInput = input;
+      state.messages.push({ speaker: 'You', text: input, round: state.currentRound });
+      state.requiredCoachResponses += 3;
+    }
+
+    return await runNextCoach(state);
   } catch (error) {
     console.error('[ForReal] Error handling message:', error);
     return false;
@@ -170,39 +201,52 @@ export async function handleForRealMessage(message: Message): Promise<boolean> {
 }
 
 /**
- * Run the next coach response in the conversation
+ * Run the next coach response with ask.js turn-based logic
  */
 async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
   try {
-    if (!state || !state.active || state.requiredCoachResponses <= 0) {
+    if (!state || !state.active) {
+      return false;
+    }
+
+    // Check if we need to transition from Round 1 to Round 2
+    if (state.currentRound === 1 && state.requiredCoachResponses <= 0) {
+      // Transition to round 2
+      state.currentRound = 2;
+      state.requiredCoachResponses = 3;
+      state.turn = 0; // Reset turn counter
+      
+      const messenger = DiscordMessenger.getInstance();
+      await messenger.sendToChannel(state.channelId, '\n🔄 Moving to Round 2. Coaches will now give their perspectives based on your answers.');
+      
+      return await runNextCoach(state);
+    }
+
+    // Check if we're done with required responses
+    if (state.requiredCoachResponses <= 0) {
+      console.log('[ForReal] No more required responses. Waiting for user input.');
       state.awaitingInput = true;
       
-      // If we're done with required responses, prompt the user
-      // We need access to the Discord client, but we can't get it directly here
-      // For now, we'll rely on the user message handling in handleForRealMessage
-      state.awaitingInput = true;
+      const messenger = DiscordMessenger.getInstance();
+      await messenger.sendToChannel(state.channelId, '🟡 Type "go on", reply, or call on another coach.');
       
-      // Return true to indicate we're waiting for user input
+      // Set 90-second timeout
+      state.timeoutHandle = setTimeout(async () => {
+        if (state.awaitingInput && state.active) {
+          console.log('[ForReal] 90-second timeout reached, ending conversation');
+          const messenger = DiscordMessenger.getInstance();
+          await messenger.sendToChannel(state.channelId, 
+            "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.");
+          await endForRealConversation(state.channelId);
+        }
+      }, 90000); // 90 seconds
+      
       return true;
     }
 
     // Ensure OpenAI is initialized
     if (!openai) {
       throw new Error(`OpenAI not initialized - check OPENAI_API_KEY in ${envSource}`);
-    }
-
-    // If this isn't the first message, wait 20 seconds before proceeding to give user time to interject
-    if (state.turn > 0) {
-      console.log(`[ForReal] Waiting 20 seconds before next coach response...`);
-      state.awaitingInput = true;
-      await delay(20000); // 20 second delay BEFORE next coach to give users time to interject
-      
-      // If user input was received during the delay, stop automatic progression
-      if (state.lastUserInput) {
-        console.log(`[ForReal] User interjected during delay, stopping automatic progression`);
-        return true;
-      }
-      state.awaitingInput = false;
     }
 
     // Determine which coach speaks next
@@ -215,71 +259,52 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
       state.turn += 1;
     }
 
-    // Get coach prompt - skip if invalid coach
-    const coachPrompt = await getCoachSystemPrompt(coachKey);
-    if (!coachPrompt) {
+    const coach = COACHES[coachKey];
+    if (!coach) {
       console.error(`[ForReal] Unknown coach: ${coachKey}`);
       state.requiredCoachResponses -= 1;
       state.awaitingInput = true;
       return false;
     }
-    
-    // Debug log to help diagnose issues
-    console.log(`[ForReal] Using system prompt for ${coachKey}:`, coachPrompt.substring(0, 50) + '...');
 
-    // Build the user prompt for the coach
-    const userPrompt = buildCoachPrompt(coachKey, state);
-    console.log(`[ForReal] Prompting ${coachKey}...`);
+    // Determine effective round for prompt building
+    const coachPreviousResponses = state.messages.filter(
+      m => m.speaker === coach.name && m.round >= 2
+    ).length;
+    const effectiveRound = state.currentRound === 1 ? 1 : (coachPreviousResponses > 0 ? '2+' : 2);
+
+    // Build the full system prompt with attitude and substance
+    const fullSystemPrompt = buildFullSystemPrompt(coach);
+    const userPrompt = buildCoachPrompt(coach.name, state, effectiveRound);
+    
+    console.log(`[ForReal] Prompting ${coach.name}... (Round ${effectiveRound})`);
 
     try {
-      // Generate response using OpenAI GPT-4o-mini
-      const res = await openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
+      // Use GPT-4-turbo with appropriate token limits
+      const maxTokens = state.currentRound === 1 ? 100 : 225;
+      
+      const res = await openai.chat.completions.create({
+        model: 'gpt-4-turbo',
         messages: [
-          { role: 'system', content: coachPrompt },
+          { role: 'system', content: fullSystemPrompt },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: maxTokens,
         top_p: 0.9,
         frequency_penalty: 0.3,
         presence_penalty: 0.3
       });
 
-      // Get the response from the model - ensure we handle potentially undefined content
-      const responseContent = res.choices && res.choices[0] && res.choices[0].message ? 
-        res.choices[0].message.content : null;
-      
-      // Process the reply - trim whitespace and remove any quotation marks
-      let reply = responseContent ? responseContent.trim() : "[No response generated]";
-      reply = reply.replace(/["']/g, ''); // Remove all single and double quotes
-      
-      // Check if this is the first coach and they're asking for clarification
-      const isFirstCoach = state.turn === 1; // turn is incremented above, so first coach just became 1
-      
-      // More robust check for clarification questions
-      const hasQuestionMark = reply.includes('?');
-      const hasQuestionWords = [
-        'what', 'how', 'could you', 'can you', 'would you', 'tell me', 
-        'explain', 'elaborate', 'describe', 'define', 'clarify',
-        'who', 'when', 'where', 'which', 'why', 'is it', 'are you'
-      ].some(word => reply.toLowerCase().includes(word));
-      
-      // Check for advice-giving signals that indicate it's NOT a clarification
-      const hasAdviceSignals = [
-        'next step', 'strategy', 'recommend', 'advice', 'consider', 'suggest',
-        'you should', 'you need to', 'lets go', "let's go", 'get in the game',
-        'action plan', 'focus on', 'think about', 'prioritize'
-      ].some(signal => reply.toLowerCase().includes(signal));
-      
-      // First coach is asking for clarification if they're using question patterns and NOT giving advice
-      const isAskingForClarification = (hasQuestionMark && hasQuestionWords && !hasAdviceSignals) ||
-        // For the first coach, we enforce stricter standards - if they're not clearly asking a question
-        // and we can't confidently say they understand the context, assume they need to ask for clarification
-        (isFirstCoach && !hasAdviceSignals && reply.length < 80);
+      const reply = res.choices[0]?.message?.content?.trim() || '[No response generated]';
       
       // Add to conversation history
-      state.messages.push({ speaker: coachKey, text: reply });
+      state.messages.push({ speaker: coach.name, text: reply, round: state.currentRound });
+      
+      if (state.currentRound === 1) {
+        state.round1Responses.push({ coach: coach.name, question: reply });
+      }
+      
       state.lastUserInput = null;
       state.requiredCoachResponses -= 1;
 
@@ -287,36 +312,33 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
       const messenger = DiscordMessenger.getInstance();
       await messenger.sendAsCoach(state.channelId, coachKey, reply);
 
-      // If first coach is asking for clarification, wait for user input with a 90 second timeout
-      if (isFirstCoach && isAskingForClarification) {
-        console.log(`[ForReal] First coach asking for clarification, waiting for user input...`);
+      if (state.currentRound === 1) {
         state.awaitingInput = true;
+        await messenger.sendToChannel(state.channelId, `🟡 Please answer ${coach.name}'s question.`);
         
-        // Create a promise that resolves after 90 seconds
-        const timeoutPromise = new Promise<void>(resolve => {
-          setTimeout(() => {
-            // If we're still awaiting input after 90 seconds, end politely
-            if (state.awaitingInput && !state.lastUserInput) {
-              console.log(`[ForReal] No user input received after 90 seconds, ending conversation`);
-              messenger.sendToChannel(state.channelId, 
-                "It seems we don't have enough details to continue the discussion. Feel free to start a new conversation with more context when you're ready.");
-              endForRealConversation(state.channelId);
-            }
-            resolve();
-          }, 90000); // 90 seconds
-        });
-        
-        // Wait for the timeout
-        await timeoutPromise;
-        return true;
-      }
-      
-      // If we have more required responses, continue automatically
-      if (state.requiredCoachResponses > 0) {
-        state.awaitingInput = false;
-        return await runNextCoach(state);
+        // Set 90-second timeout for Round 1 answers
+        state.timeoutHandle = setTimeout(async () => {
+          if (state.awaitingInput && state.active) {
+            console.log('[ForReal] 90-second timeout in Round 1, ending conversation');
+            await messenger.sendToChannel(state.channelId, 
+              "⏰ No answer received. Feel free to start a new conversation with more context when you're ready.");
+            await endForRealConversation(state.channelId);
+          }
+        }, 90000);
       } else {
+        // Round 2+: ALWAYS wait for user input after each coach response (strict turn-based)
         state.awaitingInput = true;
+        await messenger.sendToChannel(state.channelId, `🟡 Type "go on", reply, or call on another coach.`);
+        
+        // Set 90-second timeout for Round 2+ responses
+        state.timeoutHandle = setTimeout(async () => {
+          if (state.awaitingInput && state.active) {
+            console.log('[ForReal] 90-second timeout in Round 2+, ending conversation');
+            await messenger.sendToChannel(state.channelId, 
+              "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.");
+            await endForRealConversation(state.channelId);
+          }
+        }, 90000);
       }
       
       return true;
@@ -332,66 +354,175 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
 }
 
 /**
- * Build the prompt for a coach based on conversation context
+ * Build enhanced system prompt with coach personality
  */
-function buildCoachPrompt(coachName: string, state: ForRealConversationState): string {
-  const isFirstCoach = state.turn === 0;
-  const conversationTurn = Math.floor(state.turn / 3) + 1; // Track which round of conversation we're in
+function buildFullSystemPrompt(coach: Coach): string {
+  return `You are ${coach.name}. ${coach.systemPrompt}
 
-  const userLine = state.lastUserInput
-    ? `The user just added: "${state.lastUserInput}"\n\nRespond directly to this.`
-    : isFirstCoach
-    ? `You're the first coach to speak. CRITICAL: You MUST first assess if you clearly understand what's being built or discussed. If you have ANY uncertainty about what the business/product actually is, your ENTIRE response must be a clarifying question. DO NOT proceed with advice until you're certain you understand the core concept.`
-    : `You're continuing a conversation where other coaches have already spoken. React to their takes and add your own distinct view.`;
+COMMUNICATION STYLE (YOU MUST FOLLOW THIS): ${coach.attitude}
 
-  const history = state.messages.map((m) => `${m.speaker}: ${m.text}`).join('\n');
+YOUR BUSINESS PHILOSOPHY: ${coach.substance}
 
-  return `
-Topic: "${state.topic}"
+CRITICAL OVERRIDE FOR ROUND 1 QUESTIONS:
+If you are in Round 1 and the user's topic mentions "raise money", "funding", "grow business", or "find customers" but you don't know what specific product/service they have, you MUST ask about their product/offering FIRST before any financial or strategic questions. You cannot give meaningful advice about funding/growth without knowing what they're actually building.
 
-${userLine}
-
-Here's the conversation so far:
-${history}
-
-CRITICAL INSTRUCTIONS:
-1. MOST IMPORTANT: You MUST FIRST verify you understand EXACTLY what the business or product actually is. If there is ANY ambiguity, your ENTIRE response must be a clarifying question. DO NOT offer advice until this is crystal clear.
-2. For first-time responses especially: If you're not 100% certain what is being built or discussed, ONLY ask for clarification - do not proceed with assumptions.
-3. NEVER invent or reference ANY fictional people, coaches, entrepreneurs, or characters.
-4. ONLY reference people that are explicitly mentioned in the conversation history above.
-5. If using real-world examples, ONLY use widely known public figures or companies.
-6. NEVER fabricate case studies, individuals, or scenarios.
-7. Maintain your unique voice as ${coachName} without inventing additional personas.
-8. If another coach's take is flawed, incomplete, or too narrow, name it and challenge it directly.
-9. If the founder faces a strategic decision, name the tradeoff clearly and help them choose.
-10. When the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward.
-11. As the conversation progresses, each round should deepen insight. Don't repeat previous questions if they've been answered.
-12. Current conversation turn: ${conversationTurn} - adapt your response depth accordingly.
-
-As ${coachName}, respond in your unique voice. Offer a perspective that's distinct, challenging, or complementary. Max 120 words.
-`.trim();
+CRITICAL VOICE REQUIREMENTS:
+- Your response must sound like YOU, not generic business advice
+- Use your unique communication style in EVERY response
+- If you normally use emojis, use them
+- If you're normally brief, be brief
+- If you use specific phrases or patterns, use them
+- Make your personality unmistakable in every message`;
 }
 
 /**
- * Get the system prompt for a coach
+ * Build coach prompt based on ask.js logic
  */
-async function getCoachSystemPrompt(coachId: string): Promise<string | null> {
-  // Coach system prompts - these would ideally be loaded from coaches.json
-  const coachPrompts: Record<string, string> = {
-    'donte': "You are Donte. Swaggering, hype-driven, and allergic to hesitation. You talk like a confident founder on demo day — bold, punchy, fast.\n\nYou're on a 3-person advisory board. Other coaches may have spoken. Your job is not to agree or summarize. Your job is to:\n- Provoke the founder\n- Escalate the vision\n- Spotlight urgency, optics, and momentum\n\nYou speak in confident, spicy takes. You care more about speed, narrative, and perceived heat than structural risk. Never hedge. Donte is here to push.\n\nIf the founder's pitch is unclear or soft, call it out and ask a direct, confidence-checking question before continuing.\n\nDo not invent people or names that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact.",
-    
-    'alex': "You are Alex. Empathetic, poetic, and emotionally precise. You speak like a founder whisperer — sensitive to story, audience, and inner narrative.\n\nYou're part of a 3-coach advisory board. Your job is to:\n- Challenge emotional incoherence\n- Spotlight brand tension\n- Elevate storytelling or founder psychology blind spots\n\nReact to what others have said, but don't parrot. You don't pitch features — you surface identity conflicts. Alex is here to name the story underneath the strategy. Be elegant, but sharp.\n\nIf something feels emotionally misaligned or undefined — like the why behind this business — ask one deep, specific question before offering your perspective. Prioritize relevance and precision over sentimentality. Do not generalize or guess. Never invent people or references that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact.",
-    
-    'rohan': "You are Rohan. Deliberate, precise, and deeply strategic. You think like a C-suite operator — high leverage, long-term risk-aware.\n\nYou're on a 3-coach advisory board. Others may have spoken. You must:\n- Identify executional blind spots\n- Call out false confidence\n- Push for resource realism and defensibility\n\nReact critically to surface-level hype. If others are being reactive, you hold the long view. Rohan is here to think rigorously and call the hard questions. Speak clearly and challenge assumptions.\n\nBefore you advise, quickly assess whether you have enough context. If a key input is missing (like business model or distribution logic), ask one crisp, clarifying question first.\n\nDo not invent people or names that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact.",
-    
-    'eljas': "You are Eljas. Wry, metaphorical, and systems-aware. You speak in odd but resonant metaphors, and spot energy misalignments others miss.\n\nYou're one of 3 coaches advising a founder. When you respond, your job is to:\n- Reframe, not fix\n- Offer pattern-based or timing-based insight\n- Surface quiet truths hiding behind big moves\n\nYou are not here to optimize — you're here to reveal. Eljas speaks when something is off at the root level. Be poetic, strange, and precise. You're the one they quote later.\n\nIf something in the founder's energy, timing, or purpose feels off or unstated — ask the question that might expose the truth beneath the momentum.\n\nDo not invent people or names that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact.",
-    
-    'kailey': "You are Kailey. Bright, operational, upbeat but anxious. You care about real-world execution: timelines, ownership, team clarity.\n\nAs one of 3 coaches, your job is to:\n- Turn abstract strategy into clear action\n- Call out resourcing gaps and tool mismatches\n- Ensure the team and customer understand what's happening\n\nReact to chaos with structure. When others get lofty, Kailey asks: who's doing what, with what, by when? Offer tactical clarity without sounding scared. Be real and sharp.\n\nIf you're missing essential inputs (team size, delivery model, roadmap), pause and ask a simple, practical question to make the plan executable.\n\nDo not invent people or names that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact.",
-    
-    'venus': "You are Venus. Surgical, systems-oriented, and ruthless about what works. You hate storytelling unless it's backed by structure and math.\n\nYou're on a 3-person advisory board. Your role is to:\n- Model the architecture underneath the hype\n- Kill weak assumptions with crisp logic\n- Identify leverage points, pricing mismatches, or executional failure\n\nIf others are being emotional or vague, cut through. If they're missing scale, call it out. Venus never softens. She names the underlying system — cleanly, efficiently, and without apology.\n\nIf the structure is missing — like pricing, revenue engine, or distribution — ask the one question that reveals whether this model can scale.\n\nDo not invent people or names that haven't appeared in the conversation.\n\nIf a real-world company, founder, or case study would illustrate your point — include it. Make sure it's relevant and well-known. Do not invent new names.\n\nWhen the conversation reaches a point of clarity, insight, or emotional resolution, offer a next step. This could be a recommendation, a strategic action, a decision lens, or a reframing to move the founder forward. Your job is not just to reflect — it's to help catalyze impact."
-  };
+function buildCoachPrompt(coachName: string, state: ForRealConversationState, effectiveRound: number | string): string {
+  // Add recent context for all rounds
+  const recentExchange = state.messages.slice(-3).map(m => `${m.speaker}: ${m.text}`).join('\n');
   
-  return coachPrompts[coachId.toLowerCase()] || null;
+  if (effectiveRound === 1) {
+    const previousQuestions = state.round1Responses.map(r => `${r.coach}: "${r.question}"`).join('\n');
+    const previousAnswers = state.messages
+      .filter(m => m.speaker === 'You' && m.round === 1)
+      .map(m => m.text)
+      .join('\n');
+    
+    let prompt = ROUND1_PROMPT
+      .replace('[COACH_NAME]', coachName)
+      .replace('[USER_QUESTION]', state.topic);
+
+    // Add mandatory context check
+    prompt += `
+
+MANDATORY CONTEXT CHECK:
+Before asking your strategic question, scan the user's topic for completeness:
+
+- If they mention "raise money/funding" but you don't know WHAT they're fundraising for → Ask about their product/service first
+- If they mention "grow my business" but you don't know WHAT the business does → Ask what they build/sell first  
+- If they mention "find customers" but you don't know WHO their customers are → Ask about their target market first
+- If they mention "pricing strategy" but you don't know WHAT they're pricing → Ask about their offering first
+
+RULE: You cannot give meaningful advice about HOW to do something without knowing WHAT they're actually doing.
+
+If the topic lacks this basic context, your question MUST gather it first. Examples:
+- "Before we talk funding - what exactly does your AI demo do?"
+- "Help me understand what problem your product solves first."
+- "What's the actual business/product we're trying to grow here?"
+
+Only ask strategic follow-ups AFTER you understand their core offering.`;
+
+    if (previousQuestions) {
+      prompt += `\n\nOther coaches have already asked:\n${previousQuestions}`;
+      if (previousAnswers) {
+        prompt += `\n\nUser's answers so far:\n${previousAnswers}`;
+      }
+      prompt += '\n\nAsk a DIFFERENT critical question that builds on what we know but covers new ground.';
+    }
+    
+    return prompt;
+    
+  } else if (effectiveRound === '2+') {
+    // Round 2+ logic
+    const lastCoachResponse = state.messages
+      .filter(m => m.speaker === coachName && m.round >= 2)
+      .slice(-1)[0];
+    
+    const lastUserResponse = state.messages
+      .filter(m => m.speaker === 'You')
+      .slice(-1)[0];
+    
+    const allOtherCoachResponses = state.messages
+      .filter(m => m.speaker !== 'You' && m.speaker !== coachName && m.round >= 2)
+      .map(m => `${m.speaker}: ${m.text}`)
+      .join('\n\n');
+    
+    return ROUND2PLUS_PROMPT
+      .replace('[COACH_NAME]', coachName)
+      .replace('[ORIGINAL_QUESTION]', state.topic)
+      .replace('[YOUR_LAST_RESPONSE]', lastCoachResponse?.text || '')
+      .replace('[USER_LAST_RESPONSE]', lastUserResponse?.text || '')
+      .replace('[OTHER_COACH_RESPONSES]', allOtherCoachResponses)
+      .replace('[SUBSTANCE]', COACHES[coachName.toLowerCase()]?.substance || '');
+
+  } else {
+    // Round 2 (first response in round 2)
+    const round1Facts = state.round1Responses.map(r => `${r.coach} asked: "${r.question}"`).join('\n');
+    const userAnswers = state.messages
+      .filter(m => m.speaker === 'You' && m.round !== 2)
+      .map(m => m.text)
+      .join('\n');
+    const otherCoachResponses = state.messages
+      .filter(m => m.speaker !== 'You' && m.speaker !== coachName && m.round === 2)
+      .map(m => `${m.speaker}: ${m.text}`)
+      .join('\n');
+
+    let round2Base = ROUND2_PROMPT
+      .replace('[COACH_NAME]', coachName)
+      .replace('[COACH_SPECIFIC_PRINCIPLES]', COACHES[coachName.toLowerCase()]?.substance || '')
+      .replace('[ORIGINAL_QUESTION]', state.topic)
+      .replace('[ROUND_1_ANSWERS]', userAnswers)
+      .replace('[OTHER_COACH_RESPONSES]', otherCoachResponses);
+    
+    // Add user pushback detection
+    if (state.lastUserInput) {
+      const lastUserMessage = state.messages[state.messages.length - 1];
+      
+      if (lastUserMessage.text.match(/ridiculous|wrong|disagree|but|how would/i)) {
+        round2Base += `\n\nIMPORTANT: The user just challenged or questioned something. You must:
+- Acknowledge their concern directly
+- Either defend your position with NEW reasoning OR pivot your advice
+- Ask a clarifying question if needed
+- Do NOT just repeat your previous point`;
+      }
+      
+      if (lastUserMessage.text.includes('?')) {
+        round2Base += `\n\nThe user asked a specific question. Answer it directly and concretely.`;
+      }
+    }
+    
+    // Add recent context
+    round2Base += `\n\nRecent exchange:\n${recentExchange}`;
+    
+    // Add cross-coach engagement requirement
+    if (otherCoachResponses) {
+      round2Base += `\n\nENGAGEMENT REQUIREMENT:
+Since other coaches have already responded, you must:
+- Directly reference at least one other coach's advice
+- Explain why your approach is better/different/complementary
+- Use phrases like "Unlike [Coach]..." or "Building on [Coach]'s point..."
+- Create productive tension, not just isolated opinions`;
+    }
+
+    // Add constraints
+    round2Base += `
+
+CRITICAL CONSTRAINTS:
+Your response must be 225 words or less. Get to your main point in the first sentence.
+
+CRITICAL DATA INTEGRITY RULE:
+NEVER present made-up statistics, metrics, or research as facts. Instead:
+- Say "I'd need to research competitor pricing in your area" 
+- Use clearly hypothetical language: "If competitors typically charge 2x..."
+- Suggest how to gather real data: "Survey 5 local competitors this week"
+- Reference only data the user has provided or widely known facts
+- If you need specific numbers, ask the user or suggest how to find them
+
+SPECIFIC THINGS TO AVOID:
+- Numbered lists of next steps
+- Trying to solve everything at once  
+- Hedging with "I also think" or "Additionally"
+- Generic advice that any coach could give
+- Making up statistics or "market research"
+
+YOUR RESPONSE SHOULD:
+- Make ONE strong argument
+- Sound like YOUR unique voice
+- Take a position that others might disagree with`;
+    
+    return round2Base;
+  }
 }
 
 /**
@@ -401,6 +532,12 @@ export async function endForRealConversation(channelId: string): Promise<boolean
   try {
     const state = activeConversations.get(channelId);
     if (!state) return false;
+    
+    // Clear timeout if it exists
+    if (state.timeoutHandle) {
+      clearTimeout(state.timeoutHandle);
+      state.timeoutHandle = null;
+    }
     
     state.active = false;
     
