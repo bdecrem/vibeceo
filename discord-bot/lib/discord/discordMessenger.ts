@@ -16,6 +16,7 @@ export interface MessageStep {
   content: string;                   // The message content
   channelId: string | keyof ChannelRegistry; // Target channel ID or registry key
   delay?: number;                    // Optional delay in ms before sending
+  useChannelMC?: string;            // Optional: Use specific ChannelMC webhook instead of TheAF
 }
 
 export interface MessageSequence {
@@ -318,8 +319,13 @@ export class DiscordMessenger {
       const channelId = this.resolveChannelId(step.channelId);
       
       if (step.sender === 'theaf') {
-        // Send as TheAF system message
-        return await this.sendToChannel(channelId, step.content);
+        if (step.useChannelMC) {
+          // Use specific ChannelMC webhook instead of TheAF
+          return await this.sendAsCoach(channelId, step.useChannelMC, step.content);
+        } else {
+          // Default: Send as TheAF system message
+          return await this.sendToChannel(channelId, step.content);
+        }
       } else {
         // Send as coach/webhook - create new step with resolved channel ID
         const resolvedStep = { ...step, channelId };
@@ -524,6 +530,13 @@ export class DiscordMessenger {
         username: 'AlexMonroe',
         avatarUrl: 'https://cdn.discordapp.com/avatars/1121864370149351575/e43a1ecff99f09661f1c16b369f8c128.webp',
         webhookEnvVar: 'ALEXIR_VIP_WEBHOOK_URL'
+      },
+      // Optional Channel MCs
+      'forealthough-mc': {
+        name: 'AF Mod',
+        username: 'AFMod',
+        avatarUrl: 'https://cdn.discordapp.com/avatars/1381280877245497595/7def7316030ef6594a30499d231ec67f.webp',
+        webhookEnvVar: 'FOREALTHOUGH_MC_WEBHOOK_URL'
       }
     };
     

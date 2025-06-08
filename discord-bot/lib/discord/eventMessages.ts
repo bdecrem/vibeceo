@@ -114,6 +114,65 @@ function initAlexirVipWebhook() {
   }
 }
 
+/**
+ * Post ForReal system announcement to the ForRealThough channel using MC webhook
+ */
+export async function postForRealSystemAnnouncement(): Promise<boolean> {
+  try {
+    console.log(`\n\n*******************************************************************************`);
+    console.log(`***** ATTEMPTING FORREAL SYSTEM ANNOUNCEMENT *****`);
+    console.log(`*******************************************************************************\n\n`);
+    
+    // Get the ForReal MC webhook URL
+    const webhookUrls = getWebhookUrls();
+    const forRealMcWebhookUrl = webhookUrls['forealthough_mc'];
+    
+    if (!forRealMcWebhookUrl) {
+      console.warn(`[ForRealSystemAnnouncement] ForReal MC webhook URL not available. Check FOREALTHOUGH_MC_WEBHOOK_URL environment variable.`);
+      return false;
+    }
+    
+    // Create webhook client
+    const forRealMcWebhook = new WebhookClient({ url: forRealMcWebhookUrl });
+    
+    // ForReal system announcement content
+    const announcement = `FOR REAL THOUGH
+
+This is AF's **turn-based zone** for actual conversations.  
+Not vibes. Not banter. Just ✦ real ✦ talk.
+
+Here's how it works:
+
+**Start a convo**  
+Type: \`for real though: [your question]\`  
+→ Example: \`for real though: should I raise money now or later?\`
+
+And we'll take it from there. Give it a try!`;
+    
+    console.log(`Sending ForReal announcement: ${announcement}`);
+    
+    // Send the announcement via webhook
+    await forRealMcWebhook.send({
+      content: announcement,
+      username: 'AF Mod',
+      avatarURL: 'https://cdn.discordapp.com/avatars/1354491264422002849/b27c4db5ad39d1c4a725b3f76b1e1b8a.png'
+    });
+    
+    console.log(`\n\n*******************************************************************************`);
+    console.log(`***** FORREAL SYSTEM ANNOUNCEMENT SUCCESSFULLY SENT *****`);
+    console.log(`*******************************************************************************\n\n`);
+    
+    return true;
+  } catch (error) {
+    console.error(`\n\n*******************************************************************************`);
+    console.error(`***** FORREAL SYSTEM ANNOUNCEMENT ERROR *****`);
+    console.error(`*******************************************************************************`);
+    console.error("[ForRealSystemAnnouncement] Error details:", error);
+    console.error(`*******************************************************************************\n\n`);
+    return false;
+  }
+}
+
 export async function sendEventMessage(
 	channel: TextChannel,
 	eventType: keyof typeof EVENT_MESSAGES | string,
@@ -320,6 +379,16 @@ export async function sendEventMessage(
 					await postSystemAnnouncement(client, storyInfoSceneIndex);
 				} catch (error) {
 					console.error(`Error posting system announcement for scene ${storyInfoSceneIndex}:`, error);
+				}
+			}
+			
+			// Trigger ForReal system announcement twice per 24 scenes (scenes 12 and 24)
+			if (storyInfoSceneIndex === 12 || storyInfoSceneIndex === 24) {
+				try {
+					console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
+					await postForRealSystemAnnouncement();
+				} catch (error) {
+					console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
 				}
 			}
 			
