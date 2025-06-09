@@ -146,7 +146,7 @@ export default function SmsModal({ isOpen, onClose }: SmsModalProps) {
               <div className="text-center space-y-2 md:space-y-4 text-gray-300">
                 <p className="text-xs md:text-sm">
                   ✈️ SMS only works if you're US-based and emotionally unwell.<br />
-                  Not in the US? <a href="https://cdn.forms-content-1.sg-form.com/f348d1a4-4304-11f0-b649-8e824612f419" target="_blank" rel="noopener noreferrer" className="text-[#7dd3fc] hover:text-[#7dd3fc]/80">Get the daily chaos via email instead.</a>
+                  Not in the US? <a href="/email-signup" className="text-[#7dd3fc] hover:text-[#7dd3fc]/80">Get the daily chaos via email instead.</a>
                 </p>
                 <p className="text-xs">
                   By subscribing, you agree to our{' '}
