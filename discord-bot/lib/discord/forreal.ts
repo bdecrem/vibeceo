@@ -49,6 +49,7 @@ interface ForRealTriggerState {
   channelId: string;
   question: string;
   awaitingCoachSelection: boolean;
+  timeoutHandle: NodeJS.Timeout | null;
 }
 
 const forRealTriggerStates = new Map<string, ForRealTriggerState>();
@@ -56,6 +57,23 @@ const forRealTriggerStates = new Map<string, ForRealTriggerState>();
 // Delay function
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Clean up a ForReal trigger state and clear any timeouts
+ */
+function cleanupForRealTriggerState(channelId: string): void {
+  const triggerState = forRealTriggerStates.get(channelId);
+  if (triggerState) {
+    // Clear timeout if it exists
+    if (triggerState.timeoutHandle) {
+      clearTimeout(triggerState.timeoutHandle);
+      triggerState.timeoutHandle = null;
+    }
+    // Remove from map
+    forRealTriggerStates.delete(channelId);
+    console.log(`[ForRealTrigger] Cleaned up trigger state for channel ${channelId}`);
+  }
 }
 
 /**
@@ -816,12 +834,15 @@ export async function handleForRealTrigger(message: Message): Promise<void> {
       return;
     }
     
-    // Store the trigger state
-    forRealTriggerStates.set(message.channelId, {
+    // Store the trigger state with timeout
+    const triggerState: ForRealTriggerState = {
       channelId: message.channelId,
       question: question,
-      awaitingCoachSelection: true
-    });
+      awaitingCoachSelection: true,
+      timeoutHandle: null
+    };
+    
+    forRealTriggerStates.set(message.channelId, triggerState);
     
     // Import DiscordMessenger
     const { DiscordMessenger } = await import('./discordMessenger.js');
@@ -874,12 +895,57 @@ Or type \`random\` to let the algo choose.`;
       if (!success) {
         console.warn('[ForRealTrigger] DiscordMessenger failed for coach selection prompt');
       }
+      
+             // Set up 2-minute timeout for coach selection
+       triggerState.timeoutHandle = setTimeout(async () => {
+         const currentState = forRealTriggerStates.get(message.channelId);
+         if (currentState && currentState.awaitingCoachSelection) {
+           console.log('[ForRealTrigger] 2-minute timeout reached for coach selection, ending trigger state');
+           
+           // Send timeout message first
+           const messenger = DiscordMessenger.getInstance();
+           try {
+             const timeoutSequence = {
+               main: {
+                 sender: 'forealthough-mc',
+                 content: "⏰ Coach selection timed out after 2 minutes. Feel free to start a new conversation when you're ready.",
+                 channelId: message.channelId
+               }
+             };
+             await messenger.executeMessageSequence(timeoutSequence);
+           } catch (timeoutError) {
+             console.error('[ForRealTrigger] Error sending timeout message:', timeoutError);
+           }
+           
+           // Clean up the trigger state (but don't clear timeout since we're in the timeout callback)
+           forRealTriggerStates.delete(message.channelId);
+          
+          // Send timeout message
+          try {
+            const timeoutSequence = {
+              main: {
+                sender: 'forealthough-mc',
+                content: "⏰ Coach selection timed out after 2 minutes. Feel free to start a new conversation when you're ready.",
+                channelId: message.channelId
+              }
+            };
+            await messenger.executeMessageSequence(timeoutSequence);
+          } catch (timeoutError) {
+            console.error('[ForRealTrigger] Error sending timeout message:', timeoutError);
+          }
+        }
+      }, 120000); // 2 minutes
+      
     } catch (error) {
       console.warn('[ForRealTrigger] DiscordMessenger error:', error);
     }
     
   } catch (error) {
     console.error('[ForRealTrigger] Error handling trigger:', error);
+    
+    // Clean up any partial trigger state
+    cleanupForRealTriggerState(message.channelId);
+    
     // Use DiscordMessenger for error response
     try {
       const { DiscordMessenger } = await import('./discordMessenger.js');
@@ -921,8 +987,8 @@ export async function handleForRealCoachSelection(message: Message, triggerState
         }
       }
       
-      // Clear the trigger state
-      forRealTriggerStates.delete(message.channelId);
+      // Clean up the trigger state
+      cleanupForRealTriggerState(message.channelId);
       
       // Start the conversation
       await startForRealConversation(message.channelId, message.client, selectedCoaches, triggerState.question);
@@ -939,8 +1005,8 @@ export async function handleForRealCoachSelection(message: Message, triggerState
         // Validate coaches exist
         const validCoaches = uniqueCoaches.filter(coach => COACHES[coach]);
         if (validCoaches.length === 3) {
-          // Clear the trigger state
-          forRealTriggerStates.delete(message.channelId);
+          // Clean up the trigger state
+          cleanupForRealTriggerState(message.channelId);
           
           // Start the conversation
           await startForRealConversation(message.channelId, message.client, uniqueCoaches, triggerState.question);
