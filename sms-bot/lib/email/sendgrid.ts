@@ -337,7 +337,7 @@ function formatMessageAsHtml(message: string): string {
     <p style="margin-top: 0; color: #666;">A toast to your temporary delusion</p>
 
     <div style="margin: 24px 0; padding: 16px 20px; background-color: #fff3e0; border-radius: 12px;">
-      <p style="font-size: 18px; margin: 0; line-height: 1.4; color: #333;">AF Weekend 🥂<br>
+      <p style="font-size: 18px; margin: 0; line-height: 1.4; color: #333;">AF Daily — ${today}<br>
       ☀️ Welcome to your regularly scheduled reality break.<br><br>
       🌞 ${quotedContent}</p>
       ${attribution ? `<p style="margin: 8px 0 0 0; font-size: 18px; color: #333;">— ${attribution}</p>` : ''}
