@@ -136,11 +136,11 @@ export function getWebhookUrls() {
   }
   
   // ForReal MC webhook for system announcements  
-  if (process.env.FOREALTHOUGH_MC_WEBHOOK_URL) {
-    webhookUrls['forealthough_mc'] = process.env.FOREALTHOUGH_MC_WEBHOOK_URL;
+  if (process.env.FORREALTHOUGH_MC_WEBHOOK_URL) {
+    webhookUrls['forrealthough_mc'] = process.env.FORREALTHOUGH_MC_WEBHOOK_URL;
     console.log('[Config] Found ForReal MC webhook URL for system announcements');
   } else if (process.env.NODE_ENV === 'production') {
-    console.warn('[Config] FOREALTHOUGH_MC_WEBHOOK_URL not found in production environment');
+    console.warn('[Config] FORREALTHOUGH_MC_WEBHOOK_URL not found in production environment');
   }
   
   return webhookUrls;
