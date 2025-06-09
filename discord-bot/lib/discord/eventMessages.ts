@@ -115,25 +115,13 @@ function initAlexirVipWebhook() {
 }
 
 /**
- * Post ForReal system announcement to the ForRealThough channel using MC webhook
+ * Post ForReal system announcement to the ForRealThough channel using DiscordMessenger
  */
 export async function postForRealSystemAnnouncement(): Promise<boolean> {
   try {
     console.log(`\n\n*******************************************************************************`);
     console.log(`***** ATTEMPTING FORREAL SYSTEM ANNOUNCEMENT *****`);
     console.log(`*******************************************************************************\n\n`);
-    
-    // Get the ForReal MC webhook URL
-    const webhookUrls = getWebhookUrls();
-    const forRealMcWebhookUrl = webhookUrls['forrealthough_mc'];
-    
-    if (!forRealMcWebhookUrl) {
-      console.warn(`[ForRealSystemAnnouncement] ForReal MC webhook URL not available. Check FORREALTHOUGH_MC_WEBHOOK_URL environment variable.`);
-      return false;
-    }
-    
-    // Create webhook client
-    const forRealMcWebhook = new WebhookClient({ url: forRealMcWebhookUrl });
     
     // ForReal system announcement content
     const announcement = `FOR REAL THOUGH
@@ -151,12 +139,19 @@ And we'll take it from there. Give it a try!`;
     
     console.log(`Sending ForReal announcement: ${announcement}`);
     
-    // Send the announcement via webhook
-    await forRealMcWebhook.send({
-      content: announcement,
-      username: 'AF Mod',
-      avatarURL: 'https://cdn.discordapp.com/avatars/1354491264422002849/b27c4db5ad39d1c4a725b3f76b1e1b8a.png'
-    });
+    // Import and use DiscordMessenger
+    const { DiscordMessenger } = await import('./discordMessenger.js');
+    const messenger = DiscordMessenger.getInstance();
+    messenger.setDiscordClient(client);
+    
+    const sequence = {
+      main: {
+        sender: 'forealthough-mc',
+        content: announcement,
+        channelId: '1378515740235399178' // ForReal channel ID
+      }
+    };
+    await messenger.executeMessageSequence(sequence);
     
     console.log(`\n\n*******************************************************************************`);
     console.log(`***** FORREAL SYSTEM ANNOUNCEMENT SUCCESSFULLY SENT *****`);
@@ -382,16 +377,15 @@ export async function sendEventMessage(
 				}
 			}
 			
-			// DISABLED: Automatic ForReal system announcements to prevent duplicates with manual triggers
-			// Trigger ForReal system announcement twice per 24 scenes (scenes 12 and 24)
-			// if (storyInfoSceneIndex === 12 || storyInfoSceneIndex === 24) {
-			// 	try {
-			// 		console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
-			// 		await postForRealSystemAnnouncement();
-			// 	} catch (error) {
-			// 		console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
-			// 	}
-			// }
+			// Trigger ForReal system announcement twice per 24 scenes (scenes 1 and 12)
+			if (storyInfoSceneIndex === 1 || storyInfoSceneIndex === 12) {
+				try {
+					console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
+					await postForRealSystemAnnouncement();
+				} catch (error) {
+					console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
+				}
+			}
 			
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({

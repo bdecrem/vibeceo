@@ -37,6 +37,8 @@ interface ForRealConversationState {
   round1Responses: Array<{ coach: string; question: string }>;
   timeoutHandle: NodeJS.Timeout | null;
   hangingTimeoutHandle: NodeJS.Timeout | null;
+  lastChanceShown: boolean;
+  onlyGoOnResponses: boolean;
 }
 
 // Map to store active conversations by channel ID
@@ -107,7 +109,9 @@ export async function startForRealConversation(
       currentRound: 1,
       round1Responses: [],
       timeoutHandle: null,
-      hangingTimeoutHandle: null
+      hangingTimeoutHandle: null,
+      lastChanceShown: false,
+      onlyGoOnResponses: true
     };
 
     // Store the conversation state
@@ -123,7 +127,7 @@ export async function startForRealConversation(
       const sequence = {
         main: {
           sender: 'forealthough-mc',
-          content: `The coaches are gathering for a serious board meeting.
+          content: `Let's do this!
 
 🧠 Topic: ${topic}
 🎙️ Coaches: ${coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`,
@@ -193,7 +197,7 @@ export async function handleForRealMessage(message: Message): Promise<boolean> {
       const sequence = {
         main: {
           sender: 'forealthough-mc',
-          content: `The coaches are gathering for a serious board meeting.
+          content: `Let's do this!
 
 🧠 Topic: ${input}
 🎙️ Coaches: ${state.coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`,
@@ -226,8 +230,38 @@ export async function handleForRealMessage(message: Message): Promise<boolean> {
       state.messages.push({ speaker: 'You', text: input, round: state.currentRound });
       state.requiredCoachResponses += 3;
     } else if (input.toLowerCase() === 'go on') {
-      // Do nothing — just proceed
+      // Check if we just showed the last chance message
+      if (state.lastChanceShown) {
+        // End conversation immediately
+        const messenger = DiscordMessenger.getInstance();
+        const endingSequence = {
+          main: {
+            sender: 'forealthough-mc',
+            content: '🌀 That\'s it for this jam session. Build on!',
+            channelId: state.channelId
+          }
+        };
+        await messenger.executeMessageSequence(endingSequence);
+        await endForRealConversation(state.channelId);
+        return true;
+      }
+      // User said "go on" - keep tracking they're only saying go on
+    } else if (input.toLowerCase() === 'all set') {
+      // User wants to end the conversation
+      const messenger = DiscordMessenger.getInstance();
+      const endingSequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: '🌀 That\'s it for this jam session. Build on!',
+          channelId: state.channelId
+        }
+      };
+      await messenger.executeMessageSequence(endingSequence);
+      await endForRealConversation(state.channelId);
+      return true;
     } else {
+      // User injected real input - reset the "only go on" tracking
+      state.onlyGoOnResponses = false;
       state.overrideNextCoach = null;
       state.lastUserInput = input;
       state.messages.push({ speaker: 'You', text: input, round: state.currentRound });
@@ -276,26 +310,7 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
     if (state.requiredCoachResponses <= 0) {
       console.log('[ForReal] No more required responses. Checking if conversation should end naturally.');
       
-      // Check if conversation has reached a natural ending point
-      // After Round 2+ and sufficient exchanges (6+ messages), end naturally
-      const totalMessages = state.messages.length;
-      const round2Messages = state.messages.filter(m => m.round >= 2).length;
-      
-      if (state.currentRound >= 2 && totalMessages >= 6 && round2Messages >= 3) {
-        console.log('[ForReal] Conversation reached natural ending point. Total messages:', totalMessages);
-        
-        const messenger = DiscordMessenger.getInstance();
-        const endingSequence = {
-          main: {
-            sender: 'forealthough-mc',
-            content: '🌀 That\'s it for this jam session. Build on!',
-            channelId: state.channelId
-          }
-        };
-        await messenger.executeMessageSequence(endingSequence);
-        await endForRealConversation(state.channelId);
-        return true;
-      }
+      // Note: Natural ending is now handled by lastChanceShown flag in user input processing
       
       // Otherwise, continue with normal flow
       console.log('[ForReal] Continuing conversation. Waiting for user input.');
@@ -370,7 +385,7 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
 
     try {
       // Use GPT-4-turbo with appropriate token limits
-      const maxTokens = state.currentRound === 1 ? 100 : 225;
+      const maxTokens = state.currentRound === 1 ? 120 : 200;
       
       const res = await openai.chat.completions.create({
         model: 'gpt-4-turbo',
@@ -385,21 +400,54 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
         presence_penalty: 0.3
       });
 
-      const reply = res.choices[0]?.message?.content?.trim() || '[No response generated]';
+      let reply = res.choices[0]?.message?.content?.trim() || '[No response generated]';
       
-      // Add to conversation history
-      state.messages.push({ speaker: coach.name, text: reply, round: state.currentRound });
-      
-      if (state.currentRound === 1) {
-        state.round1Responses.push({ coach: coach.name, question: reply });
+      // Validate Discord character limit (2000 chars max) - be very conservative
+      if (reply.length > 1800) {
+        console.warn(`[ForReal] ${coach.name} response too long (${reply.length} chars), truncating...`);
+        // Truncate at last complete sentence before 1800 chars for safety
+        const truncated = reply.substring(0, 1700);
+        const lastSentence = truncated.lastIndexOf('.');
+        const lastExclamation = truncated.lastIndexOf('!');
+        const lastQuestion = truncated.lastIndexOf('?');
+        
+        // Find the last sentence ending
+        const lastPunctuation = Math.max(lastSentence, lastExclamation, lastQuestion);
+        
+        if (lastPunctuation > 1200) {
+          reply = truncated.substring(0, lastPunctuation + 1);
+        } else {
+          // If no good sentence break, truncate at last space
+          const lastSpace = truncated.lastIndexOf(' ');
+          if (lastSpace > 1200) {
+            reply = truncated.substring(0, lastSpace) + '...';
+          } else {
+            reply = truncated + '...';
+          }
+        }
+        console.log(`[ForReal] Truncated ${coach.name} response to ${reply.length} chars`);
       }
       
-      state.lastUserInput = null;
-      state.requiredCoachResponses -= 1;
-
-      // Send message via Discord
+      // Send message via Discord first, then update state only if successful
       const messenger = DiscordMessenger.getInstance();
-      await messenger.sendAsCoach(state.channelId, coachKey, reply);
+      try {
+        await messenger.sendAsCoach(state.channelId, coachKey, reply);
+        
+        // Only update state after successful send
+        state.messages.push({ speaker: coach.name, text: reply, round: state.currentRound });
+        
+        if (state.currentRound === 1) {
+          state.round1Responses.push({ coach: coach.name, question: reply });
+        }
+        
+        state.lastUserInput = null;
+        state.requiredCoachResponses -= 1;
+      } catch (sendError) {
+        console.error(`[ForReal] Failed to send message for ${coach.name}:`, sendError);
+        // Don't decrement requiredCoachResponses if send failed
+        state.awaitingInput = true;
+        throw sendError; // Re-throw to trigger outer catch block
+      }
 
       if (state.currentRound === 1) {
         state.awaitingInput = true;
@@ -452,11 +500,25 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
         // Round 2+: ALWAYS wait for user input after each coach response (strict turn-based)
         state.awaitingInput = true;
         
+        // Check if this is the "last chance" moment (after 3 Round 2 responses AND user only said "go on")
+        const round2CoachMessages = state.messages.filter(m => m.round >= 2 && m.speaker !== 'You').length;
+        const isLastChance = round2CoachMessages === 3 && state.onlyGoOnResponses && !state.lastChanceShown;
+        
+        console.log('[ForReal] Round 2+ prompt. Coach messages:', round2CoachMessages, 'Only go on:', state.onlyGoOnResponses, 'Last chance:', isLastChance);
+        
+        if (isLastChance) {
+          state.lastChanceShown = true;
+        }
+        
         // Use AF Mod for system prompts
+        const promptContent = isLastChance 
+          ? '🌀 Any more questions or thoughts? You can jump in, ask a coach another question, or just say "all set"'
+          : '🌀 Your move: say "go on", jump in, or ask a coach a sharp follow-up.';
+          
         const sequence = {
           main: {
             sender: 'forealthough-mc',
-            content: `🌀 Your move: say "go on", jump in, or ask a coach a sharp follow-up.`,
+            content: promptContent,
             channelId: state.channelId
           }
         };
@@ -639,7 +701,7 @@ Since other coaches have already responded, you must:
     round2Base += `
 
 CRITICAL CONSTRAINTS:
-Your response must be 225 words or less. Get to your main point in the first sentence.
+Your response must be 150 words or less. Be concise and direct. Get to your main point in the first sentence.
 
 CRITICAL DATA INTEGRITY RULE:
 NEVER present made-up statistics, metrics, or research as facts. Instead:
@@ -769,7 +831,33 @@ export async function handleForRealTrigger(message: Message): Promise<void> {
     try {
       // Send the coach selection prompt
       console.log('[ForRealTrigger] DEBUG: About to send coach selection prompt...');
-      const coachSelectionResponse = `Time to summon 3 coaches.
+      const coachSelectionResponse = `You've entered the spiral council. It's like a board meeting, but nobody's wearing shoes. Each coach brings a distinct strategic lens. You're not getting consensus — you're getting range.
+
+**Donte** – The 0-to-1 Builder  
+Focuses on early momentum, narrative velocity, and customer obsession. He's all about bold moves that get you noticed fast.  
+*"What gets you 100 obsessed users in 30 days?"*
+
+**Alex** – The Brand & Culture Architect  
+Keeps you aligned with your values and story. She thinks emotional resonance and cultural fit are the real growth engines.  
+*"What does your brand stand for beyond the product?"*
+
+**Rohan** – The Scale & Systems Strategist  
+Always thinking 10x. He focuses on competitive moats, unit economics, and whether your strategy can survive success.  
+*"How do you win when this gets copied?"*
+
+**Venus** – The Data & Optimization Realist  
+She doesn't care how it feels — only what it proves. She pushes for decisions backed by hard numbers and measurable outcomes.  
+*"What do the metrics actually say?"*
+
+**Eljas** – The Timing & Sustainability Philosopher  
+Believes in rhythm, not forcing it. He looks for natural timing, organic traction, and long-term resilience.  
+*"What wants to emerge naturally here?"*
+
+**Kailey** – The Execution & Resource Strategist  
+Gets tactical, fast. She cares about what your team can actually deliver, with what resources, and on what timeline.  
+*"How exactly does this get done with your current capacity?"*
+
+Time to summon 3 coaches.
 Tag them: \`@alex @donte @rohan\`  
 Or type \`random\` to let the algo choose.`;
       
