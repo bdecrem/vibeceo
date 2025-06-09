@@ -550,7 +550,7 @@ export class DiscordMessenger {
   // Get default intro text for a conversation type
   private getDefaultIntro(conversationType: string): string {
     const intros: Record<string, string> = {
-      'forreal': 'The coaches are gathering for a serious board meeting.',
+      'forreal': 'Let\'s do this!',
       // Other conversation types can be added here later
     };
     
