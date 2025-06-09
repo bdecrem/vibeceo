@@ -122,8 +122,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features */}
-        <section className="container mx-auto px-4 pb-8 md:pb-12">
+        {/* Features - hidden on mobile, shown on desktop in original position */}
+        <section className="container mx-auto px-4 pb-8 md:pb-12 hidden md:block">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
               <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
@@ -350,6 +350,39 @@ export default function Home() {
                 </p>
                 <p className="text-white font-semibold text-sm md:text-base">— Founder, NapMap (Acquired for $0.3M)</p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features - shown on mobile only, moved to bottom */}
+        <section className="container mx-auto px-4 pb-8 md:hidden">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Sparkles className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Disruptively Mundane</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                Our advice is statistically indistinguishable from what a human would say after three Red Bulls.
+              </p>
+            </div>
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Zap className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Aggressively Mediocre</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                We've trained our models on thousands of pitch decks that failed to secure funding.
+              </p>
+            </div>
+            <div className="group bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 hover:bg-white/[0.15] transition-all duration-300">
+              <div className="bg-[#40e0d0] w-10 h-10 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Brain className="text-[#0f172a] w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white/90 mb-2">Artificially Authentic</h3>
+              <p className="text-white/70 text-base leading-relaxed">
+                Our coaches have been carefully designed to seem just human enough to avoid legal scrutiny.
+              </p>
             </div>
           </div>
         </section>
