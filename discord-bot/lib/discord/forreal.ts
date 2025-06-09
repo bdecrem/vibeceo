@@ -919,20 +919,6 @@ Or type \`random\` to let the algo choose.`;
            
            // Clean up the trigger state (but don't clear timeout since we're in the timeout callback)
            forRealTriggerStates.delete(message.channelId);
-          
-          // Send timeout message
-          try {
-            const timeoutSequence = {
-              main: {
-                sender: 'forealthough-mc',
-                content: "⏰ Coach selection timed out after 2 minutes. Feel free to start a new conversation when you're ready.",
-                channelId: message.channelId
-              }
-            };
-            await messenger.executeMessageSequence(timeoutSequence);
-          } catch (timeoutError) {
-            console.error('[ForRealTrigger] Error sending timeout message:', timeoutError);
-          }
         }
       }, 120000); // 2 minutes
       
