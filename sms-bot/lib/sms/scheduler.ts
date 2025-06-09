@@ -162,22 +162,26 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         console.log(`Early broadcast complete. Success: ${earlySuccessCount}, Failures: ${earlyFailureCount}, Skipped: ${earlySkippedCount}`);
         
-        // After early SMS broadcast completes, send admin email preview
+        // After early SMS broadcast completes, schedule admin email preview for 1 hour later
         if (earlySuccessCount > 0) {
-          console.log(`\n📧 === ADMIN EMAIL PREVIEW (${earlyTime}) ===`);
-          try {
-            // Send the same message as a preview email to admin
-            console.log('📧 Sending admin preview email to bdecrem@gmail.com...');
-            
-            const adminEmailResult = await sendTestEmail(messageText, 'bdecrem@gmail.com');
-            if (adminEmailResult.success) {
-              console.log(`📧 Admin email preview sent successfully! Message ID: ${adminEmailResult.messageId}`);
-            } else {
-              console.log('📧 Admin email preview failed');
+          console.log(`\n📧 === ADMIN EMAIL PREVIEW SCHEDULED (${earlyTime} + 1 hour) ===`);
+          console.log('📧 Scheduling admin preview email for 1 hour after SMS...');
+          
+          // Schedule email for 1 hour later
+          setTimeout(async () => {
+            try {
+              console.log('📧 Sending delayed admin preview email to bdecrem@gmail.com...');
+              
+              const adminEmailResult = await sendTestEmail(messageText, 'bdecrem@gmail.com');
+              if (adminEmailResult.success) {
+                console.log(`📧 Admin email preview sent successfully! Message ID: ${adminEmailResult.messageId}`);
+              } else {
+                console.log('📧 Admin email preview failed');
+              }
+            } catch (emailError) {
+              console.error('📧 Admin email preview error:', emailError);
             }
-          } catch (emailError) {
-            console.error('📧 Admin email preview error:', emailError);
-          }
+          }, 60 * 60 * 1000); // 1 hour = 3,600,000 milliseconds
         } else {
           console.log('📧 Skipping admin email preview - no early SMS messages were sent successfully');
         }
@@ -264,22 +268,26 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         
         console.log(`Regular broadcast complete. Success: ${successCount}, Failures: ${failureCount}, Skipped: ${skippedCount}`);
         
-        // After regular SMS broadcast completes, send email broadcast to all subscribers
+        // After regular SMS broadcast completes, schedule email broadcast for 1 hour later
         if (successCount > 0) {
-          console.log(`\n📧 === FULL EMAIL BROADCAST (${regularTime}) ===`);
-          try {
-            // Send the same approved message via email to entire SendGrid list
-            console.log('📧 Sending daily insight to all email subscribers...');
-            
-            const emailResult = await sendToSendGridList(messageText);
-            if (emailResult.success) {
-              console.log(`📧 Email broadcast successful! Message ID: ${emailResult.messageId}`);
-            } else {
-              console.log('📧 Email broadcast failed');
+          console.log(`\n📧 === FULL EMAIL BROADCAST SCHEDULED (${regularTime} + 1 hour) ===`);
+          console.log('📧 Scheduling email broadcast for 1 hour after SMS...');
+          
+          // Schedule email for 1 hour later
+          setTimeout(async () => {
+            try {
+              console.log('📧 Sending delayed email broadcast to all subscribers...');
+              
+              const emailResult = await sendToSendGridList(messageText);
+              if (emailResult.success) {
+                console.log(`📧 Email broadcast successful! Message ID: ${emailResult.messageId}`);
+              } else {
+                console.log('📧 Email broadcast failed');
+              }
+            } catch (emailError) {
+              console.error('📧 Email broadcast error:', emailError);
             }
-          } catch (emailError) {
-            console.error('📧 Email broadcast error:', emailError);
-          }
+          }, 60 * 60 * 1000); // 1 hour = 3,600,000 milliseconds
         } else {
           console.log('📧 Skipping email broadcast - no SMS messages were sent successfully');
         }
