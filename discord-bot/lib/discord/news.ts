@@ -167,7 +167,7 @@ Give your perspective on this tech news with substance and insight, but still wi
       
       firstMessage = await generateCharacterResponse(characters[0].prompt + '\n' + firstPrompt, story.title);
       const firstMessageWithLink = story.url 
-        ? `${firstMessage}\n\n[Read the full story here](${story.url})`
+        ? `${firstMessage}\n\n${story.url}`
         : firstMessage;
       await sendAsCharacter(channelId, characters[0].id, firstMessageWithLink);
       state.conversationHistory.push({ character: characters[0].id, message: firstMessage });
