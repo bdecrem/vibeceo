@@ -125,10 +125,10 @@ export async function postForRealSystemAnnouncement(): Promise<boolean> {
     
     // Get the ForReal MC webhook URL
     const webhookUrls = getWebhookUrls();
-    const forRealMcWebhookUrl = webhookUrls['forealthough_mc'];
+    const forRealMcWebhookUrl = webhookUrls['forrealthough_mc'];
     
     if (!forRealMcWebhookUrl) {
-      console.warn(`[ForRealSystemAnnouncement] ForReal MC webhook URL not available. Check FOREALTHOUGH_MC_WEBHOOK_URL environment variable.`);
+      console.warn(`[ForRealSystemAnnouncement] ForReal MC webhook URL not available. Check FORREALTHOUGH_MC_WEBHOOK_URL environment variable.`);
       return false;
     }
     
@@ -382,15 +382,16 @@ export async function sendEventMessage(
 				}
 			}
 			
+			// DISABLED: Automatic ForReal system announcements to prevent duplicates with manual triggers
 			// Trigger ForReal system announcement twice per 24 scenes (scenes 12 and 24)
-			if (storyInfoSceneIndex === 12 || storyInfoSceneIndex === 24) {
-				try {
-					console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
-					await postForRealSystemAnnouncement();
-				} catch (error) {
-					console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
-				}
-			}
+			// if (storyInfoSceneIndex === 12 || storyInfoSceneIndex === 24) {
+			// 	try {
+			// 		console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
+			// 		await postForRealSystemAnnouncement();
+			// 	} catch (error) {
+			// 		console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
+			// 	}
+			// }
 			
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({

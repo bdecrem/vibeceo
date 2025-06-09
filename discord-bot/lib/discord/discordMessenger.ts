@@ -151,6 +151,8 @@ export class DiscordMessenger {
     message: string
   ): Promise<boolean> {
     try {
+      console.log(`[DiscordMessenger] DEBUG: Attempting to send message as ${coachId} to channel ${channelId}`);
+      
       // Get coach webhook
       const webhook = await this.getCoachWebhook(coachId);
       const coach = this.getCoachConfig(coachId);
@@ -160,6 +162,8 @@ export class DiscordMessenger {
         return false;
       }
       
+      console.log(`[DiscordMessenger] DEBUG: Got webhook and coach config for ${coachId}`);
+      
       // Send message - don't override webhook username/avatar
       await webhook.send({
         content: message
@@ -168,7 +172,7 @@ export class DiscordMessenger {
       console.log(`[DiscordMessenger] Sent message as ${coach.name} to channel ${channelId}`);
       return true;
     } catch (error) {
-      console.error(`Error sending message as coach ${coachId}:`, error);
+      console.error(`[DiscordMessenger] ERROR sending message as coach ${coachId}:`, error);
       return false;
     }
   }
@@ -536,7 +540,7 @@ export class DiscordMessenger {
         name: 'AF Mod',
         username: 'AFMod',
         avatarUrl: 'https://cdn.discordapp.com/avatars/1381280877245497595/7def7316030ef6594a30499d231ec67f.webp',
-        webhookEnvVar: 'FORREAL_WEBHOOK_MC'
+        webhookEnvVar: 'FORREALTHOUGH_MC_WEBHOOK_URL'
       }
     };
     

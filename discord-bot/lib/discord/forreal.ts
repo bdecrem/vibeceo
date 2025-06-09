@@ -36,10 +36,20 @@ interface ForRealConversationState {
   currentRound: number;
   round1Responses: Array<{ coach: string; question: string }>;
   timeoutHandle: NodeJS.Timeout | null;
+  hangingTimeoutHandle: NodeJS.Timeout | null;
 }
 
 // Map to store active conversations by channel ID
 const activeConversations = new Map<string, ForRealConversationState>();
+
+// Track ForReal trigger states for coach selection
+interface ForRealTriggerState {
+  channelId: string;
+  question: string;
+  awaitingCoachSelection: boolean;
+}
+
+const forRealTriggerStates = new Map<string, ForRealTriggerState>();
 
 // Delay function
 function delay(ms: number): Promise<void> {
@@ -56,6 +66,8 @@ export async function startForRealConversation(
   topic?: string
 ): Promise<boolean> {
   try {
+    console.log('[ForReal] DEBUG: startForRealConversation called with coaches:', coaches, 'topic:', topic);
+    console.log('[ForReal] DEBUG: Call stack:', new Error().stack?.split('\n')[1]);
     // Validate coaches
     if (coaches.length !== 3) {
       console.error('[ForReal] Exactly 3 coaches are required');
@@ -94,7 +106,8 @@ export async function startForRealConversation(
       active: true,
       currentRound: 1,
       round1Responses: [],
-      timeoutHandle: null
+      timeoutHandle: null,
+      hangingTimeoutHandle: null
     };
 
     // Store the conversation state
@@ -104,28 +117,36 @@ export async function startForRealConversation(
     const messenger = DiscordMessenger.getInstance();
     messenger.setDiscordClient(client);
 
-    // Send intro message
-    await messenger.sendIntro(channelId, 'forreal');
-
     // If topic is provided, start Round 1 immediately
     if (topic) {
-      const channel = await client.channels.fetch(channelId);
-      if (channel?.isTextBased() && 'send' in channel) {
-        await channel.send(`🧠 Topic: ${topic}`);
-        await channel.send(`🎙️ Coaches: ${coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`);
-        
-        // Start Round 1 - coaches ask questions
-        state.requiredCoachResponses = 3; // Only 3 responses needed for round 1
-        await runNextCoach(state);
-      }
+      // Send intro messages via DiscordMessenger
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: `The coaches are gathering for a serious board meeting.
+
+🧠 Topic: ${topic}
+🎙️ Coaches: ${coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`,
+          channelId: channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+      
+      // Start Round 1 - coaches ask questions
+      state.requiredCoachResponses = 3; // Only 3 responses needed for round 1
+      await runNextCoach(state);
     } else {
-      // Prompt for topic if not provided
-      const channel = await client.channels.fetch(channelId);
-      if (channel?.isTextBased() && 'send' in channel) {
-        await channel.send('🎙️ SeriousConvo starting with ' + 
-          coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ') + 
-          '. Please provide a business topic to discuss.');
-      }
+      // Prompt for topic if not provided via DiscordMessenger
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: '🎙️ SeriousConvo starting with ' + 
+            coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ') + 
+            '. Please provide a business topic to discuss.',
+          channelId: channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
     }
 
     return true;
@@ -140,14 +161,23 @@ export async function startForRealConversation(
  */
 export async function handleForRealMessage(message: Message): Promise<boolean> {
   try {
+    console.log('[ForReal] DEBUG: handleForRealMessage called for message:', message.content.substring(0, 50));
     // Get the conversation state for this channel
     const state = activeConversations.get(message.channelId);
-    if (!state || !state.active) return false;
+    console.log('[ForReal] DEBUG: Active conversation state found:', !!state, 'active:', state?.active);
+    if (!state || !state.active) {
+      console.log('[ForReal] DEBUG: No active conversation, returning false');
+      return false;
+    }
 
-    // Clear any existing timeout
+    // Clear any existing timeouts
     if (state.timeoutHandle) {
       clearTimeout(state.timeoutHandle);
       state.timeoutHandle = null;
+    }
+    if (state.hangingTimeoutHandle) {
+      clearTimeout(state.hangingTimeoutHandle);
+      state.hangingTimeoutHandle = null;
     }
 
     const input = message.content.trim();
@@ -158,8 +188,19 @@ export async function handleForRealMessage(message: Message): Promise<boolean> {
       state.requiredCoachResponses = 3; // Start Round 1
       state.awaitingInput = false;
 
-      await message.reply(`🧠 Topic: ${input}`);
-      await message.reply(`🎙️ Coaches: ${state.coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`);
+      // Send topic announcement via DiscordMessenger
+      const messenger = DiscordMessenger.getInstance();
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: `The coaches are gathering for a serious board meeting.
+
+🧠 Topic: ${input}
+🎙️ Coaches: ${state.coaches.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`,
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
 
       // Start Round 1
       return await runNextCoach(state);
@@ -221,10 +262,9 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
       // Use AF Mod for system messages
       const sequence = {
         main: {
-          sender: 'theaf',
+          sender: 'forealthough-mc',
           content: '\n🔄 Moving to Round 2. Coaches will now give their perspectives based on your answers.',
-          channelId: state.channelId,
-          useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+          channelId: state.channelId
         }
       };
       await messenger.executeMessageSequence(sequence);
@@ -234,31 +274,61 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
 
     // Check if we're done with required responses
     if (state.requiredCoachResponses <= 0) {
-      console.log('[ForReal] No more required responses. Waiting for user input.');
+      console.log('[ForReal] No more required responses. Checking if conversation should end naturally.');
+      
+      // Check if conversation has reached a natural ending point
+      // After Round 2+ and sufficient exchanges (6+ messages), end naturally
+      const totalMessages = state.messages.length;
+      const round2Messages = state.messages.filter(m => m.round >= 2).length;
+      
+      if (state.currentRound >= 2 && totalMessages >= 6 && round2Messages >= 3) {
+        console.log('[ForReal] Conversation reached natural ending point. Total messages:', totalMessages);
+        
+        const messenger = DiscordMessenger.getInstance();
+        const endingSequence = {
+          main: {
+            sender: 'forealthough-mc',
+            content: '🌀 That\'s it for this jam session. Build on!',
+            channelId: state.channelId
+          }
+        };
+        await messenger.executeMessageSequence(endingSequence);
+        await endForRealConversation(state.channelId);
+        return true;
+      }
+      
+      // Otherwise, continue with normal flow
+      console.log('[ForReal] Continuing conversation. Waiting for user input.');
       state.awaitingInput = true;
       
       const messenger = DiscordMessenger.getInstance();
-      await messenger.sendToChannel(state.channelId, '🟡 Type "go on", reply, or call on another coach.');
-      
-      // Set 90-second timeout
-      state.timeoutHandle = setTimeout(async () => {
-        if (state.awaitingInput && state.active) {
-          console.log('[ForReal] 90-second timeout reached, ending conversation');
-          const messenger = DiscordMessenger.getInstance();
-          
-          // Use AF Mod for timeout messages
-          const timeoutSequence = {
-            main: {
-              sender: 'theaf',
-              content: "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.",
-              channelId: state.channelId,
-              useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
-            }
-          };
-          await messenger.executeMessageSequence(timeoutSequence);
-          await endForRealConversation(state.channelId);
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: '🌀 Your move: say "go on", jump in, or ask a coach a sharp follow-up.',
+          channelId: state.channelId
         }
-      }, 90000); // 90 seconds
+      };
+      await messenger.executeMessageSequence(sequence);
+      
+              // Set 120-second timeout
+        state.timeoutHandle = setTimeout(async () => {
+          if (state.awaitingInput && state.active) {
+            console.log('[ForReal] 120-second timeout reached, ending conversation');
+            const messenger = DiscordMessenger.getInstance();
+            
+            // Use AF Mod for timeout messages
+            const timeoutSequence = {
+              main: {
+                sender: 'forealthough-mc',
+                content: "⏰ Conversation timed out after 120 seconds. Feel free to start a new conversation when you're ready.",
+                channelId: state.channelId
+              }
+            };
+            await messenger.executeMessageSequence(timeoutSequence);
+            await endForRealConversation(state.channelId);
+          }
+        }, 120000); // 120 seconds
       
       return true;
     }
@@ -344,35 +414,40 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
         };
         const pronoun = genderPronouns[coachKey] || 'them';
         
-        // Use AF Mod for system prompts
-        const sequence = {
-          main: {
-            sender: 'theaf',
-            content: `💬 ${coach.name} has a question. Don't leave ${pronoun} hanging.`,
-            channelId: state.channelId,
-            useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+        // Set 60-second timeout for "Don't leave hanging" message
+        state.hangingTimeoutHandle = setTimeout(async () => {
+          if (state.awaitingInput && state.active) {
+            console.log('[ForReal] 60-second timeout reached, sending "Don\'t leave hanging" message');
+            
+            // Use AF Mod for hanging reminder
+            const hangingSequence = {
+              main: {
+                sender: 'forealthough-mc',
+                content: `💬 ${coach.name} has a question. Don't leave ${pronoun} hanging.`,
+                channelId: state.channelId
+              }
+            };
+            await messenger.executeMessageSequence(hangingSequence);
           }
-        };
-        await messenger.executeMessageSequence(sequence);
+        }, 60000); // 60 seconds
         
-        // Set 90-second timeout for Round 1 answers
+        // Set 120-second timeout for Round 1 answers
         state.timeoutHandle = setTimeout(async () => {
           if (state.awaitingInput && state.active) {
-            console.log('[ForReal] 90-second timeout in Round 1, ending conversation');
+            console.log('[ForReal] 120-second timeout in Round 1, ending conversation');
             
             // Use AF Mod for timeout messages
             const timeoutSequence = {
               main: {
-                sender: 'theaf',
+                sender: 'forealthough-mc',
                 content: "⏰ No answer received. Feel free to start a new conversation with more context when you're ready.",
-                channelId: state.channelId,
-                useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+                channelId: state.channelId
               }
             };
             await messenger.executeMessageSequence(timeoutSequence);
             await endForRealConversation(state.channelId);
           }
-        }, 90000);
+        }, 120000);
       } else {
         // Round 2+: ALWAYS wait for user input after each coach response (strict turn-based)
         state.awaitingInput = true;
@@ -380,32 +455,30 @@ async function runNextCoach(state: ForRealConversationState): Promise<boolean> {
         // Use AF Mod for system prompts
         const sequence = {
           main: {
-            sender: 'theaf',
-            content: `🟡 Type "go on", reply, or call on another coach.`,
-            channelId: state.channelId,
-            useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+            sender: 'forealthough-mc',
+            content: `🌀 Your move: say "go on", jump in, or ask a coach a sharp follow-up.`,
+            channelId: state.channelId
           }
         };
         await messenger.executeMessageSequence(sequence);
         
-        // Set 90-second timeout for Round 2+ responses
+        // Set 120-second timeout for Round 2+ responses
         state.timeoutHandle = setTimeout(async () => {
           if (state.awaitingInput && state.active) {
-            console.log('[ForReal] 90-second timeout in Round 2+, ending conversation');
+            console.log('[ForReal] 120-second timeout in Round 2+, ending conversation');
             
             // Use AF Mod for timeout messages
             const timeoutSequence = {
               main: {
-                sender: 'theaf',
-                content: "⏰ Conversation timed out after 90 seconds. Feel free to start a new conversation when you're ready.",
-                channelId: state.channelId,
-                useChannelMC: 'forealthough-mc'  // Use AF Mod webhook
+                sender: 'forealthough-mc',
+                content: "⏰ Conversation timed out after 120 seconds. Feel free to start a new conversation when you're ready.",
+                channelId: state.channelId
               }
             };
             await messenger.executeMessageSequence(timeoutSequence);
             await endForRealConversation(state.channelId);
           }
-        }, 90000);
+        }, 120000);
       }
       
       return true;
@@ -450,7 +523,7 @@ function buildCoachPrompt(coachName: string, state: ForRealConversationState, ef
   const recentExchange = state.messages.slice(-3).map(m => `${m.speaker}: ${m.text}`).join('\n');
   
   if (effectiveRound === 1) {
-    const previousQuestions = state.round1Responses.map(r => `${r.coach}: "${r.question}"`).join('\n');
+    const previousQuestions = state.round1Responses.map(r => `${r.coach} asked: "${r.question}"`).join('\n');
     const previousAnswers = state.messages
       .filter(m => m.speaker === 'You' && m.round === 1)
       .map(m => m.text)
@@ -600,17 +673,17 @@ export async function endForRealConversation(channelId: string): Promise<boolean
     const state = activeConversations.get(channelId);
     if (!state) return false;
     
-    // Clear timeout if it exists
+    // Clear timeouts if they exist
     if (state.timeoutHandle) {
       clearTimeout(state.timeoutHandle);
       state.timeoutHandle = null;
     }
+    if (state.hangingTimeoutHandle) {
+      clearTimeout(state.hangingTimeoutHandle);
+      state.hangingTimeoutHandle = null;
+    }
     
     state.active = false;
-    
-    // Send outro message
-    const messenger = DiscordMessenger.getInstance();
-    await messenger.sendOutro(channelId, 'forreal');
     
     // Clean up
     activeConversations.delete(channelId);
@@ -620,4 +693,240 @@ export async function endForRealConversation(channelId: string): Promise<boolean
     console.error('[ForReal] Error ending conversation:', error);
     return false;
   }
+}
+
+/**
+ * Handle "for real though" trigger messages
+ */
+export async function handleForRealTrigger(message: Message): Promise<void> {
+  try {
+    const content = message.content.trim();
+    const contentLower = content.toLowerCase();
+    
+    // Determine which trigger was used and extract the question
+    let afterTrigger: string;
+    if (contentLower.startsWith('for real though')) {
+      afterTrigger = content.substring('for real though'.length).trim();
+    } else if (contentLower.startsWith('fr ')) {
+      afterTrigger = content.substring('fr'.length).trim();
+    } else {
+      return; // Neither trigger found
+    }
+    
+    // Check if it's just the trigger + less than 5 characters
+    if (afterTrigger.length < 5) {
+      // Use DiscordMessenger
+      const { DiscordMessenger } = await import('./discordMessenger.js');
+      const messenger = DiscordMessenger.getInstance();
+      messenger.setDiscordClient(message.client);
+      
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: 'Type: `for real though: [your question]` or `fr [your question]`',
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+      return;
+    }
+    
+    // Extract the question (remove colon if present)
+    let question = afterTrigger;
+    if (question.startsWith(':')) {
+      question = question.substring(1).trim();
+    }
+    
+    if (question.length === 0) {
+      // Use DiscordMessenger
+      const { DiscordMessenger } = await import('./discordMessenger.js');
+      const messenger = DiscordMessenger.getInstance();
+      messenger.setDiscordClient(message.client);
+      
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: 'Type: `for real though: [your question]` or `fr [your question]`',
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+      return;
+    }
+    
+    // Store the trigger state
+    forRealTriggerStates.set(message.channelId, {
+      channelId: message.channelId,
+      question: question,
+      awaitingCoachSelection: true
+    });
+    
+    // Import DiscordMessenger
+    const { DiscordMessenger } = await import('./discordMessenger.js');
+    const messenger = DiscordMessenger.getInstance();
+    messenger.setDiscordClient(message.client);
+    
+    try {
+      // Send the coach selection prompt
+      console.log('[ForRealTrigger] DEBUG: About to send coach selection prompt...');
+      const coachSelectionResponse = `Time to summon 3 coaches.
+Tag them: \`@alex @donte @rohan\`  
+Or type \`random\` to let the algo choose.`;
+      
+      const coachSequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: coachSelectionResponse,
+          channelId: message.channelId
+        }
+      };
+      
+      const success = await messenger.executeMessageSequence(coachSequence);
+      console.log('[ForRealTrigger] DEBUG: coach selection prompt result:', success);
+      if (!success) {
+        console.warn('[ForRealTrigger] DiscordMessenger failed for coach selection prompt');
+      }
+    } catch (error) {
+      console.warn('[ForRealTrigger] DiscordMessenger error:', error);
+    }
+    
+  } catch (error) {
+    console.error('[ForRealTrigger] Error handling trigger:', error);
+    // Use DiscordMessenger for error response
+    try {
+      const { DiscordMessenger } = await import('./discordMessenger.js');
+      const messenger = DiscordMessenger.getInstance();
+      messenger.setDiscordClient(message.client);
+      
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: 'Sorry, there was an error processing your request. Try: `for real though: [your question]` or `fr [your question]`',
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+    } catch (fallbackError) {
+      console.error('[ForRealTrigger] Fallback error:', fallbackError);
+    }
+  }
+}
+
+/**
+ * Handle coach selection for ForReal conversations
+ */
+export async function handleForRealCoachSelection(message: Message, triggerState: ForRealTriggerState): Promise<boolean> {
+  try {
+    const content = message.content.toLowerCase().trim();
+    
+    // Handle "random" selection
+    if (content === 'random') {
+      const allCoaches = ['alex', 'donte', 'rohan', 'eljas', 'kailey', 'venus'];
+      const selectedCoaches: string[] = [];
+      
+      // Randomly select 3 coaches
+      while (selectedCoaches.length < 3) {
+        const randomIndex = Math.floor(Math.random() * allCoaches.length);
+        const coach = allCoaches[randomIndex];
+        if (!selectedCoaches.includes(coach)) {
+          selectedCoaches.push(coach);
+        }
+      }
+      
+      // Clear the trigger state
+      forRealTriggerStates.delete(message.channelId);
+      
+      // Start the conversation
+      await startForRealConversation(message.channelId, message.client, selectedCoaches, triggerState.question);
+      return true;
+    }
+    
+    // Handle manual coach selection (look for @mentions)
+    const mentions = content.match(/@(\w+)/g);
+    if (mentions) {
+      const selectedCoaches = mentions.map(mention => mention.substring(1).toLowerCase());
+      const uniqueCoaches = [...new Set(selectedCoaches)];
+      
+      if (uniqueCoaches.length === 3) {
+        // Validate coaches exist
+        const validCoaches = uniqueCoaches.filter(coach => COACHES[coach]);
+        if (validCoaches.length === 3) {
+          // Clear the trigger state
+          forRealTriggerStates.delete(message.channelId);
+          
+          // Start the conversation
+          await startForRealConversation(message.channelId, message.client, uniqueCoaches, triggerState.question);
+          return true;
+        }
+      }
+    }
+    
+    // Invalid selection - ask again
+    try {
+      const { DiscordMessenger } = await import('./discordMessenger.js');
+      const messenger = DiscordMessenger.getInstance();
+      messenger.setDiscordClient(message.client);
+      
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: 'Please select exactly 3 coaches by tagging them (e.g., @alex @donte @rohan) or type `random`.',
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+    } catch (error) {
+      console.error('[ForRealCoachSelection] Error sending selection prompt:', error);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('[ForRealCoachSelection] Error handling coach selection:', error);
+    try {
+      const { DiscordMessenger } = await import('./discordMessenger.js');
+      const messenger = DiscordMessenger.getInstance();
+      messenger.setDiscordClient(message.client);
+      
+      const sequence = {
+        main: {
+          sender: 'forealthough-mc',
+          content: 'Sorry, there was an error processing the coach selection.',
+          channelId: message.channelId
+        }
+      };
+      await messenger.executeMessageSequence(sequence);
+    } catch (fallbackError) {
+      console.error('[ForRealCoachSelection] Fallback error:', fallbackError);
+    }
+    return true;
+  }
+}
+
+/**
+ * Check if a message is a ForReal trigger and handle it
+ */
+export async function checkAndHandleForRealTrigger(message: Message): Promise<boolean> {
+  const messageContent = message.content.toLowerCase();
+  
+  console.log('[ForRealTrigger] DEBUG: checkAndHandleForRealTrigger called with message:', messageContent.substring(0, 50));
+  
+  // Check for "for real though" or "fr" trigger
+  if (messageContent.startsWith('for real though') || messageContent.startsWith('fr ')) {
+    console.log('[ForRealTrigger] DEBUG: Detected ForReal trigger (for real though/fr), calling handleForRealTrigger...');
+    await handleForRealTrigger(message);
+    console.log('[ForRealTrigger] DEBUG: handleForRealTrigger completed, returning true');
+    return true;
+  }
+  
+  // Check for ForReal coach selection response
+  const triggerState = forRealTriggerStates.get(message.channelId);
+  if (triggerState && triggerState.awaitingCoachSelection) {
+    console.log('[ForRealTrigger] DEBUG: Detected coach selection response, calling handleForRealCoachSelection...');
+    const handled = await handleForRealCoachSelection(message, triggerState);
+    console.log('[ForRealTrigger] DEBUG: handleForRealCoachSelection completed, returning:', handled);
+    return handled;
+  }
+  
+  console.log('[ForRealTrigger] DEBUG: No ForReal trigger detected, returning false');
+  return false;
 }
