@@ -179,7 +179,7 @@ export default function SmsPage() {
                   </p>
                 </div>
                 <p>
-                  Not in the US? <a href="https://cdn.forms-content-1.sg-form.com/f348d1a4-4304-11f0-b649-8e824612f419" target="_blank" rel="noopener noreferrer" className="text-[#8b5cf6] hover:text-[#8b5cf6]/80 font-semibold underline">Get the daily chaos via email instead</a>.
+                  Not in the US? <a href="/email-signup" className="text-[#8b5cf6] hover:text-[#8b5cf6]/80 font-semibold underline">Get the daily chaos via email instead</a>.
                 </p>
                 <p className="text-sm">
                   By subscribing, you agree to our{' '}

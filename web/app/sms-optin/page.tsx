@@ -196,7 +196,7 @@ export default function SmsOptIn() {
                 >
                   <p className="text-sm text-[#1a3d3d] font-medium leading-snug">
                     ✈️ SMS is US-only. Emotionally unwell is optional.<br />
-                    🌍 Not in the US? <a href="https://advisorsfoundry.substack.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#1a3d3d]/80">Join the mailing list</a> for weekly startup spirals.
+                    🌍 Not in the US? <a href="/email-signup" className="underline hover:text-[#1a3d3d]/80">Get the daily chaos via email instead</a>.
                   </p>
                 </motion.div>
 
