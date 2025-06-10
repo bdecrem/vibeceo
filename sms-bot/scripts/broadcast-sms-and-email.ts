@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 import twilio from 'twilio';
 import pLimit from 'p-limit';
 import { getActiveSubscribers, updateLastMessageDate } from '../lib/subscribers.js';
-import { sendBroadcastEmailToList, sendTestEmail } from '../lib/email/sendgrid.js';
+import { sendTestEmail, sendToSendGridList } from '../lib/email/sendgrid.js';
 
 // Environment setup
 const __filename = fileURLToPath(import.meta.url);
@@ -36,9 +36,9 @@ async function broadcastSmsAndEmail(message: string, testEmailOnly = false) {
   if (testEmailOnly) {
     console.log('⚠️  TEST MODE: Email only - NO SMS will be sent to subscribers');
     
-    // Only send email in test mode
+    // Only send test email in test mode
     console.log('\n📧 === EMAIL TEST ===');
-    const emailResults = await broadcastEmail(message);
+    const emailResults = await broadcastEmailTest(message);
     
     console.log('\n🎉 === TEST SUMMARY ===');
     console.log(`📧 Email: ${emailResults.success ? 'Test email sent' : 'Failed'}`);
@@ -55,22 +55,44 @@ async function broadcastSmsAndEmail(message: string, testEmailOnly = false) {
   console.log('⏳ Starting in 5 seconds... (Ctrl+C to cancel)');
   await new Promise(resolve => setTimeout(resolve, 5000));
   
-  // Step 1: Send SMS to all subscribers
+  // Step 1: Send SMS to all subscribers immediately
   console.log('\n📱 === SMS BROADCAST ===');
   const smsResults = await broadcastSms(message);
   
-  // Step 2: Send Email broadcast
-  console.log('\n📧 === EMAIL BROADCAST ===');
-  const emailResults = await broadcastEmail(message);
+  // Step 2: Schedule Email broadcast for 2 hours later (aligned with SMS preview)
+  if (smsResults.success > 0) {
+    console.log('\n📧 === EMAIL BROADCAST SCHEDULED ===');
+    console.log('📧 Scheduling email broadcast for 2 hours after SMS...');
+    
+    // Schedule email for 2 hours later
+    setTimeout(async () => {
+      try {
+        console.log('📧 Sending delayed email broadcast to all subscribers...');
+        
+        const emailResult = await sendToSendGridList(message);
+        if (emailResult.success) {
+          console.log(`📧 Email broadcast successful! Message ID: ${emailResult.messageId}`);
+        } else {
+          console.log('📧 Email broadcast failed');
+        }
+      } catch (emailError) {
+        console.error('📧 Email broadcast error:', emailError);
+      }
+    }, 2 * 60 * 60 * 1000); // 2 hours = 7,200,000 milliseconds
+    
+    console.log('📧 Email broadcast scheduled for 2 hours from now');
+  } else {
+    console.log('📧 Skipping email broadcast - no SMS messages were sent successfully');
+  }
   
   // Summary
   console.log('\n🎉 === BROADCAST SUMMARY ===');
   console.log(`📱 SMS: ${smsResults.success} of ${smsResults.total} sent successfully`);
-  console.log(`📧 Email: ${emailResults.success ? 'Prepared for SendGrid list' : 'Failed'}`);
+  console.log(`📧 Email: Scheduled for 2 hour delay (aligned with SMS preview)`);
   
   return {
     sms: smsResults,
-    email: emailResults
+    email: { success: true, scheduled: true }
   };
 }
 
@@ -117,20 +139,16 @@ async function broadcastSms(message: string) {
   return { success: successCount, total: subscribers.length };
 }
 
-async function broadcastEmail(message: string) {
+// Test email function (for --test-email-only mode)
+async function broadcastEmailTest(message: string) {
   try {
-    // Option 1: Use SendGrid list (when you have it set up)
-    // const listId = process.env.SENDGRID_LIST_ID;
-    // const result = await sendBroadcastEmailToList(message, listId);
-    
-    // Option 2: For testing, send to your email
     const testEmail = 'bdecrem@gmail.com';
-    console.log(`📧 Sending test email to ${testEmail} (in production, this would go to SendGrid list)`);
+    console.log(`📧 Sending test email to ${testEmail}`);
     const result = await sendTestEmail(message, testEmail);
     
     return { success: true, details: result };
   } catch (error: unknown) {
-    console.error('❌ Email broadcast failed:', error);
+    console.error('❌ Test email failed:', error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -147,7 +165,17 @@ const testEmailOnly = args[0] === '--test-email-only';
 const message = testEmailOnly ? args.slice(1).join(' ') : args.join(' ');
 
 broadcastSmsAndEmail(message, testEmailOnly)
-  .then(() => process.exit(0))
+  .then(() => {
+    if (!testEmailOnly) {
+      console.log('\n⚠️  Process will continue running for 2 hours to send delayed email...');
+      console.log('⚠️  Press Ctrl+C if you want to stop before email is sent');
+    }
+    
+    // Don't exit immediately in production mode - need to wait for email
+    if (testEmailOnly) {
+      process.exit(0);
+    }
+  })
   .catch((error: unknown) => {
     console.error('Error in broadcast:', error);
     process.exit(1);

@@ -55,11 +55,17 @@ export async function sendBroadcastEmailToList(message: string, listId?: string)
   console.log(`📧 Broadcasting email to SendGrid list${listId ? ` (ID: ${listId})` : ''}`);
   
   try {
+    const today = new Date().toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      timeZone: 'America/Los_Angeles' 
+    });
+
     // Create the email content
     const emailContent = {
       from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
       replyTo: 'daily@reply.advisorsfoundry.ai',
-      subject: 'AF Daily — One Line to Unravel You',
+      subject: `AF Daily — ${today}: ✨ Delusion Incoming`,
       content: [
         {
           type: 'text/plain',
@@ -101,11 +107,17 @@ export async function sendBroadcastEmailToList(message: string, listId?: string)
 // For testing - send to a single email (like your test)
 export async function sendTestEmail(message: string, recipientEmail: string) {
   try {
+    const today = new Date().toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      timeZone: 'America/Los_Angeles' 
+    });
+
     const msg = {
       to: recipientEmail,
       from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
       replyTo: 'daily@reply.advisorsfoundry.ai',
-      subject: 'AF Daily — One Line to Unravel You',
+      subject: `AF Daily — ${today}: ✨ Delusion Incoming`,
       text: formatMessageAsText(message),
       html: formatMessageAsHtml(message),
     };
@@ -202,11 +214,17 @@ async function sendToListContacts(message: string, listId: string): Promise<{suc
       
       const promises = batch.map(async (email) => {
         try {
+          const today = new Date().toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric',
+            timeZone: 'America/Los_Angeles' 
+          });
+
           const msg = {
             to: email,
             from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
             replyTo: 'daily@reply.advisorsfoundry.ai',
-            subject: 'AF Daily — One Line to Unravel You',
+            subject: `AF Daily — ${today}: ✨ Delusion Incoming`,
             text: textContent,
             html: htmlContent,
             tracking_settings: {
@@ -275,19 +293,48 @@ function formatMessageAsText(message: string): string {
     timeZone: 'America/Los_Angeles' 
   });
   
-  return `AF Daily — ${today}
+  // Extract just the core content without AF Daily header and marketing footer
+  let coreContent = message;
+  
+  // Remove "AF Daily — [date]" header if present
+  coreContent = coreContent.replace(/^AF Daily — [^\n]*\n\n?/i, '');
+  
+  // Remove marketing footer if present (🌀 Text MORE...)
+  coreContent = coreContent.replace(/\n\n🌀 .*$/s, '');
+  
+  // Parse for attribution (— Author)
+  let messageContent = coreContent;
+  let attribution = '';
+  
+  const attributionMatch = coreContent.match(/^(.*?)\n— (.+)$/s);
+  if (attributionMatch) {
+    messageContent = attributionMatch[1].trim();
+    attribution = attributionMatch[2].trim();
+  }
+  
+  // Add line break after "Happy Hour:" if present
+  messageContent = messageContent.replace(/Happy Hour:([^\n])/g, 'Happy Hour:\n$1');
+  
+  // Check if it looks like a quote (has quotation marks)
+  const hasQuotes = /^["'"].*["'"]$/s.test(messageContent.trim());
+  
+  return `${today}
+A toast to your temporary delusion
 
-${message}
+AF Daily — ${today}
+🌞 Welcome to your regularly scheduled reality break.
 
-Cracked open by Advisors Foundry, your startup's favorite reality distortion field.
+${hasQuotes ? '💭 ' : ''}${messageContent}
+${attribution ? `— ${attribution}` : ''}
 
-Still hungry for founder chaos?
-Subscribe to the Substack before we pivot to selling protein powder:
-→ advisorsfoundry.substack.com
+Silence is golden. Or at least Series A adjacent.
 
 ---
-advisorsfoundry.ai
-Want out? Reply with "UNSUBSCRIBE"`;
+
+Still hungry for founder chaos?
+Subscribe to our Substack before we pivot to selling protein powder.
+
+advisorsfoundry.ai — Unsubscribe`;
 }
 
 function formatMessageAsHtml(message: string): string {
@@ -297,58 +344,52 @@ function formatMessageAsHtml(message: string): string {
     timeZone: 'America/Los_Angeles' 
   });
   
-  // Parse the message to extract quote and attribution
-  let messageContent = message;
+  // Extract just the core content without AF Daily header and marketing footer
+  let coreContent = message;
+  
+  // Remove "AF Daily — [date]" header if present
+  coreContent = coreContent.replace(/^AF Daily — [^\n]*\n\n?/i, '');
+  
+  // Remove marketing footer if present (🌀 Text MORE...)
+  coreContent = coreContent.replace(/\n\n🌀 .*$/s, '');
+  
+  // Parse for attribution (— Author)
+  let messageContent = coreContent;
   let attribution = '';
   
-  // Look for attribution pattern like "— Alex" at the end
-  const attributionMatch = message.match(/^(.*?)\s*—\s*(.+)$/s);
+  const attributionMatch = coreContent.match(/^(.*?)\n— (.+)$/s);
   if (attributionMatch) {
     messageContent = attributionMatch[1].trim();
     attribution = attributionMatch[2].trim();
   }
   
-  // Clean up quotes if present
-  messageContent = messageContent.replace(/^["'""]|["'""]$/g, '');
+  // Convert line breaks and format content, specifically handle "Happy Hour:" line break
+  let formattedContent = messageContent.replace(/\n/g, '<br>');
   
-  // Convert line breaks to HTML breaks and add quote marks
-  const quotedContent = `"${messageContent.replace(/\n/g, '<br>')}"`;
+  // Add line break after "Happy Hour:" if present
+  formattedContent = formattedContent.replace(/Happy Hour:([^<])/g, 'Happy Hour:<br>$1');
   
-  // Random motivational no-reply messages
-  const noReplyMessages = [
-    "Can't text back? Just whisper your reply into your iced coffee and trust the algorithm.",
-    "There's no reply button here. Just mutter something inspirational and hope the startup gods are listening.",
-    "No need to reply. Just vibe, hydrate, and wait for your next delusion drop.",
-    "No response needed. Just nod solemnly and pretend you understood the assignment.",
-    "You can't reply to this email, but you can always pivot spiritually.",
-    "There's no reply function. Just toast the chaos and carry on.",
-    "Replies are closed. Journal about it and launch a product.",
-    "Texting back won't work. Telepathically align with your pitch deck instead.",
-    "No reply necessary — your aura's been updated.",
-    "Silence is golden. Or at least Series A adjacent."
-  ];
-  
-  // Pick a random no-reply message
-  const randomMessage = noReplyMessages[Math.floor(Math.random() * noReplyMessages.length)];
+  // Check if it looks like a quote (has quotation marks)
+  const hasQuotes = /^["'"].*["'"]$/s.test(messageContent.trim());
   
   return `
   <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 24px; background-color: #fffaf5; color: #1a1a1a; max-width: 600px; margin: auto;">
-    <h2 style="margin-bottom: 4px;">${today}</h2>
-    <p style="margin-top: 0; color: #666;">A toast to your temporary delusion</p>
+    <p style="margin-bottom: 8px; font-size: 18px; font-weight: 600;">${today}</p>
+    <p style="margin-top: 0; margin-bottom: 24px; color: #666; font-style: italic;">A toast to your temporary delusion</p>
 
-    <div style="margin: 24px 0; padding: 16px 20px; background-color: #fff3e0; border-radius: 12px;">
-      <p style="font-size: 18px; margin: 0; line-height: 1.4; color: #333;">AF Daily — ${today}<br>
-      ☀️ Welcome to your regularly scheduled reality break.<br><br>
-      🌞 ${quotedContent}</p>
-      ${attribution ? `<p style="margin: 8px 0 0 0; font-size: 18px; color: #333;">— ${attribution}</p>` : ''}
-    </div>
+    <p style="margin-bottom: 8px; font-size: 18px; font-weight: 600;">AF Daily — ${today}</p>
+    <p style="margin-bottom: 16px; font-size: 16px;">🌞 Welcome to your regularly scheduled reality break.</p>
 
-    <p>${randomMessage}</p>
+    <p style="margin-bottom: 4px; font-size: 16px;">${hasQuotes ? '💭 ' : ''}${formattedContent}</p>
+    ${attribution ? `<p style="margin-bottom: 16px; font-size: 16px;">— ${attribution}</p>` : ''}
+    
+    <p style="margin-bottom: 24px; font-size: 16px; font-style: italic;">Silence is golden. Or at least Series A adjacent.</p>
 
-    <hr style="margin: 32px 0; border: none; border-top: 1px solid #ddd;" />
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;" />
 
-    <p style="font-size: 14px;">
-      Still hungry for founder chaos? Subscribe to our <a href="https://advisorsfoundry.substack.com" style="color: #ff6600; text-decoration: none;">Substack</a> before we pivot to selling protein powder.
+    <p style="margin-bottom: 16px; font-size: 14px;">
+      Still hungry for founder chaos?<br>
+      Subscribe to our <a href="https://advisorsfoundry.substack.com" style="color: #ff6600; text-decoration: none;">Substack</a> before we pivot to selling protein powder.
     </p>
 
     <p style="font-size: 12px; color: #888;">advisorsfoundry.ai — <a href="mailto:bot@advisorsfoundry.ai?subject=Unsubscribe" style="color: #888;">Unsubscribe</a></p>
