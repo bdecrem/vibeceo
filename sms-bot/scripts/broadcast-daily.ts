@@ -14,7 +14,7 @@ async function broadcastDailyMessage() {
     const twilioClient = initializeTwilioClient();
     
     // Get today's inspiration
-    const todaysData = getTodaysInspiration();
+    const todaysData = await getTodaysInspiration();
     const messageText = formatDailyMessage(todaysData.inspiration);
     
     // Get all active subscribers
