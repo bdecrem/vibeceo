@@ -111,7 +111,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         console.log(`Starting early daily broadcast (${earlyTime})...`);
         
         // Get today's message
-        const todaysData = getTodaysInspiration();
+        const todaysData = await getTodaysInspiration();
         const messageText = formatDailyMessage(todaysData.inspiration);
         
         // Get all active subscribers
@@ -216,7 +216,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         console.log(`Starting regular daily broadcast (${regularTime})...`);
         
         // Get today's message
-        const todaysData = getTodaysInspiration();
+        const todaysData = await getTodaysInspiration();
         const messageText = formatDailyMessage(todaysData.inspiration);
         
         // Get active subscribers

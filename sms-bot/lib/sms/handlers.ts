@@ -5,6 +5,8 @@ import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
 import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers } from '../subscribers.js';
+import { supabase } from '../supabase.js';
+import { addItemToSupabase } from './supabase-add.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,18 +17,74 @@ let marketingMessages: any[] = [];
 let dayTrackerPath: string = '';
 let usageTrackerPath: string = '';
 
-function loadInspirationsData() {
-  if (!inspirationsData.length) {
-    try {
-      const messagesPath = path.join(process.cwd(), 'data', 'af_daily_messages.json');
-      inspirationsData = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
-      dayTrackerPath = path.join(process.cwd(), 'data', 'day-tracker.json');
-      usageTrackerPath = path.join(process.cwd(), 'data', 'usage-tracker.json');
-      console.log(`Loaded ${inspirationsData.length} messages from ${messagesPath}`);
-    } catch (error) {
-      console.error('ERROR: Cannot load daily messages file:', error);
-      throw new Error('Daily messages file is missing or corrupted. Please check the file: af_daily_messages.json');
+// NEW: Load data from Supabase instead of JSON file
+async function loadInspirationsDataFromSupabase() {
+  try {
+    console.log('Loading messages from Supabase af_daily_message table...');
+    const { data, error } = await supabase
+      .from('af_daily_message')
+      .select('*')
+      .order('item', { ascending: true });
+
+    if (error) {
+      console.error('ERROR: Cannot load messages from Supabase:', error);
+      throw new Error('Supabase af_daily_message table query failed: ' + error.message);
     }
+
+    if (!data || data.length === 0) {
+      console.error('ERROR: No messages found in Supabase af_daily_message table');
+      throw new Error('Supabase af_daily_message table is empty');
+    }
+
+    // Transform Supabase data to match expected format
+    inspirationsData = data.map(record => {
+      if (record.type === 'interactive') {
+        // Convert flattened interactive format back to nested format
+        return {
+          item: record.item,
+          type: record.type,
+          trigger: {
+            keyword: record.trigger_keyword,
+            text: record.trigger_text
+          },
+          response: {
+            'quotation-marks': record.quotation_marks || 'no',
+            prepend: record.prepend || '',
+            text: record.text,
+            author: record.author
+          }
+        };
+      } else {
+        // Standard format for other types
+        return {
+          item: record.item,
+          type: record.type,
+          'quotation-marks': record.quotation_marks,
+          prepend: record.prepend,
+          text: record.text,
+          author: record.author,
+          intro: record.intro,
+          outro: record.outro
+        };
+      }
+    });
+
+    // Set up paths for day tracker and usage tracker (still using JSON files for these)
+    dayTrackerPath = path.join(process.cwd(), 'data', 'day-tracker.json');
+    usageTrackerPath = path.join(process.cwd(), 'data', 'usage-tracker.json');
+    
+    console.log(`Loaded ${inspirationsData.length} messages from Supabase`);
+    return inspirationsData;
+  } catch (error) {
+    console.error('ERROR: Failed to load from Supabase:', error);
+    throw error;
+  }
+}
+
+// UPDATED: Modified to use Supabase
+async function loadInspirationsData() {
+  if (!inspirationsData.length) {
+    await loadInspirationsDataFromSupabase();
   }
   return inspirationsData;
 }
@@ -146,9 +204,9 @@ function addToUsageTracker(itemNumber: number, date: string = new Date().toISOSt
 // ADMIN FUNCTIONS
 
 // Find a message by ID
-function findMessageById(id: number): any | null {
-  const data = loadInspirationsData();
-  const message = data.find(item => item.item === id);
+async function findMessageById(id: number): Promise<any | null> {
+  const data = await loadInspirationsData();
+  const message = data.find((item: any) => item.item === id);
   return message || null;
 }
 
@@ -176,8 +234,8 @@ export function queueSpecificMessage(itemId: number): { success: boolean, messag
 }
 
 // Get random message for today that hasn't been used in the last 30 days
-function getRandomMessageForToday(date: string = new Date().toISOString().split('T')[0]): any {
-  const data = loadInspirationsData();
+async function getRandomMessageForToday(date: string = new Date().toISOString().split('T')[0]): Promise<any> {
+  const data = await loadInspirationsData();
   const usageTracker = loadUsageTracker();
   
   // Check weekend mode - either forced via env var or actual Pacific Time weekend
@@ -244,8 +302,8 @@ function getRandomMessageForToday(date: string = new Date().toISOString().split(
 }
 
 // Legacy function - kept for backwards compatibility but not used in random system
-function getCurrentDay(): number {
-  const data = loadInspirationsData();
+async function getCurrentDay(): Promise<number> {
+  const data = await loadInspirationsData();
   
   // Filter to only inspiration and intervention types (skip interactive for now)
   const availableMessages = data.filter(item => 
@@ -275,7 +333,7 @@ function getCurrentDay(): number {
     // Skip today's message (QA feature for admin users)
     // MODERATION ACTION: This blocks today's selected message and picks a new one for everyone
     // Returns the new message
-    export function skipToNextInspiration(): { day: number, inspiration: any } {
+    export async function skipToNextInspiration(): Promise<{ day: number, inspiration: any }> {
   const today = new Date().toISOString().split('T')[0];
   const usageTracker = loadUsageTracker();
   
@@ -294,7 +352,7 @@ function getCurrentDay(): number {
   }
   
   // Get a new random message for today (this will avoid the just-blocked message)
-  const newMessage = getRandomMessageForToday(today);
+  const newMessage = await getRandomMessageForToday(today);
   
   console.log(`SKIP: Selected new message for ${today}: item ${newMessage.item} (replacing ${currentItemNumber || 'none'})`);
   
@@ -306,39 +364,29 @@ function getCurrentDay(): number {
 
 // ADD COMMAND FUNCTIONS
 
-// Find the next available item number in the JSON file
-function getNextItemNumber(): number {
-  const data = loadInspirationsData();
-  const maxItem = Math.max(...data.map(item => item.item));
-  return maxItem + 1;
-}
-
-// Add a new item to the JSON file
-function addItemToFile(itemData: any): { success: boolean, itemId?: number, error?: string } {
+// Find the next available item number in Supabase
+async function getNextItemNumber(): Promise<number> {
   try {
-    const data = loadInspirationsData();
-    const newItemId = getNextItemNumber();
-    
-    // Replace the item number with auto-incremented one
-    const newItem = { ...itemData, item: newItemId };
-    
-    // Add to data array
-    data.push(newItem);
-    
-    // Write back to file
-    const filePath = path.join(process.cwd(), 'data', 'af_daily_messages.json');
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    
-    // Clear cached data to force reload
-    inspirationsData = [];
-    
-    console.log(`Successfully added item ${newItemId} to af_daily_messages.json`);
-    return { success: true, itemId: newItemId };
+    const { data, error } = await supabase
+      .from('af_daily_message')
+      .select('item')
+      .order('item', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error getting max item number:', error);
+      throw error;
+    }
+
+    const maxItem = data && data.length > 0 ? data[0].item : 0;
+    return maxItem + 1;
   } catch (error) {
-    console.error('Error adding item to file:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    console.error('Error in getNextItemNumber:', error);
+    throw error;
   }
 }
+
+// Note: addItemToSupabase is now imported from './supabase-add.js'
 
 // Validate JSON structure for ADD command
 function validateAddJson(jsonData: any): { valid: boolean, error?: string } {
@@ -373,9 +421,9 @@ function validateAddJson(jsonData: any): { valid: boolean, error?: string } {
 }
 
 // Make these functions available for the broadcast script
-export function getTodaysInspiration() {
+export async function getTodaysInspiration() {
   const today = new Date().toISOString().split('T')[0];
-  const message = getRandomMessageForToday(today);
+  const message = await getRandomMessageForToday(today);
   
   return {
     day: 1, // Not used in random system, but kept for compatibility
@@ -1186,8 +1234,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     }
     
     // Check for interactive commands
-    const data = loadInspirationsData();
-    const interactiveMessage = data.find(item => 
+    const data = await loadInspirationsData();
+    const interactiveMessage = data.find((item: any) => 
       item.type === 'interactive' && 
       item.trigger && 
       item.trigger.keyword === messageUpper
@@ -1246,9 +1294,9 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           );
           console.log(`Admin ${from} attempted to queue non-existent item ${itemId}`);
         }
-      } else if (command === 'MORE') {
+      } else       if (command === 'MORE') {
         // MORE [id] - Preview specific message (no distribution impact)
-        const targetMessage = findMessageById(itemId);
+        const targetMessage = await findMessageById(itemId);
         
         if (targetMessage) {
           let previewText = '';
@@ -1306,8 +1354,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           return;
         }
         
-        // Add to file
-        const result = addItemToFile(jsonData);
+        // Add to Supabase
+        const result = await addItemToSupabase(jsonData);
         if (!result.success) {
           await sendSmsResponse(
             from,
@@ -1481,7 +1529,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     if (messageUpper === 'TODAY') {
       console.log(`Sending TODAY response to ${from}`);
       try {
-        const todaysData = getTodaysInspiration();
+        const todaysData = await getTodaysInspiration();
         const responseText = formatDailyMessage(todaysData.inspiration);
         
         await sendSmsResponse(
@@ -1503,7 +1551,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       console.log(`Sending MORE response to ${from}`);
       try {
         // Use the actual messages data with weekend filtering
-        const data = loadInspirationsData();
+        const data = await loadInspirationsData();
         
         // Check weekend mode for MORE command
         const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
@@ -1524,10 +1572,10 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         let availableMessages;
         if (isWeekendMode) {
           // Weekend mode: ONLY use type: weekend
-          availableMessages = data.filter(item => item.type === 'weekend');
+          availableMessages = data.filter((item: any) => item.type === 'weekend');
         } else {
           // Weekday mode: use everything EXCEPT type: weekend
-          availableMessages = data.filter(item => item.type !== 'weekend');
+          availableMessages = data.filter((item: any) => item.type !== 'weekend');
         }
         const randomIndex = Math.floor(Math.random() * availableMessages.length);
         const chaosLine = availableMessages[randomIndex];
@@ -1628,7 +1676,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       
       if (subscriber && subscriber.is_admin) {
         // User has admin privileges, process the skip command
-        const newInspiration = skipToNextInspiration();
+        const newInspiration = await skipToNextInspiration();
         const messageText = formatDailyMessage(newInspiration.inspiration);
         
         await sendSmsResponse(
