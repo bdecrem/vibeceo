@@ -89,6 +89,12 @@ async function loadInspirationsData() {
   return inspirationsData;
 }
 
+// Export function to clear cache when new items are added
+export function clearInspirationsCache() {
+  inspirationsData = [];
+  console.log('Cleared inspirations cache - will reload from Supabase on next access');
+}
+
 /**
  * Loads marketing messages from the JSON file
  * These are the messages that appear at the bottom of daily inspirations
@@ -203,16 +209,65 @@ function addToUsageTracker(itemNumber: number, date: string = new Date().toISOSt
 
 // ADMIN FUNCTIONS
 
-// Find a message by ID
+// Find a message by ID - Query Supabase directly for real-time data
 async function findMessageById(id: number): Promise<any | null> {
-  const data = await loadInspirationsData();
-  const message = data.find((item: any) => item.item === id);
-  return message || null;
+  try {
+    console.log(`Querying Supabase directly for item ${id}...`);
+    const { data, error } = await supabase
+      .from('af_daily_message')
+      .select('*')
+      .eq('item', id)
+      .single();
+
+    if (error) {
+      console.error(`Error finding item ${id} in Supabase:`, error);
+      return null;
+    }
+
+    if (!data) {
+      console.log(`Item ${id} not found in Supabase`);
+      return null;
+    }
+
+    // Transform Supabase data to expected format
+    if (data.type === 'interactive') {
+      // Convert flattened interactive format back to nested format
+      return {
+        item: data.item,
+        type: data.type,
+        trigger: {
+          keyword: data.trigger_keyword,
+          text: data.trigger_text
+        },
+        response: {
+          'quotation-marks': data.quotation_marks || 'no',
+          prepend: data.prepend || '',
+          text: data.text,
+          author: data.author
+        }
+      };
+    } else {
+      // Standard format for other types
+      return {
+        item: data.item,
+        type: data.type,
+        'quotation-marks': data.quotation_marks,
+        prepend: data.prepend,
+        text: data.text,
+        author: data.author,
+        intro: data.intro,
+        outro: data.outro
+      };
+    }
+  } catch (error) {
+    console.error(`Error in findMessageById(${id}):`, error);
+    return null;
+  }
 }
 
 // Queue specific message for next distribution (ADMIN: SKIP [id])
-export function queueSpecificMessage(itemId: number): { success: boolean, message: any | null } {
-  const targetMessage = findMessageById(itemId);
+export async function queueSpecificMessage(itemId: number): Promise<{ success: boolean, message: any | null }> {
+  const targetMessage = await findMessageById(itemId);
   
   if (!targetMessage) {
     return { success: false, message: null };
@@ -1276,7 +1331,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       
       if (command === 'SKIP') {
         // SKIP [id] - Queue specific message for distribution
-        const result = queueSpecificMessage(itemId);
+        const result = await queueSpecificMessage(itemId);
         
         if (result.success && result.message) {
           const messageText = formatDailyMessage(result.message);

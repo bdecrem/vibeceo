@@ -59,6 +59,16 @@ export async function addItemToSupabase(itemData: any): Promise<{ success: boole
     }
     
     console.log(`Successfully added item ${newItemId} to Supabase af_daily_message table`);
+    
+    // Clear the global cache so new items are immediately available
+    try {
+      const { clearInspirationsCache } = await import('./handlers.js');
+      clearInspirationsCache();
+      console.log('Cache cleared - new item immediately available for MORE/SKIP commands');
+    } catch (error) {
+      console.log('Note: Could not clear cache automatically - new item will be available on next restart');
+    }
+    
     return { success: true, itemId: newItemId };
   } catch (error) {
     console.error('Error adding item to Supabase:', error);
