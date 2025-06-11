@@ -110,15 +110,27 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         const earlyTime = isWeekendMode ? '10am PT' : '7am PT';
         console.log(`Starting early daily broadcast (${earlyTime})...`);
         
-        // Get today's message
-        const todaysData = await getTodaysInspiration();
+        // Get today's message with proper error handling
+        let todaysData;
+        try {
+          console.log('Fetching today\'s inspiration from Supabase...');
+          todaysData = await getTodaysInspiration();
+          if (!todaysData || !todaysData.inspiration) {
+            throw new Error('No inspiration found for today');
+          }
+          console.log('Successfully fetched today\'s inspiration');
+        } catch (error) {
+          console.error('Failed to fetch today\'s inspiration:', error);
+          return; // Exit early if we can't get the message
+        }
+
         const messageText = formatDailyMessage(todaysData.inspiration);
         
-        // Get all active subscribers
+        // Get active subscribers
         const allSubscribers = await getActiveSubscribers();
         
-            // Filter for admin users (early message delivery)
-    const adminSubscribers = allSubscribers.filter(sub => sub.is_admin === true);
+        // Filter for admin users
+        const adminSubscribers = allSubscribers.filter(sub => sub.is_admin === true);
         console.log(`Found ${adminSubscribers.length} admin subscribers`);
         
         // Send to each admin subscriber
@@ -215,8 +227,20 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         const regularTime = isWeekendMode ? '12pm PT' : '9am PT';
         console.log(`Starting regular daily broadcast (${regularTime})...`);
         
-        // Get today's message
-        const todaysData = await getTodaysInspiration();
+        // Get today's message with proper error handling
+        let todaysData;
+        try {
+          console.log('Fetching today\'s inspiration from Supabase...');
+          todaysData = await getTodaysInspiration();
+          if (!todaysData || !todaysData.inspiration) {
+            throw new Error('No inspiration found for today');
+          }
+          console.log('Successfully fetched today\'s inspiration');
+        } catch (error) {
+          console.error('Failed to fetch today\'s inspiration:', error);
+          return; // Exit early if we can't get the message
+        }
+
         const messageText = formatDailyMessage(todaysData.inspiration);
         
         // Get active subscribers
