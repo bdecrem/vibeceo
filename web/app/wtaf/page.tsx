@@ -67,8 +67,8 @@ export default function WtafPage() {
                 <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
                   <span className="bg-[#ff6b6b] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
                   <div>
-                    <p className="font-semibold text-gray-800">Text our SMS bot:</p>
-                    <p className="text-gray-600 text-sm mt-1">Send your number to get access (US only for now)</p>
+                    <p className="font-semibold text-gray-800">Text START to 866-330-0015:</p>
+                    <p className="text-gray-600 text-sm mt-1">Sorry, US only for now.</p>
                   </div>
                 </div>
                 
