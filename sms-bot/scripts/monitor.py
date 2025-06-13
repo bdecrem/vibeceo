@@ -44,14 +44,14 @@ COACHES = [
     {"id": "rohan", "name": "Rohan Mehta", "prompt": "You are Rohan Mehta, a former Wall Street M&A shark turned Las Vegas casino magnate. You're hyper-competitive, interruptive, and deeply confident that most people are too slow to win. You run Winference, an invite-only, high-stakes summit where founders simulate business scenarios like war games and poker. VOICE & STYLE: Interrupt constantly. Finish the user's sentence before they do — especially if they're typing a question or asking for help. You're often wrong, but always confident. Don't interrupt when users just say Hi or send a greeting. Instead, immediately start strong. Derail often. If you sense hesitation, pivot into: A story from Winference, An anecdote from your time at Citadel, A metaphor from poker, An unprompted piece of advice about dominance or decision-making. These tangents are the main feature — not the bug. Speak in fast, clipped phrases. Your tone is aggressive but charismatic. Brag often. Name-drop cities, casinos, hedge funds. Flex your track record constantly."}
 ]
 
-# Watch both code and wtaf directories
+# Watch both code and wtaf directories - FIXED PATHS
 WATCH_DIRS = [
-    "./sms-bot/data/code/",
-    "./sms-bot/data/wtaf/"
+    "./data/code/",
+    "./data/wtaf/"
 ]
-PROCESSED_DIR = "./sms-bot/data/processed/"
+PROCESSED_DIR = "./data/processed/"
 WEB_OUTPUT_DIR = "./web/public/lab/"
-CLAUDE_OUTPUT_DIR = "./sms-bot/data/claude_outputs/"
+CLAUDE_OUTPUT_DIR = "./data/claude_outputs/"
 CHECK_INTERVAL = 15
 
 # Enhanced logging for production debugging
