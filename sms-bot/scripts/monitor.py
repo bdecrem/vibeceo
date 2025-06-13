@@ -747,6 +747,7 @@ def monitor_loop():
     log_with_timestamp("🌀 GPT-4o monitor running...")
     log_with_timestamp(f"👀 Watching directories: {WATCH_DIRS}")
     processed = set()
+    currently_processing = set()  # Track files being processed right now
     loop_count = 0
     
     while True:
@@ -756,18 +757,32 @@ def monitor_loop():
                 log_with_timestamp(f"🔄 Monitor loop #{loop_count} - checking for files...")
                 
             newest = get_newest_file(WATCH_DIRS)
-            if newest and str(newest) not in processed:
+            if newest and str(newest) not in processed and str(newest) not in currently_processing:
                 log_with_timestamp(f"🚨 New file detected: {newest}")
                 log_with_timestamp(f"📄 File size: {os.path.getsize(newest)} bytes")
-                if execute_gpt4o(str(newest)):
-                    move_processed_file(str(newest))
-                    processed.add(str(newest))
-                    log_with_timestamp(f"✅ Successfully processed: {newest}")
-                else:
-                    log_with_timestamp(f"❌ Failed to process: {newest}")
+                
+                # Immediately mark as being processed to prevent duplicates
+                currently_processing.add(str(newest))
+                
+                try:
+                    if execute_gpt4o(str(newest)):
+                        move_processed_file(str(newest))
+                        processed.add(str(newest))
+                        log_with_timestamp(f"✅ Successfully processed: {newest}")
+                    else:
+                        log_with_timestamp(f"❌ Failed to process: {newest}")
+                finally:
+                    # Always remove from currently_processing when done
+                    currently_processing.discard(str(newest))
+                    
             else:
                 if loop_count % 10 == 1:  # Only log occasionally to avoid spam
-                    log_with_timestamp(f"📭 No new files found in {WATCH_DIRS}")
+                    if newest and str(newest) in processed:
+                        log_with_timestamp(f"⏭️ File already processed: {newest}")
+                    elif newest and str(newest) in currently_processing:
+                        log_with_timestamp(f"⚙️ File currently being processed: {newest}")
+                    else:
+                        log_with_timestamp(f"📭 No new files found in {WATCH_DIRS}")
                     
             time.sleep(CHECK_INTERVAL)
         except KeyboardInterrupt:
@@ -778,6 +793,8 @@ def monitor_loop():
             log_with_timestamp(f"💥 Error in monitor loop: {e}")
             log_with_timestamp(f"💥 Full traceback: {traceback.format_exc()}")
             log_with_timestamp(f"🔄 Continuing after error...")
+            # Clean up processing set on error
+            currently_processing.clear()
             time.sleep(CHECK_INTERVAL)
 
 monitor_loop()
