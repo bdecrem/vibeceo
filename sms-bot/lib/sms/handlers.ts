@@ -1305,7 +1305,31 @@ ${coach}-${slug}-about ${userBio}`;
  * @param body Message content
  * @param twilioClient Twilio client for sending responses
  */
+// Track processed messages to prevent duplicates
+const processedMessages = new Set<string>();
+
 export async function processIncomingSms(from: string, body: string, twilioClient: TwilioClient): Promise<void> {
+  // Create a unique message ID based on phone number, message content, and timestamp (within 10 seconds)
+  const timestamp = Math.floor(Date.now() / 10000); // 10-second windows
+  const messageId = `${from}:${body.substring(0, 50)}:${timestamp}`;
+  
+  // Check if we've already processed this message
+  if (processedMessages.has(messageId)) {
+    console.log(`🔄 DUPLICATE MESSAGE DETECTED - Skipping: ${messageId}`);
+    return;
+  }
+  
+  // Mark as processed immediately
+  processedMessages.add(messageId);
+  
+  // Clean up old entries (keep only last 100)
+  if (processedMessages.size > 100) {
+    const entries = Array.from(processedMessages);
+    processedMessages.clear();
+    entries.slice(-50).forEach(id => processedMessages.add(id));
+  }
+  
+  console.log(`📨 PROCESSING MESSAGE: ${messageId}`);
   console.log(`Received SMS from ${from}: ${body}`);
   
   try {
@@ -1397,7 +1421,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         
         // Then send the correct day's inspiration message based on signup date
         const signupDate = new Date();
-        const correctDayData = getInspirationForNewSubscriber(signupDate);
+        const correctDayData = await getInspirationForNewSubscriber(signupDate);
         
         // If no message is available yet, send welcome message only
         if (!correctDayData) {
