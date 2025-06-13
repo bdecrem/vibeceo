@@ -221,3 +221,54 @@ export async function confirmSubscriber(phoneNumber: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Create a new subscriber in the database
+ * Used when someone texts START to sign up for the first time
+ */
+export async function createNewSubscriber(phoneNumber: string): Promise<boolean> {
+  try {
+    // Normalize the phone number first
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+    
+    // Check if subscriber already exists
+    const existingSubscriber = await getSubscriber(normalizedNumber);
+    if (existingSubscriber) {
+      console.log(`Subscriber ${normalizedNumber} already exists`);
+      return false;
+    }
+    
+    // Generate a unique slug for this user
+    const { uniqueNamesGenerator, adjectives, animals } = await import('unique-names-generator');
+    const slug = uniqueNamesGenerator({
+      dictionaries: [adjectives, animals],
+      separator: '',
+      style: 'lowerCase'
+    });
+    
+    // Create new subscriber record
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .insert({
+        phone_number: normalizedNumber,
+        opt_in_date: new Date().toISOString(),
+        consent_given: true,
+        confirmed: false, // Will be set to true when they reply YES
+        unsubscribed: false,
+        is_admin: false,
+        role: 'user',
+        slug: slug
+      });
+      
+    if (error) {
+      console.error('Error creating new subscriber:', error);
+      return false;
+    }
+    
+    console.log(`Successfully created new subscriber: ${normalizedNumber} with slug: ${slug}`);
+    return true;
+  } catch (error) {
+    console.error('Error in createNewSubscriber:', error);
+    return false;
+  }
+}
