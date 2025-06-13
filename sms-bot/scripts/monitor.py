@@ -20,6 +20,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Server configuration from environment variables
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://theaf.us")
 
+# File storage configuration
+USE_CLOUD_STORAGE = os.getenv("USE_CLOUD_STORAGE", "false").lower() == "true"
+CLOUD_STORAGE_BUCKET = os.getenv("CLOUD_STORAGE_BUCKET", "")
+CLOUD_STORAGE_PREFIX = os.getenv("CLOUD_STORAGE_PREFIX", "wtaf-files")
+
 # Fun slug generation
 COLORS = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"]
 ANIMALS = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"]
@@ -49,14 +54,40 @@ WEB_OUTPUT_DIR = "./web/public/lab/"
 CLAUDE_OUTPUT_DIR = "./sms-bot/data/claude_outputs/"
 CHECK_INTERVAL = 15
 
-os.makedirs(PROCESSED_DIR, exist_ok=True)
-os.makedirs(CLAUDE_OUTPUT_DIR, exist_ok=True)
-os.makedirs(WEB_OUTPUT_DIR, exist_ok=True)
-for watch_dir in WATCH_DIRS:
-    os.makedirs(watch_dir, exist_ok=True)
-
+# Enhanced logging for production debugging
 def log_with_timestamp(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}")
+    # Flush output for Railway logs
+    sys.stdout.flush()
+
+# Log startup info for debugging
+log_with_timestamp("🚀 Monitor.py starting up...")
+log_with_timestamp(f"📁 Current working directory: {os.getcwd()}")
+log_with_timestamp(f"🌐 WEB_APP_URL: {WEB_APP_URL}")
+log_with_timestamp(f"📂 WEB_OUTPUT_DIR: {WEB_OUTPUT_DIR}")
+
+# Create directories with enhanced logging
+log_with_timestamp("📁 Creating required directories...")
+try:
+    os.makedirs(PROCESSED_DIR, exist_ok=True)
+    log_with_timestamp(f"✅ Created/verified: {PROCESSED_DIR}")
+    
+    os.makedirs(CLAUDE_OUTPUT_DIR, exist_ok=True)
+    log_with_timestamp(f"✅ Created/verified: {CLAUDE_OUTPUT_DIR}")
+    
+    os.makedirs(WEB_OUTPUT_DIR, exist_ok=True)
+    log_with_timestamp(f"✅ Created/verified: {WEB_OUTPUT_DIR}")
+    
+    for watch_dir in WATCH_DIRS:
+        os.makedirs(watch_dir, exist_ok=True)
+        log_with_timestamp(f"✅ Created/verified watch dir: {watch_dir}")
+        
+    log_with_timestamp("✅ All directories created successfully")
+except Exception as e:
+    log_with_timestamp(f"❌ Error creating directories: {e}")
+    log_with_timestamp(f"❌ Current working directory: {os.getcwd()}")
+    log_with_timestamp(f"❌ Directory contents: {os.listdir('.')}")
+    raise
 
 def get_newest_file(directories):
     all_files = []
@@ -239,11 +270,19 @@ def extract_code_blocks(text):
 
 def save_code_to_file(code, coach, slug, format="html", user_slug=None):
     filename = f"{slug}.html"
+    log_with_timestamp(f"💾 Starting save_code_to_file: coach={coach}, slug={slug}, user_slug={user_slug}")
     
     if user_slug:
         # Save to user's personal WTAF folder
         output_dir = f"./web/public/wtaf/{user_slug}"
-        os.makedirs(output_dir, exist_ok=True)
+        log_with_timestamp(f"📁 Creating user WTAF directory: {output_dir}")
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            log_with_timestamp(f"✅ Successfully created/verified directory: {output_dir}")
+        except Exception as e:
+            log_with_timestamp(f"❌ Failed to create directory {output_dir}: {e}")
+            log_with_timestamp(f"❌ Current working directory: {os.getcwd()}")
+            raise
         public_url = f"{WEB_APP_URL}/wtaf/{user_slug}/{filename}"
         page_url = public_url
     else:
@@ -604,25 +643,39 @@ def move_processed_file(file_path):
 
 def monitor_loop():
     log_with_timestamp("🌀 GPT-4o monitor running...")
+    log_with_timestamp(f"👀 Watching directories: {WATCH_DIRS}")
     processed = set()
+    loop_count = 0
+    
     while True:
         try:
+            loop_count += 1
+            if loop_count % 10 == 1:  # Log every 10th loop to show it's alive
+                log_with_timestamp(f"🔄 Monitor loop #{loop_count} - checking for files...")
+                
             newest = get_newest_file(WATCH_DIRS)
             if newest and str(newest) not in processed:
-                log_with_timestamp(f"🚨 New file: {newest}")
+                log_with_timestamp(f"🚨 New file detected: {newest}")
+                log_with_timestamp(f"📄 File size: {os.path.getsize(newest)} bytes")
                 if execute_gpt4o(str(newest)):
                     move_processed_file(str(newest))
                     processed.add(str(newest))
+                    log_with_timestamp(f"✅ Successfully processed: {newest}")
+                else:
+                    log_with_timestamp(f"❌ Failed to process: {newest}")
             else:
-                log_with_timestamp("📭 No new files.")
+                if loop_count % 10 == 1:  # Only log occasionally to avoid spam
+                    log_with_timestamp(f"📭 No new files found in {WATCH_DIRS}")
+                    
             time.sleep(CHECK_INTERVAL)
         except KeyboardInterrupt:
             log_with_timestamp("🛑 Stopped by user.")
             break
         except Exception as e:
             import traceback
-            log_with_timestamp(f"💥 Error: {e}")
+            log_with_timestamp(f"💥 Error in monitor loop: {e}")
             log_with_timestamp(f"💥 Full traceback: {traceback.format_exc()}")
+            log_with_timestamp(f"🔄 Continuing after error...")
             time.sleep(CHECK_INTERVAL)
 
 monitor_loop()
