@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'WTAF - Vibecoding over SMS',
-  description: 'Code directly from your flip phone with our SMS-based coding assistant',
+  title: 'WTAF – Delusional App Generator',
+  description: 'Vibecoded chaos, shipped via SMS. Text us your wildest app ideas and get back absolute unhinged web apps.',
   openGraph: {
-    title: 'WTAF - Vibecoding over SMS',
-    description: 'Code directly from your flip phone with our SMS-based coding assistant',
+    title: 'WTAF by AF',
+    description: 'Vibecoded chaos, shipped via SMS.',
     url: 'https://advisorsfoundry.ai/wtaf',
     siteName: 'AdvisorsFoundry',
     images: [
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
         url: '/images/wtaf-og.png',
         width: 1200,
         height: 630,
-        alt: 'What if vibecoding, but over SMS?',
+        alt: 'WTAF - Delusional App Generator by AdvisorsFoundry',
       },
     ],
     locale: 'en_US',
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WTAF - Vibecoding over SMS',
-    description: 'Code directly from your flip phone with our SMS-based coding assistant',
+    title: 'WTAF – Delusional App Generator',
+    description: 'Vibecoded chaos, shipped via SMS.',
     images: ['/images/wtaf-og.png'],
     creator: '@theafbot',
   },
