@@ -12,6 +12,9 @@ import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generato
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Global variable for next daily message - set at 7am, used at 9am
+let nextDailyMessage: any = null;
+
 // Global cache for inspirations data, marketing messages, day tracker, and usage tracker
 let inspirationsData: any[] = [];
 let marketingMessages: any[] = [];
@@ -266,6 +269,17 @@ async function findMessageById(id: number): Promise<any | null> {
   }
 }
 
+// Set next daily message (used by 7am scheduler and admin commands)
+export function setNextDailyMessage(message: any): void {
+  nextDailyMessage = message;
+  console.log(`Set next daily message: item ${message.item} - "${message.text}"`);
+}
+
+// Get next daily message (used by 9am scheduler)
+export function getNextDailyMessage(): any {
+  return nextDailyMessage;
+}
+
 // Queue specific message for next distribution (ADMIN: SKIP [id])
 export async function queueSpecificMessage(itemId: number): Promise<{ success: boolean, message: any | null }> {
   const targetMessage = await findMessageById(itemId);
@@ -274,23 +288,16 @@ export async function queueSpecificMessage(itemId: number): Promise<{ success: b
     return { success: false, message: null };
   }
   
-  const today = new Date().toISOString().split('T')[0];
-  const usageTracker = loadUsageTracker();
+  // Update the global next daily message variable
+  setNextDailyMessage(targetMessage);
   
-  // Clear today's selection to force new selection
-  delete usageTracker.daily_selections[today];
-  
-  // Set the specific message as today's selection
-  usageTracker.daily_selections[today] = itemId;
-  saveUsageTracker(usageTracker);
-  
-  console.log(`ADMIN: Queued message ${itemId} for distribution on ${today}`);
+  console.log(`ADMIN: Queued message ${itemId} for next distribution`);
   
   return { success: true, message: targetMessage };
 }
 
-// Get random message for today that hasn't been used in the last 30 days
-async function getRandomMessageForToday(date: string = new Date().toISOString().split('T')[0]): Promise<any> {
+// Pick a random message for today's distribution (used by 7am scheduler)
+export async function pickRandomMessageForToday(): Promise<any> {
   const data = await loadInspirationsData();
   const usageTracker = loadUsageTracker();
   
@@ -323,16 +330,6 @@ async function getRandomMessageForToday(date: string = new Date().toISOString().
     availableMessages = data.filter(item => item.type !== 'weekend');
   }
   
-  // Check if we already selected a message for today
-  if (usageTracker.daily_selections[date]) {
-    const todaysItemNumber = usageTracker.daily_selections[date];
-    const todaysMessage = availableMessages.find(msg => msg.item === todaysItemNumber);
-    if (todaysMessage) {
-      console.log(`Using previously selected message for ${date}: item ${todaysItemNumber}`);
-      return todaysMessage;
-    }
-  }
-  
   // Get list of recently used item numbers
   const recentlyUsed = usageTracker.recent_usage.map(usage => usage.item);
   
@@ -349,9 +346,10 @@ async function getRandomMessageForToday(date: string = new Date().toISOString().
   const selectedMessage = messagesToChooseFrom[randomIndex];
   
   // Track this selection
-  addToUsageTracker(selectedMessage.item, date);
+  const today = new Date().toISOString().split('T')[0];
+  addToUsageTracker(selectedMessage.item, today);
   
-  console.log(`Selected random message for ${date}: item ${selectedMessage.item} (${selectedMessage.type})`);
+  console.log(`Picked random message for ${today}: item ${selectedMessage.item} (${selectedMessage.type})`);
   console.log(`Avoided ${recentlyUsed.length} recently used items`);
   
   return selectedMessage;
@@ -407,8 +405,9 @@ async function getCurrentDay(): Promise<number> {
     saveUsageTracker(usageTracker);
   }
   
-  // Get a new random message for today (this will avoid the just-blocked message)
-  const newMessage = await getRandomMessageForToday(today);
+  // Get a new random message for today and set it as next daily message
+  const newMessage = await pickRandomMessageForToday();
+  setNextDailyMessage(newMessage);
   
   console.log(`SKIP: Selected new message for ${today}: item ${newMessage.item} (replacing ${currentItemNumber || 'none'})`);
   
@@ -478,8 +477,19 @@ function validateAddJson(jsonData: any): { valid: boolean, error?: string } {
 
 // Make these functions available for the broadcast script
 export async function getTodaysInspiration() {
-  const today = new Date().toISOString().split('T')[0];
-  const message = await getRandomMessageForToday(today);
+  // Return the next daily message if it's set, otherwise pick a random one
+  if (nextDailyMessage) {
+    console.log(`Using pre-selected next daily message: item ${nextDailyMessage.item}`);
+    return {
+      day: 1, // Not used in random system, but kept for compatibility
+      inspiration: nextDailyMessage  // Keep same property name for compatibility
+    };
+  }
+  
+  // Fallback: if no message is set, pick a random one and set it
+  console.log('No next daily message set, picking random message');
+  const message = await pickRandomMessageForToday();
+  setNextDailyMessage(message);
   
   return {
     day: 1, // Not used in random system, but kept for compatibility
@@ -493,14 +503,16 @@ export async function getTodaysInspiration() {
  * @returns Today's message for the new subscriber
  */
 export function getInspirationForNewSubscriber(signupDate: Date = new Date()) {
-  // In the random system, new subscribers get the same daily message as everyone else
-  const today = signupDate.toISOString().split('T')[0];
-  const message = getRandomMessageForToday(today);
+  // In the new system, new subscribers get the same daily message as everyone else
+  if (nextDailyMessage) {
+    return {
+      day: 1, // Not used in random system, but kept for compatibility
+      inspiration: nextDailyMessage  // Keep same property name for compatibility
+    };
+  }
   
-  return {
-    day: 1, // Not used in random system, but kept for compatibility
-    inspiration: message  // Keep same property name for compatibility
-  };
+  // If no message is set yet, return null and let the scheduler handle it
+  return null;
 }
 
 export function formatDailyMessage(message: any): string {
@@ -2098,24 +2110,27 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         );
         
         // Then send the correct day's inspiration message based on signup date
+        const signupDate = new Date();
+        const correctDayData = getInspirationForNewSubscriber(signupDate);
+        
+        // If no message is available yet, send welcome message only
+        if (!correctDayData) {
+          console.log(`No daily message available yet for new subscriber ${from}, sent welcome only`);
+          return;
+        }
+        
+        const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
+
         try {
-          // Use the signup date (now) to determine the correct day's message
-          const signupDate = new Date();
-          const correctDayData = getInspirationForNewSubscriber(signupDate);
-          const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
-          
-          // Track this message time to prevent duplicate sends (regular message + inspiration tracking)
-          await updateLastMessageDate(from, signupDate);
-          await updateLastInspirationDate(from, signupDate);
-          
-          await sendSmsResponse(
-            from,
-            inspirationMessage,
-            twilioClient
-          );
+          await twilioClient.messages.create({
+            body: inspirationMessage,
+            to: from,
+            from: process.env.TWILIO_PHONE_NUMBER
+          });
+
           console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${from} (correct day based on signup date)`);
         } catch (error) {
-          console.error(`Error sending message to new subscriber: ${error}`);
+          console.error(`Failed to send message to new subscriber ${from}:`, error);
         }
       } else {
         await sendSmsResponse(
