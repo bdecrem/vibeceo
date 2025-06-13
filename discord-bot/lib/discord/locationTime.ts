@@ -33,15 +33,19 @@ export function isWeekend(): boolean {
     // WEEKEND MODE ENABLED
     console.log('[LocationTime] Checking weekend mode...');
     
-    // Get current date in LA timezone (UTC-7)
-    const now = new Date();
-    // Convert to LA time (GMT-7)
-    const utcHour = now.getUTCHours();
-    const laHour = (utcHour - 7 + 24) % 24;
-    const day = now.getUTCDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
+    // Get current date and time in Los Angeles timezone
+    const options = { timeZone: 'America/Los_Angeles' };
+    const laDate = new Date().toLocaleString('en-US', options);
+    const la = new Date(laDate);
+    
+    const day = la.getDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
+    const hour = la.getHours();
+    
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    console.log(`[LocationTime] Current LA time: ${dayNames[day]} ${hour}:${la.getMinutes()}`);
     
     // Weekend starts Friday 6pm PT (18:00 LA time)
-    if (day === 5 && laHour >= 18) {
+    if (day === 5 && hour >= 18) {
         console.log('[LocationTime] Weekend mode: Friday evening - ACTIVE');
         return true;
     }
@@ -59,23 +63,47 @@ export function isWeekend(): boolean {
     }
     
     // Weekend mode only active Friday evening through Sunday
-    
     console.log('[LocationTime] Weekend mode: DISABLED');
     return false;
 }
 
-function getWeekendLocation(laHour: number): string {
-    // Find the current block based on LA time
-    const block = weekendBlocks.find(block => {
-        const endHour = (block.startHour + block.duration) % 24;
-        if (block.startHour < endHour) {
-            return laHour >= block.startHour && laHour < endHour;
-        } else {
-            // Handle overnight blocks
-            return laHour >= block.startHour || laHour < endHour;
-        }
-    });
-
+function getWeekendLocation(): string {
+    // Get current date and time in Los Angeles timezone
+    const options = { timeZone: 'America/Los_Angeles' };
+    const laDate = new Date().toLocaleString('en-US', options);
+    const la = new Date(laDate);
+    
+    // Get LA hour and day
+    const laDay = la.getDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
+    const laHour = la.getHours();
+    
+    // Calculate block index based on day and hour
+    // Block 1: Friday 6pm-2am (18-23, 0-1)
+    // Block 2: Saturday 2am-10am (2-9)
+    // Block 3: Saturday 10am-6pm (10-17)
+    // Block 4: Saturday 6pm-2am (18-23, 0-1)
+    // Block 5: Sunday 2am-10am (2-9)
+    // Block 6: Sunday 10am-end of day (10-23)
+    
+    let blockIndex = -1;
+    
+    if (laDay === 5) { // Friday
+        if (laHour >= 18) blockIndex = 0; // Block 1
+    } else if (laDay === 6) { // Saturday
+        if (laHour >= 0 && laHour < 2) blockIndex = 0; // Block 1 overnight
+        else if (laHour >= 2 && laHour < 10) blockIndex = 1; // Block 2
+        else if (laHour >= 10 && laHour < 18) blockIndex = 2; // Block 3
+        else if (laHour >= 18) blockIndex = 3; // Block 4
+    } else if (laDay === 0) { // Sunday
+        if (laHour >= 0 && laHour < 2) blockIndex = 3; // Block 4 overnight
+        else if (laHour >= 2 && laHour < 10) blockIndex = 4; // Block 5
+        else if (laHour >= 10) blockIndex = 5; // Block 6
+    }
+    
+    const block = blockIndex >= 0 && blockIndex < weekendBlocks.length ? 
+                  weekendBlocks[blockIndex] : null;
+    
+    console.log(`[LocationTime] Weekend block: ${blockIndex}, location: ${block ? block.location : 'Los Angeles'}`);
     return block ? block.location : "Los Angeles"; // Default to LA if no block found
 }
 
@@ -85,63 +113,56 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
     let localMinutes: number;
     let localDay: string;
 
-    // Get current date in UTC
+    // Create Date object from provided GMT hour and minutes
     const now = new Date();
-    const utcDay = now.getUTCDay(); // 0 is Sunday, 6 is Saturday
+    now.setUTCHours(gmtHour, gmtMinutes, 0, 0);
     
     // Days of the week for display
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
-    // Convert GMT to LA time (GMT-7 during daylight saving time)
-    const laHour = (gmtHour - 7 + 24) % 24;
+    // Get Los Angeles time from GMT time
+    const laOptions = { timeZone: 'America/Los_Angeles' };
+    const laDateStr = now.toLocaleString('en-US', laOptions);
+    const laDate = new Date(laDateStr);
     
-    // Calculate LA day (may be different from UTC day if crossing midnight)
-    let laDay = utcDay;
-    if (gmtHour < 7) { // If it's before 7am GMT, it's still the previous day in LA
-        laDay = (utcDay + 6) % 7; // Subtract 1 day, handle wrap around
-    }
+    const laHour = laDate.getHours();
+    const laDay = laDate.getDay(); // 0 is Sunday, 6 is Saturday
 
     if (isWeekend()) {
         // Use weekend schedule
-        location = getWeekendLocation(laHour);
+        location = getWeekendLocation();
         
         // Calculate local time and day based on location
         switch (location) {
             case "Vegas":
-                localTime = laHour; // Same as LA time
-                localMinutes = gmtMinutes;
+                // Vegas is same as LA time
+                localTime = laHour;
+                localMinutes = laDate.getMinutes();
                 localDay = days[laDay];
                 break;
             case "Tokyo": {
-                // Tokyo is UTC+9
-                // Create a date object using the GMT inputs
-                const utcNow = new Date(); 
-                utcNow.setUTCHours(gmtHour);
-                utcNow.setUTCMinutes(gmtMinutes);
+                // Get Tokyo time
+                const tokyoOptions = { timeZone: 'Asia/Tokyo' };
+                const tokyoDateStr = now.toLocaleString('en-US', tokyoOptions);
+                const tokyoDate = new Date(tokyoDateStr);
                 
-                // Create a new date for Tokyo by adding 9 hours to UTC
-                const tokyoDate = new Date(utcNow);
-                tokyoDate.setUTCHours(tokyoDate.getUTCHours() + 9);
-                
-                // Get Tokyo's hours, minutes, and day directly from the date object
-                localTime = tokyoDate.getUTCHours();
-                localMinutes = tokyoDate.getUTCMinutes();
-                
-                // Get Tokyo's day of week (0-6, where 0 is Sunday)
-                localDay = days[tokyoDate.getUTCDay()];
+                // Get Tokyo's hours, minutes, and day
+                localTime = tokyoDate.getHours();
+                localMinutes = tokyoDate.getMinutes();
+                localDay = days[tokyoDate.getDay()];
                 console.log(`[LocationTime] UTC input: ${gmtHour}:${gmtMinutes}, Tokyo time: ${localTime}:${localMinutes}, day: ${localDay}`);
                 break;
             }
             case "Paris": {
-                const utc = new Date();
-                utc.setUTCHours(gmtHour);
-                utc.setUTCMinutes(gmtMinutes);
-                // Add 2 hours for Paris (GMT+2)
-                const localDate = new Date(utc.getTime() + 2 * 60 * 60 * 1000);
-                localTime = localDate.getUTCHours();
-                localMinutes = localDate.getUTCMinutes();
-                const parisDay = localDate.getUTCDay();
-                localDay = days[parisDay];
+                // Get Paris time
+                const parisOptions = { timeZone: 'Europe/Paris' };
+                const parisDateStr = now.toLocaleString('en-US', parisOptions);
+                const parisDate = new Date(parisDateStr);
+                
+                // Get Paris's hours, minutes, and day
+                localTime = parisDate.getHours();
+                localMinutes = parisDate.getMinutes();
+                localDay = days[parisDate.getDay()];
                 console.log(`[LocationTime] UTC input: ${gmtHour}:${gmtMinutes}, Paris time: ${localTime}:${localMinutes}, day: ${localDay}`);
                 break;
             }
@@ -156,36 +177,34 @@ export async function getLocationAndTime(gmtHour: number, gmtMinutes: number): P
             // 9am-7pm PT: Los Angeles
             location = "Los Angeles office";
             localTime = laHour;
-            localMinutes = gmtMinutes;
+            localMinutes = laDate.getMinutes();
             localDay = days[laDay];
         }
         else if (laHour >= 19 || laHour < 3) {
             // 7pm PT - 3am PT: Singapore (handles overnight wrap-around)
             location = "Singapore penthouse";
-            const utc = new Date();
-            utc.setUTCHours(gmtHour);
-            utc.setUTCMinutes(gmtMinutes);
-            // Add 8 hours for Singapore (GMT+8)
-            const localDate = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
-            localTime = localDate.getUTCHours();
-            localMinutes = localDate.getUTCMinutes();
             
-            // Calculate Singapore day
-            const singaporeDay = localDate.getUTCDay();
-            localDay = days[singaporeDay];
+            // Get Singapore time
+            const singaporeOptions = { timeZone: 'Asia/Singapore' };
+            const singaporeDateStr = now.toLocaleString('en-US', singaporeOptions);
+            const singaporeDate = new Date(singaporeDateStr);
+            
+            localTime = singaporeDate.getHours();
+            localMinutes = singaporeDate.getMinutes();
+            localDay = days[singaporeDate.getDay()];
         }
         else {
             // 3am-9am PT: London
             location = "London office";
-            localTime = (laHour + 8) % 24; // LA + 8 hours (London is GMT+1)
-            localMinutes = gmtMinutes;
             
-            // Calculate London day
-            let londonDay = laDay;
-            if (localTime < laHour) {
-                londonDay = (laDay + 1) % 7; // Next day in London
-            }
-            localDay = days[londonDay];
+            // Get London time
+            const londonOptions = { timeZone: 'Europe/London' };
+            const londonDateStr = now.toLocaleString('en-US', londonOptions);
+            const londonDate = new Date(londonDateStr);
+            
+            localTime = londonDate.getHours();
+            localMinutes = londonDate.getMinutes();
+            localDay = days[londonDate.getDay()];
         }
     }
 
