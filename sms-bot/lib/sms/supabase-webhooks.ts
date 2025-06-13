@@ -31,20 +31,15 @@ export function setupSupabaseWebhooks(app: Application, twilioClient: TwilioClie
       
       console.log(`Processing webhook for new subscriber: ${phone_number}`);
 
-      // Send confirmation SMS
-      const message = await twilioClient.messages.create({
-        body: `Thanks for subscribing to The Foundry updates! Reply YES to confirm your subscription. Reply STOP at any time to unsubscribe.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone_number
-      });
-
-      console.log(`Sent confirmation SMS to ${phone_number}, SID: ${message.sid}`);
+      // Note: SMS confirmation is now handled directly in START command logic
+      // to avoid duplicate messages. Webhook only updates database.
+      console.log(`New subscriber webhook received for ${phone_number} - SMS handled by START command`);
 
       // Update last message date in database
       await updateLastMessageDate(phone_number);
 
       // Return success response
-      return res.status(200).json({ success: true, messageSid: message.sid });
+      return res.status(200).json({ success: true, note: 'Database updated, SMS handled by START command' });
     } catch (error) {
       console.error('Error processing webhook:', error);
       return res.status(500).json({ error: 'Internal server error' });

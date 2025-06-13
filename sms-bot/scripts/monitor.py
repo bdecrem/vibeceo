@@ -11,11 +11,17 @@ import json
 import sys
 import requests  # For Together API calls
 import random
+from supabase import create_client, Client
 
 env_path = Path(__file__).resolve().parent.parent / ".env.local"
 load_dotenv(dotenv_path=env_path)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Supabase setup
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 
 # Server configuration from environment variables
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://theaf.us")
@@ -35,6 +41,34 @@ def generate_fun_slug():
     animal = random.choice(ANIMALS)
     action = random.choice(ACTIONS)
     return f"{color}-{animal}-{action}"
+
+def generate_unique_app_slug(user_slug):
+    """Generate a unique 3-part app slug for this user"""
+    max_attempts = 50
+    attempts = 0
+    
+    while attempts < max_attempts:
+        # Generate random 3-part slug
+        app_slug = generate_fun_slug()
+        
+        # Check if this user already has an app with this slug
+        try:
+            result = supabase.table('wtaf_content').select('id').eq('user_slug', user_slug).eq('app_slug', app_slug).execute()
+            if not result.data:  # No existing record found
+                log_with_timestamp(f"✅ Generated unique app slug: {app_slug} for user: {user_slug}")
+                return app_slug
+        except Exception as e:
+            log_with_timestamp(f"⚠️ Error checking app slug uniqueness: {e}")
+            # Continue to next attempt
+        
+        attempts += 1
+        log_with_timestamp(f"🔄 App slug collision attempt {attempts}: {app_slug}")
+    
+    # Fallback: add timestamp to guarantee uniqueness
+    timestamp = datetime.now().strftime('%H%M%S')
+    fallback_slug = f"{generate_fun_slug()}-{timestamp}"
+    log_with_timestamp(f"🆘 Using fallback app slug: {fallback_slug}")
+    return fallback_slug
 
 # Fallback coach data
 COACHES = [
@@ -270,49 +304,97 @@ def extract_code_blocks(text):
     log_with_timestamp(f"📋 Response preview (first 100 chars): {text[:100]}")
     return ""
 
-def save_code_to_file(code, coach, slug, format="html", user_slug=None):
-    filename = f"{slug}.html"
-    log_with_timestamp(f"💾 Starting save_code_to_file: coach={coach}, slug={slug}, user_slug={user_slug}")
+def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt):
+    """Save HTML content to Supabase database"""
+    log_with_timestamp(f"💾 Starting save_code_to_supabase: coach={coach}, user_slug={user_slug}")
     
-    if user_slug:
-        # Save to user's personal WTAF folder
-        output_dir = f"./web/public/wtaf/{user_slug}"
-        log_with_timestamp(f"📁 Creating user WTAF directory: {output_dir}")
-        try:
-            os.makedirs(output_dir, exist_ok=True)
-            log_with_timestamp(f"✅ Successfully created/verified directory: {output_dir}")
-        except Exception as e:
-            log_with_timestamp(f"❌ Failed to create directory {output_dir}: {e}")
-            log_with_timestamp(f"❌ Current working directory: {os.getcwd()}")
-            raise
-        public_url = f"{WEB_APP_URL}/wtaf/{user_slug}/{filename}"
-        page_url = public_url
-    else:
-        # Save to regular lab folder
-        output_dir = WEB_OUTPUT_DIR
-        public_url = f"{WEB_APP_URL}/lab/{filename}"
-        page_url = public_url
+    # Generate unique app slug for this user
+    app_slug = generate_unique_app_slug(user_slug)
+    
+    # Get user_id from sms_subscribers table
+    try:
+        user_result = supabase.table('sms_subscribers').select('id').eq('slug', user_slug).execute()
+        if not user_result.data:
+            log_with_timestamp(f"❌ User not found with slug: {user_slug}")
+            return None, None
+        user_id = user_result.data[0]['id']
+        log_with_timestamp(f"✅ Found user_id: {user_id} for slug: {user_slug}")
+    except Exception as e:
+        log_with_timestamp(f"❌ Error finding user: {e}")
+        return None, None
     
     # Inject OpenGraph tags into HTML
+    public_url = f"{WEB_APP_URL}/wtaf/{user_slug}/{app_slug}"
     og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
     <meta property="og:image" content="{og_image_url}" />
-    <meta property="og:url" content="{page_url}" />
+    <meta property="og:url" content="{public_url}" />
     <meta name="twitter:card" content="summary_large_image" />"""
     
     # Insert OG tags after <head> tag
     if '<head>' in code:
         code = code.replace('<head>', f'<head>\n    {og_tags}')
     
-    filepath = os.path.join(output_dir, filename)
+    # Save to Supabase
+    try:
+        data = {
+            'user_id': user_id,
+            'user_slug': user_slug,
+            'app_slug': app_slug,
+            'coach': coach,
+            'sender_phone': sender_phone,
+            'original_prompt': original_prompt,
+            'html_content': code,
+            'status': 'published'
+        }
+        
+        result = supabase.table('wtaf_content').insert(data).execute()
+        log_with_timestamp(f"✅ Saved to Supabase: /wtaf/{user_slug}/{app_slug}")
+        return app_slug, public_url
+        
+    except Exception as e:
+        log_with_timestamp(f"❌ Error saving to Supabase: {e}")
+        return None, None
 
-    with open(filepath, "w") as f:
-        f.write(code)
+def save_code_to_file(code, coach, slug, format="html", user_slug=None):
+    """Legacy function - now redirects to Supabase for WTAF content"""
+    filename = f"{slug}.html"
+    log_with_timestamp(f"💾 Starting save_code_to_file: coach={coach}, slug={slug}, user_slug={user_slug}")
+    
+    if user_slug:
+        # For WTAF content, redirect to Supabase
+        log_with_timestamp("🔄 Redirecting WTAF content to Supabase...")
+        # We need the original prompt and sender phone for this to work
+        # This is a fallback - the main flow should use save_code_to_supabase directly
+        return save_code_to_supabase(code, coach, user_slug, None, "Legacy save")
+    else:
+        # Save to regular lab folder (non-WTAF content)
+        output_dir = WEB_OUTPUT_DIR
+        public_url = f"{WEB_APP_URL}/lab/{filename}"
+        page_url = public_url
+        
+        # Inject OpenGraph tags into HTML
+        og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
+        og_tags = f"""<title>WTAF – Delusional App Generator</title>
+        <meta property="og:title" content="WTAF by AF" />
+        <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+        <meta property="og:image" content="{og_image_url}" />
+        <meta property="og:url" content="{page_url}" />
+        <meta name="twitter:card" content="summary_large_image" />"""
+        
+        # Insert OG tags after <head> tag
+        if '<head>' in code:
+            code = code.replace('<head>', f'<head>\n    {og_tags}')
+        
+        filepath = os.path.join(output_dir, filename)
 
-    log_with_timestamp(f"💾 Saved HTML to: {filepath}")
-    return filename, public_url
+        with open(filepath, "w") as f:
+            f.write(code)
+
+        log_with_timestamp(f"💾 Saved HTML to: {filepath}")
+        return filename, public_url
 
 def send_confirmation_sms(message, phone_number=None):
     try:
@@ -615,17 +697,31 @@ IMPORTANT LIMITATIONS:
 
     code = extract_code_blocks(result)
     if code.strip():
-        filename, public_url = save_code_to_file(code, coach, slug, user_slug=user_slug)
-        # Send SMS to original sender if available, otherwise to default
-        if sender_phone:
-            log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")
-            if user_slug:
-                send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
-            else:
-                send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
+        if user_slug:
+            # Use new Supabase save function for WTAF content
+            app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt)
         else:
-            log_with_timestamp("📱 No sender phone - using default")
-            send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}")
+            # Use legacy file save for non-WTAF content
+            filename, public_url = save_code_to_file(code, coach, slug, user_slug=None)
+        
+        if public_url:
+            # Send SMS to original sender if available, otherwise to default
+            if sender_phone:
+                log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")
+                if user_slug:
+                    send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
+                else:
+                    send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
+            else:
+                log_with_timestamp("📱 No sender phone - using default")
+                send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}")
+        else:
+            log_with_timestamp("❌ Failed to save content")
+            # Send failure SMS
+            if sender_phone:
+                send_confirmation_sms("🤷 That broke. Database hiccup. Try a different WTAF?", sender_phone)
+            else:
+                send_confirmation_sms("🤷 That broke. Database hiccup. Try a different WTAF?")
     else:
         log_with_timestamp("⚠️ No code block found.")
         # Send failure SMS

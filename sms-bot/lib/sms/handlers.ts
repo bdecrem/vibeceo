@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
-import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers } from '../subscribers.js';
+import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers, createNewSubscriber } from '../subscribers.js';
 import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
@@ -502,7 +502,7 @@ export async function getTodaysInspiration() {
  * @param signupDate Date when user signed up (now just uses today's random selection)
  * @returns Today's message for the new subscriber
  */
-export function getInspirationForNewSubscriber(signupDate: Date = new Date()) {
+export async function getInspirationForNewSubscriber(signupDate: Date = new Date()) {
   // In the new system, new subscribers get the same daily message as everyone else
   if (nextDailyMessage) {
     return {
@@ -511,8 +511,15 @@ export function getInspirationForNewSubscriber(signupDate: Date = new Date()) {
     };
   }
   
-  // If no message is set yet, return null and let the scheduler handle it
-  return null;
+  // If no message is set yet, pick a random one and set it (same as getTodaysInspiration)
+  console.log('No next daily message set for new subscriber, picking random message');
+  const message = await pickRandomMessageForToday();
+  setNextDailyMessage(message);
+  
+  return {
+    day: 1, // Not used in random system, but kept for compatibility
+    inspiration: message  // Keep same property name for compatibility
+  };
 }
 
 export function formatDailyMessage(message: any): string {
@@ -1305,6 +1312,122 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     const message = body.trim();
     const messageUpper = message.toUpperCase();
 
+    // ========================================
+    // HANDLE SIGNUP/SUBSCRIPTION COMMANDS FIRST
+    // ========================================
+    
+    if (messageUpper === 'START' || messageUpper === 'UNSTOP') {
+      console.log('Processing START/UNSTOP command...');
+      
+      // Check if user exists in database
+      const existingSubscriber = await getSubscriber(from);
+      
+      if (!existingSubscriber) {
+        // New user signup
+        console.log(`New user signup attempt: ${from}`);
+        const success = await createNewSubscriber(from);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            "Welcome to The Foundry! 🚀\n\nReply YES to confirm your subscription and start receiving our daily creative chaos. Standard rates apply.\n\nText STOP anytime to unsubscribe.",
+            twilioClient
+          );
+          console.log(`New subscriber created: ${from}, awaiting confirmation`);
+        } else {
+          await sendSmsResponse(
+            from,
+            "We couldn't process your signup right now. Please try again later.",
+            twilioClient
+          );
+        }
+      } else if (existingSubscriber.unsubscribed) {
+        // Existing user resubscribing
+        console.log(`Existing user resubscribing: ${from}`);
+        const success = await resubscribeUser(from);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            "Welcome back! You are now subscribed to The Foundry updates.",
+            twilioClient
+          );
+        } else {
+          await sendSmsResponse(
+            from,
+            "We couldn't process your request. Please try again later.",
+            twilioClient
+          );
+        }
+      } else {
+        // Already subscribed
+        console.log(`User already subscribed: ${from}`);
+        await sendSmsResponse(
+          from,
+          "You're already subscribed to The Foundry! Text COMMANDS for available options or STOP to unsubscribe.",
+          twilioClient
+        );
+      }
+      
+      return;
+    }
+
+    if (messageUpper === 'STOP') {
+      console.log('Processing STOP command...');
+      const success = await unsubscribeUser(from);
+      activeConversations.delete(from);  // End any active conversation
+      
+      if (success) {
+        await sendSmsResponse(from, SMS_CONFIG.STOP_RESPONSE, twilioClient);
+      }
+      return;
+    }
+
+    // Handle YES confirmation responses
+    if (messageUpper === 'YES') {
+      console.log('Processing YES confirmation...');
+      const success = await confirmSubscriber(from);
+      if (success) {
+        // Send welcome/confirmation message first
+        await sendSmsResponse(
+          from,
+          "You're in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
+          twilioClient
+        );
+        
+        // Then send the correct day's inspiration message based on signup date
+        const signupDate = new Date();
+        const correctDayData = getInspirationForNewSubscriber(signupDate);
+        
+        // If no message is available yet, send welcome message only
+        if (!correctDayData) {
+          console.log(`No daily message available yet for new subscriber ${from}, sent welcome only`);
+          return;
+        }
+        
+        const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
+
+        try {
+          await twilioClient.messages.create({
+            body: inspirationMessage,
+            to: from,
+            from: process.env.TWILIO_PHONE_NUMBER
+          });
+
+          console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${from} (correct day based on signup date)`);
+        } catch (error) {
+          console.error(`Failed to send message to new subscriber ${from}:`, error);
+        }
+      } else {
+        await sendSmsResponse(
+          from,
+          "We couldn't process your confirmation. Please try again or contact support if the issue persists.",
+          twilioClient
+        );
+      }
+      return;
+    }
+
     // Handle CODE command first - before loading any messages
     if (message.match(/^CODE[\s:-]/i)) {
       console.log(`Processing CODE command from ${from}`);
@@ -1576,6 +1699,39 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       }
     }
 
+    // ========================================
+    // SUBSCRIBER AUTHENTICATION CHECK
+    // ========================================
+    // Check subscriber status BEFORE processing any commands (except START, STOP, YES)
+    if (!['START', 'UNSTOP', 'STOP', 'YES'].includes(messageUpper)) {
+      console.log('Checking subscriber status...');
+      const currentSubscriber = await getSubscriber(from);
+      console.log('Subscriber lookup result:', currentSubscriber);
+
+      if (!currentSubscriber || currentSubscriber.unsubscribed) {
+        console.log('User not subscribed or unsubscribed, sending subscription prompt');
+        await sendSmsResponse(
+          from,
+          'You are not currently subscribed to The Foundry updates. Reply START to subscribe.',
+          twilioClient
+        );
+        return;
+      }
+      
+      if (!currentSubscriber.confirmed) {
+        console.log('User not confirmed yet, prompting for confirmation');
+        await sendSmsResponse(
+          from,
+          'Please reply YES to confirm your subscription, or text STOP to unsubscribe.',
+          twilioClient
+        );
+        return;
+      }
+
+      // Update last message date for confirmed subscribers
+      await updateLastMessageDate(from);
+    }
+
     // Check for commands that should end the conversation
     const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF'];
     if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i)) {
@@ -1599,7 +1755,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       const subscriber = await getSubscriber(from);
       const isAdmin = subscriber && subscriber.is_admin;
       
-      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
+      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && subscriber.role === 'coder';
@@ -1614,16 +1770,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       await sendSmsResponse(from, helpText, twilioClient);
       return;
     }
-    
-    if (messageUpper === 'STOP') {
-      console.log('Processing STOP command...');
-      const success = await unsubscribeUser(from);
-      if (success) {
-        await sendSmsResponse(from, SMS_CONFIG.STOP_RESPONSE, twilioClient);
-      }
-      activeConversations.delete(from);  // End any active conversation
-      return;
-    }
+
 
     // Check for ABOUT command - generate testimonials
     // Format: "about @alex I'm John, a web designer in LA"
@@ -2097,75 +2244,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
     
-    // Handle YES confirmation responses
-    if (messageUpper === 'YES') {
-      console.log('Processing YES confirmation...');
-      const success = await confirmSubscriber(from);
-      if (success) {
-        // Send welcome/confirmation message first
-        await sendSmsResponse(
-          from,
-          "You're in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
-          twilioClient
-        );
-        
-        // Then send the correct day's inspiration message based on signup date
-        const signupDate = new Date();
-        const correctDayData = getInspirationForNewSubscriber(signupDate);
-        
-        // If no message is available yet, send welcome message only
-        if (!correctDayData) {
-          console.log(`No daily message available yet for new subscriber ${from}, sent welcome only`);
-          return;
-        }
-        
-        const inspirationMessage = formatDailyMessage(correctDayData.inspiration);
 
-        try {
-          await twilioClient.messages.create({
-            body: inspirationMessage,
-            to: from,
-            from: process.env.TWILIO_PHONE_NUMBER
-          });
 
-          console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${from} (correct day based on signup date)`);
-        } catch (error) {
-          console.error(`Failed to send message to new subscriber ${from}:`, error);
-        }
-      } else {
-        await sendSmsResponse(
-          from,
-          "We couldn't process your confirmation. Please try again or contact support if the issue persists.",
-          twilioClient
-        );
-      }
-      return;
-    }
-    
-    if (messageUpper === 'START' || messageUpper === 'UNSTOP') {
-      console.log('Processing START/UNSTOP command...');
-      const success = await resubscribeUser(from);
-      if (success) {
-        await sendSmsResponse(
-          from,
-          SMS_CONFIG.START_RESPONSE,
-          twilioClient
-        );
-      } else {
-        await sendSmsResponse(
-          from,
-          "We couldn't process your request. Please try again later.",
-          twilioClient
-        );
-      }
-      await sendSmsResponse(
-        from,
-        'Welcome back! You are now subscribed to The Foundry updates.',
-        twilioClient
-      );
-      
-      return;
-    }
     
     // Handle SKIP command for admin users (QA feature)
     if (messageUpper === 'SKIP') {
@@ -2194,25 +2274,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       
       return;
     }
-    
-    // Check subscriber status before processing other commands
-    console.log('Checking subscriber status...');
-    const subscriber = await getSubscriber(from);
-    console.log('Subscriber lookup result:', subscriber);
 
-    if (!subscriber || subscriber.unsubscribed) {
-      console.log('User not subscribed or unsubscribed, sending subscription prompt');
-      await sendSmsResponse(
-        from,
-        'You are not currently subscribed to The Foundry updates. Reply START to subscribe.',
-        twilioClient
-      );
-      return;
-    }
-    
-    console.log('User is valid subscriber, updating last message date...');
-    // Update last message date
-    await updateLastMessageDate(from);
     
     // Check for active conversation first, before deciding to use a random coach
     const existingConversation = getActiveConversation(from);
@@ -2322,11 +2384,25 @@ async function sendSmsResponse(
   message: string,
   twilioClient: TwilioClient
 ): Promise<any> {
-  return twilioClient.messages.create({
-    body: message,
-    to,
-    from: process.env.TWILIO_PHONE_NUMBER
-  });
+  try {
+    const response = await twilioClient.messages.create({
+      body: message,
+      to,
+      from: process.env.TWILIO_PHONE_NUMBER
+    });
+    console.log(`SMS sent to ${to}: ${message.substring(0, 50)}...`);
+    return response;
+  } catch (error: any) {
+    // Handle Twilio's automatic unsubscribe gracefully
+    if (error.code === 21610) {
+      console.log(`SMS to ${to} blocked - user is carrier-unsubscribed (Twilio error 21610)`);
+      console.log(`Message was: ${message.substring(0, 100)}...`);
+      return null; // Don't crash, just return null
+    } else {
+      console.error(`Failed to send SMS to ${to}:`, error);
+      throw error;
+    }
+  }
 }
 
 /**
