@@ -1,0 +1,80 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jordan's About Me</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FFFAF0;
+      color: #333333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #FF6347;
+    }
+    p {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+    button {
+      background-color: #FFD700;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #FFA500;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Hello, I'm Jordan!</h1>
+  <p>I love weird tech and tacos.</p>
+  <button id="saveProfile">Save My Profile</button>
+  <p id="confirmation" class="hidden"></p>
+
+  <script>
+    document.getElementById('saveProfile').addEventListener('click', async () => {
+      const name = 'Jordan';
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      const bio = "I love weird tech and tacos.";
+      const favorite_food = "Tacos";
+      const favorite_music = "Eclectic";
+      const quote = "Keep it weird!";
+      const phone_number = "";
+
+      const response = await fetch('/api/save-profile', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ slug, name, bio, favorite_food, favorite_music, quote, phone_number })
+      });
+
+      if (response.ok) {
+        document.getElementById('confirmation').textContent = `Profile saved! View it here: /lab/profile/${slug}`;
+        document.getElementById('confirmation').classList.remove('hidden');
+      } else {
+        alert('There was a problem saving your profile. Please try again.');
+      }
+    });
+  </script>
+
+</body>
+</html>
+```

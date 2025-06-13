@@ -1,0 +1,1 @@
+kailey - mindset-crossword - Create a friendly HTML crossword with 4 words related to growth mindset. Include clues and a “check your answers” button.

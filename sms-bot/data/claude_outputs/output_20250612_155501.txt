@@ -1,0 +1,152 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emerald Whale Climbing</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: linear-gradient(to right, #6DD5FA, #FFFFFF);
+        }
+        header {
+            background-color: #2E8B57;
+            color: white;
+            text-align: center;
+            padding: 1.5em 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            letter-spacing: 2px;
+            animation: fadeInDown 2s;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 15px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: white;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #FFD700;
+        }
+        .main-content {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        .main-content img {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 2s;
+        }
+        .main-content h2 {
+            font-size: 2em;
+            color: #2E8B57;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            animation: fadeIn 2s;
+        }
+        .main-content p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 40px;
+            animation: fadeIn 2.5s;
+        }
+        .cta-button {
+            background-color: #FFD700;
+            color: #2E8B57;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            animation: fadeIn 3s;
+        }
+        .cta-button:hover {
+            background-color: #FFC107;
+            transform: scale(1.05);
+        }
+        footer {
+            background-color: #2E8B57;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Emerald Whale Climbing</h1>
+        <nav>
+            <ul>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <section class="main-content" id="about">
+        <img src="https://images.unsplash.com/photo-1506742918454-4b4c4f05880d" alt="Climbing Image">
+        <h2>Welcome to Emerald Whale Climbing</h2>
+        <p>Join us for an adventure like no other. Our climbing experiences are designed for climbers at all levels, promoting both physical challenge and mental wellness. Discover the thrill and serenity of climbing with us.</p>
+        <button class="cta-button" onclick="window.location.href='#contact'">Get Started</button>
+    </section>
+    <footer>
+        <p>&copy; 2023 Emerald Whale Climbing. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+```

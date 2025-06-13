@@ -1,0 +1,1 @@
+- Kailey - blogspot - a very simple blog editor where the user types one paragraph of text and it generates a really nice little homepage for them. Make it pretty with a background selector etc

@@ -1,0 +1,85 @@
+Certainly! Below is the HTML code for a simple game called "Build or Spiral," where you can build a tower or watch it spiral down based on your actions. The game includes interactive buttons with JavaScript functionality, as well as a modern design with animations.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build or Spiral</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            color: #fff;
+        }
+        .tower {
+            margin: 20px auto;
+            width: 100px;
+            height: 0;
+            background-color: #fff;
+            transition: height 0.4s ease-in-out;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #283048;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #485563;
+        }
+        @keyframes spiral {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spiraling {
+            animation: spiral 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Build or Spiral</h1>
+        <div id="tower" class="tower"></div>
+        <button onclick="build()">Build Up</button>
+        <button onclick="spiral()">Spiral Down</button>
+    </div>
+    <script>
+        let currentHeight = 0;
+        const maxHeight = 300;
+
+        function build() {
+            const tower = document.getElementById('tower');
+            if (currentHeight < maxHeight) {
+                currentHeight += 30;
+                tower.style.height = currentHeight + 'px';
+                tower.classList.remove('spiraling');
+            }
+        }
+
+        function spiral() {
+            const tower = document.getElementById('tower');
+            currentHeight = 0;
+            tower.style.height = currentHeight + 'px';
+            tower.classList.add('spiraling');
+        }
+    </script>
+</body>
+</html>
+```
+
+To play the game, open this HTML code in a modern web browser. You can click the "Build Up" button to increase the height of the tower, and the "Spiral Down" button to reset the tower height and initiate a spiraling animation. Enjoy building your tower!

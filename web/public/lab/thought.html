@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thought</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4682b4;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4682b4;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #5a9bd6;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #eaf2f8;
+            border-radius: 4px;
+        }
+        .output h2 {
+            margin-top: 0;
+            color: #2e8b57;
+        }
+        .output p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sort Your Thoughts</h1>
+        <p>Type out your worries below, and let us help you reclassify them by their logic level. Breathe in, breathe out, and let it all flow.</p>
+        <textarea id="thoughtsInput" placeholder="Share your thoughts..."></textarea>
+        <button onclick="sortThoughts()">Sort</button>
+        <div id="output" class="output" style="display:none;">
+            <h2>Reclassified Thoughts</h2>
+            <p id="sortedThoughts"></p>
+        </div>
+    </div>
+    <script>
+        function sortThoughts() {
+            const input = document.getElementById('thoughtsInput').value;
+            const output = document.getElementById('sortedThoughts');
+            const outputContainer = document.getElementById('output');
+            
+            if (input.trim() === '') {
+                output.textContent = "Please enter some thoughts to sort.";
+                outputContainer.style.display = 'block';
+                return;
+            }
+
+            const logicLevels = [
+                { level: "Highly Logical", regex: /always|certainly|definitely/i },
+                { level: "Somewhat Logical", regex: /probably|likely|might/i },
+                { level: "Emotional", regex: /never|can't|impossible/i }
+            ];
+
+            let sortedOutput = '';
+            logicLevels.forEach(({ level, regex }) => {
+                const matches = input.match(regex);
+                if (matches) {
+                    sortedOutput += `<strong>${level}:</strong> ${matches.join(', ')}<br>`;
+                }
+            });
+
+            output.innerHTML = sortedOutput || "No reclassifiable thoughts found.";
+            outputContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

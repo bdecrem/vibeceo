@@ -1,0 +1,2 @@
+SENDER:+16508989508
+venus - word-ping - Build a minimalist word game. The system shows a word, the user types the first word that comes to mind, and the AI gives a clever or judgmental response.

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #b4a7d6;
+            text-shadow: 0 0 20px rgba(180, 167, 214, 0.5);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 50px;
+            font-size: 1.2em;
+            line-height: 1.8;
+            color: #d4d4d4;
+        }
+
+        .dream-form {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #b4a7d6;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #b4a7d6;
+            box-shadow: 0 0 10px rgba(180, 167, 214, 0.3);
+        }
+
+        select option {
+            background: #1a0a2e;
+            color: #e0e0e0;
+        }
+
+        .interpret-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, #b4a7d6, #9d8ec7);
+            border: none;
+            border-radius: 10px;
+            color: #0a0a0a;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .interpret-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(180, 167, 214, 0.4);
+        }
+
+        .interpretation {
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(180, 167, 214, 0.1);
+            border-radius: 15px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            display: none;
+        }
+
+        .interpretation.show {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        .interpretation h2 {
+            color: #b4a7d6;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .interpretation p {
+            line-height: 1.8;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .moon {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #fff5db 0%, #ffd6a5 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 245, 219, 0.5);
+            animation: moonGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes moonGlow {
+            0%, 100% { box-shadow: 0 0 50px rgba(255, 245, 219, 0.5); }
+            50% { box-shadow: 0 0 80px rgba(255, 245, 219, 0.8); }
+        }
+
+        .floating-symbol {
+            position: absolute;
+            opacity: 0.3;
+            animation: floatSymbol 15s infinite ease-in-out;
+            font-size: 2em;
+            color: #b4a7d6;
+        }
+
+        @keyframes floatSymbol {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(50px, -50px) rotate(120deg); }
+            66% { transform: translate(-50px, -30px) rotate(240deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="moon"></div>
+    
+    <div class="floating-symbol" style="top: 20%; left: 10%;">✧</div>
+    <div class="floating-symbol" style="top: 60%; right: 15%; animation-delay: 5s;">☾</div>
+    <div class="floating-symbol" style="bottom: 20%; left: 20%; animation-delay: 10s;">✦</div>
+
+    <div class="container">
+        <h1>Dream Portal</h1>
+        <p class="intro">
+            Hey beautiful soul, it's Kailey here. Your dreams are whispers from your subconscious, 
+            mystical messages waiting to be decoded. Let's explore the hidden meanings together...
+        </p>
+
+        <div class="dream-form">
+            <div class="form-group">
+                <label for="setting">Where did your dream take place?</label>
+                <select id="setting">
+                    <option value="">Choose a setting...</option>
+                    <option value="water">Ocean, lake, or water</option>
+                    <option value="sky">Flying or in the sky</option>
+                    <option value="forest">Forest or nature</option>
+                    <option value="city">City or buildings</option>
+                    <option value="home">Home or familiar place</option>
+                    <option value="unknown">Unknown or strange place</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="emotion">What was the dominant feeling?</label>
+                <select id="emotion">
+                    <option value="">Select an emotion...</option>
+                    <option value="fear">Fear or anxiety</option>
+                    <option value="joy">Joy or excitement</option>
+                    <option value="sadness">Sadness or loss</option>
+                    <option value="confusion">Confusion or uncertainty</option>
+                    <option value="peace">Peace or calm</option>
+                    <option value="anger">Anger or frustration</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="symbol">What stood out most?</label>
+                <select id="symbol">
+                    <option value="">Pick a symbol...</option>
+                    <option value="animal">Animals or creatures</option>
+                    <option value="people">People (known or unknown)</option>
+                    <option value="object">Objects or items</option>
+                    <option value="light">Light or darkness</option>
+                    <option value="movement">Running, falling, or movement</option>
+                    <option value="transformation">Changes or transformations</option>
+                </select>
+            </div>
+
+            <button class="interpret-btn" onclick="interpretDream()">Reveal Your Dream's Message</button>
+        </div>
+
+        <div class="interpretation" id="interpretation">
+            <h2>Your Dream Speaks...</h2>
+            <p id="interpretationText"></p>
+        </div>
+    </div>
+
+    <script>
+        // Create stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        const interpretations = {
+            water: {
+                fear: "Water and fear in dreams often reflect emotional overwhelm. Your subconscious is asking you to face deep feelings you've been avoiding. Trust that you can navigate these emotional currents.",
+                joy: "Joyful water dreams signify emotional cleansing and renewal. You're entering a phase of emotional freedom and spiritual flow. Embrace this healing energy.",
+                sadness: "Water mixed with sadness suggests tears that need to be shed. Your soul is ready to release old grief. Let it flow, beautiful one.",
+                confusion: "Murky waters reflect unclear emotions. Take time to sit with your feelings without judgment. Clarity will emerge like the sun through clouds.",
+                peace: "Peaceful waters mirror inner tranquility. Your emotional world is finding balance. This is a powerful sign of spiritual alignment.",
+                anger: "Turbulent waters with anger show suppressed emotions demanding attention. Channel this energy into transformation rather than destruction."
+            },
+            sky: {
+                fear: "Flying with fear suggests you're afraid of your own potential. The universe is inviting you to trust your wings and soar beyond limitations.",
+                joy: "Joyful sky dreams are pure freedom! Your spirit is ready to expand beyond current boundaries. Say yes to new possibilities.",
+                sadness: "Sky dreams with sadness might reflect feeling disconnected from your higher self. Ground yourself while keeping your vision elevated.",
+                confusion: "Being lost in the sky shows you're between worlds - leaving the old but not yet landing in the new. Trust the journey.",
+                peace: "Peaceful sky dreams indicate spiritual elevation. You're connecting with higher consciousness. Beautiful downloads are coming.",
+                anger: "Angry sky dreams suggest frustration with limitations. Use this fire to fuel your ascension rather than burn bridges."
+            },
+            forest: {
+                fear: "Forest fears represent the unknown aspects of yourself. The trees are inviting you to explore your shadow with compassion.",
+                joy: "Joyful forest dreams celebrate your connection to nature and intuition. Your wild wisdom is awakening.",
+                sadness: "Sad forest dreams may reflect feeling lost in life's journey. Remember, even in the darkest woods, you carry your own light.",
+                confusion: "Forest confusion mirrors life's complexity. Trust your inner compass - it knows the way even when the path isn't clear.",
+                peace: "Peaceful forests represent harmony with your natural self. You're finding your roots while reaching for the light.",
+                anger: "Angry forest encounters show conflict with your instinctual nature. Make peace with your wild side."
+            },
+            city: {
+                fear: "City fears often reflect social anxiety or feeling overwhelmed by life's demands. Create sacred space amidst the chaos.",
+                joy: "Joyful city dreams celebrate community and achievement. You're finding your place in the larger tapestry of life.",
+                sadness: "Sad city dreams might show loneliness in crowds. Seek authentic connections rather than surface interactions.",
+                confusion: "City confusion reflects feeling lost in society's expectations. Return to your authentic self as your true north.",
+                peace: "Peaceful city dreams show mastery of balancing personal and social life. You're creating harmony in complexity.",
+                anger: "City anger suggests frustration with systems or society. Channel this into positive change rather than destruction."
+            },
+            home: {
+                fear: "Home fears reveal insecurity in your foundation. Time to examine what truly makes you feel safe and supported.",
+                joy: "Joyful home dreams celebrate inner peace and self-acceptance. You're becoming your own sanctuary.",
+                sadness: "Sad home dreams might reflect nostalgia or unhealed family wounds. Healing begins with compassion for your journey.",
+                confusion: "Home confusion suggests identity questions. Remember, you are not your past - you're constantly evolving.",
+                peace: "Peaceful home dreams show deep self-love and acceptance. You've created inner sanctuary. Beautiful!",
+                anger: "Home anger points to internal conflict or family patterns. Break the cycles with awareness and love."
+            },
+            unknown: {
+                fear: "Unknown places with fear show you're on the edge of transformation. The unfamiliar is where magic happens.",
+                joy: "Joyful unknown places celebrate your adventurous spirit. You're ready for quantum leaps in consciousness.",
+                sadness: "Sad unknown places might reflect feeling lost in transition. Trust that confusion is the cocoon before transformation.",
+                confusion: "Unknown confused spaces are pure potential. You're in the void where all possibilities exist. Stay open.",
+                peace: "Peaceful unknown places show comfort with mystery. You're mastering the art of surrender to the divine flow.",
+                anger: "Angry unknown places reveal frustration with uncertainty. Make friends with the mystery - it's where miracles live."
+            }
+        };
+
+        const symbolMeanings = {
+            animal: "Animals represent your instinctual wisdom and untamed aspects. Listen to their message - they're your spirit guides.",
+            people: "People in dreams often represent aspects of yourself or unfinished business with others. Notice what they're teaching you.",
+            object: "Objects carry symbolic power. They represent tools, memories, or aspects of life requiring attention.",
+            light: "Light and darkness themes speak to consciousness and unconsciousness, known and unknown, hope and fear.",
+            movement: "Movement dreams reflect your life's pace and direction. Are you running from or toward something?",
+            transformation: "Transformation symbols are powerful! Your psyche is showing you that change is not only possible but happening."
+        };
+
+        function interpretDream() {
+            const setting = document.getElementById('setting').value;
+            const emotion = document.getElementById('emotion').value;
+            const symbol = document.getElementById('symbol').value;
+            const interpretationDiv = document.getElementById('interpretation');
+            const interpretationText = document.getElementById('interpretationText');
+
+            if (!setting || !emotion || !symbol) {
+                alert("Please complete all selections to receive your dream interpretation, love.");
+                return;
+            }
+
+            let message = interpretations[setting][emotion] + "<br><br>";
+            message += "The presence of " + symbolMeanings[symbol] + "<br><br>";
+            message += "Remember, gorgeous soul - you are the ultimate interpreter of your dreams. Trust your intuition above all else. Your subconscious speaks in the language of your soul. ✨";
+
+            interpretationText.innerHTML = message;
+            interpretationDiv.classList.add('show');
+            
+            // Smooth scroll to interpretation
+            interpretationDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

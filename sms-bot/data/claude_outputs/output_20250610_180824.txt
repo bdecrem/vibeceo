@@ -1,0 +1,273 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live with Kailey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .video-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .live-badge {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            background: #ff0000;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .viewer-count {
+            position: absolute;
+            top: 40px;
+            left: 120px;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .video-container {
+            flex: 1;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .kailey-video {
+            font-size: 120px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .script-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            min-height: 100px;
+        }
+        
+        .script-text {
+            font-size: 18px;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+        
+        .chat-section {
+            width: 350px;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+        }
+        
+        .comments-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        
+        .comment {
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .comment-author {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+        
+        .comment-text {
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .emoji-reactions {
+            position: absolute;
+            bottom: 20px;
+            right: 370px;
+            font-size: 30px;
+        }
+        
+        .emoji {
+            position: absolute;
+            animation: floatUp 3s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            to {
+                transform: translateY(-300px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-section">
+            <div class="live-badge">LIVE</div>
+            <div class="viewer-count"><span id="viewerCount">2,847</span> watching</div>
+            
+            <div class="video-container">
+                <div class="kailey-video">💜</div>
+            </div>
+            
+            <div class="script-container">
+                <div class="script-text" id="scriptText">
+                    Hey beautiful souls! Welcome to today's live session. I'm so grateful you're here with me right now.
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-section">
+            <div class="chat-header">Live Chat</div>
+            <div class="comments-container" id="commentsContainer"></div>
+        </div>
+        
+        <div class="emoji-reactions" id="emojiReactions"></div>
+    </div>
+    
+    <script>
+        const kaileyScripts = [
+            "Hey beautiful souls! Welcome to today's live session. I'm so grateful you're here with me right now.",
+            "Remember, you are exactly where you need to be. Every challenge is an opportunity for growth.",
+            "Take a deep breath with me... In through your nose... Hold... And release. Feel that? That's your power.",
+            "I want you to know that your dreams are valid. They're not too big, and you're not too small.",
+            "The universe is conspiring in your favor. Trust the process, even when you can't see the whole staircase.",
+            "Your energy is magnetic! When you align with your highest self, miracles happen.",
+            "Today, I challenge you to speak to yourself like you would your best friend. Be gentle. Be kind.",
+            "You're not behind. You're not too late. You're exactly on time for YOUR journey.",
+            "Let's manifest together! Close your eyes and visualize your dream life. Feel it. Believe it. Receive it.",
+            "Your intuition is your superpower. That little voice inside? It's guiding you home to yourself."
+        ];
+        
+        const comments = [
+            { author: "SoulSeeker23", text: "OMG Kailey you're changing my life! 💜" },
+            { author: "ManifestQueen", text: "I needed to hear this today!" },
+            { author: "VibeHigher", text: "Your energy is contagious!" },
+            { author: "DreamChaser101", text: "Thank you for believing in us 🙏" },
+            { author: "PositiveVibesOnly", text: "I'm literally crying happy tears" },
+            { author: "LightWorker88", text: "You inspire me every day!" },
+            { author: "GratefulHeart", text: "This message came at the perfect time" },
+            { author: "CosmicBabe", text: "I can feel the shift happening!" },
+            { author: "AlignedAF", text: "Your words heal my soul ✨" },
+            { author: "RisingPhoenix", text: "I'm ready to level up!" }
+        ];
+        
+        const emojis = ['💜', '✨', '🙏', '❤️', '🌟', '💫', '🔥', '💪', '🌈', '👑'];
+        
+        let scriptIndex = 0;
+        function updateScript() {
+            scriptIndex = (scriptIndex + 1) % kaileyScripts.length;
+            document.getElementById('scriptText').textContent = kaileyScripts[scriptIndex];
+        }
+        
+        function addComment() {
+            const randomComment = comments[Math.floor(Math.random() * comments.length)];
+            const container = document.getElementById('commentsContainer');
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment';
+            commentDiv.innerHTML = `
+                <div class="comment-author">${randomComment.author}</div>
+                <div class="comment-text">${randomComment.text}</div>
+            `;
+            container.insertBefore(commentDiv, container.firstChild);
+            
+            if (container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        function floatEmoji() {
+            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const emojiDiv = document.createElement('div');
+            emojiDiv.className = 'emoji';
+            emojiDiv.textContent = emoji;
+            emojiDiv.style.left = Math.random() * 100 + 'px';
+            document.getElementById('emojiReactions').appendChild(emojiDiv);
+            
+            setTimeout(() => emojiDiv.remove(), 3000);
+        }
+        
+        function updateViewerCount() {
+            const current = parseInt(document.getElementById('viewerCount').textContent.replace(',', ''));
+            const change = Math.floor(Math.random() * 50) - 25;
+            const newCount = Math.max(2000, current + change);
+            document.getElementById('viewerCount').textContent = newCount.toLocaleString();
+        }
+        
+        setInterval(updateScript, 8000);
+        setInterval(addComment, 2000);
+        setInterval(floatEmoji, 800);
+        setInterval(updateViewerCount, 5000);
+        
+        setTimeout(() => {
+            addComment();
+            floatEmoji();
+        }, 500);
+    </script>
+</body>
+</html>
+```

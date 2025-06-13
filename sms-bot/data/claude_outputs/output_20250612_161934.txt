@@ -1,0 +1,213 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delusional Pitch Deck</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .crossword {
+            display: grid;
+            grid-template-columns: repeat(9, 30px);
+            grid-template-rows: repeat(9, 30px);
+            gap: 2px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 14px;
+            position: relative;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            border: none;
+            text-align: center;
+            font-size: 14px;
+            outline: none;
+        }
+        .cell input:focus {
+            border: 2px solid #007bff;
+        }
+        .clues {
+            display: flex;
+            justify-content: space-between;
+        }
+        .clue-list {
+            width: 45%;
+        }
+        .clue-list h2 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .clue-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .clue-list li {
+            margin-bottom: 5px;
+        }
+        .clue-list li span {
+            margin-left: 5px;
+        }
+        @media (max-width: 600px) {
+            .clues {
+                flex-direction: column;
+            }
+            .clue-list {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delusional Pitch Deck Crossword Puzzle</h1>
+        <div class="crossword" id="crossword">
+            <!-- Black cells -->
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <!-- White cells -->
+            <div class="cell"><input type="text" maxlength="1" data-across="1" data-down="1"></div><div class="cell"><input type="text" maxlength="1" data-across="2"></div><div class="cell"></div><div class="cell"><input type="text" maxlength="1" data-across="3"></div><div class="cell"></div><div class="cell"><input type="text" maxlength="1" data-across="4"></div><div class="cell"></div><div class="cell"><input type="text" maxlength="1" data-across="5"></div><div class="cell"></div>
+            <div class="cell"><input type="text" maxlength="1" data-down="2"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"><input type="text" maxlength="1" data-down="3"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"><input type="text" maxlength="1" data-down="4"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"><input type="text" maxlength="1" data-down="5"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        </div>
+        <div class="clues">
+            <div class="clue-list">
+                <h2>Across</h2>
+                <ul>
+                    <li>1. Idea (5)</li>
+                    <li>2. Belief (6)</li>
+                    <li>3. Plan (4)</li>
+                    <li>4. Scheme (5)</li>
+                    <li>5. Venture (7)</li>
+                </ul>
+            </div>
+            <div class="clue-list">
+                <h2>Down</h2>
+                <ul>
+                    <li>1. Fantasy (7)</li>
+                    <li>2. Delusion (7)</li>
+                    <li>3. Illusion (7)</li>
+                    <li>4. Mirage (5)</li>
+                    <li>5. Hallucination (11)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        const crossword = document.getElementById('crossword');
+        const cells = crossword.querySelectorAll('.cell input');
+        const solution = {
+            across: {
+                1: 'IDEA',
+                2: 'BELIEF',
+                3: 'PLAN',
+                4: 'SCHEME',
+                5: 'VENTURE'
+            },
+            down: {
+                1: 'FANTASY',
+                2: 'DELUSION',
+                3: 'ILLUSION',
+                4: 'MIRAGE',
+                5: 'HALLUCINATION'
+            }
+        };
+
+        cells.forEach(cell => {
+            cell.addEventListener('input', (e) => {
+                const across = e.target.dataset.across;
+                const down = e.target.dataset.down;
+                const acrossWord = getWord(across, 'across');
+                const downWord = getWord(down, 'down');
+
+                if (across) {
+                    validateWord(acrossWord, across, 'across');
+                }
+                if (down) {
+                    validateWord(downWord, down, 'down');
+                }
+            });
+        });
+
+        function getWord(number, direction) {
+            let word = '';
+            let index = Array.from(cells).findIndex(cell => cell.dataset[direction] === number);
+            let step = direction === 'across' ? 1 : 9;
+
+            while (cells[index] && cells[index].dataset[direction] === number) {
+                word += cells[index].value.toUpperCase();
+                index += step;
+            }
+
+            return word;
+        }
+
+        function validateWord(word, number, direction) {
+            const correctWord = solution[direction][number];
+            if (word.length === correctWord.length) {
+                if (word === correctWord) {
+                    highlightWord(number, direction, 'green');
+                } else {
+                    highlightWord(number, direction, 'red');
+                }
+            } else {
+                highlightWord(number, direction, '');
+            }
+        }
+
+        function highlightWord(number, direction, color) {
+            cells.forEach(cell => {
+                if (cell.dataset[direction] === number) {
+                    cell.style.backgroundColor = color;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+```

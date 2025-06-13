@@ -1,0 +1,129 @@
+Creating a playable 3x3 Sudoku game with a pastel-themed design involves HTML, CSS, and JavaScript. Below is the complete code for such a game:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 083219</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+
+        .sudoku-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 180px;
+            height: 180px;
+        }
+
+        .sudoku-cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f1f8fc;
+            border-radius: 5px;
+            font-size: 24px;
+            color: #333;
+            transition: background-color 0.3s ease;
+        }
+
+        .sudoku-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            font-size: 24px;
+            text-align: center;
+            background-color: transparent;
+            outline: none;
+            color: #333;
+            caret-color: transparent;
+        }
+
+        .sudoku-cell input:focus {
+            background-color: #e2f0fc;
+        }
+
+        .button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #a5dee5;
+            border: none;
+            border-radius: 5px;
+            color: #333;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #88c8d4;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sudoku-container" id="sudoku">
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-0-0"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-0-1"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-0-2"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-1-0"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-1-1"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-1-2"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-2-0"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-2-1"></div>
+        <div class="sudoku-cell"><input type="text" maxlength="1" id="cell-2-2"></div>
+    </div>
+    <button class="button" onclick="checkSudoku()">Check</button>
+    <div id="message" class="hidden"></div>
+    <script>
+        const solution = [
+            [1, 2, 3],
+            [3, 1, 2],
+            [2, 3, 1]
+        ];
+
+        function checkSudoku() {
+            let isCorrect = true;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cellValue = document.getElementById(`cell-${i}-${j}`).value;
+                    if (parseInt(cellValue) !== solution[i][j]) {
+                        isCorrect = false;
+                    }
+                }
+            }
+            const message = document.getElementById("message");
+            if (isCorrect) {
+                message.textContent = "Congratulations! You solved the Sudoku!";
+                message.style.color = "#28a745";
+            } else {
+                message.textContent = "Oops! There are mistakes. Try again!";
+                message.style.color = "#dc3545";
+            }
+            message.classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>
+```
+
+This code creates a simple, pastel-themed 3x3 Sudoku game where users can input values and check their solution. The `checkSudoku` function verifies whether the entered values match the solution and then displays a success or error message accordingly.

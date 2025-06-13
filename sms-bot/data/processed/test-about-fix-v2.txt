@@ -1,0 +1,2 @@
+SENDER:+16508989508
+alex-user-test-about Hi I'm testing the ABOUT command fix with the correct dash format. 

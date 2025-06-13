@@ -1,0 +1,133 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Me Generator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .personal-page {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+        .personal-page h2 {
+            margin-top: 0;
+        }
+        .copy-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>About Me Generator</h1>
+        <form id="aboutMeForm">
+            <label for="name">Your Name:</label>
+            <input type="text" id="name" required>
+
+            <label for="bio">Short Bio:</label>
+            <textarea id="bio" rows="3" required></textarea>
+
+            <label for="favoriteFood">Favorite Food:</label>
+            <input type="text" id="favoriteFood" required>
+
+            <label for="favoriteMusic">Favorite Music:</label>
+            <input type="text" id="favoriteMusic" required>
+
+            <label for="favoriteQuote">Favorite Quote:</label>
+            <input type="text" id="favoriteQuote" required>
+
+            <button type="submit">Generate My Page</button>
+        </form>
+
+        <div class="personal-page" id="personalPage">
+            <h2 id="displayName"></h2>
+            <p id="displayBio"></p>
+            <p><strong>Favorite Food:</strong> <span id="displayFavoriteFood"></span></p>
+            <p><strong>Favorite Music:</strong> <span id="displayFavoriteMusic"></span></p>
+            <p><strong>Favorite Quote:</strong> <span id="displayFavoriteQuote"></span></p>
+            <a href="#" class="copy-link" id="copyLinkButton">Copy My Link</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('aboutMeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const bio = document.getElementById('bio').value;
+            const favoriteFood = document.getElementById('favoriteFood').value;
+            const favoriteMusic = document.getElementById('favoriteMusic').value;
+            const favoriteQuote = document.getElementById('favoriteQuote').value;
+
+            document.getElementById('displayName').textContent = name;
+            document.getElementById('displayBio').textContent = bio;
+            document.getElementById('displayFavoriteFood').textContent = favoriteFood;
+            document.getElementById('displayFavoriteMusic').textContent = favoriteMusic;
+            document.getElementById('displayFavoriteQuote').textContent = favoriteQuote;
+
+            document.getElementById('personalPage').style.display = 'block';
+        });
+
+        document.getElementById('copyLinkButton').addEventListener('click', function() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url)
+                .then(() => alert('Link copied to clipboard!'));
+        });
+    </script>
+</body>
+</html>
+```

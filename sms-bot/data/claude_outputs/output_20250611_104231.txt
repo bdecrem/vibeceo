@@ -1,0 +1,109 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thought</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #006400;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            max-width: 600px;
+            height: 150px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+        }
+        button {
+            background-color: #20b2aa;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #008b8b;
+        }
+        .output {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e6f7ff;
+            border: 1px solid #b0e0e6;
+        }
+        .thought-category {
+            margin-bottom: 10px;
+        }
+        .thought-category h3 {
+            margin: 0 0 5px;
+            color: #4682b4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thought Sorter</h1>
+    <textarea id="thoughtsInput" placeholder="Type your worries here..."></textarea>
+    <button onclick="sortThoughts()">Sort</button>
+    <div id="sortedThoughts" class="output" hidden>
+        <div class="thought-category">
+            <h3>Logical Concerns:</h3>
+            <ul id="logicalList"></ul>
+        </div>
+        <div class="thought-category">
+            <h3>Emotional Concerns:</h3>
+            <ul id="emotionalList"></ul>
+        </div>
+        <div class="thought-category">
+            <h3>Uncategorized:</h3>
+            <ul id="uncategorizedList"></ul>
+        </div>
+    </div>
+
+    <script>
+        function sortThoughts() {
+            const input = document.getElementById('thoughtsInput').value;
+            const thoughts = input.split('\n').filter(thought => thought.trim() !== '');
+
+            const logical = [];
+            const emotional = [];
+            const uncategorized = [];
+
+            thoughts.forEach(thought => {
+                if (thought.toLowerCase().includes('must') || thought.toLowerCase().includes('need')) {
+                    logical.push(thought);
+                } else if (thought.toLowerCase().includes('feel') || thought.toLowerCase().includes('afraid')) {
+                    emotional.push(thought);
+                } else {
+                    uncategorized.push(thought);
+                }
+            });
+
+            document.getElementById('logicalList').innerHTML = logical.map(thought => `<li>${thought}</li>`).join('');
+            document.getElementById('emotionalList').innerHTML = emotional.map(thought => `<li>${thought}</li>`).join('');
+            document.getElementById('uncategorizedList').innerHTML = uncategorized.map(thought => `<li>${thought}</li>`).join('');
+
+            document.getElementById('sortedThoughts').hidden = false;
+        }
+    </script>
+</body>
+</html>
+```

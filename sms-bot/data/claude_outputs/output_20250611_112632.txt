@@ -1,0 +1,133 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compost</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 3em;
+            margin-top: 0;
+            color: #2e8b57;
+        }
+        #game-area {
+            width: 80%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .container {
+            border: 2px dashed #2e8b57;
+            width: 45%;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #e0ffe0;
+            position: relative;
+        }
+        .item {
+            font-size: 2em;
+            cursor: grab;
+            user-select: none;
+            margin-bottom: 10px;
+        }
+        .emoji {
+            font-size: 3em;
+            margin: 10px 0;
+        }
+        #compost-bin {
+            border-color: #228b22;
+        }
+        #trash-bin {
+            border-color: #b22222;
+        }
+        #tips {
+            font-size: 1.2em;
+            color: #5f9ea0;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌱 Compost or 🗑️ Trash?</h1>
+    <div id="game-area">
+        <div id="compost-bin" class="container" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="emoji">🌿</div>
+            <span>Compost Bin</span>
+        </div>
+        <div id="trash-bin" class="container" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="emoji">🗑️</div>
+            <span>Trash Bin</span>
+        </div>
+    </div>
+    <div id="items" class="container">
+        <span class="item" draggable="true" ondragstart="drag(event)" id="banana-peel">🍌</span>
+        <span class="item" draggable="true" ondragstart="drag(event)" id="plastic-bottle">🥤</span>
+        <span class="item" draggable="true" ondragstart="drag(event)" id="apple-core">🍏</span>
+        <span class="item" draggable="true" ondragstart="drag(event)" id="candy-wrapper">🍬</span>
+    </div>
+    <div id="tips"></div>
+
+    <script>
+        const tips = [
+            "Great job! Remember, composting reduces landfill waste!",
+            "Uh-oh! Plastics don't compost, let's focus on recycling them.",
+            "Keep it up! Composting helps enrich soil with nutrients.",
+            "Oops! Wrappers belong in the trash, not the compost!"
+        ];
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.id);
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const data = event.dataTransfer.getData("text");
+            const element = document.getElementById(data);
+            const target = event.target.closest('.container');
+            
+            if ((data === "banana-peel" || data === "apple-core") && target.id === "compost-bin") {
+                target.appendChild(element);
+                showTip(0); // Correct compost tip
+            } else if ((data === "plastic-bottle" || data === "candy-wrapper") && target.id === "trash-bin") {
+                target.appendChild(element);
+                showTip(2); // Correct trash tip
+            } else if (target.id === "compost-bin") {
+                showTip(1); // Plastic in compost
+            } else if (target.id === "trash-bin") {
+                showTip(3); // Organic in trash
+            }
+        }
+
+        function showTip(index) {
+            const tipEl = document.getElementById("tips");
+            tipEl.textContent = tips[index];
+            setTimeout(() => {
+                tipEl.textContent = "";
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+```

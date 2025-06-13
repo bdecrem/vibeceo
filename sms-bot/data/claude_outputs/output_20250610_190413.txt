@@ -1,0 +1,296 @@
+I'll create a calming HTML page where users can input their worries and have them sorted by logic level. Here's the complete HTML:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thought Sorter - Let VENUS Help You</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #5a67d8;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 150px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            display: none;
+        }
+
+        .category {
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .category h3 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .facts {
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+        }
+
+        .facts h3 {
+            color: #2c7a7b;
+        }
+
+        .interpretations {
+            background: #f0e5ff;
+            border-left: 4px solid #9f7aea;
+        }
+
+        .interpretations h3 {
+            color: #6b46c1;
+        }
+
+        .emotions {
+            background: #ffe5e5;
+            border-left: 4px solid #fc8181;
+        }
+
+        .emotions h3 {
+            color: #c53030;
+        }
+
+        .thought-item {
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            line-height: 1.5;
+        }
+
+        .venus-message {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+
+        .reset-btn {
+            background: #718096;
+            font-size: 14px;
+            padding: 10px 20px;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Thought Sorter</h1>
+        <p class="subtitle">Hello, I'm VENUS. Let me help you organize your thoughts with clarity and compassion.</p>
+        
+        <div class="input-section">
+            <textarea id="worryInput" placeholder="Share what's on your mind... I'm here to help you see things more clearly."></textarea>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="sortThoughts()">Sort My Thoughts</button>
+        </div>
+        
+        <div id="results" class="results">
+            <div class="category facts">
+                <h3>📊 Observable Facts</h3>
+                <div id="factsContent"></div>
+            </div>
+            
+            <div class="category interpretations">
+                <h3>💭 Interpretations & Stories</h3>
+                <div id="interpretationsContent"></div>
+            </div>
+            
+            <div class="category emotions">
+                <h3>❤️ Feelings & Emotions</h3>
+                <div id="emotionsContent"></div>
+            </div>
+            
+            <div class="venus-message">
+                Remember: Facts are neutral. Your interpretations create your experience. 
+                Your emotions are valid signals worth exploring with curiosity, not judgment.
+            </div>
+            
+            <div class="button-container">
+                <button class="reset-btn" onclick="resetSorter()">Clear & Start Fresh</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function sortThoughts() {
+            const input = document.getElementById('worryInput').value.trim();
+            if (!input) {
+                alert('Please share your thoughts first. I\'m here to help.');
+                return;
+            }
+
+            const thoughts = input.split(/[.!?]+/).filter(t => t.trim());
+            const facts = [];
+            const interpretations = [];
+            const emotions = [];
+
+            // Keywords for categorization
+            const factIndicators = ['is', 'are', 'was', 'were', 'happened', 'said', 'did', 'at', 'on', 'in'];
+            const emotionWords = ['feel', 'feeling', 'felt', 'angry', 'sad', 'happy', 'worried', 'anxious', 'scared', 'frustrated', 'disappointed', 'hurt', 'excited', 'nervous', 'overwhelmed', 'stressed', 'afraid', 'upset', 'confused'];
+            const interpretationWords = ['think', 'believe', 'seems', 'probably', 'maybe', 'might', 'could', 'should', 'would', 'suppose', 'imagine', 'wonder', 'guess', 'assume', 'mean', 'means', 'because', 'why', 'always', 'never', 'everyone', 'nobody'];
+
+            thoughts.forEach(thought => {
+                const lower = thought.toLowerCase().trim();
+                
+                if (emotionWords.some(word => lower.includes(word))) {
+                    emotions.push(thought.trim());
+                } else if (interpretationWords.some(word => lower.includes(word))) {
+                    interpretations.push(thought.trim());
+                } else if (factIndicators.some(word => lower.includes(word)) && !interpretationWords.some(word => lower.includes(word))) {
+                    facts.push(thought.trim());
+                } else {
+                    interpretations.push(thought.trim());
+                }
+            });
+
+            // Display results
+            displayCategory('factsContent', facts, 'What actually happened - the observable reality.');
+            displayCategory('interpretationsContent', interpretations, 'The stories you\'re telling yourself about the facts.');
+            displayCategory('emotionsContent', emotions, 'Your valid emotional responses that deserve acknowledgment.');
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('worryInput').style.opacity = '0.7';
+        }
+
+        function displayCategory(elementId, items, emptyMessage) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            
+            if (items.length === 0) {
+                container.innerHTML = `<div class="thought-item" style="font-style: italic; color: #718096;">${emptyMessage}</div>`;
+            } else {
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'thought-item';
+                    div.textContent = item;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function resetSorter() {
+            document.getElementById('worryInput').value = '';
+            document.getElementById('worryInput').style.opacity = '1';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('worryInput').focus();
+        }
+
+        // Allow Enter key to submit (Shift+Enter for new line)
+        document.getElementById('worryInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sortThoughts();
+            }
+        });
+    </script>
+</body>
+</html>
+```

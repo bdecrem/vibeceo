@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Bart</title>
+  <style>
+    body {
+      font-family: 'Comic Neue', sans-serif;
+      background-color: #FFEEAD;
+      color: #3B3A30;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.5em;
+    }
+    p {
+      font-size: 1.2em;
+      margin-bottom: 1em;
+    }
+    button {
+      background-color: #FF6F61;
+      color: white;
+      padding: 1em 2em;
+      border: none;
+      border-radius: 12px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #FF3B30;
+    }
+    .confirmation {
+      display: none;
+      margin-top: 2em;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Welcome, Bart!</h1>
+  <p>Bart is a curious soul with a passion for the peculiarities of technology and the simple delights of tacos. Always on the hunt for the next quirky gadget and the perfect taco stand.</p>
+
+  <button id="saveProfileBtn">Save Profile</button>
+
+  <div class="confirmation" id="confirmation">
+    Your profile has been saved! View it <a href="#" id="profileLink">here</a>.
+  </div>
+
+  <script>
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+      const name = "Bart";
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      const bio = "Bart is a curious soul with a passion for the peculiarities of technology and the simple delights of tacos.";
+      const favorite_food = "Tacos";
+      const favorite_music = "Eclectic";
+      const quote = "Stay weird!";
+      const phone_number = "";
+
+      const response = await fetch('/api/save-profile', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ slug, name, bio, favorite_food, favorite_music, quote, phone_number })
+      });
+
+      if (response.ok) {
+        const confirmation = document.getElementById('confirmation');
+        const profileLink = document.getElementById('profileLink');
+        profileLink.href = `https://theaf-web.ngrok.io/lab/profile/${slug}`;
+        confirmation.style.display = 'block';
+      }
+    });
+  </script>
+
+</body>
+</html>

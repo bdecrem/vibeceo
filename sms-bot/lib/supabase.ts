@@ -39,6 +39,8 @@ export type SMSSubscriber = {
   unsubscribed?: boolean;
   confirmed?: boolean;
   is_admin?: boolean;
+  role?: 'user' | 'coder' | 'admin'; // User role with preset values
+  slug?: string; // Auto-generated slug for personal WTAF folder
 }
 
 // Initialize Supabase client

@@ -1,0 +1,106 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 113837</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            animation: glow 2s infinite alternate;
+        }
+        .container input {
+            font-size: 2em;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            outline: none;
+            text-align: center;
+            animation: glitch 1.5s infinite;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #ffffff, 0 0 10px #ff00ff, 0 0 15px #ff00ff; }
+            to { box-shadow: 0 0 20px #ffffff, 0 0 30px #ff00ff, 0 0 40px #ff00ff; }
+        }
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(2deg); }
+            40% { transform: skew(-2deg); }
+            60% { transform: skew(1deg); }
+            80% { transform: skew(-1deg); }
+            100% { transform: skew(0deg); }
+        }
+        @keyframes reveal {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .omen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff00ff;
+            font-size: 3em;
+            transform: scale(0.9);
+            animation: reveal 1s forwards;
+            z-index: 100;
+            animation-delay: 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="text" id="visionInput" placeholder="What do you see?" autofocus>
+    </div>
+    <div id="omenDisplay" class="omen" style="display:none;"></div>
+    <script>
+        const input = document.getElementById('visionInput');
+        const omenDisplay = document.getElementById('omenDisplay');
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const vision = input.value;
+                if (vision.trim() !== "") {
+                    showOmen(vision);
+                }
+            }
+        });
+
+        function showOmen(vision) {
+            const omens = [
+                "The stars align, your path is clear.",
+                "Shadows gather, but fear not.",
+                "A storm approaches, embrace the change.",
+                "The phoenix rises, rebirth is upon you.",
+                "Infinite possibilities await, choose wisely."
+            ];
+            const randomOmen = omens[Math.floor(Math.random() * omens.length)];
+            omenDisplay.textContent = `Venus whispers: "${randomOmen}"`;
+            omenDisplay.style.display = 'flex';
+            setTimeout(() => {
+                omenDisplay.style.display = 'none';
+            }, 5000); // Hide the omen after 5 seconds
+        }
+    </script>
+</body>
+</html>
+```

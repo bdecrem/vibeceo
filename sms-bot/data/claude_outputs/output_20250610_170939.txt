@@ -1,0 +1,24 @@
+```json
+{
+  "top_scifi_movies": [
+    {
+      "rank": 1,
+      "title": "2001: A Space Odyssey",
+      "year": 1968,
+      "director": "Stanley Kubrick"
+    },
+    {
+      "rank": 2,
+      "title": "Blade Runner",
+      "year": 1982,
+      "director": "Ridley Scott"
+    },
+    {
+      "rank": 3,
+      "title": "The Matrix",
+      "year": 1999,
+      "director": "The Wachowskis"
+    }
+  ]
+}
+```

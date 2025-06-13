@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ask GPT-4</title>
+  <style>
+    body {
+      background-color: #f0f8ff;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input[type="text"], button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin: 5px;
+    }
+    button {
+      background-color: #ff6347;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #ff4500;
+    }
+    #answer {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ask Anything to GPT-4!</h1>
+  <form id="question-form">
+    <input type="text" id="question" placeholder="Enter your question" required>
+    <button type="submit">Submit</button>
+  </form>
+  <div id="answer"></div>
+
+  <script>
+    document.getElementById('question-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const question = document.getElementById('question').value;
+
+      // Time to make a bet. Simulate a call to the OpenAI API, act fast, win faster.
+      // Normally, you'd call the API here, but instead, we'll pretend with a placeholder.
+      const response = await mockOpenAIResponse(question);
+
+      document.getElementById('answer').textContent = response;
+    });
+
+    // Mock function simulating an API call to OpenAI
+    async function mockOpenAIResponse(question) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(`Imagine this is a fancy, insightful response to: "${question}"`);
+        }, 1000);
+      });
+    }
+  </script>
+</body>
+</html>

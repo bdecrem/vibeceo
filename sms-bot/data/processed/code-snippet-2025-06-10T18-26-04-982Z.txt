@@ -1,0 +1,1 @@
+send an SMS saying "Hello from text command!"

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Crossword Puzzle</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+            margin: 0;
+        }
+        .crossword-container {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-gap: 2px;
+            background-color: #fff;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .crossword-cell {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .crossword-cell.black {
+            background-color: #333;
+            border: none;
+        }
+        .buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    <div class="crossword-container" id="crossword">
+        <!-- JavaScript will populate this grid -->
+    </div>
+    <div class="buttons">
+        <button onclick="checkAnswers()">Check Answers</button>
+        <button onclick="resetPuzzle()">Reset</button>
+        <button onclick="getHint()">Get Hint</button>
+    </div>
+</div>
+
+<script>
+    const crosswordData = {
+        grid: [
+            [null, 'C', 'A', 'T', null, null, 'D', 'O', 'G'],
+            [null, null, null, 'A', null, null, null, null, 'E'],
+            ['B', 'A', 'T', 'S', null, 'D', 'U', 'C', 'K'],
+            [null, null, null, null, null, null, null, null, null],
+            [null, 'H', 'E', 'N', null, 'F', 'O', 'X', null],
+            [null, null, null, null, null, null, null, null, null],
+            ['C', 'O', 'W', null, 'P', 'I', 'G', null, 'E'],
+            [null, null, null, 'R', null, null, null, null, null],
+            ['S', 'H', 'E', 'E', 'P', null, 'B', 'U', 'L', 'L']
+        ],
+        hints: {
+            across: {
+                1: "A feline pet",
+                3: "Opposite of a cat",
+                5: "A male bovine"
+            },
+            down: {
+                1: "A flying nocturnal animal",
+                2: "A female chicken",
+                4: "A dairy animal"
+            }
+        }
+    };
+
+    const crosswordContainer = document.getElementById('crossword');
+    const userGrid = [...Array(9)].map(() => Array(9).fill(''));
+
+    function createCrossword() {
+        crosswordData.grid.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.className = 'crossword-cell';
+                if (cell === null) {
+                    input.classList.add('black');
+                    input.disabled = true;
+                } else {
+                    input.addEventListener('input', (e) => {
+                        userGrid[rowIndex][colIndex] = e.target.value.toUpperCase();
+                    });
+                }
+                crosswordContainer.appendChild(input);
+            });
+        });
+    }
+
+    function checkAnswers() {
+        let correct = true;
+        crosswordData.grid.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                if (cell !== null && cell !== userGrid[rowIndex][colIndex]) {
+                    correct = false;
+                }
+            });
+        });
+        alert(correct ? "All answers are correct!" : "Some answers are incorrect.");
+    }
+
+    function resetPuzzle() {
+        document.querySelectorAll('.crossword-cell').forEach(input => {
+            if (!input.classList.contains('black')) {
+                input.value = '';
+                input.style.backgroundColor = '';
+            }
+        });
+        userGrid.forEach(row => row.fill(''));
+    }
+
+    function getHint() {
+        // Would be dynamic in a real puzzle, but let's give a random hint here
+        const hints = Object.keys(crosswordData.hints.across).concat(Object.keys(crosswordData.hints.down));
+        const randomHint = hints[Math.floor(Math.random() * hints.length)];
+        alert(`Hint for ${randomHint}: ${crosswordData.hints.across[randomHint] || crosswordData.hints.down[randomHint]}`);
+    }
+
+    createCrossword();
+</script>
+
+</body>
+</html>

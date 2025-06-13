@@ -1,0 +1,131 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compost Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #e0f7fa;
+            color: #004d40;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 3rem;
+            text-shadow: 2px 2px #00796b;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .bin {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #004d40;
+            border-radius: 10px;
+            background-color: #b2dfdb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .bin:hover {
+            background-color: #00796b;
+        }
+
+        .item {
+            font-size: 3rem;
+            cursor: grab;
+        }
+
+        .tips {
+            background-color: #00796b;
+            color: #e0f7fa;
+            padding: 10px;
+            border-radius: 5px;
+            width: 60%;
+            text-align: center;
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compost Game</h1>
+    <div class="game-container">
+        <div class="bin" id="compost-bin">🍃</div>
+        <div class="item" id="item">🍎</div>
+        <div class="bin" id="trash-bin">🗑️</div>
+    </div>
+    <div class="tips hidden" id="tips">Let's get sorting, eco-champion!</div>
+
+    <script>
+        const item = document.getElementById('item');
+        const compostBin = document.getElementById('compost-bin');
+        const trashBin = document.getElementById('trash-bin');
+        const tips = document.getElementById('tips');
+
+        let draggableItem = null;
+
+        item.addEventListener('dragstart', function (e) {
+            draggableItem = this;
+            setTimeout(() => this.style.display = 'none', 0);
+        });
+
+        item.addEventListener('dragend', function (e) {
+            setTimeout(() => {
+                this.style.display = 'block';
+                draggableItem = null;
+            }, 0);
+        });
+
+        [compostBin, trashBin].forEach(bin => {
+            bin.addEventListener('dragover', function (e) {
+                e.preventDefault();
+            });
+
+            bin.addEventListener('dragenter', function (e) {
+                e.preventDefault();
+            });
+
+            bin.addEventListener('dragleave', function (e) {});
+
+            bin.addEventListener('drop', function (e) {
+                if (draggableItem) {
+                    if (this.id === 'compost-bin') {
+                        tips.textContent = "Great! 🍎 can go to compost! Reduce those food scraps!";
+                    } else {
+                        tips.textContent = "Oops! 🍎 doesn't belong in trash. Try composting!";
+                    }
+                    tips.classList.remove('hidden');
+                    setTimeout(() => {
+                        tips.classList.add('hidden');
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+```
