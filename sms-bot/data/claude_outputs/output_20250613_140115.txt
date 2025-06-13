@@ -1,0 +1,320 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delusional Pitch Deck</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .crossword-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .crossword-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-template-rows: repeat(9, 40px);
+            gap: 2px;
+        }
+        .crossword-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            font-size: 18px;
+            position: relative;
+        }
+        .crossword-cell.black {
+            background-color: #000;
+        }
+        .crossword-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            outline: none;
+        }
+        .clues {
+            margin-top: 20px;
+        }
+        .clues h3 {
+            margin-bottom: 10px;
+        }
+        .clues ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .clues li {
+            margin-bottom: 5px;
+        }
+        .clues label {
+            cursor: pointer;
+        }
+        .clues label:hover {
+            text-decoration: underline;
+        }
+        .clues input {
+            margin-right: 5px;
+        }
+        @media (max-width: 600px) {
+            .crossword-cell {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+            .crossword-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="crossword-container">
+        <div class="crossword-grid" id="crosswordGrid">
+            <!-- 9x9 Grid -->
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="1" data-down="1"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="2"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="3"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-down="2"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="4"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="5"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="6"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-down="3"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="7"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="8"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="9"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-down="4"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="10"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="11"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="12"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-down="5"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="13"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="14"></div>
+            <div class="crossword-cell"><input type="text" maxlength="1" data-across="15"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+            <div class="crossword-cell black"></div>
+        </div>
+        <div class="clues">
+            <h3>Across</h3>
+            <ul>
+                <li><label for="across1">1. A type of software (6)</label></li>
+                <li><label for="across2">2. A common programming language (5)</label></li>
+                <li><label for="across3">3. A web framework (5)</label></li>
+                <li><label for="across4">4. A database system (5)</label></li>
+                <li><label for="across5">5. A version control system (4)</label></li>
+                <li><label for="across6">6. A markup language (4)</label></li>
+                <li><label for="across7">7. A styling language (5)</label></li>
+                <li><label for="across8">8. A scripting language (6)</label></li>
+                <li><label for="across9">9. A design pattern (6)</label></li>
+                <li><label for="across10">10. A software methodology (7)</label></li>
+                <li><label for="across11">11. A testing framework (5)</label></li>
+                <li><label for="across12">12. A deployment tool (5)</label></li>
+                <li><label for="across13">13. A containerization platform (6)</label></li>
+                <li><label for="across14">14. A cloud service provider (5)</label></li>
+                <li><label for="across15">15. A continuous integration tool (4)</label></li>
+            </ul>
+            <h3>Down</h3>
+            <ul>
+                <li><label for="down1">1. A type of software (6)</label></li>
+                <li><label for="down2">2. A common programming language (5)</label></li>
+                <li><label for="down3">3. A web framework (5)</label></li>
+                <li><label for="down4">4. A database system (5)</label></li>
+                <li><label for="down5">5. A version control system (4)</label></li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        const crosswordData = {
+            across: {
+                1: { word: "SOFTWARE", clue: "A type of software (6)" },
+                2: { word: "PYTHON", clue: "A common programming language (5)" },
+                3: { word: "DJANGO", clue: "A web framework (5)" },
+                4: { word: "MYSQL", clue: "A database system (5)" },
+                5: { word: "GIT", clue: "A version control system (4)" },
+                6: { word: "HTML", clue: "A markup language (4)" },
+                7: { word: "CSS", clue: "A styling language (5)" },
+                8: { word: "JAVASCRIPT", clue: "A scripting language (6)" },
+                9: { word: "MVC", clue: "A design pattern (6)" },
+                10: { word: "AGILE", clue: "A software methodology (7)" },
+                11: { word: "JEST", clue: "A testing framework (5)" },
+                12: { word: "DOCKER", clue: "A deployment tool (5)" },
+                13: { word: "KUBERNETES", clue: "A containerization platform (6)" },
+                14: { word: "AWS", clue: "A cloud service provider (5)" },
+                15: { word: "JENKINS", clue: "A continuous integration tool (4)" }
+            },
+            down: {
+                1: { word: "SOFTWARE", clue: "A type of software (6)" },
+                2: { word: "PYTHON", clue: "A common programming language (5)" },
+                3: { word: "DJANGO", clue: "A web framework (5)" },
+                4: { word: "MYSQL", clue: "A database system (5)" },
+                5: { word: "GIT", clue: "A version control system (4)" }
+            }
+        };
+
+        const grid = document.getElementById('crosswordGrid');
+        const cells = grid.querySelectorAll('.crossword-cell input');
+
+        cells.forEach(cell => {
+            cell.addEventListener('input', (e) => {
+                const across = e.target.dataset.across;
+                const down = e.target.dataset.down;
+                const value = e.target.value.toUpperCase();
+
+                if (across) {
+                    const acrossWord = crosswordData.across[across].word;
+                    const acrossInput = Array.from(grid.querySelectorAll(`.crossword-cell input[data-across="${across}"]`));
+                    acrossInput.forEach((input, index) => {
+                        input.value = acrossWord[index] || '';
+                    });
+                }
+
+                if (down) {
+                    const downWord = crosswordData.down[down].word;
+                    const downInput = Array.from(grid.querySelectorAll(`.crossword-cell input[data-down="${down}"]`));
+                    downInput.forEach((input, index) => {
+                        input.value = downWord[index] || '';
+                    });
+                }
+
+                validateInput(e.target);
+            });
+        });
+
+        function validateInput(cell) {
+            const across = cell.dataset.across;
+            const down = cell.dataset.down;
+            const value = cell.value.toUpperCase();
+
+            if (across) {
+                const acrossWord = crosswordData.across[across].word;
+                if (value !== acrossWord[cell.dataset.acrossIndex]) {
+                    cell.style.backgroundColor = 'red';
+                } else {
+                    cell.style.backgroundColor = '';
+                }
+            }
+
+            if (down) {
+                const downWord = crosswordData.down[down].word;
+                if (value !== downWord[cell.dataset.downIndex]) {
+                    cell.style.backgroundColor = 'red';
+                } else {
+                    cell.style.backgroundColor = '';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+```
