@@ -329,7 +329,7 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
         return None, None
     
     # Inject OpenGraph tags into HTML
-    public_url = f"{WEB_APP_URL}/wtaf/{user_slug}/{app_slug}"
+    public_url = f"https://wtaf.me/{user_slug}/{app_slug}"
     og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />

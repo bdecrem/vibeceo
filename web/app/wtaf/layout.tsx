@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'WTAF by AF',
     description: 'Vibecoded chaos, shipped via SMS.',
-    url: 'https://advisorsfoundry.ai/wtaf',
+    url: 'https://wtaf.me',
     siteName: 'AdvisorsFoundry',
     images: [
       {

@@ -1,0 +1,43 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gorgeous Hello World</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        h1 {
+            font-size: 5rem;
+            color: white;
+            text-align: center;
+            animation: colorChange 5s infinite alternate, fadeInOut 5s infinite;
+        }
+        @keyframes colorChange {
+            0% { color: #ff7e5f; }
+            25% { color: #feb47b; }
+            50% { color: #86a8e7; }
+            75% { color: #91eae4; }
+            100% { color: #86a8e7; }
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello World</h1>
+</body>
+</html>
+```
