@@ -307,6 +307,11 @@ def extract_code_blocks(text):
 def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt):
     """Save HTML content to Supabase database"""
     log_with_timestamp(f"💾 Starting save_code_to_supabase: coach={coach}, user_slug={user_slug}")
+    log_with_timestamp(f"🔍 DUPLICATE DEBUG: save_code_to_supabase called from {original_prompt[:50]}...")
+    
+    # DEBUG: Add stack trace to see where this is called from
+    import traceback
+    log_with_timestamp(f"🔍 CALL STACK: {traceback.format_stack()[-3].strip()}")
     
     # Generate unique app slug for this user
     app_slug = generate_unique_app_slug(user_slug)
@@ -362,10 +367,12 @@ def save_code_to_file(code, coach, slug, format="html", user_slug=None):
     """Legacy function - now redirects to Supabase for WTAF content"""
     filename = f"{slug}.html"
     log_with_timestamp(f"💾 Starting save_code_to_file: coach={coach}, slug={slug}, user_slug={user_slug}")
+    log_with_timestamp(f"🔍 DUPLICATE DEBUG: save_code_to_file called with user_slug={user_slug}")
     
     if user_slug:
         # For WTAF content, redirect to Supabase
         log_with_timestamp("🔄 Redirecting WTAF content to Supabase...")
+        log_with_timestamp("❌ ERROR: save_code_to_file should NOT be called with user_slug!")
         # We need the original prompt and sender phone for this to work
         # This is a fallback - the main flow should use save_code_to_supabase directly
         return save_code_to_supabase(code, coach, user_slug, None, "Legacy save")
@@ -699,9 +706,11 @@ IMPORTANT LIMITATIONS:
     if code.strip():
         if user_slug:
             # Use new Supabase save function for WTAF content
+            log_with_timestamp(f"🎯 Using direct Supabase save for user_slug: {user_slug}")
             app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt)
         else:
-            # Use legacy file save for non-WTAF content
+            # Use legacy file save for non-WTAF content (NO user_slug passed to prevent double save)
+            log_with_timestamp(f"📁 Using legacy file save for non-WTAF content")
             filename, public_url = save_code_to_file(code, coach, slug, user_slug=None)
         
         if public_url:
@@ -732,16 +741,7 @@ IMPORTANT LIMITATIONS:
 
     return True
 
-def move_processed_file(file_path):
-    target = os.path.join(PROCESSED_DIR, os.path.basename(file_path))
-    try:
-        if os.path.exists(file_path):
-            os.rename(file_path, target)
-            log_with_timestamp(f"📦 Moved to processed: {target}")
-        else:
-            log_with_timestamp(f"⚠️ File already gone, skip move: {file_path}")
-    except FileNotFoundError:
-        log_with_timestamp(f"⚠️ File already moved or deleted: {file_path}")
+# Function removed - file moving is now handled directly in monitor loop to prevent race conditions
 
 def monitor_loop():
     log_with_timestamp("🌀 GPT-4o monitor running...")
@@ -757,23 +757,49 @@ def monitor_loop():
                 log_with_timestamp(f"🔄 Monitor loop #{loop_count} - checking for files...")
                 
             newest = get_newest_file(WATCH_DIRS)
-            if newest and str(newest) not in processed and str(newest) not in currently_processing:
+            newest_str = str(newest) if newest else None
+            
+            # Check if file exists AND hasn't been processed AND isn't being processed
+            if newest and newest_str not in processed and newest_str not in currently_processing and os.path.exists(newest):
                 log_with_timestamp(f"🚨 New file detected: {newest}")
                 log_with_timestamp(f"📄 File size: {os.path.getsize(newest)} bytes")
                 
-                # Immediately mark as being processed to prevent duplicates
-                currently_processing.add(str(newest))
+                # CRITICAL FIX: Immediately move file to prevent race conditions
+                # Create a temporary processing filename with timestamp
+                processing_name = f"PROCESSING_{datetime.now().strftime('%H%M%S')}_{os.path.basename(newest)}"
+                processing_path = os.path.join(os.path.dirname(newest), processing_name)
                 
                 try:
-                    if execute_gpt4o(str(newest)):
-                        move_processed_file(str(newest))
-                        processed.add(str(newest))
-                        log_with_timestamp(f"✅ Successfully processed: {newest}")
+                    # Atomic rename to claim the file immediately
+                    os.rename(str(newest), processing_path)
+                    log_with_timestamp(f"🔒 File locked for processing: {processing_path}")
+                    
+                    # Mark as processing
+                    currently_processing.add(newest_str)
+                    
+                    # Process the file
+                    if execute_gpt4o(processing_path):
+                        # Move to final processed location
+                        target = os.path.join(PROCESSED_DIR, os.path.basename(newest))
+                        os.rename(processing_path, target)
+                        processed.add(newest_str)
+                        log_with_timestamp(f"✅ Successfully processed and moved: {target}")
                     else:
-                        log_with_timestamp(f"❌ Failed to process: {newest}")
+                        log_with_timestamp(f"❌ Failed to process: {processing_path}")
+                        # Move failed file to processed anyway to avoid reprocessing
+                        target = os.path.join(PROCESSED_DIR, f"FAILED_{os.path.basename(newest)}")
+                        os.rename(processing_path, target)
+                        
+                except FileNotFoundError:
+                    # Another process already claimed this file
+                    log_with_timestamp(f"⚡ File already claimed by another process: {newest}")
+                    continue
+                except OSError as e:
+                    log_with_timestamp(f"❌ Error claiming file {newest}: {e}")
+                    continue
                 finally:
                     # Always remove from currently_processing when done
-                    currently_processing.discard(str(newest))
+                    currently_processing.discard(newest_str)
                     
             else:
                 if loop_count % 10 == 1:  # Only log occasionally to avoid spam
