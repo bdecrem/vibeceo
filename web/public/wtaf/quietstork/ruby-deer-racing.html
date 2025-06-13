@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf-web.ngrok.io/images/wtaf-og.png" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/wtaf/quietstork/ruby-deer-racing.html" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delusional Pitch Deck</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        .crossword {
+            display: grid;
+            grid-template-columns: repeat(9, 30px);
+            grid-template-rows: repeat(9, 30px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #000;
+            background-color: #fff;
+            position: relative;
+        }
+        .cell.black {
+            background-color: #000;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+        }
+        .clues {
+            display: flex;
+            justify-content: space-between;
+        }
+        .clues div {
+            width: 45%;
+        }
+        .clues h3 {
+            margin-top: 0;
+        }
+        .clues ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .clues li {
+            margin-bottom: 5px;
+        }
+        .clues li span {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        @media (max-width: 600px) {
+            .clues {
+                flex-direction: column;
+            }
+            .clues div {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delusional Pitch Deck Crossword</h1>
+        <div class="crossword" id="crossword">
+            <!-- Row 1 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 2 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 3 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 4 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 5 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 6 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 7 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 8 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <!-- Row 9 -->
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+            <div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1"></div>
+        </div>
+        <div class="clues">
+            <div>
+                <h3>Across</h3>
+                <ul>
+                    <li><span>1.</span> A pitch that convinces no one (8)</li>
+                    <li><span>3.</span> Often mistaken for reality (8)</li>
+                    <li><span>5.</span> A false belief (8)</li>
+                    <li><span>7.</span> Imaginary ideas (8)</li>
+                    <li><span>9.</span> Not based on facts (8)</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Down</h3>
+                <ul>
+                    <li><span>1.</span> Unrealistic expectations (8)</li>
+                    <li><span>2.</span> Misguided notions (8)</li>
+                    <li><span>4.</span> Fabricated stories (8)</li>
+                    <li><span>6.</span> Illusory concepts (8)</li>
+                    <li><span>8.</span> Deceptive presentations (8)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        const crossword = [
+            ['D', '', 'E', 'L', '', 'U', 'S', 'I', 'O'],
+            ['N', '', 'A', 'L', '', 'P', 'I', 'T', 'C'],
+            ['I', '', 'C', 'H', '', 'H', 'E', 'D', 'E'],
+            ['C', '', 'K', '', '', 'O', 'N', '', 'K'],
+            ['H', '', 'E', '', '', 'N', '', '', 'E'],
+            ['E', '', 'D', '', '', 'D', '', '', 'D'],
+            ['D', '', 'E', '', '', 'E', '', '', 'E'],
+            ['E', '', 'L', '', '', 'C', '', '', 'E'],
+            ['O', '', 'N', '', '', 'K', '', '', 'D']
+        ];
+
+        const cells = document.querySelectorAll('.crossword .cell input');
+        const acrossClues = [0, 2, 4, 6, 8];
+        const downClues = [0, 1, 3, 5, 7];
+
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 9);
+            const col = index % 9;
+
+            if (crossword[row][col] === '') {
+                cell.parentElement.classList.add('black');
+                cell.disabled = true;
+            } else {
+                cell.addEventListener('input', (e) => {
+                    const value = e.target.value.toUpperCase();
+                    if (!/^[A-Z]$/.test(value)) {
+                        e.target.value = '';
+                    } else {
+                        crossword[row][col] = value;
+                        checkWin();
+                    }
+                });
+
+                if (acrossClues.includes(row)) {
+                    cell.setAttribute('aria-label', `Across ${row + 1}`);
+                }
+                if (downClues.includes(col)) {
+                    cell.setAttribute('aria-label', `Down ${col + 1}`);
+                }
+            }
+        });
+
+        function checkWin() {
+            let completed = true;
+            crossword.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    if (cell !== '' && cells[rowIndex * 9 + colIndex].value.toUpperCase() !== cell) {
+                        completed = false;
+                    }
+                });
+            });
+            if (completed) {
+                alert('Congratulations! You solved the crossword!');
+            }
+        }
+    </script>
+</body>
+</html>

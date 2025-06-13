@@ -1,4 +1,4 @@
-import { getTodaysInspiration, formatDailyMessage } from './handlers.js';
+import { getTodaysInspiration, formatDailyMessage, pickRandomMessageForToday, setNextDailyMessage, getNextDailyMessage } from './handlers.js';
 import { getActiveSubscribers, getSubscriber, updateLastInspirationDate } from '../subscribers.js';
 import type { TwilioClient } from './webhooks.js';
 import twilio from 'twilio';
@@ -90,8 +90,9 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
       const now = new Date();
       const todayPT = now.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
       
-      // Process early subscribers (weekday: 7am PT, weekend: 10am PT)
+      // Process admin users first (weekday: 7am PT, weekend: 10am PT)
       if (isTimeToSend(true) && lastEarlySendDate !== todayPT) {
+        // Check weekend mode to display correct time
         const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
         let isWeekendMode = false;
         
@@ -108,23 +109,22 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         }
         
         const earlyTime = isWeekendMode ? '10am PT' : '7am PT';
-        console.log(`Starting early daily broadcast (${earlyTime})...`);
+        console.log(`Starting early admin broadcast (${earlyTime})...`);
         
-        // Get today's message with proper error handling
-        let todaysData;
+        // Pick today's message and set it as the next daily message
+        let todaysMessage;
         try {
-          console.log('Fetching today\'s inspiration from Supabase...');
-          todaysData = await getTodaysInspiration();
-          if (!todaysData || !todaysData.inspiration) {
-            throw new Error('No inspiration found for today');
-          }
-          console.log('Successfully fetched today\'s inspiration');
+          console.log('Picking today\'s random message for admin preview...');
+          todaysMessage = await pickRandomMessageForToday();
+          setNextDailyMessage(todaysMessage);
+          console.log(`Successfully picked and set next daily message: item ${todaysMessage.item}`);
         } catch (error) {
-          console.error('Failed to fetch today\'s inspiration:', error);
-          return; // Exit early if we can't get the message
+          console.error('Failed to pick today\'s message:', error);
+          return; // Exit early if we can't pick the message
         }
 
-        const messageText = formatDailyMessage(todaysData.inspiration);
+        const messageText = formatDailyMessage(todaysMessage);
+        const adminPreviewText = `📋 ADMIN PREVIEW: Today's message will be:\n\n${messageText}\n\n💡 Text SKIP to change it or SKIP [id] to queue a specific message.`;
         
         // Get active subscribers
         const allSubscribers = await getActiveSubscribers();
@@ -145,15 +145,16 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
             const lastInspirationDate = fullSubscriber?.last_inspiration_date ? new Date(fullSubscriber.last_inspiration_date) : null;
             const now = new Date();
             
-            // Skip if they received a daily inspiration less than 3 hours ago
-            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+            // Skip if they received a daily inspiration less than 30 minutes ago (reduced from 3 hours)
+            const MIN_TIME_FOR_PREVIEW = 30 * 60 * 1000; // 30 minutes
+            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_FOR_PREVIEW)) {
               console.log(`Skipping early message to ${subscriber.phone_number} - received previous inspiration too recently`);
               earlySkippedCount++;
               continue;
             }
             
             await twilioClient.messages.create({
-              body: messageText,
+              body: adminPreviewText,
               to: subscriber.phone_number,
               from: process.env.TWILIO_PHONE_NUMBER
             });
@@ -162,7 +163,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
             await updateLastInspirationDate(subscriber.phone_number);
             
             earlySuccessCount++;
-            console.log(`Successfully sent early message to ${subscriber.phone_number}`);
+            console.log(`Successfully sent early preview to ${subscriber.phone_number}`);
             
             // Add delay between messages to avoid rate limits
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -227,21 +228,15 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         const regularTime = isWeekendMode ? '12pm PT' : '9am PT';
         console.log(`Starting regular daily broadcast (${regularTime})...`);
         
-        // Get today's message with proper error handling
-        let todaysData;
-        try {
-          console.log('Fetching today\'s inspiration from Supabase...');
-          todaysData = await getTodaysInspiration();
-          if (!todaysData || !todaysData.inspiration) {
-            throw new Error('No inspiration found for today');
-          }
-          console.log('Successfully fetched today\'s inspiration');
-        } catch (error) {
-          console.error('Failed to fetch today\'s inspiration:', error);
-          return; // Exit early if we can't get the message
+        // Get the pre-selected next daily message (set at 7am, possibly modified by admin)
+        const nextMessage = getNextDailyMessage();
+        if (!nextMessage) {
+          console.error('No next daily message available! This should have been set at 7am.');
+          return;
         }
-
-        const messageText = formatDailyMessage(todaysData.inspiration);
+        
+        console.log(`Using pre-selected daily message: item ${nextMessage.item}`);
+        const messageText = formatDailyMessage(nextMessage);
         
         // Get active subscribers
         const allSubscribers = await getActiveSubscribers();
@@ -263,8 +258,9 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
             const lastInspirationDate = fullSubscriber?.last_inspiration_date ? new Date(fullSubscriber.last_inspiration_date) : null;
             const now = new Date();
             
-            // Skip if they received a daily inspiration less than 3 hours ago
-            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_BETWEEN_MESSAGES)) {
+            // Skip if they received a daily inspiration less than 30 minutes ago (reduced from 3 hours)
+            const MIN_TIME_FOR_REGULAR = 30 * 60 * 1000; // 30 minutes
+            if (lastInspirationDate && (now.getTime() - lastInspirationDate.getTime() < MIN_TIME_FOR_REGULAR)) {
               console.log(`Skipping message to ${subscriber.phone_number} - received previous inspiration too recently`);
               skippedCount++;
               continue;

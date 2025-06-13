@@ -45,13 +45,15 @@ COACHES = [
 ]
 
 # Watch both code and wtaf directories - FIXED PATHS
+# Get the sms-bot directory path relative to this script
+SMS_BOT_DIR = Path(__file__).resolve().parent.parent
 WATCH_DIRS = [
-    "./data/code/",
-    "./data/wtaf/"
+    str(SMS_BOT_DIR / "data" / "code"),
+    str(SMS_BOT_DIR / "data" / "wtaf")
 ]
-PROCESSED_DIR = "./data/processed/"
-WEB_OUTPUT_DIR = "./web/public/lab/"
-CLAUDE_OUTPUT_DIR = "./data/claude_outputs/"
+PROCESSED_DIR = str(SMS_BOT_DIR / "data" / "processed")
+WEB_OUTPUT_DIR = str(SMS_BOT_DIR.parent / "web" / "public" / "lab")
+CLAUDE_OUTPUT_DIR = str(SMS_BOT_DIR / "data" / "claude_outputs")
 CHECK_INTERVAL = 15
 
 # Enhanced logging for production debugging
@@ -521,14 +523,12 @@ IMPORTANT LIMITATIONS:
 
     full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
-    # Check if this is a CODE or WTAF command for routing to Together.ai
-    is_code_command = raw_prompt.strip().upper().startswith(('CODE:', 'CODE ', 'WTAF ', 'WTAF:'))
-    
+    # Always use Together.ai if available, regardless of command type
     # Debug message to check if the API key is being loaded
     log_with_timestamp(f"🔑 Together API key exists: {bool(os.environ.get('TOGETHER_API_KEY'))}")
     
-    if is_code_command and os.environ.get('TOGETHER_API_KEY'):
-        log_with_timestamp("🧠 Routing CODE command to Together.ai (DeepSeek-V3)...")
+    if os.environ.get('TOGETHER_API_KEY'):
+        log_with_timestamp("🧠 Routing to Together.ai (DeepSeek-V3)...")
         try:
             # Call Together.ai API with DeepSeek-V3 model
             together_api_key = os.environ.get('TOGETHER_API_KEY')
@@ -638,8 +638,14 @@ IMPORTANT LIMITATIONS:
 
 def move_processed_file(file_path):
     target = os.path.join(PROCESSED_DIR, os.path.basename(file_path))
-    os.rename(file_path, target)
-    log_with_timestamp(f"📦 Moved to processed: {target}")
+    try:
+        if os.path.exists(file_path):
+            os.rename(file_path, target)
+            log_with_timestamp(f"📦 Moved to processed: {target}")
+        else:
+            log_with_timestamp(f"⚠️ File already gone, skip move: {file_path}")
+    except FileNotFoundError:
+        log_with_timestamp(f"⚠️ File already moved or deleted: {file_path}")
 
 def monitor_loop():
     log_with_timestamp("🌀 GPT-4o monitor running...")

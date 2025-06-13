@@ -1,0 +1,263 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delusional Pitch Deck</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .crossword-container {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-template-rows: repeat(9, 40px);
+            gap: 2px;
+        }
+        .crossword-cell {
+            width: 40px;
+            height: 40px;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+        .crossword-cell.black {
+            background-color: #000;
+        }
+        .crossword-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            outline: none;
+        }
+        .clues {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 360px;
+        }
+        .clue-list {
+            width: 170px;
+        }
+        .clue-list h3 {
+            margin-bottom: 10px;
+        }
+        .clue-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .clue-list li {
+            margin-bottom: 5px;
+        }
+        .instructions {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>Delusional Pitch Deck Crossword Puzzle</h1>
+        <p>Fill in the grid using the clues provided. Words intersect and all letters are lowercase.</p>
+    </div>
+    <div class="crossword-container" id="crossword">
+        <!-- 9x9 Grid -->
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="1" data-down="1"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="2"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="3"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="2"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="3"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="4"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="4"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="5"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="5"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="6"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="6"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="7"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="7"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="8"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="8"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-across="9"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell black"></div>
+        <div class="crossword-cell"><input type="text" maxlength="1" data-down="9"></div>
+    </div>
+    <div class="clues">
+        <div class="clue-list">
+            <h3>Across</h3>
+            <ul>
+                <li>1. A bold plan (5)</li>
+                <li>2. Financial strategy (6)</li>
+                <li>3. Market analysis (6)</li>
+                <li>4. Business model (6)</li>
+                <li>5. Team expertise (5)</li>
+                <li>6. Sales forecast (6)</li>
+                <li>7. Risk assessment (6)</li>
+                <li>8. Financial projections (6)</li>
+                <li>9. Marketing plan (6)</li>
+            </ul>
+        </div>
+        <div class="clue-list">
+            <h3>Down</h3>
+            <ul>
+                <li>1. Vision statement (6)</li>
+                <li>2. Unique selling point (6)</li>
+                <li>3. Customer acquisition (6)</li>
+                <li>4. Revenue model (6)</li>
+                <li>5. Competitive analysis (6)</li>
+                <li>6. Operational plan (6)</li>
+                <li>7. Growth strategy (6)</li>
+                <li>8. Financial health (6)</li>
+                <li>9. Exit strategy (6)</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        const crossword = document.getElementById('crossword');
+        const cells = crossword.querySelectorAll('.crossword-cell input');
+        const solutions = {
+            across: {
+                1: 'pitch',
+                2: 'strategy',
+                3: 'market',
+                4: 'model',
+                5: 'team',
+                6: 'forecast',
+                7: 'risk',
+                8: 'projections',
+                9: 'plan'
+            },
+            down: {
+                1: 'vision',
+                2: 'selling',
+                3: 'acquisition',
+                4: 'revenue',
+                5: 'analysis',
+                6: 'operational',
+                7: 'growth',
+                8: 'health',
+                9: 'exit'
+            }
+        };
+
+        cells.forEach(cell => {
+            cell.addEventListener('input', function() {
+                const across = this.getAttribute('data-across');
+                const down = this.getAttribute('data-down');
+                let isCorrect = true;
+
+                if (across) {
+                    const acrossWord = Array.from(cells).filter(c => c.getAttribute('data-across') === across).map(c => c.value).join('');
+                    if (acrossWord.length === solutions.across[across].length) {
+                        isCorrect = acrossWord === solutions.across[across];
+                    }
+                }
+
+                if (down) {
+                    const downWord = Array.from(cells).filter(c => c.getAttribute('data-down') === down).map(c => c.value).join('');
+                    if (downWord.length === solutions.down[down].length) {
+                        isCorrect = downWord === solutions.down[down];
+                    }
+                }
+
+                this.style.backgroundColor = isCorrect ? '#c8e6c9' : '#ffcdd2';
+            });
+        });
+    </script>
+</body>
+</html>
+```
