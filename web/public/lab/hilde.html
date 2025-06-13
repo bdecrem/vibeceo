@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilde</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            margin: 0;
+            padding: 0;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            color: #ff6f61;
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input, textarea, button {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+        }
+        button {
+            background-color: #ff6f61;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #ff4f41;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        .container {
+            animation: fadeIn 0.8s ease-in;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Your Profile</h1>
+        <form id="profileForm">
+            <input type="text" id="name" placeholder="Your Name" required>
+            <textarea id="bio" placeholder="Your Bio" required></textarea>
+            <input type="text" id="favoriteFood" placeholder="Favorite Food" required>
+            <input type="text" id="favoriteMusic" placeholder="Favorite Music" required>
+            <textarea id="favoriteQuote" placeholder="Favorite Quote" required></textarea>
+            <button type="submit">Save Profile</button>
+        </form>
+        <div id="confirmationMessage" style="display:none; margin-top: 15px; color: green;">
+            Profile saved successfully!
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const profile = {
+                slug: 'hilde',
+                name: document.getElementById('name').value,
+                bio: document.getElementById('bio').value,
+                favorite_food: document.getElementById('favoriteFood').value,
+                favorite_music: document.getElementById('favoriteMusic').value,
+                quote: document.getElementById('favoriteQuote').value
+            };
+
+            try {
+                const response = await fetch('/api/save-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profile)
+                });
+
+                if (response.ok) {
+                    document.getElementById('confirmationMessage').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('confirmationMessage').style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

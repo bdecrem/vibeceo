@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bronze Hawk Jumping</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            background: linear-gradient(to right, #ffecd2 0%, #fcb69f 100%);
+        }
+        
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: url('https://source.unsplash.com/1600x900/?hawk,landscape') no-repeat center center/cover;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 2px 2px 4px #000000;
+            animation: fadeIn 3s ease-in-out;
+        }
+
+        header p {
+            font-size: 1.5em;
+            margin: 10px 0;
+            text-shadow: 1px 1px 3px #000000;
+            animation: fadeIn 4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .content {
+            padding: 50px;
+            text-align: center;
+            background-color: #fff;
+            border-top-left-radius: 50px;
+            border-top-right-radius: 50px;
+            margin-top: -50px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+        }
+
+        .content h2 {
+            color: #f76c6c;
+            margin-bottom: 20px;
+        }
+
+        .content p {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #f76c6c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #ff4747;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Bronze Hawk Jumping</h1>
+    <p>Experience the thrill of flight</p>
+</header>
+
+<section class="content">
+    <h2>Join the Adventure</h2>
+    <p>At Bronze Hawk Jumping, we offer a unique and exhilarating experience that will take your breath away. Whether you’re a thrill-seeker or looking to conquer your fears, our team of experienced professionals are here to guide you every step of the way. Embark on a journey that will leave you with unforgettable memories and a newfound sense of freedom.</p>
+    <button class="cta-button" onclick="alert('Adventure Awaits!')">Get Started</button>
+</section>
+
+</body>
+</html>

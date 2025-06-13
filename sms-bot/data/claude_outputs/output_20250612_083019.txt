@@ -1,0 +1,100 @@
+Below is the HTML code for a simple interactive game called "Build or Spiral". This game involves clicking buttons to either "Build" or "Spiral" and shows a simple animation based on the player's choice.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build or Spiral</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .game-container {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        button {
+            background: #6200ea;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.2s ease;
+        }
+        button:hover {
+            transform: scale(1.1);
+        }
+        .result {
+            margin-top: 30px;
+            font-size: 24px;
+            color: #6200ea;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .result.visible {
+            opacity: 1;
+            transform: translateY(-10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Build or Spiral</h1>
+        <div class="buttons">
+            <button id="buildBtn">Build</button>
+            <button id="spiralBtn">Spiral</button>
+        </div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const buildBtn = document.getElementById('buildBtn');
+        const spiralBtn = document.getElementById('spiralBtn');
+        const result = document.getElementById('result');
+
+        buildBtn.addEventListener('click', () => {
+            result.textContent = "You've chosen to Build!";
+            result.classList.add('visible');
+            result.style.color = '#4caf50'; // Green for build
+            animateResult();
+        });
+
+        spiralBtn.addEventListener('click', () => {
+            result.textContent = "You're spiraling...!";
+            result.classList.add('visible');
+            result.style.color = '#f44336'; // Red for spiral
+            animateResult();
+        });
+
+        function animateResult() {
+            setTimeout(() => {
+                result.classList.remove('visible');
+            }, 2000); // Hide result after 2 seconds
+        }
+    </script>
+</body>
+</html>
+```
+
+This code creates a simple game interface where you can choose between "Build" or "Spiral". When you click either button, a message will be displayed with a fade-in animation and will disappear after 2 seconds. Feel free to customize the styles and animations further to suit your preferences!

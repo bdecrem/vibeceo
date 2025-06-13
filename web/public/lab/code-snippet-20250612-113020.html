@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 113020</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 700px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+        }
+
+        .title {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        .countdown {
+            font-size: 2em;
+            margin-bottom: 20px;
+            animation: fadeIn 3s ease-in-out;
+        }
+
+        .cta-btn {
+            background-color: #ff6f61;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="title">New Product Launch</div>
+        <div class="countdown" id="countdown">00:15:00</div>
+        <button class="cta-btn" id="cta-button">Get Notified</button>
+    </div>
+
+    <script>
+        // Fake countdown timer functionality
+        let time = 15 * 60; // 15 minutes in seconds
+        const countdownElement = document.getElementById('countdown');
+
+        function updateCountdown() {
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+            countdownElement.innerHTML = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            if (time > 0) {
+                time--;
+            }
+        }
+        setInterval(updateCountdown, 1000);
+
+        // CTA button functionality
+        const ctaButton = document.getElementById('cta-button');
+        ctaButton.addEventListener('click', function() {
+            alert('Thank you! You will be notified when the product launches.');
+        });
+    </script>
+
+</body>
+</html>

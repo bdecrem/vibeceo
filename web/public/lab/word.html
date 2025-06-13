@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Game</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #FFFBEC;
+        }
+        #word-container {
+            background-color: #FF6B6B;
+            padding: 20px;
+            border-radius: 15px;
+            color: #FFFFFF;
+            font-size: 2em;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        #word-container:hover {
+            transform: scale(1.05);
+        }
+        input {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4ECDC4;
+            color: #FFFFFF;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:hover {
+            background-color: #1A535C;
+            transform: scale(1.05);
+        }
+        #response {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #FF6B6B;
+        }
+    </style>
+</head>
+<body>
+    <div id="word-container">Sunshine</div>
+    <input type="text" id="user-input" placeholder="Type the first word that comes to mind">
+    <button onclick="getResponse()">Submit</button>
+    <div id="response"></div>
+
+    <script>
+        function getResponse() {
+            const userInput = document.getElementById('user-input').value.toLowerCase();
+            const responses = {
+                "rain": "Oh, are we feeling a bit stormy?",
+                "moon": "Dreaming about lunar adventures, are we?",
+                "beach": "Building sandcastles in your mind?",
+                "cloud": "Head in the clouds, I see!",
+                "happy": "A sunny disposition matches the word!"
+            };
+            const defaultResponse = "Interesting choice! How avant-garde!";
+            const response = responses[userInput] || defaultResponse;
+            document.getElementById('response').textContent = response;
+        }
+    </script>
+</body>
+</html>

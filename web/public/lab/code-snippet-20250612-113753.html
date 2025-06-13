@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 113753</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f06, #f79);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        p {
+            font-size: 1.5rem;
+            margin: 0.5rem 0 2rem;
+            animation: fadeIn 3s ease-in-out;
+        }
+
+        #countdown {
+            font-size: 2rem;
+            letter-spacing: 2px;
+            margin: 2rem 0;
+        }
+
+        .cta-button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            color: #f06;
+            background-color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Exciting New Product Launch!</h1>
+        <p>Stay tuned for our big reveal</p>
+        <div id="countdown">00:00:00</div>
+        <button class="cta-button" onclick="alert('Thank you for your interest!')">Notify Me</button>
+    </div>
+
+    <script>
+        // Fake countdown timer
+        const countdownElement = document.getElementById('countdown');
+        let fakeTime = 3600; // 1 hour
+
+        function updateCountdown() {
+            const hours = String(Math.floor(fakeTime / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((fakeTime % 3600) / 60)).padStart(2, '0');
+            const seconds = String(fakeTime % 60).padStart(2, '0');
+
+            countdownElement.textContent = `${hours}:${minutes}:${seconds}`;
+
+            if (fakeTime > 0) {
+                fakeTime--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                countdownElement.textContent = "00:00:00";
+            }
+        }
+
+        updateCountdown();
+    </script>
+</body>
+</html>

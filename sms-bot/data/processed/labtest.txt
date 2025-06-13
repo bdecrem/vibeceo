@@ -1,0 +1,1 @@
+Create an HTML page that says "Welcome to the lab"

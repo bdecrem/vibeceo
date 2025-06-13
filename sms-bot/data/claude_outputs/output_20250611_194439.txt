@@ -1,0 +1,55 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>James's Bio</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fce4ec;
+            color: #424242;
+            margin: 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #e91e63;
+        }
+        p {
+            font-size: 1.2rem;
+            line-height: 1.5;
+        }
+        .fun-facts {
+            margin-top: 1.5rem;
+            background-color: #f8bbd0;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hey there! 🌊🌮</h1>
+        <p>I'm James, a passionate software developer based in Orlando. When I'm not coding, you can catch me riding the waves and enjoying delicious tacos for breakfast!</p>
+        <div class="fun-facts">
+            <p>Fun Facts:</p>
+            <ul>
+                <li>🏄‍♂️ I love the ocean and surfing is my meditation.</li>
+                <li>🌮 Tacos for breakfast? Always a YES!</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+```

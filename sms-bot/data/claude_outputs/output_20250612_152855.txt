@@ -1,0 +1,105 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 152837 | Kailey's Mental Wellness Coaching</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            height: 100%;
+            color: #333;
+        }
+        .hero {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+            animation: fadeIn 2s ease-in-out;
+        }
+        .hero h1 {
+            font-size: 3.5em;
+            margin: 0;
+            animation: slideIn 1s ease-out;
+        }
+        .hero p {
+            font-size: 1.5em;
+            margin: 20px 0;
+            animation: slideIn 1.5s ease-out;
+        }
+        .hero button {
+            background-color: #fff;
+            color: #ff9a9e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: background-color 0.3s ease-in-out;
+            animation: slideIn 2s ease-out;
+        }
+        .hero button:hover {
+            background-color: #fad0c4;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0;}
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .info-section {
+            padding: 50px 20px;
+            background-color: #f3f3f3;
+            text-align: center;
+            color: #555;
+        }
+        .info-section h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .info-section p {
+            font-size: 1.2em;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <div>
+            <h1>Welcome to Kailey's Mental Wellness Coaching</h1>
+            <p>Empower your mind. Transform your life.</p>
+            <button onclick="location.href='#contact'">Get Started</button>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>About Kailey</h2>
+        <p>
+            Kailey is a certified mental wellness coach with over a decade of experience
+            in helping individuals achieve mental clarity, emotional balance, and life fulfillment.
+            Her unique approach combines mindfulness, cognitive behavioral techniques, and holistic practices
+            tailored to meet each client's personal goals.
+        </p>
+    </div>
+
+    <div id="contact" class="info-section" style="background-color: #ff9a9e; color: #fff;">
+        <h2>Contact Kailey</h2>
+        <p>
+            Ready to start your journey to better mental wellness? Reach out to Kailey today.
+            Email: <a href="mailto:kailey@wellnesscoach.com" style="color: #fff; text-decoration: underline;">kailey@wellnesscoach.com</a>
+        </p>
+    </div>
+
+</body>
+</html>
+```

@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sendTestEmail } from '../lib/email/sendgrid.js';
+import { getTodaysInspiration, formatDailyMessage } from '../lib/sms/handlers.js';
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -21,18 +22,23 @@ if (!isProduction) {
   }
 }
 
-// Test with exact content format requested
-const todaysInspiration = `"You're not lost.\nYou're just temporarily vibing in the in-between." — Donte`;
+// Get today's actual message (same logic as SMS system)
+async function sendTodaysEmail() {
+  try {
+    console.log('📧 Getting today\'s actual message from SMS system...');
+    const todaysData = await getTodaysInspiration();
+    const todaysInspiration = formatDailyMessage(todaysData.inspiration);
 
-console.log('📧 Sending test email with NEW TEMPLATE...');
-console.log('💬 Message:', todaysInspiration);
-console.log('📧 Recipient: bdecrem@gmail.com');
+    console.log('📧 Sending test email with today\'s actual message...');
+    console.log('💬 Message:', todaysInspiration);
+    console.log('📧 Recipient: bdecrem@gmail.com');
 
-sendTestEmail(todaysInspiration, 'bdecrem@gmail.com')
-  .then((result) => {
+    const result = await sendTestEmail(todaysInspiration, 'bdecrem@gmail.com');
     console.log('✅ Test email sent successfully!');
     console.log('📧 Result:', result);
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('❌ Test email failed:', error);
-  });
+  }
+}
+
+sendTodaysEmail();

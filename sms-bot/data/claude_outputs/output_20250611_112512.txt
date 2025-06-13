@@ -1,0 +1,146 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compost</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #A0C334 50%, #FFCC00 50%);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        #gameArea {
+            display: flex;
+            justify-content: space-around;
+            width: 80%;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        .dropzone {
+            width: 200px;
+            height: 300px;
+            border: 3px dashed #ffffff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+        .dropzone:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        .trash, .compost {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .item {
+            width: 150px;
+            padding: 10px;
+            margin: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            cursor: grab;
+            transition: transform 0.2s ease;
+        }
+        .item:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        #tip {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.2em;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Sort Items into Compost or Trash</h1>
+<div id="gameArea">
+    <div class="dropzone" id="compostZone">
+        <span class="compost">Compost</span>
+    </div>
+    <div class="dropzone" id="trashZone">
+        <span class="trash">Trash</span>
+    </div>
+</div>
+
+<div class="item" draggable="true" id="item1">Banana Peel</div>
+<div class="item" draggable="true" id="item2">Plastic Bottle</div>
+<div class="item" draggable="true" id="item3">Apple Core</div>
+<div class="item" draggable="true" id="item4">Candy Wrapper</div>
+
+<div id="tip">Tip: Did you know composting can reduce your household waste by up to 30%?</div>
+
+<script>
+    const compostZone = document.getElementById('compostZone');
+    const trashZone = document.getElementById('trashZone');
+    const items = document.querySelectorAll('.item');
+    const tip = document.getElementById('tip');
+    const tips = [
+        "Tip: Composting can enrich the soil and reduce the need for chemical fertilizers.",
+        "Tip: Keep your compost pile moist but not too wet.",
+        "Tip: Avoid adding meat or dairy products to your compost.",
+        "Tip: Composting reduces methane emissions from landfills.",
+        "Tip: Use a mix of greens and browns in your compost for the best results."
+    ];
+
+    items.forEach(item => {
+        item.addEventListener('dragstart', dragStart);
+    });
+
+    [compostZone, trashZone].forEach(zone => {
+        zone.addEventListener('dragover', dragOver);
+        zone.addEventListener('drop', drop);
+    });
+
+    function dragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.id);
+    }
+
+    function dragOver(e) {
+        e.preventDefault();
+    }
+
+    function drop(e) {
+        const id = e.dataTransfer.getData('text');
+        const item = document.getElementById(id);
+        if (e.target.id === 'compostZone' && (id === 'item1' || id === 'item3')) {
+            compostZone.appendChild(item);
+            updateTip();
+        } else if (e.target.id === 'trashZone' && (id === 'item2' || id === 'item4')) {
+            trashZone.appendChild(item);
+            updateTip();
+        }
+    }
+
+    function updateTip() {
+        tip.textContent = tips[Math.floor(Math.random() * tips.length)];
+    }
+</script>
+
+</body>
+</html>
+```

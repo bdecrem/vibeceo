@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kailey's Mental Wellness Coaching</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial, sans-serif';
+            color: #333;
+            background: linear-gradient(to bottom, #ffecd2, #fcb69f);
+            overflow-x: hidden;
+        }
+        header {
+            background-color: #6a0572;
+            color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        header nav a {
+            color: #ffffff;
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+        header nav a:hover {
+            color: #ffecd2;
+        }
+        .hero {
+            height: 100vh;
+            background: url('https://source.unsplash.com/1600x900/?nature,wellness') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #ffffff;
+            animation: fadeIn 2s ease-in-out;
+        }
+        .hero h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 1.5em;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .about, .contact {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .about h3, .contact h3 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .about p, .contact form {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.2em;
+        }
+        .contact form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .contact input, .contact textarea {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .contact button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #6a0572;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .contact button:hover {
+            background-color: #833a8b;
+        }
+        footer {
+            background-color: #333333;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Kailey's Mental Wellness Coaching</h1>
+    <nav>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div>
+        <h2>Your Journey to Wellness Starts Here</h2>
+        <p>Transform your mind, transform your life with personalized coaching from Kailey.</p>
+    </div>
+</section>
+
+<section id="about" class="about">
+    <h3>About Kailey</h3>
+    <p>Kailey is a certified mental wellness coach with over 10 years of experience in helping individuals achieve balance and clarity in their lives. Her holistic approach focuses on mindfulness, self-care, and personal growth. Together, you can work towards a more peaceful and fulfilling life.</p>
+</section>
+
+<section id="contact" class="contact">
+    <h3>Contact Kailey</h3>
+    <form id="contactForm">
+        <input type="text" id="name" name="name" placeholder="Your Name" required>
+        <input type="email" id="email" name="email" placeholder="Your Email" required>
+        <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
+        <button type="submit">Send Message</button>
+    </form>
+</section>
+
+<footer>
+    <p>© 2023 Kailey's Mental Wellness Coaching. All rights reserved.</p>
+</footer>
+
+<script>
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const message = document.getElementById('message').value;
+
+        if (name && email && message) {
+            alert(`Thank you, ${name}! Your message has been sent.`);
+            this.reset();
+        } else {
+            alert('Please fill in all fields.');
+        }
+    });
+</script>
+
+</body>
+</html>

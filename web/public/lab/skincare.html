@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magical Morning Routine Quiz</title>
+    <style>
+        body {
+            background-color: #fff9ec;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .quiz-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .question {
+            margin: 10px 0;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        .option {
+            background-color: #f9a8d4;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: transform 0.2s;
+            color: #fff;
+        }
+        .option:hover {
+            transform: scale(1.05);
+        }
+        .option:active {
+            background-color: #f78fb3;
+        }
+        .btn-submit {
+            background-color: #76e5c6;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: #fff;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            transform: scale(1.05);
+        }
+        .btn-submit:active {
+            background-color: #66d4b3;
+        }
+        .result {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #fffae3;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: #333;
+        }
+        .result span {
+            font-weight: bold;
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #fff; }
+            50% { box-shadow: 0 0 20px #ff8c94; }
+            100% { box-shadow: 0 0 5px #fff; }
+        }
+        .quiz-container:hover {
+            animation: glow 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>✨ Find Your Morning Glow ✨</h1>
+    <div class="question">
+        <p>What's your main skin concern?</p>
+        <div class="options" data-question="skin-concern">
+            <div class="option">Dryness</div>
+            <div class="option">Acne</div>
+            <div class="option">Redness</div>
+            <div class="option">Aging</div>
+        </div>
+    </div>
+    <div class="question">
+        <p>How do you feel today?</p>
+        <div class="options" data-question="mood">
+            <div class="option">Relaxed</div>
+            <div class="option">Energized</div>
+            <div class="option">Stressed</div>
+            <div class="option">Happy</div>
+        </div>
+    </div>
+    <div class="btn-submit">Show My Routine</div>
+    <div class="result"></div>
+</div>
+
+<script>
+    const options = document.querySelectorAll('.option');
+    const btnSubmit = document.querySelector('.btn-submit');
+    const resultDiv = document.querySelector('.result');
+    let answers = {};
+
+    options.forEach(option => {
+        option.addEventListener('click', function() {
+            const question = this.parentElement.dataset.question;
+            answers[question] = this.textContent;
+            this.parentElement.querySelectorAll('.option').forEach(opt => opt.style.backgroundColor = '#f9a8d4');
+            this.style.backgroundColor = '#f78fb3';
+        });
+    });
+
+    btnSubmit.addEventListener('click', function() {
+        if (answers['skin-concern'] && answers['mood']) {
+            const routine = generateRoutine(answers['skin-concern'], answers['mood']);
+            resultDiv.innerHTML = `<span>Your Personalized Morning Routine:</span> ${routine}`;
+            resultDiv.style.display = 'block';
+        } else {
+            resultDiv.innerHTML = `<span>Please answer all the questions!</span>`;
+            resultDiv.style.display = 'block';
+        }
+    });
+
+    function generateRoutine(skinConcern, mood) {
+        const routines = {
+            "Dryness": "Start with a hydrating serum, followed by a rich moisturizer. 🌊",
+            "Acne": "Use a gentle cleanser and apply a calming toner. 🚿",
+            "Redness": "Try a soothing mask and a green tea mist. 🍵",
+            "Aging": "Incorporate a retinol serum and vitamin C. 🌟"
+        };
+
+        const moodActions = {
+            "Relaxed": "Meditate for 10 minutes. 🧘‍♂️",
+            "Energized": "Do a quick HIIT session. 🏋️‍♂️",
+            "Stressed": "Light a lavender candle and breathe. 🕯️",
+            "Happy": "Dance to your favorite song. 💃"
+        };
+
+        return `${routines[skinConcern]} Then, ${moodActions[mood]}`;
+    }
+</script>
+
+</body>
+</html>

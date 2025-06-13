@@ -1,0 +1,156 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet 20250612 115058</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 50px 0;
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 3rem;
+            animation: fadein 2s ease;
+        }
+
+        header p {
+            margin: 10px 0 0;
+            font-size: 1.2rem;
+            animation: fadein 3s ease;
+        }
+
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .intro h2 {
+            font-size: 2.5rem;
+            color: #764ba2;
+        }
+
+        .intro p {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card h3 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
+        .cta-button:hover {
+            background-color: #556cd6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kailey's Mental Wellness Coaching</h1>
+        <p>Empower Your Mind, Transform Your Life</p>
+    </header>
+
+    <div class="container">
+        <div class="intro">
+            <h2>Welcome to a Journey of Self-Discovery</h2>
+            <p>At Kailey's Mental Wellness Coaching, we believe in nurturing the mind and soul. Our personalized coaching sessions are designed to help you overcome challenges and embrace a life full of joy and fulfillment.</p>
+            <a href="#contact" class="cta-button">Book a Session</a>
+        </div>
+
+        <div class="card">
+            <h3>Our Philosophy</h3>
+            <p>We focus on holistic approaches that consider your emotional, psychological, and social well-being. Our goal is to empower you with the tools and knowledge to achieve mental clarity and emotional balance.</p>
+        </div>
+
+        <div class="card">
+            <h3>Customized Coaching</h3>
+            <p>Every individual is unique, and our coaching sessions are tailored to your personal needs. Whether you're dealing with stress, anxiety, or seeking personal growth, we're here to support you every step of the way.</p>
+        </div>
+        
+        <div class="card">
+            <h3>Success Stories</h3>
+            <p>Join the many who have transformed their lives through our coaching. Discover how past clients have gained a deeper understanding of themselves and cultivated resilience and positivity in their lives.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Kailey's Mental Wellness Coaching. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // JavaScript can be added here for additional interactivity
+    </script>
+</body>
+</html>
+```

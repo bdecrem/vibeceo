@@ -1,0 +1,190 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delusional Pitch Deck</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        .crossword {
+            display: grid;
+            grid-template-columns: repeat(9, 30px);
+            grid-template-rows: repeat(9, 30px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            position: relative;
+        }
+        .cell.black {
+            background-color: #000;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+        }
+        .clues {
+            display: flex;
+            justify-content: space-between;
+        }
+        .clue-list {
+            width: 45%;
+        }
+        .clue-list h3 {
+            margin-bottom: 10px;
+        }
+        .clue-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .clue-list li {
+            margin-bottom: 5px;
+        }
+        @media (max-width: 600px) {
+            .clues {
+                flex-direction: column;
+            }
+            .clue-list {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delusional Pitch Deck Crossword</h1>
+        <div class="crossword" id="crossword">
+            <!-- 9x9 Grid -->
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-across="1" data-down="1"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="2"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="3"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell"><input type="text" maxlength="1" data-across="4" data-down="5"></div><div class="cell"><input type="text" maxlength="1" data-across="6"></div><div class="cell"><input type="text" maxlength="1" data-across="7"></div><div class="cell"><input type="text" maxlength="1" data-across="8"></div><div class="cell"><input type="text" maxlength="1" data-across="9"></div><div class="cell"><input type="text" maxlength="1" data-across="10"></div><div class="cell"><input type="text" maxlength="1" data-across="11"></div><div class="cell"><input type="text" maxlength="1" data-across="12"></div><div class="cell"><input type="text" maxlength="1" data-across="13"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="14"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="15"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="16"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="17"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+            <div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell"><input type="text" maxlength="1" data-down="18"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div><div class="cell black"></div>
+        </div>
+        <div class="clues">
+            <div class="clue-list">
+                <h3>Across</h3>
+                <ul>
+                    <li>1. A pitch that's not grounded in reality (8)</li>
+                    <li>4. Key component of a delusional idea (5)</li>
+                    <li>6. Often exaggerated in delusions (6)</li>
+                    <li>7. Misleading or deceptive (7)</li>
+                    <li>8. Unrealistic belief (8)</li>
+                    <li>9. False or mistaken idea (6)</li>
+                    <li>10. Imagined or fancied (7)</li>
+                    <li>11. Not based on fact (6)</li>
+                    <li>12. Illusory or deceptive (8)</li>
+                    <li>13. Fabricated or invented (8)</li>
+                </ul>
+            </div>
+            <div class="clue-list">
+                <h3>Down</h3>
+                <ul>
+                    <li>1. A pitch that's not grounded in reality (8)</li>
+                    <li>2. Key component of a delusional idea (5)</li>
+                    <li>3. Often exaggerated in delusions (6)</li>
+                    <li>5. Misleading or deceptive (7)</li>
+                    <li>14. Unrealistic belief (8)</li>
+                    <li>15. False or mistaken idea (6)</li>
+                    <li>16. Imagined or fancied (7)</li>
+                    <li>17. Not based on fact (6)</li>
+                    <li>18. Illusory or deceptive (8)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        const crossword = document.getElementById('crossword');
+        const cells = crossword.querySelectorAll('.cell input');
+        const solution = {
+            1: "DELUSIONARY",
+            4: "CORE",
+            6: "EXAGGERATED",
+            7: "DECEPTIVE",
+            8: "BELIEF",
+            9: "FALSE",
+            10: "IMAGINED",
+            11: "UNREALISTIC",
+            12: "ILLUSORY",
+            13: "FABRICATED",
+            2: "CORE",
+            3: "EXAGGERATED",
+            5: "DECEPTIVE",
+            14: "BELIEF",
+            15: "FALSE",
+            16: "IMAGINED",
+            17: "UNREALISTIC",
+            18: "ILLUSORY"
+        };
+
+        cells.forEach(cell => {
+            cell.addEventListener('input', (e) => {
+                const across = e.target.dataset.across;
+                const down = e.target.dataset.down;
+                if (across && e.target.value.toLowerCase() !== solution[across].toLowerCase().slice(0, e.target.value.length)) {
+                    e.target.style.backgroundColor = 'red';
+                } else if (down && e.target.value.toLowerCase() !== solution[down].toLowerCase().slice(0, e.target.value.length)) {
+                    e.target.style.backgroundColor = 'red';
+                } else {
+                    e.target.style.backgroundColor = '';
+                }
+            });
+        });
+
+        crossword.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                const nextCell = e.target.parentElement.nextElementSibling?.querySelector('input');
+                if (nextCell) nextCell.focus();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prevCell = e.target.parentElement.previousElementSibling?.querySelector('input');
+                if (prevCell) prevCell.focus();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextRowCell = e.target.parentElement.parentElement.nextElementSibling?.children[e.target.parentElement.cellIndex]?.querySelector('input');
+                if (nextRowCell) nextRowCell.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevRowCell = e.target.parentElement.parentElement.previousElementSibling?.children[e.target.parentElement.cellIndex]?.querySelector('input');
+                if (prevRowCell) prevRowCell.focus();
+            }
+        });
+    </script>
+</body>
+</html>
+```

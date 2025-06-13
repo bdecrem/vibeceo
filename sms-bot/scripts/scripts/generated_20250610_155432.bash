@@ -1,0 +1,1 @@
+npx ts-node scripts/send-direct-sms.ts "Remote control test successful!"

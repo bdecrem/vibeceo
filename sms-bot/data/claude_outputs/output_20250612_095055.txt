@@ -1,0 +1,95 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Launch</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #8360c3, #2ebf91);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+            animation: fadeIn 2s ease-in-out;
+        }
+        .countdown {
+            font-size: 3em;
+            margin-bottom: 1em;
+            animation: fadeIn 2.5s ease-in-out;
+        }
+        .cta-button {
+            font-size: 1.5em;
+            padding: 0.5em 2em;
+            background-color: #ff5e57;
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            animation: fadeIn 3s ease-in-out;
+        }
+        .cta-button:hover {
+            background-color: #ff1c1c;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Launch</h1>
+        <div id="countdown" class="countdown">00:00:00</div>
+        <button class="cta-button" id="ctaButton">Notify Me</button>
+    </div>
+
+    <script>
+        // Fake countdown timer
+        function startCountdown(duration, display) {
+            let timer = duration, hours, minutes, seconds;
+            setInterval(() => {
+                hours = Math.floor(timer / 3600);
+                minutes = Math.floor((timer % 3600) / 60);
+                seconds = timer % 60;
+
+                hours = hours < 10 ? "0" + hours : hours;
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = hours + ":" + minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    timer = duration;
+                }
+            }, 1000);
+        }
+
+        window.onload = () => {
+            const countdownTime = 7200; // 2 hours
+            const display = document.querySelector('#countdown');
+            startCountdown(countdownTime, display);
+        };
+
+        // Button functionality
+        document.getElementById('ctaButton').addEventListener('click', () => {
+            alert('You will be notified!');
+        });
+    </script>
+</body>
+</html>
+```

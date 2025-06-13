@@ -1,0 +1,58 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kailey</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #6200ea;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+        main {
+            padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 1rem;
+        }
+        p {
+            line-height: 1.6;
+        }
+        footer {
+            background-color: #6200ea;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hello, Kailey!</h1>
+    </header>
+    <main>
+        <p>Welcome to your personal webpage. Here, you'll find inspiration, learning, and motivation to fuel your journey. Remember, every great achievement was once considered impossible.</p>
+        <p>Take today as a new opportunity to grow and thrive. Keep pushing your boundaries and embrace every challenge with a smile. You got this!</p>
+    </main>
+    <footer>
+        <p>&copy; 2023 Kailey's Inspiration Hub</p>
+    </footer>
+</body>
+</html>
+```

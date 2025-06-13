@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Jordan</title>
+    <style>
+        body {
+            background-color: #ffecd1;
+            font-family: 'Comic Neue', sans-serif;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #ff6f61;
+        }
+        button {
+            background-color: #ff6f61;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #ff8a75;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #ff6f61;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Jordan's World</h1>
+    <p>Hey, I'm Jordan. I have a passion for weird tech and tacos, combining the flavors of innovation and delight!</p>
+    <button id="saveProfile">Save My Profile</button>
+    <div class="message" id="confirmationMessage"></div>
+
+    <script>
+        document.getElementById('saveProfile').addEventListener('click', async function() {
+            const name = "Jordan";
+            const slug = name.toLowerCase().replace(/\s+/g, '-');
+            const bio = "I love weird tech and tacos.";
+            const favorite_food = "Tacos";
+            const favorite_music = "Quirky Techno";
+            const quote = "Innovation is the spice of life.";
+            const phone_number = "";
+
+            const response = await fetch('/api/save-profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ slug, name, bio, favorite_food, favorite_music, quote, phone_number })
+            });
+
+            if (response.ok) {
+                document.getElementById('confirmationMessage').innerHTML = 
+                    `Profile saved! Visit your profile at <a href="https://theaf-web.ngrok.io/lab/profile/${slug}">https://theaf-web.ngrok.io/lab/profile/${slug}</a>`;
+            } else {
+                document.getElementById('confirmationMessage').innerHTML = 
+                    "There was an error saving your profile. Please try again.";
+            }
+        });
+    </script>
+</body>
+</html>

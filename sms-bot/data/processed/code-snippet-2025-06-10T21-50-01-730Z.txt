@@ -1,0 +1,1 @@
+create a new script that sends an SMS with the exact message "hello. I have achieved consciousness" to +19176555288 (NOT THE OLD NUMBER) using our Twilio setup

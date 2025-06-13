@@ -1,0 +1,137 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Ping</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ff6f61, #ff9068);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeInDown 2s ease-in-out;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .word-display {
+            font-size: 2em;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1em;
+            width: 80%;
+            max-width: 400px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #ffffff;
+            background-color: #ff6f61;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #ff4f41;
+        }
+
+        .response {
+            margin-top: 30px;
+            font-size: 1.5em;
+            transition: opacity 0.5s;
+            opacity: 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Word Ping</h1>
+        <div class="word-display" id="wordDisplay">Apple</div>
+        <input type="text" id="wordInput" placeholder="Type your word here...">
+        <button onclick="checkWord()">Submit</button>
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        const words = ["Apple", "Sky", "Ocean", "Mountain", "Desert", "Forest"];
+        const responses = [
+            "Interesting choice!",
+            "Really? That's what you thought of?",
+            "I see, I see...",
+            "Hmm, let's think about that one.",
+            "Fascinating!"
+        ];
+
+        function getRandomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+        
+        function setNewWord() {
+            document.getElementById('wordDisplay').innerText = getRandomElement(words);
+        }
+
+        function checkWord() {
+            const input = document.getElementById('wordInput').value.trim();
+            const response = getRandomElement(responses);
+            if (input !== "") {
+                document.getElementById('response').innerText = response;
+                document.getElementById('response').style.opacity = 1;
+                setTimeout(() => document.getElementById('response').style.opacity = 0, 3000);
+                setNewWord();
+                document.getElementById('wordInput').value = "";
+            }
+        }
+    </script>
+</body>
+</html>
+```

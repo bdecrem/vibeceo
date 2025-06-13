@@ -1,0 +1,1 @@
+kailey - live-coaching - Create an HTML page that looks like a livestream from Kailey. Include a fake video embed, scrolling comments from users, and Kailey's motivational script updating every few seconds using JavaScript.

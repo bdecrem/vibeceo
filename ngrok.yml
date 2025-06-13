@@ -1,0 +1,10 @@
+version: "2"
+tunnels:
+  sms-bot:
+    proto: http
+    addr: 3030
+    subdomain: theaf-sms
+  web:
+    proto: http
+    addr: 3000
+    subdomain: theaf-web 

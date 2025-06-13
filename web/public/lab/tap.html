@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #eee;
+            user-select: none;
+        }
+        .container {
+            text-align: center;
+        }
+        .circle {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 20px auto;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .circle:active {
+            transform: scale(0.95);
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .timer {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        .start-btn, .reset-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .start-btn:hover, .reset-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        .hidden {
+            display: none;
+        }
+        .game-over {
+            font-size: 32px;
+            margin: 20px 0;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="timer">Time: <span id="timer">10</span>s</div>
+        <div class="circle hidden" id="circle"></div>
+        <button class="start-btn" id="startBtn">Start Game</button>
+        <button class="reset-btn hidden" id="resetBtn">Play Again</button>
+        <div class="game-over hidden" id="gameOver"></div>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 10;
+        let gameActive = false;
+        let timerInterval;
+
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const circle = document.getElementById('circle');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const gameOverEl = document.getElementById('gameOver');
+
+        function startGame() {
+            score = 0;
+            timeLeft = 10;
+            gameActive = true;
+            scoreEl.textContent = score;
+            timerEl.textContent = timeLeft;
+            
+            startBtn.classList.add('hidden');
+            circle.classList.remove('hidden');
+            gameOverEl.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            circle.classList.add('hidden');
+            resetBtn.classList.remove('hidden');
+            gameOverEl.classList.remove('hidden');
+            gameOverEl.textContent = `Game Over! Final Score: ${score}`;
+        }
+
+        function tapCircle() {
+            if (!gameActive) return;
+            score++;
+            scoreEl.textContent = score;
+        }
+
+        circle.addEventListener('click', tapCircle);
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', startGame);
+    </script>
+</body>
+</html>

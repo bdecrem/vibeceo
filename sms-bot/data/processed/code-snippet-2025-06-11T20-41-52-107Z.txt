@@ -1,0 +1,2 @@
+SENDER:+16508989508
+kailey - bart - This user said: "I'm Bart. I love weird tech and tacos." Build their About Me page and save it to our system using fetch to POST to /api/save-profile. Use their name as the slug. After saving, show a message with the link to their live profile page using the full domain theaf-web.ngrok.io followed by /lab/profile/ and their slug.

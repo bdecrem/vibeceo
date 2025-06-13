@@ -1,0 +1,115 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Your Profile</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff6f61;
+        }
+        form {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #ff6f61;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #e65a50;
+        }
+        #confirmation {
+            margin-top: 20px;
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Your Profile</h1>
+    <form id="profile-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+
+        <label for="bio">Bio:</label>
+        <textarea id="bio" rows="3" required></textarea>
+
+        <label for="favorite_food">Favorite Food:</label>
+        <input type="text" id="favorite_food" required>
+
+        <label for="favorite_music">Favorite Music:</label>
+        <input type="text" id="favorite_music" required>
+
+        <label for="quote">Favorite Quote:</label>
+        <textarea id="quote" rows="2" required></textarea>
+
+        <label for="phone_number">Phone Number:</label>
+        <input type="text" id="phone_number" required>
+
+        <button type="button" onclick="saveProfile()">Create Profile</button>
+    </form>
+    <div id="confirmation"></div>
+
+    <script>
+        async function saveProfile() {
+            const name = document.getElementById('name').value;
+            const bio = document.getElementById('bio').value;
+            const favorite_food = document.getElementById('favorite_food').value;
+            const favorite_music = document.getElementById('favorite_music').value;
+            const quote = document.getElementById('quote').value;
+            const phone_number = document.getElementById('phone_number').value;
+            const slug = name.toLowerCase().replace(/\s+/g, '-');
+
+            const response = await fetch('/api/save-profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ slug, name, bio, favorite_food, favorite_music, quote, phone_number })
+            });
+
+            if (response.ok) {
+                document.getElementById('confirmation').textContent = `Profile created! View it at /lab/profile/${slug}`;
+            } else {
+                document.getElementById('confirmation').textContent = `Error creating profile. Please try again.`;
+            }
+        }
+    </script>
+</body>
+</html>
+```

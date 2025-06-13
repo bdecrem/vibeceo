@@ -55,17 +55,69 @@ if [ "$1" != "dev" ] && [ "$1" != "prod" ]; then
   exit 1
 fi
 
+# Function to check if ngrok is running
+check_ngrok_running() {
+  if pgrep -f "ngrok" > /dev/null; then
+    return 0  # ngrok is running
+  else
+    return 1  # ngrok is not running
+  fi
+}
+
+# Function to start ngrok and wait for it to be ready
+start_ngrok() {
+  echo "🚀 Starting ngrok tunnels..."
+  
+  # Start ngrok in the background
+  cd "$ROOT_DIR/.." && ngrok start --all > /dev/null 2>&1 &
+  
+  # Wait for ngrok to be ready (check every 2 seconds, max 30 seconds)
+  local max_attempts=15
+  local attempt=0
+  
+  while [ $attempt -lt $max_attempts ]; do
+    if curl -s http://localhost:4040/api/tunnels > /dev/null 2>&1; then
+      echo "✅ ngrok tunnels are ready!"
+      return 0
+    fi
+    echo "⏳ Waiting for ngrok to start... (attempt $((attempt + 1))/$max_attempts)"
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+  
+  echo "❌ Failed to start ngrok after 30 seconds"
+  return 1
+}
+
 # Determine which URLs to use
 if [ "$1" = "dev" ]; then
   # Development environment URLs
   TWILIO_TARGET_URL="$NGROK_URL/sms/webhook"
   SUPABASE_TARGET_URL="$NGROK_URL/api/webhooks/new-subscriber"
   ENV_NAME="development (ngrok)"
+  
+  # Check if ngrok is running, start it if not
+  if ! check_ngrok_running; then
+    echo "📡 ngrok is not running. Starting ngrok..."
+    if ! start_ngrok; then
+      echo "❌ Failed to start ngrok. Please start it manually with: ngrok start --all"
+      exit 1
+    fi
+  else
+    echo "✅ ngrok is already running"
+  fi
 else
   # Production environment URLs
   TWILIO_TARGET_URL="$PRODUCTION_URL/sms/webhook"
   SUPABASE_TARGET_URL="$PRODUCTION_URL/api/webhooks/new-subscriber"
   ENV_NAME="production (Railway)"
+  
+  # Optionally stop ngrok when switching to production
+  if check_ngrok_running; then
+    echo "🛑 Stopping ngrok (switching to production)..."
+    pkill -f "ngrok"
+    sleep 2
+  fi
 fi
 
 echo "Switching to $ENV_NAME environment..."

@@ -1,0 +1,126 @@
+Below is a simple HTML and JavaScript implementation of a game called "Build or Spiral." In this game, you must make choices to either build a structure or risk spiraling out of control. The game has a simple decision-making mechanic and showcases a modern design with CSS animations.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build or Spiral</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+            overflow: hidden;
+        }
+        .game-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #555;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.4;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        #build-btn {
+            background: #28a745;
+            color: white;
+        }
+        #spiral-btn {
+            background: #dc3545;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Build or Spiral</h1>
+        <p id="game-message">Make a choice to build your structure or risk spiraling out of control!</p>
+        <button id="build-btn">Build</button>
+        <button id="spiral-btn">Spiral</button>
+    </div>
+
+    <script>
+        let structureHealth = 100;
+
+        const gameMessage = document.getElementById('game-message');
+        const buildBtn = document.getElementById('build-btn');
+        const spiralBtn = document.getElementById('spiral-btn');
+
+        buildBtn.addEventListener('click', () => {
+            structureHealth += 10;
+            updateGameMessage(`You chose to build! Structure health is now ${structureHealth}.`);
+            checkGameStatus();
+        });
+
+        spiralBtn.addEventListener('click', () => {
+            structureHealth -= 20;
+            updateGameMessage(`Oh no! You spiraled! Structure health is now ${structureHealth}.`);
+            checkGameStatus();
+        });
+
+        function updateGameMessage(message) {
+            gameMessage.textContent = message;
+            gameMessage.classList.add('fade-in');
+            setTimeout(() => {
+                gameMessage.classList.remove('fade-in');
+            }, 1000);
+        }
+
+        function checkGameStatus() {
+            if (structureHealth <= 0) {
+                updateGameMessage('Your structure has collapsed! Game over.');
+                buildBtn.disabled = true;
+                spiralBtn.disabled = true;
+            } else if (structureHealth >= 200) {
+                updateGameMessage('Congratulations! You have successfully built a robust structure!');
+                buildBtn.disabled = true;
+                spiralBtn.disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+This game is simple but engaging, with a choice between building up your structure or taking a risky path that could lead to a loss. The game ends when you either reach a high structure health or it collapses. With modern CSS styling and animations, the game is visually appealing as well.

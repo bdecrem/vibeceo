@@ -5,8 +5,9 @@ import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
 import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers } from '../subscribers.js';
-import { supabase } from '../supabase.js';
+import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
+import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -779,7 +780,7 @@ const coachDataPath = path.join(process.cwd(), 'data', 'coaches.json');
 console.log('Loading from:', coachDataPath);
 console.log('File exists:', fs.existsSync(coachDataPath));
 const coachData = JSON.parse(fs.readFileSync(coachDataPath, 'utf8')) as { ceos: CEO[] };
-console.log('Loaded coach data:', coachData);
+console.log(`Loaded ${coachData.ceos.length} coaches:`, coachData.ceos.map(c => c.name).join(', '));
 
 // Load Leo's data separately (easter egg coach)
 const leoDataPath = path.join(process.cwd(), 'data', 'leo.json');
@@ -1187,8 +1188,8 @@ async function handleDefaultConversation(message: string, twilioClient: TwilioCl
 // Legacy coach conversation handler for explicit coach requests
 async function handleExplicitCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   console.log('=== EXPLICIT COACH CONVERSATION START ===');
-  console.log('Input:', { coach, message });
-  console.log('Available coaches:', coachData.ceos);
+console.log('Input:', { coach, message });
+console.log('Available coaches:', coachData.ceos.map(c => c.name).join(', '));
   
   // First try exact match (case insensitive)
   const searchName = coach.toLowerCase();
@@ -1241,6 +1242,45 @@ async function handleExplicitCoachConversation(coach: string, message: string, t
 }
 
 /**
+ * Handle ABOUT command - generate testimonials
+ * @param coach Coach name (alex, kailey, etc.)
+ * @param slug User slug for URL
+ * @param userBio User's bio description
+ * @param senderPhone Sender's phone number
+ * @returns Promise<boolean> Success status
+ */
+async function handleAboutCommand(coach: string, slug: string, userBio: string, senderPhone: string): Promise<boolean> {
+  try {
+    console.log(`🔍 Processing ABOUT command: coach=${coach}, slug=${slug}, bio=${userBio}`);
+    
+    // Use the existing format that monitor.py already understands
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `about-${coach}-${slug}-${timestamp}.txt`;
+    const filePath = path.join(process.cwd(), 'data', 'code', filename);
+    
+    // Ensure data/code directory exists
+    const codeDir = path.join(process.cwd(), 'data', 'code');
+    if (!fs.existsSync(codeDir)) {
+      fs.mkdirSync(codeDir, { recursive: true });
+    }
+    
+    // Create content in the existing format that monitor.py already handles
+    const aboutCommand = `SENDER:${senderPhone}
+${coach}-${slug}-about ${userBio}`;
+    
+    // Save to file (same pattern as CODE command)
+    fs.writeFileSync(filePath, aboutCommand, 'utf8');
+    
+    console.log(`✅ ABOUT command saved to ${filename} for monitor.py processing`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ Error in handleAboutCommand:`, error);
+    return false;
+  }
+}
+
+/**
  * Handle incoming SMS message
  * @param from Sender's phone number
  * @param body Message content
@@ -1252,12 +1292,291 @@ export async function processIncomingSms(from: string, body: string, twilioClien
   try {
     const message = body.trim();
     const messageUpper = message.toUpperCase();
-    
+
+    // Handle CODE command first - before loading any messages
+    if (message.match(/^CODE[\s:-]/i)) {
+      console.log(`Processing CODE command from ${from}`);
+      
+      try {
+        let codeContent;
+        let coachPrefix = '';
+        
+        // Check if this is the coach-specific format (CODE - coach - prompt)
+        const coachMatch = message.match(/^CODE\s*-\s*(\w+)\s*-\s*(.+)$/i);
+        
+        if (coachMatch) {
+          // Coach-specific format
+          const coachName = coachMatch[1].toLowerCase();
+          codeContent = coachMatch[2].trim();
+          
+          // Find the coach in coaches data
+          const coaches = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'coaches.json'), 'utf8')).ceos;
+          const coach = coaches.find((c: any) => c.id.toLowerCase() === coachName);
+          
+          if (!coach) {
+            await sendSmsResponse(
+              from,
+              `❌ CODE: Unknown coach "${coachName}". Available coaches: ${coaches.map((c: any) => c.id).join(', ')}`,
+              twilioClient
+            );
+            return;
+          }
+          
+          coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
+        } else {
+          // Original format - extract content after "CODE " or "CODE:"
+          const codePrefix = message.match(/^CODE[\s:]+/i)?.[0] || 'CODE ';
+          codeContent = message.substring(codePrefix.length).trim();
+        }
+        
+        if (!codeContent) {
+          await sendSmsResponse(
+            from,
+            `❌ CODE: Please provide content after CODE command.\nExamples:\nCODE function hello() { return 'world'; }\nCODE - kailey - create a meditation timer`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `code-snippet-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'code', filename);
+        
+        // Ensure data/code directory exists
+        const codeDir = path.join(process.cwd(), 'data', 'code');
+        if (!fs.existsSync(codeDir)) {
+          fs.mkdirSync(codeDir, { recursive: true });
+        }
+        
+        // Save code content to file with sender's phone number and optional coach prefix
+        const fileContent = `SENDER:${from}\n${coachPrefix}${codeContent}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        await sendSmsResponse(
+          from,
+          `✅ CODE: Saved ${codeContent.length} characters to data/code/${filename}${coachPrefix ? ` with ${coachMatch![1]} as coach` : ''}`,
+          twilioClient
+        );
+        
+        console.log(`Admin ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        return;
+      } catch (error) {
+        console.error(`Error processing CODE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ CODE: Failed to save code snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
+    // Handle WTAF command with slug system
+    if (message.match(/^WTAF(?:\s|$)/i)) {
+      console.log(`Processing WTAF command from ${from}`);
+      
+      try {
+        // Check user role for WTAF command
+        const subscriber = await getSubscriber(from);
+        if (!subscriber || subscriber.role !== 'coder') {
+          console.log(`User ${from} attempted WTAF command without coder privileges`);
+          // Silent ignore - don't reveal command to non-coder users
+          return;
+        }
+        
+        // Get or create user slug
+        const userSlug = await getOrCreateUserSlug(from);
+        
+        // Check if user just typed "WTAF" alone
+        const wtafMatch = message.match(/^WTAF\s*$/i);
+        if (wtafMatch) {
+          // Check if this is their first time - get user from Supabase to see if they have a slug already
+          const subscriber = await getSubscriber(from);
+          const isFirstTime = !subscriber || !subscriber.slug;
+          
+          let response = `🧪 WTAF? Welcome to the chaos.\n\nTry stuff like:\n→ wtaf code a delusional pitch deck\n→ wtaf make a vibes-based todo list\n\nWe'll turn your weird prompts into weird little apps.`;
+          
+          if (isFirstTime) {
+            response = `🎯 Your WTAF slug is: ${userSlug}\n\n${response}`;
+          }
+          
+          await sendSmsResponse(
+            from,
+            response,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Extract content after WTAF
+        let codeContent;
+        let coachPrefix = '';
+        
+        // Check if this is the coach-specific format (WTAF - coach - prompt)
+        const coachMatch = message.match(/^WTAF\s*-\s*(\w+)\s*-\s*(.+)$/i);
+        
+        if (coachMatch) {
+          // Coach-specific format
+          const coachName = coachMatch[1].toLowerCase();
+          codeContent = coachMatch[2].trim();
+          
+          // Find the coach in coaches data
+          const coaches = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'coaches.json'), 'utf8')).ceos;
+          const coach = coaches.find((c: any) => c.id.toLowerCase() === coachName);
+          
+          if (!coach) {
+            await sendSmsResponse(
+              from,
+              `❌ WTAF: Unknown coach "${coachName}". Available coaches: ${coaches.map((c: any) => c.id).join(', ')}`,
+              twilioClient
+            );
+            return;
+          }
+          
+          coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
+        } else {
+          // Original format - extract content after "WTAF " or "WTAF:"
+          const codePrefix = message.match(/^WTAF[\s:]+/i)?.[0] || 'WTAF ';
+          codeContent = message.substring(codePrefix.length).trim();
+        }
+        
+        if (!codeContent) {
+          await sendSmsResponse(
+            from,
+            `❌ WTAF: Please provide content after WTAF command.\nExamples:\nWTAF function hello() { return 'world'; }\nWTAF - kailey - create a meditation timer`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create filename with timestamp for monitor.py processing
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `wtaf-snippet-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'wtaf', filename);
+        
+        // Ensure data/wtaf directory exists for monitor.py
+        const wtafDir = path.join(process.cwd(), 'data', 'wtaf');
+        if (!fs.existsSync(wtafDir)) {
+          fs.mkdirSync(wtafDir, { recursive: true });
+        }
+        
+        // Save content for monitor.py processing with user slug info
+        const fileContent = `SENDER:${from}\nUSER_SLUG:${userSlug}\n${coachPrefix}${codeContent}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        await sendSmsResponse(
+          from,
+          `📡 Signal received. Coding the chaos now.`,
+          twilioClient
+        );
+        
+        console.log(`User ${from} (${userSlug}) saved WTAF request for processing: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        return;
+      } catch (error) {
+        console.error(`Error processing WTAF command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ WTAF: Failed to save snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
+    // Handle CODE command (original functionality)
+    if (message.match(/^CODE[\s:-]/i)) {
+      const command = 'CODE';
+      console.log(`Processing ${command} command from ${from}`);
+      
+      try {
+        let codeContent;
+        let coachPrefix = '';
+        
+        // Check if this is the coach-specific format (CODE - coach - prompt)
+        const coachMatch = message.match(/^CODE\s*-\s*(\w+)\s*-\s*(.+)$/i);
+        
+        if (coachMatch) {
+          // Coach-specific format
+          const coachName = coachMatch[1].toLowerCase();
+          codeContent = coachMatch[2].trim();
+          
+          // Find the coach in coaches data
+          const coaches = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'coaches.json'), 'utf8')).ceos;
+          const coach = coaches.find((c: any) => c.id.toLowerCase() === coachName);
+          
+          if (!coach) {
+            await sendSmsResponse(
+              from,
+              `❌ CODE: Unknown coach "${coachName}". Available coaches: ${coaches.map((c: any) => c.id).join(', ')}`,
+              twilioClient
+            );
+            return;
+          }
+          
+          coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
+        } else {
+          // Original format - extract content after "CODE " or "CODE:"
+          const codePrefix = message.match(/^CODE[\s:]+/i)?.[0] || 'CODE ';
+          codeContent = message.substring(codePrefix.length).trim();
+        }
+        
+        if (!codeContent) {
+          await sendSmsResponse(
+            from,
+            `❌ CODE: Please provide content after CODE command.\nExamples:\nCODE function hello() { return 'world'; }\nCODE - kailey - create a meditation timer`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `code-snippet-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'code', filename);
+        
+        // Ensure data/code directory exists
+        const codeDir = path.join(process.cwd(), 'data', 'code');
+        if (!fs.existsSync(codeDir)) {
+          fs.mkdirSync(codeDir, { recursive: true });
+        }
+        
+        // Save code content to file with sender's phone number and optional coach prefix
+        const fileContent = `SENDER:${from}\n${coachPrefix}${codeContent}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        await sendSmsResponse(
+          from,
+          `✅ CODE: Saved ${codeContent.length} characters to data/code/${filename}${coachPrefix ? ` with ${coachMatch![1]} as coach` : ''}`,
+          twilioClient
+        );
+        
+        console.log(`User ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        return;
+      } catch (error) {
+        console.error(`Error processing CODE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ CODE: Failed to save code snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
+    }
+
+    // Only load messages from Supabase if we get this far
+    try {
+      await loadInspirationsData();
+    } catch (error) {
+      console.error('ERROR: Failed to load from Supabase:', error);
+      // Continue processing - we might not need the messages
     }
     
     // Always check for system commands first
@@ -1268,10 +1587,16 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       const subscriber = await getSubscriber(from);
       const isAdmin = subscriber && subscriber.is_admin;
       
-      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nNote: Using any command will end your current coach conversation.';
+      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
+      
+      // Check if user has coder role to show WTAF command
+      const hasCoder = subscriber && subscriber.role === 'coder';
+      if (hasCoder) {
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file (coder role only)';
+      }
       
       if (isAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast\n• CODE [text] - Save code snippet to file';
       }
       
       await sendSmsResponse(from, helpText, twilioClient);
@@ -1285,6 +1610,51 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         await sendSmsResponse(from, SMS_CONFIG.STOP_RESPONSE, twilioClient);
       }
       activeConversations.delete(from);  // End any active conversation
+      return;
+    }
+
+    // Check for ABOUT command - generate testimonials
+    // Format: "about @alex I'm John, a web designer in LA"
+    const aboutMatch = message.match(/^about\s+@(\w+)\s+(.+)$/i);
+    
+    if (aboutMatch) {
+      console.log('🔍 Detected ABOUT command');
+      
+      const coach = aboutMatch[1].toLowerCase();
+      const userBio = aboutMatch[2].trim();
+      
+      // Generate a slug from the phone number (remove +1 and use last 4 digits)
+      const phoneSlug = from.replace(/^\+?1?/, '').slice(-4);
+      const slug = `user-${phoneSlug}`;
+      
+      console.log(`Processing ABOUT command: coach=${coach}, slug=${slug}, bio=${userBio}`);
+      
+      try {
+        const success = await handleAboutCommand(coach, slug, userBio, from);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `🔄 Creating your testimonial with ${coach}... You'll get a link in about 30 seconds!`,
+            twilioClient
+          );
+          console.log(`ABOUT command queued for processing: ${coach} testimonial for ${from}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Sorry, there was an issue processing your request. Please try again later.`,
+            twilioClient
+          );
+          console.log(`Failed to queue ABOUT command for ${from}`);
+        }
+      } catch (error) {
+        console.error(`Error processing ABOUT command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ Sorry, there was an issue processing your request. Please try again later.`,
+          twilioClient
+        );
+      }
       return;
     }
     
@@ -1501,6 +1871,66 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           twilioClient
         );
         console.log(`Admin ${from} chose to save item ${pendingBroadcast.itemId} for later`);
+      }
+      
+      return;
+    }
+    
+    // Check for CODE command - save admin code snippets to file
+    if (message.match(/^CODE[\s:]/i)) {
+      console.log(`Processing CODE command from ${from}`);
+      
+      // Check if user is admin
+      const subscriber = await getSubscriber(from);
+      if (!subscriber || !subscriber.is_admin) {
+        console.log(`User ${from} attempted CODE command without admin privileges`);
+        // Silent ignore - don't reveal admin features to non-admin users
+        return;
+      }
+      
+      try {
+        // Extract the code content after "CODE " or "CODE:"
+        const codePrefix = message.match(/^CODE[\s:]+/i)?.[0] || 'CODE ';
+        const codeContent = message.substring(codePrefix.length).trim();
+        
+        if (!codeContent) {
+          await sendSmsResponse(
+            from,
+            `❌ CODE: Please provide content after CODE command. Example: CODE function hello() { return 'world'; }`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `code-snippet-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'code', filename);
+        
+        // Ensure data/code directory exists
+        const codeDir = path.join(process.cwd(), 'data', 'code');
+        if (!fs.existsSync(codeDir)) {
+          fs.mkdirSync(codeDir, { recursive: true });
+        }
+        
+        // Save code content to file with sender's phone number
+        const fileContent = `SENDER:${from}\n${codeContent}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        await sendSmsResponse(
+          from,
+          `✅ CODE: Saved ${codeContent.length} characters to data/code/${filename}`,
+          twilioClient
+        );
+        
+        console.log(`Admin ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+      } catch (error) {
+        console.error(`Error processing CODE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ CODE: Failed to save code snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
       }
       
       return;
@@ -1890,4 +2320,85 @@ async function sendSmsResponse(
 export async function cleanup(): Promise<void> {
   console.log('Cleaning up SMS handlers resources...');
   return Promise.resolve();
+}
+
+/**
+ * Generate a unique user slug using adjective + animal (max 5 chars each)
+ */
+async function generateUserSlug(): Promise<string> {
+  // Filter dictionaries to max 5 characters and remove bad words
+  const badWords = ['then', 'when', 'where', 'what', 'how', 'why', 'who', 'which', 'that', 'this', 'than', 'them', 'they', 'there', 'these', 'those'];
+  const shortAdjectives = adjectives.filter(adj => 
+    adj.length <= 5 && 
+    !badWords.includes(adj.toLowerCase()) &&
+    adj.match(/^[a-z]+$/i) // Only letters, no numbers or special chars
+  );
+  const shortAnimals = animals.filter(animal => 
+    animal.length <= 5 &&
+    animal.match(/^[a-z]+$/i) // Only letters, no numbers or special chars
+  );
+  
+  let attempts = 0;
+  const maxAttempts = 50;
+  
+  while (attempts < maxAttempts) {
+    const slug = uniqueNamesGenerator({
+      dictionaries: [shortAdjectives, shortAnimals],
+      separator: '',
+      length: 2
+    });
+    
+    // Check if slug already exists in database
+    const { data, error } = await supabase
+      .from('sms_subscribers')
+      .select('slug')
+      .eq('slug', slug)
+      .single();
+    
+    if (error && error.code === 'PGRST116') {
+      // No rows returned - slug is unique
+      return slug;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback if we can't generate unique slug
+  const timestamp = Date.now().toString().slice(-4);
+  return `user${timestamp}`;
+}
+
+/**
+ * Get or create user slug for WTAF commands
+ */
+async function getOrCreateUserSlug(phoneNumber: string): Promise<string> {
+  const subscriber = await getSubscriber(phoneNumber);
+  
+  if (subscriber?.slug) {
+    return subscriber.slug;
+  }
+  
+  // Generate new slug
+  const newSlug = await generateUserSlug();
+  
+  // Update database with new slug
+  const { error } = await supabase
+    .from('sms_subscribers')
+    .update({ slug: newSlug })
+    .eq('phone_number', phoneNumber);
+  
+  if (error) {
+    console.error('Error saving user slug:', error);
+    throw new Error('Failed to save user slug');
+  }
+  
+  // Create user's personal directory in web/public/wtaf/
+  const userDir = path.join(process.cwd(), '..', 'web', 'public', 'wtaf', newSlug);
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+    console.log(`Created directory: ${userDir}`);
+  }
+  
+  console.log(`Generated new slug for ${phoneNumber}: ${newSlug}`);
+  return newSlug;
 }
