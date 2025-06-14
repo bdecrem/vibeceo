@@ -256,7 +256,7 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
         confirmed: false, // Will be set to true when they reply YES
         unsubscribed: false,
         is_admin: false,
-        role: 'user',
+        role: 'coder',
         slug: slug
       });
       
