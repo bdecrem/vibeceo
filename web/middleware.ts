@@ -33,10 +33,16 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // CRITICAL FIX: Prevent infinite loops by checking if path already starts with /wtaf/
+    if (pathname.startsWith('/wtaf/')) {
+      console.log(`[Middleware] Path already starts with /wtaf/, continuing normally: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Handle different routing scenarios
     if (isWtafDomain) {
-      // For wtaf.me domain: rewrite to /wtaf/username/filename internally
-      const newUrl = new URL(`/wtaf${pathname}${search}`, `https://${host}`)
+      // FIXED: Rewrite to internal Next.js server, not back to same domain
+      const newUrl = new URL(`/wtaf${pathname}${search}`, request.url)
       console.log(`[Middleware] Rewriting wtaf.me ${pathname} -> /wtaf${pathname}`)
       return NextResponse.rewrite(newUrl)
     } else if (isDevUserRoute) {
