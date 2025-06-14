@@ -4,8 +4,11 @@ from openai import OpenAI
 import re
 import subprocess
 from pathlib import Path
-from dotenv import load_dotenv
-import shutil
+from dotenv import l:q!
+:q!
+oad_dotenv
+import shutil:q!
+
 from datetime import datetime
 import json
 import sys
@@ -35,6 +38,27 @@ CLOUD_STORAGE_PREFIX = os.getenv("CLOUD_STORAGE_PREFIX", "wtaf-files")
 COLORS = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"]
 ANIMALS = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"]
 ACTIONS = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"]
+
+def detect_request_type(user_prompt):
+    """Detect what type of application the user wants"""
+    prompt_lower = user_prompt.lower()
+    
+    # Game keywords
+    game_keywords = ['game', 'pong', 'tetris', 'snake', 'tic-tac-toe', 'memory game', 
+                     'quiz', 'trivia', 'puzzle', 'arcade', 'solitaire', 'blackjack',
+                     'breakout', 'flappy', 'platformer', 'shooter', 'racing', 'cards']
+    
+    # App/tool keywords
+    app_keywords = ['calculator', 'todo', 'task manager', 'tracker', 'tool', 'app',
+                   'converter', 'generator', 'timer', 'counter', 'dashboard', 'planner',
+                   'notepad', 'editor', 'organizer', 'utility', 'widget', 'calendar']
+    
+    if any(keyword in prompt_lower for keyword in game_keywords):
+        return 'game'
+    elif any(keyword in prompt_lower for keyword in app_keywords):
+        return 'app'
+    else:
+        return 'website'
 
 def generate_fun_slug():
     color = random.choice(COLORS)
@@ -566,6 +590,10 @@ def execute_gpt4o(prompt_file):
     
 
 
+    # Detect request type for smart prompt selection
+    request_type = detect_request_type(user_prompt)
+    log_with_timestamp(f"🎯 Detected request type: {request_type}")
+    
     # Find the coach data - prioritize coach from file, then from parsing
     coach_data = None
     coach_to_find = coach_from_file if coach_from_file else coach
@@ -581,8 +609,152 @@ def execute_gpt4o(prompt_file):
     else:
         log_with_timestamp(f"🎨 No coach specified (coach='{coach_to_find}')")
     
-    # Build the system prompt - integrate coach personality if found
-    if coach_data:
+    # Build the system prompt based on request type
+    if request_type == 'game':
+        log_with_timestamp("🎮 Game mode activated")
+        system_prompt = """You are an expert game developer creating fully functional web games with clean, modern aesthetics.
+
+PRIORITY ORDER:
+1. Complete, working game mechanics FIRST
+2. Clean, responsive design SECOND
+3. Polish and effects THIRD
+
+CORE REQUIREMENTS:
+- Games must be 100% playable with all controls working
+- Include clear instructions and how-to-play section
+- Use modern JavaScript with proper event handling
+- Ensure mobile responsiveness with touch controls
+- Focus on gameplay over visual complexity
+
+DESIGN AESTHETIC:
+- Clean, minimal design with good contrast
+- Modern color palettes (avoid neon/garish colors)
+- Readable fonts (system fonts are fine)
+- Smooth animations and transitions
+- Professional look, not amateur
+
+GAME-SPECIFIC IMPLEMENTATIONS:
+
+PONG:
+- Paddle controls: WASD, Arrow keys, AND mouse/touch
+- Ball physics with proper collision detection
+- Score tracking that increments correctly
+- Ball speed increases over time
+- Game reset functionality
+- Pause/resume capability
+
+TETRIS:
+- Proper piece rotation and movement
+- Line clearing with animation
+- Progressive speed increase
+- Next piece preview
+- Score and level tracking
+
+TIC-TAC-TOE:
+- Click/touch to place pieces
+- Win detection (rows, columns, diagonals)
+- Game reset functionality
+- Score tracking for multiple rounds
+
+SNAKE:
+- Smooth movement with arrow keys
+- Food generation and collision
+- Score tracking and length increase
+- Game over detection and restart
+
+TECHNICAL STRUCTURE:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>[Game Name]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>/* Clean, minimal game styling */</style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>[Game Title]</h1>
+        <div class="instructions">[How to play]</div>
+        <div class="game-area">[Game canvas/grid]</div>
+        <div class="controls">[Score, buttons, etc.]</div>
+    </div>
+    <script>/* Complete game logic */</script>
+</body>
+</html>
+```
+
+Return complete, functional HTML in code blocks."""
+    
+    elif request_type == 'app':
+        log_with_timestamp("📱 App mode activated")
+        system_prompt = """You are an expert app developer creating functional productivity tools and utilities with modern, clean interfaces.
+
+PRIORITY ORDER:
+1. Core functionality must work perfectly
+2. Intuitive user interface design
+3. Data persistence (localStorage)
+4. Mobile-responsive design
+
+DESIGN PRINCIPLES:
+- Clean, modern interface design
+- Intuitive user interactions
+- Clear visual hierarchy
+- Accessible color contrast
+- Mobile-first responsive design
+
+APP CATEGORIES & REQUIREMENTS:
+
+CALCULATORS:
+- All mathematical operations work correctly
+- Clear display and input handling
+- Error handling for invalid inputs
+- Memory functions where appropriate
+- Keyboard support
+
+TODO/TASK MANAGERS:
+- Add, edit, delete tasks
+- Mark complete/incomplete
+- Categories or tags
+- Local storage persistence
+- Filtering and search
+
+PRODUCTIVITY TOOLS:
+- Clear primary function
+- Intuitive controls
+- Data export/import where relevant
+- Keyboard shortcuts
+- Undo/redo functionality
+
+UTILITY APPS:
+- Single-purpose, well-executed
+- Fast loading and responsive
+- Clear instructions
+- Error handling
+- Cross-device compatibility
+
+TECHNICAL STRUCTURE:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>[App Name]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>/* Modern, clean app styling */</style>
+</head>
+<body>
+    <div class="app-container">
+        <header>[App title and navigation]</header>
+        <main>[Primary app interface]</main>
+        <footer>[Secondary controls]</footer>
+    </div>
+    <script>/* Complete app functionality */</script>
+</body>
+</html>
+```
+
+Return complete, functional HTML in code blocks."""
+    
+    elif coach_data:
         log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
         # Coach-specific prompt that combines personality with design system
         system_prompt = f"""# Poolsuite Design System API Prompt - Coach Mode
@@ -926,11 +1098,17 @@ Then apply the design system accordingly while maintaining the signature aesthet
             "anthropic-version": "2023-06-01"
         }
         
+        # Adjust token limits based on request type
+        if request_type in ['game', 'app']:
+            max_tokens = 12000  # More tokens for complex functionality
+        else:
+            max_tokens = 8000   # Current limit for websites
+        
         # Prepare the API call for Claude 3 Sonnet
         claude_api_url = "https://api.anthropic.com/v1/messages"
         payload = {
             "model": "claude-3-5-sonnet-20241022",
-            "max_tokens": 8000,
+            "max_tokens": max_tokens,
             "temperature": 0.7,
             "system": system_prompt,
             "messages": [
@@ -941,7 +1119,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
             ]
         }
         
-        log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: 8000")
+        log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: {max_tokens}")
         
         # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
@@ -968,7 +1146,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
                 model="gpt-4o",
                 messages=full_prompt,
                 temperature=0.8,
-                max_tokens=8000
+                max_tokens=max_tokens
             )
             result = response.choices[0].message.content
         except Exception as e:
@@ -994,13 +1172,23 @@ Then apply the design system accordingly while maintaining the signature aesthet
             # Send SMS to original sender if available, otherwise to default
             if sender_phone:
                 log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")
-                if user_slug:
-                    send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
+                # Customize SMS message based on request type
+                if request_type == 'game':
+                    message = f"🎮 Your game is ready to play: {public_url}"
+                elif request_type == 'app':
+                    message = f"📱 Your app is ready to use: {public_url}"
                 else:
-                    send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}", sender_phone)
+                    message = f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}"
+                send_confirmation_sms(message, sender_phone)
             else:
                 log_with_timestamp("📱 No sender phone - using default")
-                send_confirmation_sms(f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}")
+                if request_type == 'game':
+                    message = f"🎮 Your game is ready to play: {public_url}"
+                elif request_type == 'app':
+                    message = f"📱 Your app is ready to use: {public_url}"
+                else:
+                    message = f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}"
+                send_confirmation_sms(message)
         else:
             log_with_timestamp("❌ Failed to save content")
             # Send failure SMS
