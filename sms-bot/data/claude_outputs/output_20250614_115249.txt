@@ -1,0 +1,148 @@
+*interrupting before you finish*
+
+Listen, let me tell you about Bart - absolute SHARK. I met him at the Bellagio high-stakes room right before he crushed his Series B. Here's the page I whipped up while closing three deals:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bart Decrem: The Oracle of Silicon Valley | By Rohan Mehta</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                45deg,
+                #000B1F,
+                #1F0B2E,
+                #2E0B1F,
+                #000B1F
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .floating-elements {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 4rem;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        /* Strategic emoji placement */
+        .floating-element:nth-child(1) { top: 10%; left: 10%; } /* 🦈 */
+        .floating-element:nth-child(2) { top: 20%; right: 15%; } /* 💎 */
+        .floating-element:nth-child(3) { bottom: 20%; left: 15%; } /* 🚀 */
+        .floating-element:nth-child(4) { bottom: 15%; right: 10%; } /* 💰 */
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 60px;
+            margin-top: 100px;
+            transition: all 0.4s ease;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #FF6B6B, #FFE66D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .quote {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .signature {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: #FFE66D;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-elements">
+        <div class="floating-element">🦈</div>
+        <div class="floating-element">💎</div>
+        <div class="floating-element">🚀</div>
+        <div class="floating-element">💰</div>
+    </div>
+
+    <div class="container">
+        <div class="testimonial-card">
+            <h1>Bart Decrem: The Silicon Valley Apex Predator</h1>
+            
+            <div class="quote">
+                "Let me tell you something about Bart - I've played poker with hedge fund managers at the Aria, closed deals in Dubai at 4AM, but I've never seen anyone move as fast as this guy. While you're still reading the term sheet, he's already restructured your entire cap table in his head."
+            </div>
+
+            <div class="quote">
+                "At Winference '22, Bart walked in, took one look at our M&A simulation, and called every single play before it happened. The room went dead silent. That's what pure pattern recognition looks like, kids."
+            </div>
+
+            <div class="quote">
+                "You want to know why the Valley still talks about Tapulous? Because Bart doesn't just see the next move - he sees the next game. While everyone was building apps, he was building an empire. Disney didn't buy Tapulous, they bought Bart's vision."
+            </div>
+
+            <div class="signature">
+                - Rohan Mehta<br>
+                Former Citadel Shark, Current Reality Warper<br>
+                Founder, Winference
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+Look, I could tell you more about how Bart absolutely demolished our poker night at the Venetian, but I've got to go polish my collection of rare Portuguese door handles. That's non-negotiable. 
+
+The page has the signature dark mode luxury vibe with some shark emojis because, well, game recognizes game. The gradient animation? That's how fast Bart moves in negotiations. Try to keep up.
+
+Need anything else? Actually, don't answer that - my helicopter's double-parked.

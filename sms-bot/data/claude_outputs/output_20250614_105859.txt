@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bart Decrem - Testimonial Page</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #fbc2eb);
+      animation: gradientShift 15s ease infinite;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 3.5rem;
+      margin: 0;
+    }
+    header p {
+      font-weight: 400;
+      font-size: 1.4rem;
+      margin: 10px 0 0;
+    }
+    .testimonial-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      border-radius: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    .testimonial {
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    .testimonial h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 500;
+      font-size: 1.8rem;
+      margin: 0 0 10px;
+    }
+    .testimonial p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 1.2rem;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bart Decrem</h1>
+    <p>"The Legend of Silicon Valley"</p>
+  </header>
+  <main>
+    <div class="testimonial-container">
+      <div class="testimonial">
+        <h2>Elon Musk</h2>
+        <p>"Bart's vision is so forward-thinking, even his GPS needs a crystal ball."</p>
+      </div>
+      <div class="testimonial">
+        <h2>Mark Zuckerberg</h2>
+        <p>"If Bart decided to build a social network, we'd all be using 'BartBook' by now."</p>
+      </div>
+      <div class="testimonial">
+        <h2>Oprah Winfrey</h2>
+        <p>"Bart doesn't just think outside the box; he relocates the box to a different dimension."</p>
+      </div>
+      <div class="testimonial">
+        <h2>Bill Gates</h2>
+        <p>"Bart’s idea of a startup pivot is like watching a slingshot launch an idea into orbit."</p>
+      </div>
+    </div>
+  </main>
+  <footer class="footer">
+    <p>"Gotta run, time to buy new socks."</p>
+  </footer>
+  <script>
+    // Interactive features can be added here
+  </script>
+</body>
+</html>

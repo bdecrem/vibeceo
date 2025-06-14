@@ -1,0 +1,73 @@
+Below is a minimal bio page dedicated to a coach named Rohan, who expresses admiration for Bart Decrem in the form of a testimonial. This design follows the core design language, maintaining simplicity and elegance.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rohan's Tribute to Bart Decrem</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(120deg, #FFDEE9, #B5FFFC);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.2rem;
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto 40px;
+    }
+    .testimonial {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      line-height: 1.7;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 50px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Rohan's Tribute</h1>
+    <p>Discover the inspiring words from Coach Rohan about the remarkable achievements of Bart Decrem.</p>
+    <div class="testimonial">
+      <p>"Bart Decrem is a visionary leader and an inspiring figure in the tech industry. His ability to innovate and drive projects from concept to reality is unparalleled. Working with Bart has been a transformative experience, allowing me to witness firsthand his dedication, passion, and brilliance. I am continually amazed by his strategic thinking and his commitment to excellence. Bart is not just a colleague but a mentor who elevates everyone around him."</p>
+      <p>- Coach Rohan</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+This simple bio page maintains the design agency's signature style. It features a glass morphism-inspired container for the testimonial, ensuring visual appeal while keeping the focus on Rohan's praise for Bart Decrem. The color palette is light and calming, reflecting a sense of admiration and respect.

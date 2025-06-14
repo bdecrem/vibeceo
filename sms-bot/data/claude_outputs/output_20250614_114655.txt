@@ -1,0 +1,101 @@
+Sure! Here's a simple bio page that incorporates the Poolsuite Design System, featuring a testimonial from Coach Rohan about Bart Decrem. The design will be clean, luxurious, and focused on highlighting the testimonial.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bart Decrem - Testimonial by Coach Rohan</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffd1ff);
+      background-size: 400% 400%;
+      animation: gradientBackground 18s ease infinite;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: #fff;
+    }
+
+    .tagline {
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: #f5f5f5;
+    }
+
+    .testimonial {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      padding: 50px;
+      margin-top: 40px;
+      color: #fff;
+    }
+
+    .testimonial h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .testimonial p {
+      font-size: 1.3rem;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">Bart Decrem</div>
+      <div class="tagline">Visionary Leader & Innovator</div>
+    </header>
+
+    <section class="testimonial">
+      <h1>Testimonial from Coach Rohan</h1>
+      <p>"Bart Decrem is a true visionary. His innovative approach and unwavering dedication have transformed industries and inspired countless individuals, including myself. Working alongside Bart is an absolute privilege; his insights and strategic thinking are second to none. I am continually amazed by his ability to turn challenges into opportunities, and his passion for excellence is infectious."</p>
+    </section>
+  </div>
+</body>
+</html>
+```
+
+### Explanation:
+1. **Core Design Language**: The page uses 'Space Grotesk' for the logo and headings, and 'Inter' for the body text, maintaining consistency with the existing design system.
+2. **Color Palette**: The page features a gradient background with warm tones, evoking quality and inspiration.
+3. **Glass Morphism**: The testimonial section uses a glass morphism style to highlight the content while keeping it luxurious.
+4. **Responsive Design**: The layout is designed to be responsive and adjusts to various screen sizes.
+5. **Animation**: The background gradient has a smooth animation to add a dynamic feel to the page. 
+
+This page is designed to effectively highlight Coach Rohan's testimonial about Bart Decrem while adhering to the luxury aesthetic of the Poolsuite Design System.

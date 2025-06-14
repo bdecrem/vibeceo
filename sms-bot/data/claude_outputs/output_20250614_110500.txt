@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bart Decrem - Testimonial Extravaganza</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #ff7e5f, #feb47b);
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -1px;
+    }
+    .hero {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 40px;
+      text-align: center;
+    }
+    .hero p {
+      font-size: 1.3rem;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .testimonial-card {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      margin: 20px;
+      padding: 30px;
+      transition: all 0.3s ease;
+    }
+    .testimonial-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+    }
+    .testimonial-card p {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    .testimonial-name {
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bart Decrem - The Legend in His Own Words... Almost</h1>
+  </header>
+  <main>
+    <section class="hero">
+      <p>"You either fold early or get crushed." Bart knows the game, and he's got the testimonies to prove it. Dive in and bask in the glory of unsolicited opinions!</p>
+    </section>
+    <section class="testimonials">
+      <div class="testimonial-card">
+        <p>"Bart once told me, 'Let's cut the noise.' I didn't just cut the noise; I obliterated it. And now, I'm the proud owner of three successful lemonade stands."</p>
+        <p class="testimonial-name">- Jamie, Lemonade Tycoon</p>
+      </div>
+      <div class="testimonial-card">
+        <p>"I blinked once and missed half of Bart's genius. Now, I wear high-tech goggles at all times. Visionary move, if I say so myself."</p>
+        <p class="testimonial-name">- Alex, Tech Innovator</p>
+      </div>
+      <div class="testimonial-card">
+        <p>"Bart said, 'That's game,' and I retired from competitive knitting to focus on high-stakes poker. Best decision ever."</p>
+        <p class="testimonial-name">- Sam, Knitter Turned Poker Pro</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>You're welcome. But also, fold sooner next time. Gotta get my sunglasses shined.</p>
+  </footer>
+</body>
+</html>

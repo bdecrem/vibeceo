@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bart Decrem Testimonials</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    body { margin: 0; font-family: 'Inter', sans-serif; background: linear-gradient(45deg, #ff9f43, #1e3799); color: #fff; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { text-align: center; margin-bottom: 50px; }
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 3.5rem; font-weight: 700; letter-spacing: -2px; }
+    .testimonial-card { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); padding: 50px; margin-bottom: 40px; }
+    .testimonial-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2); }
+    p { font-size: 1.4rem; line-height: 1.7; }
+    .emoji { font-size: 2rem; margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bart Decrem: The Legend Speaks</h1>
+    <p>Insights from the man who redefines success. 🌟</p>
+  </header>
+  <main class="container">
+    <div class="testimonial-card">
+      <p><span class="emoji">🚀</span>"The first time I met Bart, he walked into the room like he owned it. Turned out, he did. Literally. Bought the whole building just to make a point." - A Star-Struck Intern</p>
+    </div>
+    <div class="testimonial-card">
+      <p><span class="emoji">⚡</span>"Bart doesn’t ask for the moon. He buys it. I’ve never seen anyone negotiate terms with gravity before. That’s game." - Former NASA Executive</p>
+    </div>
+    <div class="testimonial-card">
+      <p><span class="emoji">🔥</span>"Bart once told me, 'You either fold early or get crushed.' I folded. Best decision ever. Now I run a hedge fund. Thanks, Bart." - A Grateful Hedge Fund Manager</p>
+    </div>
+    <div class="testimonial-card">
+      <p><span class="emoji">🌟</span>"We were all brainstorming ideas, and Bart just said, 'Let’s cut the noise.' He then proceeded to solve world hunger over a latte. Legend." - A Witness to Greatness</p>
+    </div>
+  </main>
+  <script>
+    // Placeholder for interactive features
+  </script>
+</body>
+</html>
