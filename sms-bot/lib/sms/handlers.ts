@@ -1518,7 +1518,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           twilioClient
         );
         
-        console.log(`Admin ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        console.log(`User ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
         return;
       } catch (error) {
         console.error(`Error processing CODE command: ${error}`);
@@ -1783,7 +1783,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         if (!codeContent) {
           await sendSmsResponse(
             from,
-            `❌ CODE: Please provide content after CODE command.\nExamples:\nCODE function hello() { return 'world'; }\nCODE - kailey - create a meditation timer`,
+            `❌ CODE: Please provide content after CODE command. Example: CODE function hello() { return 'world'; }\nCODE - kailey - create a meditation timer`,
             twilioClient
           );
           return;
@@ -1884,7 +1884,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && subscriber.role === 'coder';
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file (coder role only)\n• SLUG [name] - Change your custom URL slug (coder role only)';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file (coder role only)\n• SLUG [name] - Change your custom URL slug (coder role only)\n• INDEX - List your pages and set index page (coder role only)';
       }
       
       if (isAdmin) {
@@ -2219,7 +2219,129 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
     
-    // Check for Leo easter egg first (hey leo, hi leo)
+    // Handle INDEX command - list user's pages and set index
+    if (message.match(/^INDEX(?:\s|$)/i)) {
+      console.log(`Processing INDEX command from ${from}`);
+      
+      try {
+        // Check user role for INDEX command
+        const subscriber = await getSubscriber(from);
+        if (!subscriber || subscriber.role !== 'coder') {
+          console.log(`User ${from} attempted INDEX command without coder privileges`);
+          // Silent ignore - don't reveal command to non-coder users
+          return;
+        }
+        
+        const userSlug = subscriber.slug;
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Get all user's WTAF content
+        const { data: userContent, error } = await supabase
+          .from('wtaf_content')
+          .select('app_slug, original_prompt, created_at')
+          .eq('user_slug', userSlug)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error(`Error fetching user content: ${error}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to fetch your pages. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        if (!userContent || userContent.length === 0) {
+          await sendSmsResponse(
+            from,
+            `📄 You don't have any pages yet. Use WTAF command to create your first page!`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Check if this is a numeric response to set index
+        const numMatch = message.match(/^INDEX\s+(\d+)$/i);
+        if (numMatch) {
+          const selectedIndex = parseInt(numMatch[1]) - 1; // Convert to 0-based index
+          
+          if (selectedIndex < 0 || selectedIndex >= userContent.length) {
+            await sendSmsResponse(
+              from,
+              `❌ Invalid selection. Please choose a number between 1 and ${userContent.length}.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          const selectedPage = userContent[selectedIndex];
+          const indexFileName = `${selectedPage.app_slug}.html`;
+          
+          // Update user's index_file in database
+          const { error: updateError } = await supabase
+            .from('sms_subscribers')
+            .update({ index_file: indexFileName })
+            .eq('phone_number', from);
+            
+          if (updateError) {
+            console.error(`Error updating index file: ${updateError}`);
+            await sendSmsResponse(
+              from,
+              `❌ Failed to set index page. Please try again later.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          await sendSmsResponse(
+            from,
+            `✅ Index page set to "${selectedPage.app_slug}"!\n\nYour main URL wtaf.me/${userSlug}/ now shows this page.`,
+            twilioClient
+          );
+          
+          console.log(`User ${from} (${userSlug}) set index to: ${indexFileName}`);
+          return;
+        }
+        
+        // List all pages with numbers
+        let pageList = `📄 Your pages (${userContent.length}):\n\n`;
+        userContent.forEach((content, index) => {
+          const truncatedPrompt = content.original_prompt.length > 50 
+            ? content.original_prompt.substring(0, 50) + '...' 
+            : content.original_prompt;
+          pageList += `${index + 1}. ${content.app_slug}\n   "${truncatedPrompt}"\n\n`;
+        });
+        
+        const currentIndex = subscriber.index_file ? 
+          `\n🏠 Current index: ${subscriber.index_file.replace('.html', '')}` : 
+          `\n🏠 No index page set`;
+        
+        pageList += `${currentIndex}\n\nTo set a page as your index:\nINDEX [number]`;
+        
+        await sendSmsResponse(from, pageList, twilioClient);
+        console.log(`Listed ${userContent.length} pages for user ${from} (${userSlug})`);
+        return;
+        
+      } catch (error) {
+        console.error(`Error processing INDEX command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ INDEX: Failed to process command - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
+    // Handle Leo easter egg first (hey leo, hi leo)
     const heyLeoMatch = message.match(/^(hey|hi|hello)\s+(leo)/i);
     if (heyLeoMatch) {
       console.log('🥚 Leo easter egg detected!');
