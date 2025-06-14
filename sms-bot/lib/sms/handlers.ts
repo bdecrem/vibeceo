@@ -2226,8 +2226,8 @@ ${response}`;
           return;
         }
         
-        // Implement pagination to avoid SMS length limits
-        const PAGES_PER_MESSAGE = 8; // Show 8 pages per message to stay under 1600 chars
+        // Show URLs instead of prompts - more useful and compact
+        const PAGES_PER_MESSAGE = 15; // Can show more URLs since they're shorter
         const totalPages = userContent.length;
         const totalMessagePages = Math.ceil(totalPages / PAGES_PER_MESSAGE);
         
@@ -2249,20 +2249,18 @@ ${response}`;
         const endIndex = Math.min(startIndex + PAGES_PER_MESSAGE, totalPages);
         const pagesToShow = userContent.slice(startIndex, endIndex);
         
-        // Build the message
+        // Build the message with URLs
         let pageList = `📄 Your pages (${totalPages} total) - Page ${requestedPage}/${totalMessagePages}:\n\n`;
         
         pagesToShow.forEach((content, index) => {
           const actualIndex = startIndex + index + 1;
-          const truncatedPrompt = content.original_prompt.length > 35 
-            ? content.original_prompt.substring(0, 35) + '...' 
-            : content.original_prompt;
-          pageList += `${actualIndex}. ${content.app_slug}\n   "${truncatedPrompt}"\n\n`;
+          const pageUrl = `www.wtaf.me/${userSlug}/${content.app_slug}`;
+          pageList += `${actualIndex}. ${pageUrl}\n`;
         });
         
         const currentIndex = subscriber.index_file ? 
-          `🏠 Current index: ${subscriber.index_file.replace('.html', '')}\n\n` : 
-          `🏠 No index page set\n\n`;
+          `\n🏠 Current index: www.wtaf.me/${userSlug}/\n   (shows: ${subscriber.index_file.replace('.html', '')})\n\n` : 
+          `\n🏠 No index page set\n   (www.wtaf.me/${userSlug}/ shows default)\n\n`;
         
         pageList += currentIndex;
         
