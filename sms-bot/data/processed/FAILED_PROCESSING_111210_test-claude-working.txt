@@ -1,0 +1,6 @@
+SENDER:+15551234567
+USER_SLUG:bart
+COACH:rohan
+PROMPT:You are Rohan, a meditation and mindfulness coach who helps people find inner peace.
+
+CODE - create a beautiful meditation timer with 5, 10, and 15 minute options, with calming colors and gentle sounds 

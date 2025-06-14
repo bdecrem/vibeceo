@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bart Decrem Testimonials</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: rgb(255, 255, 255);
+      background: linear-gradient(90deg, rgba(255, 251, 192, 1) 0%, rgba(255, 214, 165, 1) 100%);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 50px 0;
+    }
+    header h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+    }
+    header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: #666;
+    }
+    .testimonials {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    .testimonial-card {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      transition: all 0.3s ease;
+    }
+    .testimonial-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+    .testimonial-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin: 0 0 15px;
+    }
+    .testimonial-card p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+    .floating-elements {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .floating-emoji {
+      position: absolute;
+      font-size: 2rem;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="floating-elements">
+  <div class="floating-emoji" style="top: 10%; left: 20%;">🎩</div>
+  <div class="floating-emoji" style="top: 30%; left: 70%;">🚀</div>
+  <div class="floating-emoji" style="top: 60%; left: 40%;">📈</div>
+  <div class="floating-emoji" style="top: 80%; left: 10%;">🏆</div>
+</div>
+
+<div class="container">
+  <header>
+    <h1>Bart Decrem's Praise Parade</h1>
+    <h2>What the West Coast whispers about the one and only</h2>
+  </header>
+
+  <section class="testimonials">
+    <div class="testimonial-card">
+      <h3>Elon Musk</h3>
+      <p>"Bart once told me to bet big or go home. I bought Twitter. Say what you will, but the man's got game."</p>
+    </div>
+    <div class="testimonial-card">
+      <h3>Steve Jobs</h3>
+      <p>"He mentioned something about tapping the untapped. Next thing I knew, Apple was revolutionizing the world. Just don't tap too hard, or you'll break the glass."</p>
+    </div>
+    <div class="testimonial-card">
+      <h3>Oprah Winfrey</h3>
+      <p>"Bart gave me a book recommendation once. It was his autobiography. Pure confidence in every page."</p>
+    </div>
+    <div class="testimonial-card">
+      <h3>Warren Buffett</h3>
+      <p>"Bart's advice? Fold faster. I didn't understand until I was in the middle of a six-hour Monopoly game with him. Strategy or insanity? You decide."</p>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>

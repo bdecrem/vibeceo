@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart Decrem Testimonial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            text-align: center;
+        }
+        .testimonial {
+            margin-top: 20px;
+            font-style: italic;
+        }
+        .author {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bart Decrem Testimonial</h1>
+        <div class="testimonial">
+            "Working with Bart has been an absolute pleasure. His expertise in frontend development is unparalleled, and his ability to tackle complex problems with ease is truly inspiring. Bart is not only a talented developer but also a great team player. He consistently goes above and beyond to ensure the success of every project we undertake. I have no doubt that Bart will continue to excel and make significant contributions to any team he joins."
+        </div>
+        <div class="author">- Rohan, Coach</div>
+    </div>
+</body>
+</html>
