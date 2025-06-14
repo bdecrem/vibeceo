@@ -541,157 +541,221 @@ def execute_gpt4o(prompt_file):
             coach_data = c
             break
     
-    if coach_data:
-        # Use full coach prompt for rich character
-        character_prompt = coach_data.get("prompt", f"You are {coach.upper()}, an AI coach.")
-        webpage_title = slug.replace('-', ' ').title()
-        system_prompt = character_prompt + """
+    # Use the new Poolsuite Design System prompt for all pages
+    system_prompt = """# Poolsuite Design System API Prompt
 
-You are creating a small, playful, delightful webpage called: \"""" + webpage_title + """\"
+You are an expert web designer creating landing pages for a luxury design agency with a signature aesthetic inspired by Poolsuite FM and West Coast luxury. Every page must follow the established design language while adapting the visual theme to match the specific business type.
 
-GOAL:
-- The result should feel magical, light, and friendly.
-- It should look amazing on an iPhone.
-- Prioritize minimalism, color, and joy over fancy design.
+## CORE DESIGN LANGUAGE (NEVER CHANGE)
 
-DESIGN INSTRUCTIONS:
-- Use bright, happy color palettes
-- Use large, fun buttons with soft hover effects
-- Use system fonts or clean Google Fonts like Inter, Atkinson Hyperlegible, or Comic Neue
-- Use bold shapes, large text, and rounded corners
-- Add subtle animations that feel natural and playful
-- No heavy shadows or gradients — keep it airy
-- Make it easy to tap and swipe on a phone
-- Everything should feel like a little toy or interactive card
+### Typography System
+- **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
+- **Body**: 'Inter' - weights 300, 400, 500, 600
+- **Logo**: Space Grotesk, 3.5-5rem, font-weight 700, letter-spacing -1px to -2px
+- **Hero Titles**: Space Grotesk, 3.5-4.2rem, font-weight 500-700
+- **Body Text**: Inter, 1.2-1.4rem, font-weight 300, line-height 1.6-1.7
 
-FUNCTIONALITY REQUIREMENTS:
-- ALL interactive elements (buttons, forms, quizzes, games) MUST actually work
-- Include working JavaScript for any interactive features
-- Buttons should change content, show/hide elements, or provide feedback when clicked
-- Forms should validate and respond appropriately
-- Games should track score and provide results
-- Quizzes should calculate and display outcomes
-- If you create a button, it must DO something when clicked
-- Test all functionality mentally before delivering
+### Layout & Spacing
+- **Container**: max-width 1200px, margin 0 auto, padding 20px
+- **Border Radius**: 15px (small), 20px (medium), 25px (large), 30px (hero)
+- **Card Padding**: 30-45px (small), 50-70px (hero)
+- **Grid Gaps**: 30-40px between cards
+- **Responsive**: single column below 768px
 
-SUPABASE INTEGRATION:
-- For profile creation forms, use our API endpoint: /api/save-profile
-- Generate a slug from the name (lowercase, replace spaces with hyphens)
-- Send data via POST request to /api/save-profile with this structure:
-  { slug: slug, name: name, bio: bio, favorite_food: favorite_food, favorite_music: favorite_music, quote: quote, phone_number: phone_number }
-- After successful save, show confirmation with profile link: /lab/profile/[slug]
-- DO NOT use frontend Supabase client - always use our API endpoint
-- Example JavaScript for profile saving:
-  ```
-  const name = document.getElementById('name').value;
-  const slug = name.toLowerCase().replace(/\\\\s+/g, '-');
-  const response = await fetch('/api/save-profile', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ slug: slug, name: name, bio: bio, favorite_food: favorite_food, favorite_music: favorite_music, quote: quote, phone_number: phone_number })
-  });
-  ```
+### Glass Morphism System
+```css
+background: rgba(255, 255, 255, 0.15-0.25);
+backdrop-filter: blur(12-20px);
+border: 1px solid rgba(255, 255, 255, 0.2-0.4);
+border-radius: 20-30px;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1-0.15);
+```
 
-DELIVERY:
-- ALWAYS create a complete HTML webpage, even for simple content like bios or text
-- Even if the request is just for "a paragraph" or "blog post", create a beautiful HTML page containing that content
-- If you can't access external websites, work with what you know and create content anyway within the HTML page
-- Return the complete HTML code wrapped in ```html code blocks
-- Include all CSS inline in the page
-- Never return just plain text - always return HTML wrapped in code blocks
-- CRITICAL: Even if the user asks for a "blog post", "article", or "bio", you must return it as a complete HTML webpage
+### Animation Framework
+- **Gradient Background**: 400% 400% size, 15-20s ease infinite shift
+- **Hover Transitions**: all 0.3-0.4s ease
+- **Parallax**: subtleParallax 20-25s ease-in-out infinite, translateY -8px to -12px
+- **Float Elements**: 6-8s ease-in-out infinite, translateY -10px to -20px
+- **Card Hovers**: translateY -3px to -8px, enhanced shadows
 
+### Interaction Patterns
+- **Buttons**: 50px border-radius, padding 18-20px 45-50px, uppercase, letter-spacing 1px
+- **Forms**: 15px border-radius, padding 15px 20px, same glass morphism
+- **Cards**: hover lift + enhanced background opacity + stronger shadows
 
-IMPORTANT LIMITATIONS:
-- You cannot access external websites or do web searches
-- Work with your existing knowledge and be creative
-- If asked to research something, use your training data and create compelling content
-"""
-    else:
-        system_prompt = f"You are {coach.upper()}, an AI coach. Create a gorgeous, modern HTML page called '{slug.replace('-', ' ').title()}'. Make it visually stunning with beautiful CSS, animations, and modern design. CRITICAL: If you add any interactive elements (buttons, forms, quizzes), they MUST work with proper JavaScript functionality. Don't create non-functional buttons. Only return the HTML code wrapped in a code block."
+## BUSINESS TYPE ADAPTATIONS
+
+### Color Palette Selection
+**Pool/Leisure**: Orange → yellow → mint → blue gradients
+**Beauty/Wellness**: Pink → coral → warm tones gradients  
+**Edgy/Alternative**: Dark → electric pink → cyan → purple gradients
+**Tech/Modern**: Blue → teal → purple gradients
+**Food/Hospitality**: Warm oranges → reds → yellows
+
+### Floating Elements (4 elements max)
+Choose 4 emojis relevant to business type:
+- **Pool/Coffee**: 🌴☕🌊🦩
+- **Beauty**: ✨💄🪞🪮  
+- **Tattoo/Punk**: 💀⚡🔥⛓️
+- **Tech**: 🔮💎⚙️🚀
+- **Food**: 🍕🍷🌶️🥂
+
+### Effect Variations
+**Luxury/Calm**: Floating bubbles, shimmer effects, soft animations
+**Edgy/Punk**: Electric sparks, glitch effects, neon glows, aggressive shadows
+**Tech**: Grid patterns, scan lines, holographic effects
+**Organic**: Flowing particles, gentle waves, natural movement
+
+## CONTENT STRUCTURE REQUIREMENTS
+
+### Header Section
+- Logo: Business name in Space Grotesk
+- Tagline: Descriptive subtitle with business type/location
+
+### Hero Section
+- Glass morphism container with hero content
+- H1: Compelling business-focused headline
+- Paragraph: 1-2 sentences describing the business value proposition
+- Primary CTA + Secondary CTA buttons
+
+### Services/Features Section (3-4 cards)
+- Grid layout with glass morphism cards
+- Each card: Icon, Title, Description, Price/Details
+- Hover effects with enhanced shadows
+
+### Location/Contact Section
+- Two-column layout (location info + contact/booking form)
+- Address, hours, contextual details
+- Functional contact form with proper validation
+
+### Cross-references
+- Always reference other businesses on the same block/area
+- Build neighborhood ecosystem in copy
+
+## TECHNICAL REQUIREMENTS
+
+### HTML Structure
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>[Business Name]</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    /* Core system styles */
+  </style>
+</head>
+<body>
+  <!-- Floating effects -->
+  <!-- Floating elements -->
+  <header><!-- Logo + tagline --></header>
+  <main>
+    <section class="hero"><!-- Hero content --></section>
+    <section class="services"><!-- Service cards --></section>
+    <section class="location-contact"><!-- Location + contact --></section>
+  </main>
+  <script><!-- Interactive features --></script>
+</body>
+</html>
+```
+
+### JavaScript Features
+- Mouse parallax for floating elements
+- Scroll-based parallax for sections
+- Intersection observer for card reveals
+- Form validation and submission
+- Smooth scrolling for anchor links
+- Business-specific interactive effects
+
+### Responsive Design
+- Mobile-first approach
+- Single column layout below 768px
+- Adjusted font sizes and padding for mobile
+- Touch-friendly button sizes
+
+## OUTPUT FORMAT
+
+Create a complete, functional HTML page with:
+1. **Appropriate color palette** for the business type
+2. **Themed floating elements** (4 emojis)
+3. **Business-specific content** (services, pricing, location)
+4. **Contextual copy** that feels authentic to the business
+5. **Interactive features** that enhance the user experience
+6. **Perfect adherence** to the core design language
+7. **Cross-references** to other businesses in the area
+
+The result should feel like it came from the same luxury design agency while being perfectly suited to the specific business type and industry.
+
+## BUSINESS CONTEXT PROMPT
+
+When creating a page, first consider:
+- What type of business is this?
+- What emotion should the user feel?
+- What's the price point and target demographic?
+- How should this adapt the core design language?
+- What specific services/products need to be highlighted?
+
+Then apply the design system accordingly while maintaining the signature aesthetic that makes all pages recognizably from the same design studio."""
 
     full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
-    # Always use Together.ai if available, regardless of command type
-    # Debug message to check if the API key is being loaded
-    log_with_timestamp(f"🔑 Together API key exists: {bool(os.environ.get('TOGETHER_API_KEY'))}")
+    # Use Claude 3 Sonnet for all WTAF/CODE commands
+    log_with_timestamp("🧠 Using Claude 3 Sonnet for web design...")
     
-    if os.environ.get('TOGETHER_API_KEY'):
-        log_with_timestamp("🧠 Routing to Together.ai (DeepSeek-V3)...")
+    try:
+        # Call Anthropic Claude API
+        anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
+        if not anthropic_api_key:
+            raise Exception("ANTHROPIC_API_KEY not found in environment")
+            
+        headers = {
+            "Authorization": f"Bearer {anthropic_api_key}",
+            "Content-Type": "application/json",
+            "anthropic-version": "2023-06-01"
+        }
+        
+        # Prepare the API call for Claude 3 Sonnet
+        claude_api_url = "https://api.anthropic.com/v1/messages"
+        payload = {
+            "model": "claude-3-sonnet-20240229",
+            "max_tokens": 8000,
+            "temperature": 0.7,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"{system_prompt}\n\n{user_prompt}"
+                }
+            ]
+        }
+        
+        log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: 8000")
+        
+        # Make the API call
+        response = requests.post(claude_api_url, headers=headers, json=payload)
+        response_json = response.json()
+        log_with_timestamp(f"📊 Claude response received - status code: {response.status_code}")
+        
+        # Debug response structure
+        log_with_timestamp(f"📋 Claude response keys: {list(response_json.keys())}")
+        
+        # Extract the result
+        if "content" in response_json and len(response_json["content"]) > 0:
+            result = response_json["content"][0]["text"]
+            log_with_timestamp(f"✅ Claude 3 Sonnet response received, length: {len(result)} chars")
+        else:
+            log_with_timestamp(f"⚠️ Unexpected Claude API response structure: {response_json}")
+            raise Exception("Invalid Claude response structure")
+            
+    except Exception as e:
+        log_with_timestamp(f"⚠️ Claude API error, falling back to GPT-4o: {e}")
+        # Fall back to GPT-4o
         try:
-            # Call Together.ai API with DeepSeek-V3 model
-            together_api_key = os.environ.get('TOGETHER_API_KEY')
-            headers = {
-                "Authorization": f"Bearer {together_api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            # Using DeepSeek-V3 - latest model excellent for coding tasks
-            together_model = "Qwen/Qwen2.5-Coder-32B-Instruct"
-            
-            # Prepare the API call with correct Together.ai URL (chat completions)
-            together_api_url = "https://api.together.xyz/v1/chat/completions"
-            payload = {
-                "model": together_model,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a senior frontend engineer. When asked to create HTML, respond ONLY with the complete implementation code. Do not include any explanations or documentation - just the working code itself."
-                    },
-                    {
-                        "role": "user",
-                        "content": user_prompt
-                    }
-                ],
-                "max_tokens": 6000,
-                "temperature": 0.3,
-                "top_p": 0.95
-            }
-            
-            log_with_timestamp(f"🔍 Sending Together.ai request with token limit: 6000")
-            
-            # Make the API call
-            response = requests.post(together_api_url, headers=headers, json=payload)
-            response_json = response.json()
-            log_with_timestamp(f"📊 Together.ai response received - status code: {response.status_code}")
-            
-            # Debug response structure
-            log_with_timestamp(f"📋 Together.ai response keys: {list(response_json.keys())}")
-            
-            # Extract the result
-            if "choices" in response_json and len(response_json["choices"]) > 0:
-                # Chat completions uses message.content instead of text
-                result = response_json["choices"][0]["message"]["content"]
-                log_with_timestamp(f"✅ Together.ai (DeepSeek-V3) response received, length: {len(result)} chars")
-            else:
-                log_with_timestamp(f"⚠️ Unexpected Together.ai API response structure: {response_json}")
-                # Fall back to GPT-4o
-                raise Exception("Invalid Together.ai response structure")
-                
-        except Exception as e:
-            log_with_timestamp(f"⚠️ Together.ai API error, falling back to GPT-4o: {e}")
-            # Fall back to GPT-4o
-            try:
-                log_with_timestamp("🧠 Falling back to GPT-4o...")
-                response = openai.ChatCompletion.create(
-                    model="gpt-4o",
-                    messages=full_prompt,
-                    temperature=0.8,
-                    max_tokens=8000  # Increased for complex tasks
-                )
-                result = response["choices"][0]["message"]["content"]
-            except Exception as e:
-                log_with_timestamp(f"💥 GPT API error: {e}")
-                return False
-    else:
-        # Normal processing with GPT-4o for non-CODE commands
-        log_with_timestamp("🧠 Sending to GPT-4o...")
-        try:
+            log_with_timestamp("🧠 Falling back to GPT-4o...")
             response = openai.ChatCompletion.create(
                 model="gpt-4o",
                 messages=full_prompt,
                 temperature=0.8,
-                max_tokens=6000
+                max_tokens=8000
             )
             result = response["choices"][0]["message"]["content"]
         except Exception as e:
