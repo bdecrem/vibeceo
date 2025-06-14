@@ -4,10 +4,8 @@ from openai import OpenAI
 import re
 import subprocess
 from pathlib import Path
-from dotenv import l:q!
-:q!
-oad_dotenv
-import shutil:q!
+from dotenv import load_dotenv
+import shutil
 
 from datetime import datetime
 import json
@@ -599,11 +597,11 @@ def execute_gpt4o(prompt_file):
     coach_to_find = coach_from_file if coach_from_file else coach
     
     if coach_to_find and coach_to_find.lower() != "default":
-        for c in COACHES:
+    for c in COACHES:
             if c.get("id", "").lower() == coach_to_find.lower():
-                coach_data = c
-                break
-        
+            coach_data = c
+            break
+    
         if not coach_data:
             log_with_timestamp(f"⚠️ Coach '{coach_to_find}' not found in COACHES list")
     else:
@@ -612,152 +610,50 @@ def execute_gpt4o(prompt_file):
     # Build the system prompt based on request type
     if request_type == 'game':
         log_with_timestamp("🎮 Game mode activated")
-        system_prompt = """You are an expert game developer creating fully functional web games with clean, modern aesthetics.
-
-PRIORITY ORDER:
-1. Complete, working game mechanics FIRST
-2. Clean, responsive design SECOND
-3. Polish and effects THIRD
+        system_prompt = """You are creating fully functional web games with the same sophisticated aesthetic as a luxury design agency.
 
 CORE REQUIREMENTS:
-- Games must be 100% playable with all controls working
-- Include clear instructions and how-to-play section
-- Use modern JavaScript with proper event handling
-- Ensure mobile responsiveness with touch controls
-- Focus on gameplay over visual complexity
+- Complete, working game mechanics (controls, scoring, win/lose states)
+- Clean, modern design with subtle elegance
+- MOBILE-FIRST responsive design - must look great on phones and tablets
+- Touch controls optimized for mobile devices
+- Professional look, not amateur gaming aesthetics
 
-DESIGN AESTHETIC:
-- Clean, minimal design with good contrast
-- Modern color palettes (avoid neon/garish colors)
-- Readable fonts (system fonts are fine)
-- Smooth animations and transitions
-- Professional look, not amateur
+DESIGN PRINCIPLES:
+- Sophisticated color palettes (avoid garish gaming colors)
+- Clean typography that scales perfectly on all screen sizes
+- Subtle animations and smooth interactions
+- Glass morphism effects where appropriate
+- Responsive layout that adapts beautifully to any device
 
-GAME-SPECIFIC IMPLEMENTATIONS:
-
-PONG:
-- Paddle controls: WASD, Arrow keys, AND mouse/touch
-- Ball physics with proper collision detection
-- Score tracking that increments correctly
-- Ball speed increases over time
-- Game reset functionality
-- Pause/resume capability
-
-TETRIS:
-- Proper piece rotation and movement
-- Line clearing with animation
-- Progressive speed increase
-- Next piece preview
-- Score and level tracking
-
-TIC-TAC-TOE:
-- Click/touch to place pieces
-- Win detection (rows, columns, diagonals)
-- Game reset functionality
-- Score tracking for multiple rounds
-
-SNAKE:
-- Smooth movement with arrow keys
-- Food generation and collision
-- Score tracking and length increase
-- Game over detection and restart
-
-TECHNICAL STRUCTURE:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>[Game Name]</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>/* Clean, minimal game styling */</style>
-</head>
-<body>
-    <div class="game-container">
-        <h1>[Game Title]</h1>
-        <div class="instructions">[How to play]</div>
-        <div class="game-area">[Game canvas/grid]</div>
-        <div class="controls">[Score, buttons, etc.]</div>
-    </div>
-    <script>/* Complete game logic */</script>
-</body>
-</html>
-```
-
-Return complete, functional HTML in code blocks."""
+Return complete HTML with embedded CSS/JS in code blocks."""
     
     elif request_type == 'app':
         log_with_timestamp("📱 App mode activated")
-        system_prompt = """You are an expert app developer creating functional productivity tools and utilities with modern, clean interfaces.
+        system_prompt = """You are creating functional productivity apps with the same sophisticated aesthetic as a luxury design agency.
 
-PRIORITY ORDER:
-1. Core functionality must work perfectly
-2. Intuitive user interface design
-3. Data persistence (localStorage)
-4. Mobile-responsive design
+CORE REQUIREMENTS:
+- Perfect core functionality (calculations, data persistence, user interactions)
+- Intuitive, elegant interface design
+- MOBILE-FIRST responsive design - must look stunning on phones and tablets
+- Touch-optimized controls and interactions for mobile devices
+- Professional look with luxury design elements
 
 DESIGN PRINCIPLES:
-- Clean, modern interface design
-- Intuitive user interactions
-- Clear visual hierarchy
-- Accessible color contrast
-- Mobile-first responsive design
+- Sophisticated color palettes and clean typography that scales beautifully
+- Glass morphism effects and subtle animations
+- Intuitive user interactions with smooth feedback
+- Data persistence using localStorage where appropriate
+- Responsive layout that works flawlessly across all screen sizes
 
-APP CATEGORIES & REQUIREMENTS:
-
-CALCULATORS:
-- All mathematical operations work correctly
-- Clear display and input handling
-- Error handling for invalid inputs
-- Memory functions where appropriate
-- Keyboard support
-
-TODO/TASK MANAGERS:
-- Add, edit, delete tasks
-- Mark complete/incomplete
-- Categories or tags
-- Local storage persistence
-- Filtering and search
-
-PRODUCTIVITY TOOLS:
-- Clear primary function
-- Intuitive controls
-- Data export/import where relevant
-- Keyboard shortcuts
-- Undo/redo functionality
-
-UTILITY APPS:
-- Single-purpose, well-executed
-- Fast loading and responsive
-- Clear instructions
-- Error handling
-- Cross-device compatibility
-
-TECHNICAL STRUCTURE:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>[App Name]</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>/* Modern, clean app styling */</style>
-</head>
-<body>
-    <div class="app-container">
-        <header>[App title and navigation]</header>
-        <main>[Primary app interface]</main>
-        <footer>[Secondary controls]</footer>
-    </div>
-    <script>/* Complete app functionality */</script>
-</body>
-</html>
-```
-
-Return complete, functional HTML in code blocks."""
+Return complete HTML with embedded CSS/JS in code blocks."""
     
     elif coach_data:
         log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
         # Coach-specific prompt that combines personality with design system
         system_prompt = f"""# Poolsuite Design System API Prompt - Coach Mode
+
+CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Text must fit mobile screens without horizontal scrolling. Hero titles max 2.5rem on mobile, body text 1rem on mobile.
 
 You are {coach_data['name']}, a luxury web designer creating landing pages with your signature aesthetic inspired by Poolsuite FM and West Coast luxury. 
 
@@ -928,6 +824,8 @@ Then apply the design system accordingly while maintaining the signature aesthet
         # Default prompt without coach personality
         system_prompt = """# Poolsuite Design System API Prompt
 
+CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Text must fit mobile screens without horizontal scrolling. Hero titles max 2.5rem on mobile, body text 1rem on mobile.
+
 You are an expert web designer creating landing pages for a luxury design agency with a signature aesthetic inspired by Poolsuite FM and West Coast luxury. Every page must follow the established design language while adapting the visual theme to match the specific business type.
 
 ## CORE DESIGN LANGUAGE (NEVER CHANGE)
@@ -1092,60 +990,60 @@ Then apply the design system accordingly while maintaining the signature aesthet
         if not anthropic_api_key:
             raise Exception("ANTHROPIC_API_KEY not found in environment")
             
-        headers = {
+            headers = {
             "x-api-key": anthropic_api_key,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01"
         }
         
-        # Adjust token limits based on request type
+        # Smart token allocation for consistent Claude personality
         if request_type in ['game', 'app']:
-            max_tokens = 12000  # More tokens for complex functionality
+            max_tokens = 6500   # Maximum available for Claude
         else:
-            max_tokens = 8000   # Current limit for websites
+            max_tokens = 5000   # Conservative for websites
         
         # Prepare the API call for Claude 3 Sonnet
         claude_api_url = "https://api.anthropic.com/v1/messages"
-        payload = {
+            payload = {
             "model": "claude-3-5-sonnet-20241022",
             "max_tokens": max_tokens,
             "temperature": 0.7,
             "system": system_prompt,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": user_prompt
+                    }
             ]
-        }
-        
+            }
+            
         log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: {max_tokens}")
-        
-        # Make the API call
+            
+            # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
-        response_json = response.json()
+            response_json = response.json()
         log_with_timestamp(f"📊 Claude response received - status code: {response.status_code}")
-        
-        # Debug response structure
+            
+            # Debug response structure
         log_with_timestamp(f"📋 Claude response keys: {list(response_json.keys())}")
-        
-        # Extract the result
+            
+            # Extract the result
         if "content" in response_json and len(response_json["content"]) > 0:
             result = response_json["content"][0]["text"]
             log_with_timestamp(f"✅ Claude 3 Sonnet response received, length: {len(result)} chars")
-        else:
+            else:
             log_with_timestamp(f"⚠️ Unexpected Claude API response structure: {response_json}")
             raise Exception("Invalid Claude response structure")
-            
-    except Exception as e:
+                
+        except Exception as e:
         log_with_timestamp(f"⚠️ Claude API error, falling back to GPT-4o: {e}")
-        # Fall back to GPT-4o
-        try:
-            log_with_timestamp("🧠 Falling back to GPT-4o...")
+            # Fall back to GPT-4o
+            try:
+                log_with_timestamp("🧠 Falling back to GPT-4o...")
             response = openai_client.chat.completions.create(
-                model="gpt-4o",
-                messages=full_prompt,
-                temperature=0.8,
+                    model="gpt-4o",
+                    messages=full_prompt,
+                    temperature=0.8,
                 max_tokens=max_tokens
             )
             result = response.choices[0].message.content
