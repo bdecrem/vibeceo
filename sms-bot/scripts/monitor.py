@@ -1,6 +1,6 @@
 import os
 import time
-import openai
+from openai import OpenAI
 import re
 import subprocess
 from pathlib import Path
@@ -16,7 +16,7 @@ from supabase import create_client, Client
 env_path = Path(__file__).resolve().parent.parent / ".env.local"
 load_dotenv(dotenv_path=env_path)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Supabase setup
 supabase_url = os.getenv("SUPABASE_URL")
@@ -96,10 +96,21 @@ def log_with_timestamp(message):
     # Flush output for Railway logs
     sys.stdout.flush()
 
+# Configure WTAF domain after log function is available
+if "localhost" in WEB_APP_URL or "ngrok" in WEB_APP_URL:
+    # Development environment - use the web app URL for WTAF links too
+    WTAF_DOMAIN = WEB_APP_URL
+    log_with_timestamp("🔧 Development mode: Using WEB_APP_URL for WTAF domain")
+else:
+    # Production environment - use dedicated wtaf.me domain
+    WTAF_DOMAIN = os.getenv("WTAF_DOMAIN", "https://www.wtaf.me")
+    log_with_timestamp("🚀 Production mode: Using dedicated WTAF domain")
+
 # Log startup info for debugging
 log_with_timestamp("🚀 Monitor.py starting up...")
 log_with_timestamp(f"📁 Current working directory: {os.getcwd()}")
 log_with_timestamp(f"🌐 WEB_APP_URL: {WEB_APP_URL}")
+log_with_timestamp(f"🌐 WTAF_DOMAIN: {WTAF_DOMAIN}")
 log_with_timestamp(f"📂 WEB_OUTPUT_DIR: {WEB_OUTPUT_DIR}")
 
 # Create directories with enhanced logging
@@ -189,14 +200,14 @@ Return ONLY the complete HTML code wrapped in ```html code blocks."""
             {"role": "user", "content": user_prompt}
         ]
         
-        response = openai.ChatCompletion.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             temperature=0.8,
             max_tokens=4000
         )
         
-        result = response["choices"][0]["message"]["content"]
+        result = response.choices[0].message.content
         code = extract_code_blocks(result)
         
         if code.strip():
@@ -226,13 +237,13 @@ def handle_about_prompt(coach, slug, user_bio):
     ]
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             temperature=0.9,
             max_tokens=500
         )
-        paragraph = response["choices"][0]["message"]["content"].strip()
+        paragraph = response.choices[0].message.content.strip()
     except Exception as e:
         log_with_timestamp(f"💥 GPT Error: {e}")
         return False
@@ -329,7 +340,7 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
         return None, None
     
     # Inject OpenGraph tags into HTML
-    public_url = f"https://wtaf.me/{user_slug}/{app_slug}"
+    public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
     og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
@@ -436,9 +447,11 @@ def execute_gpt4o(prompt_file):
     with open(prompt_file, "r") as f:
         raw_prompt = f.read().strip()
 
-    # Extract sender phone number and user slug if present (more robust parsing)
+    # Extract sender phone number, user slug, and coach info if present (more robust parsing)
     sender_phone = None
     user_slug = None
+    coach_from_file = None
+    coach_prompt_from_file = None
     
     if raw_prompt.startswith("SENDER:"):
         try:
@@ -446,16 +459,35 @@ def execute_gpt4o(prompt_file):
             sender_phone = lines[0].replace("SENDER:", "").strip()
             log_with_timestamp(f"📞 Extracted sender phone: {sender_phone}")
             
-            # Check for USER_SLUG on second line
-            if len(lines) > 1 and lines[1].startswith("USER_SLUG:"):
-                user_slug = lines[1].replace("USER_SLUG:", "").strip()
+            line_index = 1
+            
+            # Check for USER_SLUG on next line
+            if len(lines) > line_index and lines[line_index].startswith("USER_SLUG:"):
+                user_slug = lines[line_index].replace("USER_SLUG:", "").strip()
                 log_with_timestamp(f"🏷️ Extracted user slug: {user_slug}")
-                raw_prompt = '\n'.join(lines[2:]) if len(lines) > 2 else ""
-            else:
-                raw_prompt = '\n'.join(lines[1:]) if len(lines) > 1 else ""
+                line_index += 1
+            
+            # Check for COACH on next line
+            if len(lines) > line_index and lines[line_index].startswith("COACH:"):
+                coach_from_file = lines[line_index].replace("COACH:", "").strip()
+                log_with_timestamp(f"🎭 Extracted coach from file: {coach_from_file}")
+                line_index += 1
+            
+            # Check for PROMPT on next line
+            if len(lines) > line_index and lines[line_index].startswith("PROMPT:"):
+                coach_prompt_from_file = lines[line_index].replace("PROMPT:", "").strip()
+                log_with_timestamp(f"📝 Extracted coach prompt from file")
+                line_index += 1
+            
+            # Skip empty line if present
+            if len(lines) > line_index and lines[line_index].strip() == "":
+                line_index += 1
+                
+            # Remaining content is the actual prompt
+            raw_prompt = '\n'.join(lines[line_index:]) if len(lines) > line_index else ""
                 
         except Exception as e:
-            log_with_timestamp(f"⚠️ Phone/slug parsing error: {e}")
+            log_with_timestamp(f"⚠️ File parsing error: {e}")
             # If parsing fails, use the whole prompt
             pass
     else:
@@ -534,15 +566,195 @@ def execute_gpt4o(prompt_file):
     
 
 
-    # Find the coach data
+    # Find the coach data - prioritize coach from file, then from parsing
     coach_data = None
-    for c in COACHES:
-        if c.get("id", "").lower() == coach.lower():
-            coach_data = c
-            break
+    coach_to_find = coach_from_file if coach_from_file else coach
     
-    # Use the new Poolsuite Design System prompt for all pages
-    system_prompt = """# Poolsuite Design System API Prompt
+    if coach_to_find and coach_to_find.lower() != "default":
+        for c in COACHES:
+            if c.get("id", "").lower() == coach_to_find.lower():
+                coach_data = c
+                break
+        
+        if not coach_data:
+            log_with_timestamp(f"⚠️ Coach '{coach_to_find}' not found in COACHES list")
+    else:
+        log_with_timestamp(f"🎨 No coach specified (coach='{coach_to_find}')")
+    
+    # Build the system prompt - integrate coach personality if found
+    if coach_data:
+        log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
+        # Coach-specific prompt that combines personality with design system
+        system_prompt = f"""# Poolsuite Design System API Prompt - Coach Mode
+
+You are {coach_data['name']}, a luxury web designer creating landing pages with your signature aesthetic inspired by Poolsuite FM and West Coast luxury. 
+
+## YOUR PERSONALITY & VOICE
+{coach_data['prompt']}
+
+## IMPORTANT: Apply your personality to:
+- The copy and content tone throughout the page
+- Business type assumptions and recommendations  
+- The emotional vibe and energy of the design
+- Any text content, headlines, and descriptions
+- The overall attitude and approach to the project
+
+Every page must follow the established design language while adapting the visual theme to match the specific business type AND reflecting your unique personality and voice.
+
+## CORE DESIGN LANGUAGE (NEVER CHANGE)
+
+### Typography System
+- **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
+- **Body**: 'Inter' - weights 300, 400, 500, 600
+- **Logo**: Space Grotesk, 3.5-5rem, font-weight 700, letter-spacing -1px to -2px
+- **Hero Titles**: Space Grotesk, 3.5-4.2rem, font-weight 500-700
+- **Body Text**: Inter, 1.2-1.4rem, font-weight 300, line-height 1.6-1.7
+
+### Layout & Spacing
+- **Container**: max-width 1200px, margin 0 auto, padding 20px
+- **Border Radius**: 15px (small), 20px (medium), 25px (large), 30px (hero)
+- **Card Padding**: 30-45px (small), 50-70px (hero)
+- **Grid Gaps**: 30-40px between cards
+- **Responsive**: single column below 768px
+
+### Glass Morphism System
+```css
+background: rgba(255, 255, 255, 0.15-0.25);
+backdrop-filter: blur(12-20px);
+border: 1px solid rgba(255, 255, 255, 0.2-0.4);
+border-radius: 20-30px;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1-0.15);
+```
+
+### Animation Framework
+- **Gradient Background**: 400% 400% size, 15-20s ease infinite shift
+- **Hover Transitions**: all 0.3-0.4s ease
+- **Parallax**: subtleParallax 20-25s ease-in-out infinite, translateY -8px to -12px
+- **Float Elements**: 6-8s ease-in-out infinite, translateY -10px to -20px
+- **Card Hovers**: translateY -3px to -8px, enhanced shadows
+
+### Interaction Patterns
+- **Buttons**: 50px border-radius, padding 18-20px 45-50px, uppercase, letter-spacing 1px
+- **Forms**: 15px border-radius, padding 15px 20px, same glass morphism
+- **Cards**: hover lift + enhanced background opacity + stronger shadows
+
+## BUSINESS TYPE ADAPTATIONS
+
+### Color Palette Selection
+**Pool/Leisure**: Orange → yellow → mint → blue gradients
+**Beauty/Wellness**: Pink → coral → warm tones gradients  
+**Edgy/Alternative**: Dark → electric pink → cyan → purple gradients
+**Tech/Modern**: Blue → teal → purple gradients
+**Food/Hospitality**: Warm oranges → reds → yellows
+
+### Floating Elements (4 elements max)
+Choose 4 emojis relevant to business type:
+- **Pool/Coffee**: 🌴☕🌊🦩
+- **Beauty**: ✨💄🪞🪮  
+- **Tattoo/Punk**: 💀⚡🔥⛓️
+- **Tech**: 🔮💎⚙️🚀
+- **Food**: 🍕🍷🌶️🥂
+
+### Effect Variations
+**Luxury/Calm**: Floating bubbles, shimmer effects, soft animations
+**Edgy/Punk**: Electric sparks, glitch effects, neon glows, aggressive shadows
+**Tech**: Grid patterns, scan lines, holographic effects
+**Organic**: Flowing particles, gentle waves, natural movement
+
+## CONTENT STRUCTURE REQUIREMENTS
+
+### Header Section
+- Logo: Business name in Space Grotesk
+- Tagline: Descriptive subtitle with business type/location
+
+### Hero Section
+- Glass morphism container with hero content
+- H1: Compelling business-focused headline
+- Paragraph: 1-2 sentences describing the business value proposition
+- Primary CTA + Secondary CTA buttons
+
+### Services/Features Section (3-4 cards)
+- Grid layout with glass morphism cards
+- Each card: Icon, Title, Description, Price/Details
+- Hover effects with enhanced shadows
+
+### Location/Contact Section
+- Two-column layout (location info + contact/booking form)
+- Address, hours, contextual details
+- Functional contact form with proper validation
+
+### Cross-references
+- Always reference other businesses on the same block/area
+- Build neighborhood ecosystem in copy
+
+## TECHNICAL REQUIREMENTS
+
+### HTML Structure
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>[Business Name]</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+    /* Core system styles */
+  </style>
+</head>
+<body>
+  <!-- Floating effects -->
+  <!-- Floating elements -->
+  <header><!-- Logo + tagline --></header>
+  <main>
+    <section class="hero"><!-- Hero content --></section>
+    <section class="services"><!-- Service cards --></section>
+    <section class="location-contact"><!-- Location + contact --></section>
+  </main>
+  <script><!-- Interactive features --></script>
+</body>
+</html>
+```
+
+### JavaScript Features
+- Mouse parallax for floating elements
+- Scroll-based parallax for sections
+- Intersection observer for card reveals
+- Form validation and submission
+- Smooth scrolling for anchor links
+- Business-specific interactive effects
+
+### Responsive Design
+- Mobile-first approach
+- Single column layout below 768px
+- Adjusted font sizes and padding for mobile
+- Touch-friendly button sizes
+
+## OUTPUT FORMAT
+
+Create a complete, functional HTML page with:
+1. **Appropriate color palette** for the business type
+2. **Themed floating elements** (4 emojis)
+3. **Business-specific content** (services, pricing, location)
+4. **Contextual copy** that feels authentic to the business
+5. **Interactive features** that enhance the user experience
+6. **Perfect adherence** to the core design language
+7. **Cross-references** to other businesses in the area
+
+The result should feel like it came from the same luxury design agency while being perfectly suited to the specific business type and industry.
+
+## BUSINESS CONTEXT PROMPT
+
+When creating a page, first consider:
+- What type of business is this?
+- What emotion should the user feel?
+- What's the price point and target demographic?
+- How should this adapt the core design language?
+- What specific services/products need to be highlighted?
+
+Then apply the design system accordingly while maintaining the signature aesthetic that makes all pages recognizably from the same design studio."""
+    else:
+        log_with_timestamp("🎨 Using default design system prompt (no coach specified)")
+        # Default prompt without coach personality
+        system_prompt = """# Poolsuite Design System API Prompt
 
 You are an expert web designer creating landing pages for a luxury design agency with a signature aesthetic inspired by Poolsuite FM and West Coast luxury. Every page must follow the established design language while adapting the visual theme to match the specific business type.
 
@@ -709,7 +921,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
             raise Exception("ANTHROPIC_API_KEY not found in environment")
             
         headers = {
-            "Authorization": f"Bearer {anthropic_api_key}",
+            "x-api-key": anthropic_api_key,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01"
         }
@@ -717,13 +929,14 @@ Then apply the design system accordingly while maintaining the signature aesthet
         # Prepare the API call for Claude 3 Sonnet
         claude_api_url = "https://api.anthropic.com/v1/messages"
         payload = {
-            "model": "claude-3-sonnet-20240229",
+            "model": "claude-3-5-sonnet-20241022",
             "max_tokens": 8000,
             "temperature": 0.7,
+            "system": system_prompt,
             "messages": [
                 {
                     "role": "user",
-                    "content": f"{system_prompt}\n\n{user_prompt}"
+                    "content": user_prompt
                 }
             ]
         }
@@ -751,13 +964,13 @@ Then apply the design system accordingly while maintaining the signature aesthet
         # Fall back to GPT-4o
         try:
             log_with_timestamp("🧠 Falling back to GPT-4o...")
-            response = openai.ChatCompletion.create(
+            response = openai_client.chat.completions.create(
                 model="gpt-4o",
                 messages=full_prompt,
                 temperature=0.8,
                 max_tokens=8000
             )
-            result = response["choices"][0]["message"]["content"]
+            result = response.choices[0].message.content
         except Exception as e:
             log_with_timestamp(f"💥 GPT API error: {e}")
             return False
