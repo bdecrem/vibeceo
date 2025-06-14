@@ -2226,20 +2226,59 @@ ${response}`;
           return;
         }
         
-        // List all pages with numbers
-        let pageList = `📄 Your pages (${userContent.length}):\n\n`;
-        userContent.forEach((content, index) => {
-          const truncatedPrompt = content.original_prompt.length > 50 
-            ? content.original_prompt.substring(0, 50) + '...' 
+        // Implement pagination to avoid SMS length limits
+        const PAGES_PER_MESSAGE = 8; // Show 8 pages per message to stay under 1600 chars
+        const totalPages = userContent.length;
+        const totalMessagePages = Math.ceil(totalPages / PAGES_PER_MESSAGE);
+        
+        // Check if user specified a page number (INDEX PAGE 2)
+        const pageMatch = message.match(/^INDEX\s+PAGE\s+(\d+)$/i);
+        const requestedPage = pageMatch ? parseInt(pageMatch[1]) : 1;
+        
+        if (requestedPage < 1 || requestedPage > totalMessagePages) {
+          await sendSmsResponse(
+            from,
+            `❌ Invalid page. Available pages: 1-${totalMessagePages}`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Calculate which pages to show
+        const startIndex = (requestedPage - 1) * PAGES_PER_MESSAGE;
+        const endIndex = Math.min(startIndex + PAGES_PER_MESSAGE, totalPages);
+        const pagesToShow = userContent.slice(startIndex, endIndex);
+        
+        // Build the message
+        let pageList = `📄 Your pages (${totalPages} total) - Page ${requestedPage}/${totalMessagePages}:\n\n`;
+        
+        pagesToShow.forEach((content, index) => {
+          const actualIndex = startIndex + index + 1;
+          const truncatedPrompt = content.original_prompt.length > 35 
+            ? content.original_prompt.substring(0, 35) + '...' 
             : content.original_prompt;
-          pageList += `${index + 1}. ${content.app_slug}\n   "${truncatedPrompt}"\n\n`;
+          pageList += `${actualIndex}. ${content.app_slug}\n   "${truncatedPrompt}"\n\n`;
         });
         
         const currentIndex = subscriber.index_file ? 
-          `\n🏠 Current index: ${subscriber.index_file.replace('.html', '')}` : 
-          `\n🏠 No index page set`;
+          `🏠 Current index: ${subscriber.index_file.replace('.html', '')}\n\n` : 
+          `🏠 No index page set\n\n`;
         
-        pageList += `${currentIndex}\n\nTo set a page as your index:\nINDEX [number]`;
+        pageList += currentIndex;
+        
+        // Add navigation instructions
+        if (totalMessagePages > 1) {
+          pageList += `📖 Navigation:\n`;
+          if (requestedPage < totalMessagePages) {
+            pageList += `• INDEX PAGE ${requestedPage + 1} (next)\n`;
+          }
+          if (requestedPage > 1) {
+            pageList += `• INDEX PAGE ${requestedPage - 1} (prev)\n`;
+          }
+          pageList += `\n`;
+        }
+        
+        pageList += `To set index: INDEX [number]`;
         
         await sendSmsResponse(from, pageList, twilioClient);
         console.log(`Listed ${userContent.length} pages for user ${from} (${userSlug})`);
