@@ -1554,10 +1554,22 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           const subscriber = await getSubscriber(from);
           const isFirstTime = !subscriber || !subscriber.slug;
           
-          let response = `🧪 WTAF? Welcome to the chaos.\n\nTry stuff like:\n→ wtaf code a delusional pitch deck\n→ wtaf make a vibes-based todo list\n\nWe'll turn your weird prompts into weird little apps.`;
+          let response = `🧪 WTAF? Welcome to the chaos.
+
+Try stuff like:
+→ wtaf code a delusional pitch deck
+→ wtaf make a vibes-based todo list
+
+We'll turn your weird prompts into weird little apps.
+
+💻 CODER COMMANDS:
+• SLUG [name] - Change your custom URL
+• INDEX - List & set your homepage`;
           
           if (isFirstTime) {
-            response = `🎯 Your WTAF slug is: ${userSlug}\n\n${response}`;
+            response = `🎯 Your WTAF slug is: ${userSlug}
+
+${response}`;
           }
           
           await sendSmsResponse(
@@ -1637,106 +1649,6 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         await sendSmsResponse(
           from,
           `❌ WTAF: Failed to save snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
-          twilioClient
-        );
-        return;
-      }
-    }
-
-    // Handle SLUG command - change user's slug
-    if (message.match(/^SLUG(?:\s|$)/i)) {
-      console.log(`Processing SLUG command from ${from}`);
-      
-      try {
-        // Check user role for SLUG command
-        const subscriber = await getSubscriber(from);
-        if (!subscriber || subscriber.role !== 'coder') {
-          console.log(`User ${from} attempted SLUG command without coder privileges`);
-          // Silent ignore - don't reveal command to non-coder users
-          return;
-        }
-        
-        // Extract new slug from message
-        const slugMatch = message.match(/^SLUG\s+(.+)$/i);
-        if (!slugMatch) {
-          const currentSlug = subscriber.slug || 'none';
-          await sendSmsResponse(
-            from,
-            `🏷️ Your current slug: ${currentSlug}\n\nTo change it, use:\nSLUG your-new-slug\n\nSlug must be 3-20 characters, letters/numbers/hyphens only.`,
-            twilioClient
-          );
-          return;
-        }
-        
-        const newSlug = slugMatch[1].trim().toLowerCase();
-        
-        // Validate slug format
-        if (!/^[a-z0-9-]{3,20}$/.test(newSlug)) {
-          await sendSmsResponse(
-            from,
-            `❌ Invalid slug format. Must be 3-20 characters, letters/numbers/hyphens only.\n\nExample: SLUG cool-developer`,
-            twilioClient
-          );
-          return;
-        }
-        
-        // Check if slug is already taken
-        const existingUser = await supabase
-          .from('sms_subscribers')
-          .select('phone_number')
-          .eq('slug', newSlug)
-          .single();
-        
-        if (existingUser.data && existingUser.data.phone_number !== from) {
-          await sendSmsResponse(
-            from,
-            `❌ Slug "${newSlug}" is already taken. Try another one.`,
-            twilioClient
-          );
-          return;
-        }
-        
-        // Update user's slug in subscribers table
-        const updateUserResult = await supabase
-          .from('sms_subscribers')
-          .update({ slug: newSlug })
-          .eq('phone_number', from);
-        
-        if (updateUserResult.error) {
-          console.error(`Error updating user slug: ${updateUserResult.error}`);
-          await sendSmsResponse(
-            from,
-            `❌ Failed to update slug. Please try again later.`,
-            twilioClient
-          );
-          return;
-        }
-        
-        // Update all existing WTAF content to use new slug
-        const updateContentResult = await supabase
-          .from('wtaf_content')
-          .update({ user_slug: newSlug })
-          .eq('sender_phone', from);
-        
-        if (updateContentResult.error) {
-          console.error(`Error updating content slugs: ${updateContentResult.error}`);
-          // Don't fail completely - user slug was updated successfully
-          console.log(`User slug updated but content migration failed for ${from}`);
-        }
-        
-        await sendSmsResponse(
-          from,
-          `✅ Slug updated to "${newSlug}"!\n\nAll your existing content now lives at:\n/wtaf/${newSlug}/...`,
-          twilioClient
-        );
-        
-        console.log(`User ${from} changed slug to: ${newSlug}`);
-        return;
-      } catch (error) {
-        console.error(`Error processing SLUG command: ${error}`);
-        await sendSmsResponse(
-          from,
-          `❌ SLUG: Failed to update slug - ${error instanceof Error ? error.message : 'Unknown error'}`,
           twilioClient
         );
         return;
@@ -2285,6 +2197,9 @@ export async function processIncomingSms(from: string, body: string, twilioClien
           const selectedPage = userContent[selectedIndex];
           const indexFileName = `${selectedPage.app_slug}.html`;
           
+          console.log(`Setting index for user ${from} (${userSlug}): ${indexFileName}`);
+          console.log(`Selected page:`, selectedPage);
+          
           // Update user's index_file in database
           const { error: updateError } = await supabase
             .from('sms_subscribers')
@@ -2292,7 +2207,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
             .eq('phone_number', from);
             
           if (updateError) {
-            console.error(`Error updating index file: ${updateError}`);
+            console.error(`Error updating index file:`, updateError);
             await sendSmsResponse(
               from,
               `❌ Failed to set index page. Please try again later.`,
