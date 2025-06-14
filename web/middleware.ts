@@ -19,8 +19,7 @@ export function middleware(request: NextRequest) {
 
     // Root path - redirect to main WTAF page
     if (pathname === '/') {
-      const url = new URL('/wtaf', request.url)
-      url.host = 'advisorsfoundry.ai' // or your main domain
+      const url = new URL('https://advisorsfoundry.ai/wtaf')
       return NextResponse.redirect(url)
     }
 
