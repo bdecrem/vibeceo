@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
 
     // Handle wtaf.me/username/filename format
     // Rewrite to /wtaf/username/filename internally
-    const newUrl = new URL(`/wtaf${pathname}${search}`, request.url)
+    const newUrl = new URL(`/wtaf${pathname}${search}`, `https://${host}`)
     return NextResponse.rewrite(newUrl)
   }
 
