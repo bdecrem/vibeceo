@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface UserPageProps {
   params: {
     user_slug: string
@@ -16,18 +20,27 @@ const supabase = createClient(
 export default async function UserPage({ params }: UserPageProps) {
   const { user_slug } = params
 
-  // Check if user has an index file set
-  const { data: subscriber } = await supabase
+  console.log(`[DEBUG] UserPage called with user_slug: ${user_slug}`)
+
+  // Check if user has an index file set (with cache busting)
+  const { data: subscriber, error } = await supabase
     .from('sms_subscribers')
     .select('index_file')
     .eq('slug', user_slug)
+    .limit(1)
     .single()
+
+  console.log(`[DEBUG] Database query result:`, { subscriber, error })
 
   // If user has an index file set, redirect to that page
   if (subscriber?.index_file) {
     const app_slug = subscriber.index_file.replace('.html', '')
-    redirect(`/wtaf/${user_slug}/${app_slug}`)
+    const redirectUrl = `/wtaf/${user_slug}/${app_slug}`
+    console.log(`[DEBUG] Redirecting to: ${redirectUrl}`)
+    redirect(redirectUrl)
   }
+
+  console.log(`[DEBUG] No index file found, showing default page`)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
