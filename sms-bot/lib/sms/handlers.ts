@@ -2293,6 +2293,120 @@ ${response}`;
       }
     }
 
+    // Handle SLUG command - change user's custom URL slug
+    if (message.match(/^SLUG\s+(.+)$/i)) {
+      console.log(`Processing SLUG command from ${from}`);
+      
+      try {
+        // Check user role for SLUG command
+        const subscriber = await getSubscriber(from);
+        if (!subscriber || subscriber.role !== 'coder') {
+          console.log(`User ${from} attempted SLUG command without coder privileges`);
+          // Silent ignore - don't reveal command to non-coder users
+          return;
+        }
+
+        // Extract the requested new slug
+        const slugMatch = message.match(/^SLUG\s+(.+)$/i);
+        if (!slugMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ SLUG: Please provide a new slug name. Example: SLUG mynewname`,
+            twilioClient
+          );
+          return;
+        }
+
+        const requestedSlug = slugMatch[1].trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        
+        if (!requestedSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ SLUG: Invalid slug name. Use only letters, numbers, and hyphens.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Check if requested slug is already in use
+        const { data: existingUser, error: checkError } = await supabase
+          .from('sms_subscribers')
+          .select('phone_number')
+          .eq('slug', requestedSlug)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error(`Error checking slug availability:`, checkError);
+          await sendSmsResponse(
+            from,
+            `❌ SLUG: Failed to check slug availability. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+
+        if (existingUser) {
+          await sendSmsResponse(
+            from,
+            `❌ SLUG: "${requestedSlug}" is already taken. Please choose a different slug.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const oldSlug = subscriber.slug;
+
+        // Update user's slug in sms_subscribers table
+        const { error: updateUserError } = await supabase
+          .from('sms_subscribers')
+          .update({ slug: requestedSlug })
+          .eq('phone_number', from);
+
+        if (updateUserError) {
+          console.error(`Error updating user slug:`, updateUserError);
+          await sendSmsResponse(
+            from,
+            `❌ SLUG: Failed to update your slug. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Update all existing WTAF content to use new user_slug
+        if (oldSlug) {
+          const { error: updateContentError } = await supabase
+            .from('wtaf_content')
+            .update({ user_slug: requestedSlug })
+            .eq('user_slug', oldSlug);
+
+          if (updateContentError) {
+            console.error(`Error updating content slugs:`, updateContentError);
+            // Continue anyway - at least the user slug is updated
+          } else {
+            console.log(`Updated all wtaf_content records from ${oldSlug} to ${requestedSlug}`);
+          }
+        }
+
+        await sendSmsResponse(
+          from,
+          `✅ SLUG: Your custom URL is now "${requestedSlug}"!\n\nYour pages are now at: wtaf.me/${requestedSlug}/\n\nAll existing pages have been moved to the new URL.`,
+          twilioClient
+        );
+
+        console.log(`User ${from} changed slug from "${oldSlug}" to "${requestedSlug}"`);
+        return;
+
+      } catch (error) {
+        console.error(`Error processing SLUG command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ SLUG: Failed to process command - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Handle Leo easter egg first (hey leo, hi leo)
     const heyLeoMatch = message.match(/^(hey|hi|hello)\s+(leo)/i);
     if (heyLeoMatch) {
