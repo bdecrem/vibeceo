@@ -102,37 +102,65 @@ export async function POST(request: Request) {
 			const stream = new ReadableStream({
 				async start(controller) {
 					try {
-						// Send initial progress messages
+						// Send initial progress messages as separate chat lines
 						const progressMessages = [
-							"🧪 WTAF received your chaotic request...\n\n",
-							"📡 Signal transmitted to the chaos engine...\n\n",
-							"⚡ Generating delusional code architecture...\n\n",
-							"🎨 Applying questionable design patterns...\n\n",
-							"🚀 Your chaotic app is materializing...\n\n"
+							"🧪 WTAF received your chaotic request...",
+							"📡 Signal transmitted to the chaos engine...",
+							"⚡ Generating delusional code architecture...",
+							"🎨 Applying questionable design patterns...",
+							"🚀 Your chaotic app is materializing..."
 						];
 
-						// Send progress messages with delays
+						// Send progress messages with delays as separate chat messages
 						for (const message of progressMessages) {
 							controller.enqueue(encoder.encode(`data: ${message}`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
 							await new Promise(resolve => setTimeout(resolve, 800));
 						}
 
 						// Poll for real results
-						controller.enqueue(encoder.encode(`data: 🔍 Waiting for your page to be generated...\n\n`));
+						controller.enqueue(encoder.encode(`data: 🔍 Waiting for your page to be generated...`));
+						controller.enqueue(encoder.encode(`data: [DONE]`));
 						
 						const realUrl = await pollForResults(requestStartTime);
 						
 						if (realUrl) {
-							// Success - show real URL
-							controller.enqueue(encoder.encode(`data: ✅ WTAF delivered! Your page is ready:\n\n`));
-							controller.enqueue(encoder.encode(`data: 🔗 **Your App:** ${realUrl}\n\n`));
-							controller.enqueue(encoder.encode(`data: 📱 **Also sent to your phone via SMS!**\n\n`));
-							controller.enqueue(encoder.encode(`data: Features include:\n• Questionable UI decisions ✨\n• Code that works by accident 🎲\n• Peak startup energy 🚀\n\n`));
+							// Success - show real URL as separate messages
+							await new Promise(resolve => setTimeout(resolve, 500));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: ✅ WTAF delivered! Your page is ready:`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: 🔗 **Your App:** [${realUrl}](${realUrl})`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: 📱 **Also sent to your phone via SMS!**`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: Features include:\n• Questionable UI decisions ✨\n• Code that works by accident 🎲\n• Peak startup energy 🚀`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
 							controller.enqueue(encoder.encode(`data: *Remember: If it breaks, it's a feature!*`));
 						} else {
-							// Timeout - show fallback
-							controller.enqueue(encoder.encode(`data: ⏰ Page generation taking longer than expected...\n\n`));
-							controller.enqueue(encoder.encode(`data: 🔗 **Check:** https://wtaf.me/cptcrk/ (may appear shortly)\n\n`));
+							// Timeout - show fallback as separate messages
+							await new Promise(resolve => setTimeout(resolve, 500));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: ⏰ Page generation taking longer than expected...`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
+							controller.enqueue(encoder.encode(`data: 🔗 **Check:** [https://wtaf.me/cptcrk/](https://wtaf.me/cptcrk/) (may appear shortly)`));
+							controller.enqueue(encoder.encode(`data: [DONE]`));
+							
+							await new Promise(resolve => setTimeout(resolve, 200));
 							controller.enqueue(encoder.encode(`data: 📱 **You'll get SMS with direct link when ready!**`));
 						}
 
