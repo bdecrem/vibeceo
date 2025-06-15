@@ -1,31 +1,28 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'WTAF – Delusional App Generator',
-  description: 'Vibecoded chaos, shipped via SMS. Text us your wildest app ideas and get back absolute unhinged web apps.',
+  title: 'WTAF - Delusional App Generator',
+  description: 'Vibecoded chaos, shipped via SMS.',
   openGraph: {
-    title: 'WTAF by AF',
+    title: 'WTAF - Delusional App Generator',
     description: 'Vibecoded chaos, shipped via SMS.',
-    url: 'https://wtaf.me',
-    siteName: 'AdvisorsFoundry',
+    type: 'website',
+    siteName: 'WTAF',
     images: [
       {
         url: '/images/wtaf-og.png',
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: 'WTAF - Delusional App Generator by AdvisorsFoundry',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
+      }
+    ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WTAF – Delusional App Generator',
+    title: 'WTAF - Delusional App Generator',
     description: 'Vibecoded chaos, shipped via SMS.',
-    images: ['/images/wtaf-og.png'],
-    creator: '@theafbot',
-  },
+    images: ['/images/wtaf-og.png']
+  }
 };
 
 export default function WtafLayout({
