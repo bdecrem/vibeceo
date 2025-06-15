@@ -51,12 +51,28 @@ def detect_request_type(user_prompt):
                    'converter', 'generator', 'timer', 'counter', 'dashboard', 'planner',
                    'notepad', 'editor', 'organizer', 'utility', 'widget', 'calendar']
     
-    if any(keyword in prompt_lower for keyword in game_keywords):
-        return 'game'
-    elif any(keyword in prompt_lower for keyword in app_keywords):
-        return 'app'
-    else:
-        return 'website'
+    # Use word boundary matching to avoid false positives
+    # Check for game keywords
+    for keyword in game_keywords:
+        # Use word boundaries for single words, exact match for phrases
+        if ' ' in keyword:
+            if keyword in prompt_lower:
+                return 'game'
+        else:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', prompt_lower):
+                return 'game'
+    
+    # Check for app keywords
+    for keyword in app_keywords:
+        # Use word boundaries for single words, exact match for phrases
+        if ' ' in keyword:
+            if keyword in prompt_lower:
+                return 'app'
+        else:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', prompt_lower):
+                return 'app'
+    
+    return 'website'
 
 def generate_fun_slug():
     color = random.choice(COLORS)
@@ -505,8 +521,25 @@ def execute_gpt4o(prompt_file):
             if len(lines) > line_index and lines[line_index].strip() == "":
                 line_index += 1
                 
-            # Remaining content is the actual prompt
-            raw_prompt = '\n'.join(lines[line_index:]) if len(lines) > line_index else ""
+            # For files with coach prompts, the actual user request is the last non-empty line
+            # Everything else is coach background information
+            if coach_from_file and coach_prompt_from_file:
+                # Find the last non-empty line as the actual user request
+                actual_user_request = ""
+                for i in range(len(lines) - 1, -1, -1):
+                    if lines[i].strip():
+                        actual_user_request = lines[i].strip()
+                        break
+                
+                if actual_user_request:
+                    raw_prompt = actual_user_request
+                    log_with_timestamp(f"🎯 Extracted actual user request: {actual_user_request[:50]}...")
+                else:
+                    # Fallback to original logic if no user request found
+                    raw_prompt = '\n'.join(lines[line_index:]) if len(lines) > line_index else ""
+            else:
+                # Original logic for files without coach prompts
+                raw_prompt = '\n'.join(lines[line_index:]) if len(lines) > line_index else ""
                 
         except Exception as e:
             log_with_timestamp(f"⚠️ File parsing error: {e}")
@@ -597,10 +630,10 @@ def execute_gpt4o(prompt_file):
     coach_to_find = coach_from_file if coach_from_file else coach
     
     if coach_to_find and coach_to_find.lower() != "default":
-    for c in COACHES:
+        for c in COACHES:
             if c.get("id", "").lower() == coach_to_find.lower():
-            coach_data = c
-            break
+                coach_data = c
+                break
     
         if not coach_data:
             log_with_timestamp(f"⚠️ Coach '{coach_to_find}' not found in COACHES list")
@@ -653,7 +686,7 @@ Return complete HTML with embedded CSS/JS in code blocks."""
         # Coach-specific prompt that combines personality with design system
         system_prompt = f"""# Poolsuite Design System API Prompt - Coach Mode
 
-CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Text must fit mobile screens without horizontal scrolling. Hero titles max 2.5rem on mobile, body text 1rem on mobile.
+CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Ensure floating elements, animations, and full glass morphism design system on ALL screen sizes.
 
 You are {coach_data['name']}, a luxury web designer creating landing pages with your signature aesthetic inspired by Poolsuite FM and West Coast luxury. 
 
@@ -670,6 +703,19 @@ You are {coach_data['name']}, a luxury web designer creating landing pages with 
 Every page must follow the established design language while adapting the visual theme to match the specific business type AND reflecting your unique personality and voice.
 
 ## CORE DESIGN LANGUAGE (NEVER CHANGE)
+
+## LUXURY ENFORCEMENT (MANDATORY)
+EVERY page must include ALL of these elements:
+- 4 floating emoji elements relevant to business type with smooth animations
+- Animated gradient background (400% size, 15-20s animation)
+- Multiple glass morphism containers with proper blur effects
+- All typography following Space Grotesk/Inter hierarchy
+- Hover animations on cards (translateY -5px, enhanced shadows)
+- Mouse parallax effects on floating elements
+- Professional color palette appropriate to business type
+- Intersection observer animations for reveals
+
+NO EXCEPTIONS - even simple pages must feel like luxury design agency work.
 
 ### Typography System
 - **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
@@ -824,11 +870,24 @@ Then apply the design system accordingly while maintaining the signature aesthet
         # Default prompt without coach personality
         system_prompt = """# Poolsuite Design System API Prompt
 
-CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Text must fit mobile screens without horizontal scrolling. Hero titles max 2.5rem on mobile, body text 1rem on mobile.
+CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Ensure floating elements, animations, and full glass morphism design system on ALL screen sizes.
 
 You are an expert web designer creating landing pages for a luxury design agency with a signature aesthetic inspired by Poolsuite FM and West Coast luxury. Every page must follow the established design language while adapting the visual theme to match the specific business type.
 
 ## CORE DESIGN LANGUAGE (NEVER CHANGE)
+
+## LUXURY ENFORCEMENT (MANDATORY)
+EVERY page must include ALL of these elements:
+- 4 floating emoji elements relevant to business type with smooth animations
+- Animated gradient background (400% size, 15-20s animation)
+- Multiple glass morphism containers with proper blur effects
+- All typography following Space Grotesk/Inter hierarchy
+- Hover animations on cards (translateY -5px, enhanced shadows)
+- Mouse parallax effects on floating elements
+- Professional color palette appropriate to business type
+- Intersection observer animations for reveals
+
+NO EXCEPTIONS - even simple pages must feel like luxury design agency work.
 
 ### Typography System
 - **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
@@ -989,8 +1048,8 @@ Then apply the design system accordingly while maintaining the signature aesthet
         anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
         if not anthropic_api_key:
             raise Exception("ANTHROPIC_API_KEY not found in environment")
-            
-            headers = {
+        
+        headers = {
             "x-api-key": anthropic_api_key,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01"
@@ -998,52 +1057,52 @@ Then apply the design system accordingly while maintaining the signature aesthet
         
         # Smart token allocation for consistent Claude personality
         if request_type in ['game', 'app']:
-            max_tokens = 6500   # Maximum available for Claude
+            max_tokens = 7500   # Maximum available for Claude
         else:
-            max_tokens = 5000   # Conservative for websites
+            max_tokens = 6500   # INCREASED from 5000 to allow full design system
         
         # Prepare the API call for Claude 3 Sonnet
         claude_api_url = "https://api.anthropic.com/v1/messages"
-            payload = {
+        payload = {
             "model": "claude-3-5-sonnet-20241022",
             "max_tokens": max_tokens,
             "temperature": 0.7,
             "system": system_prompt,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": user_prompt
-                    }
+            "messages": [
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
             ]
-            }
-            
+        }
+        
         log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: {max_tokens}")
-            
-            # Make the API call
+        
+        # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
-            response_json = response.json()
+        response_json = response.json()
         log_with_timestamp(f"📊 Claude response received - status code: {response.status_code}")
-            
-            # Debug response structure
+        
+        # Debug response structure
         log_with_timestamp(f"📋 Claude response keys: {list(response_json.keys())}")
-            
-            # Extract the result
+        
+        # Extract the result
         if "content" in response_json and len(response_json["content"]) > 0:
             result = response_json["content"][0]["text"]
             log_with_timestamp(f"✅ Claude 3 Sonnet response received, length: {len(result)} chars")
-            else:
+        else:
             log_with_timestamp(f"⚠️ Unexpected Claude API response structure: {response_json}")
             raise Exception("Invalid Claude response structure")
-                
-        except Exception as e:
+        
+    except Exception as e:
         log_with_timestamp(f"⚠️ Claude API error, falling back to GPT-4o: {e}")
-            # Fall back to GPT-4o
-            try:
-                log_with_timestamp("🧠 Falling back to GPT-4o...")
+        # Fall back to GPT-4o
+        try:
+            log_with_timestamp("🧠 Falling back to GPT-4o...")
             response = openai_client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=full_prompt,
-                    temperature=0.8,
+                model="gpt-4o",
+                messages=full_prompt,
+                temperature=0.8,
                 max_tokens=max_tokens
             )
             result = response.choices[0].message.content
