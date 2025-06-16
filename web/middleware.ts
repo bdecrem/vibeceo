@@ -4,6 +4,24 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = request.headers.get('host')
   
+  // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
+  if (pathname.startsWith('/api/')) {
+    if (host?.includes('localhost') || host?.includes('ngrok')) {
+      console.log(`[Middleware] API route bypassed: ${pathname}`)
+    }
+    return NextResponse.next()
+  }
+
+  // CRITICAL FIX: Also bypass Next.js internals, static files, and assets immediately
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
   // Debug logging for development
   if (host?.includes('localhost') || host?.includes('ngrok')) {
     console.log(`[Middleware] ${host}${pathname} - Processing request`)
@@ -13,7 +31,7 @@ export function middleware(request: NextRequest) {
   const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me'
   const isDevEnvironment = host?.includes('localhost') || host?.includes('ngrok')
   const isDevWtafRoute = isDevEnvironment && pathname.startsWith('/wtaf/')
-  const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next')
+  const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing'
   
   if (isWtafDomain || isDevWtafRoute || isDevUserRoute) {
     // Skip API routes, static files, and Next.js internals
@@ -27,10 +45,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Root path - redirect to main WTAF page (only for wtaf.me domain, not dev routes)
+    // Root path - serve WTAF landing page (only for wtaf.me domain, not dev routes)
     if (pathname === '/' && isWtafDomain) {
-      const url = new URL('https://advisorsfoundry.ai/wtaf')
-      return NextResponse.redirect(url)
+      const newUrl = new URL('/wtaf-landing', request.url)
+      console.log(`[Middleware] Serving WTAF landing page for root path`)
+      return NextResponse.rewrite(newUrl)
     }
 
     // CRITICAL FIX: Prevent infinite loops by checking if path already starts with /wtaf/
@@ -70,4 +89,4 @@ export const config = {
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
-} 
+}

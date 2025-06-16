@@ -50,7 +50,7 @@ export default async function WTAFAppPage({ params }: PageProps) {
   }
 }
 
-// Optional: Generate metadata for better SEO
+// Generate metadata with dynamic OG images
 export async function generateMetadata({ params }: PageProps) {
   const { user_slug, app_slug } = await params
   
@@ -68,25 +68,41 @@ export async function generateMetadata({ params }: PageProps) {
       `${data.original_prompt.substring(0, 150)}...` : 
       'Vibecoded chaos, shipped via SMS.'
 
+    // Use simpler query-parameter based OG image route
+    const ogImageUrl = `/api/og-wtaf?user=${encodeURIComponent(user_slug)}&app=${encodeURIComponent(app_slug)}`
+
     return {
       title,
       description,
       openGraph: {
         title,
         description,
-        images: ['/images/wtaf-og.png'],
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: title,
+          }
+        ],
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: ['/images/wtaf-og.png'],
+        images: [ogImageUrl],
       },
     }
   } catch (error) {
+    console.error('Error generating metadata:', error)
     return {
       title: 'WTAF - Delusional App Generator',
       description: 'Vibecoded chaos, shipped via SMS.',
+      openGraph: {
+        title: 'WTAF - Delusional App Generator',
+        description: 'Vibecoded chaos, shipped via SMS.',
+        images: ['/api/og-wtaf?user=default&app=wtaf'],
+      },
     }
   }
 } 

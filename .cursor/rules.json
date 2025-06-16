@@ -1,7 +1,8 @@
 {
   "imports": [
     "./security-rules.json",
-    "./code-style-rules.json"
+    "./code-style-rules.json",
+    "./project-patterns.json"
   ],
   "rules": [
     {
