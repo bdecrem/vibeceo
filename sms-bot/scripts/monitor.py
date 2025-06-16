@@ -379,11 +379,13 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
     
     # Inject OpenGraph tags into HTML
     public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
-    og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
+    og_image_url = f"{WEB_APP_URL}/api/og/{user_slug}/{app_slug}"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
     <meta property="og:image" content="{og_image_url}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:url" content="{public_url}" />
     <meta name="twitter:card" content="summary_large_image" />"""
     
@@ -432,11 +434,13 @@ def save_code_to_file(code, coach, slug, format="html", user_slug=None):
         page_url = public_url
         
         # Inject OpenGraph tags into HTML
-        og_image_url = f"{WEB_APP_URL}/images/wtaf-og.png"
+        og_image_url = f"{WEB_APP_URL}/api/og/{slug}"
         og_tags = f"""<title>WTAF – Delusional App Generator</title>
         <meta property="og:title" content="WTAF by AF" />
         <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
         <meta property="og:image" content="{og_image_url}" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:url" content="{page_url}" />
         <meta name="twitter:card" content="summary_large_image" />"""
         
@@ -1040,8 +1044,15 @@ Then apply the design system accordingly while maintaining the signature aesthet
 
     full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
-    # Use Claude 3 Sonnet for all WTAF/CODE commands
-    log_with_timestamp("🧠 Using Claude 3 Sonnet for web design...")
+    # Smart model selection based on request type
+    if request_type in ['game', 'app']:
+        model = "claude-3-5-opus-20241022"
+        max_tokens = 16000  # Generous token budget for complex apps/games
+        log_with_timestamp("🧠 Using Claude 3.5 Opus for complex web apps/games...")
+    else:
+        model = "claude-3-5-sonnet-20241022"
+        max_tokens = 8100  # Standard token budget for websites
+        log_with_timestamp("🧠 Using Claude 3.5 Sonnet for web design...")
     
     try:
         # Call Anthropic Claude API
@@ -1055,16 +1066,10 @@ Then apply the design system accordingly while maintaining the signature aesthet
             "anthropic-version": "2023-06-01"
         }
         
-        # Smart token allocation for consistent Claude personality
-        if request_type in ['game', 'app']:
-            max_tokens = 7500   # Maximum available for Claude
-        else:
-            max_tokens = 6500   # INCREASED from 5000 to allow full design system
-        
-        # Prepare the API call for Claude 3 Sonnet
+        # Prepare the API call with dynamic model selection
         claude_api_url = "https://api.anthropic.com/v1/messages"
         payload = {
-            "model": "claude-3-5-sonnet-20241022",
+            "model": model,
             "max_tokens": max_tokens,
             "temperature": 0.7,
             "system": system_prompt,
@@ -1076,7 +1081,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
             ]
         }
         
-        log_with_timestamp(f"🔍 Sending Claude 3 Sonnet request with token limit: {max_tokens}")
+        log_with_timestamp(f"🔍 Sending {model} request with token limit: {max_tokens}")
         
         # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
@@ -1089,7 +1094,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
         # Extract the result
         if "content" in response_json and len(response_json["content"]) > 0:
             result = response_json["content"][0]["text"]
-            log_with_timestamp(f"✅ Claude 3 Sonnet response received, length: {len(result)} chars")
+            log_with_timestamp(f"✅ {model} response received, length: {len(result)} chars")
         else:
             log_with_timestamp(f"⚠️ Unexpected Claude API response structure: {response_json}")
             raise Exception("Invalid Claude response structure")
