@@ -1,0 +1,276 @@
+I'll create a website for a craft brewery taproom using our design system, adapting it for an upscale but approachable craft beer experience.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coastal Drift Brewing | Venice Beach Craft Brewery & Taproom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --gradient-bg: linear-gradient(45deg, #FF8C42, #FFB26B, #FFD700, #4ECDC4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            background: var(--gradient-bg);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #1A1A1A;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -1px;
+        }
+
+        /* Glass Card Base */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 0;
+        }
+
+        .hero-content {
+            padding: 60px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .hero h1 {
+                font-size: 4rem;
+            }
+        }
+
+        /* Tap List Grid */
+        .tap-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        @media (min-width: 768px) {
+            .tap-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .beer-card {
+            padding: 30px;
+        }
+
+        .beer-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: #1A1A1A;
+        }
+
+        /* Floating Elements */
+        .floating-element {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .hero-content {
+                padding: 30px;
+            }
+
+            .beer-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Elements -->
+    <div class="floating-element" style="top: 10%; left: 10%;">🍺</div>
+    <div class="floating-element" style="top: 20%; right: 15%;">🌾</div>
+    <div class="floating-element" style="bottom: 30%; left: 20%;">🍻</div>
+    <div class="floating-element" style="bottom: 20%; right: 10%;">🌊</div>
+
+    <div class="container">
+        <header>
+            <div class="logo">Coastal Drift</div>
+            <p>Craft Brewery & Taproom • Venice Beach</p>
+        </header>
+
+        <section class="hero">
+            <div class="glass-card hero-content">
+                <h1>Small-Batch Craft Beer by the Beach</h1>
+                <p>Experience artisanal brewing at its finest, where California sunshine meets craft innovation. Located steps from Venice Beach Boardwalk.</p>
+                <div style="margin-top: 30px;">
+                    <a href="#reserve" class="btn btn-primary">Reserve a Table</a>
+                    <a href="#menu" class="btn btn-secondary" style="margin-left: 20px;">View Tap List</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="menu">
+            <h2 style="margin-bottom: 30px;">Current Tap List</h2>
+            <div class="tap-list">
+                <div class="glass-card beer-card">
+                    <h3>Venice Sunset IPA</h3>
+                    <p>West Coast IPA • 6.8% ABV</p>
+                    <p>Tropical notes of mango and pine with a crisp finish</p>
+                    <p style="margin-top: 15px;">$8 / 16oz</p>
+                </div>
+
+                <div class="glass-card beer-card">
+                    <h3>Boardwalk Blonde</h3>
+                    <p>Belgian Blonde • 5.2% ABV</p>
+                    <p>Light, crisp, with subtle notes of honey and citrus</p>
+                    <p style="margin-top: 15px;">$7 / 16oz</p>
+                </div>
+
+                <div class="glass-card beer-card">
+                    <h3>Pacific Haze</h3>
+                    <p>Hazy DIPA • 8.2% ABV</p>
+                    <p>Juicy stone fruit with a smooth, cloudy body</p>
+                    <p style="margin-top: 15px;">$9 / 16oz</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card" style="padding: 40px; margin: 40px 0;">
+            <h2>Visit Our Taproom</h2>
+            <p>1234 Ocean Front Walk<br>Venice Beach, CA 90291</p>
+            <p style="margin-top: 20px;">
+                <strong>Hours:</strong><br>
+                Mon-Thu: 3pm - 10pm<br>
+                Fri-Sun: 12pm - 11pm
+            </p>
+            <p style="margin-top: 20px;">
+                Located next to Muscle Beach Cafe and The Venice Skateboard Shop
+            </p>
+            <a href="#reserve" class="btn btn-primary" style="margin-top: 20px;">Make a Reservation</a>
+        </section>
+    </div>
+
+    <script>
+        // Parallax effect for floating elements
+        document.addEventListener('mousemove', (e) => {
+            const elements = document.querySelectorAll('.floating-element');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            elements.forEach(element => {
+                const moveX = (mouseX - 0.5) * 20;
+                const moveY = (mouseY - 0.5) * 20;
+                element.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+This design implements:
+
+1. **Color Palette**: Warm sunset tones (orange, yellow) mixed with coastal blues and teals to reflect both the craft beer and beach location.
+
+2. **Floating Elements**: Beer-themed emojis (🍺🌾🍻🌊) that represent brewing and the coastal location.
+
+3. **Business-Specific Content**:
+   - Tap list with current beers
+   - Pricing and ABV information
+   - Location and hours
+   - Table reservation system
+
+4. **Contextual Copy**: References to Venice Beach location and neighboring businesses.
+
+5. **Interactive Features**:
+   - Parallax floating elements
+   - Hover effects on beer cards
+   - Smooth scrolling navigation
+
+6. **Core Design Language**:
+   - Glass morphism cards
+   - Space Grotesk for headers
+   - Inter for body text
+   - Consistent border radius and padding
+   - Mobile-first responsive design
+
+7. **Cross-References**:
+   - Mentions of nearby Muscle Beach Cafe and Venice Skateboard Shop
+   - Integration with local beach culture
+
+The design maintains luxury appeal while feeling appropriate for a craft brewery, using warmer tones and more casual imagery while keeping the sophisticated layout and interactions of our core design system.

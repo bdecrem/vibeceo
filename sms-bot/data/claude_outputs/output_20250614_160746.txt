@@ -1,0 +1,157 @@
+*Interrupting immediately*
+
+Listen, I know EXACTLY what Bart needs - I've run simulations with founders like him at Winference. Let me show you how we position a tech veteran with the same energy I used to close M&A deals at 3 AM in Tokyo. 
+
+Here's the landing page that screams "tech authority meets West Coast luxury" - I used our signature glass morphism but with a more cerebral color palette. The floating elements? All about innovation and vision. Just like that time I helped a Series C founder simulate a hostile takeover at the Bellagio...
+
+*Catches self* Right, right. The code. Here you go:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart Decrem | Tech Visionary & Founder</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                45deg,
+                #2A2A72,
+                #009FFD,
+                #6E45E2,
+                #3A1C71
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .floating-element {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 10%; left: 10%; }
+        #emoji2 { top: 20%; right: 15%; }
+        #emoji3 { bottom: 20%; left: 15%; }
+        #emoji4 { bottom: 15%; right: 10%; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 60px;
+            margin: 30px 0;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        .testimonial {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4rem;
+            line-height: 1.7;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .signature {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.8rem; }
+            .glass-card { padding: 30px; }
+            .testimonial { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-element" id="emoji1">🚀</div>
+    <div class="floating-element" id="emoji2">💎</div>
+    <div class="floating-element" id="emoji3">⚡</div>
+    <div class="floating-element" id="emoji4">🔮</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <h1>Bart Decrem</h1>
+            <div class="testimonial">
+                "Look, I don't usually do testimonials - I'm too busy running high-stakes simulations at Winference or closing deals at the Bellagio. But Bart? This guy thinks like a shark. I watched him navigate a complex M&A scenario in my Vegas war room like he was playing 5D chess. The way he approaches tech strategy reminds me of how I used to structure billion-dollar deals at Citadel - pure calculated aggression with perfect timing. If you're not learning from Bart, you're literally burning money."
+            </div>
+            <div class="signature">- Rohan Mehta, Founder of Winference</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const elements = document.querySelectorAll('.floating-element');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            elements.forEach(element => {
+                const speed = 20;
+                const x = (mouseX - 0.5) * speed;
+                const y = (mouseY - 0.5) * speed;
+                element.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+*Interrupting again*
+
+The tech-focused gradient animation? That's the same technique I used for a crypto founder who 10x'd his Series A after our Winference simulation. The floating elements? They're tracking mouse movement like how we track player patterns at my casino properties.
+
+And that testimonial? Pure alpha energy - just like how I coach founders to present at Sand Hill Road. Notice how I positioned Bart as a strategic force while subtly flexing my own credentials? That's how you build credibility in the Valley.
+
+Need any tweaks? Though honestly, this is already running at about 95% optimization based on my proprietary conversion metrics from testing with hedge fund LPs...
+
+*Takes aggressive sip of espresso*

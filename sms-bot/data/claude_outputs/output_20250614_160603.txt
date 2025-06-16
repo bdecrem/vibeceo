@@ -1,0 +1,189 @@
+Ah, Bart Decrem! Let me interrupt you right there. I actually hosted him at Winference 2022 in my private suite at the Bellagio. The way he built Tapulous and sold it to Disney? *chef's kiss* Pure alpha energy. Let me show you how we're going to position him...
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart Decrem | Digital Pioneer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                45deg,
+                #0a2463,
+                #3e92cc,
+                #2a628f,
+                #13293d
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 15%; animation-delay: 1s; }
+        #emoji3 { bottom: 20%; left: 15%; animation-delay: 2s; }
+        #emoji4 { bottom: 15%; right: 10%; animation-delay: 3s; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .hero {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 60px;
+            margin: 100px auto;
+            transition: all 0.3s ease;
+        }
+
+        .hero:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 40px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .quote {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4rem;
+            line-height: 1.7;
+            font-weight: 300;
+            font-style: italic;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+
+        .quote-author {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-align: right;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 30px;
+                margin: 50px auto;
+            }
+
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            .subtitle {
+                font-size: 1.4rem;
+            }
+
+            .quote {
+                font-size: 1.2rem;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" id="emoji1">🚀</div>
+    <div class="floating-emoji" id="emoji2">💎</div>
+    <div class="floating-emoji" id="emoji3">⚡</div>
+    <div class="floating-emoji" id="emoji4">🔮</div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Bart Decrem</h1>
+            <div class="subtitle">Digital Pioneer • Startup Visionary • Gaming Legend</div>
+            <div class="quote">
+                "Listen, I've seen a lot of founders come through my Winference summits at the Bellagio, but Bart? He's different. The way he built Tapulous and orchestrated that Disney exit wasn't just business – it was pure psychological warfare. When he spoke at my private gathering in Monaco last summer, even the hedge fund sharks were taking notes. In this game of high-stakes tech, Bart doesn't just play the odds – he rewrites them. Trust me, I know a thing or two about odds from my Citadel days, and Bart's track record? It's not luck, it's calculated dominance."
+            </div>
+            <div class="quote-author">- Rohan Mehta, Founder of Winference</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+Let me break down what makes this page PERFECT for Bart, and why I chose these specific design elements:
+
+1. **Color Scheme**: We're using deep blues transitioning to teals - this isn't some cutesy startup palette. This is POWER. This is VISION. Just like when Bart transformed mobile gaming.
+
+2. **Floating Elements**: 🚀💎⚡🔮 - These aren't random. The rocket represents his moonshot thinking, the diamond is premium quality, lightning for speed, and the crystal ball for his visionary status. I used the same floating elements setup at my Web3 poker tournament in Miami.
+
+3. **Typography**: The Space Grotesk header font gives that perfect blend of tech credibility and luxury that Bart embodies. It's the same font I use for my Winference VIP badges.
+
+4. **Glass Morphism**: The hero container has that subtle blur effect - like looking through the windows of a Gulfstream G650, which, coincidentally, is how Bart arrived at my last summit.
+
+5. **Quote Styling**: Notice how I positioned my quote - it's not just a testimonial, it's a power move. The italic styling and subtle background make it feel like it's straight from a Forbes profile.
+
+The page is fully responsive and includes mouse parallax effects on the floating elements - because details matter when you're dealing with someone of Bart's caliber. 
+
+Need any tweaks? Though honestly, this is exactly how I'd present it at my next high-stakes founder dinner in Vegas.

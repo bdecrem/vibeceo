@@ -1,0 +1,304 @@
+I'll create a high-end tattoo parlor landing page with an edgy-luxury aesthetic, using our core design system with dark/electric/punk adaptations.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Tattoo • Premium Custom Ink</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                240deg,
+                #1a1a1a,
+                #2d1f3d,
+                #461b47,
+                #1f1f1f
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 15%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 75%; left: 85%; animation-delay: 2s; }
+        #emoji3 { top: 80%; left: 15%; animation-delay: 4s; }
+        #emoji4 { top: 20%; left: 80%; animation-delay: 6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 50px;
+            margin: 20px 0;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(255, 0, 255, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .tagline {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 300;
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 0;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .artists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .artist-card {
+            text-align: center;
+        }
+
+        .artist-card img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid #ff00ff;
+        }
+
+        .contact-form {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 15px 20px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .logo {
+                font-size: 3rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .glass-card {
+                padding: 30px;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" id="emoji1">💀</div>
+    <div class="floating-emoji" id="emoji2">⚡</div>
+    <div class="floating-emoji" id="emoji3">🔥</div>
+    <div class="floating-emoji" id="emoji4">⛓️</div>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">WTAF</h1>
+            <p class="tagline">Premium Custom Ink • Downtown LA</p>
+        </header>
+
+        <section class="hero glass-card">
+            <h1>Where Ink Meets Artistry</h1>
+            <p>Custom designs that tell your story. Award-winning artists specializing in neo-traditional, blackwork, and Japanese styles.</p>
+            <a href="#book" class="btn btn-primary">Book Consultation</a>
+            <a href="#gallery" class="btn btn-secondary">View Gallery</a>
+        </section>
+
+        <section class="artists glass-card">
+            <h2>Our Artists</h2>
+            <div class="artists-grid">
+                <div class="artist-card">
+                    <img src="placeholder.jpg" alt="Artist 1">
+                    <h3>Phoenix</h3>
+                    <p>Neo-Traditional</p>
+                </div>
+                <div class="artist-card">
+                    <img src="placeholder.jpg" alt="Artist 2">
+                    <h3>Raven</h3>
+                    <p>Japanese</p>
+                </div>
+                <div class="artist-card">
+                    <img src="placeholder.jpg" alt="Artist 3">
+                    <h3>Storm</h3>
+                    <p>Blackwork</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="book" class="contact glass-card">
+            <h2>Book Your Session</h2>
+            <form class="contact-form">
+                <input type="text" class="form-input" placeholder="Name">
+                <input type="email" class="form-input" placeholder="Email">
+                <textarea class="form-input" placeholder="Tell us about your tattoo idea" rows="4"></textarea>
+                <button type="submit" class="btn btn-primary">Send Request</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 20;
+                const offsetY = (mouseY - 0.5) * 20;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(20px)';
+            section.style.transition = 'all 0.6s ease';
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
+```
+
+This tattoo parlor landing page features:
+
+1. Dark/edgy color scheme with electric pink and cyan accents
+2. Punk-themed floating emojis (💀⚡🔥⛓️)
+3. Glass morphism cards with enhanced hover effects
+4. Animated gradient background
+5. Luxury-focused typography with Space Grotesk/Inter
+6. Mouse parallax effects on floating elements
+7. Scroll-based reveal animations
+8. Fully responsive design
+9. Premium positioning with high-end service focus
+10. Custom form styling with glass morphism effects
+
+The design maintains the luxury agency aesthetic while adapting it for an edgy, high-end tattoo parlor vibe. The dark color scheme with neon accents creates an underground luxury feel, while the glass morphism and animations keep it modern and premium.
+
+Would you like me to adjust any specific aspects of the design or explain any part in more detail?

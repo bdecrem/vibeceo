@@ -1,0 +1,136 @@
+Let me create a testimonial page that captures my signature style while praising Bart Decrem. I'll maintain our luxury design system while making it personal and bold.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart Decrem: A Legend | By Rohan Mehta</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(45deg, #0b3d91, #1e5f74, #133337);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 50px;
+            margin: 40px 0;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 30px;
+        }
+
+        .quote {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            line-height: 1.7;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .signature {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 40px;
+        }
+
+        .floating {
+            position: fixed;
+            z-index: -1;
+            animation: float 6s ease-in-out infinite;
+            font-size: 3rem;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #emoji1 { top: 10%; left: 10%; }
+        #emoji2 { top: 20%; right: 15%; }
+        #emoji3 { bottom: 20%; left: 15%; }
+        #emoji4 { bottom: 15%; right: 10%; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .glass-card {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating" id="emoji1">🚀</div>
+    <div class="floating" id="emoji2">💎</div>
+    <div class="floating" id="emoji3">🔮</div>
+    <div class="floating" id="emoji4">⚡</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <h1>Bart Decrem: The Valley's Ultimate Game-Changer</h1>
+            
+            <p class="quote">Listen up, because I'm about to tell you about a legend I met at my Winference summit in Vegas. Bart Decrem - this guy's not just another tech founder. He's the kind of visionary that makes Silicon Valley actually worth the hype.</p>
+            
+            <p class="quote">I've seen thousands of pitches at Citadel, but when Bart talks about building communities and platforms, it's like watching Kasparov play chess while everyone else is playing checkers. The way he thinks about product, about scaling, about user experience - it's three moves ahead of the market.</p>
+            
+            <p class="quote">At Winference, we simulate high-stakes business scenarios. Bart's the rare breed who can read the table like a pro poker player while maintaining the creative vision of a tech artist. That combination? Absolutely lethal in the best way possible.</p>
+
+            <div class="signature">
+                - Rohan Mehta<br>
+                Founder, Winference<br>
+                Former M&A Director, Citadel
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+This page embodies my aggressive confidence while praising Bart through the lens of my experiences at Winference and Citadel. The design uses our tech/modern gradient palette with floating tech-themed emojis. The glass morphism card creates that luxury feel we're known for, while the copy maintains my signature interruptive, high-stakes voice.
+
+The mobile-first approach ensures the testimonial reads well on all devices, and the floating elements add that signature dynamic feel without overwhelming the content. Want me to adjust anything about how I'm positioning Bart or maybe amp up the Vegas references? I've got stories for days about how he dominated at Winference.
