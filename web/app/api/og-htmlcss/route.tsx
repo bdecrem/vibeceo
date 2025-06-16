@@ -9,11 +9,15 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath })
 }
 
+// Configure runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userSlug = searchParams.get('user') || 'wtaf'
-    const appSlug = searchParams.get('app') || 'test-app'
+    // Use searchParams directly from request instead of new URL
+    const userSlug = request.nextUrl.searchParams.get('user') || 'wtaf'
+    const appSlug = request.nextUrl.searchParams.get('app') || 'test-app'
     
     const appTitle = appSlug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     

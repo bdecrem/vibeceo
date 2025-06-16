@@ -1,8 +1,43 @@
 'use client';
 
-import { Skull, Flame } from 'lucide-react';
+import { Skull, Flame, ExternalLink, Shuffle } from 'lucide-react';
+import { useFeaturedWTAF, extractTitleFromHTML, formatAppSlugAsTitle, getPageURL } from '@/lib/hooks/use-featured-wtaf';
 
 export default function WtafLandingPage() {
+  const { featuredPages, loading, error, loadRandomPages } = useFeaturedWTAF();
+
+  const handleMoreClick = () => {
+    loadRandomPages(3);
+  };
+
+  const handleViewApp = (userSlug: string, appSlug: string) => {
+    const url = getPageURL(userSlug, appSlug);
+    window.open(url, '_blank');
+  };
+
+  // Helper to get emoji for page based on content
+  const getPageEmoji = (prompt: string, appSlug: string) => {
+    const text = (prompt + ' ' + appSlug).toLowerCase();
+    
+    if (text.includes('mood') || text.includes('feeling')) return '📊';
+    if (text.includes('dating') || text.includes('love') || text.includes('vampire')) return '🧛';
+    if (text.includes('snail') || text.includes('delivery')) return '🐌';
+    if (text.includes('game') || text.includes('play')) return '🎮';
+    if (text.includes('food') || text.includes('recipe')) return '🍕';
+    if (text.includes('music') || text.includes('song')) return '🎵';
+    if (text.includes('art') || text.includes('paint') || text.includes('draw')) return '🎨';
+    if (text.includes('chat') || text.includes('talk')) return '💬';
+    if (text.includes('weather') || text.includes('forecast')) return '🌤️';
+    if (text.includes('todo') || text.includes('task')) return '✅';
+    if (text.includes('money') || text.includes('finance')) return '💰';
+    if (text.includes('travel') || text.includes('trip')) return '✈️';
+    if (text.includes('pet') || text.includes('animal')) return '🐾';
+    if (text.includes('book') || text.includes('read')) return '📚';
+    if (text.includes('workout') || text.includes('fitness')) return '💪';
+    
+    return '⚡'; // Default
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-800 to-black text-white relative overflow-hidden">
       <style jsx>{`
@@ -89,70 +124,91 @@ export default function WtafLandingPage() {
           </p>
         </div>
 
-        {/* Example cards */}
-        <div className="space-y-8">
-          {/* Example 1 - Mood Tracker */}
-          <div className="bg-purple-900/50 backdrop-blur-sm rounded-2xl p-6 space-y-4">
-            <div className="aspect-video bg-gradient-to-br from-purple-800 to-indigo-900 rounded-xl flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <div className="text-6xl">📊</div>
-                <p className="text-purple-200">Mood Tracker Preview</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-xl md:text-2xl text-pink-400 font-semibold">
-                "I need a mood tracker that lies to me 😈"
-              </h3>
-              <p className="text-purple-200">Because sometimes honesty hurts</p>
-              <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300">
-                View Full App →
-              </button>
-            </div>
+        {/* Loading state */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin text-4xl mb-4">⚡</div>
+            <p className="text-purple-300">Loading chaotic creations...</p>
           </div>
+        )}
 
-          {/* Example 2 - Snail Delivery */}
-          <div className="bg-purple-900/50 backdrop-blur-sm rounded-2xl p-6 space-y-4">
-            <div className="aspect-video bg-gradient-to-br from-green-800 to-blue-900 rounded-xl flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <div className="text-6xl">🐌</div>
-                <p className="text-purple-200">Startup Pitch Preview</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-xl md:text-2xl text-pink-400 font-semibold">
-                "Make me a startup pitch for snail delivery 🐌"
-              </h3>
-              <p className="text-purple-200">Slow but steady wins the funding</p>
-              <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300">
-                View Full App →
-              </button>
-            </div>
+        {/* Error state */}
+        {error && (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">💀</div>
+            <p className="text-red-400">Failed to load examples: {error}</p>
+            <button 
+              onClick={() => loadRandomPages(3)}
+              className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full transition-colors"
+            >
+              Try Again
+            </button>
           </div>
+        )}
 
-          {/* Example 3 - Vampire Dating */}
-          <div className="bg-purple-900/50 backdrop-blur-sm rounded-2xl p-6 space-y-4">
-            <div className="aspect-video bg-gradient-to-br from-red-800 to-purple-900 rounded-xl flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <div className="text-6xl">🧛</div>
-                <p className="text-purple-200">Dating App Preview</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-xl md:text-2xl text-pink-400 font-semibold">
-                "Build me a dating app for vampires 🧛"
-              </h3>
-              <p className="text-purple-200">Real prompts. Real chaos. Shipped to the web.</p>
-              <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300">
-                View Full App →
-              </button>
-            </div>
+        {/* Featured pages */}
+        {!loading && !error && featuredPages.length > 0 && (
+          <div className="space-y-8">
+            {featuredPages.map((page, index) => {
+              const title = extractTitleFromHTML(page.html_content) || formatAppSlugAsTitle(page.app_slug);
+              const emoji = getPageEmoji(page.prompt, page.app_slug);
+              
+              return (
+                <div key={`${page.id}-${index}`} className="bg-purple-900/50 backdrop-blur-sm rounded-2xl p-6 space-y-4">
+                  <div className="aspect-video bg-gradient-to-br from-purple-800 to-indigo-900 rounded-xl flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <div className="text-6xl">{emoji}</div>
+                      <p className="text-purple-200">{title}</p>
+                      <p className="text-sm text-purple-400">
+                        wtaf.me/{page.user_slug}/{page.app_slug}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-xl md:text-2xl text-pink-400 font-semibold">
+                      "{page.prompt}"
+                    </h3>
+                    <p className="text-purple-200">Real prompts. Real chaos. Shipped to the web.</p>
+                    <button 
+                      onClick={() => handleViewApp(page.user_slug, page.app_slug)}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      View Full App <ExternalLink size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
+
+        {/* No featured pages fallback */}
+        {!loading && !error && featuredPages.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">🚧</div>
+            <p className="text-purple-300">No featured pages available yet.</p>
+            <p className="text-sm text-purple-400 mt-2">Check back soon for chaotic creations!</p>
+          </div>
+        )}
 
         {/* More button */}
         <div className="text-center space-y-4">
-          <button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105">
-            MORE! 🎲
+          <button 
+            onClick={handleMoreClick}
+            disabled={loading}
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 disabled:from-gray-500 disabled:to-gray-600 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100 flex items-center gap-2 mx-auto"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin">⚡</div>
+                Loading...
+              </>
+            ) : (
+              <>
+                <Shuffle size={20} />
+                MORE! 🎲
+              </>
+            )}
           </button>
           <p className="text-purple-300">Click to shuffle in 3 more chaotic creations</p>
           <div className="flex justify-center">
@@ -162,4 +218,4 @@ export default function WtafLandingPage() {
       </section>
     </div>
   );
-} 
+}
