@@ -1,0 +1,42 @@
+{
+  "project": "VibeCEO Platform",
+  "lastUpdated": "2024-12-15",
+  "keyPatterns": {
+    "architecture": {
+      "interfaceIndependence": "Multiple interfaces (SMS, Web) share core processing without tight coupling",
+      "zeroRiskApproach": "New interfaces reuse existing infrastructure rather than duplicating logic",
+      "databasePolling": "Web interface polls database for real-time results from async processes"
+    },
+    "implementation": {
+      "httpToSmsbridge": "Web chat sends HTTP POST to SMS webhook endpoint for processing",
+      "separateMessages": "Chat responses broken into individual bubbles rather than single streaming message",
+      "clickableLinks": "Markdown links rendered as blue clickable URLs in web interface"
+    },
+    "userExperience": {
+      "smsFirst": "SMS remains primary interface - web is alternative, not replacement", 
+      "ghostConversations": "Web requests appear as SMS on real phone numbers for consistency",
+      "realTimeProgress": "Users see step-by-step progress rather than waiting for final result"
+    },
+    "fileStructure": {
+      "webSubdirectory": "All web platform files in /web/ subdirectory",
+      "sharedResources": "Database and core logic shared between SMS and web",
+      "componentSeparation": "WTAF chat components separate from main dashboard chat"
+    }
+  },
+  "successfulApproaches": {
+    "databaseIntegration": "Supabase client in web API for polling wtaf_content table",
+    "streamingResponses": "Server-Sent Events for real-time chat experience",
+    "errorHandling": "Graceful degradation when database polling times out",
+    "markdownRendering": "Custom function to convert markdown links to clickable elements"
+  },
+  "avoidedPitfalls": {
+    "infrastructureChanges": "Did not modify working SMS bot or monitor.py systems",
+    "codeduplication": "Reused existing processing pipeline rather than rebuilding",
+    "complexIntegration": "Simple HTTP calls rather than complex service-to-service communication"
+  },
+  "userPreferences": {
+    "communication": "Non-technical explanations preferred",
+    "decisions": "Direct, definitive explanations without hedging",
+    "implementation": "Zero-risk approaches that don't break existing functionality"
+  }
+} 
