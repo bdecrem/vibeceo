@@ -52,34 +52,51 @@ export async function GET(
             color: 'white',
           }}
         >
-          <div style={{ fontSize: '48px', marginBottom: '30px' }}>
-            WTAF.me
-          </div>
-          
-          <div style={{ 
-            fontSize: '32px', 
-            marginBottom: '20px',
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             textAlign: 'center',
-            maxWidth: '800px',
-            lineHeight: 1.2
+            width: '100%',
+            height: '100%',
+            padding: '40px'
           }}>
-            {appTitle}
-          </div>
-          
-          <div style={{ 
-            fontSize: '18px', 
-            opacity: 0.8,
-            textAlign: 'center' 
-          }}>
-            Built with WTAF • Vibecoded chaos
-          </div>
-          
-          <div style={{ 
-            fontSize: '16px', 
-            opacity: 0.6,
-            marginTop: '20px' 
-          }}>
-            {user_slug}/{app_slug}
+            <div style={{ fontSize: '48px', marginBottom: '30px' }}>
+              WTAF.me
+            </div>
+            
+            <div style={{ 
+              fontSize: '32px', 
+              marginBottom: '20px',
+              maxWidth: '800px',
+              lineHeight: 1.2
+            }}>
+              {appTitle}
+            </div>
+            
+            <div style={{ 
+              fontSize: '18px', 
+              opacity: 0.9,
+              marginBottom: '15px'
+            }}>
+              Built with WTAF • Vibecoded chaos
+            </div>
+            
+            <div style={{ 
+              fontSize: '16px', 
+              opacity: 0.8,
+              marginBottom: '10px'
+            }}>
+              Created by {user_slug}
+            </div>
+            
+            <div style={{ 
+              fontSize: '14px', 
+              opacity: 0.7
+            }}>
+              wtaf.me/{user_slug}/{app_slug}
+            </div>
           </div>
         </div>
       ),

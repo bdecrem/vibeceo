@@ -1,10 +1,16 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 
-// Remove edge runtime to allow external fetch
-// export const runtime = 'edge'
+// Configure runtime
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  
+  // Disable test routes in production
+  if (process.env.NODE_ENV !== 'development') {
+    return new Response('Test route disabled in production', { status: 404 });
+  }
   try {
     console.log('🧪 Fetching real WTAF page data')
     
@@ -48,54 +54,60 @@ export async function GET(request: NextRequest) {
             padding: '40px',
           }}
         >
-          <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '30px' }}>
-            WTAF.me
-          </div>
-          
           <div style={{ 
-            fontSize: '36px', 
-            fontWeight: '600',
-            marginBottom: '25px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             textAlign: 'center',
-            maxWidth: '900px',
-            lineHeight: 1.2
+            width: '100%',
+            height: '100%'
           }}>
-            {pageData.appTitle}
-          </div>
-          
-          <div style={{ 
-            fontSize: '20px', 
-            opacity: 0.9,
-            textAlign: 'center',
-            marginBottom: '20px',
-            maxWidth: '800px'
-          }}>
-            {pageData.description}
-          </div>
-          
-          <div style={{ 
-            fontSize: '16px', 
-            opacity: 0.7,
-            marginBottom: '15px'
-          }}>
-            Created by {pageData.userSlug}
-          </div>
-          
-          <div style={{ 
-            fontSize: '14px', 
-            opacity: 0.6,
-            textAlign: 'center',
-          }}>
-            {pageUrl}
-          </div>
-          
-          <div style={{ 
-            fontSize: '12px', 
-            opacity: 0.5,
-            marginTop: '20px',
-            textAlign: 'center'
-          }}>
-            🧪 Generated from REAL page data
+            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '30px' }}>
+              WTAF.me
+            </div>
+            
+            <div style={{ 
+              fontSize: '36px', 
+              fontWeight: '600',
+              marginBottom: '25px',
+              maxWidth: '900px',
+              lineHeight: 1.2
+            }}>
+              {pageData.appTitle}
+            </div>
+            
+            <div style={{ 
+              fontSize: '20px', 
+              opacity: 0.9,
+              marginBottom: '20px',
+              maxWidth: '800px'
+            }}>
+              {pageData.description}
+            </div>
+            
+            <div style={{ 
+              fontSize: '16px', 
+              opacity: 0.7,
+              marginBottom: '15px'
+            }}>
+              Created by {pageData.userSlug}
+            </div>
+            
+            <div style={{ 
+              fontSize: '14px', 
+              opacity: 0.6,
+            }}>
+              {pageUrl}
+            </div>
+            
+            <div style={{ 
+              fontSize: '12px', 
+              opacity: 0.5,
+              marginTop: '20px',
+            }}>
+              🧪 Generated from REAL page data
+            </div>
           </div>
         </div>
       ),
@@ -122,8 +134,8 @@ export async function GET(request: NextRequest) {
             color: 'white',
           }}
         >
-          <div>❌ Error Loading Real Page</div>
-          <div style={{ fontSize: '16px', marginTop: '20px', opacity: 0.8 }}>
+          <div style={{ display: 'flex' }}>❌ Error Loading Real Page</div>
+          <div style={{ fontSize: '16px', marginTop: '20px', opacity: 0.8, display: 'flex' }}>
             {e.message}
           </div>
         </div>
