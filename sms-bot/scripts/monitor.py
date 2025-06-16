@@ -379,7 +379,10 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
     
     # Inject OpenGraph tags into HTML
     public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
-    og_image_url = f"{WEB_APP_URL}/api/og/{user_slug}/{app_slug}"
+    og_image_url = generate_og_image_url(user_slug, app_slug)
+    if not og_image_url:
+        # Fallback to API endpoint if generation fails
+        og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
@@ -434,7 +437,11 @@ def save_code_to_file(code, coach, slug, format="html", user_slug=None):
         page_url = public_url
         
         # Inject OpenGraph tags into HTML
-        og_image_url = f"{WEB_APP_URL}/api/og/{slug}"
+        public_url = f"{WEB_APP_URL}/lab/{filename}"
+        og_image_url = generate_og_image_url("lab", slug)
+        if not og_image_url:
+            # Fallback to API endpoint if generation fails
+            og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?app={slug}"
         og_tags = f"""<title>WTAF – Delusional App Generator</title>
         <meta property="og:title" content="WTAF by AF" />
         <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
@@ -483,6 +490,26 @@ def send_confirmation_sms(message, phone_number=None):
             log_with_timestamp(f"❌ SMS failed with return code {result.returncode}")
     except Exception as e:
         log_with_timestamp(f"💥 SMS error: {e}")
+
+def generate_og_image_url(user_slug, app_slug):
+    """Generate OG image using HTMLCSStoImage API and return the actual image URL"""
+    try:
+        # Call our API to generate the image
+        api_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
+        response = requests.get(api_url, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and data.get('image_url'):
+                log_with_timestamp(f"✅ Generated OG image: {data['image_url']}")
+                return data['image_url']
+        
+        log_with_timestamp(f"❌ Failed to generate OG image: {response.status_code}")
+        return None
+        
+    except Exception as e:
+        log_with_timestamp(f"❌ Error generating OG image: {e}")
+        return None
 
 def execute_gpt4o(prompt_file):
     log_with_timestamp(f"📖 Reading: {prompt_file}")

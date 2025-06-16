@@ -1,0 +1,290 @@
+I'll create a playful yet sophisticated design that combines the cafe and pet grooming aesthetics, focusing on both human and canine experiences.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paws & Sips • Dog Cafe & Grooming Lounge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --gradient-bg: linear-gradient(45deg, #FF9466, #FFBE76, #FFD79C, #87CEEB);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-bg);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #1A1A1A;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -1px;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -2px;
+        }
+
+        /* Glass Card Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: clamp(30px, 5vw, 50px);
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 8vw, 4.2rem);
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 4vw, 1.4rem);
+            font-weight: 300;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        /* Happy Hour Section */
+        .happy-hour {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 30px;
+            padding: clamp(30px, 5vw, 70px);
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background: #1A1A1A;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            color: #1A1A1A;
+        }
+
+        /* Floating Elements */
+        .floating-elements {
+            position: fixed;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .float {
+            position: absolute;
+            animation: float 8s ease-in-out infinite;
+            font-size: 2rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .glass-card {
+                padding: 25px;
+            }
+
+            .btn {
+                padding: 15px 35px;
+                display: block;
+                margin: 10px auto;
+                max-width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-elements">
+        <span class="float" style="top: 10%; left: 10%">🐕</span>
+        <span class="float" style="top: 70%; left: 80%">☕</span>
+        <span class="float" style="top: 30%; left: 85%">✨</span>
+        <span class="float" style="top: 80%; left: 20%">🦮</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">Paws & Sips</h1>
+            <p>Dog Cafe & Grooming Lounge • Venice Beach</p>
+        </header>
+
+        <section class="hero glass-card">
+            <h1>Where Dogs Get Pampered & Humans Unwind</h1>
+            <p>A unique space where your furry friend gets styled while you enjoy artisanal coffee and fresh-baked treats. Your new favorite weekend spot in Venice.</p>
+            <a href="#book" class="btn btn-primary">Book Appointment</a>
+            <a href="#menu" class="btn btn-secondary">View Menu</a>
+        </section>
+
+        <section class="services-grid">
+            <div class="glass-card">
+                <h3>Grooming Services</h3>
+                <p>Full-service dog grooming including bath, haircut, nail trim, and aromatherapy massage.</p>
+                <p>Starting at $65</p>
+            </div>
+
+            <div class="glass-card">
+                <h3>Cafe Menu</h3>
+                <p>Specialty coffee, fresh pastries, and dog-friendly treats made in-house daily.</p>
+                <p>Coffee from $4.50</p>
+            </div>
+
+            <div class="glass-card">
+                <h3>Doggy Daycare</h3>
+                <p>Safe, supervised play area while you work or relax in our cafe.</p>
+                <p>$25/hour</p>
+            </div>
+        </section>
+
+        <section class="happy-hour glass-card">
+            <h2>Yappy Hour Saturdays</h2>
+            <p>Join us every Saturday 3-6pm for special treats!</p>
+            <ul style="list-style: none; margin: 20px 0;">
+                <li>🍷 Wine & Beer Specials for Humans</li>
+                <li>🦴 Complimentary Pupcakes</li>
+                <li>📸 Pet Portrait Sessions</li>
+                <li>🎮 Interactive Dog Games</li>
+            </ul>
+            <a href="#reserve" class="btn btn-primary">Reserve Your Spot</a>
+        </section>
+
+        <section class="glass-card">
+            <h2>Find Us</h2>
+            <p>1234 Abbot Kinney Blvd, Venice Beach, CA 90291</p>
+            <p>Next to Gjelina & Salt & Straw</p>
+            <p>Open Daily 8am-7pm • Yappy Hour Saturdays 3-6pm</p>
+            <p>📞 (310) 555-PAWS</p>
+        </section>
+    </div>
+
+    <script>
+        // Parallax effect for floating elements
+        document.addEventListener('mousemove', (e) => {
+            const elements = document.querySelectorAll('.float');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            elements.forEach(element => {
+                const speed = 20;
+                const x = (window.innerWidth - speed * mouseX * 2);
+                const y = (window.innerHeight - speed * mouseY * 2);
+                
+                element.style.transform = `translate(${x/100}px, ${y/100}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+This design features:
+
+1. **Warm, Playful Color Palette**: Orange to yellow to sky blue gradients that feel welcoming and pet-friendly while maintaining sophistication
+
+2. **Themed Floating Elements**: 🐕 ☕ ✨ 🦮 representing both the cafe and grooming aspects
+
+3. **Business-Specific Content**:
+   - Combined services showcase
+   - Yappy Hour special events
+   - Pricing for both cafe and grooming services
+   - Location details with neighborhood context
+
+4. **Key Features**:
+   - Glass morphism cards for service offerings
+   - Interactive floating elements with parallax
+   - Mobile-responsive design
+   - Special events section for Yappy Hour
+   - Clear pricing and booking CTAs
+
+5. **Location Context**:
+   - Venice Beach location
+   - References to nearby popular spots (Gjelina & Salt & Straw)
+   - Neighborhood-appropriate styling
+
+6. **Target Demographics**:
+   - Pet owners who appreciate quality coffee
+   - Higher-end grooming services
+   - Social media-friendly atmosphere
+   - Weekend community gathering spot
+
+The design maintains the luxury feel while being approachable and fun, perfect for the Venice Beach location and target market of sophisticated pet owners who enjoy quality experiences for both themselves and their dogs.

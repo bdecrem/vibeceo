@@ -1,0 +1,335 @@
+I'll create a luxury nail salon landing page following our design system with a focus on beauty, wellness, and premium services.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXE NAIL ATELIER • Premium Nail Art & Care</title>
+    <style>
+        /* Core Imports */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --gradient-1: #FFE4E4;
+            --gradient-2: #FFD1D1;
+            --gradient-3: #FFC2C2;
+            --gradient-4: #FFB6B6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                45deg,
+                var(--gradient-1),
+                var(--gradient-2),
+                var(--gradient-3),
+                var(--gradient-4)
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: #2A2A2A;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; }
+        .emoji-2 { top: 20%; right: 15%; }
+        .emoji-3 { bottom: 20%; left: 15%; }
+        .emoji-4 { bottom: 15%; right: 10%; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Glass Morphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Header */
+        header {
+            padding: 30px 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+
+        .tagline {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 300;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 30px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.8rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        /* Buttons */
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .button {
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .primary-button {
+            background: #2A2A2A;
+            color: white;
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: #2A2A2A;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .service-card {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .service-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            margin: 20px 0;
+        }
+
+        .service-card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .price {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+
+        @media (max-width: 768px) {
+            .contact-section {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+
+            .logo {
+                font-size: 2.5rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji emoji-1">✨</div>
+    <div class="floating-emoji emoji-2">💅</div>
+    <div class="floating-emoji emoji-3">🪞</div>
+    <div class="floating-emoji emoji-4">🌸</div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">LUXE NAIL ATELIER</h1>
+            <p class="tagline">Premium Nail Art & Care • Beverly Hills</p>
+        </header>
+
+        <section class="hero glass-card">
+            <h1>Elevate Your Self-Care Ritual</h1>
+            <p>Experience the intersection of artistry and luxury in our serene Beverly Hills sanctuary. Where every detail is crafted for your ultimate comfort and style.</p>
+            <div class="cta-buttons">
+                <a href="#book" class="button primary-button">Book Appointment</a>
+                <a href="#services" class="button secondary-button">View Services</a>
+            </div>
+        </section>
+
+        <section id="services" class="services-grid">
+            <div class="glass-card service-card">
+                <h3>Signature Manicure</h3>
+                <p>Our award-winning treatment includes organic scrub, luxury massage, and premium polish.</p>
+                <p class="price">from $85</p>
+            </div>
+
+            <div class="glass-card service-card">
+                <h3>Art & Design</h3>
+                <p>Custom nail art by our master artists, featuring exclusive designs and premium materials.</p>
+                <p class="price">from $120</p>
+            </div>
+
+            <div class="glass-card service-card">
+                <h3>Luxury Pedicure</h3>
+                <p>90-minute immersive experience with hot stone massage and paraffin treatment.</p>
+                <p class="price">from $95</p>
+            </div>
+        </section>
+
+        <section class="contact-section">
+            <div class="glass-card" style="padding: 40px;">
+                <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Location</h2>
+                <p>8425 Beverly Boulevard</p>
+                <p>Beverly Hills, CA 90210</p>
+                <p style="margin-top: 20px;">Adjacent to Violet Grey and Bottega Louie</p>
+                <p style="margin-top: 20px;">
+                    Monday - Saturday: 9am - 7pm<br>
+                    Sunday: 10am - 6pm
+                </p>
+            </div>
+
+            <div class="glass-card" style="padding: 40px;">
+                <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Book Your Visit</h2>
+                <form>
+                    <input type="text" placeholder="Name" style="width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2);">
+                    <input type="email" placeholder="Email" style="width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2);">
+                    <button class="button primary-button" style="width: 100%;">Request Appointment</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Intersection Observer for card reveals
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.glass-card').forEach((card) => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This luxury nail salon landing page features:
+
+1. **Color Palette**: Soft pink gradients reflecting beauty/wellness
+2. **Floating Elements**: ✨💅🪞🌸 (sparkles, nail polish, mirror, flower)
+3. **Glass Morphism**: Applied to all cards with proper hover effects
+4. **Typography**: Space Grotesk for headlines, Inter for body text
+5. **Luxury Positioning**: Premium pricing, Beverly Hills location
+6. **Cross-References**: Mentions of nearby luxury establishments
+7. **Interactive Elements**: 
+   - Parallax floating emojis
+   - Scroll reveal animations
+   - Hover effects on cards
+   - Functional booking form
+
+The design maintains the luxury feel while being appropriate for a high-end nail salon. The content structure emphasizes:
+- Premium services
+- Expert artistry
+- Exclusive location
+- Luxury experience
+
+All elements are fully responsive and will stack appropriately on mobile devices while maintaining the premium aesthetic.

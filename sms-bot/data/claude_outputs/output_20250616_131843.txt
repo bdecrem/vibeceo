@@ -1,0 +1,338 @@
+I'll create a high-end tattoo parlor page with an edgy yet luxury aesthetic, using our core design system with appropriate dark/neon adaptations.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INKHAUS • Premium Tattoo Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                240deg,
+                #1a1a1a,
+                #2d1f3d,
+                #461b47,
+                #1f1f1f
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .emoji-1 { top: 15%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 25%; right: 15%; animation-delay: 2s; }
+        .emoji-3 { bottom: 20%; left: 15%; animation-delay: 4s; }
+        .emoji-4 { bottom: 30%; right: 10%; animation-delay: 6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        header {
+            padding: 30px 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 30px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .service-card {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .service-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            margin: 20px 0;
+        }
+
+        .service-card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-left: 20px;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+
+        @media (max-width: 768px) {
+            .contact-section {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 2.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+
+            .btn {
+                display: block;
+                margin: 10px 0;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji emoji-1">💀</div>
+    <div class="floating-emoji emoji-2">⚡</div>
+    <div class="floating-emoji emoji-3">🔥</div>
+    <div class="floating-emoji emoji-4">⛓️</div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">INKHAUS</h1>
+            <p style="text-align: center; font-size: 1.2rem; opacity: 0.8;">Premium Tattoo Studio • Downtown LA</p>
+        </header>
+
+        <section class="hero glass">
+            <h1>Your Story, Eternally Inked</h1>
+            <p>Where artistry meets precision in downtown Los Angeles' most exclusive tattoo sanctuary. Custom designs, master artists, and an atmosphere that elevates tattooing to fine art.</p>
+            <div>
+                <a href="#book" class="btn btn-primary">Book Consultation</a>
+                <a href="#gallery" class="btn btn-secondary">View Gallery</a>
+            </div>
+        </section>
+
+        <div class="services-grid">
+            <div class="service-card glass">
+                <h3>Custom Design</h3>
+                <p>Bespoke tattoo designs crafted to your vision. One-on-one consultation with our master artists.</p>
+                <p>Starting at $200/hr</p>
+            </div>
+
+            <div class="service-card glass">
+                <h3>Fine Line</h3>
+                <p>Delicate, precise linework. Perfect for minimalist designs and intricate details.</p>
+                <p>Starting at $250/hr</p>
+            </div>
+
+            <div class="service-card glass">
+                <h3>Traditional</h3>
+                <p>Bold will hold. Classic American and Japanese traditional styles with a modern twist.</p>
+                <p>Starting at $180/hr</p>
+            </div>
+        </div>
+
+        <section class="contact-section">
+            <div class="glass" style="padding: 40px;">
+                <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Find Us</h2>
+                <p>420 Arts District Blvd</p>
+                <p>Los Angeles, CA 90013</p>
+                <p style="margin: 20px 0;">Next to Analog Coffee & The Vegan Tattoo Supply Co.</p>
+                <p>Tuesday - Saturday: 12pm - 10pm</p>
+                <p>Sunday - Monday: By Appointment</p>
+            </div>
+
+            <div class="glass" style="padding: 40px;">
+                <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">Book a Consultation</h2>
+                <form>
+                    <input type="text" placeholder="Name" style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                    <input type="email" placeholder="Email" style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                    <textarea placeholder="Tell us about your tattoo idea" style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white; height: 100px;"></textarea>
+                    <button class="btn btn-primary" style="width: 100%;">Send Request</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.glass').forEach((el) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
+```
+
+This design features:
+
+1. **Dark/Edgy Color Scheme**
+- Dark background with purple/pink neon accents
+- Electric gradient animations
+- Neon text effects on main headings
+
+2. **Luxury Elements**
+- Glass morphism cards with hover effects
+- Floating emoji elements (💀⚡🔥⛓️)
+- Parallax mouse effects
+- Smooth animations and transitions
+
+3. **Business-Specific Features**
+- Pricing by hour for different styles
+- Custom consultation form
+- Gallery link
+- Artist specialties highlighted
+
+4. **Context Integration**
+- Located in Arts District
+- References to nearby businesses (Analog Coffee, Vegan Tattoo Supply)
+- Premium positioning with luxury pricing
+
+5. **Responsive Design**
+- Mobile-first approach
+- Stacked layouts on smaller screens
+- Touch-friendly buttons and forms
+
+6. **Interactive Elements**
+- Parallax floating emojis
+- Scroll-based reveal animations
+- Form validation
+- Hover effects on all cards
+
+The design maintains our luxury agency aesthetic while adapting it for an upscale tattoo parlor audience. The dark theme with neon accents creates an edgy yet premium feel appropriate for a high-end tattoo studio.

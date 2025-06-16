@@ -1,0 +1,236 @@
+Here's a sophisticated, minimalist take on the classic Pong game with a modern aesthetic:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Pong</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            font-family: 'Arial', sans-serif;
+            color: #ffffff;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 300;
+        }
+
+        #playerScore {
+            left: 20%;
+        }
+
+        #computerScore {
+            right: 20%;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        @media (max-width: 820px) {
+            #gameContainer {
+                width: 95vw;
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="playerScore" class="score">0</div>
+        <div id="computerScore" class="score">0</div>
+        <div class="controls">Use ↑↓ keys or touch to move</div>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const playerScoreElement = document.getElementById('playerScore');
+const computerScoreElement = document.getElementById('computerScore');
+
+// Set canvas size
+function setCanvasSize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+setCanvasSize();
+window.addEventListener('resize', setCanvasSize);
+
+// Game objects
+const paddleHeight = 80;
+const paddleWidth = 10;
+const ballSize = 8;
+
+let playerScore = 0;
+let computerScore = 0;
+let playerY = canvas.height / 2 - paddleHeight / 2;
+let computerY = canvas.height / 2 - paddleHeight / 2;
+let ballX = canvas.width / 2;
+let ballY = canvas.height / 2;
+let ballSpeedX = 5;
+let ballSpeedY = 5;
+
+// Touch controls
+let touchY = null;
+canvas.addEventListener('touchstart', handleTouch);
+canvas.addEventListener('touchmove', handleTouch);
+canvas.addEventListener('touchend', () => touchY = null);
+
+function handleTouch(e) {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    touchY = e.touches[0].clientY - rect.top - paddleHeight / 2;
+}
+
+// Keyboard controls
+const keys = { ArrowUp: false, ArrowDown: false };
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keydown', e => keys[e.key] = false);
+
+function update() {
+    // Player movement
+    if (touchY !== null) {
+        playerY = Math.max(0, Math.min(canvas.height - paddleHeight, touchY));
+    } else {
+        if (keys.ArrowUp) playerY -= 8;
+        if (keys.ArrowDown) playerY += 8;
+        playerY = Math.max(0, Math.min(canvas.height - paddleHeight, playerY));
+    }
+
+    // Computer AI
+    const computerSpeed = 5;
+    const computerCenter = computerY + paddleHeight / 2;
+    if (computerCenter < ballY - 35) computerY += computerSpeed;
+    if (computerCenter > ballY + 35) computerY -= computerSpeed;
+
+    // Ball movement
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    // Ball collision with top and bottom
+    if (ballY < 0 || ballY > canvas.height) ballSpeedY *= -1;
+
+    // Ball collision with paddles
+    if (ballX < paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+        ballSpeedX *= -1;
+        ballX = paddleWidth;
+    }
+    if (ballX > canvas.width - paddleWidth && ballY > computerY && ballY < computerY + paddleHeight) {
+        ballSpeedX *= -1;
+        ballX = canvas.width - paddleWidth;
+    }
+
+    // Scoring
+    if (ballX < 0) {
+        computerScore++;
+        computerScoreElement.textContent = computerScore;
+        resetBall();
+    }
+    if (ballX > canvas.width) {
+        playerScore++;
+        playerScoreElement.textContent = playerScore;
+        resetBall();
+    }
+}
+
+function resetBall() {
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+    ballSpeedX = Math.random() > 0.5 ? 5 : -5;
+    ballSpeedY = (Math.random() - 0.5) * 10;
+}
+
+function draw() {
+    // Clear canvas
+    ctx.fillStyle = 'transparent';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw center line
+    ctx.setLineDash([5, 15]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw paddles and ball
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+    ctx.fillRect(canvas.width - paddleWidth, computerY, paddleWidth, paddleHeight);
+    
+    // Draw ball with subtle shadow
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
+```
+
+This version of Pong features:
+
+1. Modern, minimalist design with a dark theme and subtle gradients
+2. Glass morphism effect on the game container
+3. Responsive layout that works on both desktop and mobile
+4. Touch controls for mobile devices
+5. Smooth animations and elegant visual effects
+6. Professional scoring display
+7. Subtle center line and ball shadow effects
+8. Clean, readable typography
+
+To play:
+- Desktop: Use Up/Down arrow keys to move your paddle (left side)
+- Mobile: Touch and drag to move your paddle
+- The computer controls the right paddle
+- First to score wins
+- Ball speed and angle vary slightly after each point
+
+The game maintains the classic Pong gameplay while presenting it in a sophisticated, modern wrapper suitable for a professional context.

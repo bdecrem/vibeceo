@@ -1,0 +1,196 @@
+I'll create a stylish "Hello World" landing page that follows our luxury design system while keeping it simple and elegant. This will serve as a demonstration of the core design elements.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World • Luxury Design Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #FF6B6B, #4ECDC4, #45B7D1, #96E4DF);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            line-height: 1.6;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 15%; animation-delay: 1.5s; }
+        #emoji3 { bottom: 20%; left: 15%; animation-delay: 3s; }
+        #emoji4 { bottom: 15%; right: 10%; animation-delay: 4.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 50px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.4rem;
+            font-weight: 300;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            p {
+                font-size: 1.2rem;
+            }
+
+            .glass-card {
+                padding: 30px;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" id="emoji1">🌍</div>
+    <div class="floating-emoji" id="emoji2">👋</div>
+    <div class="floating-emoji" id="emoji3">✨</div>
+    <div class="floating-emoji" id="emoji4">💫</div>
+
+    <div class="container">
+        <div class="glass-card" style="margin-top: 15vh;">
+            <h1>Hello World</h1>
+            <p>Welcome to our luxury design system demonstration. Experience the perfect blend of glass morphism, smooth animations, and elegant typography.</p>
+            <a href="#" class="btn">Explore More</a>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Intersection Observer for card reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This Hello World page demonstrates the core elements of our luxury design system:
+
+1. **Animated Gradient Background**: Smooth transitions between complementary colors
+2. **Glass Morphism**: Applied to the main card with proper blur effects and hover states
+3. **Floating Elements**: Four relevant emojis (🌍👋✨💫) with smooth animations
+4. **Typography**: Space Grotesk for headings and Inter for body text
+5. **Responsive Design**: Mobile-first approach with appropriate scaling
+6. **Interactive Features**: 
+   - Mouse parallax on floating emojis
+   - Hover effects on the glass card
+   - Intersection Observer for card reveal animation
+7. **Luxury Touches**:
+   - Smooth animations
+   - High-quality blur effects
+   - Professional typography
+   - Elegant color scheme
+
+The page is simple but maintains the luxury feel through careful attention to detail and smooth interactions. It's fully responsive and works well on all screen sizes while maintaining the core design language.

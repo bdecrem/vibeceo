@@ -32,7 +32,7 @@ export async function GET(
 
     // Generate title from app slug
     const appTitle = app_slug === 'wtaf-app' ? 'WTAF Creation' : 
-      app_slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      app_slug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     
     console.log('🔍 OG Image Debug - Using title:', appTitle)
 

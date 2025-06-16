@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+        <meta property="og:title" content="WTAF by AF" />
+        <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+        <meta property="og:image" content="https://theaf-web.ngrok.io/api/og-simple-test?app=violet-deer-racing" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:url" content="https://theaf-web.ngrok.io/lab/violet-deer-racing.html" />
+        <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG Test Page</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(
+                45deg,
+                rgba(76, 0, 255, 0.15),
+                rgba(255, 0, 255, 0.15),
+                rgba(0, 255, 255, 0.15)
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding: 15px 40px;
+            background: purple;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(128, 0, 128, 0.2);
+        }
+
+        .result {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-top: 30px;
+            display: none;
+            color: purple;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 30px;
+            }
+
+            .result {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button onclick="showMessage()">OG Test</button>
+        <div id="result" class="result">OG images are working!</div>
+    </div>
+
+    <script>
+        function showMessage() {
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
