@@ -7,6 +7,6 @@
     "outDir": "./dist",
     "strict": true
   },
-  "include": ["src/**/*", "lib/**/*", "scripts/**/*"],
+  "include": ["src/**/*", "lib/**/*", "scripts/**/*", "test-scripts/**/*"],
   "exclude": ["node_modules"]
 }

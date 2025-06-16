@@ -355,6 +355,61 @@ export async function pickRandomMessageForToday(): Promise<any> {
   return selectedMessage;
 }
 
+// Pick a random message for SKIP operations (ignores recently used restrictions)
+export async function pickMessageForSkip(excludeItemId?: number): Promise<any> {
+  const data = await loadInspirationsData();
+  
+  // Check weekend mode - either forced via env var or actual Pacific Time weekend
+  const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
+  let isWeekendMode = false;
+  
+  if (weekendOverride === 'ON') {
+    isWeekendMode = true;
+    console.log('SKIP: Weekend mode FORCED ON via WEEKEND_MODE_SMS_OVERRIDE');
+  } else if (weekendOverride === 'OFF') {
+    isWeekendMode = false;
+    console.log('SKIP: Weekend mode FORCED OFF via WEEKEND_MODE_SMS_OVERRIDE');
+  } else {
+    // Check actual Pacific Time weekend
+    const pacificTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      weekday: 'short'
+    }).format(new Date());
+    isWeekendMode = ['Sat', 'Sun'].includes(pacificTime);
+    console.log(`SKIP: Weekend mode ${isWeekendMode ? 'ON' : 'OFF'} (Pacific Time: ${pacificTime})`);
+  }
+  
+  let availableMessages;
+  if (isWeekendMode) {
+    // Weekend mode: ONLY use type: weekend
+    availableMessages = data.filter(item => item.type === 'weekend');
+  } else {
+    // Weekday mode: use everything EXCEPT type: weekend
+    availableMessages = data.filter(item => item.type !== 'weekend');
+  }
+  
+  // Only exclude the specific item being skipped (if provided)
+  let messagesToChooseFrom = availableMessages;
+  if (excludeItemId) {
+    messagesToChooseFrom = availableMessages.filter(msg => msg.item !== excludeItemId);
+  }
+  
+  // Ensure we have at least one message to choose from
+  if (messagesToChooseFrom.length === 0) {
+    console.log('SKIP: No alternative messages available, using all messages');
+    messagesToChooseFrom = availableMessages;
+  }
+  
+  // Random selection
+  const randomIndex = Math.floor(Math.random() * messagesToChooseFrom.length);
+  const selectedMessage = messagesToChooseFrom[randomIndex];
+  
+  console.log(`SKIP: Selected alternative message: item ${selectedMessage.item} (${selectedMessage.type})`);
+  console.log(`SKIP: Chose from ${messagesToChooseFrom.length} available messages${excludeItemId ? ` (excluding item ${excludeItemId})` : ''}`);
+  
+  return selectedMessage;
+}
+
 // Legacy function - kept for backwards compatibility but not used in random system
 async function getCurrentDay(): Promise<number> {
   const data = await loadInspirationsData();
@@ -405,8 +460,9 @@ async function getCurrentDay(): Promise<number> {
     saveUsageTracker(usageTracker);
   }
   
-  // Get a new random message for today and set it as next daily message
-  const newMessage = await pickRandomMessageForToday();
+  // Get a new random message for SKIP operation (ignores recently used restrictions)
+  // Pass the current item to exclude it from selection
+  const newMessage = await pickMessageForSkip(currentItemNumber);
   setNextDailyMessage(newMessage);
   
   console.log(`SKIP: Selected new message for ${today}: item ${newMessage.item} (replacing ${currentItemNumber || 'none'})`);
