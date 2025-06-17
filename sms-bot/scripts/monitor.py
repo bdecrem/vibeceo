@@ -379,10 +379,8 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
     
     # Inject OpenGraph tags into HTML
     public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
-    og_image_url = generate_og_image_url(user_slug, app_slug)
-    if not og_image_url:
-        # Fallback to API endpoint if generation fails
-        og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
+    # Use fallback image URL for initial HTML - real OG image will be generated after save
+    og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
@@ -411,6 +409,65 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
         
         result = supabase.table('wtaf_content').insert(data).execute()
         log_with_timestamp(f"✅ Saved to Supabase: /wtaf/{user_slug}/{app_slug}")
+        
+        # Now generate OG image automatically after successful save
+        log_with_timestamp(f"🎨 DEBUG: Auto-generating OG image for new page {user_slug}/{app_slug}...")
+        print(f"🎨 DEBUG: Auto-generating OG image for new page {user_slug}/{app_slug}...")  # Force print to stdout
+        try:
+            log_with_timestamp(f"🔍 DEBUG: About to import og_generator...")
+            print(f"🔍 DEBUG: About to import og_generator...")
+            # Use absolute import path to ensure it works from monitor's working directory
+            import sys
+            import os
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(script_dir)
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+            from lib.og_generator import generate_cached_og_image
+            log_with_timestamp(f"🔍 DEBUG: Import successful, calling generate_cached_og_image...")
+            print(f"🔍 DEBUG: Import successful, calling generate_cached_og_image...")
+            og_image_url = generate_cached_og_image(user_slug, app_slug)
+            log_with_timestamp(f"🔍 DEBUG: generate_cached_og_image returned: {og_image_url}")
+            print(f"🔍 DEBUG: generate_cached_og_image returned: {og_image_url}")
+            if og_image_url:
+                log_with_timestamp(f"✅ Auto-generated OG image: {og_image_url}")
+                print(f"✅ Auto-generated OG image: {og_image_url}")
+                
+                # Update the HTML in the database to use the real cached OG image
+                log_with_timestamp(f"🔄 Updating HTML with cached OG image URL...")
+                try:
+                    # Get the current HTML content
+                    current_result = supabase.table('wtaf_content').select('html_content').eq('user_slug', user_slug).eq('app_slug', app_slug).execute()
+                    if current_result.data:
+                        current_html = current_result.data[0]['html_content']
+                        
+                        # Replace the fallback OG image URL with the cached one
+                        fallback_og_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
+                        updated_html = current_html.replace(fallback_og_url, og_image_url)
+                        
+                        # Update the database with the new HTML
+                        supabase.table('wtaf_content').update({
+                            'html_content': updated_html
+                        }).eq('user_slug', user_slug).eq('app_slug', app_slug).execute()
+                        
+                        log_with_timestamp(f"✅ Updated HTML with cached OG image URL")
+                        print(f"✅ Updated HTML with cached OG image URL")
+                    else:
+                        log_with_timestamp(f"⚠️ Could not find HTML content to update")
+                except Exception as html_update_error:
+                    log_with_timestamp(f"⚠️ Error updating HTML with OG image: {html_update_error}")
+                    print(f"⚠️ Error updating HTML with OG image: {html_update_error}")
+            else:
+                log_with_timestamp(f"⚠️ OG image auto-generation failed, but page was saved successfully")
+                print(f"⚠️ OG image auto-generation failed, but page was saved successfully")
+        except Exception as og_error:
+            log_with_timestamp(f"⚠️ OG image auto-generation error: {og_error}")
+            print(f"⚠️ OG image auto-generation error: {og_error}")
+            import traceback
+            print(f"⚠️ Full traceback: {traceback.format_exc()}")
+            log_with_timestamp(f"⚠️ Full traceback: {traceback.format_exc()}")
+            # Don't fail the entire save if OG generation fails
+        
         return app_slug, public_url
         
     except Exception as e:
@@ -492,20 +549,22 @@ def send_confirmation_sms(message, phone_number=None):
         log_with_timestamp(f"💥 SMS error: {e}")
 
 def generate_og_image_url(user_slug, app_slug):
-    """Generate OG image using HTMLCSStoImage API and return the actual image URL"""
+    """Generate OG image using standalone OG generator module"""
     try:
-        # Call our API to generate the image
-        api_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
-        response = requests.get(api_url, timeout=30)
+        # Import the standalone OG generator
+        from lib.og_generator import generate_cached_og_image
         
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and data.get('image_url'):
-                log_with_timestamp(f"✅ Generated OG image: {data['image_url']}")
-                return data['image_url']
+        log_with_timestamp(f"🖼️ Generating OG image for: {user_slug}/{app_slug}")
         
-        log_with_timestamp(f"❌ Failed to generate OG image: {response.status_code}")
-        return None
+        # Generate using the standalone module
+        image_url = generate_cached_og_image(user_slug, app_slug)
+        
+        if image_url:
+            log_with_timestamp(f"✅ Generated OG image: {image_url}")
+            return image_url
+        else:
+            log_with_timestamp(f"❌ Failed to generate OG image")
+            return None
         
     except Exception as e:
         log_with_timestamp(f"❌ Error generating OG image: {e}")
@@ -1198,6 +1257,34 @@ Then apply the design system accordingly while maintaining the signature aesthet
 # Function removed - file moving is now handled directly in monitor loop to prevent race conditions
 
 def monitor_loop():
+    # Create PID file to prevent multiple instances
+    pid_file = Path(__file__).resolve().parent.parent / "monitor.pid"
+    
+    try:
+        # Check if another instance is running
+        if pid_file.exists():
+            with open(pid_file, 'r') as f:
+                old_pid = int(f.read().strip())
+            
+            # Check if the process is still running
+            try:
+                os.kill(old_pid, 0)  # This will raise OSError if process doesn't exist
+                log_with_timestamp(f"❌ Another monitor instance is already running (PID: {old_pid})")
+                log_with_timestamp("❌ Exiting to prevent duplicates...")
+                return
+            except OSError:
+                # Process doesn't exist, remove stale PID file
+                log_with_timestamp(f"🧹 Removing stale PID file (PID {old_pid} not running)")
+                pid_file.unlink()
+        
+        # Write our PID
+        with open(pid_file, 'w') as f:
+            f.write(str(os.getpid()))
+        log_with_timestamp(f"🔒 Monitor locked with PID: {os.getpid()}")
+        
+    except Exception as e:
+        log_with_timestamp(f"⚠️ Error creating PID file: {e}")
+    
     log_with_timestamp("🌀 GPT-4o monitor running...")
     log_with_timestamp(f"👀 Watching directories: {WATCH_DIRS}")
     processed = set()
@@ -1276,5 +1363,13 @@ def monitor_loop():
             # Clean up processing set on error
             currently_processing.clear()
             time.sleep(CHECK_INTERVAL)
+    
+    # Cleanup PID file on exit
+    try:
+        if pid_file.exists():
+            pid_file.unlink()
+            log_with_timestamp("🧹 Cleaned up PID file")
+    except Exception as e:
+        log_with_timestamp(f"⚠️ Error cleaning up PID file: {e}")
 
 monitor_loop()
