@@ -9,9 +9,8 @@ export async function GET(request: NextRequest) {
     const user_slug = searchParams.get('user') || 'unknown'
     const app_slug = searchParams.get('app') || 'wtaf-app'
     
-    // Generate title from app slug
-    const appTitle = app_slug === 'wtaf-app' ? 'WTAF Creation' : 
-      app_slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    const pageTitle = "Finally, Someone Who Actually Wants to Hear About Your Startup Idea"
+    const theme = { bgColor: '#14b8a6', textColor: 'white' } // Teal theme
 
     return new ImageResponse(
       (
@@ -23,40 +22,48 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#7c3aed',
+            background: `linear-gradient(135deg, ${theme.bgColor} 0%, ${theme.bgColor}dd 100%)`,
             fontSize: 32,
             fontWeight: 600,
-            color: 'white',
+            color: theme.textColor,
+            padding: '60px',
+            textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: '48px', marginBottom: '30px' }}>
+          <div style={{ 
+            fontSize: '48px', 
+            marginBottom: '40px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)' 
+          }}>
             WTAF.me
           </div>
           
           <div style={{ 
-            fontSize: '32px', 
-            marginBottom: '20px',
+            fontSize: '28px', 
+            marginBottom: '30px',
             textAlign: 'center',
-            maxWidth: '800px',
-            lineHeight: 1.2
+            maxWidth: '900px',
+            lineHeight: 1.2,
+            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
           }}>
-            {appTitle}
+            {pageTitle}
           </div>
           
           <div style={{ 
-            fontSize: '18px', 
-            opacity: 0.8,
-            textAlign: 'center' 
+            fontSize: '20px', 
+            opacity: 0.9,
+            textAlign: 'center',
+            marginBottom: '20px'
           }}>
-            Built with WTAF • Vibecoded chaos
+            Vibecoded chaos, shipped via SMS
           </div>
           
           <div style={{ 
             fontSize: '16px', 
-            opacity: 0.6,
-            marginTop: '20px' 
+            opacity: 0.7,
+            fontFamily: 'monospace'
           }}>
-            {user_slug}/{app_slug}
+            wtaf.me/{user_slug}/{app_slug}
           </div>
         </div>
       ),
@@ -82,7 +89,7 @@ export async function GET(request: NextRequest) {
             color: 'white',
           }}
         >
-          WTAF.me
+          WTAF.me ERROR
         </div>
       ),
       { width: 1200, height: 630 }

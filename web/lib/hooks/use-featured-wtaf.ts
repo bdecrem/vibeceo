@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
 // Type for WTAF content
 export type WTAFContent = {
@@ -9,20 +8,12 @@ export type WTAFContent = {
   user_slug: string;
   app_slug: string;
   prompt: string;
+  original_prompt: string;
   html_content: string;
   created_at: string;
   feature: boolean;
   title?: string;
 };
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-let supabase: any = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
 
 export function useFeaturedWTAF() {
   const [featuredPages, setFeaturedPages] = useState<WTAFContent[]>([]);
@@ -30,50 +21,37 @@ export function useFeaturedWTAF() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchFeaturedPages = async (count: number = 3) => {
-    if (!supabase) {
-      setError('Supabase not configured');
-      setLoading(false);
-      return [];
-    }
-
     try {
+      console.log('🔄 Starting to fetch featured pages...');
       setLoading(true);
+      setError(null);
       
-      // Fetch all featured pages
-      const { data: allFeatured, error: fetchError } = await supabase
-        .from('wtaf_content')
-        .select('*')
-        .eq('feature', true)
-        .order('created_at', { ascending: false });
+      const response = await fetch(`/api/featured-wtaf?count=${count}`);
+      const result = await response.json();
 
-      if (fetchError) {
-        throw fetchError;
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch featured pages');
       }
 
-      if (!allFeatured || allFeatured.length === 0) {
-        console.warn('No featured WTAF pages found');
-        return [];
-      }
-
-      // Randomly select the requested number of pages
-      const shuffled = [...allFeatured].sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, Math.min(count, shuffled.length));
-      
-      console.log(`✅ Fetched ${selected.length} featured WTAF pages`);
-      return selected;
+      console.log(`✅ Fetched ${result.data.length} featured WTAF pages`, result.data);
+      return result.data;
 
     } catch (err: any) {
       console.error('❌ Error fetching featured WTAF pages:', err);
       setError(err.message || 'Failed to fetch featured pages');
       return [];
     } finally {
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
 
   const loadRandomPages = async (count: number = 3) => {
+    console.log(`🎲 Loading ${count} random pages...`);
     const pages = await fetchFeaturedPages(count);
+    console.log(`📋 Setting featured pages:`, pages);
     setFeaturedPages(pages);
+    console.log(`✨ Featured pages state updated!`);
   };
 
   // Load initial pages on mount
