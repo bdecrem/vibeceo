@@ -1251,34 +1251,6 @@ Then apply the design system accordingly while maintaining the signature aesthet
 # Function removed - file moving is now handled directly in monitor loop to prevent race conditions
 
 def monitor_loop():
-    # Create PID file to prevent multiple instances
-    pid_file = Path(__file__).resolve().parent.parent / "monitor.pid"
-    
-    try:
-        # Check if another instance is running
-        if pid_file.exists():
-            with open(pid_file, 'r') as f:
-                old_pid = int(f.read().strip())
-            
-            # Check if the process is still running
-            try:
-                os.kill(old_pid, 0)  # This will raise OSError if process doesn't exist
-                log_with_timestamp(f"❌ Another monitor instance is already running (PID: {old_pid})")
-                log_with_timestamp("❌ Exiting to prevent duplicates...")
-                return
-            except OSError:
-                # Process doesn't exist, remove stale PID file
-                log_with_timestamp(f"🧹 Removing stale PID file (PID {old_pid} not running)")
-                pid_file.unlink()
-        
-        # Write our PID
-        with open(pid_file, 'w') as f:
-            f.write(str(os.getpid()))
-        log_with_timestamp(f"🔒 Monitor locked with PID: {os.getpid()}")
-        
-    except Exception as e:
-        log_with_timestamp(f"⚠️ Error creating PID file: {e}")
-    
     log_with_timestamp("🌀 GPT-4o monitor running...")
     log_with_timestamp(f"👀 Watching directories: {WATCH_DIRS}")
     processed = set()
@@ -1357,13 +1329,5 @@ def monitor_loop():
             # Clean up processing set on error
             currently_processing.clear()
             time.sleep(CHECK_INTERVAL)
-    
-    # Cleanup PID file on exit
-    try:
-        if pid_file.exists():
-            pid_file.unlink()
-            log_with_timestamp("🧹 Cleaned up PID file")
-    except Exception as e:
-        log_with_timestamp(f"⚠️ Error cleaning up PID file: {e}")
 
 monitor_loop()

@@ -2,12 +2,128 @@
 
 import { Skull, Flame, ExternalLink, Shuffle } from 'lucide-react';
 import { useFeaturedWTAF, extractTitleFromHTML, formatAppSlugAsTitle, getPageURL } from '@/lib/hooks/use-featured-wtaf';
+import { useState, useEffect } from 'react';
+
+// Type for OG image data
+type OGImageData = {
+  image_url: string;
+  title: string;
+  loading: boolean;
+  error?: string;
+};
+
+// Component to display OG image with proper state management
+function OGImageDisplay({ page, title, emoji }: {
+  page: any;
+  title: string;
+  emoji: string;
+}) {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const generateOG = async () => {
+      try {
+        setIsLoading(true);
+        setHasError(false);
+        
+        const response = await fetch(`/api/generate-og-cached?user=${page.user_slug}&app=${page.app_slug}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setImageUrl(data.image_url);
+        } else {
+          setHasError(true);
+        }
+      } catch (error) {
+        console.error('Failed to generate OG:', error);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    generateOG();
+  }, [page.user_slug, page.app_slug]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="animate-spin text-4xl">⚡</div>
+          <p className="text-purple-200">Generating preview...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (imageUrl && !hasError) {
+    return (
+      <img 
+        src={imageUrl} 
+        alt={title}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  // Fallback display
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="text-center space-y-2">
+        <div className="text-6xl">{emoji}</div>
+        <p className="text-purple-200">{title}</p>
+        <p className="text-sm text-purple-400">
+          wtaf.me/{page.user_slug}/{page.app_slug}
+        </p>
+        {hasError && (
+          <p className="text-xs text-red-400">Failed to load preview</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function WtafLandingPage() {
-  const { featuredPages, loading, error, loadRandomPages } = useFeaturedWTAF();
+  const [featuredPages, setFeaturedPages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadRandomPages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🎲 Loading random featured pages...');
+      const response = await fetch('/api/featured-wtaf?limit=3');
+      const data = await response.json();
+      
+      if (data.success && data.pages) {
+        setFeaturedPages(data.pages);
+        console.log(`✅ Loaded ${data.pages.length} featured pages`);
+      } else {
+        setError('Failed to load featured pages');
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading featured pages:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load initial pages on component mount
+  useEffect(() => {
+    loadRandomPages();
+  }, []);
+
+
 
   const handleMoreClick = () => {
-    loadRandomPages(3);
+    loadRandomPages();
   };
 
   const handleViewApp = (userSlug: string, appSlug: string) => {
@@ -16,8 +132,8 @@ export default function WtafLandingPage() {
   };
 
   // Helper to get emoji for page based on content
-  const getPageEmoji = (prompt: string, appSlug: string) => {
-    const text = (prompt + ' ' + appSlug).toLowerCase();
+  const getPageEmoji = (originalPrompt: string, appSlug: string) => {
+    const text = (originalPrompt + ' ' + appSlug).toLowerCase();
     
     if (text.includes('mood') || text.includes('feeling')) return '📊';
     if (text.includes('dating') || text.includes('love') || text.includes('vampire')) return '🧛';
@@ -138,7 +254,7 @@ export default function WtafLandingPage() {
             <div className="text-4xl mb-4">💀</div>
             <p className="text-red-400">Failed to load examples: {error}</p>
             <button 
-              onClick={() => loadRandomPages(3)}
+              onClick={() => loadRandomPages()}
               className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full transition-colors"
             >
               Try Again
@@ -151,22 +267,21 @@ export default function WtafLandingPage() {
           <div className="space-y-8">
             {featuredPages.map((page, index) => {
               const title = extractTitleFromHTML(page.html_content) || formatAppSlugAsTitle(page.app_slug);
-              const emoji = getPageEmoji(page.prompt, page.app_slug);
+              const emoji = getPageEmoji(page.original_prompt, page.app_slug);
               
               return (
                 <div key={`${page.id}-${index}`} className="bg-purple-900/50 backdrop-blur-sm rounded-2xl p-6 space-y-4">
-                  <div className="aspect-video bg-gradient-to-br from-purple-800 to-indigo-900 rounded-xl flex items-center justify-center">
-                    <div className="text-center space-y-2">
-                      <div className="text-6xl">{emoji}</div>
-                      <p className="text-purple-200">{title}</p>
-                      <p className="text-sm text-purple-400">
-                        wtaf.me/{page.user_slug}/{page.app_slug}
-                      </p>
-                    </div>
+                  <div className="aspect-video bg-gradient-to-br from-purple-800 to-indigo-900 rounded-xl overflow-hidden">
+                    {/* FULLY AUTOMATED SMART OG IMAGES */}
+                    <OGImageDisplay 
+                      page={page} 
+                      title={title} 
+                      emoji={emoji} 
+                    />
                   </div>
                   <div className="space-y-3">
                     <h3 className="text-xl md:text-2xl text-pink-400 font-semibold">
-                      "{page.prompt}"
+                      "{page.original_prompt}"
                     </h3>
                     <p className="text-purple-200">Real prompts. Real chaos. Shipped to the web.</p>
                     <button 
