@@ -1,0 +1,486 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Paddle Clash</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            background: #0a0a0a;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bg-gradient {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            opacity: 0.8;
+            filter: blur(100px);
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.3;
+        }
+        
+        .emoji-1 {
+            top: 10%;
+            left: 10%;
+            animation: float1 20s infinite ease-in-out;
+        }
+        
+        .emoji-2 {
+            top: 20%;
+            right: 15%;
+            animation: float2 25s infinite ease-in-out;
+        }
+        
+        .emoji-3 {
+            bottom: 15%;
+            left: 20%;
+            animation: float3 22s infinite ease-in-out;
+        }
+        
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(30px, -20px) rotate(180deg); }
+        }
+        
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-40px, 30px) rotate(-180deg); }
+        }
+        
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, -40px) rotate(360deg); }
+        }
+        
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .screen.active {
+            opacity: 1;
+        }
+        
+        .glass-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            animation: slideUp 0.8s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(131, 56, 236, 0.4);
+            min-width: 200px;
+            touch-action: manipulation;
+        }
+        
+        .button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(131, 56, 236, 0.4);
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+        
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            z-index: 6;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .end-score {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            color: #06ffa5;
+            margin: 20px 0;
+            text-shadow: 0 0 30px rgba(6, 255, 165, 0.5);
+        }
+        
+        .touch-zone {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            z-index: 7;
+            opacity: 0;
+        }
+        
+        .touch-left {
+            left: 0;
+        }
+        
+        .touch-right {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="bg-gradient"></div>
+        <div class="floating-emoji emoji-1">🎮</div>
+        <div class="floating-emoji emoji-2">⚡</div>
+        <div class="floating-emoji emoji-3">🏓</div>
+        
+        <div id="introScreen" class="screen active">
+            <div class="glass-container">
+                <h1>Paddle Clash</h1>
+                <p class="subtitle">Tap sides to move • First to miss loses</p>
+                <button class="button" onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        <div class="score-display" id="scoreDisplay" style="display: none;">0</div>
+        
+        <div class="touch-zone touch-left" id="touchLeft"></div>
+        <div class="touch-zone touch-right" id="touchRight"></div>
+        
+        <div id="endScreen" class="screen">
+            <div class="glass-container">
+                <h1>Game Over</h1>
+                <div class="end-score" id="finalScore">0</div>
+                <p class="subtitle">Nice rally! 🔥</p>
+                <button class="button" onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const introScreen = document.getElementById('introScreen');
+        const endScreen = document.getElementById('endScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScore = document.getElementById('finalScore');
+        const touchLeft = document.getElementById('touchLeft');
+        const touchRight = document.getElementById('touchRight');
+        
+        let gameState = 'intro';
+        let score = 0;
+        let animationId;
+        
+        const dpr = window.devicePixelRatio || 1;
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        const game = {
+            paddle: {
+                x: window.innerWidth / 2 - 50,
+                y: window.innerHeight - 100,
+                width: 100,
+                height: 20,
+                speed: 8,
+                targetX: window.innerWidth / 2 - 50
+            },
+            aiPaddle: {
+                x: window.innerWidth / 2 - 50,
+                y: 50,
+                width: 100,
+                height: 20,
+                speed: 4
+            },
+            ball: {
+                x: window.innerWidth / 2,
+                y: window.innerHeight / 2,
+                radius: 10,
+                speedX: 4,
+                speedY: 4,
+                trail: []
+            }
+        };
+        
+        function handleMouseMove(e) {
+            if (gameState === 'playing') {
+                game.paddle.targetX = e.clientX - game.paddle.width / 2;
+            }
+        }
+        
+        function handleTouchMove(e) {
+            if (gameState === 'playing') {
+                e.preventDefault();
+                const touch = e.touches[0];
+                game.paddle.targetX = touch.clientX - game.paddle.width / 2;
+            }
+        }
+        
+        let leftPressed = false;
+        let rightPressed = false;
+        
+        touchLeft.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPressed = true;
+        });
+        
+        touchLeft.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            leftPressed = false;
+        });
+        
+        touchRight.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            rightPressed = true;
+        });
+        
+        touchRight.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            rightPressed = false;
+        });
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        
+        function updatePaddle() {
+            if (leftPressed) {
+                game.paddle.targetX = Math.max(0, game.paddle.x - game.paddle.speed);
+            }
+            if (rightPressed) {
+                game.paddle.targetX = Math.min(window.innerWidth - game.paddle.width, game.paddle.x + game.paddle.speed);
+            }
+            
+            game.paddle.x += (game.paddle.targetX - game.paddle.x) * 0.2;
+        }
+        
+        function updateAIPaddle() {
+            const paddleCenter = game.aiPaddle.x + game.aiPaddle.width / 2;
+            const diff = game.ball.x - paddleCenter;
+            
+            if (Math.abs(diff) > 5) {
+                game.aiPaddle.x += diff > 0 ? game.aiPaddle.speed : -game.aiPaddle.speed;
+            }
+            
+            game.aiPaddle.x = Math.max(0, Math.min(window.innerWidth - game.aiPaddle.width, game.aiPaddle.x));
+        }
+        
+        function updateBall() {
+            game.ball.trail.push({ x: game.ball.x, y: game.ball.y, alpha: 1 });
+            if (game.ball.trail.length > 10) {
+                game.ball.trail.shift();
+            }
+            
+            game.ball.x += game.ball.speedX;
+            game.ball.y += game.ball.speedY;
+            
+            if (game.ball.x - game.ball.radius <= 0 || game.ball.x + game.ball.radius >= window.innerWidth) {
+                game.ball.speedX = -game.ball.speedX;
+            }
+            
+            if (game.ball.y + game.ball.radius >= game.paddle.y &&
+                game.ball.y + game.ball.radius <= game.paddle.y + game.paddle.height &&
+                game.ball.x >= game.paddle.x &&
+                game.ball.x <= game.paddle.x + game.paddle.width) {
+                
+                game.ball.speedY = -Math.abs(game.ball.speedY);
+                const hitPos = (game.ball.x - game.paddle.x) / game.paddle.width;
+                game.ball.speedX = 8 * (hitPos - 0.5);
+                score++;
+                scoreDisplay.textContent = score;
+            }
+            
+            if (game.ball.y - game.ball.radius <= game.aiPaddle.y + game.aiPaddle.height &&
+                game.ball.y - game.ball.radius >= game.aiPaddle.y &&
+                game.ball.x >= game.aiPaddle.x &&
+                game.ball.x <= game.aiPaddle.x + game.aiPaddle.width) {
+                
+                game.ball.speedY = Math.abs(game.ball.speedY);
+            }
+            
+            if (game.ball.y - game.ball.radius > window.innerHeight || game.ball.y + game.ball.radius < 0) {
+                endGame();
+            }
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            game.ball.trail.forEach((point, index) => {
+                point.alpha -= 0.1;
+                if (point.alpha > 0) {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, game.ball.radius * point.alpha, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(6, 255, 165, ${point.alpha * 0.3})`;
+                    ctx.fill();
+                }
+            });
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#06ffa5';
+            ctx.fillStyle = '#06ffa5';
+            ctx.beginPath();
+            ctx.arc(game.ball.x, game.ball.y, game.ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#ff006e';
+            ctx.fillStyle = '#ff006e';
+            ctx.fillRect(game.paddle.x, game.paddle.y, game.paddle.width, game.paddle.height);
+            
+            ctx.shadowColor = '#8338ec';
+            ctx.fillStyle = '#8338ec';
+            ctx.fillRect(game.aiPaddle.x, game.aiPaddle.y, game.aiPaddle.width, game.aiPaddle.height);
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updatePaddle();
+                updateAIPaddle();
+                updateBall();
+                render();
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        function startGame() {
+            introScreen.classList.remove('active');
+            scoreDisplay.style.display = 'block';
+            gameState = 'playing';
+            score = 0;
+            scoreDisplay.textContent = score;
+            
+            game.ball.x = window.innerWidth / 2;
+            game.ball.y = window.innerHeight / 2;
+            game.ball.speedX = 4;
+            game.ball.speedY = 4;
+            game.ball.trail = [];
+            
+            game.paddle.x = window.innerWidth / 2 - 50;
+            game.paddle.targetX = game.paddle.x;
+            game.aiPaddle.x = window.innerWidth / 2 - 50;
+            
+            gameLoop();
+        }
+        
+        function endGame() {
+            gameState = 'ended';
+            cancelAnimationFrame(animationId);
+            scoreDisplay.style.display = 'none';
+            finalScore.textContent = score;
+            endScreen.classList.add('active');
+        }
+        
+        function restartGame() {
+            endScreen.classList.remove('active');
+            startGame();
+        }
+        
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            emojis.forEach((emoji, index) => {
+                const speed = (index + 1) * 0.02;
+                const x = (e.clientX - window.innerWidth / 2) * speed;
+                const y = (e.clientY - window.innerHeight / 2) * speed;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

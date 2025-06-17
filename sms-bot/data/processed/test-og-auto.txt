@@ -1,0 +1,5 @@
+SENDER: +15551234567
+USER_SLUG: bart
+COACH: alex
+
+Create a test page with big text saying "AUTO OG TEST" and a rainbow background 

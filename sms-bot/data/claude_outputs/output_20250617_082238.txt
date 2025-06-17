@@ -1,0 +1,200 @@
+I'll create a stylish "Hello World" landing page that follows our luxury design system while keeping it simple. This will serve as a perfect demonstration of our core design elements.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World • Luxury Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(
+                45deg,
+                #FF6B6B,
+                #4ECDC4,
+                #45B7D1,
+                #96E6A1
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 60px;
+            text-align: center;
+            transition: all 0.4s ease;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        p {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            color: white;
+            font-weight: 300;
+            margin-bottom: 30px;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #emoji1 { top: 15%; left: 15%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 15%; animation-delay: 1.5s; }
+        #emoji3 { bottom: 20%; left: 20%; animation-delay: 3s; }
+        #emoji4 { bottom: 15%; right: 20%; animation-delay: 4.5s; }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .glass-card {
+                padding: 40px 20px;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            p {
+                font-size: 1.2rem;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Emojis -->
+        <div class="floating-emoji" id="emoji1">✨</div>
+        <div class="floating-emoji" id="emoji2">🌟</div>
+        <div class="floating-emoji" id="emoji3">💫</div>
+        <div class="floating-emoji" id="emoji4">⭐</div>
+
+        <!-- Main Content -->
+        <div class="glass-card">
+            <h1>Hello World</h1>
+            <p>Welcome to our luxury design system showcase. Experience the perfect blend of modern aesthetics and innovative interaction.</p>
+            <a href="#" class="btn">Explore More</a>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+This Hello World page demonstrates key elements of our luxury design system:
+
+1. **Animated Gradient Background**: Smooth, continuous color transitions
+2. **Glass Morphism**: Applied to the main card with proper blur and transparency
+3. **Typography**: Space Grotesk for headings, Inter for body text
+4. **Floating Elements**: Four star/sparkle emojis with smooth animations
+5. **Hover Effects**: On both the card and button
+6. **Mouse Parallax**: Floating emojis react to mouse movement
+7. **Responsive Design**: Properly scales for mobile devices
+
+Key Features:
+- Clean, minimal layout that still feels luxurious
+- Smooth animations and transitions
+- Mobile-first responsive design
+- Interactive elements that enhance user experience
+- Professional typography hierarchy
+- Proper spacing and padding
+- Subtle but effective hover states
+
+This serves as a perfect foundation for more complex pages while demonstrating all core design system elements.

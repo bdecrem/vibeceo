@@ -1,0 +1,282 @@
+I'll create a luxury-edgy tattoo parlor landing page with a punk aesthetic while maintaining our core design language. The target demographic is alternative/punk culture enthusiasts who appreciate high-end tattoo artistry.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRIC INK • Premium Tattoo Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --gradient-bg: linear-gradient(
+                315deg,
+                #1a1a1a,
+                #2d0a3e,
+                #801a54,
+                #ff2975
+            );
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-bg);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 15%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 25%; right: 15%; animation-delay: 2s; }
+        #emoji3 { bottom: 20%; left: 15%; animation-delay: 4s; }
+        #emoji4 { bottom: 30%; right: 10%; animation-delay: 6s; }
+
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+        }
+
+        .glass:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        header {
+            padding: 30px 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #fff, #ff2975);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 0;
+        }
+
+        .hero-content {
+            padding: 60px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            padding: 40px 0;
+        }
+
+        .service-card {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .service-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            margin: 20px 0;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff2975, #801a54);
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Animations */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .logo { font-size: 3rem; }
+            .hero h1 { font-size: 2.8rem; }
+            .hero-content { padding: 30px; }
+            .service-card { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" id="emoji1">💀</div>
+    <div class="floating-emoji" id="emoji2">⚡</div>
+    <div class="floating-emoji" id="emoji3">🔥</div>
+    <div class="floating-emoji" id="emoji4">⛓️</div>
+
+    <div class="container">
+        <header>
+            <div class="logo">ELECTRIC INK</div>
+        </header>
+
+        <section class="hero">
+            <div class="glass hero-content">
+                <h1>WHERE REBELLION MEETS ARTISTRY</h1>
+                <p>Premium tattoo studio in Downtown LA. Custom designs, traditional flash, and blackwork by award-winning artists.</p>
+                <a href="#book" class="btn btn-primary">Book Session</a>
+                <a href="#gallery" class="btn btn-secondary">View Gallery</a>
+            </div>
+        </section>
+
+        <section class="services-grid">
+            <div class="glass service-card">
+                <h3>Custom Design</h3>
+                <p>Unique pieces tailored to your vision. Full consultation and design process included.</p>
+                <p class="price">Starting at $200/hr</p>
+            </div>
+
+            <div class="glass service-card">
+                <h3>Traditional Flash</h3>
+                <p>Classic designs with a modern twist. Extensive collection of original flash art.</p>
+                <p class="price">From $150</p>
+            </div>
+
+            <div class="glass service-card">
+                <h3>Blackwork</h3>
+                <p>Bold geometric patterns and contemporary black designs.</p>
+                <p class="price">Starting at $180/hr</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Intersection Observer for reveal animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.service-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This design features:
+
+1. **Dark, edgy color palette** with neon pink accents
+2. **Punk-themed floating emojis** (skull, lightning, fire, chains)
+3. **Glass morphism** with darker, more aggressive styling
+4. **Electric gradient** background animation
+5. **Bold typography** with aggressive spacing
+6. **Premium pricing** structure
+7. **Luxury service offerings** with custom design focus
+
+The design maintains our luxury framework while adapting it for the punk/alternative aesthetic:
+- Darker base colors but still premium feel
+- More aggressive animations and transitions
+- Edgy emoji selection
+- Bold, confident copy
+- High-end pricing structure
+- Premium service categorization
+
+Cross-references could be added to:
+- Local alternative clothing stores
+- Nearby punk music venues
+- Alternative hair salons
+- Local piercing studios
+
+This creates a high-end tattoo experience while maintaining the edge and attitude expected of a punk tattoo parlor.

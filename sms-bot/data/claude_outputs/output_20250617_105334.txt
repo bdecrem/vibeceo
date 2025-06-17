@@ -1,0 +1,181 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dawn Espresso | Premium Morning Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: #FF9A8B;
+            --gradient-2: #FF6A88; 
+            --gradient-3: #FF99AC;
+            --glass: rgba(255, 255, 255, 0.1);
+            --blur: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, var(--gradient-1), var(--gradient-2), var(--gradient-3));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #1A1A1A;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(var(--blur));
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        .glass-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn {
+            background: #1A1A1A;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 3rem; }
+            .glass-card { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 10%;">☕</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%;">🌅</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 20%;">✨</div>
+    <div class="floating-emoji" style="bottom: 15%; right: 10%;">☕</div>
+
+    <div class="container">
+        <section class="hero">
+            <div class="glass-card">
+                <h1>Dawn Espresso</h1>
+                <p>Experience the city's most exclusive morning ritual. Find us at sunrise in Beverly Hills.</p>
+                <a href="#location" class="btn">Find Us Today</a>
+            </div>
+        </section>
+
+        <section class="glass-card">
+            <h2>Today's Pour</h2>
+            <div class="menu-item">
+                <span>Single Origin Ethiopian</span>
+                <span>$6.50</span>
+            </div>
+            <div class="menu-item">
+                <span>Dawn Signature Latte</span>
+                <span>$8.50</span>
+            </div>
+            <div class="menu-item">
+                <span>Golden Hour Cappuccino</span>
+                <span>$7.50</span>
+            </div>
+        </section>
+
+        <section class="glass-card">
+            <h2>Location & Hours</h2>
+            <p>Beverly Gardens Park<br>Adjacent to The Beverly Hills Hotel</p>
+            <p>Monday - Friday<br>5:30 AM - 10:00 AM</p>
+        </section>
+    </div>
+
+    <script>
+        // Parallax Effect
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Intersection Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```

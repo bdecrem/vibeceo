@@ -1,0 +1,12 @@
+{
+  "page_title": "Say Hello!",
+  "hero_text": "Hello World!",
+  "subhead": "Making the web a brighter place, one greeting at a time",
+  "call_to_action": "Spread some joy today",
+  "button_text": "Wave Hello 👋",
+  "sections": ["greeting"],
+  "color_palette": ["#FF61D8", "#FFA84B", "#36D6FF", "#8B5FFF"],
+  "font_style": "grotesk",
+  "emoji_pack": ["👋", "✨", "🌈", "💫", "🎨"],
+  "layout_variant": "centered-minimal"
+}

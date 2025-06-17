@@ -1,0 +1,202 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghostwriter | Your Personal Journaling Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8294C4;
+            --secondary: #ACB1D6; 
+            --accent: #DBDFEA;
+            --text: #2D3250;
+            --background: #F8F9FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: linear-gradient(120deg, var(--background), #fff, var(--accent));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--text);
+            transform: translateY(-2px);
+        }
+
+        .testimonial {
+            font-style: italic;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .price-tag {
+            font-size: 3rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .glass-card { padding: 2rem; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 10%">👻</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%">✨</div>
+    <div class="floating-emoji" style="bottom: 15%; left: 20%">📖</div>
+    <div class="floating-emoji" style="bottom: 25%; right: 10%">🌙</div>
+
+    <section class="hero">
+        <div class="container">
+            <div class="glass-card">
+                <h1>Let your thoughts take flight</h1>
+                <p style="font-size: 1.4rem; margin-bottom: 2rem;">Your personal ghostwriter is here to capture the stories you've been meaning to tell.</p>
+                <button class="cta-button">Begin Your Journey</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 2rem;">Why Ghostwriter?</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                <div>
+                    <h3>Daily Prompts</h3>
+                    <p>Thoughtfully curated writing prompts delivered each morning</p>
+                </div>
+                <div>
+                    <h3>Mood Tracking</h3>
+                    <p>Beautiful visualizations of your emotional journey</p>
+                </div>
+                <div>
+                    <h3>Private Vault</h3>
+                    <p>Bank-level encryption for your most intimate thoughts</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>What Our Writers Say</h2>
+            <div class="testimonial">
+                "Ghostwriter helped me rediscover my voice. Now I write every day, and I've never felt more clear-headed."
+                <p style="margin-top: 1rem;">— Sarah Chen, Upper West Side</p>
+            </div>
+        </div>
+
+        <div class="glass-card" style="text-align: center;">
+            <h2>Begin Your Story</h2>
+            <p class="price-tag">$9/month</p>
+            <p style="margin: 1rem 0;">Unlimited entries. Unlimited growth.</p>
+            <button class="cta-button">Start Writing</button>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const { clientX, clientY } = e;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            emojis.forEach(emoji => {
+                const moveX = (clientX - centerX) * 0.05;
+                const moveY = (clientY - centerY) * 0.05;
+                emoji.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,195 @@
+I'll create a luxury-styled single-page design featuring a dog photo while maintaining our high-end design system. This will include floating elements, glass morphism, and animations while keeping the focus on the dog image.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxury Pet Portraits</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(
+                45deg,
+                #ffd6a5,
+                #ffb4a2,
+                #e7c6ff,
+                #b5deff
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 40px;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #2d3436;
+        }
+
+        .dog-image {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            border-radius: 20px;
+            margin: 20px auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 10%; animation-delay: 1.5s; }
+        #emoji3 { bottom: 20%; left: 15%; animation-delay: 3s; }
+        #emoji4 { bottom: 15%; right: 15%; animation-delay: 4.5s; }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .glass-card {
+                padding: 20px;
+            }
+
+            .floating-emoji {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" id="emoji1">🐕</div>
+    <div class="floating-emoji" id="emoji2">🦴</div>
+    <div class="floating-emoji" id="emoji3">🐾</div>
+    <div class="floating-emoji" id="emoji4">💝</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <h1>Meet Our Gorgeous Friend</h1>
+            <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
+                 alt="Beautiful Dog Portrait" 
+                 class="dog-image">
+        </div>
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Intersection Observer for card reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        const card = document.querySelector('.glass-card');
+        card.style.opacity = 0;
+        card.style.transform = 'translateY(20px)';
+        observer.observe(card);
+    </script>
+</body>
+</html>
+```
+
+This page features:
+
+1. **Luxury Design Elements**:
+   - Animated gradient background
+   - Glass morphism card effect
+   - Floating emoji elements (dog-themed)
+   - Smooth hover animations
+   - High-end typography
+
+2. **Interactive Features**:
+   - Mouse parallax on floating emojis
+   - Card hover effects
+   - Smooth intersection observer animations
+
+3. **Responsive Design**:
+   - Mobile-friendly layout
+   - Adjusted typography and spacing for smaller screens
+   - Maintained aesthetic across all device sizes
+
+4. **Visual Elements**:
+   - Warm, pet-friendly color palette
+   - Dog-themed floating emojis
+   - Large, prominent image display
+   - Professional typography hierarchy
+
+To use this page, simply:
+1. Replace the image URL with your preferred dog photo
+2. Adjust the color scheme if desired
+3. Modify the heading text as needed
+
+The page will maintain its luxury feel while showcasing your dog photo in an elegant, modern way.

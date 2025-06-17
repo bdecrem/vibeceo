@@ -1,0 +1,5 @@
+SENDER: +15551234567
+USER_SLUG: test-user
+COACH: alex
+
+Create a simple hello world app with a button that says 'Hello WTAF!' 

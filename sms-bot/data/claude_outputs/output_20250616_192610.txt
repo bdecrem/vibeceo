@@ -1,0 +1,256 @@
+I'll create a vibrant, luxury-styled page with a rainbow gradient and peace sign theme while maintaining our high-end design system.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peace & Love Luxury Experience</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(
+                238deg,
+                #ff6b6b,
+                #ffd93d,
+                #6bff84,
+                #6bcaff,
+                #b66bff
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 20%; right: 15%; animation-delay: 2s; }
+        .emoji-3 { bottom: 20%; left: 15%; animation-delay: 4s; }
+        .emoji-4 { bottom: 15%; right: 10%; animation-delay: 6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Glass Card Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 60px;
+            margin: 30px 0;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Peace Sign */
+        .peace-sign {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            position: relative;
+            border: 15px solid white;
+            border-radius: 50%;
+            margin-bottom: 40px;
+        }
+
+        .peace-line {
+            position: absolute;
+            width: 15px;
+            height: 150px;
+            background: white;
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%);
+        }
+
+        .peace-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        /* Typography */
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4rem;
+            line-height: 1.7;
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Button Styles */
+        .cta-button {
+            display: inline-block;
+            padding: 18px 50px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .cta-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            .peace-sign {
+                width: 200px;
+                height: 200px;
+                border-width: 10px;
+            }
+
+            .peace-line {
+                height: 100px;
+                width: 10px;
+            }
+
+            .glass-card {
+                padding: 30px;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji emoji-1">☮️</div>
+    <div class="floating-emoji emoji-2">🌈</div>
+    <div class="floating-emoji emoji-3">✨</div>
+    <div class="floating-emoji emoji-4">🕊️</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="peace-sign">
+                <div class="peace-line"></div>
+            </div>
+            <h1>Peace & Love</h1>
+            <p>Experience tranquility and harmony in our uniquely designed space. Let the positive vibes flow through you as we celebrate unity and understanding.</p>
+            <div style="text-align: center;">
+                <a href="#" class="cta-button">Spread Peace</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 30;
+                const offsetY = (mouseY - 0.5) * 30;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+This page features:
+
+1. **Rainbow Gradient Background**
+- Smooth animated gradient cycling through vibrant colors
+- 400% size for smooth transitions
+- 15-second animation cycle
+
+2. **Giant Peace Sign**
+- Centered, minimalist design
+- White border with clean lines
+- Responsive sizing for different screens
+
+3. **Luxury Elements**
+- Glass morphism card with blur effects
+- Floating emoji elements (☮️🌈✨🕊️)
+- Mouse parallax effects
+- Hover animations on cards and buttons
+
+4. **Typography**
+- Space Grotesk for headings
+- Inter for body text
+- Proper spacing and hierarchy
+
+5. **Interactive Features**
+- Mouse-following parallax on floating elements
+- Hover effects on glass cards
+- Smooth animations throughout
+
+6. **Responsive Design**
+- Mobile-friendly layout
+- Adjusted sizes for smaller screens
+- Touch-friendly buttons
+
+The design maintains our luxury aesthetic while incorporating the rainbow and peace theme in an elegant way. The floating emojis and parallax effects add depth and interactivity, while the glass morphism maintains our signature look.

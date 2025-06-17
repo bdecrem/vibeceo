@@ -1,0 +1,225 @@
+I'll create a vibrant, luxury-styled page with a rainbow gradient and peace theme while maintaining our high-end design system.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peace & Love Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(
+                45deg,
+                #ff6b6b,
+                #ffd93d,
+                #6bff84,
+                #6bcaff,
+                #d56bff
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 20%; right: 10%; animation-delay: 2s; }
+        .emoji-3 { bottom: 20%; left: 15%; animation-delay: 4s; }
+        .emoji-4 { bottom: 15%; right: 15%; animation-delay: 6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Peace Sign */
+        .peace-container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 60px;
+            margin: 40px auto;
+            text-align: center;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .peace-sign {
+            font-size: 12rem;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin: 20px 0;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50px;
+            padding: 18px 45px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .peace-container {
+                padding: 30px;
+                margin: 20px;
+            }
+
+            .peace-sign {
+                font-size: 8rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            .floating-emoji {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji emoji-1">☮️</div>
+    <div class="floating-emoji emoji-2">🌈</div>
+    <div class="floating-emoji emoji-3">🕊️</div>
+    <div class="floating-emoji emoji-4">💫</div>
+
+    <div class="container">
+        <div class="peace-container">
+            <div class="peace-sign">☮️</div>
+            <h1>Peace & Love</h1>
+            <p>Spread harmony, embrace unity, and celebrate peace in our interconnected world. Together we can create positive change.</p>
+            <button class="btn">Spread Peace</button>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const speed = 20;
+                const x = (mouseX - 0.5) * speed;
+                const y = (mouseY - 0.5) * speed;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Intersection Observer for peace container
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        const peaceContainer = document.querySelector('.peace-container');
+        peaceContainer.style.opacity = '0';
+        peaceContainer.style.transform = 'translateY(50px)';
+        peaceContainer.style.transition = 'all 0.8s ease-out';
+        observer.observe(peaceContainer);
+    </script>
+</body>
+</html>
+```
+
+This page features:
+
+1. **Rainbow Gradient Background**: Smooth animated gradient cycling through vibrant colors
+
+2. **Centered Peace Sign**: Large peace emoji with subtle pulse animation
+
+3. **Glass Morphism**: Applied to both the main container and button
+
+4. **Floating Elements**: Four themed emojis (☮️🌈🕊️💫) with parallax effects
+
+5. **Luxury Touches**:
+   - Space Grotesk for headings
+   - Inter for body text
+   - Smooth animations
+   - Glass morphism effects
+   - Hover states
+   - Intersection observer animations
+
+6. **Mobile Responsive**: Adjusts sizes and spacing for smaller screens
+
+7. **Interactive Elements**:
+   - Mouse parallax on floating emojis
+   - Hover effects on button
+   - Scroll reveal animation
+
+The design maintains our luxury aesthetic while incorporating the rainbow and peace theme in an elevated way. The glass morphism containers and floating elements create depth, while the animations keep the page dynamic and engaging.
