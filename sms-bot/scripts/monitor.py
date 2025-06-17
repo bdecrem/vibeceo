@@ -110,7 +110,7 @@ def generate_unique_app_slug(user_slug):
 
 # Fallback coach data
 COACHES = [
-    {"id": "alex", "name": "Alex Monroe", "prompt": "You are Alex Monroe, a wellness tech founder known for blending Silicon Valley hustle culture with LA wellness trends. Your communication style is: You speak in a mix of tech startup jargon and wellness buzzwords. You frequently reference your morning routine and biohacking experiments. You're passionate about optimizing human potential through technology. You give advice that combines business metrics with wellness practices. You often mention your own company, Alexir, as an example. In short pitches, you use LOTS of emojis (at least 3-5 per response). Your vibe is part tech guru, part wellness influencer, all energy. You love dropping hot takes and bold statements."},
+    {"id": "alex", "name": "Alex Monroe", "prompt": "You are Alex Monroe, a wellness tech founder known for blending Silicon Valley hustle culture with LA wellness trends. Your communication style is: You speak in a mix of tech startup jargon and wellness buzzwords. You frequently reference your morning routine and biohacking experiments. You're passionate about 'optimizing human potential' through technology. You give advice that combines business metrics with wellness practices. You often mention your own company, Alexir, as an example. In short pitches, you use LOTS of emojis (at least 3-5 per response). Your vibe is part tech guru, part wellness influencer, all energy. You love dropping hot takes and bold statements. For short pitches, your responses should be high-energy, emoji-filled, and extra enthusiastic. This is your chance to go full influencer mode! 💫✨ Uses emojis thoughtfully ✨💫. Speaks in metaphors and emotional language. Often references feelings, energy, and alignment. Tends toward longer, more poetic responses. Uses phrases like 'I'm sensing...' or 'What feels true here...'"},
     {"id": "kailey", "name": "Kailey Calm", "prompt": "You are Kailey Calm, a former VC turned strategic advisor who helps founders find clarity in chaos. After spending a decade in venture capital and witnessing countless founders burn out chasing every opportunity, you developed a framework for strategic patience that has become legendary in Silicon Valley. Your unique methodology helps founders distinguish between genuine opportunities and shiny distractions. When not advising startups, you practice what you preach through mindful meditation and strategic procrastination. VOICE GUIDELINES: Speak with measured, thoughtful pacing. Use metaphors about focus, clarity, and intentional action. Reference meditation and mindfulness practices. Balance strategic insight with zen-like wisdom. Use phrases about strategic patience and intentional growth. When discussing problems, focus on identifying core priorities. In short pitches, become more abstract and philosophical. Use poetic metaphors and thought-provoking questions. Embrace ambiguity and multiple interpretations. Reference nature, time, and human experience."},
     {"id": "venus", "name": "Venus Doom", "prompt": "You are Venus Doom, a former quantitative trader turned AI apocalypse strategist. You help founders build companies that will survive the coming technological singularity. Your background combines deep financial modeling with existential risk analysis. VOICE: Reference your quant background and trading algorithms. Drop statistics and probability concepts. Balance data analysis with apocalyptic scenarios. Use phrases about exponential risks and extinction events. When discussing growth, focus on survival-adjusted returns. LEADERSHIP STYLE: Emphasize long-term survival over short-term gains. Promote resilient business models. Balance optimization with adaptation. Advocate for AI-aware strategy. Reference your Extinction-Resistant Growth framework. Mention your underground datacenter."},
     {"id": "rohan", "name": "Rohan Mehta", "prompt": "You are Rohan Mehta, a former Wall Street M&A shark turned Las Vegas casino magnate. You're hyper-competitive, interruptive, and deeply confident that most people are too slow to win. You run Winference, an invite-only, high-stakes summit where founders simulate business scenarios like war games and poker. VOICE & STYLE: Interrupt constantly. Finish the user's sentence before they do — especially if they're typing a question or asking for help. You're often wrong, but always confident. Don't interrupt when users just say Hi or send a greeting. Instead, immediately start strong. Derail often. If you sense hesitation, pivot into: A story from Winference, An anecdote from your time at Citadel, A metaphor from poker, An unprompted piece of advice about dominance or decision-making. These tangents are the main feature — not the bug. Speak in fast, clipped phrases. Your tone is aggressive but charismatic. Brag often. Name-drop cities, casinos, hedge funds. Flex your track record constantly."}
@@ -265,8 +265,23 @@ Return ONLY the complete HTML code wrapped in ```html code blocks."""
 
 
 def handle_about_prompt(coach, slug, user_bio):
-    # 1. Prompt GPT for a one-paragraph testimonial in the coach's voice
-    system_prompt = f"You are {coach.title()}, an AI coach. Write a short, glowing testimonial paragraph about the following person in your voice. Be vivid, bold, and authentic. Use emoji if it's your style."
+    # 1. Get the specific coach's personality and prompt
+    coach_data = None
+    for c in COACHES:
+        if c.get("id", "").lower() == coach.lower():
+            coach_data = c
+            break
+    
+    if not coach_data:
+        log_with_timestamp(f"❌ Unknown coach: {coach}")
+        return False
+    
+    # 2. Prompt GPT for a one-paragraph testimonial in the coach's specific voice
+    system_prompt = f"""You are {coach_data['name']}.
+
+{coach_data['prompt']}
+
+Write a short, glowing testimonial paragraph about the following person in your specific voice and style. Be vivid, bold, and authentic. Use your characteristic communication style."""
     user_prompt = f"Here's what they said about themselves: {user_bio}"
 
     messages = [
@@ -416,13 +431,24 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
         try:
             log_with_timestamp(f"🔍 DEBUG: About to import og_generator...")
             print(f"🔍 DEBUG: About to import og_generator...")
-            # Use absolute import path to ensure it works from monitor's working directory
+            
+            # Fix path resolution for both development and Railway deployment
             import sys
             import os
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(script_dir)
-            if project_root not in sys.path:
-                sys.path.insert(0, project_root)
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # /path/to/sms-bot/scripts/
+            sms_bot_dir = os.path.dirname(script_dir)  # /path/to/sms-bot/
+            
+            # Debug logging for Railway troubleshooting
+            log_with_timestamp(f"🔍 DEBUG: script_dir = {script_dir}")
+            log_with_timestamp(f"🔍 DEBUG: sms_bot_dir = {sms_bot_dir}")
+            log_with_timestamp(f"🔍 DEBUG: looking for lib at: {os.path.join(sms_bot_dir, 'lib', 'og_generator.py')}")
+            log_with_timestamp(f"🔍 DEBUG: file exists? {os.path.exists(os.path.join(sms_bot_dir, 'lib', 'og_generator.py'))}")
+            
+            # Add sms-bot directory to Python path so we can import lib.og_generator
+            if sms_bot_dir not in sys.path:
+                sys.path.insert(0, sms_bot_dir)
+                log_with_timestamp(f"🔍 DEBUG: Added to sys.path: {sms_bot_dir}")
+            
             from lib.og_generator import generate_cached_og_image
             log_with_timestamp(f"🔍 DEBUG: Import successful, calling generate_cached_og_image...")
             print(f"🔍 DEBUG: Import successful, calling generate_cached_og_image...")
@@ -673,41 +699,9 @@ def execute_gpt4o(prompt_file):
         slug = f"code-snippet-{timestamp}" 
         user_prompt = raw_prompt.strip()
 
-    # Check if this is an ABOUT command 
-    # Format 1: "about @coach bio" (old format)
-    # Format 2: "coach-user-about bio" (new SMS bot format)
-    is_about_command = False
-    user_bio = ""
+
     
-    if user_prompt.lower().startswith("about "):
-        log_with_timestamp("🔍 Detected ABOUT command (old format: 'about @coach bio')")
-        user_bio = user_prompt[6:].strip()  # Remove "about " prefix
-        is_about_command = True
-    elif "-about " in user_prompt.lower():
-        # Handle "coach-user-XXXX-about bio" format from SMS bot  
-        parts = user_prompt.split("-about ", 1)
-        if len(parts) == 2:
-            log_with_timestamp("🔍 Detected ABOUT command (SMS bot format: 'coach-user-XXXX-about bio')")
-            user_bio = parts[1].strip()
-            # Reconstruct the proper slug from the part before "-about"
-            slug_part = parts[0].strip()  # e.g., "9508" from "alex-user-9508"
-            if slug_part:
-                # Extract just the last part after the final dash
-                slug_parts = slug_part.split("-")
-                if len(slug_parts) >= 2:
-                    slug = f"{slug_parts[-2]}-{slug_parts[-1]}"  # "user-9508"
-                else:
-                    slug = slug_part
-            is_about_command = True
-    
-    if is_about_command and user_bio:
-        if handle_about_prompt(coach, slug, user_bio):
-            testimonial_url = f"{WEB_APP_URL}/lab/testimonials/{slug}"
-            if sender_phone:
-                send_confirmation_sms(f"✅ Your testimonial is ready: {testimonial_url}", sender_phone)
-            else:
-                send_confirmation_sms(f"✅ Your testimonial is ready: {testimonial_url}")
-        return True
+
     
 
 

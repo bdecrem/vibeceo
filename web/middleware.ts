@@ -33,6 +33,13 @@ export function middleware(request: NextRequest) {
   const isDevWtafRoute = isDevEnvironment && pathname.startsWith('/wtaf/')
   const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing'
   
+  // Debug logging for WTAF domain routing
+  if (isWtafDomain) {
+    console.log(`[Middleware] WTAF domain detected: ${host}${pathname}`)
+    console.log(`[Middleware] Search params: ${search}`)
+    console.log(`[Middleware] Full URL: ${request.url}`)
+  }
+  
   if (isWtafDomain || isDevWtafRoute || isDevUserRoute) {
     // Skip API routes, static files, and Next.js internals
     if (
@@ -60,9 +67,18 @@ export function middleware(request: NextRequest) {
 
     // Handle different routing scenarios
     if (isWtafDomain) {
-      // FIXED: Rewrite to internal Next.js server, not back to same domain
-      const newUrl = new URL(`/wtaf${pathname}${search}`, request.url)
-      console.log(`[Middleware] Rewriting wtaf.me ${pathname} -> /wtaf${pathname}`)
+      // CRITICAL FIX: Handle trailing slash properly for dynamic routes
+      let rewritePath = `/wtaf${pathname}`
+      
+      // If pathname ends with / and it's not just root, ensure it maps correctly
+      if (pathname !== '/' && pathname.endsWith('/')) {
+        // For user paths like /bart/, rewrite to /wtaf/bart (remove trailing slash for dynamic route)
+        rewritePath = `/wtaf${pathname.slice(0, -1)}`
+      }
+      
+      const newUrl = new URL(`${rewritePath}${search}`, request.url)
+      console.log(`[Middleware] Rewriting wtaf.me ${host}${pathname} -> ${rewritePath}`)
+      console.log(`[Middleware] New URL: ${newUrl.toString()}`)
       return NextResponse.rewrite(newUrl)
     } else if (isDevUserRoute) {
       // For dev user routes (e.g., /bart or /bart/app): rewrite to /wtaf/bart or /wtaf/bart/app
