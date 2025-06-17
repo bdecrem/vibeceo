@@ -1,0 +1,245 @@
+I'll create a vibrant, luxury-styled page with a rainbow gradient and peace sign theme while maintaining our high-end design system.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peace & Love Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(
+                45deg,
+                #ff6b6b,
+                #ffd93d,
+                #6cce9e,
+                #6c5ce7,
+                #ff6b6b
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 50px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .peace-sign {
+            font-size: 15rem;
+            text-align: center;
+            animation: float 6s ease-in-out infinite;
+            margin: 40px 0;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 18px 45px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .buttons {
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .peace-sign {
+                font-size: 10rem;
+            }
+
+            .glass-card {
+                padding: 30px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" style="top: 10%; left: 10%">🌈</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%">✌️</div>
+    <div class="floating-emoji" style="bottom: 20%; left: 15%">☮️</div>
+    <div class="floating-emoji" style="bottom: 30%; right: 10%">💝</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <h1>Peace & Love Studio</h1>
+            <p>Spreading positive vibes through art and community</p>
+            
+            <div class="peace-sign">☮️</div>
+            
+            <div class="buttons">
+                <a href="#" class="button">Join Our Community</a>
+                <a href="#" class="button">Spread The Love</a>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2 style="font-family: 'Space Grotesk'; font-size: 2.5rem; text-align: center; margin-bottom: 30px;">
+                Our Mission
+            </h2>
+            <p>
+                Creating a world of harmony through creative expression, mindful connection, and the power of peace. Join us in making the world a more colorful and loving place.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Intersection Observer for card reveals
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.glass-card').forEach((card) => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This page features:
+
+1. **Rainbow Gradient Background**
+- Smooth animated gradient with peaceful colors
+- 15-second animation cycle
+- Full viewport coverage
+
+2. **Giant Peace Sign**
+- Centered ☮️ emoji with floating animation
+- Large size (15rem on desktop, 10rem on mobile)
+- Gentle floating animation
+
+3. **Luxury Glass Morphism**
+- Cards with backdrop-filter blur
+- Hover animations
+- Proper spacing and padding
+
+4. **Floating Elements**
+- 4 themed emojis (🌈✌️☮️💝)
+- Mouse parallax effect
+- Infinite floating animation
+
+5. **Typography**
+- Space Grotesk for headings
+- Inter for body text
+- Proper sizing and spacing
+
+6. **Responsive Design**
+- Mobile-first approach
+- Adjusted sizes for small screens
+- Touch-friendly buttons
+
+7. **Interactive Features**
+- Mouse parallax on floating emojis
+- Scroll reveal animations
+- Hover effects on cards and buttons
+
+The design maintains the luxury feel while incorporating the peace and rainbow theme in an elegant way. The glass morphism effects and animations create a premium experience that works across all devices.

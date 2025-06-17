@@ -1,0 +1,259 @@
+I'll create a punk/alternative-styled landing page for Ink Riot tattoo parlor while maintaining our luxury design system. The page will use dark gradients with neon accents and edgy elements while keeping the premium feel.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink Riot • Premium Tattoo Artistry</title>
+    <style>
+        /* Core Imports */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                240deg,
+                #1a1a1a,
+                #2d1f3d,
+                #461b4d,
+                #1f1f1f
+            );
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animations */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) }
+            50% { transform: translateY(-20px) }
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        #emoji-1 { top: 10%; left: 5%; animation-delay: 0s; }
+        #emoji-2 { top: 20%; right: 10%; animation-delay: 2s; }
+        #emoji-3 { bottom: 15%; left: 8%; animation-delay: 4s; }
+        #emoji-4 { bottom: 25%; right: 5%; animation-delay: 6s; }
+
+        /* Layout Components */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Glass Card Base */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 50px;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -1px;
+        }
+
+        h1 {
+            font-size: 4.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #ff006e, #ff4e00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* CTA Button */
+        .cta-button {
+            background: linear-gradient(90deg, #ff006e, #ff4e00);
+            border: none;
+            border-radius: 50px;
+            padding: 18px 45px;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 0, 110, 0.3);
+        }
+
+        /* Artist Grid */
+        .artist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 { font-size: 3rem; }
+            .glass-card { padding: 30px; }
+            .floating-emoji { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Elements -->
+    <div class="floating-emoji" id="emoji-1">💀</div>
+    <div class="floating-emoji" id="emoji-2">⚡</div>
+    <div class="floating-emoji" id="emoji-3">🔥</div>
+    <div class="floating-emoji" id="emoji-4">⛓️</div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="glass-card hero-content">
+                <h1>INK RIOT</h1>
+                <p style="font-size: 1.4rem; margin-bottom: 30px; font-weight: 300;">
+                    Where rebellion meets artistry. Premium tattoo studio in the heart of the Lower East Side.
+                </p>
+                <button class="cta-button">Book Your Session</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Artists Section -->
+    <section class="container">
+        <div class="artist-grid">
+            <div class="glass-card">
+                <h3>BLADE</h3>
+                <p>Specializing in neo-traditional and Japanese style pieces. Featured in Inked Magazine.</p>
+            </div>
+            <div class="glass-card">
+                <h3>STORM</h3>
+                <p>Black work and geometric specialist. International guest artist from Berlin.</p>
+            </div>
+            <div class="glass-card">
+                <h3>NOVA</h3>
+                <p>Fine line and watercolor expert. Award-winning portrait artist.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section class="container" style="margin-top: 50px;">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 30px;">START YOUR JOURNEY</h2>
+            <form>
+                <input type="text" placeholder="Name" style="width: 100%; margin-bottom: 20px; padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                <input type="email" placeholder="Email" style="width: 100%; margin-bottom: 20px; padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                <textarea placeholder="Tell us about your tattoo idea" style="width: 100%; height: 150px; margin-bottom: 20px; padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;"></textarea>
+                <button class="cta-button">Submit Request</button>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        // Parallax Effect for Floating Elements
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - mouseX * speed) / 100;
+                const y = (window.innerHeight - mouseY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Intersection Observer for Card Animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.glass-card').forEach((card) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(50px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This design features:
+
+1. Dark, edgy gradient background with neon pink/orange accents
+2. Punk-themed floating emojis (skull, lightning, fire, chains)
+3. Glass morphism cards with enhanced hover effects
+4. Neon gradient text effects for main heading
+5. Responsive layout with mobile optimization
+6. Interactive parallax effects on floating elements
+7. Smooth scroll reveal animations
+8. Premium form styling with dark theme
+9. Artist showcase grid
+10. Luxury booking experience
+
+The design maintains the premium feel while incorporating punk/alternative elements through:
+- Dark color palette with neon accents
+- Edgy emoji choices
+- Bold typography
+- Grungy-yet-premium aesthetic
+- Alternative culture references
+
+The page is fully responsive and includes all core design system requirements while adapting them to fit the tattoo parlor's edgy brand identity.

@@ -1,0 +1,26 @@
+{
+  "page_title": "Inked Rebellion | Break Free Through Art",
+  "hero_text": "Your Body. Your Rules. Your Story.",
+  "subhead": "Where ink meets anarchy and self-expression knows no bounds",
+  "call_to_action": "Ready to make your mark? Our artists are waiting to bring your rebellion to life.",
+  "button_text": "BOOK YOUR REBELLION",
+  "sections": [
+    "about",
+    "featured_work",
+    "meet_the_rebels",
+    "pricing",
+    "booking",
+    "contact"
+  ],
+  "color_palette": [
+    "#1A1A1A",
+    "#FF3333",
+    "#00FF8C",
+    "#FFFFFF",
+    "#8C1AFF"
+  ],
+  "font_style": "mixed",
+  "emoji_pack": ["🎸", "⚡️", "💀", "🔥", "✨", "🖤", "🎨"],
+  "layout_variant": "asymmetrical-grid",
+  "coach_quote": "If it doesn't scare your parents, you're not doing it right"
+}

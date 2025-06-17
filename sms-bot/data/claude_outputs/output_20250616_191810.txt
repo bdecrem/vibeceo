@@ -1,0 +1,160 @@
+Here's a luxury-styled quote page featuring Steve Jobs, with a warm gradient and floating tech elements:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steve Jobs Quote - Luxury Design</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF4D4D, #FF8C00, #FFD700, #FFA500);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .floating-element {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 15%; right: 15%; animation-delay: 2s; }
+        #emoji3 { bottom: 20%; left: 20%; animation-delay: 1s; }
+        #emoji4 { bottom: 15%; right: 10%; animation-delay: 3s; }
+
+        .quote-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 50px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        .quote-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .quote {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 500;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 30px;
+            letter-spacing: -0.5px;
+        }
+
+        .author {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .quote {
+                font-size: 1.8rem;
+            }
+            
+            .author {
+                font-size: 1rem;
+            }
+
+            .quote-container {
+                padding: 30px;
+            }
+
+            .floating-element {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Elements -->
+    <div class="floating-element" id="emoji1">💡</div>
+    <div class="floating-element" id="emoji2">🚀</div>
+    <div class="floating-element" id="emoji3">⚡</div>
+    <div class="floating-element" id="emoji4">💫</div>
+
+    <!-- Quote Container -->
+    <div class="quote-container">
+        <p class="quote">"Stay hungry, stay foolish."</p>
+        <p class="author">Steve Jobs</p>
+    </div>
+
+    <script>
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            const elements = document.querySelectorAll('.floating-element');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            elements.forEach(element => {
+                const shift = 30; // Maximum pixel shift
+                const x = (mouseX - 0.5) * shift;
+                const y = (mouseY - 0.5) * shift;
+
+                element.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+This page features:
+
+1. **Warm Gradient Background**: Animated gradient cycling through yellow to red tones
+2. **Glass Morphism**: Quote container with blur effect and subtle transparency
+3. **Floating Elements**: Tech-themed emojis (💡🚀⚡💫) with smooth animations
+4. **Typography**: Space Grotesk for the quote, Inter for the author
+5. **Hover Effects**: Container lifts and becomes slightly more transparent on hover
+6. **Mouse Parallax**: Floating elements follow cursor movement
+7. **Responsive Design**: Adjusts for mobile viewing
+8. **Luxury Details**: 
+   - Subtle text shadows
+   - Premium spacing
+   - Smooth animations
+   - High-quality blur effects
+
+The design maintains the luxury feel while being minimal and impactful, letting the quote take center stage. The warm gradient adds energy and optimism, appropriate for a Steve Jobs quote.

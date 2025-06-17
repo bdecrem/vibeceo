@@ -1,0 +1,191 @@
+I'll create a stylish "Hello World" landing page that follows our luxury design system while keeping it simple and elegant.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World • Luxury Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(
+                45deg,
+                #ff6b6b,
+                #ffd93d,
+                #6c5ce7,
+                #a8e6cf
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 60px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.4rem;
+            font-weight: 300;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .floating {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #emoji1 { top: 15%; left: 15%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 15%; animation-delay: 2s; }
+        #emoji3 { bottom: 20%; left: 20%; animation-delay: 4s; }
+        #emoji4 { bottom: 15%; right: 20%; animation-delay: 6s; }
+
+        @media (max-width: 768px) {
+            .glass-card {
+                padding: 40px 20px;
+                margin: 20px;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            p {
+                font-size: 1.2rem;
+            }
+
+            .floating {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Emojis -->
+        <div class="floating" id="emoji1">🌟</div>
+        <div class="floating" id="emoji2">✨</div>
+        <div class="floating" id="emoji3">💫</div>
+        <div class="floating" id="emoji4">⭐</div>
+
+        <!-- Main Content -->
+        <div class="glass-card">
+            <h1>Hello World</h1>
+            <p>Welcome to our luxury design system showcase</p>
+        </div>
+    </div>
+
+    <script>
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            const floatingElements = document.querySelectorAll('.floating');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            floatingElements.forEach(element => {
+                const offsetX = (mouseX - 0.5) * 30;
+                const offsetY = (mouseY - 0.5) * 30;
+                element.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+
+        // Intersection Observer for card reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.glass-card'));
+    </script>
+</body>
+</html>
+```
+
+This Hello World page includes:
+
+1. **Core Design Language Elements**:
+   - Animated gradient background
+   - Glass morphism card
+   - Space Grotesk for heading
+   - Inter for body text
+   - Floating emoji elements with animations
+
+2. **Interactive Features**:
+   - Mouse parallax effect on floating elements
+   - Hover animation on the glass card
+   - Intersection Observer for card reveal
+
+3. **Responsive Design**:
+   - Mobile-friendly layout
+   - Adjusted sizes for smaller screens
+   - Preserved visual effects across devices
+
+4. **Visual Elements**:
+   - Four floating star/sparkle emojis (✨🌟💫⭐)
+   - Smooth animations
+   - Luxury-style glass morphism
+
+The page maintains the luxury feel while keeping the content minimal and focused. The color gradient moves through warm and cool tones to create an engaging but not overwhelming background, and the floating elements add visual interest without cluttering the design.
+
+To use this page, simply save it as an HTML file and open it in a modern browser. All fonts and styles are included, and no external dependencies are required.

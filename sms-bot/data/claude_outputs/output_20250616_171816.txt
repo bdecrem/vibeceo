@@ -1,0 +1,252 @@
+I'll create a luxury-edgy design for a punk tattoo parlor, adapting our core design system with an alternative aesthetic while maintaining the high-end feel.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRIC INK • Premium Tattoo Studio</title>
+    <style>
+        /* Core Imports */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --gradient-start: #1a0f2e;
+            --gradient-mid1: #4a1259;
+            --gradient-mid2: #ff2975;
+            --gradient-end: #4a1259;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(
+                240deg,
+                var(--gradient-start),
+                var(--gradient-mid1),
+                var(--gradient-mid2),
+                var(--gradient-end)
+            );
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating Elements */
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .emoji-1 { top: 15%; left: 10%; }
+        .emoji-2 { top: 25%; right: 15%; }
+        .emoji-3 { bottom: 20%; left: 15%; }
+        .emoji-4 { bottom: 30%; right: 10%; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Glass Card Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 40px;
+            margin: 20px 0;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Typography */
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #ff2975);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        /* Button Styles */
+        .cta-button {
+            background: rgba(255, 41, 117, 0.3);
+            border: 1px solid rgba(255, 41, 117, 0.5);
+            padding: 18px 45px;
+            border-radius: 50px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Space Grotesk';
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .cta-button:hover {
+            background: rgba(255, 41, 117, 0.5);
+            transform: translateY(-3px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 { font-size: 3rem; }
+            .container { padding: 15px; }
+            .glass-card { padding: 25px; }
+            .services-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji emoji-1">💀</div>
+    <div class="floating-emoji emoji-2">⚡</div>
+    <div class="floating-emoji emoji-3">🔥</div>
+    <div class="floating-emoji emoji-4">⛓️</div>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="glass-card">
+            <h1>ELECTRIC INK</h1>
+            <p style="font-size: 1.4rem; margin-bottom: 30px;">
+                Premium tattoo artistry in the heart of Venice Beach.
+                Where punk meets luxury, and rebellion meets refinement.
+            </p>
+            <button class="cta-button">Book Consultation</button>
+            <button class="cta-button" style="background: rgba(255,255,255,0.1);">
+                View Portfolio
+            </button>
+        </div>
+
+        <!-- Services Section -->
+        <div class="services-grid">
+            <div class="glass-card">
+                <h2>Custom Design</h2>
+                <p>Bespoke artwork crafted to your vision. Starting at $200/hr</p>
+            </div>
+            <div class="glass-card">
+                <h2>Flash Collection</h2>
+                <p>Curated designs by our resident artists. From $150</p>
+            </div>
+            <div class="glass-card">
+                <h2>Cover-Ups</h2>
+                <p>Transform existing pieces into new art. Starting at $250/hr</p>
+            </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="glass-card">
+            <h2>Find Us</h2>
+            <p style="margin-bottom: 20px;">
+                1234 Abbot Kinney Blvd<br>
+                Venice Beach, CA 90291<br>
+                Next to Gjelina & Salt & Straw
+            </p>
+            <p>
+                Tuesday - Saturday: 12PM - 10PM<br>
+                Sunday & Monday: By Appointment
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Parallax Effect for Floating Elements
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 30;
+                const offsetY = (mouseY - 0.5) * 30;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+
+        // Intersection Observer for Card Reveals
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
+```
+
+This design incorporates:
+
+1. **Edgy Color Palette**: Dark purples to electric pink gradients
+2. **Punk Aesthetic**: Skull, lightning, fire, and chain emojis as floating elements
+3. **Luxury Elements**: Glass morphism cards with enhanced hover effects
+4. **Premium Positioning**: High-end pricing and sophisticated copy
+5. **Venice Beach Context**: References to nearby premium establishments
+6. **Interactive Features**: Mouse parallax and scroll reveal animations
+
+The design maintains our luxury agency aesthetic while adapting it for the punk/alternative market. The glass morphism effects and animations create a premium feel, while the color scheme and typography maintain the edge needed for a tattoo parlor.
+
+Key features:
+- Animated gradient background
+- Floating emoji elements with parallax
+- Glass morphism cards with hover effects
+- Responsive design for all screen sizes
+- Intersection Observer for scroll animations
+- Premium pricing structure
+- Local business references
+- Punk aesthetic with luxury finishing
+
+Would you like me to modify any specific aspect of the design?

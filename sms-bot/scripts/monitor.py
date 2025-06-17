@@ -177,7 +177,7 @@ except Exception as e:
 def get_newest_file(directories):
     all_files = []
     for directory in directories:
-        files = [f for f in Path(directory).glob("*.txt") if f.is_file()]
+        files = [f for f in Path(directory).glob("*.txt") if f.is_file() and not f.name.startswith("PROCESSING_")]
         all_files.extend(files)
     return max(all_files, key=os.path.getctime) if all_files else None
 
@@ -264,81 +264,7 @@ Return ONLY the complete HTML code wrapped in ```html code blocks."""
 
 
 
-def handle_about_prompt(coach, slug, user_bio):
-    # 1. Get the specific coach's personality and prompt
-    coach_data = None
-    for c in COACHES:
-        if c.get("id", "").lower() == coach.lower():
-            coach_data = c
-            break
-    
-    if not coach_data:
-        log_with_timestamp(f"❌ Unknown coach: {coach}")
-        return False
-    
-    # 2. Prompt GPT for a one-paragraph testimonial in the coach's specific voice
-    system_prompt = f"""You are {coach_data['name']}.
 
-{coach_data['prompt']}
-
-Write a short, glowing testimonial paragraph about the following person in your specific voice and style. Be vivid, bold, and authentic. Use your characteristic communication style."""
-    user_prompt = f"Here's what they said about themselves: {user_bio}"
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.9,
-            max_tokens=500
-        )
-        paragraph = response.choices[0].message.content.strip()
-    except Exception as e:
-        log_with_timestamp(f"💥 GPT Error: {e}")
-        return False
-
-    log_with_timestamp(f"📝 Generated paragraph: {paragraph}")
-
-    # 2. Inject the paragraph into each design template
-    try:
-        with open("sms-bot/scripts/templates/testimonial1.html", "r") as f1, \
-             open("sms-bot/scripts/templates/testimonial2.html", "r") as f2, \
-             open("sms-bot/scripts/templates/testimonial3.html", "r") as f3, \
-             open("sms-bot/scripts/templates/testimonial4.html", "r") as f4:
-            templates = [f.read() for f in (f1, f2, f3, f4)]
-    except Exception as e:
-        log_with_timestamp(f"💥 Template load error: {e}")
-        return False
-
-    rendered = [
-        html.replace("{{TESTIMONIAL}}", paragraph).replace("{{NAME}}", slug.title())
-        for html in templates
-    ]
-
-    # 3. Build the Supabase payload
-    payload = {
-        "slug": slug,
-        "name": slug.title(),
-        "coach": coach,
-        "voice_paragraph": paragraph,
-        "designs": { "designs": rendered }
-    }
-
-    try:
-        r = requests.post(f"{WEB_APP_URL}/api/save-testimonial", json=payload)
-        if r.status_code == 200:
-            log_with_timestamp("✅ Saved testimonial to Supabase")
-        else:
-            log_with_timestamp(f"❌ Supabase error: {r.status_code} {r.text}")
-    except Exception as e:
-        log_with_timestamp(f"💥 POST failed: {e}")
-        return False
-
-    return True
 
 def extract_code_blocks(text):
     # First try to extract content between ```html and ``` markers (most specific)
@@ -596,6 +522,97 @@ def generate_og_image_url(user_slug, app_slug):
         log_with_timestamp(f"❌ Error generating OG image: {e}")
         return None
 
+def load_prompt_json(filename):
+    """Load prompt from JSON file"""
+    try:
+        prompt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "prompts", filename)
+        with open(prompt_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        log_with_timestamp(f"⚠️ Error loading prompt {filename}: {e}")
+        return None
+
+def generate_prompt_2(user_input):
+    """Generate a better prompt from user input - Prompt 1"""
+    log_with_timestamp("=" * 80)
+    log_with_timestamp("🎯 PROMPT 1: Enhancing user input...")
+    log_with_timestamp(f"📥 ORIGINAL INPUT: {user_input}")
+    log_with_timestamp("-" * 80)
+    
+    # Parse coach from user prompt before sending to Claude (WTAF syntax: "wtaf -coach- request")
+    coach_match = re.search(r'wtaf\s+-([a-z]+)-\s+(.+)', user_input, re.IGNORECASE)
+    if coach_match:
+        coach = coach_match.group(1).lower()
+        cleaned_input = f"wtaf {coach_match.group(2)}"  # Keep "wtaf" but remove coach
+    else:
+        coach = None
+        cleaned_input = user_input
+    
+    if coach:
+        log_with_timestamp(f"🎭 Extracted coach: {coach}")
+        log_with_timestamp(f"🧹 Cleaned input: {cleaned_input}")
+    
+    # Load Prompt 1 from JSON file
+    prompt1_data = load_prompt_json("prompt1-creative-brief.json")
+    if not prompt1_data:
+        log_with_timestamp("❌ Failed to load Prompt 1, using fallback")
+        return user_input, None
+    
+    # Prepare user message with coach information
+    user_message = cleaned_input
+    if coach:
+        user_message += f"\n\nCOACH_HANDLE: {coach}"
+    
+    messages = [
+        prompt1_data,
+        {"role": "user", "content": user_message}
+    ]
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
+        )
+        json_output = response.choices[0].message.content.strip()
+        log_with_timestamp(f"📤 JSON BRIEF: {json_output}")
+        
+        # Parse JSON and extract data
+        try:
+            import json
+            brief = json.loads(json_output)
+            
+            # Create enhanced prompt from JSON data
+            enhanced_prompt = f"""Project: {brief.get('project_name', 'Untitled')}
+
+Summary: {brief.get('summary', user_input)}
+
+Tone: {brief.get('tone', 'modern and engaging')}
+
+Style Notes: {brief.get('style_notes', 'clean, modern design')}
+
+Core Features: {', '.join(brief.get('core_features', ['main content area']))}"""
+            
+            log_with_timestamp(f"📋 Parsed brief - Type: {brief.get('request_type', 'page')}")
+            log_with_timestamp("✅ Prompt 1 complete!")
+            log_with_timestamp("=" * 80)
+            
+            # Return both the enhanced prompt and the parsed JSON
+            return enhanced_prompt, brief
+            
+        except json.JSONDecodeError as je:
+            log_with_timestamp(f"⚠️ JSON parsing error: {je}")
+            log_with_timestamp("📤 Using raw output as prompt")
+            log_with_timestamp("✅ Prompt 1 complete!")
+            log_with_timestamp("=" * 80)
+            return json_output, None
+            
+    except Exception as e:
+        log_with_timestamp(f"⚠️ Error generating prompt, using original: {e}")
+        log_with_timestamp("=" * 80)
+        return user_input, None  # Fallback to original if generation fails
+
 def execute_gpt4o(prompt_file):
     log_with_timestamp(f"📖 Reading: {prompt_file}")
     with open(prompt_file, "r") as f:
@@ -699,19 +716,39 @@ def execute_gpt4o(prompt_file):
         slug = f"code-snippet-{timestamp}" 
         user_prompt = raw_prompt.strip()
 
-
+    # NEW: Generate enhanced prompt from user input (Prompt 1 → Prompt 2)
+    enhanced_prompt, brief = generate_prompt_2(user_prompt)
     
+    # Use enhanced_prompt for the rest of the processing
+    user_prompt = enhanced_prompt
 
+    # Get request type from JSON brief or fallback to detection
+    log_with_timestamp("🚀 PROMPT 2: Building final content...")
+    if brief and 'request_type' in brief:
+        request_type = brief['request_type']
+        # Map "page" to "website" for compatibility with existing system
+        if request_type == 'page':
+            request_type = 'website'
+        log_with_timestamp(f"🎯 Request type from brief: {request_type}")
+    else:
+        request_type = detect_request_type(user_prompt)
+        log_with_timestamp(f"🎯 Detected request type (fallback): {request_type}")
     
-
-
-    # Detect request type for smart prompt selection
-    request_type = detect_request_type(user_prompt)
-    log_with_timestamp(f"🎯 Detected request type: {request_type}")
-    
-    # Find the coach data - prioritize coach from file, then from parsing
+    # Find the coach data - prioritize brief coach, then file coach, then parsing
     coach_data = None
-    coach_to_find = coach_from_file if coach_from_file else coach
+    coach_to_find = None
+    
+    # Check for coach in brief first
+    if brief and brief.get('inject_coach_voice') and brief.get('coach_handle'):
+        coach_to_find = brief['coach_handle']
+        log_with_timestamp(f"🎭 Coach from brief: {coach_to_find}")
+    # Fallback to file or parsing coach
+    elif coach_from_file:
+        coach_to_find = coach_from_file
+        log_with_timestamp(f"🎭 Coach from file: {coach_to_find}")
+    elif coach:
+        coach_to_find = coach
+        log_with_timestamp(f"🎭 Coach from parsing: {coach_to_find}")
     
     if coach_to_find and coach_to_find.lower() != "default":
         for c in COACHES:
@@ -722,415 +759,67 @@ def execute_gpt4o(prompt_file):
         if not coach_data:
             log_with_timestamp(f"⚠️ Coach '{coach_to_find}' not found in COACHES list")
     else:
-        log_with_timestamp(f"🎨 No coach specified (coach='{coach_to_find}')")
+        log_with_timestamp(f"🎨 No coach specified")
     
-    # Build the system prompt based on request type
+    # Load the appropriate Prompt 2 based on request type
     if request_type == 'game':
         log_with_timestamp("🎮 Game mode activated")
-        system_prompt = """You are creating fully functional web games with the same sophisticated aesthetic as a luxury design agency.
-
-CORE REQUIREMENTS:
-- Complete, working game mechanics (controls, scoring, win/lose states)
-- Clean, modern design with subtle elegance
-- MOBILE-FIRST responsive design - must look great on phones and tablets
-- Touch controls optimized for mobile devices
-- Professional look, not amateur gaming aesthetics
-
-DESIGN PRINCIPLES:
-- Sophisticated color palettes (avoid garish gaming colors)
-- Clean typography that scales perfectly on all screen sizes
-- Subtle animations and smooth interactions
-- Glass morphism effects where appropriate
-- Responsive layout that adapts beautifully to any device
-
-Return complete HTML with embedded CSS/JS in code blocks."""
-    
+        prompt2_data = load_prompt_json("prompt2-game.json")
     elif request_type == 'app':
-        log_with_timestamp("📱 App mode activated")
-        system_prompt = """You are creating functional productivity apps with the same sophisticated aesthetic as a luxury design agency.
-
-CORE REQUIREMENTS:
-- Perfect core functionality (calculations, data persistence, user interactions)
-- Intuitive, elegant interface design
-- MOBILE-FIRST responsive design - must look stunning on phones and tablets
-- Touch-optimized controls and interactions for mobile devices
-- Professional look with luxury design elements
-
-DESIGN PRINCIPLES:
-- Sophisticated color palettes and clean typography that scales beautifully
-- Glass morphism effects and subtle animations
-- Intuitive user interactions with smooth feedback
-- Data persistence using localStorage where appropriate
-- Responsive layout that works flawlessly across all screen sizes
-
-Return complete HTML with embedded CSS/JS in code blocks."""
+        log_with_timestamp("📱 App mode activated") 
+        prompt2_data = load_prompt_json("prompt2-app.json")
+    elif request_type == 'website' or coach_data:
+        if coach_data:
+            log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
+        else:
+            log_with_timestamp("🌐 Website mode activated")
+        prompt2_data = load_prompt_json("prompt2-website.json")
+    else:
+        log_with_timestamp("🎨 Using default website mode")
+        prompt2_data = load_prompt_json("prompt2-website.json")
     
-    elif coach_data:
-        log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
-        # Coach-specific prompt that combines personality with design system
-        system_prompt = f"""# Poolsuite Design System API Prompt - Coach Mode
+    if not prompt2_data:
+        log_with_timestamp("❌ Failed to load Prompt 2, using fallback")
+        system_prompt = "You are a helpful web designer. Create a complete HTML page based on the user's request."
+    else:
+        system_prompt = prompt2_data["content"]
+        
+        # Inject coach personality if needed
+        if coach_data and brief and brief.get('inject_coach_voice'):
+            coach_info = f"""
 
-CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Ensure floating elements, animations, and full glass morphism design system on ALL screen sizes.
+IMPORTANT: You are now {coach_data['name']} writing this testimonial personally.
 
-You are {coach_data['name']}, a luxury web designer creating landing pages with your signature aesthetic inspired by Poolsuite FM and West Coast luxury. 
-
-## YOUR PERSONALITY & VOICE
 {coach_data['prompt']}
 
-## IMPORTANT: Apply your personality to:
-- The copy and content tone throughout the page
-- Business type assumptions and recommendations  
-- The emotional vibe and energy of the design
-- Any text content, headlines, and descriptions
-- The overall attitude and approach to the project
+When creating this testimonial page:
+- Write the testimonial content in YOUR authentic voice and style
+- Use YOUR characteristic communication patterns
+- Channel YOUR personality directly into the testimonial text
+- Make it feel like YOU personally wrote this testimonial about the person
+- The testimonial should sound exactly like something YOU would say
 
-Every page must follow the established design language while adapting the visual theme to match the specific business type AND reflecting your unique personality and voice.
-
-## CORE DESIGN LANGUAGE (NEVER CHANGE)
-
-## LUXURY ENFORCEMENT (MANDATORY)
-EVERY page must include ALL of these elements:
-- 4 floating emoji elements relevant to business type with smooth animations
-- Animated gradient background (400% size, 15-20s animation)
-- Multiple glass morphism containers with proper blur effects
-- All typography following Space Grotesk/Inter hierarchy
-- Hover animations on cards (translateY -5px, enhanced shadows)
-- Mouse parallax effects on floating elements
-- Professional color palette appropriate to business type
-- Intersection observer animations for reveals
-
-NO EXCEPTIONS - even simple pages must feel like luxury design agency work.
-
-### Typography System
-- **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
-- **Body**: 'Inter' - weights 300, 400, 500, 600
-- **Logo**: Space Grotesk, 3.5-5rem, font-weight 700, letter-spacing -1px to -2px
-- **Hero Titles**: Space Grotesk, 3.5-4.2rem, font-weight 500-700
-- **Body Text**: Inter, 1.2-1.4rem, font-weight 300, line-height 1.6-1.7
-
-### Layout & Spacing
-- **Container**: max-width 1200px, margin 0 auto, padding 20px
-- **Border Radius**: 15px (small), 20px (medium), 25px (large), 30px (hero)
-- **Card Padding**: 30-45px (small), 50-70px (hero)
-- **Grid Gaps**: 30-40px between cards
-- **Responsive**: single column below 768px
-
-### Glass Morphism System
-```css
-background: rgba(255, 255, 255, 0.15-0.25);
-backdrop-filter: blur(12-20px);
-border: 1px solid rgba(255, 255, 255, 0.2-0.4);
-border-radius: 20-30px;
-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1-0.15);
-```
-
-### Animation Framework
-- **Gradient Background**: 400% 400% size, 15-20s ease infinite shift
-- **Hover Transitions**: all 0.3-0.4s ease
-- **Parallax**: subtleParallax 20-25s ease-in-out infinite, translateY -8px to -12px
-- **Float Elements**: 6-8s ease-in-out infinite, translateY -10px to -20px
-- **Card Hovers**: translateY -3px to -8px, enhanced shadows
-
-### Interaction Patterns
-- **Buttons**: 50px border-radius, padding 18-20px 45-50px, uppercase, letter-spacing 1px
-- **Forms**: 15px border-radius, padding 15px 20px, same glass morphism
-- **Cards**: hover lift + enhanced background opacity + stronger shadows
-
-## BUSINESS TYPE ADAPTATIONS
-
-### Color Palette Selection
-**Pool/Leisure**: Orange → yellow → mint → blue gradients
-**Beauty/Wellness**: Pink → coral → warm tones gradients  
-**Edgy/Alternative**: Dark → electric pink → cyan → purple gradients
-**Tech/Modern**: Blue → teal → purple gradients
-**Food/Hospitality**: Warm oranges → reds → yellows
-
-### Floating Elements (4 elements max)
-Choose 4 emojis relevant to business type:
-- **Pool/Coffee**: 🌴☕🌊🦩
-- **Beauty**: ✨💄🪞🪮  
-- **Tattoo/Punk**: 💀⚡🔥⛓️
-- **Tech**: 🔮💎⚙️🚀
-- **Food**: 🍕🍷🌶️🥂
-
-### Effect Variations
-**Luxury/Calm**: Floating bubbles, shimmer effects, soft animations
-**Edgy/Punk**: Electric sparks, glitch effects, neon glows, aggressive shadows
-**Tech**: Grid patterns, scan lines, holographic effects
-**Organic**: Flowing particles, gentle waves, natural movement
-
-## CONTENT STRUCTURE REQUIREMENTS
-
-### Header Section
-- Logo: Business name in Space Grotesk
-- Tagline: Descriptive subtitle with business type/location
-
-### Hero Section
-- Glass morphism container with hero content
-- H1: Compelling business-focused headline
-- Paragraph: 1-2 sentences describing the business value proposition
-- Primary CTA + Secondary CTA buttons
-
-### Services/Features Section (3-4 cards)
-- Grid layout with glass morphism cards
-- Each card: Icon, Title, Description, Price/Details
-- Hover effects with enhanced shadows
-
-### Location/Contact Section
-- Two-column layout (location info + contact/booking form)
-- Address, hours, contextual details
-- Functional contact form with proper validation
-
-### Cross-references
-- Always reference other businesses on the same block/area
-- Build neighborhood ecosystem in copy
-
-## TECHNICAL REQUIREMENTS
-
-### HTML Structure
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>[Business Name]</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
-    /* Core system styles */
-  </style>
-</head>
-<body>
-  <!-- Floating effects -->
-  <!-- Floating elements -->
-  <header><!-- Logo + tagline --></header>
-  <main>
-    <section class="hero"><!-- Hero content --></section>
-    <section class="services"><!-- Service cards --></section>
-    <section class="location-contact"><!-- Location + contact --></section>
-  </main>
-  <script><!-- Interactive features --></script>
-</body>
-</html>
-```
-
-### JavaScript Features
-- Mouse parallax for floating elements
-- Scroll-based parallax for sections
-- Intersection observer for card reveals
-- Form validation and submission
-- Smooth scrolling for anchor links
-- Business-specific interactive effects
-
-### Responsive Design
-- Mobile-first approach
-- Single column layout below 768px
-- Adjusted font sizes and padding for mobile
-- Touch-friendly button sizes
-
-## OUTPUT FORMAT
-
-Create a complete, functional HTML page with:
-1. **Appropriate color palette** for the business type
-2. **Themed floating elements** (4 emojis)
-3. **Business-specific content** (services, pricing, location)
-4. **Contextual copy** that feels authentic to the business
-5. **Interactive features** that enhance the user experience
-6. **Perfect adherence** to the core design language
-7. **Cross-references** to other businesses in the area
-
-The result should feel like it came from the same luxury design agency while being perfectly suited to the specific business type and industry.
-
-## BUSINESS CONTEXT PROMPT
-
-When creating a page, first consider:
-- What type of business is this?
-- What emotion should the user feel?
-- What's the price point and target demographic?
-- How should this adapt the core design language?
-- What specific services/products need to be highlighted?
-
-Then apply the design system accordingly while maintaining the signature aesthetic that makes all pages recognizably from the same design studio."""
-    else:
-        log_with_timestamp("🎨 Using default design system prompt (no coach specified)")
-        # Default prompt without coach personality
-        system_prompt = """# Poolsuite Design System API Prompt
-
-CRITICAL: ALL PAGES MUST BE MOBILE-FIRST RESPONSIVE. Ensure floating elements, animations, and full glass morphism design system on ALL screen sizes.
-
-You are an expert web designer creating landing pages for a luxury design agency with a signature aesthetic inspired by Poolsuite FM and West Coast luxury. Every page must follow the established design language while adapting the visual theme to match the specific business type.
-
-## CORE DESIGN LANGUAGE (NEVER CHANGE)
-
-## LUXURY ENFORCEMENT (MANDATORY)
-EVERY page must include ALL of these elements:
-- 4 floating emoji elements relevant to business type with smooth animations
-- Animated gradient background (400% size, 15-20s animation)
-- Multiple glass morphism containers with proper blur effects
-- All typography following Space Grotesk/Inter hierarchy
-- Hover animations on cards (translateY -5px, enhanced shadows)
-- Mouse parallax effects on floating elements
-- Professional color palette appropriate to business type
-- Intersection observer animations for reveals
-
-NO EXCEPTIONS - even simple pages must feel like luxury design agency work.
-
-### Typography System
-- **Headers**: 'Space Grotesk' - weights 300, 400, 500, 700, 900
-- **Body**: 'Inter' - weights 300, 400, 500, 600
-- **Logo**: Space Grotesk, 3.5-5rem, font-weight 700, letter-spacing -1px to -2px
-- **Hero Titles**: Space Grotesk, 3.5-4.2rem, font-weight 500-700
-- **Body Text**: Inter, 1.2-1.4rem, font-weight 300, line-height 1.6-1.7
-
-### Layout & Spacing
-- **Container**: max-width 1200px, margin 0 auto, padding 20px
-- **Border Radius**: 15px (small), 20px (medium), 25px (large), 30px (hero)
-- **Card Padding**: 30-45px (small), 50-70px (hero)
-- **Grid Gaps**: 30-40px between cards
-- **Responsive**: single column below 768px
-
-### Glass Morphism System
-```css
-background: rgba(255, 255, 255, 0.15-0.25);
-backdrop-filter: blur(12-20px);
-border: 1px solid rgba(255, 255, 255, 0.2-0.4);
-border-radius: 20-30px;
-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1-0.15);
-```
-
-### Animation Framework
-- **Gradient Background**: 400% 400% size, 15-20s ease infinite shift
-- **Hover Transitions**: all 0.3-0.4s ease
-- **Parallax**: subtleParallax 20-25s ease-in-out infinite, translateY -8px to -12px
-- **Float Elements**: 6-8s ease-in-out infinite, translateY -10px to -20px
-- **Card Hovers**: translateY -3px to -8px, enhanced shadows
-
-### Interaction Patterns
-- **Buttons**: 50px border-radius, padding 18-20px 45-50px, uppercase, letter-spacing 1px
-- **Forms**: 15px border-radius, padding 15px 20px, same glass morphism
-- **Cards**: hover lift + enhanced background opacity + stronger shadows
-
-## BUSINESS TYPE ADAPTATIONS
-
-### Color Palette Selection
-**Pool/Leisure**: Orange → yellow → mint → blue gradients
-**Beauty/Wellness**: Pink → coral → warm tones gradients  
-**Edgy/Alternative**: Dark → electric pink → cyan → purple gradients
-**Tech/Modern**: Blue → teal → purple gradients
-**Food/Hospitality**: Warm oranges → reds → yellows
-
-### Floating Elements (4 elements max)
-Choose 4 emojis relevant to business type:
-- **Pool/Coffee**: 🌴☕🌊🦩
-- **Beauty**: ✨💄🪞🪮  
-- **Tattoo/Punk**: 💀⚡🔥⛓️
-- **Tech**: 🔮💎⚙️🚀
-- **Food**: 🍕🍷🌶️🥂
-
-### Effect Variations
-**Luxury/Calm**: Floating bubbles, shimmer effects, soft animations
-**Edgy/Punk**: Electric sparks, glitch effects, neon glows, aggressive shadows
-**Tech**: Grid patterns, scan lines, holographic effects
-**Organic**: Flowing particles, gentle waves, natural movement
-
-## CONTENT STRUCTURE REQUIREMENTS
-
-### Header Section
-- Logo: Business name in Space Grotesk
-- Tagline: Descriptive subtitle with business type/location
-
-### Hero Section
-- Glass morphism container with hero content
-- H1: Compelling business-focused headline
-- Paragraph: 1-2 sentences describing the business value proposition
-- Primary CTA + Secondary CTA buttons
-
-### Services/Features Section (3-4 cards)
-- Grid layout with glass morphism cards
-- Each card: Icon, Title, Description, Price/Details
-- Hover effects with enhanced shadows
-
-### Location/Contact Section
-- Two-column layout (location info + contact/booking form)
-- Address, hours, contextual details
-- Functional contact form with proper validation
-
-### Cross-references
-- Always reference other businesses on the same block/area
-- Build neighborhood ecosystem in copy
-
-## TECHNICAL REQUIREMENTS
-
-### HTML Structure
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>[Business Name]</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
-    /* Core system styles */
-  </style>
-</head>
-<body>
-  <!-- Floating effects -->
-  <!-- Floating elements -->
-  <header><!-- Logo + tagline --></header>
-  <main>
-    <section class="hero"><!-- Hero content --></section>
-    <section class="services"><!-- Service cards --></section>
-    <section class="location-contact"><!-- Location + contact --></section>
-  </main>
-  <script><!-- Interactive features --></script>
-</body>
-</html>
-```
-
-### JavaScript Features
-- Mouse parallax for floating elements
-- Scroll-based parallax for sections
-- Intersection observer for card reveals
-- Form validation and submission
-- Smooth scrolling for anchor links
-- Business-specific interactive effects
-
-### Responsive Design
-- Mobile-first approach
-- Single column layout below 768px
-- Adjusted font sizes and padding for mobile
-- Touch-friendly button sizes
-
-## OUTPUT FORMAT
-
-Create a complete, functional HTML page with:
-1. **Appropriate color palette** for the business type
-2. **Themed floating elements** (4 emojis)
-3. **Business-specific content** (services, pricing, location)
-4. **Contextual copy** that feels authentic to the business
-5. **Interactive features** that enhance the user experience
-6. **Perfect adherence** to the core design language
-7. **Cross-references** to other businesses in the area
-
-The result should feel like it came from the same luxury design agency while being perfectly suited to the specific business type and industry.
-
-## BUSINESS CONTEXT PROMPT
-
-When creating a page, first consider:
-- What type of business is this?
-- What emotion should the user feel?
-- What's the price point and target demographic?
-- How should this adapt the core design language?
-- What specific services/products need to be highlighted?
-
-Then apply the design system accordingly while maintaining the signature aesthetic that makes all pages recognizably from the same design studio."""
+You are not designing a page AS a designer - you ARE the testimonial author speaking in your own voice."""
+            
+            system_prompt += coach_info
+            log_with_timestamp(f"✨ Injected {coach_data['name']} as testimonial author (not designer)")
 
     full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
     # Smart model selection based on request type
-    if request_type in ['game', 'app']:
-        model = "claude-3-5-opus-20241022"
-        max_tokens = 16000  # Generous token budget for complex apps/games
-        log_with_timestamp("🧠 Using Claude 3.5 Opus for complex web apps/games...")
+    if request_type == 'game':
+        model = "claude-opus-4-20250514"  # Claude 4 Opus supports 32K tokens
+        fallback_model = "claude-sonnet-4-20250514"  # Claude 4 Sonnet as fallback
+        max_tokens = 32000  # Maximum token budget for complex games
+        log_with_timestamp("🧠 Using Claude 4 Opus with 32K tokens for games...")
+    elif request_type == 'app':
+        model = "claude-3-opus-20240229"  # Claude 3 Opus for apps
+        fallback_model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet as fallback
+        max_tokens = 4000  # Claude 3 Opus max is 4096, use 4000 to be safe
+        log_with_timestamp("🧠 Using Claude 3 Opus with 4K tokens for apps...")
     else:
         model = "claude-3-5-sonnet-20241022"
+        fallback_model = "claude-3-5-haiku-20241022"  # Claude 3.5 Haiku as fallback
         max_tokens = 8100  # Standard token budget for websites
         log_with_timestamp("🧠 Using Claude 3.5 Sonnet for web design...")
     
@@ -1162,6 +851,7 @@ Then apply the design system accordingly while maintaining the signature aesthet
         }
         
         log_with_timestamp(f"🔍 Sending {model} request with token limit: {max_tokens}")
+        log_with_timestamp("🤖 Executing PROMPT 2 with enhanced input...")
         
         # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
@@ -1180,20 +870,61 @@ Then apply the design system accordingly while maintaining the signature aesthet
             raise Exception("Invalid Claude response structure")
         
     except Exception as e:
-        log_with_timestamp(f"⚠️ Claude API error, falling back to GPT-4o: {e}")
-        # Fall back to GPT-4o
+        log_with_timestamp(f"⚠️ Claude {model} error, trying fallback: {e}")
+        # Try Claude fallback model first
         try:
-            log_with_timestamp("🧠 Falling back to GPT-4o...")
-            response = openai_client.chat.completions.create(
-                model="gpt-4o",
-                messages=full_prompt,
-                temperature=0.8,
-                max_tokens=max_tokens
-            )
-            result = response.choices[0].message.content
-        except Exception as e:
-            log_with_timestamp(f"💥 GPT API error: {e}")
-            return False
+            if 'fallback_model' in locals():
+                log_with_timestamp(f"🔄 Trying Claude fallback: {fallback_model}")
+                
+                # Adjust max tokens for fallback model if needed
+                fallback_max_tokens = max_tokens
+                if fallback_model == "claude-3-5-sonnet-20241022":
+                    fallback_max_tokens = min(max_tokens, 8100)
+                elif fallback_model == "claude-3-5-haiku-20241022":
+                    fallback_max_tokens = min(max_tokens, 4000)
+                
+                payload = {
+                    "model": fallback_model,
+                    "max_tokens": fallback_max_tokens,
+                    "temperature": 0.7,
+                    "system": system_prompt,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": user_prompt
+                        }
+                    ]
+                }
+                
+                response = requests.post(claude_api_url, headers=headers, json=payload)
+                response_json = response.json()
+                log_with_timestamp(f"📊 Claude fallback response - status: {response.status_code}")
+                
+                if "content" in response_json and len(response_json["content"]) > 0:
+                    result = response_json["content"][0]["text"]
+                    log_with_timestamp(f"✅ {fallback_model} response received, length: {len(result)} chars")
+                else:
+                    raise Exception("Invalid Claude fallback response structure")
+            else:
+                raise Exception("No fallback model available")
+                
+        except Exception as fallback_error:
+            log_with_timestamp(f"⚠️ Claude fallback also failed, using GPT-4o: {fallback_error}")
+            # Final fallback to GPT-4o
+            try:
+                # GPT-4o max tokens is 16,384, adjust if needed
+                gpt_max_tokens = min(max_tokens, 16000)  # Use 16K to be safe
+                log_with_timestamp(f"🧠 Falling back to GPT-4o with {gpt_max_tokens} tokens...")
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=full_prompt,
+                    temperature=0.8,
+                    max_tokens=gpt_max_tokens
+                )
+                result = response.choices[0].message.content
+            except Exception as gpt_error:
+                log_with_timestamp(f"💥 All models failed - GPT error: {gpt_error}")
+                return False
 
     output_file = os.path.join(CLAUDE_OUTPUT_DIR, f"output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
     with open(output_file, "w") as f:
@@ -1211,6 +942,11 @@ Then apply the design system accordingly while maintaining the signature aesthet
             filename, public_url = save_code_to_file(code, coach, slug, user_slug=None)
         
         if public_url:
+            log_with_timestamp("=" * 80)
+            log_with_timestamp("🎉 TWO-PROMPT PROCESS COMPLETE!")
+            log_with_timestamp(f"🌐 Final URL: {public_url}")
+            log_with_timestamp("=" * 80)
+            
             # Send SMS to original sender if available, otherwise to default
             if sender_phone:
                 log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")

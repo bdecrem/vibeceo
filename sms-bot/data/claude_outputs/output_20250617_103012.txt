@@ -1,0 +1,382 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Serpent Run</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(45deg, #FF006E, #8338EC, #3A86FF, #06FFB4);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .score {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 15px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 60px;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        canvas {
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.8);
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            opacity: 0.6;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 80%; right: 15%; animation-delay: 5s; }
+        .emoji-3 { top: 50%; left: 85%; animation-delay: 10s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(-5deg); }
+            75% { transform: translateY(20px) rotate(3deg); }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 2rem;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+        
+        #gameScreen { display: none; }
+        #endScreen { display: none; }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji emoji-1">🐍</div>
+    <div class="floating-emoji emoji-2">🍎</div>
+    <div class="floating-emoji emoji-3">✨</div>
+    
+    <div class="container">
+        <div id="startScreen" class="glass-panel">
+            <h1>Serpent Run</h1>
+            <p style="color: white; margin-bottom: 30px; font-size: 1.1rem;">Collect pixels. Avoid yourself.</p>
+            <button onclick="startGame()">Start Slithering</button>
+        </div>
+        
+        <div id="gameScreen">
+            <canvas id="gameCanvas"></canvas>
+            <div class="controls">
+                <button class="control-btn" onclick="changeDirection('up')">↑</button>
+                <button class="control-btn" onclick="changeDirection('down')">↓</button>
+                <button class="control-btn" onclick="changeDirection('left')">←</button>
+                <button class="control-btn" onclick="changeDirection('right')">→</button>
+            </div>
+        </div>
+        
+        <div id="endScreen" class="glass-panel">
+            <h1>Game Over!</h1>
+            <div class="score">Score: <span id="finalScore">0</span></div>
+            <p style="color: white; margin-bottom: 30px;">You became too tangled 🌀</p>
+            <button onclick="startGame()">Try Again</button>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 15;
+        
+        let snake = [];
+        let direction = 'right';
+        let nextDirection = 'right';
+        let food = {};
+        let score = 0;
+        let gameRunning = false;
+        let lastTime = 0;
+        let accumulator = 0;
+        const GAME_SPEED = 100;
+        
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const size = Math.min(window.innerWidth - 40, 400);
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            ctx.scale(dpr, dpr);
+            ctx.imageSmoothingEnabled = false;
+        }
+        
+        function initGame() {
+            snake = [
+                {x: 10, y: 10},
+                {x: 9, y: 10},
+                {x: 8, y: 10}
+            ];
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            placeFood();
+        }
+        
+        function placeFood() {
+            do {
+                food = {
+                    x: Math.floor(Math.random() * GRID_SIZE),
+                    y: Math.floor(Math.random() * GRID_SIZE)
+                };
+            } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+        }
+        
+        function changeDirection(newDir) {
+            if (gameRunning) {
+                if (newDir === 'up' && direction !== 'down') nextDirection = 'up';
+                else if (newDir === 'down' && direction !== 'up') nextDirection = 'down';
+                else if (newDir === 'left' && direction !== 'right') nextDirection = 'left';
+                else if (newDir === 'right' && direction !== 'left') nextDirection = 'right';
+            }
+        }
+        
+        function update() {
+            direction = nextDirection;
+            
+            const head = {...snake[0]};
+            
+            if (direction === 'up') head.y--;
+            else if (direction === 'down') head.y++;
+            else if (direction === 'left') head.x--;
+            else if (direction === 'right') head.x++;
+            
+            if (head.x < 0 || head.x >= GRID_SIZE || 
+                head.y < 0 || head.y >= GRID_SIZE ||
+                snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                endGame();
+                return;
+            }
+            
+            snake.unshift(head);
+            
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+        }
+        
+        function render() {
+            const canvasSize = parseInt(canvas.style.width);
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+            
+            const cellSize = canvasSize / GRID_SIZE;
+            
+            ctx.fillStyle = '#06FFB4';
+            ctx.fillRect(food.x * cellSize + 2, food.y * cellSize + 2, cellSize - 4, cellSize - 4);
+            
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#FF006E' : '#8338EC';
+                ctx.fillRect(segment.x * cellSize + 1, segment.y * cellSize + 1, cellSize - 2, cellSize - 2);
+            });
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Space Grotesk';
+            ctx.fillText(`Score: ${score}`, 10, 25);
+        }
+        
+        function gameLoop(currentTime) {
+            if (!gameRunning) return;
+            
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            accumulator += deltaTime;
+            
+            while (accumulator >= GAME_SPEED) {
+                update();
+                accumulator -= GAME_SPEED;
+            }
+            
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            setupCanvas();
+            initGame();
+            gameRunning = true;
+            lastTime = 0;
+            accumulator = 0;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            e.preventDefault();
+            if (e.key === 'ArrowUp') changeDirection('up');
+            else if (e.key === 'ArrowDown') changeDirection('down');
+            else if (e.key === 'ArrowLeft') changeDirection('left');
+            else if (e.key === 'ArrowRight') changeDirection('right');
+        });
+        
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) changeDirection('right');
+                else changeDirection('left');
+            } else {
+                if (dy > 0) changeDirection('down');
+                else changeDirection('up');
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            if (gameRunning) setupCanvas();
+        });
+        
+        const floatingEmojis = document.querySelectorAll('.floating-emoji');
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            floatingEmojis.forEach((emoji, index) => {
+                const offsetX = (x - 0.5) * 20 * (index + 1);
+                const offsetY = (y - 0.5) * 20 * (index + 1);
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
