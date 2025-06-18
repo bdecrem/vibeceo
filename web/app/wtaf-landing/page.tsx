@@ -391,6 +391,26 @@ export default function WtafLandingPage() {
           filter: drop-shadow(0 0 10px currentColor);
         }
 
+        .service-card .service-image {
+          width: calc(100% - 20px);
+          height: 250px;
+          margin: 0 10px 20px 10px;
+          display: block;
+          object-fit: cover;
+          border-radius: 15px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.5));
+          transition: all 0.3s ease;
+          background: rgba(0, 0, 0, 0.2);
+        }
+
+        .service-card:hover .service-image {
+          transform: scale(1.02);
+          filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.8));
+          border-color: rgba(255, 0, 128, 0.7);
+          box-shadow: 0 10px 40px rgba(255, 0, 128, 0.3);
+        }
+
         .service-card h3 {
           font-family: 'Space Grotesk', sans-serif;
           color: #ffffff;
@@ -407,12 +427,41 @@ export default function WtafLandingPage() {
           margin-bottom: 25px;
         }
 
+        .prompt-showcase {
+          color: #00ffff;
+          font-family: 'Space Grotesk', monospace;
+          font-size: 1.1rem;
+          font-weight: 500;
+          background: rgba(0, 255, 255, 0.1);
+          border: 2px solid rgba(0, 255, 255, 0.3);
+          border-radius: 15px;
+          padding: 15px 20px;
+          margin: 0 10px 20px 10px;
+          text-align: center;
+          text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+          backdrop-filter: blur(5px);
+          font-style: italic;
+        }
+
         .service-price {
           font-family: 'Space Grotesk', sans-serif;
           font-size: 1.4rem;
           color: #ff0080;
           font-weight: 700;
           text-shadow: 0 0 5px #ff0080;
+        }
+
+        .prompt-label {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 1.1rem;
+          color: rgba(255, 255, 255, 0.7);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin: 0 10px 12px 10px;
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+          opacity: 0.8;
+          text-align: center;
         }
 
         .location-contact {
@@ -618,12 +667,26 @@ export default function WtafLandingPage() {
 
         @media (max-width: 768px) {
           .logo { font-size: 3.5rem; }
-          .hero h1 { font-size: 3rem; }
-          .hero p { font-size: 1.2rem; }
-          .hero-content { padding: 50px 30px; }
+          .hero h1 { font-size: 2.8rem; line-height: 1.2; }
+          .hero p { font-size: 1.1rem; }
+          .hero-content { padding: 40px 20px; }
+          .hero { padding: 40px 20px; }
           .services { grid-template-columns: 1fr; }
           .location-contact { grid-template-columns: 1fr; }
           .cta-section { flex-direction: column; }
+          .service-card { padding: 35px 25px; }
+          .location-card, .contact-card { padding: 40px 25px; }
+        }
+
+        @media (max-width: 480px) {
+          .logo { font-size: 3rem; }
+          .hero h1 { font-size: 2.4rem; line-height: 1.1; }
+          .hero p { font-size: 1rem; }
+          .hero-content { padding: 35px 15px; }
+          .hero { padding: 30px 15px; }
+          .cta-button { padding: 18px 35px; font-size: 1rem; }
+          .service-card { padding: 30px 20px; }
+          .location-card, .contact-card { padding: 35px 20px; }
         }
       `}</style>
 
@@ -651,25 +714,148 @@ export default function WtafLandingPage() {
           <section className="hero parallax">
             <div className="hero-content">
               <h1 className="glitch" data-text="One-Shot Prompting Over SMS">One-Shot Prompting Over SMS</h1>
-              <p>Where rebellion meets artistry. Custom tattoos that channel your inner voltage in the heart of West Hollywood&apos;s most electric block.</p>
+              <p>Where prompts go primal. Hand-inked chaos for your startup soul, piped in from West Hollywood&apos;s most electric corner. It&apos;s rebellion. It&apos;s art. It&apos;s algorithmically unhinged.</p>
+              <p 
+                style={{
+                  marginTop: '20px', 
+                  fontSize: '1.2rem', 
+                  fontWeight: '600', 
+                  color: '#00ffff', 
+                  textShadow: '0 0 8px rgba(0, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => {
+                  navigator.clipboard.writeText('+1-866-330-0015').then(() => {
+                    alert('📱 Phone number copied! Paste it into your messaging app.');
+                  }).catch(() => {
+                    alert('📱 Phone number: +1-866-330-0015');
+                  });
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.textShadow = '0 0 12px rgba(0, 255, 255, 0.8)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.textShadow = '0 0 8px rgba(0, 255, 255, 0.5)';
+                }}
+              >
+                Text START to +1-866-330-0015 to get initiated.
+              </p>
               <div className="cta-section">
                 <button 
                   className="cta-button"
-                  onClick={() => handleSmoothScroll('#contact')}
+                  onClick={() => window.open('https://wtaf.me/bart/azure-fox-climbing', '_blank')}
                 >
-                  Book Consultation
+                  Learn More
                 </button>
                 <button 
                   className="cta-button secondary"
-                  onClick={() => handleSmoothScroll('#portfolio')}
                 >
-                  View Portfolio
+                  Gallery
                 </button>
               </div>
             </div>
           </section>
 
           <section className="services" id="services">
+            {/* New image-based service cards */}
+            <div className="service-card parallax">
+              <a href="https://wtaf.me/bart/azure-fox-climbing" target="_blank" rel="noopener noreferrer">
+                <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
+              </a>
+              <div className="prompt-label">The prompt:</div>
+              <div 
+                className="prompt-showcase"
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => {
+                  navigator.clipboard.writeText('wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF').then(() => {
+                    alert('📋 Prompt copied! Send it as an SMS to get started.');
+                  }).catch(() => {
+                    alert('📋 Prompt: wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF');
+                  });
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                }}
+              >
+                "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
+              </div>
+            </div>
+
+            <div className="service-card parallax">
+              <a href="https://wtaf.me/bart/golden-jaguar-racing" target="_blank" rel="noopener noreferrer">
+                <img src="/wtaf-landing/images/berghain.png" alt="Berghain Vibes" className="service-image" />
+              </a>
+              <div className="prompt-label">The prompt:</div>
+              <div 
+                className="prompt-showcase"
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => {
+                  navigator.clipboard.writeText('wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin').then(() => {
+                    alert('📋 Prompt copied! Send it as an SMS to get started.');
+                  }).catch(() => {
+                    alert('📋 Prompt: wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin');
+                  });
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                }}
+              >
+                "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+              </div>
+              <div className="prompt-label" style={{textTransform: 'none'}}>This app comes with an <a href="https://wtaf.me/bart/admin-BerghainBash_kj9x8z" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">admin page</a>.</div>
+            </div>
+
+            <div className="service-card parallax">
+              <a href="https://wtaf.me/bart/bronze-dolphin-flying" target="_blank" rel="noopener noreferrer">
+                <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
+              </a>
+              <div className="prompt-label">The prompt:</div>
+              <div 
+                className="prompt-showcase"
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => {
+                  navigator.clipboard.writeText('wtaf make a pong-style browser game').then(() => {
+                    alert('📋 Prompt copied! Send it as an SMS to get started.');
+                  }).catch(() => {
+                    alert('📋 Prompt: wtaf make a pong-style browser game');
+                  });
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                }}
+              >
+                "wtaf make a pong-style browser game"
+              </div>
+            </div>
+
+            {/* Existing service cards */}
             <div className="service-card parallax">
               <span className="icon">🖤</span>
               <h3>Custom Blackwork</h3>
