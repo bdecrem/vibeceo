@@ -1,0 +1,412 @@
+Here is the HTML for a luxury app to sign up for an elegant party at the Eiffel Tower:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EiffelParty - An Elegant Soirée at the Eiffel Tower</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(-45deg, #091540, #133572, #1D4C9B, #133572, #091540);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1, h2, h3 {  
+      font-family: 'Space Grotesk', sans-serif;
+      text-transform: uppercase;
+    }
+
+    .container {
+      max-width: 900px;  
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 40px;
+      margin: 20px 0;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    }
+
+    .floating-emojis {
+      position: fixed;
+      z-index: 100;
+    }
+
+    .floating-emojis span {
+      position: absolute;
+      font-size: 24px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0); }
+    }
+
+    .emoji-1 { top: 20%; left: 10%; animation-delay: 0s; }
+    .emoji-2 { top: 50%; left: 30%; animation-delay: 2s; }
+    .emoji-3 { top: 30%; right: 20%; animation-delay: 4s; }
+    .emoji-4 { top: 60%; right: 10%; animation-delay: 6s; }
+
+    form {
+      margin: 30px auto;
+      max-width: 500px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin: 20px 0 5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      background: white;
+      color: #091540;
+      border: none;
+      border-radius: 5px;
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #FFD700;
+    }
+
+    footer {
+      margin-top: 100px;
+      opacity: 0.7;
+    }
+
+    footer a {
+      color: white;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 2s;
+    }
+
+    .active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-emojis">
+    <span class="emoji-1">✨</span>
+    <span class="emoji-2">🥂</span>
+    <span class="emoji-3">🎉</span>
+    <span class="emoji-4">🗼</span>
+  </div>
+
+  <div class="container">
+    <section class="hero">
+      <h1 class="reveal">EiffelParty</h1>
+      <h2 class="reveal">An Elegant Soirée at the Eiffel Tower</h2>
+      <p class="reveal">Join us for an enchanting evening under the glittering lights of the Eiffel Tower. Savor champagne, mingle with Parisian elite, and dance the night away at the most iconic landmark in the world.</p>
+    </section>
+
+    <section class="event-details card reveal">
+      <h3>Event Details</h3>
+      <p><strong>Date:</strong> Friday, June 16th</p>
+      <p><strong>Time:</strong> 7:00pm - Midnight</p>
+      <p><strong>Dress Code:</strong> Cocktail Attire</p>
+      <p><strong>Location:</strong> Eiffel Tower, Champ de Mars, 75007 Paris, France</p>
+    </section>
+
+    <section class="signup card reveal">
+      <h3>Reserve Your Spot</h3>
+      <form id="signup-form">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="guests">Number of Guests</label>
+        <select id="guests" name="guests" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+
+        <button type="submit">Submit</button>
+      </form>
+    </section>
+    
+    <footer>
+      <p class="reveal">For inquiries, please contact <a href="mailto:info@eiffelparty.com">info@eiffelparty.com</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+    
+    document.getElementById('signup-form').addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      const formData = new FormData(event.target)
+      const { data, error } = await supabase.from('wtaf_submissions').insert({
+        app_id: 'eiffelparty',
+        submission_data: formData
+      })
+
+      alert('Thank you for signing up! Check your email for party updates.')
+      event.target.reset()
+    })
+
+    function reveal() {
+      const reveals = document.querySelectorAll(".reveal")
+      for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight
+        const elementTop = reveals[i].getBoundingClientRect().top
+        const elementVisible = 150
+        if (elementTop < windowHeight - elementVisible) {
+          reveals[i].classList.add("active")
+        } else {
+          reveals[i].classList.remove("active")
+        }
+      }
+    }
+
+    window.addEventListener("scroll", reveal)
+
+    // Floating emojis parallax effect
+    document.addEventListener("mousemove", parallax)
+    function parallax(e) {
+      document.querySelectorAll(".floating-emojis span").forEach(function(move) {
+        let moving_value = move.getAttribute("data-value")
+        let x = (e.clientX * moving_value) / 250
+        let y = (e.clientY * moving_value) / 250
+        move.style.transform = "translateX(" + x + "px) translateY(" + y + "px)"
+      })
+    }
+  </script>
+</body>
+</html>
+```
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EiffelParty - Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(-45deg, #091540, #133572, #1D4C9B, #133572, #091540);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1, h2, h3 {  
+      font-family: 'Space Grotesk', sans-serif;
+      text-transform: uppercase;
+    }
+
+    .container {
+      max-width: 900px;  
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 30px 0;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: rgba(255,255,255,0.1);
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    tr:hover {
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    button {
+      padding: 10px 20px;
+      background: white;
+      color: #091540;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #FFD700;
+    }
+
+    .floating-emojis {
+      position: fixed;
+      z-index: 100;
+    }
+
+    .floating-emojis span {
+      position: absolute;
+      font-size: 24px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0); }
+    }
+
+    .emoji-1 { top: 20%; left: 10%; animation-delay: 0s; }
+    .emoji-2 { top: 50%; left: 30%; animation-delay: 2s; }
+    .emoji-3 { top: 30%; right: 20%; animation-delay: 4s; }
+    .emoji-4 { top: 60%; right: 10%; animation-delay: 6s; }
+  </style>
+</head>
+<body>
+  <div class="floating-emojis">
+    <span class="emoji-1">✨</span>
+    <span class="emoji-2">🥂</span>
+    <span class="emoji-3">🎉</span>
+    <span class="emoji-4">🗼</span>
+  </div>
+
+  <div class="container">
+    <h1>EiffelParty - Admin Dashboard</h1>
+
+    <table id="submissions-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Guests</th>
+          <th>Submitted At</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button id="export-btn">Export to CSV</button>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+    async function fetchSubmissions() {
+      const { data, error } = await supabase.from('wtaf_submissions')
+        .select('*')
+        .eq('app_id', 'eiffelparty')
+        .order('created_at', { ascending: false })
+
+      const tableBody = document.querySelector('#submissions-table tbody')
+      tableBody.innerHTML = ''
+
+      data.forEach(submission => {
+        const row = document.createElement('tr')
+        row.innerHTML = `
+          <td>${submission.submission_data.name}</td>
+          <td>${submission.submission_data.email}</td>
+          <td>${submission.submission_data.guests}</td>
+          <td>${new Date(submission.created_at).toLocaleString()}</td>
+        `
+        tableBody.appendChild(row)
+      })
+    }
+
+    fetchSubmissions()
+
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      const { data, error } = await supabase.from('wtaf_submissions')
+        .select('*')
+        .eq('app_id', 'eiffelparty')
+        .csv()
+
+      const url = window.URL.createObjectURL(new Blob([data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'eiffelparty_submissions.csv')
+      document.body.appendChild(link)
+      link.click()
+    })
+
+    // Floating emojis parallax effect
+    document.addEventListener("mousemove", parallax)
+    function parallax(e) {
+      document.querySelectorAll(".floating-emojis span").forEach(function(move) {
+        let moving_value = move.getAttribute("data-value")
+        let x = (e.clientX * moving_value) / 250
+        let y = (e.clientY * moving_value) / 250
+        move.style.transform = "translateX(" + x + "px) translateY(" + y + "px)"
+      })
+    }
+  </script>
+</body>
+</html>
+```

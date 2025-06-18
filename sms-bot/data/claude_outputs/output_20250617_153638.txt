@@ -1,0 +1,75 @@
+Here's a complete HTML page for your party sign-up app:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Sign-Up</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: grid;
+            gap: 10px;
+        }
+        label, input, button {
+            display: block;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Party Sign-Up</h1>
+    <p>Join us for a party next Friday at 7pm at the Eiffel Tower!</p>
+    <form id="signupForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="guests">Number of Guests:</label>
+        <input type="number" id="guests" name="guests" min="1" required>
+
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const guests = document.getElementById('guests').value;
+
+            alert(`Thank you, ${name}! You have successfully signed up for the party with ${guests} guest(s). We'll send a confirmation to ${email}.`);
+            this.reset();
+        });
+    </script>
+</body>
+</html>
+
+This HTML page includes:
+
+1. A title and description of the party.
+2. A form for users to enter their name, email, and the number of guests they're bringing.
+3. Basic styling using CSS to make the page more visually appealing.
+4. JavaScript to handle the form submission, display a confirmation message, and reset the form.
+
+When a user fills out the form and clicks the "Sign Up" button, they will see an alert with a confirmation message that includes their name, email, and the number of guests they entered. The form will then reset, allowing another user to sign up.
+
+Note that this is a simple front-end example and does not include any server-side processing or actual email sending functionality. To add those features, you would need to use a back-end language like Node.js, PHP, or Python and integrate with an email service.
