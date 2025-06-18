@@ -270,8 +270,21 @@ def extract_code_blocks(text):
     # First try to extract content between ```html and ``` markers (most specific)
     matches = re.findall(r'```html\s*([\s\S]*?)```', text)
     if matches:
-        log_with_timestamp("✅ Found code block with html language specifier")
-        return matches[0]
+        log_with_timestamp(f"✅ Found {len(matches)} HTML code block(s)")
+        
+        # Handle dual-page output: combine multiple HTML blocks with delimiter
+        if len(matches) > 1:
+            # Look for delimiter between code blocks
+            delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->'
+            if delimiter in text:
+                log_with_timestamp("🔗 Detected dual-page output with delimiter - combining blocks")
+                return matches[0] + '\n' + delimiter + '\n' + matches[1]
+            else:
+                log_with_timestamp("⚠️ Multiple HTML blocks found but no delimiter - using first block")
+                return matches[0]
+        else:
+            # Single HTML block - return as normal
+            return matches[0]
     
     # Try to find content between ```HTML and ``` markers (case insensitive)
     matches = re.findall(r'```HTML\s*([\s\S]*?)```', text)
@@ -294,17 +307,68 @@ def extract_code_blocks(text):
     log_with_timestamp(f"📋 Response preview (first 100 chars): {text[:100]}")
     return ""
 
-def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt):
+def inject_supabase_credentials(html):
+    """Inject Supabase credentials into HTML placeholders"""
+    import os
+    import re
+    supabase_url = os.getenv('SUPABASE_URL', '')
+    
+    # Try to get anonymous key first, fallback to service key if needed
+    # Frontend forms should use SUPABASE_ANON_KEY, but we'll handle missing cases
+    supabase_anon_key = os.getenv('SUPABASE_ANON_KEY', '')
+    if not supabase_anon_key:
+        # Check for other common key variable names
+        supabase_anon_key = os.getenv('SUPABASE_PUBLIC_KEY', '')
+        if not supabase_anon_key:
+            # Last resort: Use service key (not ideal but allows forms to work)
+            supabase_anon_key = os.getenv('SUPABASE_SERVICE_KEY', '')
+            log_with_timestamp("⚠️ Using SUPABASE_SERVICE_KEY for frontend (should use SUPABASE_ANON_KEY)")
+    
+    # Replace standard placeholders
+    html = html.replace('YOUR_SUPABASE_URL', supabase_url)
+    html = html.replace('YOUR_SUPABASE_ANON_KEY', supabase_anon_key)
+    
+    # More robust replacement for cases where Claude doesn't use exact placeholders
+    # Look for createClient calls with empty or placeholder API keys
+    html = re.sub(
+        r"createClient\(\s*['\"]([^'\"]+)['\"],\s*['\"]['\"]?\s*\)",
+        f"createClient('{supabase_url}', '{supabase_anon_key}')",
+        html
+    )
+    
+    # Also handle cases where URL might be missing
+    html = re.sub(
+        r"createClient\(\s*['\"]['\"],?\s*['\"]([^'\"]*)['\"]?\s*\)",
+        f"createClient('{supabase_url}', '{supabase_anon_key}')",
+        html
+    )
+    
+    log_with_timestamp(f"🔑 Injected Supabase credentials: URL={supabase_url[:20]}..., Key={supabase_anon_key[:10]}...")
+    
+    return html
+
+def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt, admin_table_id=None, brief=None):
     """Save HTML content to Supabase database"""
-    log_with_timestamp(f"💾 Starting save_code_to_supabase: coach={coach}, user_slug={user_slug}")
+    log_with_timestamp(f"💾 Starting save_code_to_supabase: coach={coach}, user_slug={user_slug}, admin_table_id={admin_table_id}")
     log_with_timestamp(f"🔍 DUPLICATE DEBUG: save_code_to_supabase called from {original_prompt[:50]}...")
     
     # DEBUG: Add stack trace to see where this is called from
     import traceback
     log_with_timestamp(f"🔍 CALL STACK: {traceback.format_stack()[-3].strip()}")
     
-    # Generate unique app slug for this user
-    app_slug = generate_unique_app_slug(user_slug)
+    # Replace admin_table_id placeholder in HTML if brief is available
+    if brief and brief.get('admin_table_id'):
+        actual_admin_table_id = brief.get('admin_table_id')
+        code = code.replace('brief_admin_table_id_here', actual_admin_table_id)
+        log_with_timestamp(f"🔄 Replaced admin_table_id placeholder with: {actual_admin_table_id}")
+    
+    # For admin pages, use the admin_table_id as the app_slug
+    if admin_table_id:
+        app_slug = f"admin-{admin_table_id}"
+        log_with_timestamp(f"📊 Using admin app_slug: {app_slug}")
+    else:
+        # Generate unique app slug for this user
+        app_slug = generate_unique_app_slug(user_slug)
     
     # Get user_id from sms_subscribers table
     try:
@@ -320,6 +384,9 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt)
     
     # Inject OpenGraph tags into HTML
     public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
+    # Inject Supabase credentials into HTML
+    code = inject_supabase_credentials(code)
+    
     # Use fallback image URL for initial HTML - real OG image will be generated after save
     og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
     og_tags = f"""<title>WTAF – Delusional App Generator</title>
@@ -444,6 +511,9 @@ def save_code_to_file(code, coach, slug, format="html", user_slug=None):
         output_dir = WEB_OUTPUT_DIR
         public_url = f"{WEB_APP_URL}/lab/{filename}"
         page_url = public_url
+        
+        # Inject Supabase credentials into HTML
+        code = inject_supabase_credentials(code)
         
         # Inject OpenGraph tags into HTML
         public_url = f"{WEB_APP_URL}/lab/{filename}"
@@ -813,10 +883,17 @@ You are not designing a page AS a designer - you ARE the testimonial author spea
         max_tokens = 32000  # Maximum token budget for complex games
         log_with_timestamp("🧠 Using Claude 4 Opus with 32K tokens for games...")
     elif request_type == 'app':
-        model = "claude-3-opus-20240229"  # Claude 3 Opus for apps
-        fallback_model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet as fallback
-        max_tokens = 4000  # Claude 3 Opus max is 4096, use 4000 to be safe
-        log_with_timestamp("🧠 Using Claude 3 Opus with 4K tokens for apps...")
+        # Dynamic model and token selection based on data collection needs
+        if brief and brief.get('has_data_collection', False):
+            model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet supports up to 8192 tokens
+            fallback_model = "claude-3-5-haiku-20241022"  # Claude 3.5 Haiku as fallback
+            max_tokens = 8000  # Apps need dual pages (under 8192 limit)
+            log_with_timestamp("🧠 Using Claude 3.5 Sonnet with 8K tokens for data collection apps...")
+        else:
+            model = "claude-3-opus-20240229"  # Claude 3 Opus for regular apps
+            fallback_model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet as fallback
+            max_tokens = 4000   # Regular apps are fine with current limit
+            log_with_timestamp("🧠 Using Claude 3 Opus with 4K tokens for apps...")
     else:
         model = "claude-3-5-sonnet-20241022"
         fallback_model = "claude-3-5-haiku-20241022"  # Claude 3.5 Haiku as fallback
@@ -935,23 +1012,61 @@ You are not designing a page AS a designer - you ARE the testimonial author spea
         if user_slug:
             # Use new Supabase save function for WTAF content
             log_with_timestamp(f"🎯 Using direct Supabase save for user_slug: {user_slug}")
-            app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt)
+            
+            # Check if this app has data collection (dual-page deployment)
+            if brief and brief.get('has_data_collection'):
+                log_with_timestamp(f"📊 Data collection app detected - deploying dual pages")
+                
+                # Split HTML on the delimiter
+                delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->'
+                if delimiter in code:
+                    public_html, admin_html = code.split(delimiter, 1)
+                    log_with_timestamp(f"✂️ Split HTML into public ({len(public_html)} chars) and admin ({len(admin_html)} chars) pages")
+                    
+                    # Deploy public page (normal app)
+                    app_slug, public_url = save_code_to_supabase(public_html.strip(), coach, user_slug, sender_phone, user_prompt, brief=brief)
+                    
+                    # Deploy admin page using admin_table_id from brief
+                    admin_table_id = brief.get('admin_table_id', 'unknown')
+                    admin_slug, admin_url = save_code_to_supabase(admin_html.strip(), coach, user_slug, sender_phone, f"Admin dashboard for {user_prompt}", admin_table_id, brief)
+                    
+                    # Store URLs for SMS messaging
+                    public_url = public_url
+                    admin_url = admin_url
+                    is_dual_page = True
+                    
+                else:
+                    log_with_timestamp(f"⚠️ Data collection flag set but no delimiter found - deploying as single page")
+                    app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt, brief=brief)
+                    admin_url = None
+                    is_dual_page = False
+            else:
+                # Single page deployment (existing logic)
+                app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt, brief=brief)
+                admin_url = None
+                is_dual_page = False
         else:
             # Use legacy file save for non-WTAF content (NO user_slug passed to prevent double save)
             log_with_timestamp(f"📁 Using legacy file save for non-WTAF content")
             filename, public_url = save_code_to_file(code, coach, slug, user_slug=None)
+            admin_url = None
+            is_dual_page = False
         
         if public_url:
             log_with_timestamp("=" * 80)
             log_with_timestamp("🎉 TWO-PROMPT PROCESS COMPLETE!")
             log_with_timestamp(f"🌐 Final URL: {public_url}")
+            if admin_url:
+                log_with_timestamp(f"📊 Admin URL: {admin_url}")
             log_with_timestamp("=" * 80)
             
             # Send SMS to original sender if available, otherwise to default
             if sender_phone:
                 log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")
-                # Customize SMS message based on request type
-                if request_type == 'game':
+                # Customize SMS message based on request type and dual-page status
+                if is_dual_page and admin_url:
+                    message = f"📱 Your app: {public_url}\n📊 View data: {admin_url}"
+                elif request_type == 'game':
                     message = f"🎮 Your game is ready to play: {public_url}"
                 elif request_type == 'app':
                     message = f"📱 Your app is ready to use: {public_url}"
@@ -960,7 +1075,9 @@ You are not designing a page AS a designer - you ARE the testimonial author spea
                 send_confirmation_sms(message, sender_phone)
             else:
                 log_with_timestamp("📱 No sender phone - using default")
-                if request_type == 'game':
+                if is_dual_page and admin_url:
+                    message = f"📱 Your app: {public_url}\n📊 View data: {admin_url}"
+                elif request_type == 'game':
                     message = f"🎮 Your game is ready to play: {public_url}"
                 elif request_type == 'app':
                     message = f"📱 Your app is ready to use: {public_url}"
