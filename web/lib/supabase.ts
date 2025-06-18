@@ -1,25 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+'use client'
 
-// Type definitions
-export type SMSSubscriber = {
-  id?: string;
-  phone_number: string;
-  opt_in_date?: string;
-  consent_given: boolean;
-  last_message_date?: string;
-  unsubscribed?: boolean;
-  confirmed?: boolean;
-}
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+// If you have generated Supabase types, import them like this:
+// import { Database } from '@/types/supabase'
+// Then use: createBrowserClient<Database>()
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_ANON_KEY.');
-}
-
-export const supabase = createClient(
-  supabaseUrl as string, 
-  supabaseKey as string
-);
+export const supabase = createPagesBrowserClient()

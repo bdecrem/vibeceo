@@ -1,0 +1,236 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink & Aura | Premium Tattoo Atelier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --dark-gray: #1a1a1a;
+            --gold: #c9a87c;
+            --cream: #f5f5f1;
+            --gradient: linear-gradient(45deg, var(--black), var(--dark-gray));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--black);
+            color: var(--cream);
+            overflow-x: hidden;
+        }
+
+        .floating-emojis {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .emoji {
+            position: fixed;
+            font-size: 64px;
+            transition: all 0.2s ease;
+            opacity: 0.5;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            animation: gradientBG 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-container {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--gold);
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 6rem;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        .portfolio {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            padding: 100px 10%;
+        }
+
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s ease;
+        }
+
+        .portfolio-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .booking {
+            padding: 100px 10%;
+        }
+
+        .booking form {
+            display: grid;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        input, textarea {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--gold);
+            padding: 15px;
+            border-radius: 5px;
+            color: var(--cream);
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: var(--gold);
+            color: var(--black);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+            
+            .portfolio {
+                padding: 50px 5%;
+            }
+            
+            .booking {
+                padding: 50px 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <div class="emoji">🎨</div>
+        <div class="emoji">✨</div>
+        <div class="emoji">🖋️</div>
+        <div class="emoji">🌙</div>
+    </div>
+    
+    <div class="gradient-bg"></div>
+
+    <section class="hero glass-container">
+        <div>
+            <h1>Ink & Aura</h1>
+            <p>Premium tattoo atelier in Williamsburg, Brooklyn</p>
+        </div>
+    </section>
+
+    <section class="portfolio">
+        <div class="portfolio-item glass-container">
+            <img src="https://source.unsplash.com/random/1" alt="Tattoo art">
+            <h3>Fine Line Art</h3>
+        </div>
+        <div class="portfolio-item glass-container">
+            <img src="https://source.unsplash.com/random/2" alt="Tattoo art">
+            <h3>Traditional</h3>
+        </div>
+        <div class="portfolio-item glass-container">
+            <img src="https://source.unsplash.com/random/3" alt="Tattoo art">
+            <h3>Japanese</h3>
+        </div>
+    </section>
+
+    <section class="booking glass-container">
+        <h2>Book Your Session</h2>
+        <form>
+            <input type="text" placeholder="Name">
+            <input type="email" placeholder="Email">
+            <textarea placeholder="Tell us about your tattoo idea"></textarea>
+            <button type="submit">Submit Request</button>
+        </form>
+    </section>
+
+    <script>
+        // Parallax floating emojis
+        const emojis = document.querySelectorAll('.emoji');
+        document.addEventListener('mousemove', (e) => {
+            emojis.forEach((emoji, index) => {
+                const speed = (index + 1) * 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.portfolio-item').forEach((item) => {
+            observer.observe(item);
+        });
+    </script>
+</body>
+</html>
+```

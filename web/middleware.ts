@@ -12,6 +12,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // CRITICAL FIX: Bypass auth routes - no processing whatsoever
+  if (pathname.startsWith('/login') || 
+      pathname.startsWith('/register') || 
+      pathname.startsWith('/link') || 
+      pathname.startsWith('/dashboard')) {
+    if (host?.includes('localhost') || host?.includes('ngrok')) {
+      console.log(`[Middleware] Auth route bypassed: ${pathname}`)
+    }
+    return NextResponse.next()
+  }
+
   // CRITICAL FIX: Also bypass Next.js internals, static files, and assets immediately
   if (
     pathname.startsWith('/_next/') ||
