@@ -1,10 +1,13 @@
-version: "2"
+version: "3"
+agent:
+  authtoken: 2xKEaScU1SC9lvR55J9TybvaOuR_7FHUgSms6URHSkUjPbaA9
+
 tunnels:
   sms-bot:
     proto: http
     addr: 3030
-    subdomain: theaf-sms
+    domain: theaf-sms.ngrok.io
   web:
     proto: http
     addr: 3000
-    subdomain: theaf-web 
+    domain: theaf-web.ngrok.io 
