@@ -34,7 +34,7 @@ export default async function UserPage({ params }: UserPageProps) {
 
   // If user has an index file set, redirect to that page
   if (subscriber?.index_file) {
-    const app_slug = subscriber.index_file.replace('.html', '')
+    const app_slug = subscriber.index_file.trim().replace('.html', '')
     const redirectUrl = `/wtaf/${user_slug}/${app_slug}`
     console.log(`[DEBUG] Redirecting to: ${redirectUrl}`)
     redirect(redirectUrl)
