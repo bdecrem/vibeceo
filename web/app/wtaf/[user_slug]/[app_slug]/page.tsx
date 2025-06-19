@@ -7,6 +7,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 )
 
+// Force dynamic rendering and disable caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface PageProps {
   params: Promise<{
     user_slug: string
