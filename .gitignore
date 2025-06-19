@@ -80,3 +80,7 @@ next-env.d.ts
 *.backup
 *-backup
 *.working-backup
+
+.specstory
+/sms-bot/node_modules
+/sms-bot/dist
