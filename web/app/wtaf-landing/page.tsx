@@ -341,9 +341,12 @@ export default function WtafLandingPage() {
 
         .services {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          grid-template-columns: 1fr;
           gap: 35px;
           margin-bottom: 90px;
+          max-width: 800px;
+          margin-left: auto;
+          margin-right: auto;
         }
 
         .service-card {
@@ -356,6 +359,40 @@ export default function WtafLandingPage() {
           overflow: hidden;
           transition: all 0.3s ease;
           box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Desktop layout for feature cards with images */
+        @media (min-width: 769px) {
+          .service-card.image-card {
+            display: flex !important;
+            align-items: center !important;
+            gap: 60px !important;
+            padding: 40px 50px !important;
+            max-width: 1600px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            width: 100% !important;
+          }
+          
+          .service-card.image-card .service-image {
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+            width: 400px !important;
+            max-width: 400px !important;
+            min-width: 400px !important;
+            height: auto !important;
+          }
+          
+          .service-card.image-card .image-content {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          .service-card.image-card .prompt-label,
+          .service-card.image-card .prompt-showcase {
+            margin: 0 0 20px 0 !important;
+          }
         }
 
         .service-card::before {
@@ -393,10 +430,10 @@ export default function WtafLandingPage() {
 
         .service-card .service-image {
           width: calc(100% - 20px);
-          height: 250px;
+          height: auto;
           margin: 0 10px 20px 10px;
           display: block;
-          object-fit: cover;
+          object-fit: initial;
           border-radius: 15px;
           border: 2px solid rgba(255, 255, 255, 0.3);
           filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.5));
@@ -670,7 +707,7 @@ export default function WtafLandingPage() {
           .hero h1 { font-size: 2.8rem; line-height: 1.2; }
           .hero p { font-size: 1.1rem; }
           .hero-content { padding: 40px 20px; }
-          .hero { padding: 40px 20px; }
+          .hero { padding: 20px; }
           .services { grid-template-columns: 1fr; }
           .location-contact { grid-template-columns: 1fr; }
           .cta-section { flex-direction: column; }
@@ -683,7 +720,7 @@ export default function WtafLandingPage() {
           .hero h1 { font-size: 2.4rem; line-height: 1.1; }
           .hero p { font-size: 1rem; }
           .hero-content { padding: 35px 15px; }
-          .hero { padding: 30px 15px; }
+          .hero { padding: 20px; }
           .cta-button { padding: 18px 35px; font-size: 1rem; }
           .service-card { padding: 30px 20px; }
           .location-card, .contact-card { padding: 35px 20px; }
@@ -761,97 +798,103 @@ export default function WtafLandingPage() {
 
           <section className="services" id="services">
             {/* New image-based service cards */}
-            <div className="service-card parallax">
+            <div className="service-card image-card parallax">
               <a href="https://wtaf.me/bart/azure-fox-climbing" target="_blank" rel="noopener noreferrer">
                 <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
               </a>
-              <div className="prompt-label">The prompt:</div>
-              <div 
-                className="prompt-showcase"
-                style={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onClick={() => {
-                  navigator.clipboard.writeText('wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF').then(() => {
-                    alert('📋 Prompt copied! Send it as an SMS to get started.');
-                  }).catch(() => {
-                    alert('📋 Prompt: wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF');
-                  });
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
-                }}
-              >
-                "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
+              <div className="image-content">
+                <div className="prompt-label">The prompt:</div>
+                <div 
+                  className="prompt-showcase"
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText('wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF').then(() => {
+                      alert('📋 Prompt copied! Send it as an SMS to get started.');
+                    }).catch(() => {
+                      alert('📋 Prompt: wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF');
+                    });
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                  }}
+                >
+                  "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
+                </div>
               </div>
             </div>
 
-            <div className="service-card parallax">
+            <div className="service-card image-card parallax">
               <a href="https://wtaf.me/bart/golden-jaguar-racing" target="_blank" rel="noopener noreferrer">
                 <img src="/wtaf-landing/images/berghain.png" alt="Berghain Vibes" className="service-image" />
               </a>
-              <div className="prompt-label">The prompt:</div>
-              <div 
-                className="prompt-showcase"
-                style={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onClick={() => {
-                  navigator.clipboard.writeText('wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin').then(() => {
-                    alert('📋 Prompt copied! Send it as an SMS to get started.');
-                  }).catch(() => {
-                    alert('📋 Prompt: wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin');
-                  });
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
-                }}
-              >
-                "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+              <div className="image-content">
+                <div className="prompt-label">The prompt:</div>
+                <div 
+                  className="prompt-showcase"
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText('wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin').then(() => {
+                      alert('📋 Prompt copied! Send it as an SMS to get started.');
+                    }).catch(() => {
+                      alert('📋 Prompt: wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin');
+                    });
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                  }}
+                >
+                  "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+                </div>
+                <div className="prompt-label" style={{textTransform: 'none'}}>This app comes with an <a href="https://wtaf.me/bart/admin-BerghainBash_kj9x8z" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">admin page</a>.</div>
               </div>
-              <div className="prompt-label" style={{textTransform: 'none'}}>This app comes with an <a href="https://wtaf.me/bart/admin-BerghainBash_kj9x8z" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">admin page</a>.</div>
             </div>
 
-            <div className="service-card parallax">
+            <div className="service-card image-card parallax">
               <a href="https://wtaf.me/bart/bronze-dolphin-flying" target="_blank" rel="noopener noreferrer">
                 <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
               </a>
-              <div className="prompt-label">The prompt:</div>
-              <div 
-                className="prompt-showcase"
-                style={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onClick={() => {
-                  navigator.clipboard.writeText('wtaf make a pong-style browser game').then(() => {
-                    alert('📋 Prompt copied! Send it as an SMS to get started.');
-                  }).catch(() => {
-                    alert('📋 Prompt: wtaf make a pong-style browser game');
-                  });
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
-                }}
-              >
-                "wtaf make a pong-style browser game"
+              <div className="image-content">
+                <div className="prompt-label">The prompt:</div>
+                <div 
+                  className="prompt-showcase"
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText('wtaf make a pong-style browser game').then(() => {
+                      alert('📋 Prompt copied! Send it as an SMS to get started.');
+                    }).catch(() => {
+                      alert('📋 Prompt: wtaf make a pong-style browser game');
+                    });
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.2)';
+                  }}
+                >
+                  "wtaf make a pong-style browser game"
+                </div>
               </div>
             </div>
 
