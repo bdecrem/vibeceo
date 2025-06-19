@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import twilio from 'twilio';
-import { setupTwilioWebhooks } from './webhooks.js';
+import { setupTwilioWebhooks, setupWhatsAppWebhooks } from './webhooks.js';
 import { setupSupabaseWebhooks } from './supabase-webhooks.js';
 import { setupEmailWebhooks } from './email-webhooks.js';
 import { initializeMessageHandlers } from './handlers.js';
@@ -38,6 +38,9 @@ export async function startSmsBot(): Promise<void> {
   
   // Setup Twilio webhooks
   setupTwilioWebhooks(server);
+  
+  // Setup WhatsApp webhooks (uses same infrastructure as SMS)
+  setupWhatsAppWebhooks(server);
   
   // Setup Supabase webhooks
   setupSupabaseWebhooks(server, twilioClient);

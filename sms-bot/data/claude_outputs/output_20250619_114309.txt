@@ -1,0 +1,188 @@
+I'll create a luxury coffee shop landing page with all the specified design elements.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artisan Coffee House | Premium Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #2c1810, #4a2c22, #6d4238, #8b6b64);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .feature {
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #c7a17a;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: #d4b08c;
+            transform: translateY(-2px);
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.1s ease;
+        }
+
+        .emoji-1 { top: 20%; left: 20%; }
+        .emoji-2 { top: 30%; right: 20%; }
+        .emoji-3 { bottom: 30%; left: 15%; }
+        .emoji-4 { bottom: 20%; right: 15%; }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .glass-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">☕</span>
+        <span class="emoji-2" data-value="3">✨</span>
+        <span class="emoji-3" data-value="1">🫖</span>
+        <span class="emoji-4" data-value="4">🥐</span>
+    </div>
+
+    <div class="container">
+        <div class="glass-container">
+            <h1>Artisan Coffee House</h1>
+            <p class="subtitle">Where every cup tells a story of craftsmanship and passion</p>
+            <a href="#reserve" class="cta-button">Reserve a Table</a>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>Specialty Roasts</h3>
+                <p>Carefully selected beans from sustainable farms, roasted to perfection in small batches.</p>
+            </div>
+            <div class="feature">
+                <h3>Artisanal Pastries</h3>
+                <p>Fresh-baked daily by our master pastry chef using premium ingredients.</p>
+            </div>
+            <div class="feature">
+                <h3>Cozy Ambiance</h3>
+                <p>A sophisticated space designed for comfort and connection.</p>
+            </div>
+        </div>
+
+        <div class="glass-container">
+            <h2>Our Story</h2>
+            <p>Founded in 2020, Artisan Coffee House has become a sanctuary for coffee enthusiasts and casual visitors alike. Our commitment to quality, sustainability, and community drives everything we do.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+    </script>
+</body>
+</html>
+```
+
+This landing page features:
+
+1. A sophisticated design with an animated gradient background in warm coffee tones
+2. Glass morphism containers with blur effects
+3. Floating coffee-themed emojis with parallax mouse movement
+4. Responsive grid layout for features
+5. Luxury typography using Space Grotesk for headings and Inter for body text
+6. Call-to-action button with hover effects
+7. Mobile-responsive design that adapts to different screen sizes
+
+The design maintains a high-end, artisanal coffee shop aesthetic while being modern and interactive. The color palette uses warm browns and creams typically associated with coffee, while the glass morphism effects add a contemporary touch.
+
+To customize further, you could:
+1. Add more sections like a menu
+2. Include high-quality coffee images
+3. Add a reservation form
+4. Include social media links
+5. Add an Instagram feed section
+6. Include a map showing the location
+
+Let me know if you'd like any modifications or additional features!

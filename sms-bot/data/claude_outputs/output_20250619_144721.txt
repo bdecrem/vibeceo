@@ -1,0 +1,423 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aroma Luxe Coffee | Premium Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --brown-dark: #2C1810;
+            --brown-medium: #4A2C1C; 
+            --cream: #F5E6D3;
+            --gold: #D4AF37;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--brown-dark);
+            background: linear-gradient(120deg, #2C1810, #4A2C1C, #8B4513);
+            background-size: 300% 300%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2.5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--cream);
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--cream);
+            margin-bottom: 40px;
+        }
+
+        .about {
+            padding: 100px 0;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--cream);
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: var(--gold);
+            color: var(--brown-dark);
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .location {
+            padding: 100px 0;
+            color: var(--cream);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.2rem;
+            }
+            
+            .glass-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">☕</span>
+        <span class="emoji-2" data-value="3">🥐</span>
+        <span class="emoji-3" data-value="1">✨</span>
+        <span class="emoji-4" data-value="4">🍮</span>
+    </div>
+
+    <main>
+        <section class="hero">
+            <div class="container glass-container">
+                <h1>Indulge in the Opulence of Aroma Luxe Coffee</h1>
+                <p>Where Every Sip Is a Journey to the Extraordinary</p>
+            </div>
+        </section>
+
+        <section class="about">
+            <div class="container glass-container">
+                <h2>A Symphony of Flavors</h2>
+                <p>Nestled in the heart of the prestigious Elite Square, Aroma Luxe Coffee stands as a beacon of refined taste and sophisticated indulgence. Our master baristas craft each beverage with meticulous attention to detail, using only the finest single-origin beans sourced from exclusive estates worldwide.</p>
+            </div>
+        </section>
+
+        <section class="contact">
+            <div class="container glass-container">
+                <h2>Connect with Us</h2>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <input type="text" name="name" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Your Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" name="phone" placeholder="Phone Number">
+                    </div>
+                    <div class="form-group">
+                        <input type="date" name="visitDate" placeholder="Preferred Visit Date">
+                    </div>
+                    <div class="form-group">
+                        <textarea name="message" placeholder="Your Message" rows="4"></textarea>
+                    </div>
+                    <button type="submit">Submit Inquiry</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="location">
+            <div class="container glass-container">
+                <h2>Visit Us</h2>
+                <p>123 Elite Square, Luxury District</p>
+                <p>Monday - Sunday: 7:00 AM - 9:00 PM</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const formData = Object.fromEntries(new FormData(e.target))
+            
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'contact_xyz789',
+                    submission_data: formData
+                })
+                if (error) throw error
+                alert('Thank you for your inquiry. We will contact you shortly.')
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Submission failed. Please try again.')
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aroma Luxe Coffee | Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --brown-dark: #2C1810;
+            --brown-medium: #4A2C1C;
+            --cream: #F5E6D3;
+            --gold: #D4AF37;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(120deg, #2C1810, #4A2C1C, #8B4513);
+            background-size: 300% 300%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: var(--cream);
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 30px;
+            color: var(--gold);
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .submissions-table th,
+        .submissions-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .submissions-table th {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--gold);
+        }
+
+        .export-btn {
+            background: var(--gold);
+            color: var(--brown-dark);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="glass-container">
+            <h1>Aroma Luxe Coffee - Inquiry Dashboard</h1>
+            <button class="export-btn" onclick="exportToCSV()">Export to CSV</button>
+            <table class="submissions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Visit Date</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody id="submissionsTableBody">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        async function loadSubmissions() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'contact_xyz789')
+                    .order('created_at', { ascending: false })
+
+                if (error) throw error
+
+                const tableBody = document.getElementById('submissionsTableBody')
+                tableBody.innerHTML = ''
+
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No submissions yet</td></tr>'
+                    return
+                }
+
+                data.forEach(row => {
+                    const submissionData = row.submission_data
+                    const tr = document.createElement('tr')
+                    tr.innerHTML = `
+                        <td>${new Date(row.created_at).toLocaleDateString()}</td>
+                        <td>${submissionData.name || ''}</td>
+                        <td>${submissionData.email || ''}</td>
+                        <td>${submissionData.phone || ''}</td>
+                        <td>${submissionData.visitDate || ''}</td>
+                        <td>${submissionData.message || ''}</td>
+                    `
+                    tableBody.appendChild(tr)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportToCSV() {
+            try {
+                const table = document.querySelector('.submissions-table')
+                const rows = table.querySelectorAll('tr')
+                let csvContent = 'data:text/csv;charset=utf-8,'
+
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('th, td')
+                    const rowData = Array.from(cells).map(cell => cell.textContent)
+                    csvContent += rowData.join(',') + '\n'
+                })
+
+                const encodedUri = encodeURI(csvContent)
+                const link = document.createElement('a')
+                link.setAttribute('href', encodedUri)
+                link.setAttribute('download', 'aroma-luxe-submissions.csv')
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        // Load submissions when page loads
+        loadSubmissions()
+    </script>
+</body>
+</html>
+```

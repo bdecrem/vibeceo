@@ -1,0 +1,241 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrewConnect | Artisanal Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4A3428;
+            --secondary: #8B7355;
+            --accent: #D4B59E;
+            --background: #FAF6F2;
+            --text: #2C1810;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(120deg, var(--background), #FFF8F3, var(--background));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: var(--text);
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .floating-emojis {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0.98);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: scale(1);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            line-height: 1.2;
+        }
+
+        p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .menu-item {
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .glass-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">☕</span>
+        <span class="emoji-2" data-value="3">🫖</span>
+        <span class="emoji-3" data-value="1">🥐</span>
+        <span class="emoji-4" data-value="4">✨</span>
+    </div>
+
+    <div class="container">
+        <nav>
+            <div class="logo">BrewConnect</div>
+        </nav>
+
+        <div class="glass-card">
+            <h1>Craft Coffee<br>Curated Connections</h1>
+            <p>Located in the heart of Beverly Hills, BrewConnect is more than a coffee shop—it's a sanctuary for coffee enthusiasts and creative minds.</p>
+        </div>
+
+        <div class="glass-card">
+            <h2>Signature Selections</h2>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <h3>Single Origin Pour-Over</h3>
+                    <p>Ethiopian Yirgacheffe, bright and floral</p>
+                </div>
+                <div class="menu-item">
+                    <h3>Artisan Espresso</h3>
+                    <p>House blend, notes of chocolate and caramel</p>
+                </div>
+                <div class="menu-item">
+                    <h3>Cold Brew Tonic</h3>
+                    <p>24-hour steeped, citrus-infused</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>Connect With Us</h2>
+            <form id="contactForm">
+                <div class="form-group">
+                    <input type="text" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" placeholder="Your Email" required>
+                </div>
+                <div class="form-group">
+                    <textarea placeholder="Your Message" rows="4" required></textarea>
+                </div>
+                <button type="submit">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1'
+                    entry.target.style.transform = 'translateY(0)'
+                }
+            })
+        }, {
+            threshold: 0.1
+        })
+
+        document.querySelectorAll('.glass-card').forEach((card) => {
+            observer.observe(card)
+        })
+    </script>
+</body>
+</html>
+```
