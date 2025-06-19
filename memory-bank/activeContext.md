@@ -1,83 +1,92 @@
-# Active Context: URL Routing Architecture Documentation
+# Active Context: EDIT Command Implementation for Degen Users
 
-## Current Focus: COMPLETED
-**Successfully documented the sophisticated dual-domain URL routing system**
+## Current Focus: IMPLEMENTING EDIT COMMAND
+**Building SMS command for degen users to edit existing WTAF pages**
 
-## What Was Just Analyzed
+## Implementation Plan Overview
 
-### Complex URL Routing System
-- **Two Domains:** `advisorsfoundry.ai` (business) + `wtaf.me` (app generator)
-- **Environment Aware:** Different behavior for development vs production
-- **Single Codebase:** One Next.js app serves both websites via middleware
+### Goal
+Add `EDIT [index_number] [instructions]` command that allows degen role users to modify their existing WTAF pages via SMS, using the same polished workflow as WTAF creation.
 
-### Key Architecture Insights
+### Architecture Decision: Option 2 - Minimal Monitor Extension
+**Extend monitor.py with minimal complexity rather than creating separate processes**
 
-#### Middleware-Driven Routing (`web/middleware.ts`)
-```
-Domain Detection → Environment Check → URL Rewriting → File Structure Mapping
-```
+#### Why This Approach:
+- ✅ **Single process** - no new things to manage
+- ✅ **Proven pattern** - follows existing WTAF workflow  
+- ✅ **Reuses everything** - SMS, OG, error handling, logging
+- ✅ **Minimal code** - just extending what already works (~20-30 lines)
 
-#### Environment Patterns
-- **Development (localhost:3000/3001):** Single domain serves both sites
-- **Production (Railway):** Separate domains with cross-domain routing
-- **Port Flexibility:** Works on both 3000 (normal) and 3001 (secondary Cursor instance)
+### Implementation Flow
+1. **handlers.ts**: Parse `EDIT 2 change background` → validate degen role → queue edit request
+2. **monitor.py**: Process edit queue → fetch existing HTML → combine with `prompts/edits.json` → call AI
+3. **monitor.py**: **UPDATE same row** in wtaf_content (preserving app_slug, user_slug, URL) → generate new OG image → send SMS
+4. **User**: Gets SMS with same URL (content now updated)
 
-#### URL Rewriting Examples
-- `wtaf.me/bart` → internally becomes `/wtaf/bart`
-- `localhost:3000/bart` → internally becomes `/wtaf/bart`
-- `localhost:3000/wtaf/bart` → continues normally (no rewrite)
+### Key Benefits
+- **Preserves URLs** - same app_slug means bookmarks still work
+- **Leverages monitor.py** - all the SMS formatting, OG images, error handling
+- **Clean database** - no duplicate entries, just updated content
+- **Consistent UX** - same SMS experience as WTAF
 
-### File Structure Mapping
-```
-web/app/
-├── page.tsx                     # AdvisorsFoundry homepage
-├── coaches/page.tsx             # Business coaching
-├── wtaf/
-│   ├── [user_slug]/
-│   │   ├── page.tsx             # User pages (wtaf.me/bart)
-│   │   ├── chat/page.tsx        # Chat interface (wtaf.me/bart/chat)
-│   │   └── [app_slug]/page.tsx  # Generated apps (wtaf.me/bart/my-app)
-```
+## Current Implementation Status
 
-### Complexity Factors Identified
-1. **Domain Switching:** Same codebase serves different websites
-2. **Environment Detection:** localhost vs production behavior
-3. **URL Rewriting:** Clean URLs hide internal structure
-4. **Loop Prevention:** Careful checks avoid infinite rewrites
-5. **Asset Handling:** Different rules for API vs content routes
+### ✅ COMPLETED: Basic Structure
+- Created `sms-bot/lib/degen_commands.ts` with edit command logic
+- Added EDIT command detection in `sms-bot/lib/sms/handlers.ts`
+- Added role-based security (degen users only)
+- Updated help text to show EDIT command for degen users
 
-## Cross-Service Integration
-- **SMS Bot:** Environment-aware URL generation for different domains
-- **Web Platform:** Middleware handles routing for both business and WTAF sites
-- **Database:** Unified data layer works across all domains
+### ❌ NEEDS CORRECTION: Current Issues
+**Current implementation bypasses monitor.py workflow - needs to be redesigned**
 
-## Technical Implementation Details
+- Current code does direct AI calls instead of using monitor.py
+- Doesn't use `prompts/edits.json` structure
+- Missing proper SMS formatting and OG image generation
+- Doesn't follow established queue → process → notify pattern
 
-### Environment Configuration
-```python
-# SMS Bot adapts URL generation based on environment
-if "localhost" in WEB_APP_URL:
-    WTAF_DOMAIN = WEB_APP_URL  # Development: single domain
-else:
-    WTAF_DOMAIN = "https://www.wtaf.me"  # Production: separate domain
-```
+### 🔄 NEXT STEPS: Proper Integration
+1. **Create edit queue table** (or reuse existing queue with edit type)
+2. **Add prompts/edits.json** with proper edit prompt structure
+3. **Extend monitor.py** with `process_edit_queue()` function
+4. **Update handlers.ts** to queue edit requests instead of direct processing
+5. **Test end-to-end** workflow with degen user
 
-### Middleware Logic
-```javascript
-// Detects domain type and rewrites URLs accordingly
-const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me'
-const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+/)
+## Database Structure Needed
+```sql
+-- Option 1: Add to existing queue
+ALTER TABLE request_queue ADD COLUMN request_type VARCHAR DEFAULT 'wtaf';
+-- Option 2: New table
+CREATE TABLE edit_requests (
+    id SERIAL PRIMARY KEY,
+    user_slug VARCHAR,
+    target_index INTEGER,
+    edit_instructions TEXT,
+    status VARCHAR DEFAULT 'pending',
+    created_at TIMESTAMP
+);
 ```
 
-## Current Status: FULLY DOCUMENTED
-- Routing system complexity understood
-- Environment patterns documented
-- Cross-service integration mapped
-- Development workflow clarified
-- Production deployment considerations noted
+## Files Modified So Far
+- `sms-bot/lib/degen_commands.ts` - **NEEDS REWORK** (currently bypasses monitor.py)
+- `sms-bot/lib/sms/handlers.ts` - **NEEDS UPDATE** (change from direct processing to queueing)
 
-## Next Steps Available
-- System works smoothly in both development and production
-- Documentation enables easier onboarding and maintenance
-- Architecture ready for future expansion (mobile app, API, etc.)
-- Clear separation enables independent scaling of services 
+## Files Still To Create/Modify
+- `sms-bot/prompts/edits.json` - Edit prompt template
+- `monitor.py` - Add edit queue processing (~20-30 lines)
+- Database schema updates for edit queue
+
+## Command Usage
+```
+EDIT 2 change the background to blue
+EDIT 1 add a header that says "Welcome to my site"
+EDIT 3 make the text larger and center it
+```
+
+## Role-Based Security
+- Only users with `role = 'degen'` can use EDIT command
+- Silent ignore for non-degen users (doesn't reveal command exists)
+- Uses INDEX command numbering (1-based, ordered by created_at desc)
+
+## Current Status: IMPLEMENTATION IN PROGRESS
+Ready to correct current approach and implement proper monitor.py integration. 
