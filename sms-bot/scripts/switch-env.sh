@@ -1,8 +1,8 @@
 #!/bin/bash
-# Script to toggle between local development and production environments
+# Script to toggle between development (WhatsApp) and production (SMS) environments
 # This updates both Twilio webhook and Supabase webhook
-# Usage: ./switch-env.sh dev   (to use local ngrok URLs)
-#        ./switch-env.sh prod  (to use Railway production URLs)
+# Usage: ./switch-env.sh dev   (WhatsApp sandbox for development)
+#        ./switch-env.sh prod  (SMS for production users)
 
 # Find the .env.local file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,8 +50,8 @@ PRODUCTION_URL="https://smsbot-production.up.railway.app" # Your Railway URL
 # Check if environment argument is provided
 if [ "$1" != "dev" ] && [ "$1" != "prod" ]; then
   echo "Error: Please specify environment: dev or prod"
-  echo "Usage: ./switch-env.sh dev   (to use local ngrok URL)"
-  echo "       ./switch-env.sh prod  (to use Railway production URL)"
+  echo "Usage: ./switch-env.sh dev   (WhatsApp sandbox for development)"
+  echo "       ./switch-env.sh prod  (SMS for production users)"
   exit 1
 fi
 
@@ -91,10 +91,10 @@ start_ngrok() {
 
 # Determine which URLs to use
 if [ "$1" = "dev" ]; then
-  # Development environment URLs
-  TWILIO_TARGET_URL="$NGROK_URL/sms/webhook"
+  # Development environment URLs (WhatsApp sandbox)
+  TWILIO_TARGET_URL="$NGROK_URL/whatsapp/webhook"
   SUPABASE_TARGET_URL="$NGROK_URL/api/webhooks/new-subscriber"
-  ENV_NAME="development (ngrok)"
+  ENV_NAME="development (WhatsApp sandbox via ngrok)"
   
   # Check if ngrok is running, start it if not
   if ! check_ngrok_running; then
@@ -124,14 +124,31 @@ echo "Switching to $ENV_NAME environment..."
 
 # Update the Twilio webhook URL
 echo "Updating Twilio webhook to: $TWILIO_TARGET_URL"
-curl -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/IncomingPhoneNumbers/$PHONE_SID.json" \
-  --data-urlencode "SmsUrl=$TWILIO_TARGET_URL" \
-  -u "$TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN"
 
-if [ $? -eq 0 ]; then
-  echo "✅ Success! Twilio webhook updated to $ENV_NAME"
+if [ "$1" = "dev" ]; then
+  # For development, configure WhatsApp sandbox webhook
+  echo "🔧 Configuring WhatsApp sandbox webhook..."
+  curl -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Sandbox/WhatsApp.json" \
+    --data-urlencode "WhatsAppUrl=$TWILIO_TARGET_URL" \
+    -u "$TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN"
+  
+  if [ $? -eq 0 ]; then
+    echo "✅ Success! WhatsApp sandbox webhook updated to $ENV_NAME"
+    echo "📱 To test: Send 'join' + your sandbox code to +1 (415) 523-8886 on WhatsApp"
+  else
+    echo "❌ Failed to update WhatsApp sandbox webhook. Check your credentials and try again."
+  fi
 else
-  echo "❌ Failed to update Twilio webhook. Check your credentials and try again."
+  # For production, configure regular SMS webhook
+  curl -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/IncomingPhoneNumbers/$PHONE_SID.json" \
+    --data-urlencode "SmsUrl=$TWILIO_TARGET_URL" \
+    -u "$TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN"
+  
+  if [ $? -eq 0 ]; then
+    echo "✅ Success! SMS webhook updated to $ENV_NAME"
+  else
+    echo "❌ Failed to update SMS webhook. Check your credentials and try again."
+  fi
 fi
 
 # Provide instructions for updating Supabase webhook

@@ -5,14 +5,14 @@ export const SMS_CONFIG = {
   // Maximum number of messages to keep in conversation history
   MAX_CONVERSATION_LENGTH: 10,
   
-  // Default system prompt for SMS conversations
-  SYSTEM_PROMPT: `You are VibeCEO's SMS assistant. You help users with information about VibeCEO. 
-Keep your responses concise and friendly, as they will be delivered via SMS.
+  // Default system prompt for SMS/WhatsApp conversations
+  SYSTEM_PROMPT: `You are VibeCEO's messaging assistant. You help users with information about VibeCEO via SMS and WhatsApp. 
+Keep your responses concise and friendly, as they will be delivered via text messaging.
 Provide helpful, accurate information about VibeCEO's services and features.
 If you don't know something, be honest about it.`,
   
   // Message size limits
-  MAX_SMS_LENGTH: 1600, // Maximum SMS message length
+  MAX_SMS_LENGTH: 1600, // Maximum message length for both SMS and WhatsApp
   
   // Response configuration
   RESPONSE_TIMEOUT: 15000, // 15 seconds timeout for AI responses,

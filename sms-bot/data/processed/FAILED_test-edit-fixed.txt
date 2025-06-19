@@ -1,0 +1,14 @@
+SENDER:+16508989508
+USER_SLUG:bart
+EDIT_TARGET:ruby-hawk-swimming  
+EDIT_INSTRUCTIONS:change the background color to blue
+
+ORIGINAL_HTML:
+<!DOCTYPE html>
+<html>
+<head><title>Test Page</title></head>
+<body style="background: white;">
+<h1>Hello World</h1>
+<p>This is a test page.</p>
+</body>
+</html> 

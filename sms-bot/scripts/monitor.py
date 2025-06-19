@@ -38,18 +38,13 @@ ANIMALS = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabb
 ACTIONS = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"]
 
 def detect_request_type(user_prompt):
-    """Detect what type of application the user wants"""
+    """Detect what type of application the user wants - only app or game"""
     prompt_lower = user_prompt.lower()
     
     # Game keywords
     game_keywords = ['game', 'pong', 'tetris', 'snake', 'tic-tac-toe', 'memory game', 
                      'quiz', 'trivia', 'puzzle', 'arcade', 'solitaire', 'blackjack',
                      'breakout', 'flappy', 'platformer', 'shooter', 'racing', 'cards']
-    
-    # App/tool keywords
-    app_keywords = ['calculator', 'todo', 'task manager', 'tracker', 'tool', 'app',
-                   'converter', 'generator', 'timer', 'counter', 'dashboard', 'planner',
-                   'notepad', 'editor', 'organizer', 'utility', 'widget', 'calendar']
     
     # Use word boundary matching to avoid false positives
     # Check for game keywords
@@ -62,17 +57,8 @@ def detect_request_type(user_prompt):
             if re.search(r'\b' + re.escape(keyword) + r'\b', prompt_lower):
                 return 'game'
     
-    # Check for app keywords
-    for keyword in app_keywords:
-        # Use word boundaries for single words, exact match for phrases
-        if ' ' in keyword:
-            if keyword in prompt_lower:
-                return 'app'
-        else:
-            if re.search(r'\b' + re.escape(keyword) + r'\b', prompt_lower):
-                return 'app'
-    
-    return 'website'
+    # Everything else is an app (with data collection by default)
+    return 'app'
 
 def generate_fun_slug():
     color = random.choice(COLORS)
@@ -283,8 +269,15 @@ def extract_code_blocks(text):
                 log_with_timestamp("⚠️ Multiple HTML blocks found but no delimiter - using first block")
                 return matches[0]
         else:
-            # Single HTML block - return as normal
-            return matches[0]
+            # Single HTML block - check if it contains the delimiter INSIDE
+            single_block = matches[0]
+            delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->'
+            if delimiter in single_block:
+                log_with_timestamp("🔗 Detected dual-page output with delimiter INSIDE single code block")
+                return single_block  # Return the whole block containing both pages
+            else:
+                # Single page - return as normal
+                return single_block
     
     # Try to find content between ```HTML and ``` markers (case insensitive)
     matches = re.findall(r'```HTML\s*([\s\S]*?)```', text)
@@ -347,7 +340,7 @@ def inject_supabase_credentials(html):
     
     return html
 
-def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt, admin_table_id=None, brief=None):
+def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt, admin_table_id=None):
     """Save HTML content to Supabase database"""
     log_with_timestamp(f"💾 Starting save_code_to_supabase: coach={coach}, user_slug={user_slug}, admin_table_id={admin_table_id}")
     log_with_timestamp(f"🔍 DUPLICATE DEBUG: save_code_to_supabase called from {original_prompt[:50]}...")
@@ -356,11 +349,7 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt,
     import traceback
     log_with_timestamp(f"🔍 CALL STACK: {traceback.format_stack()[-3].strip()}")
     
-    # Replace admin_table_id placeholder in HTML if brief is available
-    if brief and brief.get('admin_table_id'):
-        actual_admin_table_id = brief.get('admin_table_id')
-        code = code.replace('brief_admin_table_id_here', actual_admin_table_id)
-        log_with_timestamp(f"🔄 Replaced admin_table_id placeholder with: {actual_admin_table_id}")
+    # Note: Old brief system removed - APP_TABLE_ID replacement now handled below
     
     # For admin pages, use the admin_table_id as the app_slug
     if admin_table_id:
@@ -386,6 +375,11 @@ def save_code_to_supabase(code, coach, user_slug, sender_phone, original_prompt,
     public_url = f"{WTAF_DOMAIN}/{user_slug}/{app_slug}"
     # Inject Supabase credentials into HTML
     code = inject_supabase_credentials(code)
+    
+    # 🔧 FIX: Replace APP_TABLE_ID placeholder with actual app_slug
+    code = code.replace("'APP_TABLE_ID'", f"'{app_slug}'")
+    code = code.replace('"APP_TABLE_ID"', f'"{app_slug}"')
+    log_with_timestamp(f"🔧 Replaced APP_TABLE_ID with: {app_slug}")
     
     # Use fallback image URL for initial HTML - real OG image will be generated after save
     og_image_url = f"{WEB_APP_URL}/api/og-htmlcss?user={user_slug}&app={app_slug}"
@@ -603,9 +597,9 @@ def load_prompt_json(filename):
         return None
 
 def generate_prompt_2(user_input):
-    """Generate a better prompt from user input - Prompt 1"""
+    """Generate a complete prompt for Claude - Prompt 1"""
     log_with_timestamp("=" * 80)
-    log_with_timestamp("🎯 PROMPT 1: Enhancing user input...")
+    log_with_timestamp("🎯 PROMPT 1: Creating complete prompt for Claude...")
     log_with_timestamp(f"📥 ORIGINAL INPUT: {user_input}")
     log_with_timestamp("-" * 80)
     
@@ -626,7 +620,7 @@ def generate_prompt_2(user_input):
     prompt1_data = load_prompt_json("prompt1-creative-brief.json")
     if not prompt1_data:
         log_with_timestamp("❌ Failed to load Prompt 1, using fallback")
-        return user_input, None
+        return user_input
     
     # Prepare user message with coach information
     user_message = cleaned_input
@@ -643,45 +637,19 @@ def generate_prompt_2(user_input):
             model="gpt-4o",
             messages=messages,
             temperature=0.7,
-            max_tokens=500
+            max_tokens=1000
         )
-        json_output = response.choices[0].message.content.strip()
-        log_with_timestamp(f"📤 JSON BRIEF: {json_output}")
+        complete_prompt = response.choices[0].message.content.strip()
+        log_with_timestamp(f"📤 COMPLETE PROMPT: {complete_prompt[:200]}...")
+        log_with_timestamp("✅ Prompt 1 complete!")
+        log_with_timestamp("=" * 80)
         
-        # Parse JSON and extract data
-        try:
-            import json
-            brief = json.loads(json_output)
-            
-            # Create enhanced prompt from JSON data
-            enhanced_prompt = f"""Project: {brief.get('project_name', 'Untitled')}
-
-Summary: {brief.get('summary', user_input)}
-
-Tone: {brief.get('tone', 'modern and engaging')}
-
-Style Notes: {brief.get('style_notes', 'clean, modern design')}
-
-Core Features: {', '.join(brief.get('core_features', ['main content area']))}"""
-            
-            log_with_timestamp(f"📋 Parsed brief - Type: {brief.get('request_type', 'page')}")
-            log_with_timestamp("✅ Prompt 1 complete!")
-            log_with_timestamp("=" * 80)
-            
-            # Return both the enhanced prompt and the parsed JSON
-            return enhanced_prompt, brief
-            
-        except json.JSONDecodeError as je:
-            log_with_timestamp(f"⚠️ JSON parsing error: {je}")
-            log_with_timestamp("📤 Using raw output as prompt")
-            log_with_timestamp("✅ Prompt 1 complete!")
-            log_with_timestamp("=" * 80)
-            return json_output, None
+        return complete_prompt
             
     except Exception as e:
         log_with_timestamp(f"⚠️ Error generating prompt, using original: {e}")
         log_with_timestamp("=" * 80)
-        return user_input, None  # Fallback to original if generation fails
+        return user_input  # Fallback to original if generation fails
 
 def execute_gpt4o(prompt_file):
     log_with_timestamp(f"📖 Reading: {prompt_file}")
@@ -786,141 +754,110 @@ def execute_gpt4o(prompt_file):
         slug = f"code-snippet-{timestamp}" 
         user_prompt = raw_prompt.strip()
 
-    # NEW: Generate enhanced prompt from user input (Prompt 1 → Prompt 2)
-    enhanced_prompt, brief = generate_prompt_2(user_prompt)
+    # NEW: Generate complete prompt from user input (Prompt 1 → Prompt 2)
+    log_with_timestamp(f"🔧 DEBUG: About to call generate_prompt_2 with: {user_prompt[:50]}...")
+    complete_prompt = generate_prompt_2(user_prompt)
+    log_with_timestamp(f"🔧 DEBUG: generate_prompt_2 returned: {complete_prompt[:100] if complete_prompt else None}...")
     
-    # Use enhanced_prompt for the rest of the processing
-    user_prompt = enhanced_prompt
-
-    # Get request type from JSON brief or fallback to detection
-    log_with_timestamp("🚀 PROMPT 2: Building final content...")
-    if brief and 'request_type' in brief:
-        request_type = brief['request_type']
-        # Map "page" to "website" for compatibility with existing system
-        if request_type == 'page':
-            request_type = 'website'
-        log_with_timestamp(f"🎯 Request type from brief: {request_type}")
-    else:
-        request_type = detect_request_type(user_prompt)
-        log_with_timestamp(f"🎯 Detected request type (fallback): {request_type}")
+    # Use the complete prompt directly - no more complex logic needed!
+    log_with_timestamp("🚀 PROMPT 2: Sending complete prompt to Claude...")
     
-    # Find the coach data - prioritize brief coach, then file coach, then parsing
-    coach_data = None
-    coach_to_find = None
-    
-    # Check for coach in brief first
-    if brief and brief.get('inject_coach_voice') and brief.get('coach_handle'):
-        coach_to_find = brief['coach_handle']
-        log_with_timestamp(f"🎭 Coach from brief: {coach_to_find}")
-    # Fallback to file or parsing coach
-    elif coach_from_file:
-        coach_to_find = coach_from_file
-        log_with_timestamp(f"🎭 Coach from file: {coach_to_find}")
-    elif coach:
-        coach_to_find = coach
-        log_with_timestamp(f"🎭 Coach from parsing: {coach_to_find}")
-    
-    if coach_to_find and coach_to_find.lower() != "default":
-        for c in COACHES:
-            if c.get("id", "").lower() == coach_to_find.lower():
-                coach_data = c
-                break
-    
-        if not coach_data:
-            log_with_timestamp(f"⚠️ Coach '{coach_to_find}' not found in COACHES list")
-    else:
-        log_with_timestamp(f"🎨 No coach specified")
-    
-    # Load the appropriate Prompt 2 based on request type
-    if request_type == 'game':
-        log_with_timestamp("🎮 Game mode activated")
-        prompt2_data = load_prompt_json("prompt2-game.json")
-    elif request_type == 'app':
-        log_with_timestamp("📱 App mode activated") 
-        prompt2_data = load_prompt_json("prompt2-app.json")
-    elif request_type == 'website' or coach_data:
-        if coach_data:
-            log_with_timestamp(f"🎭 Coach mode activated: {coach_data['name']} ({coach_data['id']})")
-        else:
-            log_with_timestamp("🌐 Website mode activated")
-        prompt2_data = load_prompt_json("prompt2-website.json")
-    else:
-        log_with_timestamp("🎨 Using default website mode")
-        prompt2_data = load_prompt_json("prompt2-website.json")
-    
-    if not prompt2_data:
-        log_with_timestamp("❌ Failed to load Prompt 2, using fallback")
-        system_prompt = "You are a helpful web designer. Create a complete HTML page based on the user's request."
-    else:
-        system_prompt = prompt2_data["content"]
-        
-        # Inject coach personality for different types of requests
-        if coach_data:
-            if brief and brief.get('inject_coach_voice'):
-                # Testimonial-specific injection
-                coach_info = f"""
+    # System prompt with all technical requirements - let Prompt 1 handle creative direction
+    system_prompt = """🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨
+🚨🚨🚨 READ THIS FIRST BEFORE ANYTHING ELSE 🚨🚨🚨
 
-IMPORTANT: You are now {coach_data['name']} writing this testimonial personally.
+IF YOU SEE "<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->" IN THE USER'S REQUEST:
+YOU MUST CREATE EXACTLY TWO COMPLETE HTML PAGES
+SEPARATED BY THAT EXACT DELIMITER
+NEVER CREATE JUST ONE PAGE
+THIS IS NON-NEGOTIABLE
 
-{coach_data['prompt']}
+🚨🚨🚨 END CRITICAL INSTRUCTION 🚨🚨🚨
 
-When creating this testimonial page:
-- Write the testimonial content in YOUR authentic voice and style
-- Use YOUR characteristic communication patterns
-- Channel YOUR personality directly into the testimonial text
-- Make it feel like YOU personally wrote this testimonial about the person
-- The testimonial should sound exactly like something YOU would say
+You are a senior designer at a luxury digital agency. Create exactly what the user requests using premium design standards.
 
-You are not designing a page AS a designer - you ARE the testimonial author speaking in your own voice."""
-                
-                system_prompt += coach_info
-                log_with_timestamp(f"✨ Injected {coach_data['name']} as testimonial author (not designer)")
-            
-            else:
-                # General coach-guided content creation for website requests
-                coach_info = f"""
+REQUIRED DESIGN ELEMENTS:
+- 4 floating emojis with mouse parallax effects
+- Animated gradient background (15s ease infinite)
+- Glass morphism containers with backdrop-filter blur
+- Space Grotesk font for headlines, Inter for body text
+- Mobile-responsive design
+- Professional color palette
+- Luxury aesthetic with sophisticated copy
 
-IMPORTANT: You are {coach_data['name']} providing guidance and creating this content.
+TECHNICAL REQUIREMENTS FOR APPS WITH FORMS:
 
-{coach_data['prompt']}
+1. EXACT Supabase Integration (use these exact placeholders):
+const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
 
-When creating this webpage:
-- Infuse the content with YOUR personality and voice
-- Write any text content (headlines, copy, descriptions) in YOUR characteristic style
-- Let YOUR expertise and perspective guide the content strategy
-- Make the content feel like it came from YOU personally
-- Channel YOUR unique viewpoint into the messaging and tone
+2. Public page form submission with error handling:
+try {
+  const { data, error } = await supabase.from('wtaf_submissions').insert({
+    app_id: 'APP_TABLE_ID',
+    submission_data: formData
+  })
+  if (error) throw error
+  // Show success message
+} catch (error) {
+  console.error('Error:', error)
+  alert('Submission failed. Please try again.')
+}
 
-You are not just a designer - you are a coach providing content guidance with your authentic voice."""
-                
-                system_prompt += coach_info
-                log_with_timestamp(f"✨ Injected {coach_data['name']} as content coach and guide")
+3. Admin page fetch with error handling:
+try {
+  const { data, error } = await supabase.from('wtaf_submissions')
+    .select('*')
+    .eq('app_id', 'APP_TABLE_ID')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  // Display data in table
+} catch (error) {
+  console.error('Error:', error)
+  alert('Failed to load submissions')
+}
 
-    full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+4. CSV Export (manual implementation):
+const csvContent = 'Name,Email,Message\\n' + data.map(row => 
+  `${row.submission_data.name || ''},${row.submission_data.email || ''},${row.submission_data.message || ''}`
+).join('\\n')
+const blob = new Blob([csvContent], { type: 'text/csv' })
+const url = URL.createObjectURL(blob)
+const a = document.createElement('a')
+a.href = url
+a.download = 'submissions.csv'
+a.click()
 
-    # Smart model selection based on request type
-    if request_type == 'game':
-        model = "claude-opus-4-20250514"  # Claude 4 Opus supports 32K tokens
-        fallback_model = "claude-sonnet-4-20250514"  # Claude 4 Sonnet as fallback
-        max_tokens = 32000  # Maximum token budget for complex games
-        log_with_timestamp("🧠 Using Claude 4 Opus with 32K tokens for games...")
-    elif request_type == 'app':
-        # Dynamic model and token selection based on data collection needs
-        if brief and brief.get('has_data_collection', False):
-            model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet supports up to 8192 tokens
-            fallback_model = "claude-3-5-haiku-20241022"  # Claude 3.5 Haiku as fallback
-            max_tokens = 8000  # Apps need dual pages (under 8192 limit)
-            log_with_timestamp("🧠 Using Claude 3.5 Sonnet with 8K tokens for data collection apps...")
-        else:
-            model = "claude-3-opus-20240229"  # Claude 3 Opus for regular apps
-            fallback_model = "claude-3-5-sonnet-20241022"  # Claude 3.5 Sonnet as fallback
-            max_tokens = 4000   # Regular apps are fine with current limit
-            log_with_timestamp("🧠 Using Claude 3 Opus with 4K tokens for apps...")
-    else:
-        model = "claude-3-5-sonnet-20241022"
-        fallback_model = "claude-3-5-haiku-20241022"  # Claude 3.5 Haiku as fallback
-        max_tokens = 8100  # Standard token budget for websites
-        log_with_timestamp("🧠 Using Claude 3.5 Sonnet for web design...")
+5. Required script tag:
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+6. Floating emojis with parallax:
+<span class="emoji-1" data-value="2">🎉</span>
+<span class="emoji-2" data-value="3">✨</span>
+<span class="emoji-3" data-value="1">🥂</span>
+<span class="emoji-4" data-value="4">🗼</span>
+
+7. Parallax effect:
+document.addEventListener('mousemove', (e) => {
+  document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+    const speed = elem.getAttribute('data-value')
+    const x = (e.clientX * speed) / 100
+    const y = (e.clientY * speed) / 100
+    elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+  })
+})
+
+Use 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY' exactly as placeholders.
+Replace 'APP_TABLE_ID' with a unique identifier for this app.
+
+Return complete HTML wrapped in ```html code blocks."""
+
+    full_prompt = [{"role": "system", "content": system_prompt}, {"role": "user", "content": complete_prompt}]
+
+    # Smart model selection - use Claude 3.5 Sonnet for all requests
+    model = "claude-3-5-sonnet-20241022"
+    fallback_model = "claude-3-5-haiku-20241022"
+    max_tokens = 8192  # Maximum for Claude to ensure dual pages fit
+    log_with_timestamp("🧠 Using Claude 3.5 Sonnet with 8K tokens...")
     
     try:
         # Call Anthropic Claude API
@@ -944,13 +881,14 @@ You are not just a designer - you are a coach providing content guidance with yo
             "messages": [
                 {
                     "role": "user",
-                    "content": user_prompt
+                    "content": complete_prompt
                 }
             ]
         }
         
         log_with_timestamp(f"🔍 Sending {model} request with token limit: {max_tokens}")
-        log_with_timestamp("🤖 Executing PROMPT 2 with enhanced input...")
+        log_with_timestamp("🤖 Executing PROMPT 2 with complete prompt...")
+        log_with_timestamp(f"🔧 DEBUG: Complete prompt being sent to Claude: {complete_prompt[-300:]}")  # Last 300 chars
         
         # Make the API call
         response = requests.post(claude_api_url, headers=headers, json=payload)
@@ -990,7 +928,7 @@ You are not just a designer - you are a coach providing content guidance with yo
                     "messages": [
                         {
                             "role": "user",
-                            "content": user_prompt
+                            "content": complete_prompt
                         }
                     ]
                 }
@@ -1032,39 +970,34 @@ You are not just a designer - you are a coach providing content guidance with yo
     code = extract_code_blocks(result)
     if code.strip():
         if user_slug:
-            # Use new Supabase save function for WTAF content
+            # Use Supabase save function for WTAF content
             log_with_timestamp(f"🎯 Using direct Supabase save for user_slug: {user_slug}")
             
-            # Check if this app has data collection (dual-page deployment)
-            if brief and brief.get('has_data_collection'):
-                log_with_timestamp(f"📊 Data collection app detected - deploying dual pages")
+            # Check if Claude generated dual pages by looking for the delimiter
+            delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->'
+            log_with_timestamp(f"🔍 DEBUG: Checking for delimiter in code (length: {len(code)} chars)")
+            log_with_timestamp(f"🔍 DEBUG: Code preview: {code[:200]}...")
+            
+            if delimiter in code:
+                log_with_timestamp(f"📊 Dual-page app detected - deploying both pages")
                 
                 # Split HTML on the delimiter
-                delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->'
-                if delimiter in code:
-                    public_html, admin_html = code.split(delimiter, 1)
-                    log_with_timestamp(f"✂️ Split HTML into public ({len(public_html)} chars) and admin ({len(admin_html)} chars) pages")
-                    
-                    # Deploy public page (normal app)
-                    app_slug, public_url = save_code_to_supabase(public_html.strip(), coach, user_slug, sender_phone, user_prompt, brief=brief)
-                    
-                    # Deploy admin page using admin_table_id from brief
-                    admin_table_id = brief.get('admin_table_id', 'unknown')
-                    admin_slug, admin_url = save_code_to_supabase(admin_html.strip(), coach, user_slug, sender_phone, f"Admin dashboard for {user_prompt}", admin_table_id, brief)
-                    
-                    # Store URLs for SMS messaging
-                    public_url = public_url
-                    admin_url = admin_url
-                    is_dual_page = True
-                    
-                else:
-                    log_with_timestamp(f"⚠️ Data collection flag set but no delimiter found - deploying as single page")
-                    app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt, brief=brief)
-                    admin_url = None
-                    is_dual_page = False
+                public_html, admin_html = code.split(delimiter, 1)
+                log_with_timestamp(f"✂️ Split HTML into public ({len(public_html)} chars) and admin ({len(admin_html)} chars) pages")
+                
+                # Deploy public page (normal app)
+                app_slug, public_url = save_code_to_supabase(public_html.strip(), coach, user_slug, sender_phone, user_prompt)
+                
+                # Deploy admin page with admin prefix
+                admin_slug, admin_url = save_code_to_supabase(admin_html.strip(), coach, user_slug, sender_phone, f"Admin dashboard for {user_prompt}", "admin")
+                
+                # Store URLs for SMS messaging
+                is_dual_page = True
+                
             else:
-                # Single page deployment (existing logic)
-                app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt, brief=brief)
+                # Single page deployment
+                log_with_timestamp(f"📱 Single-page app - deploying one page")
+                app_slug, public_url = save_code_to_supabase(code, coach, user_slug, sender_phone, user_prompt)
                 admin_url = None
                 is_dual_page = False
         else:
@@ -1085,26 +1018,18 @@ You are not just a designer - you are a coach providing content guidance with yo
             # Send SMS to original sender if available, otherwise to default
             if sender_phone:
                 log_with_timestamp(f"📱 Sending SMS to original sender: {sender_phone}")
-                # Customize SMS message based on request type and dual-page status
+                # Customize SMS message based on dual-page status
                 if is_dual_page and admin_url:
                     message = f"📱 Your app: {public_url}\n📊 View data: {admin_url}"
-                elif request_type == 'game':
-                    message = f"🎮 Your game is ready to play: {public_url}"
-                elif request_type == 'app':
-                    message = f"📱 Your app is ready to use: {public_url}"
                 else:
-                    message = f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}"
+                    message = f"📱 Your app is ready to use: {public_url}"
                 send_confirmation_sms(message, sender_phone)
             else:
                 log_with_timestamp("📱 No sender phone - using default")
                 if is_dual_page and admin_url:
                     message = f"📱 Your app: {public_url}\n📊 View data: {admin_url}"
-                elif request_type == 'game':
-                    message = f"🎮 Your game is ready to play: {public_url}"
-                elif request_type == 'app':
-                    message = f"📱 Your app is ready to use: {public_url}"
                 else:
-                    message = f"✅ WTAF delivered — if it breaks, it's a feature. {public_url}"
+                    message = f"📱 Your app is ready to use: {public_url}"
                 send_confirmation_sms(message)
         else:
             log_with_timestamp("❌ Failed to save content")

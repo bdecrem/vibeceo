@@ -1,0 +1,412 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yo Yo! - Share Your Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --deep-brown: #2c1810;
+            --gold: #ffd700;
+            --cream: #fff5d7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, var(--deep-brown), #4a2b1d, #63392a, var(--deep-brown));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: var(--cream);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--cream);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        button {
+            background: var(--gold);
+            color: var(--deep-brown);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: all 0.1s ease;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; }
+        .emoji-2 { top: 20%; right: 10%; }
+        .emoji-3 { bottom: 20%; left: 15%; }
+        .emoji-4 { bottom: 10%; right: 15%; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .glass-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">☕</span>
+        <span class="emoji-2" data-value="3">✨</span>
+        <span class="emoji-3" data-value="1">🥐</span>
+        <span class="emoji-4" data-value="4">🍰</span>
+    </div>
+
+    <div class="container">
+        <div class="glass-container">
+            <h1>Yo Yo!</h1>
+            <form id="feedbackForm">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Your Message</label>
+                    <textarea id="message" rows="5" required></textarea>
+                </div>
+                <button type="submit">Share Your Experience ✨</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                message: document.getElementById('message').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'wtaf_abc123',
+                    submission_data: formData
+                })
+                if (error) throw error
+                alert('Thank you for your feedback!')
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Submission failed. Please try again.')
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yo Yo! Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --deep-brown: #2c1810;
+            --gold: #ffd700;
+            --cream: #fff5d7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, var(--deep-brown), #4a2b1d, #63392a, var(--deep-brown));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: var(--cream);
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        input[type="search"] {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--cream);
+        }
+
+        button {
+            background: var(--gold);
+            color: var(--deep-brown);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--gold);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="glass-container">
+            <h1>Yo Yo! Admin Dashboard</h1>
+            
+            <div class="controls">
+                <input type="search" id="searchInput" placeholder="Search submissions...">
+                <button onclick="exportCSV()">Export CSV</button>
+            </div>
+
+            <table id="submissionsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+        let submissionsData = []
+
+        async function loadSubmissions() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_abc123')
+                    .order('created_at', { ascending: false })
+                
+                if (error) throw error
+                
+                submissionsData = data
+                displaySubmissions(data)
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function displaySubmissions(data) {
+            const tbody = document.querySelector('#submissionsTable tbody')
+            tbody.innerHTML = ''
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td>${new Date(row.created_at).toLocaleDateString()}</td>
+                    <td>${row.submission_data.name}</td>
+                    <td>${row.submission_data.email}</td>
+                    <td>${row.submission_data.message}</td>
+                `
+                tbody.appendChild(tr)
+            })
+        }
+
+        function exportCSV() {
+            const csvContent = 'Date,Name,Email,Message\n' + submissionsData.map(row => 
+                `${new Date(row.created_at).toLocaleDateString()},${row.submission_data.name},${row.submission_data.email},${row.submission_data.message}`
+            ).join('\n')
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'yo-yo-feedback.csv'
+            a.click()
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase()
+            const filteredData = submissionsData.filter(row => 
+                row.submission_data.name.toLowerCase().includes(searchTerm) ||
+                row.submission_data.email.toLowerCase().includes(searchTerm) ||
+                row.submission_data.message.toLowerCase().includes(searchTerm)
+            )
+            displaySubmissions(filteredData)
+        })
+
+        // Load submissions when page loads
+        loadSubmissions()
+    </script>
+</body>
+</html>
+```

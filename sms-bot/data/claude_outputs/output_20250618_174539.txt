@@ -1,0 +1,436 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Paddle Clash</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            background: #0a0a0a;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            opacity: 0.15;
+            z-index: 0;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 20%; right: 15%; animation-delay: 7s; }
+        .emoji-3 { bottom: 20%; left: 20%; animation-delay: 14s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            max-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        
+        canvas {
+            background: rgba(10, 10, 10, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(131, 56, 236, 0.3);
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 10;
+        }
+        
+        .screen.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(131, 56, 236, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            border: none;
+            color: white;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(131, 56, 236, 0.4);
+            min-height: 44px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(131, 56, 236, 0.6);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .score-display {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin: 2rem 0;
+            color: #06ffa5;
+            text-shadow: 0 0 20px rgba(6, 255, 165, 0.5);
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 3;
+        }
+        
+        @media (max-width: 768px) {
+            .controls-hint {
+                bottom: 1rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="floating-emoji emoji-1">🎮</div>
+    <div class="floating-emoji emoji-2">⚡</div>
+    <div class="floating-emoji emoji-3">🏓</div>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="introScreen" class="screen active">
+            <h1>Paddle Clash</h1>
+            <p class="subtitle">Tap to ignite the neon</p>
+            <button class="btn" onclick="startGame()">Start Game</button>
+        </div>
+        
+        <div id="endScreen" class="screen">
+            <h1>Game Over</h1>
+            <div class="score-display" id="finalScore">0</div>
+            <p class="subtitle">You survived the clash</p>
+            <button class="btn" onclick="restartGame()">Play Again</button>
+        </div>
+        
+        <div class="controls-hint" id="controlsHint">Tap sides to move paddle</div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const introScreen = document.getElementById('introScreen');
+        const endScreen = document.getElementById('endScreen');
+        const finalScoreEl = document.getElementById('finalScore');
+        const controlsHint = document.getElementById('controlsHint');
+        
+        let gameRunning = false;
+        let score = 0;
+        let ballSpeed = 5;
+        let animationId;
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            const padding = 40;
+            const maxWidth = Math.min(container.clientWidth - padding, 800);
+            const maxHeight = Math.min(container.clientHeight - padding, 600);
+            
+            const aspectRatio = 4/3;
+            let width = maxWidth;
+            let height = width / aspectRatio;
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * aspectRatio;
+            }
+            
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        const paddle = {
+            width: 15,
+            height: 80,
+            x: 20,
+            y: canvas.height / (2 * window.devicePixelRatio) - 40,
+            speed: 8,
+            targetY: null
+        };
+        
+        const ball = {
+            x: canvas.width / (2 * window.devicePixelRatio),
+            y: canvas.height / (2 * window.devicePixelRatio),
+            radius: 10,
+            speedX: ballSpeed,
+            speedY: ballSpeed * 0.5,
+            trail: []
+        };
+        
+        function handleInput(e) {
+            if (!gameRunning) return;
+            
+            let y;
+            if (e.type.includes('touch')) {
+                e.preventDefault();
+                y = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            } else {
+                y = e.clientY - canvas.getBoundingClientRect().top;
+            }
+            
+            paddle.targetY = y - paddle.height / 2;
+        }
+        
+        if (isMobile) {
+            canvas.addEventListener('touchstart', handleInput, { passive: false });
+            canvas.addEventListener('touchmove', handleInput, { passive: false });
+        } else {
+            canvas.addEventListener('mousemove', handleInput);
+        }
+        
+        function updatePaddle() {
+            if (paddle.targetY !== null) {
+                const diff = paddle.targetY - paddle.y;
+                paddle.y += diff * 0.15;
+            }
+            
+            paddle.y = Math.max(0, Math.min(canvas.height / window.devicePixelRatio - paddle.height, paddle.y));
+        }
+        
+        function updateBall() {
+            ball.trail.push({ x: ball.x, y: ball.y, alpha: 1 });
+            if (ball.trail.length > 10) {
+                ball.trail.shift();
+            }
+            
+            ball.trail.forEach(point => {
+                point.alpha *= 0.9;
+            });
+            
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+            
+            const canvasW = canvas.width / window.devicePixelRatio;
+            const canvasH = canvas.height / window.devicePixelRatio;
+            
+            if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvasH) {
+                ball.speedY = -ball.speedY;
+            }
+            
+            if (ball.x + ball.radius >= canvasW) {
+                ball.speedX = -ball.speedX;
+                ball.x = canvasW - ball.radius;
+            }
+            
+            if (ball.x - ball.radius <= paddle.x + paddle.width &&
+                ball.x - ball.radius > paddle.x &&
+                ball.y >= paddle.y &&
+                ball.y <= paddle.y + paddle.height) {
+                
+                ball.speedX = Math.abs(ball.speedX);
+                const relativeIntersectY = (paddle.y + paddle.height / 2) - ball.y;
+                const normalizedRelativeIntersectionY = relativeIntersectY / (paddle.height / 2);
+                const bounceAngle = normalizedRelativeIntersectionY * Math.PI / 4;
+                
+                ball.speedX = ballSpeed * Math.cos(bounceAngle);
+                ball.speedY = ballSpeed * -Math.sin(bounceAngle);
+                
+                score++;
+                
+                if (score % 5 === 0) {
+                    ballSpeed += 0.5;
+                    ball.speedX = ball.speedX > 0 ? ballSpeed : -ballSpeed;
+                }
+            }
+            
+            if (ball.x - ball.radius <= 0) {
+                endGame();
+            }
+        }
+        
+        function render() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, w, h);
+            
+            ball.trail.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, ball.radius * 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 0, 110, ${point.alpha * 0.3})`;
+                ctx.fill();
+            });
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff006e';
+            ctx.fillStyle = '#ff006e';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+            
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#06ffa5';
+            ctx.shadowColor = '#06ffa5';
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 48px Space Grotesk';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.textAlign = 'center';
+            ctx.fillText(score, w / 2, h / 2);
+        }
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            updatePaddle();
+            updateBall();
+            render();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            introScreen.classList.remove('active');
+            controlsHint.style.opacity = '1';
+            setTimeout(() => {
+                controlsHint.style.opacity = '0';
+            }, 3000);
+            
+            gameRunning = true;
+            score = 0;
+            ballSpeed = 5;
+            ball.x = canvas.width / (2 * window.devicePixelRatio);
+            ball.y = canvas.height / (2 * window.devicePixelRatio);
+            ball.speedX = ballSpeed;
+            ball.speedY = ballSpeed * 0.5;
+            ball.trail = [];
+            paddle.y = canvas.height / (2 * window.devicePixelRatio) - paddle.height / 2;
+            
+            gameLoop();
+        }
+        
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            finalScoreEl.textContent = score;
+            endScreen.classList.add('active');
+        }
+        
+        function restartGame() {
+            endScreen.classList.remove('active');
+            startGame();
+        }
+        
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            emojis.forEach((emoji, i) => {
+                const offsetX = (x - 0.5) * 20 * (i + 1);
+                const offsetY = (y - 0.5) * 20 * (i + 1);
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

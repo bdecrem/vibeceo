@@ -1,0 +1,150 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World | Premium Digital Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: #f6f1eb;
+            --gradient-2: #f3e9e0;
+            --gradient-3: #f9f2ec;
+            --text: #1c1c1c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, var(--gradient-1), var(--gradient-2), var(--gradient-3));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 4rem;
+            text-align: center;
+            transform: translateY(30px);
+            opacity: 0;
+            animation: fadeUp 1s forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(45deg, #1c1c1c, #2a2a2a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: #444;
+            max-width: 600px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+            
+            p {
+                font-size: 1.1rem;
+            }
+
+            .glass-card {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glass-card">
+            <h1>Hello World</h1>
+            <p>Welcome to a world of refined digital experiences, where every pixel is crafted with intention and purpose.</p>
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 15%; left: 15%">✨</div>
+    <div class="floating-emoji" style="top: 75%; left: 80%">💫</div>
+    <div class="floating-emoji" style="top: 80%; left: 20%">⭐</div>
+    <div class="floating-emoji" style="top: 20%; left: 85%">🌟</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            emojis.forEach(emoji => {
+                const rect = emoji.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const deltaX = (mouseX - centerX) * 0.01;
+                const deltaY = (mouseY - centerY) * 0.01;
+
+                emoji.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            });
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.glass-card'));
+    </script>
+</body>
+</html>
+```

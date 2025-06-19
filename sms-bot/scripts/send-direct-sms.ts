@@ -10,8 +10,8 @@ import twilio from 'twilio';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-const envPath = path.resolve(__dirname, '../.env.local');
+// Load environment variables (look in project root, not dist directory)
+const envPath = path.resolve(__dirname, '../../.env.local');
 console.log('Loading environment from:', envPath);
 dotenv.config({ path: envPath });
 
@@ -40,10 +40,19 @@ async function sendMessage(customMessage?: string): Promise<void> {
     console.log(`Sending message: "${messageBody}"`);
     console.log(`To phone number: ${targetPhone}`);
     
+    // Determine the correct "from" number based on target platform
+    const isWhatsApp = targetPhone.startsWith('whatsapp:');
+    const fromNumber = isWhatsApp 
+      ? 'whatsapp:+14155238886'  // Twilio WhatsApp sandbox number
+      : process.env.TWILIO_PHONE_NUMBER;  // Regular SMS number
+    
+    console.log(`Platform: ${isWhatsApp ? 'WhatsApp' : 'SMS'}`);
+    console.log(`From number: ${fromNumber}`);
+    
     // Send a message directly using Twilio API
     const message = await twilioClient.messages.create({
       body: messageBody,
-      from: process.env.TWILIO_PHONE_NUMBER,
+      from: fromNumber,
       to: targetPhone
     });
     

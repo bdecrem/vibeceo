@@ -63,6 +63,49 @@ export function setupTwilioWebhooks(app: Application): void {
   console.log('Twilio webhooks configured successfully');
 }
 
+/**
+ * Setup WhatsApp webhooks on Express server
+ * Uses same processing logic as SMS webhooks
+ * @param app Express application
+ */
+export function setupWhatsAppWebhooks(app: Application): void {
+  // WhatsApp webhook endpoint - uses same infrastructure as SMS
+  app.post('/whatsapp/webhook', async (req: Request, res: Response) => {
+    try {
+      // Extract message details from Twilio webhook (same format as SMS)
+      const { From, Body } = req.body;
+      
+      if (!From || !Body) {
+        console.error('Invalid WhatsApp webhook payload:', req.body);
+        return res.status(400).send('Bad Request: Missing required parameters');
+      }
+      
+      if (!twilioClient) {
+        console.error('Twilio client not initialized');
+        return res.status(500).send('Internal Server Error');
+      }
+      
+      // Process using existing SMS handler - it's platform agnostic!
+      void processIncomingSms(From, Body, twilioClient);
+      
+      // Respond to Twilio with empty TwiML to avoid auto-response
+      res.set('Content-Type', 'text/xml');
+      res.send('<Response></Response>');
+      
+    } catch (error) {
+      console.error('Error processing WhatsApp webhook:', error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+  
+  // Setup validation endpoint (useful for Twilio to verify webhook URL)
+  app.get('/whatsapp/webhook', (req: Request, res: Response) => {
+    res.status(200).send('WhatsApp Webhook endpoint is active');
+  });
+  
+  console.log('WhatsApp webhooks configured successfully');
+}
+
 export function initializeTwilioClient(): TwilioClient {
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
     throw new Error('Missing required Twilio environment variables');
