@@ -12,6 +12,20 @@ import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generato
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Platform detection utilities for WhatsApp integration
+export function detectMessagePlatform(from: string): 'sms' | 'whatsapp' {
+  return from.startsWith('whatsapp:') ? 'whatsapp' : 'sms';
+}
+
+export function normalizePhoneNumber(from: string): string {
+  return from.replace('whatsapp:', '');
+}
+
+export function formatPhoneForPlatform(phoneNumber: string, platform: 'sms' | 'whatsapp'): string {
+  const cleanNumber = phoneNumber.replace('whatsapp:', '');
+  return platform === 'whatsapp' ? `whatsapp:${cleanNumber}` : cleanNumber;
+}
+
 // Global variable for next daily message - set at 7am, used at 9am
 let nextDailyMessage: any = null;
 
@@ -1365,6 +1379,10 @@ ${coach}-${slug}-about ${userBio}`;
 const processedMessages = new Set<string>();
 
 export async function processIncomingSms(from: string, body: string, twilioClient: TwilioClient): Promise<void> {
+  // Normalize phone number for database operations (removes whatsapp: prefix)
+  const normalizedPhoneNumber = normalizePhoneNumber(from);
+  const platform = detectMessagePlatform(from);
+  
   // Create a unique message ID based on phone number, message content, and timestamp (within 10 seconds)
   const timestamp = Math.floor(Date.now() / 10000); // 10-second windows
   const messageId = `${from}:${body.substring(0, 50)}:${timestamp}`;
@@ -1386,7 +1404,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
   }
   
   console.log(`📨 PROCESSING MESSAGE: ${messageId}`);
-  console.log(`Received SMS from ${from}: ${body}`);
+  console.log(`Received ${platform.toUpperCase()} from ${from}: ${body}`);
   
   try {
     const message = body.trim();
@@ -1400,12 +1418,12 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       console.log('Processing START/UNSTOP command...');
       
       // Check if user exists in database
-      const existingSubscriber = await getSubscriber(from);
+      const existingSubscriber = await getSubscriber(normalizedPhoneNumber);
       
       if (!existingSubscriber) {
         // New user signup
-        console.log(`New user signup attempt: ${from}`);
-        const success = await createNewSubscriber(from);
+        console.log(`New user signup attempt: ${normalizedPhoneNumber}`);
+        const success = await createNewSubscriber(normalizedPhoneNumber);
         
         if (success) {
           await sendSmsResponse(
@@ -1413,7 +1431,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
             "Welcome to The Foundry! 🚀\n\nReply YES to confirm your subscription and start receiving our daily creative chaos. Standard rates apply.\n\nText STOP anytime to unsubscribe.",
             twilioClient
           );
-          console.log(`New subscriber created: ${from}, awaiting confirmation`);
+          console.log(`New subscriber created: ${normalizedPhoneNumber}, awaiting confirmation`);
         } else {
           await sendSmsResponse(
             from,
@@ -1423,8 +1441,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         }
       } else if (existingSubscriber.unsubscribed) {
         // Existing user resubscribing
-        console.log(`Existing user resubscribing: ${from}`);
-        const success = await resubscribeUser(from);
+        console.log(`Existing user resubscribing: ${normalizedPhoneNumber}`);
+        const success = await resubscribeUser(normalizedPhoneNumber);
         
         if (success) {
           await sendSmsResponse(
@@ -1441,7 +1459,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         }
       } else {
         // Already subscribed
-        console.log(`User already subscribed: ${from}`);
+        console.log(`User already subscribed: ${normalizedPhoneNumber}`);
         await sendSmsResponse(
           from,
           "You're already subscribed to The Foundry! Text COMMANDS for available options or STOP to unsubscribe.",
@@ -1454,7 +1472,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
 
     if (messageUpper === 'STOP') {
       console.log('Processing STOP command...');
-      const success = await unsubscribeUser(from);
+      const success = await unsubscribeUser(normalizedPhoneNumber);
       activeConversations.delete(from);  // End any active conversation
       
       if (success) {
@@ -1466,7 +1484,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     // Handle YES confirmation responses
     if (messageUpper === 'YES') {
       console.log('Processing YES confirmation...');
-      const success = await confirmSubscriber(from);
+      const success = await confirmSubscriber(normalizedPhoneNumber);
       if (success) {
         // Send welcome/confirmation message first
         await sendSmsResponse(
@@ -1481,7 +1499,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         
         // If no message is available yet, send welcome message only
         if (!correctDayData) {
-          console.log(`No daily message available yet for new subscriber ${from}, sent welcome only`);
+          console.log(`No daily message available yet for new subscriber ${normalizedPhoneNumber}, sent welcome only`);
           return;
         }
         
@@ -1494,9 +1512,9 @@ export async function processIncomingSms(from: string, body: string, twilioClien
             from: process.env.TWILIO_PHONE_NUMBER
           });
 
-          console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${from} (correct day based on signup date)`);
+          console.log(`Successfully sent Day ${correctDayData.day} message to new subscriber ${normalizedPhoneNumber} (correct day based on signup date)`);
         } catch (error) {
-          console.error(`Failed to send message to new subscriber ${from}:`, error);
+          console.error(`Failed to send message to new subscriber ${normalizedPhoneNumber}:`, error);
         }
       } else {
         await sendSmsResponse(
@@ -1593,21 +1611,21 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       
       try {
         // Check user role for WTAF command
-        const subscriber = await getSubscriber(from);
-        if (!subscriber || subscriber.role !== 'coder') {
-          console.log(`User ${from} attempted WTAF command without coder privileges`);
-          // Silent ignore - don't reveal command to non-coder users
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+        console.log(`User ${normalizedPhoneNumber} attempted WTAF command without coder/degen privileges`);
+        // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
         
         // Get or create user slug
-        const userSlug = await getOrCreateUserSlug(from);
+        const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
         
         // Check if user just typed "WTAF" alone
         const wtafMatch = message.match(/^WTAF\s*$/i);
         if (wtafMatch) {
           // Check if this is their first time - get user from Supabase to see if they have a slug already
-          const subscriber = await getSubscriber(from);
+          const subscriber = await getSubscriber(normalizedPhoneNumber);
           const isFirstTime = !subscriber || !subscriber.slug;
           
           let response = `🧪 WTAF? Welcome to the chaos.
@@ -1689,7 +1707,7 @@ ${response}`;
         }
         
         // Save content for monitor.py processing with user slug info
-        const fileContent = `SENDER:${from}\nUSER_SLUG:${userSlug}\n${coachPrefix}${codeContent}`;
+        const fileContent = `SENDER:${normalizedPhoneNumber}\nUSER_SLUG:${userSlug}\n${coachPrefix}${codeContent}`;
         fs.writeFileSync(filePath, fileContent, 'utf8');
         
         await sendSmsResponse(
@@ -1698,7 +1716,7 @@ ${response}`;
           twilioClient
         );
         
-        console.log(`User ${from} (${userSlug}) saved WTAF request for processing: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) saved WTAF request for processing: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
         return;
       } catch (error) {
         console.error(`Error processing WTAF command: ${error}`);
@@ -1714,7 +1732,7 @@ ${response}`;
     // Handle CODE command (original functionality)
     if (message.match(/^CODE[\s:-]/i)) {
       const command = 'CODE';
-      console.log(`Processing ${command} command from ${from}`);
+      console.log(`Processing ${command} command from ${normalizedPhoneNumber}`);
       
       try {
         let codeContent;
@@ -1797,7 +1815,7 @@ ${response}`;
     // Check subscriber status BEFORE processing any commands (except START, STOP, YES)
     if (!['START', 'UNSTOP', 'STOP', 'YES'].includes(messageUpper)) {
       console.log('Checking subscriber status...');
-      const currentSubscriber = await getSubscriber(from);
+      const currentSubscriber = await getSubscriber(normalizedPhoneNumber);
       console.log('Subscriber lookup result:', currentSubscriber);
 
       if (!currentSubscriber || currentSubscriber.unsubscribed) {
@@ -1821,7 +1839,7 @@ ${response}`;
       }
 
       // Update last message date for confirmed subscribers
-      await updateLastMessageDate(from);
+      await updateLastMessageDate(normalizedPhoneNumber);
     }
 
     // Check for commands that should end the conversation
@@ -1844,15 +1862,21 @@ ${response}`;
       console.log(`Sending COMMANDS response to ${from}`);
       
       // Check if user is admin to show admin commands
-      const subscriber = await getSubscriber(from);
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
       const isAdmin = subscriber && subscriber.is_admin;
       
       let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
       
       // Check if user has coder role to show WTAF command
-      const hasCoder = subscriber && subscriber.role === 'coder';
+      const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file (coder role only)\n• SLUG [name] - Change your custom URL slug (coder role only)\n• INDEX - List your pages and set index page (coder role only)';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List your pages and set index page';
+      }
+      
+      // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
+      const hasDegen = subscriber && subscriber.role === 'degen';
+      if (hasDegen) {
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n\nExample: EDIT 2 change the background to blue';
       }
       
       if (isAdmin) {
@@ -1909,6 +1933,95 @@ ${response}`;
       return;
     }
     
+    // Handle EDIT command - for degen users only
+    if (message.match(/^EDIT(?:\s|$)/i)) {
+      // Check if the command has the required arguments
+      if (!message.match(/^EDIT\s+\d+\s+.+$/i)) {
+        await sendSmsResponse(
+          from,
+          `❌ EDIT: Please specify a page number and instructions.\n\nExample: EDIT 1 change the background to blue\n\nUse INDEX to see your page numbers.`,
+          twilioClient
+        );
+        return;
+      }
+      console.log(`Processing EDIT command from ${from}`);
+      console.log(`Message content: "${message}"`);
+      
+      try {
+        // Check user role for EDIT command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        console.log(`Subscriber data:`, JSON.stringify(subscriber, null, 2));
+        
+        if (!subscriber) {
+          console.log(`❌ No subscriber found for ${normalizedPhoneNumber}`);
+          return;
+        }
+        
+        if (subscriber.role !== 'degen') {
+          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'degen' required`);
+          // Silent ignore - don't reveal command to non-degen users
+          return;
+        }
+        
+        console.log(`✅ User ${normalizedPhoneNumber} has 'degen' role, proceeding with EDIT command`);
+        
+        // Parse the command - we know this will match because we already validated the format
+        const editMatch = message.match(/^EDIT\s+(\d+)\s+(.+)$/i);
+        
+        if (!editMatch || !editMatch[1] || !editMatch[2]) {
+          console.error('Failed to parse EDIT command:', message);
+          await sendSmsResponse(
+            from,
+            '❌ Invalid EDIT command format. Use: EDIT [page_number] [instructions]',
+            twilioClient
+          );
+          return;
+        }
+        
+        const indexNumber = parseInt(editMatch[1]);
+        const instructions = editMatch[2].trim();
+        
+        const userSlug = subscriber.slug;
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Queue the edit request by writing to monitored directory (same pattern as WTAF)
+        const { queueEditRequest } = await import('../degen_commands.js');
+        const success = await queueEditRequest(userSlug, indexNumber, instructions, normalizedPhoneNumber);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `🎨 Processing your edit request... You'll get a link in about 30 seconds!`,
+            twilioClient
+          );
+          console.log(`✅ EDIT command queued for processing: ${normalizedPhoneNumber}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Failed to queue your edit request. Please try again later.`,
+            twilioClient
+          );
+          console.log(`❌ Failed to queue EDIT command for ${normalizedPhoneNumber}`);
+        }
+        
+      } catch (error) {
+        console.error(`Error processing EDIT command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ EDIT: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+    
     // Check for interactive commands
     const data = await loadInspirationsData();
     const interactiveMessage = data.find((item: any) => 
@@ -1943,9 +2056,9 @@ ${response}`;
       console.log(`Processing admin command: ${command} ${itemId}`);
       
       // Check if user is admin
-      const subscriber = await getSubscriber(from);
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
       if (!subscriber || !subscriber.is_admin) {
-        console.log(`User ${from} attempted admin command ${command} ${itemId} without privileges`);
+        console.log(`User ${normalizedPhoneNumber} attempted admin command ${command} ${itemId} without privileges`);
         // Silent ignore - don't reveal admin features to non-admin users
         return;
       }
@@ -1961,14 +2074,14 @@ ${response}`;
             `✅ ADMIN: Queued item ${itemId} for next distribution:\n\n${messageText}`,
             twilioClient
           );
-          console.log(`Admin ${from} queued item ${itemId} for distribution`);
+          console.log(`Admin ${normalizedPhoneNumber} queued item ${itemId} for distribution`);
         } else {
           await sendSmsResponse(
             from,
             `❌ ADMIN: Item ${itemId} not found. Use COMMANDS to see available options.`,
             twilioClient
           );
-          console.log(`Admin ${from} attempted to queue non-existent item ${itemId}`);
+          console.log(`Admin ${normalizedPhoneNumber} attempted to queue non-existent item ${itemId}`);
         }
       } else       if (command === 'MORE') {
         // MORE [id] - Preview specific message (no distribution impact)
@@ -2007,9 +2120,9 @@ ${response}`;
       console.log(`Processing ADD command from ${from}`);
       
       // Check if user is admin
-      const subscriber = await getSubscriber(from);
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
       if (!subscriber || !subscriber.is_admin) {
-        console.log(`User ${from} attempted ADD command without admin privileges`);
+        console.log(`User ${normalizedPhoneNumber} attempted ADD command without admin privileges`);
         // Silent ignore - don't reveal admin features to non-admin users
         return;
       }
@@ -2059,7 +2172,7 @@ ${response}`;
           twilioClient
         );
         
-        console.log(`Admin ${from} added item ${result.itemId}, awaiting broadcast decision`);
+        console.log(`Admin ${normalizedPhoneNumber} added item ${result.itemId}, awaiting broadcast decision`);
       } catch (error) {
         console.error(`Error processing ADD command: ${error}`);
         await sendSmsResponse(
@@ -2121,7 +2234,7 @@ ${response}`;
           `📋 Item ${pendingBroadcast.itemId} saved for later. Available in daily rotation.`,
           twilioClient
         );
-        console.log(`Admin ${from} chose to save item ${pendingBroadcast.itemId} for later`);
+        console.log(`Admin ${normalizedPhoneNumber} chose to save item ${pendingBroadcast.itemId} for later`);
       }
       
       return;
@@ -2132,9 +2245,9 @@ ${response}`;
       console.log(`Processing CODE command from ${from}`);
       
       // Check if user is admin
-      const subscriber = await getSubscriber(from);
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
       if (!subscriber || !subscriber.is_admin) {
-        console.log(`User ${from} attempted CODE command without admin privileges`);
+        console.log(`User ${normalizedPhoneNumber} attempted CODE command without admin privileges`);
         // Silent ignore - don't reveal admin features to non-admin users
         return;
       }
@@ -2165,7 +2278,7 @@ ${response}`;
         }
         
         // Save code content to file with sender's phone number
-        const fileContent = `SENDER:${from}\n${codeContent}`;
+        const fileContent = `SENDER:${normalizedPhoneNumber}\n${codeContent}`;
         fs.writeFileSync(filePath, fileContent, 'utf8');
         
         await sendSmsResponse(
@@ -2174,7 +2287,7 @@ ${response}`;
           twilioClient
         );
         
-        console.log(`Admin ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
+        console.log(`Admin ${normalizedPhoneNumber} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
       } catch (error) {
         console.error(`Error processing CODE command: ${error}`);
         await sendSmsResponse(
@@ -2193,10 +2306,10 @@ ${response}`;
       
       try {
         // Check user role for INDEX command
-        const subscriber = await getSubscriber(from);
-        if (!subscriber || subscriber.role !== 'coder') {
-          console.log(`User ${from} attempted INDEX command without coder privileges`);
-          // Silent ignore - don't reveal command to non-coder users
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+        console.log(`User ${normalizedPhoneNumber} attempted INDEX command without coder/degen privileges`);
+        // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
         
@@ -2356,9 +2469,9 @@ ${response}`;
       try {
         // Check user role for SLUG command
         const subscriber = await getSubscriber(from);
-        if (!subscriber || subscriber.role !== 'coder') {
-          console.log(`User ${from} attempted SLUG command without coder privileges`);
-          // Silent ignore - don't reveal command to non-coder users
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+        console.log(`User ${from} attempted SLUG command without coder/degen privileges`);
+        // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
 
@@ -2449,7 +2562,7 @@ ${response}`;
           twilioClient
         );
 
-        console.log(`User ${from} changed slug from "${oldSlug}" to "${requestedSlug}"`);
+        console.log(`User ${normalizedPhoneNumber} changed slug from "${oldSlug}" to "${requestedSlug}"`);
         return;
 
       } catch (error) {
@@ -2518,7 +2631,7 @@ ${response}`;
     
     // Update last message date in database
     console.log('Updating last message date...');
-    await updateLastMessageDate(from);
+    await updateLastMessageDate(normalizedPhoneNumber);
     console.log('Last message date updated successfully');
     
     // Handle TEST command - simple test command
@@ -2603,9 +2716,9 @@ ${response}`;
         
         // Update last_message_date but NOT last_inspiration_date
         // This ensures the MORE command doesn't prevent daily inspirations
-        await updateLastMessageDate(from);
+        await updateLastMessageDate(normalizedPhoneNumber);
         
-        console.log(`Successfully sent MORE response to ${from}: "${chaosLine.text}"`);
+        console.log(`Successfully sent MORE response to ${normalizedPhoneNumber}: "${chaosLine.text}"`);
       } catch (error) {
         console.error(`Error sending MORE response: ${error}`);
       }
@@ -2620,7 +2733,7 @@ ${response}`;
       console.log('Processing SKIP command...');
       
       // Check if the user has admin privileges
-      const subscriber = await getSubscriber(from);
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
       
       if (subscriber && subscriber.is_admin) {
         // User has admin privileges, process the skip command
@@ -2633,10 +2746,10 @@ ${response}`;
           twilioClient
         );
         
-        console.log(`User ${from} with admin privileges skipped to day ${newInspiration.day}`); 
+        console.log(`User ${normalizedPhoneNumber} with admin privileges skipped to day ${newInspiration.day}`); 
       } else {
         // User doesn't have admin privileges, ignore the command
-        console.log(`User ${from} attempted to use SKIP command without admin privileges`); 
+        console.log(`User ${normalizedPhoneNumber} attempted to use SKIP command without admin privileges`); 
         // Send no response to avoid revealing the feature to non-admin users
       }
       
@@ -2742,8 +2855,8 @@ function saveConversationHistory(
 }
 
 /**
- * Send SMS response to user
- * @param to Recipient's phone number
+ * Send message response to user (SMS or WhatsApp)
+ * @param to Recipient's phone number (with or without whatsapp: prefix)
  * @param message Message content
  * @param twilioClient Twilio client instance
  */
@@ -2753,21 +2866,30 @@ async function sendSmsResponse(
   twilioClient: TwilioClient
 ): Promise<any> {
   try {
+    const platform = detectMessagePlatform(to);
+    
+    // For WhatsApp, use sandbox number (for development) or configured WhatsApp number
+    const fromNumber = platform === 'whatsapp' 
+      ? 'whatsapp:+14155238886'  // Twilio WhatsApp sandbox number
+      : process.env.TWILIO_PHONE_NUMBER;
+    
     const response = await twilioClient.messages.create({
       body: message,
-      to,
-      from: process.env.TWILIO_PHONE_NUMBER
+      to, // Keep original format (whatsapp: prefix if WhatsApp)
+      from: fromNumber
     });
-    console.log(`SMS sent to ${to}: ${message.substring(0, 50)}...`);
+    
+    console.log(`${platform.toUpperCase()} sent to ${to}: ${message.substring(0, 50)}...`);
     return response;
   } catch (error: any) {
+    const platform = detectMessagePlatform(to);
     // Handle Twilio's automatic unsubscribe gracefully
     if (error.code === 21610) {
-      console.log(`SMS to ${to} blocked - user is carrier-unsubscribed (Twilio error 21610)`);
+      console.log(`${platform.toUpperCase()} to ${to} blocked - user is carrier-unsubscribed (Twilio error 21610)`);
       console.log(`Message was: ${message.substring(0, 100)}...`);
       return null; // Don't crash, just return null
     } else {
-      console.error(`Failed to send SMS to ${to}:`, error);
+      console.error(`Failed to send ${platform.toUpperCase()} to ${to}:`, error);
       throw error;
     }
   }
