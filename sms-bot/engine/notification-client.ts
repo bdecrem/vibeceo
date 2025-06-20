@@ -15,7 +15,7 @@ export async function sendConfirmationSms(message: string, phoneNumber: string |
         logWithTimestamp(`📱 Sending confirmation SMS: ${message}`);
         
         // Use compiled JavaScript instead of TypeScript
-        const smsScriptPath = join(dirname(__dirname), "dist", "scripts", "send-direct-sms.js");
+        const smsScriptPath = join(dirname(__dirname), "scripts", "send-direct-sms.js");
         const cmd = ["node", smsScriptPath, message];
         
         if (phoneNumber) {

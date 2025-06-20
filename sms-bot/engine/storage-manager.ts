@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -6,11 +6,17 @@ import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMA
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
 import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId } from './shared/utils.js';
 
-// Initialize Supabase client
-const supabase = createClient(
-    SUPABASE_URL || '', 
-    SUPABASE_SERVICE_KEY || ''
-);
+// Lazy initialization of Supabase client
+let supabase: SupabaseClient | null = null;
+function getSupabaseClient(): SupabaseClient {
+    if (!supabase) {
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+            throw new Error("SUPABASE_URL and SUPABASE_SERVICE_KEY are required");
+        }
+        supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    }
+    return supabase;
+}
 
 /**
  * Generate unique app slug for this user
@@ -26,7 +32,7 @@ export async function generateUniqueAppSlug(userSlug: string): Promise<string> {
         
         // Check if this user already has an app with this slug
         try {
-            const { data, error } = await supabase
+            const { data, error } = await getSupabaseClient()
                 .from('wtaf_content')
                 .select('id')
                 .eq('user_slug', userSlug)
@@ -59,12 +65,108 @@ export async function generateUniqueAppSlug(userSlug: string): Promise<string> {
 }
 
 /**
+ * Update saved HTML content with actual OG image URL (after generation)
+ * This replaces the API endpoint URL with the actual Supabase Storage URL
+ */
+export async function updateOGImageInHTML(userSlug: string, appSlug: string, actualImageUrl: string): Promise<boolean> {
+    try {
+        logWithTimestamp(`🔄 Updating HTML with actual OG image URL...`);
+        
+        // Get current HTML content
+        const { data: currentData, error: fetchError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('html_content')
+            .eq('user_slug', userSlug)
+            .eq('app_slug', appSlug)
+            .single();
+            
+        if (fetchError || !currentData) {
+            logError(`Failed to fetch current HTML: ${fetchError?.message}`);
+            return false;
+        }
+        
+        // Replace API endpoint URL with actual image URL
+        const apiEndpointUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
+        const updatedHTML = currentData.html_content.replace(apiEndpointUrl, actualImageUrl);
+        
+        // Update the database with corrected HTML
+        const { error: updateError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .update({ 
+                html_content: updatedHTML,
+                og_image_url: actualImageUrl,
+                og_image_cached_at: new Date().toISOString()
+            })
+            .eq('user_slug', userSlug)
+            .eq('app_slug', appSlug);
+            
+        if (updateError) {
+            logError(`Failed to update HTML: ${updateError.message}`);
+            return false;
+        }
+        
+        logSuccess(`✅ Updated HTML with actual OG image URL: ${actualImageUrl}`);
+        return true;
+        
+    } catch (error) {
+        logError(`Error updating OG image in HTML: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
+ * Generate cached OG image for the app - matches Python monitor.py workflow
+ * This calls the API and returns the actual Supabase Storage URL (not the API endpoint)
+ */
+export async function generateOGImage(userSlug: string, appSlug: string): Promise<string | null> {
+    try {
+        logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
+        
+        const ogApiUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
+        logWithTimestamp(`🔗 Calling OG API: ${ogApiUrl}`);
+        
+        const response = await fetch(ogApiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            logWarning(`❌ OG generation API failed with status: ${response.status}`);
+            logWarning(`Response text: ${await response.text()}`);
+            return null;
+        }
+        
+        const data = await response.json();
+        logWithTimestamp(`📋 OG API response: ${JSON.stringify(data, null, 2)}`);
+        
+        if (data.success && data.image_url) {
+            if (data.cached) {
+                logWithTimestamp(`⚡ Using cached OG image (${data.image_url.length > 50 ? data.image_url.substring(0, 50) + '...' : data.image_url})`);
+            } else {
+                logWithTimestamp(`📥 Downloaded and uploaded new OG image to Supabase Storage`);
+            }
+            logSuccess(`✅ Generated OG image: ${data.image_url}`);
+            return data.image_url;
+        } else {
+            logWarning(`❌ OG generation API returned error: ${data.error || 'Unknown error'}`);
+            return null;
+        }
+        
+    } catch (error) {
+        logError(`❌ Error generating OG image: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
  * Get user ID from sms_subscribers table
  * Helper function for database operations
  */
 async function getUserId(userSlug: string): Promise<string | null> {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabaseClient()
             .from('sms_subscribers')
             .select('id')
             .eq('slug', userSlug);
@@ -128,8 +230,8 @@ export async function saveCodeToSupabase(
     // Replace APP_TABLE_ID placeholder with actual app_slug
     code = replaceAppTableId(code, appSlug);
     
-    // Use fallback image URL for initial HTML - real OG image will be generated after save
-    const ogImageUrl = `${WEB_APP_URL}/api/og-htmlcss?user=${userSlug}&app=${appSlug}`;
+    // Use fallback OG image URL initially - will be updated after OG generation
+    const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
     const ogTags = `<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
@@ -157,7 +259,7 @@ export async function saveCodeToSupabase(
             status: 'published'
         };
         
-        const { error } = await supabase
+        const { error } = await getSupabaseClient()
             .from('wtaf_content')
             .insert(data);
             
@@ -194,7 +296,7 @@ export async function saveCodeToFile(
     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     
     // Inject OpenGraph tags into HTML  
-    const ogImageUrl = `${WEB_APP_URL}/api/og-htmlcss?app=${slug}`;
+    const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=lab&app=${slug}`;
     const ogTags = `<title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />

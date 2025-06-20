@@ -1,0 +1,184 @@
+I'll create a luxurious greeting page for Amy with all the specified features. Since this doesn't require data collection, I'll focus on the visual experience while maintaining the premium aesthetic.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Luxurious Greeting for Amy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1a1f35;
+            --gold: #d4af37;
+            --cream: #f8f5f0;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #1a1f35, #2a3045, #3a4055, #4a5065);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: var(--cream);
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            position: relative;
+            padding: 4rem;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(30px);
+            opacity: 0;
+            animation: fadeUp 1s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 5rem;
+            font-weight: 600;
+            color: var(--cream);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.02em;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .emoji-1 { top: 20%; left: 20%; }
+        .emoji-2 { top: 30%; right: 20%; }
+        .emoji-3 { bottom: 30%; left: 25%; }
+        .emoji-4 { bottom: 20%; right: 25%; }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .floating-emojis span {
+                font-size: 2rem;
+            }
+        }
+
+        .luxury-accent {
+            position: absolute;
+            width: 50px;
+            height: 2px;
+            background: var(--gold);
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .subtle-text {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--gold);
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">✨</span>
+        <span class="emoji-2" data-value="3">💫</span>
+        <span class="emoji-3" data-value="1">⭐</span>
+        <span class="emoji-4" data-value="4">🌟</span>
+    </div>
+
+    <div class="container">
+        <h1>Hi Amy</h1>
+        <div class="luxury-accent"></div>
+        <div class="subtle-text">Welcome to excellence</div>
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        // Intersection Observer for container reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1'
+                    entry.target.style.transform = 'translateY(0)'
+                }
+            })
+        }, {
+            threshold: 0.1
+        })
+
+        observer.observe(document.querySelector('.container'))
+    </script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. Luxury Design Elements:
+- Premium color palette with navy, gold, and cream
+- Sophisticated typography with Space Grotesk and Inter
+- Glass morphism container with backdrop-filter blur
+- Animated gradient background
+- Gold accent line under the greeting
+- Subtle uppercase tagline
+
+2. Interactive Features:
+- Four floating star/sparkle emojis with parallax effect
+- Smooth fade-up animation on page load
+- Intersection Observer for scroll-based animations
+- Responsive design for all devices
+
+3. Technical Excellence:
+- Clean, semantic HTML structure
+- Optimized CSS with custom properties
+- Smooth animations and transitions
+- Mobile-first responsive design
+
+The design maintains a luxury aesthetic while delivering a warm, personal greeting to Amy. The floating emojis add a touch of playfulness without compromising the sophisticated feel, and the glass morphism container creates depth and visual interest.

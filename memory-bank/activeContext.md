@@ -1,133 +1,134 @@
-# Active Context: Monitor.py Microservices Refactoring
+# Active Context: WTAF TypeScript Engine - Complex Page Generation System
 
-## Current Focus: MICROSERVICES ARCHITECTURE IMPLEMENTATION
-**Refactoring monolithic monitor.py (1133 lines) into focused microservice modules for easier Code Agent modifications**
+## Current Focus: ARCHITECTURE SIMPLIFICATION NEEDED
+**The TypeScript engine is working but is unnecessarily complex. Priority: Simplify the hot mess of 2-step prompting.**
 
-## Implementation Plan Overview
+## COMPLETED: TypeScript Engine Refactoring (100% Done)
+✅ **Successfully refactored** monolithic monitor.py (1133 lines) into TypeScript microservices
+✅ **All functionality working**: WTAF creation, EDIT commands, OG image generation
+✅ **Production ready**: Deployed and processing real requests
+✅ **OpenGraph fixed**: Meta tags now use actual Supabase Storage URLs
 
-### Goal
-Transform the monolithic `monitor.py` into a modular microservices architecture that:
-- Breaks down complex functionality into single-responsibility modules
-- Makes the system easier for Code Agents to understand and modify
-- Maintains identical external behavior and reliability
-- Enables independent scaling and testing of components
-
-### Architecture Decision: Node.js Microservices Pattern
-**Replace `python3 scripts/monitor.py` with `node scripts/controller.js`**
-
-#### Why This Approach:
-- ✅ **Modular Design** - Each module has a single responsibility
-- ✅ **Code Agent Friendly** - Smaller, focused files are easier to understand and modify
-- ✅ **Maintainable** - Clear separation of concerns
-- ✅ **Testable** - Individual modules can be tested in isolation
-- ✅ **Scalable** - Components can be scaled independently if needed
-
-## Microservices Architecture
-
-### Proposed Module Structure
+### ✅ Final Architecture
 ```
 sms-bot/engine/
-├── shared/
-│   ├── config.js        # Environment, paths, constants, coach data
-│   ├── logger.js        # Logging with timestamps and emoji indicators  
-│   └── utils.js         # Slug generation, code extraction, credential injection
-├── ai-client.js         # OpenAI and Anthropic API interactions with fallbacks
-├── storage-manager.js   # Supabase database operations, file system operations
-├── notification-client.js # SMS sending via spawn process
-├── file-watcher.js      # File monitoring with race condition prevention
-├── wtaf-processor.js    # WTAF creation workflow orchestration
-├── edit-processor.js    # Edit command processing (when implemented)
-└── controller.js        # Main orchestrator (replacement for monitor.py)
+├── controller.ts           # Main orchestrator (processWtafRequest)
+├── ai-client.ts           # 2-step prompt system (GPT-4o → Claude)
+├── storage-manager.ts     # Database operations, OG image handling
+├── file-watcher.ts        # Directory monitoring  
+├── notification-client.ts # SMS notifications
+└── shared/
+    ├── config.ts          # Environment, paths, constants
+    ├── logger.ts          # Centralized logging
+    └── utils.ts           # Utilities
 ```
 
-### Module Responsibilities
+### ✅ What Works Perfectly
+- **WTAF Creation**: User input → HTML generation → Database → SMS notification
+- **EDIT Commands**: Degen users can modify existing pages via natural language
+- **OG Images**: Generated and cached with proper meta tag updates
+- **Type Safety**: Full TypeScript compilation and error checking
+- **Reliability**: All original functionality preserved
 
-#### Shared Modules
-- **config.js**: Environment variables, file paths, constants, coach data
-- **logger.js**: Centralized logging with timestamps and emoji indicators
-- **utils.js**: Utility functions (slug generation, code extraction, credential injection)
+## 🔥 NEW FOCUS: Page Generation Workflow Simplification
 
-#### Service Modules  
-- **ai-client.js**: All AI API interactions (OpenAI, Anthropic) with fallback logic
-- **storage-manager.js**: Database operations (Supabase), file system operations
-- **notification-client.js**: SMS notifications via spawn process calls
-- **file-watcher.js**: Directory monitoring, file parsing, request type determination
-
-#### Workflow Modules
-- **wtaf-processor.js**: Complete WTAF creation workflow orchestration
-- **edit-processor.js**: Edit command processing workflow (future implementation)
-- **controller.js**: Main entry point, coordinates all other modules
-
-## Current Implementation Status
-
-### ✅ COMPLETED: Foundation Modules (70% Complete)
-- ✅ **Shared Modules**: config.js, logger.js, utils.js
-- ✅ **Core Services**: ai-client.js, storage-manager.js
-- ✅ **Communication**: notification-client.js, file-watcher.js
-- ✅ **Safety**: Git checkpoints and rollback strategy established
-
-### 🔄 IN PROGRESS: Workflow Modules (30% Remaining)
-- 🔄 **wtaf-processor.js**: Extract WTAF workflow orchestration
-- 🔄 **controller.js**: Main entry point to replace monitor.py
-- 🔄 **Integration Testing**: Ensure identical behavior to original
-
-### Safety Protocol
-- **Max 3 attempts** for overall refactoring
-- **Max 2 attempts** per component
-- **Thursday branch** with incremental commits
-- **`git reset --hard`** for quick rollbacks if needed
-
-## Deployment Model Change
-
-### Before (Monolithic)
-```bash
-python3 scripts/monitor.py
+### Current Complex Workflow (HOT MESS)
+```
+User Input 
+→ generateCompletePrompt() [loads prompt1-creative-brief.json → GPT-4o] 
+→ callClaude() [120-line SYSTEM_PROMPT → Claude 3.5 Sonnet → Haiku → GPT-4o fallbacks]
+→ extractCodeBlocks() 
+→ saveToDatabase() 
+→ generateOGImage() 
+→ sendSMS()
 ```
 
-### After (Microservices)
-```bash
-node scripts/controller.js
+### What Makes It Overly Complex
+1. **2-Step Prompting**: GPT-4o to expand prompt → Claude to generate code
+2. **3-Model Fallback Chain**: Claude Sonnet → Claude Haiku → GPT-4o  
+3. **Multiple Prompt Files**: prompt1-creative-brief.json, prompt2-app.json, etc.
+4. **Massive System Prompt**: 120 lines of hardcoded design requirements
+5. **File-Based Queuing**: Instead of direct function calls
+6. **Complex Parsing**: Coach injection, dual-page detection, delimiter parsing
+
+### What It Should Be
+```
+User Input → Single Claude Call → Extract HTML → Save → Generate OG → Send SMS
 ```
 
-### Benefits of New Architecture
-1. **Code Agent Friendly**: Smaller, focused files are easier to understand and modify
-2. **Maintainable**: Clear separation of concerns makes debugging easier
-3. **Testable**: Individual modules can be tested in isolation
-4. **Scalable**: Components can be independently scaled if needed
-5. **Reliable**: Identical external behavior maintained
+**4 steps instead of the current Rube Goldberg machine.**
 
-## Key Implementation Patterns
+## Key Files for Page Generation
 
-### Module Export/Import Pattern
-```javascript
-// Export functions from modules
-module.exports = { functionName, anotherFunction }
+### Core Workflow Files
+- **controller.ts lines 130-265**: `processWtafRequest()` - main workflow orchestration
+- **ai-client.ts lines 40-90**: `generateCompletePrompt()` - Step 1 (GPT-4o expansion)  
+- **ai-client.ts lines 95-240**: `callClaude()` - Step 2 (Claude generation with fallbacks)
+- **controller.ts lines 38-123**: `SYSTEM_PROMPT` - massive hardcoded design requirements
 
-// Import in controller
-const { functionName } = require('./ai-client.js')
+### Prompt Files (Overcomplicated)
+- **prompts/prompt1-creative-brief.json**: "Creative director" that expands user requests
+- **prompts/edits.json**: Special prompts for EDIT commands
+- **prompts/prompt2-*.json**: Various unused specialized prompts
+
+### Processing Logic  
+- **storage-manager.ts**: Database operations, OG image coordination
+- **shared/utils.ts**: HTML code extraction, dual-page detection
+
+## Simplification Plan
+
+### Phase 1: Create Parallel Simple System
+Build new streamlined processor alongside existing complex one:
+```typescript
+async function processWtafSimple(userInput: string): Promise<string> {
+  const html = await claude.generate({
+    prompt: `${SIMPLE_DESIGN_REQUIREMENTS}\n\nUser wants: ${userInput}`
+  });
+  
+  const url = await saveToDatabase(html);
+  await generateOGImage(url);
+  await sendSMS(url);
+  return url;
+}
 ```
 
-### Error Handling Strategy
-- Consistent error logging across all modules
-- Graceful degradation with fallbacks
-- Preserve original error handling behavior
+### Phase 2: A/B Test & Compare
+- Route 10% of traffic to simple system
+- Compare quality, speed, reliability
+- Ensure no regression in user experience
 
-### File Processing Flow
-```
-File Watcher → Request Parser → Workflow Processor → AI Client → Storage Manager → Notification Client
-```
+### Phase 3: Full Migration
+- Gradually increase traffic to simple system
+- Remove complex 2-step prompting
+- Delete unused prompt files
+- Celebrate massive code reduction 🎉
 
-## Commit History
-1. `e9649f6c` - Safety checkpoint before refactoring
-2. `6ecbd394` - Shared modules (config, logger, utils)
-3. `4c92a2a0` - AI client and storage manager modules
-4. `3b98c77a` - Notification client and file watcher modules
+### Target Metrics
+- **Lines of Code**: ~800 lines → ~200 lines
+- **AI API Calls**: 2 calls → 1 call
+- **Processing Time**: ~30 seconds → ~15 seconds
+- **Maintainability**: Complex → Simple
 
-## Next Steps
-1. Complete wtaf-processor.js module
-2. Create controller.js main entry point
-3. Integration testing with real WTAF requests
-4. Performance validation vs original monitor.py
+## Current Status: Production Ready But Needs Cleanup
 
-## Current Status: 70% COMPLETE
-The microservices architecture is taking shape with solid foundations. Ready to complete the workflow modules and begin integration testing. 
+The TypeScript engine is **fully functional and handling real traffic**, but the page generation workflow is a **hot mess of unnecessary complexity**. The refactoring from Python is complete and successful, but now we need a **simplification phase** to make it maintainable long-term.
+
+**Next Priority**: Build simple parallel system to replace the complex 2-step prompting workflow.
+
+## Architecture Issues to Address
+
+### What's Working Well
+✅ TypeScript microservices architecture
+✅ Type safety and error checking  
+✅ Modular, focused components
+✅ Reliable file processing and database operations
+✅ OpenGraph image generation and caching
+
+### What Needs Simplification
+❌ 2-step prompting (GPT-4o → Claude) - unnecessary
+❌ 3-model fallback chain - overkill  
+❌ Multiple JSON prompt files - consolidate
+❌ 120-line hardcoded system prompt - make modular
+❌ Complex parsing logic - simplify
+
+The system works great but is way more complex than it needs to be for the task at hand. 

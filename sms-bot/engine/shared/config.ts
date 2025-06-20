@@ -6,8 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Load environment variables from .env.local
-const envPath = join(__dirname, '..', '..', '.env.local');
+// When compiled, this runs from dist/engine/shared/, so we need to go up 3 levels to reach sms-bot/
+const envPath = join(__dirname, '..', '..', '..', '.env.local');
 dotenv.config({ path: envPath });
+
+// Debug logging for environment loading
+console.log(`🔧 Loading .env from: ${envPath}`);
+console.log(`🔧 OPENAI_API_KEY loaded: ${process.env.OPENAI_API_KEY ? 'YES' : 'NO'}`);
+console.log(`🔧 ANTHROPIC_API_KEY loaded: ${process.env.ANTHROPIC_API_KEY ? 'YES' : 'NO'}`);
 
 // Type definitions
 export interface Coach {
@@ -37,7 +43,8 @@ export const ANIMALS: readonly string[] = ["fox", "owl", "wolf", "bear", "eagle"
 export const ACTIONS: readonly string[] = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"] as const;
 
 // File paths
-const SMS_BOT_DIR: string = join(__dirname, '..', '..');
+// When compiled, this runs from dist/engine/shared/, so we need to go up 3 levels to reach sms-bot/
+const SMS_BOT_DIR: string = join(__dirname, '..', '..', '..');
 export const WATCH_DIRS: string[] = [
     join(SMS_BOT_DIR, "data", "code"),
     join(SMS_BOT_DIR, "data", "wtaf")

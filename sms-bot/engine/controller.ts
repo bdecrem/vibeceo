@@ -22,7 +22,9 @@ import { generateCompletePrompt, callClaude } from './ai-client.js';
 import { 
     saveCodeToSupabase, 
     saveCodeToFile, 
-    createRequiredDirectories 
+    createRequiredDirectories,
+    generateOGImage,
+    updateOGImageInHTML 
 } from './storage-manager.js';
 import { 
     sendSuccessNotification, 
@@ -129,7 +131,7 @@ Return complete HTML wrapped in \`\`\`html code blocks.`;
  * Process WTAF creation workflow
  * Main workflow extracted from monitor.py execute_gpt4o function
  */
-async function processWtafRequest(processingPath, fileData, requestInfo) {
+async function processWtafRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
     logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing file: ${processingPath}`);
     
@@ -216,8 +218,32 @@ async function processWtafRequest(processingPath, fileData, requestInfo) {
                 publicUrl = result.publicUrl;
             }
             
-            // Send notification
+            // Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)
             if (publicUrl) {
+                try {
+                    // Extract app slug from URL for OG generation
+                    const urlParts = publicUrl.split('/');
+                    const appSlug = urlParts[urlParts.length - 1];
+                    
+                    logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                    
+                    if (actualImageUrl) {
+                        logSuccess(`✅ Generated OG image: ${actualImageUrl}`);
+                        // Update the saved HTML with the actual image URL
+                        const updateSuccess = await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                        if (updateSuccess) {
+                            logSuccess(`✅ Updated HTML with correct OG image URL`);
+                        } else {
+                            logWarning(`⚠️ Failed to update HTML with OG image URL`);
+                        }
+                    } else {
+                        logWarning(`⚠️ OG generation failed, keeping fallback URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
                 await sendSuccessNotification(publicUrl, adminUrl, senderPhone);
                 logWithTimestamp("=" + "=".repeat(79));
                 logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
@@ -238,6 +264,22 @@ async function processWtafRequest(processingPath, fileData, requestInfo) {
             const result = await saveCodeToFile(code, coach, requestInfo.slug, WEB_OUTPUT_DIR);
             
             if (result.publicUrl) {
+                // Generate OG image for legacy files too (before SMS)
+                try {
+                    logWithTimestamp(`🖼️ Generating OG image for legacy file: lab/${requestInfo.slug}`);
+                    const actualImageUrl = await generateOGImage("lab", requestInfo.slug);
+                    
+                    if (actualImageUrl) {
+                        logSuccess(`✅ Generated OG image for legacy file: ${actualImageUrl}`);
+                        // Note: Legacy files don't get HTML updates since they're file-based, not database-based
+                        logWithTimestamp(`📝 Legacy files use API endpoint in meta tags (file-based storage)`);
+                    } else {
+                        logWarning(`⚠️ OG generation failed for legacy file`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
                 await sendSuccessNotification(result.publicUrl, null, senderPhone);
                 logWithTimestamp("=" + "=".repeat(79));
                 logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
@@ -252,7 +294,7 @@ async function processWtafRequest(processingPath, fileData, requestInfo) {
         }
         
     } catch (error) {
-        logError(`WTAF processing error: ${error.message}`);
+        logError(`WTAF processing error: ${error instanceof Error ? error.message : String(error)}`);
         await sendFailureNotification("generic", senderPhone);
         return false;
     }
@@ -269,7 +311,7 @@ async function mainControllerLoop() {
     try {
         await createRequiredDirectories(PROCESSED_DIR, CLAUDE_OUTPUT_DIR, WEB_OUTPUT_DIR, WATCH_DIRS);
     } catch (error) {
-        logError(`Failed to create directories: ${error.message}`);
+        logError(`Failed to create directories: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
     }
     
@@ -293,7 +335,7 @@ async function mainControllerLoop() {
                     success = false;
                 }
             } catch (processingError) {
-                logError(`Processing error: ${processingError.message}`);
+                logError(`Processing error: ${processingError instanceof Error ? processingError.message : String(processingError)}`);
                 success = false;
             }
             
@@ -307,7 +349,7 @@ async function mainControllerLoop() {
             }
         }
     } catch (error) {
-        logError(`Controller loop error: ${error.message}`);
+        logError(`Controller loop error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
     }
 }
@@ -323,7 +365,10 @@ process.on('SIGTERM', () => {
     process.exit(0);
 });
 
-// Start the controller
+// Export the main function for use by start-engine script
+export { mainControllerLoop };
+
+// Start the controller if run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
     mainControllerLoop().catch(error => {
         logError(`Fatal error: ${error.message}`);
