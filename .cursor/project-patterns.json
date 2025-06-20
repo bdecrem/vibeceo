@@ -1,11 +1,14 @@
 {
   "project": "VibeCEO Platform",
-  "lastUpdated": "2024-12-15",
+  "lastUpdated": "2025-06-20",
   "keyPatterns": {
     "architecture": {
       "interfaceIndependence": "Multiple interfaces (SMS, Web) share core processing without tight coupling",
-      "zeroRiskApproach": "New interfaces reuse existing infrastructure rather than duplicating logic",
-      "databasePolling": "Web interface polls database for real-time results from async processes"
+      "zeroRiskApproach": "New interfaces reuse existing infrastructure rather than duplicating logic", 
+      "databasePolling": "Web interface polls database for real-time results from async processes",
+      "typescriptMicroservices": "WTAF processing uses TypeScript engine (sms-bot/engine/) instead of Python monitor.py",
+      "productionSeparation": "SMS bot (port 3030) and TypeScript engine run as separate coordinated services",
+      "fileQueueSystem": "Engine monitors data/wtaf/ directory for processing requests"
     },
     "implementation": {
       "httpToSmsbridge": "Web chat sends HTTP POST to SMS webhook endpoint for processing",
@@ -25,14 +28,20 @@
   },
   "successfulApproaches": {
     "databaseIntegration": "Supabase client in web API for polling wtaf_content table",
-    "streamingResponses": "Server-Sent Events for real-time chat experience",
+    "streamingResponses": "Server-Sent Events for real-time chat experience", 
     "errorHandling": "Graceful degradation when database polling times out",
-    "markdownRendering": "Custom function to convert markdown links to clickable elements"
+    "markdownRendering": "Custom function to convert markdown links to clickable elements",
+    "typescriptRefactoring": "Migrated Python monitor.py to TypeScript microservices for better maintainability",
+    "editCommandArchitecture": "Fixed edit commands by filtering database queries with both user_slug AND app_slug",
+    "productionDeployment": "Separate Railway build and start phases for optimal TypeScript compilation"
   },
   "avoidedPitfalls": {
-    "infrastructureChanges": "Did not modify working SMS bot or monitor.py systems",
-    "codeduplication": "Reused existing processing pipeline rather than rebuilding",
-    "complexIntegration": "Simple HTTP calls rather than complex service-to-service communication"
+    "infrastructureChanges": "Did not modify working SMS bot during TypeScript migration",
+    "codeduplication": "Reused existing processing pipeline rather than rebuilding", 
+    "complexIntegration": "Simple HTTP calls rather than complex service-to-service communication",
+    "productionMismatch": "Avoided running different engines in dev vs production environments",
+    "databaseAmbiguity": "Fixed edit commands by using precise user+app filtering instead of app-only queries",
+    "processManagement": "Ensured only TypeScript engine runs in production, not both Python and TypeScript"
   },
   "userPreferences": {
     "communication": "Non-technical explanations preferred",
