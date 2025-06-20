@@ -4,10 +4,6 @@ echo "🚀 Starting SMS Bot Production Services (TypeScript)..."
 echo "📁 Current directory: $(pwd)"
 echo "📁 Directory contents: $(ls -la)"
 
-# Build the TypeScript first
-echo "🔨 Building TypeScript..."
-npm run build
-
 # Start the SMS bot in the background
 echo "📱 Starting SMS bot..."
 npm run start:prod &
