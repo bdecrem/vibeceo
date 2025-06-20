@@ -358,4 +358,34 @@ export async function createRequiredDirectories(
         logError(`Current working directory: ${process.cwd()}`);
         throw error;
     }
-} 
+}
+
+/**
+ * Update existing page in Supabase (for EDIT commands)
+ */
+export async function updatePageInSupabase(userSlug: string, appSlug: string, newHtml: string): Promise<boolean> {
+    try {
+        logWithTimestamp(`🔄 Updating page in Supabase: ${userSlug}/${appSlug}`);
+        
+        const { error } = await getSupabaseClient()
+            .from('wtaf_content')
+            .update({ 
+                html_content: newHtml,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_slug', userSlug)
+            .eq('app_slug', appSlug);
+        
+        if (error) {
+            logError(`Failed to update page ${userSlug}/${appSlug}: ${error.message}`);
+            return false;
+        }
+        
+        logSuccess(`✅ Updated page ${userSlug}/${appSlug} in Supabase`);
+        return true;
+        
+    } catch (error) {
+        logError(`Error updating page ${userSlug}/${appSlug}: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}

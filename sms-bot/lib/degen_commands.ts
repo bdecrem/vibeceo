@@ -93,6 +93,72 @@ export async function queueEditRequest(
   }
 }
 
+export async function queueEditRequestBySlug(
+  userSlug: string,
+  appSlug: string,
+  editInstructions: string,
+  senderPhone: string
+): Promise<boolean> {
+  try {
+    logWithTimestamp(`📝 Queueing edit request: user=${userSlug}, slug=${appSlug}`);
+    
+    // Get the HTML content for the specific page (slug already resolved by handlers.ts)
+    const { data: htmlContent, error: htmlError } = await supabase
+      .from('wtaf_content')
+      .select('html_content')
+      .eq('user_slug', userSlug)
+      .eq('app_slug', appSlug)
+      .single();
+      
+    if (htmlError || !htmlContent) {
+      logWithTimestamp(`❌ Error fetching HTML content for ${appSlug}: ${htmlError}`);
+      return false;
+    }
+    
+    const originalHtml = htmlContent.html_content;
+    
+    if (!originalHtml) {
+      logWithTimestamp(`❌ No HTML content found for page ${appSlug}`);
+      return false;
+    }
+    
+    // Create edit request file following monitor.py's expected format
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `edit-${userSlug}-${appSlug}-${timestamp}.txt`;
+    
+    // Build the file content with all necessary information for monitor.py
+    const fileContent = [
+      `SENDER:${senderPhone}`,
+      `USER_SLUG:${userSlug}`,
+      `EDIT_TARGET:${appSlug}`,
+      `EDIT_INSTRUCTIONS:${editInstructions}`,
+      ``,
+      `ORIGINAL_HTML:`,
+      originalHtml
+    ].join('\n');
+    
+    // Write to the wtaf directory that monitor.py watches
+    // Need to go up from dist/lib to the root sms-bot directory
+    const smsDir = path.resolve(__dirname, '..', '..');
+    const wtafDir = path.join(smsDir, 'data', 'wtaf');
+    
+    // Ensure directory exists
+    if (!fs.existsSync(wtafDir)) {
+      fs.mkdirSync(wtafDir, { recursive: true });
+    }
+    
+    const filePath = path.join(wtafDir, filename);
+    fs.writeFileSync(filePath, fileContent, 'utf8');
+    
+    logWithTimestamp(`✅ Edit request queued at: ${filePath}`);
+    return true;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error queueing edit request: ${error}`);
+    return false;
+  }
+}
+
 // Note: Direct processing functions removed - we now use file-based queueing
 // to integrate with monitor.py's existing workflow. Edit processing happens
 // in monitor.py using the prompts/edits.json template. 

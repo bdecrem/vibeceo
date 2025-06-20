@@ -1,0 +1,188 @@
+SENDER:+16508989508
+USER_SLUG:bart
+EDIT_TARGET:emerald-eagle-flying
+EDIT_INSTRUCTIONS:test edit by slug
+
+ORIGINAL_HTML:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf-web.ngrok.io/api/generate-og-cached?user=bart&app=emerald-eagle-flying" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/emerald-eagle-flying" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome, Amy | Luxury Greetings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1a2644;
+            --gold: #c8a55b;
+            --cream: #f8f5f0;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #1a2644, #2a3854, #3a4864, #1a2644);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: var(--cream);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(50px);
+            opacity: 0;
+            animation: fadeUp 1s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.5rem;
+            color: var(--cream);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: rgba(248, 245, 240, 0.9);
+        }
+
+        .location {
+            font-size: 0.9rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 2rem;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .emoji-1 { top: 20%; left: 20%; }
+        .emoji-2 { top: 30%; right: 20%; }
+        .emoji-3 { bottom: 30%; left: 15%; }
+        .emoji-4 { bottom: 20%; right: 25%; }
+
+        .accent-line {
+            width: 50px;
+            height: 2px;
+            background: var(--gold);
+            margin: 1.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            .glass-card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating-emojis">
+            <span class="emoji-1" data-value="2">✨</span>
+            <span class="emoji-2" data-value="3">🌟</span>
+            <span class="emoji-3" data-value="1">💫</span>
+            <span class="emoji-4" data-value="4">⭐</span>
+        </div>
+
+        <div class="glass-card">
+            <h1>Hi Amy</h1>
+            <div class="accent-line"></div>
+            <p>Welcome to our curated space of digital excellence. We're delighted to present you with a personally crafted experience that reflects our commitment to exceptional design and innovative solutions.</p>
+            <p>Each pixel, every interaction, and all elements before you have been meticulously crafted to create a moment as unique as your vision.</p>
+            <div class="location">
+                Crafted with precision at our Madison Avenue Studio
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1'
+                    entry.target.style.transform = 'translateY(0)'
+                }
+            })
+        }, {
+            threshold: 0.1
+        })
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            observer.observe(card)
+        })
+    </script>
+</body>
+</html>

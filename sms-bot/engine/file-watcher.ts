@@ -178,8 +178,18 @@ export async function parseFileContent(filePath: string): Promise<any> {
  * Determine request type from user prompt
  * Extracted from monitor.py prompt parsing logic
  */
-export function determineRequestType(userPrompt: string): { type: string; slug: string | null; coach: string; cleanPrompt: string } {
+export function determineRequestType(userPrompt: string, filename?: string): { type: string; slug: string | null; coach: string; cleanPrompt: string } {
     try {
+        // Check if this is an EDIT file by filename pattern
+        if (filename && filename.includes('edit-')) {
+            return {
+                type: 'edit',
+                slug: null,
+                coach: 'default',
+                cleanPrompt: userPrompt.trim()
+            };
+        }
+        
         // Check if raw prompt starts with 'CODE:' or 'CODE ' (case insensitive)
         const isCodeCommand = userPrompt.trim().toUpperCase().startsWith('CODE:') || 
                              userPrompt.trim().toUpperCase().startsWith('CODE ');
@@ -357,7 +367,7 @@ export async function* watchForFiles() {
                     }
                     
                     // Determine request type
-                    const requestInfo = determineRequestType(fileData.userPrompt);
+                    const requestInfo = determineRequestType(fileData.userPrompt, basename(processingPath));
                     
                     // Yield the processed file data
                     yield {
