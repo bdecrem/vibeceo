@@ -5,11 +5,14 @@ import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/log
 // Initialize OpenAI client
 const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+// Type definitions
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+
 /**
  * Load prompt from JSON file
  * Extracted from monitor.py load_prompt_json function
  */
-export async function loadPromptJson(filename) {
+export async function loadPromptJson(filename: string): Promise<ChatCompletionMessageParam | null> {
     try {
         const { readFile } = await import('fs/promises');
         const { join, dirname } = await import('path');
@@ -31,7 +34,7 @@ export async function loadPromptJson(filename) {
  * Generate complete prompt for Claude (Prompt 1)
  * Extracted from monitor.py generate_prompt_2 function
  */
-export async function generateCompletePrompt(userInput) {
+export async function generateCompletePrompt(userInput: string): Promise<string> {
     logWithTimestamp("=" + "=".repeat(79));
     logWithTimestamp("🎯 PROMPT 1: Creating complete prompt for Claude...");
     logWithTimestamp(`📥 ORIGINAL INPUT: ${userInput}`);

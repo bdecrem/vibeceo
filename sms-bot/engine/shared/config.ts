@@ -9,41 +9,48 @@ const __dirname = dirname(__filename);
 const envPath = join(__dirname, '..', '..', '.env.local');
 dotenv.config({ path: envPath });
 
+// Type definitions
+export interface Coach {
+  id: string;
+  name: string;
+  prompt: string;
+}
+
 // Server configuration from environment variables
-export const WEB_APP_URL = process.env.WEB_APP_URL || "https://theaf.us";
-export const USE_CLOUD_STORAGE = (process.env.USE_CLOUD_STORAGE || "false").toLowerCase() === "true";
-export const CLOUD_STORAGE_BUCKET = process.env.CLOUD_STORAGE_BUCKET || "";
-export const CLOUD_STORAGE_PREFIX = process.env.CLOUD_STORAGE_PREFIX || "wtaf-files";
+export const WEB_APP_URL: string = process.env.WEB_APP_URL || "https://theaf.us";
+export const USE_CLOUD_STORAGE: boolean = (process.env.USE_CLOUD_STORAGE || "false").toLowerCase() === "true";
+export const CLOUD_STORAGE_BUCKET: string = process.env.CLOUD_STORAGE_BUCKET || "";
+export const CLOUD_STORAGE_PREFIX: string = process.env.CLOUD_STORAGE_PREFIX || "wtaf-files";
 
 // Supabase configuration
-export const SUPABASE_URL = process.env.SUPABASE_URL;
-export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+export const SUPABASE_URL: string | undefined = process.env.SUPABASE_URL;
+export const SUPABASE_SERVICE_KEY: string | undefined = process.env.SUPABASE_SERVICE_KEY;
+export const SUPABASE_ANON_KEY: string | undefined = process.env.SUPABASE_ANON_KEY;
 
 // API Keys
-export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-export const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+export const OPENAI_API_KEY: string | undefined = process.env.OPENAI_API_KEY;
+export const ANTHROPIC_API_KEY: string | undefined = process.env.ANTHROPIC_API_KEY;
 
 // Fun slug generation data
-export const COLORS = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"];
-export const ANIMALS = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"];
-export const ACTIONS = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"];
+export const COLORS: readonly string[] = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"] as const;
+export const ANIMALS: readonly string[] = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"] as const;
+export const ACTIONS: readonly string[] = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"] as const;
 
 // File paths
-const SMS_BOT_DIR = join(__dirname, '..', '..');
-export const WATCH_DIRS = [
+const SMS_BOT_DIR: string = join(__dirname, '..', '..');
+export const WATCH_DIRS: string[] = [
     join(SMS_BOT_DIR, "data", "code"),
     join(SMS_BOT_DIR, "data", "wtaf")
 ];
-export const PROCESSED_DIR = join(SMS_BOT_DIR, "data", "processed");
-export const WEB_OUTPUT_DIR = join(SMS_BOT_DIR, "..", "web", "public", "lab");
-export const CLAUDE_OUTPUT_DIR = join(SMS_BOT_DIR, "data", "claude_outputs");
+export const PROCESSED_DIR: string = join(SMS_BOT_DIR, "data", "processed");
+export const WEB_OUTPUT_DIR: string = join(SMS_BOT_DIR, "..", "web", "public", "lab");
+export const CLAUDE_OUTPUT_DIR: string = join(SMS_BOT_DIR, "data", "claude_outputs");
 
 // Monitor settings
-export const CHECK_INTERVAL = 15; // seconds
+export const CHECK_INTERVAL: number = 15; // seconds
 
 // Configure WTAF domain based on environment
-export const WTAF_DOMAIN = (() => {
+export const WTAF_DOMAIN: string = (() => {
     if (WEB_APP_URL.includes("localhost") || WEB_APP_URL.includes("ngrok")) {
         return WEB_APP_URL; // Development environment
     } else {
@@ -52,7 +59,7 @@ export const WTAF_DOMAIN = (() => {
 })();
 
 // Fallback coach data
-export const COACHES = [
+export const COACHES: Coach[] = [
     {
         "id": "alex", 
         "name": "Alex Monroe", 
