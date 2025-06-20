@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
  * Send confirmation SMS
  * Extracted from monitor.py send_confirmation_sms function
  */
-export async function sendConfirmationSms(message, phoneNumber = null) {
+export async function sendConfirmationSms(message: string, phoneNumber: string | null = null): Promise<boolean> {
     try {
         logWithTimestamp(`📱 Sending confirmation SMS: ${message}`);
         
@@ -65,7 +65,7 @@ export async function sendConfirmationSms(message, phoneNumber = null) {
         });
         
     } catch (error) {
-        logError(`SMS error: ${error.message}`);
+        logError(`SMS error: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
     }
 }
@@ -74,7 +74,7 @@ export async function sendConfirmationSms(message, phoneNumber = null) {
  * Send success notification with URLs
  * Helper function for successful WTAF creation
  */
-export async function sendSuccessNotification(publicUrl, adminUrl = null, senderPhone = null) {
+export async function sendSuccessNotification(publicUrl: string, adminUrl: string | null = null, senderPhone: string | null = null): Promise<boolean> {
     try {
         let message;
         if (adminUrl) {
@@ -86,7 +86,7 @@ export async function sendSuccessNotification(publicUrl, adminUrl = null, sender
         await sendConfirmationSms(message, senderPhone);
         return true;
     } catch (error) {
-        logError(`Error sending success notification: ${error.message}`);
+        logError(`Error sending success notification: ${error instanceof Error ? error.message : String(error)}`);
         return false;
     }
 }
@@ -113,7 +113,7 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
         await sendConfirmationSms(message, senderPhone);
         return true;
     } catch (error) {
-        logError(`Error sending failure notification: ${error.message}`);
+        logError(`Error sending failure notification: ${error instanceof Error ? error.message : String(error)}`);
         return false;
     }
 } 
