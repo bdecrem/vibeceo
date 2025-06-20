@@ -2305,6 +2305,12 @@ ${response}`;
       console.log(`Processing INDEX command from ${from}`);
       
       try {
+        // Environment-aware domain configuration (same as monitor.py)
+        const WEB_APP_URL = process.env.WEB_APP_URL || "https://theaf.us";
+        const WTAF_DOMAIN = (WEB_APP_URL.includes("localhost") || WEB_APP_URL.includes("ngrok")) 
+          ? WEB_APP_URL 
+          : (process.env.WTAF_DOMAIN || "https://www.wtaf.me");
+        
         // Check user role for INDEX command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
               if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
@@ -2387,7 +2393,7 @@ ${response}`;
           
           await sendSmsResponse(
             from,
-            `✅ Index page set to "${selectedPage.app_slug}"!\n\nYour main URL wtaf.me/${userSlug}/ now shows this page.`,
+            `✅ Index page set to "${selectedPage.app_slug}"!\n\nYour main URL ${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/ now shows this page.`,
             twilioClient
           );
           
@@ -2423,13 +2429,14 @@ ${response}`;
         
         pagesToShow.forEach((content, index) => {
           const actualIndex = startIndex + index + 1;
-          const pageUrl = `www.wtaf.me/${userSlug}/${content.app_slug}`;
+          const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${content.app_slug}`;
           pageList += `${actualIndex}. ${pageUrl}\n`;
         });
         
+        const domainForDisplay = WTAF_DOMAIN.replace(/^https?:\/\//, '');
         const currentIndex = subscriber.index_file ? 
-          `\n🏠 Current index: www.wtaf.me/${userSlug}/\n   (shows: ${subscriber.index_file.replace('.html', '')})\n\n` : 
-          `\n🏠 No index page set\n   (www.wtaf.me/${userSlug}/ shows default)\n\n`;
+          `\n🏠 Current index: ${domainForDisplay}/${userSlug}/\n   (shows: ${subscriber.index_file.replace('.html', '')})\n\n` : 
+          `\n🏠 No index page set\n   (${domainForDisplay}/${userSlug}/ shows default)\n\n`;
         
         pageList += currentIndex;
         
@@ -2467,6 +2474,12 @@ ${response}`;
       console.log(`Processing SLUG command from ${from}`);
       
       try {
+        // Environment-aware domain configuration (same as monitor.py)
+        const WEB_APP_URL = process.env.WEB_APP_URL || "https://theaf.us";
+        const WTAF_DOMAIN = (WEB_APP_URL.includes("localhost") || WEB_APP_URL.includes("ngrok")) 
+          ? WEB_APP_URL 
+          : (process.env.WTAF_DOMAIN || "https://www.wtaf.me");
+        
         // Check user role for SLUG command
         const subscriber = await getSubscriber(from);
               if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
@@ -2558,7 +2571,7 @@ ${response}`;
 
         await sendSmsResponse(
           from,
-          `✅ SLUG: Your custom URL is now "${requestedSlug}"!\n\nYour pages are now at: wtaf.me/${requestedSlug}/\n\nAll existing pages have been moved to the new URL.`,
+          `✅ SLUG: Your custom URL is now "${requestedSlug}"!\n\nYour pages are now at: ${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${requestedSlug}/\n\nAll existing pages have been moved to the new URL.`,
           twilioClient
         );
 

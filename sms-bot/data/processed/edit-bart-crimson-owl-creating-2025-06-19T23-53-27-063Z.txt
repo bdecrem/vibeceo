@@ -1,0 +1,218 @@
+SENDER:+16508989508
+USER_SLUG:bart
+EDIT_TARGET:crimson-owl-creating
+EDIT_INSTRUCTIONS:make the background black
+
+ORIGINAL_HTML:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf-web.ngrok.io/api/og-htmlcss?user=bart&app=crimson-owl-creating" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/crimson-owl-creating" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Luxe Digital Haven</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient-1: #8B0000;
+            --gradient-2: #DC143C;
+            --gradient-3: #FF1744;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, var(--gradient-1), var(--gradient-2), var(--gradient-3));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.6s ease;
+        }
+
+        .glass-panel.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; }
+        .emoji-2 { top: 20%; right: 10%; }
+        .emoji-3 { bottom: 20%; left: 15%; }
+        .emoji-4 { bottom: 15%; right: 15%; }
+
+        .contact-form {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        input, textarea {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: white;
+            color: var(--gradient-2);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .container { padding: 1rem; }
+            .glass-panel { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">💎</span>
+        <span class="emoji-2" data-value="3">✨</span>
+        <span class="emoji-3" data-value="1">🌟</span>
+        <span class="emoji-4" data-value="4">👑</span>
+    </div>
+
+    <div class="container">
+        <div class="glass-panel">
+            <h1>Red Luxe Digital Haven</h1>
+            <p>Welcome to Manhattan's most prestigious digital sanctuary, where luxury meets innovation at the intersection of Silicon Avenue and Elite Street.</p>
+        </div>
+
+        <div class="glass-panel">
+            <h2>Digital Sophistication Redefined</h2>
+            <p>Nestled among the city's finest establishments, our digital haven offers an unparalleled experience in modern luxury. Adjacent to the renowned Crystal Lounge and mere steps from the prestigious Tech & Co., we curate digital experiences that transcend the ordinary.</p>
+        </div>
+
+        <div class="glass-panel">
+            <h2>Connect With Us</h2>
+            <form class="contact-form" id="contactForm">
+                <input type="text" placeholder="Your Name" id="name" required>
+                <input type="email" placeholder="Your Email" id="email" required>
+                <textarea placeholder="Your Message" id="message" rows="4" required></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('https://tqniseocczttrfwtpbdr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350')
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible')
+                }
+            })
+        }, { threshold: 0.1 })
+
+        document.querySelectorAll('.glass-panel').forEach((panel) => {
+            observer.observe(panel)
+        })
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                message: document.getElementById('message').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'luxred_xyz789',
+                    submission_data: formData
+                })
+                if (error) throw error
+                alert('Message sent successfully!')
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Submission failed. Please try again.')
+            }
+        })
+    </script>
+</body>
+</html>
