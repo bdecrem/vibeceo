@@ -12,7 +12,10 @@
 
 ### Backend Services
 - **SMS Bot:** Node.js/Express server (port 3030)
-- **Monitor System:** Python scripts for content generation
+- **Engine System:** Node.js microservices architecture (replaces Python monitor.py)
+  - **Deployment:** `node scripts/controller.js` instead of `python3 scripts/monitor.py`
+  - **Architecture:** Modular design with single-responsibility components
+  - **Benefits:** Code Agent friendly, easier to maintain and modify
 - **Database:** Supabase (PostgreSQL with real-time features)
 - **Authentication:** Phone number verification via Twilio
 
@@ -292,3 +295,47 @@ discord-ceos.ts              # Discord bot CEO data
 - **Background Processing:** Python monitor handles generation
 
 This technical stack enables rapid development while maintaining production stability across multiple interfaces. 
+
+## NEW: Engine Microservices Architecture
+
+### Technology Shift
+**Previous:** Monolithic Python script (monitor.py, 1133 lines)
+**Current:** Node.js microservices with focused modules
+
+### Module Structure
+```
+sms-bot/engine/
+├── shared/
+│   ├── config.js        # Environment, paths, constants, coach data
+│   ├── logger.js        # Centralized logging with timestamps
+│   └── utils.js         # Utility functions (slug generation, etc.)
+├── ai-client.js         # OpenAI/Anthropic API interactions
+├── storage-manager.js   # Supabase database operations
+├── notification-client.js # SMS sending via spawn process
+├── file-watcher.js      # Directory monitoring
+├── wtaf-processor.js    # WTAF workflow orchestration
+└── controller.js        # Main entry point
+```
+
+### Key Technical Patterns
+
+#### Module Export/Import
+```javascript
+// Module exports
+module.exports = { functionName, anotherFunction }
+
+// Controller imports
+const { processWtafRequest } = require('./wtaf-processor.js')
+const { watchDirectories } = require('./file-watcher.js')
+```
+
+#### Error Handling Strategy
+- Consistent error logging across all modules
+- Graceful degradation with AI model fallbacks
+- Preserve original behavior and reliability
+
+#### Benefits for Code Agents
+- **Smaller Files**: 100-300 lines per module vs 1133 line monolith
+- **Single Responsibility**: Each module has one clear purpose
+- **Easy Navigation**: Clear module names indicate functionality
+- **Isolated Testing**: Individual components can be tested separately 

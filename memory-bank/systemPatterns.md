@@ -16,6 +16,44 @@ User Interface Layer → API Gateway → Core Processing → Shared Database
 - Zero risk when adding new interfaces
 - Consistent output quality
 
+## NEW: Microservices Architecture Pattern
+
+### Design Philosophy
+**Principle:** Break monolithic components into focused, single-responsibility modules that are easier for Code Agents to understand and modify.
+
+### Monitor.py Microservices Transformation
+```
+Monolithic monitor.py (1133 lines)
+↓
+Microservices Architecture:
+Controller → File Watcher → WTAF Processor → AI Client → Storage Manager → Notification Client
+```
+
+### Module Responsibilities
+- **controller.js**: Main orchestrator, replaces monitor.py entry point
+- **file-watcher.js**: Directory monitoring with race condition prevention
+- **wtaf-processor.js**: Complete WTAF workflow orchestration
+- **ai-client.js**: OpenAI/Anthropic API interactions with fallbacks
+- **storage-manager.js**: Supabase database operations, file system
+- **notification-client.js**: SMS sending via spawn process calls
+
+### Shared Infrastructure Modules
+- **config.js**: Environment variables, paths, constants, coach data
+- **logger.js**: Centralized logging with timestamps and emoji indicators
+- **utils.js**: Utility functions (slug generation, code extraction)
+
+### Benefits of Microservices Pattern
+1. **Code Agent Friendly**: Smaller files (100-300 lines) vs monolithic 1133 lines
+2. **Single Responsibility**: Each module has one clear purpose
+3. **Maintainable**: Clear separation of concerns
+4. **Testable**: Individual modules can be tested in isolation
+5. **Debuggable**: Easier to locate and fix issues
+6. **Scalable**: Components can be scaled independently
+
+### Deployment Model Change
+**Before:** `python3 scripts/monitor.py`
+**After:** `node scripts/controller.js`
+
 ## SMS Bot Infrastructure Pattern
 
 ### Request Processing Pipeline
@@ -26,7 +64,7 @@ SMS Webhook → Handler Logic → File Writer → Monitor System → Database �
 ### Key Components
 - **Port 3030:** Single HTTP endpoint for all SMS processing
 - **File-based Queue:** `data/wtaf/` directory for processing queue
-- **Python Monitor:** `monitor.py` watches files and generates content
+- **Engine System:** Node.js microservices (replacing Python monitor)
 - **Database Storage:** Results stored in `wtaf_content` table
 
 ### Why This Pattern Works
@@ -71,7 +109,7 @@ Web Request → Trigger Processing → Poll Database → Return Real URL
 ### Shared Infrastructure
 - **Database:** Single source of truth (Supabase)
 - **User Management:** Unified across interfaces
-- **Content Generation:** Same monitor.py for all requests
+- **Content Generation:** Same engine for all requests
 - **URL Structure:** Consistent `wtaf.me/[user]/[app]` pattern
 
 ### Interface-Specific Components
@@ -96,7 +134,7 @@ Web Request → Trigger Processing → Poll Database → Return Real URL
 ### Service Separation
 - **SMS Bot:** Independent service on port 3030
 - **Web Platform:** Next.js application (separate process)
-- **Monitor System:** Python script (independent process)
+- **Engine System:** Node.js microservices (replacing Python monitor)
 - **Database:** External service (Supabase)
 
 ### Benefits
@@ -109,7 +147,7 @@ Web Request → Trigger Processing → Poll Database → Return Real URL
 ### Unified Content Pipeline
 ```
 [SMS Input] ──┐
-               ├── File Queue ──→ Monitor.py ──→ Database ──→ Live Pages
+               ├── File Queue ──→ Engine Services ──→ Database ──→ Live Pages
 [Web Input] ──┘
 ```
 
@@ -118,4 +156,4 @@ Web Request → Trigger Processing → Poll Database → Return Real URL
 - **Web:** Real-time progress + database polling for final result
 - **Both:** Backup notifications ensure user always gets result
 
-This architecture enables rapid expansion to new interfaces (mobile app, API, etc.) without disrupting existing functionality. 
+This architecture enables rapid expansion to new interfaces (mobile app, API, etc.) without disrupting existing functionality. The new microservices pattern makes the system much more maintainable and Code Agent friendly. 

@@ -10,11 +10,13 @@
   - CEO coaching interactions
   - User management (roles: coder, user, admin)
   - SLUG command for changing user URLs
-  - File processing pipeline to monitor.py
+  - File processing pipeline to engine system
 
-### Monitor.py Processing System
-- **Status:** Stable, production-ready
-- **Function:** Processes WTAF prompts → generates HTML pages
+### Engine System (NEW: Microservices Architecture)
+- **Status:** 70% Complete, Under Active Development
+- **Function:** Processes WTAF prompts → generates HTML pages (replacing monitor.py)
+- **Architecture:** Node.js microservices for Code Agent friendliness
+- **Deployment:** `node scripts/controller.js` (replaces `python3 scripts/monitor.py`)
 - **Output:** Live pages at `wtaf.me/[user_slug]/[app_slug]`
 - **Integration:** Works seamlessly with both SMS and web interfaces
 
@@ -29,8 +31,8 @@
 - **Features:** Business coaching, CEO personas, dashboard
 - **URL:** `advisorsfoundry.ai`
 
-### **🎉 NEW: WTAF Web Chat Interface**
-- **Status:** FULLY FUNCTIONAL (just completed)
+### **🎉 WTAF Web Chat Interface**
+- **Status:** FULLY FUNCTIONAL
 - **URL:** `wtaf.me/[user_slug]/chat`
 - **Features Working:**
   - Real-time chat interface
@@ -40,43 +42,58 @@
   - SMS backup notifications
   - Full integration with existing infrastructure
 
-## 🔧 RECENT COMPLETED WORK
+## 🔧 CURRENT MAJOR PROJECT: Microservices Refactoring
 
-### WTAF Web Chat (December 2024)
-1. ✅ Cloned dashboard chat interface
-2. ✅ Created simplified WTAF-specific layout
-3. ✅ Implemented SMS bot integration (HTTP calls to port 3030)
-4. ✅ Added database polling for real results
-5. ✅ Fixed streaming response to show separate messages
-6. ✅ Added clickable link rendering
-7. ✅ Tested end-to-end functionality
+### Goal: Monitor.py → Engine Microservices
+**Transform monolithic monitor.py (1133 lines) into modular Node.js microservices**
 
-### Architecture Improvements
-- ✅ Zero-risk approach: No changes to working SMS systems
-- ✅ Clean separation: Web and SMS can evolve independently
-- ✅ Database integration: Real URL detection from `wtaf_content` table
-- ✅ User experience: Professional chat interface with real-time feedback
+### Why This Refactoring
+1. **Code Agent Friendly**: Smaller, focused files are easier to understand and modify
+2. **Maintainable**: Clear separation of concerns
+3. **Testable**: Individual modules can be tested in isolation
+4. **Reliable**: Maintains identical external behavior
+
+### Implementation Status (70% Complete)
+- ✅ **Foundation Complete**: Safety protocols, git checkpoints
+- ✅ **Shared Modules**: config.js, logger.js, utils.js
+- ✅ **Core Services**: ai-client.js, storage-manager.js  
+- ✅ **Communication**: notification-client.js, file-watcher.js
+- 🔄 **Workflow Modules**: wtaf-processor.js (in progress)
+- 🔄 **Main Controller**: controller.js (in progress)
+- 🔄 **Integration Testing**: Validate identical behavior
+
+### Microservices Architecture
+```
+Controller → File Watcher → WTAF Processor → AI Client → Storage Manager → Notification Client
+```
+
+### Commits Made
+1. `e9649f6c` - Safety checkpoint before refactoring
+2. `6ecbd394` - Shared modules (config, logger, utils)
+3. `4c92a2a0` - AI client and storage manager modules
+4. `3b98c77a` - Notification client and file watcher modules
 
 ## 🏗️ CURRENT INFRASTRUCTURE STATUS
 
 ### Production Services
 - **SMS Bot:** Running on port 3030
+- **Engine System:** Node.js microservices (70% complete, replacing Python monitor)
 - **Web Platform:** Next.js application
 - **Database:** Supabase with proper tables
-- **File Processing:** monitor.py watching `data/wtaf/`
+- **File Processing:** engine/ watching `data/wtaf/`
 - **Domain Routing:** `wtaf.me` middleware working
 
 ### Development Workflow
 - **SMS Testing:** Direct SMS to phone numbers
 - **Web Testing:** `localhost:3001/cptcrk/chat`
-- **Page Generation:** Both interfaces create real pages
+- **Page Generation:** Both interfaces create real pages (via engine services)
 - **Database Monitoring:** Supabase admin panel
 
 ## 🎯 SYSTEM INTEGRATION STATUS
 
 ### Cross-Platform Features
 - ✅ Same user database across SMS and web
-- ✅ Same page generation system
+- ✅ Same page generation system (engine microservices)
 - ✅ Same URL structure (`wtaf.me/[user]/[app]`)
 - ✅ Same coach/persona system available
 - ✅ Consistent branding and experience
@@ -94,4 +111,14 @@
 - **Business Site:** `advisorsfoundry.ai` for coaching
 - **Generated Pages:** `wtaf.me/[user]/[app]` for results
 
-All systems operational and ready for expansion. 
+## 🚀 NEXT DEVELOPMENT PRIORITIES
+1. **Complete Engine Refactoring** (30% remaining)
+   - Finish wtaf-processor.js workflow module
+   - Create controller.js main entry point
+   - Integration testing with real WTAF requests
+
+2. **Production Deployment** of new engine architecture
+   - Performance validation vs original monitor.py
+   - Rollback capability via git checkpoints
+
+All core systems operational. Engine microservices refactoring in progress with strong foundations completed. 

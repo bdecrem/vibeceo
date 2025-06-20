@@ -1,92 +1,133 @@
-# Active Context: EDIT Command Implementation for Degen Users
+# Active Context: Monitor.py Microservices Refactoring
 
-## Current Focus: IMPLEMENTING EDIT COMMAND
-**Building SMS command for degen users to edit existing WTAF pages**
+## Current Focus: MICROSERVICES ARCHITECTURE IMPLEMENTATION
+**Refactoring monolithic monitor.py (1133 lines) into focused microservice modules for easier Code Agent modifications**
 
 ## Implementation Plan Overview
 
 ### Goal
-Add `EDIT [index_number] [instructions]` command that allows degen role users to modify their existing WTAF pages via SMS, using the same polished workflow as WTAF creation.
+Transform the monolithic `monitor.py` into a modular microservices architecture that:
+- Breaks down complex functionality into single-responsibility modules
+- Makes the system easier for Code Agents to understand and modify
+- Maintains identical external behavior and reliability
+- Enables independent scaling and testing of components
 
-### Architecture Decision: Option 2 - Minimal Monitor Extension
-**Extend monitor.py with minimal complexity rather than creating separate processes**
+### Architecture Decision: Node.js Microservices Pattern
+**Replace `python3 scripts/monitor.py` with `node scripts/controller.js`**
 
 #### Why This Approach:
-- ✅ **Single process** - no new things to manage
-- ✅ **Proven pattern** - follows existing WTAF workflow  
-- ✅ **Reuses everything** - SMS, OG, error handling, logging
-- ✅ **Minimal code** - just extending what already works (~20-30 lines)
+- ✅ **Modular Design** - Each module has a single responsibility
+- ✅ **Code Agent Friendly** - Smaller, focused files are easier to understand and modify
+- ✅ **Maintainable** - Clear separation of concerns
+- ✅ **Testable** - Individual modules can be tested in isolation
+- ✅ **Scalable** - Components can be scaled independently if needed
 
-### Implementation Flow
-1. **handlers.ts**: Parse `EDIT 2 change background` → validate degen role → queue edit request
-2. **monitor.py**: Process edit queue → fetch existing HTML → combine with `prompts/edits.json` → call AI
-3. **monitor.py**: **UPDATE same row** in wtaf_content (preserving app_slug, user_slug, URL) → generate new OG image → send SMS
-4. **User**: Gets SMS with same URL (content now updated)
+## Microservices Architecture
 
-### Key Benefits
-- **Preserves URLs** - same app_slug means bookmarks still work
-- **Leverages monitor.py** - all the SMS formatting, OG images, error handling
-- **Clean database** - no duplicate entries, just updated content
-- **Consistent UX** - same SMS experience as WTAF
+### Proposed Module Structure
+```
+sms-bot/engine/
+├── shared/
+│   ├── config.js        # Environment, paths, constants, coach data
+│   ├── logger.js        # Logging with timestamps and emoji indicators  
+│   └── utils.js         # Slug generation, code extraction, credential injection
+├── ai-client.js         # OpenAI and Anthropic API interactions with fallbacks
+├── storage-manager.js   # Supabase database operations, file system operations
+├── notification-client.js # SMS sending via spawn process
+├── file-watcher.js      # File monitoring with race condition prevention
+├── wtaf-processor.js    # WTAF creation workflow orchestration
+├── edit-processor.js    # Edit command processing (when implemented)
+└── controller.js        # Main orchestrator (replacement for monitor.py)
+```
+
+### Module Responsibilities
+
+#### Shared Modules
+- **config.js**: Environment variables, file paths, constants, coach data
+- **logger.js**: Centralized logging with timestamps and emoji indicators
+- **utils.js**: Utility functions (slug generation, code extraction, credential injection)
+
+#### Service Modules  
+- **ai-client.js**: All AI API interactions (OpenAI, Anthropic) with fallback logic
+- **storage-manager.js**: Database operations (Supabase), file system operations
+- **notification-client.js**: SMS notifications via spawn process calls
+- **file-watcher.js**: Directory monitoring, file parsing, request type determination
+
+#### Workflow Modules
+- **wtaf-processor.js**: Complete WTAF creation workflow orchestration
+- **edit-processor.js**: Edit command processing workflow (future implementation)
+- **controller.js**: Main entry point, coordinates all other modules
 
 ## Current Implementation Status
 
-### ✅ COMPLETED: Basic Structure
-- Created `sms-bot/lib/degen_commands.ts` with edit command logic
-- Added EDIT command detection in `sms-bot/lib/sms/handlers.ts`
-- Added role-based security (degen users only)
-- Updated help text to show EDIT command for degen users
+### ✅ COMPLETED: Foundation Modules (70% Complete)
+- ✅ **Shared Modules**: config.js, logger.js, utils.js
+- ✅ **Core Services**: ai-client.js, storage-manager.js
+- ✅ **Communication**: notification-client.js, file-watcher.js
+- ✅ **Safety**: Git checkpoints and rollback strategy established
 
-### ❌ NEEDS CORRECTION: Current Issues
-**Current implementation bypasses monitor.py workflow - needs to be redesigned**
+### 🔄 IN PROGRESS: Workflow Modules (30% Remaining)
+- 🔄 **wtaf-processor.js**: Extract WTAF workflow orchestration
+- 🔄 **controller.js**: Main entry point to replace monitor.py
+- 🔄 **Integration Testing**: Ensure identical behavior to original
 
-- Current code does direct AI calls instead of using monitor.py
-- Doesn't use `prompts/edits.json` structure
-- Missing proper SMS formatting and OG image generation
-- Doesn't follow established queue → process → notify pattern
+### Safety Protocol
+- **Max 3 attempts** for overall refactoring
+- **Max 2 attempts** per component
+- **Thursday branch** with incremental commits
+- **`git reset --hard`** for quick rollbacks if needed
 
-### 🔄 NEXT STEPS: Proper Integration
-1. **Create edit queue table** (or reuse existing queue with edit type)
-2. **Add prompts/edits.json** with proper edit prompt structure
-3. **Extend monitor.py** with `process_edit_queue()` function
-4. **Update handlers.ts** to queue edit requests instead of direct processing
-5. **Test end-to-end** workflow with degen user
+## Deployment Model Change
 
-## Database Structure Needed
-```sql
--- Option 1: Add to existing queue
-ALTER TABLE request_queue ADD COLUMN request_type VARCHAR DEFAULT 'wtaf';
--- Option 2: New table
-CREATE TABLE edit_requests (
-    id SERIAL PRIMARY KEY,
-    user_slug VARCHAR,
-    target_index INTEGER,
-    edit_instructions TEXT,
-    status VARCHAR DEFAULT 'pending',
-    created_at TIMESTAMP
-);
+### Before (Monolithic)
+```bash
+python3 scripts/monitor.py
 ```
 
-## Files Modified So Far
-- `sms-bot/lib/degen_commands.ts` - **NEEDS REWORK** (currently bypasses monitor.py)
-- `sms-bot/lib/sms/handlers.ts` - **NEEDS UPDATE** (change from direct processing to queueing)
-
-## Files Still To Create/Modify
-- `sms-bot/prompts/edits.json` - Edit prompt template
-- `monitor.py` - Add edit queue processing (~20-30 lines)
-- Database schema updates for edit queue
-
-## Command Usage
-```
-EDIT 2 change the background to blue
-EDIT 1 add a header that says "Welcome to my site"
-EDIT 3 make the text larger and center it
+### After (Microservices)
+```bash
+node scripts/controller.js
 ```
 
-## Role-Based Security
-- Only users with `role = 'degen'` can use EDIT command
-- Silent ignore for non-degen users (doesn't reveal command exists)
-- Uses INDEX command numbering (1-based, ordered by created_at desc)
+### Benefits of New Architecture
+1. **Code Agent Friendly**: Smaller, focused files are easier to understand and modify
+2. **Maintainable**: Clear separation of concerns makes debugging easier
+3. **Testable**: Individual modules can be tested in isolation
+4. **Scalable**: Components can be independently scaled if needed
+5. **Reliable**: Identical external behavior maintained
 
-## Current Status: IMPLEMENTATION IN PROGRESS
-Ready to correct current approach and implement proper monitor.py integration. 
+## Key Implementation Patterns
+
+### Module Export/Import Pattern
+```javascript
+// Export functions from modules
+module.exports = { functionName, anotherFunction }
+
+// Import in controller
+const { functionName } = require('./ai-client.js')
+```
+
+### Error Handling Strategy
+- Consistent error logging across all modules
+- Graceful degradation with fallbacks
+- Preserve original error handling behavior
+
+### File Processing Flow
+```
+File Watcher → Request Parser → Workflow Processor → AI Client → Storage Manager → Notification Client
+```
+
+## Commit History
+1. `e9649f6c` - Safety checkpoint before refactoring
+2. `6ecbd394` - Shared modules (config, logger, utils)
+3. `4c92a2a0` - AI client and storage manager modules
+4. `3b98c77a` - Notification client and file watcher modules
+
+## Next Steps
+1. Complete wtaf-processor.js module
+2. Create controller.js main entry point
+3. Integration testing with real WTAF requests
+4. Performance validation vs original monitor.py
+
+## Current Status: 70% COMPLETE
+The microservices architecture is taking shape with solid foundations. Ready to complete the workflow modules and begin integration testing. 
