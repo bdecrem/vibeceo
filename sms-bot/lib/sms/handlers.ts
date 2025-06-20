@@ -1935,11 +1935,11 @@ ${response}`;
     
     // Handle EDIT command - for degen users only
     if (message.match(/^EDIT(?:\s|$)/i)) {
-      // Check if the command has the required arguments
-      if (!message.match(/^EDIT\s+\d+\s+.+$/i)) {
+      // Check if the command has the required arguments (number OR slug)
+      if (!message.match(/^EDIT\s+.+\s+.+$/i)) {
         await sendSmsResponse(
           from,
-          `❌ EDIT: Please specify a page number and instructions.\n\nExample: EDIT 1 change the background to blue\n\nUse INDEX to see your page numbers.`,
+          `❌ EDIT: Please specify a page number/slug and instructions.\n\nExample: EDIT 1 change the background to blue\nExample: EDIT emerald-eagle-flying make it purple\n\nUse INDEX to see your pages.`,
           twilioClient
         );
         return;
@@ -1965,20 +1965,20 @@ ${response}`;
         
         console.log(`✅ User ${normalizedPhoneNumber} has 'degen' role, proceeding with EDIT command`);
         
-        // Parse the command - we know this will match because we already validated the format
-        const editMatch = message.match(/^EDIT\s+(\d+)\s+(.+)$/i);
+        // Parse the command - support both number and slug
+        const editMatch = message.match(/^EDIT\s+(.+?)\s+(.+)$/i);
         
         if (!editMatch || !editMatch[1] || !editMatch[2]) {
           console.error('Failed to parse EDIT command:', message);
           await sendSmsResponse(
             from,
-            '❌ Invalid EDIT command format. Use: EDIT [page_number] [instructions]',
+            '❌ Invalid EDIT command format. Use: EDIT [page_number_or_slug] [instructions]',
             twilioClient
           );
           return;
         }
         
-        const indexNumber = parseInt(editMatch[1]);
+        const pageIdentifier = editMatch[1].trim();
         const instructions = editMatch[2].trim();
         
         const userSlug = subscriber.slug;
@@ -1991,9 +1991,46 @@ ${response}`;
           return;
         }
         
+        // Convert index number to slug using EXACT same query as INDEX command
+        let targetSlug = pageIdentifier;
+        
+        if (/^\d+$/.test(pageIdentifier)) {
+          // It's a number - convert to slug using same logic as INDEX
+          const indexNumber = parseInt(pageIdentifier);
+          
+          // Use IDENTICAL query to INDEX command
+          const { data: userContent, error } = await supabase
+            .from('wtaf_content')
+            .select('app_slug, original_prompt, created_at')
+            .eq('user_slug', userSlug)
+            .order('created_at', { ascending: false });
+            
+          if (error || !userContent || userContent.length === 0) {
+            await sendSmsResponse(
+              from,
+              `❌ Failed to fetch your pages. Please try again later.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          if (indexNumber < 1 || indexNumber > userContent.length) {
+            await sendSmsResponse(
+              from,
+              `❌ Invalid index ${indexNumber}. You have ${userContent.length} pages. Use INDEX to see them.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          // Convert to slug (1-based index to 0-based array)
+          targetSlug = userContent[indexNumber - 1].app_slug;
+          console.log(`🔢 EDIT ${indexNumber} -> converted to slug: ${targetSlug}`);
+        }
+        
         // Queue the edit request by writing to monitored directory (same pattern as WTAF)
-        const { queueEditRequest } = await import('../degen_commands.js');
-        const success = await queueEditRequest(userSlug, indexNumber, instructions, normalizedPhoneNumber);
+        const { queueEditRequestBySlug } = await import('../degen_commands.js');
+        const success = await queueEditRequestBySlug(userSlug, targetSlug, instructions, normalizedPhoneNumber);
         
         if (success) {
           await sendSmsResponse(
@@ -2005,7 +2042,7 @@ ${response}`;
         } else {
           await sendSmsResponse(
             from,
-            `❌ Failed to queue your edit request. Please try again later.`,
+            `❌ Failed to queue your edit request. Page not found or invalid.`,
             twilioClient
           );
           console.log(`❌ Failed to queue EDIT command for ${normalizedPhoneNumber}`);

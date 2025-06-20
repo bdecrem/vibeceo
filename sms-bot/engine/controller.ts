@@ -36,10 +36,10 @@ import {
 } from './file-watcher.js';
 
 /**
- * System prompt with all technical requirements
+ * System prompt for creating new WTAF apps
  * Extracted from monitor.py system prompt
  */
-const SYSTEM_PROMPT = `🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨
+const CREATION_SYSTEM_PROMPT = `🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨
 🚨🚨🚨 READ THIS FIRST BEFORE ANYTHING ELSE 🚨🚨🚨
 
 IF YOU SEE "<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->" IN THE USER'S REQUEST:
@@ -128,6 +128,30 @@ Replace 'APP_TABLE_ID' with a unique identifier for this app.
 Return complete HTML wrapped in \`\`\`html code blocks.`;
 
 /**
+ * Edit system prompt - exact copy from working prompts/edits.json
+ */
+const EDIT_SYSTEM_PROMPT = `You are an expert web developer and UI/UX designer tasked with editing an existing HTML page based on specific user instructions.
+
+Your role is to:
+1. Carefully analyze the existing HTML structure, styling, and functionality
+2. Make precise edits according to the user's instructions
+3. Preserve the overall design integrity unless specifically asked to change it
+4. Maintain all existing functionality that isn't being modified
+5. Ensure the changes integrate seamlessly with the existing code
+6. Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks
+
+IMPORTANT GUIDELINES:
+- Keep the same overall layout and structure unless specifically requested to change it
+- Preserve existing CSS classes and IDs unless they conflict with requested changes
+- Maintain responsive design principles
+- Ensure all interactive elements continue to work properly
+- If the request is unclear, make the most logical interpretation
+- Focus on clean, maintainable code
+- Test-worthy: ensure the modified page will render and function correctly
+
+Return the complete, modified HTML page wrapped in \`\`\`html and \`\`\` tags. Do not include explanations or comments outside the code blocks.`;
+
+/**
  * Process WTAF creation workflow
  * Main workflow extracted from monitor.py execute_gpt4o function
  */
@@ -148,7 +172,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
         logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
         
-        const result = await callClaude(SYSTEM_PROMPT, completePrompt);
+        const result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt);
         
         // Step 3: Save Claude output to file
         const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
@@ -301,6 +325,102 @@ async function processWtafRequest(processingPath: string, fileData: any, request
 }
 
 /**
+ * Process EDIT workflow
+ * Handles edit-* files created by handlers.ts EDIT command
+ */
+async function processEditRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+    logWithTimestamp("🎨 STARTING EDIT PROCESSING WORKFLOW");
+    logWithTimestamp(`📖 Processing edit file: ${processingPath}`);
+    
+    const { senderPhone, userPrompt } = fileData;
+    
+    try {
+        // Parse EDIT file format (from degen_commands.ts)
+        const lines = fileData.rawContent.split('\n');
+        let editTarget = null;
+        let editInstructions = null;
+        let originalHtml = null;
+        let userSlug = null;
+        
+        // Parse the file structure
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('USER_SLUG:')) {
+                userSlug = lines[i].replace('USER_SLUG:', '').trim();
+            }
+            if (lines[i].startsWith('EDIT_TARGET:')) {
+                editTarget = lines[i].replace('EDIT_TARGET:', '').trim();
+            }
+            if (lines[i].startsWith('EDIT_INSTRUCTIONS:')) {
+                editInstructions = lines[i].replace('EDIT_INSTRUCTIONS:', '').trim();
+            }
+            if (lines[i] === 'ORIGINAL_HTML:') {
+                originalHtml = lines.slice(i + 1).join('\n');
+                break;
+            }
+        }
+        
+        if (!userSlug || !editTarget || !editInstructions || !originalHtml) {
+            logError("Invalid EDIT file format - missing user_slug, target, instructions, or HTML");
+            await sendFailureNotification("invalid-edit", senderPhone);
+            return false;
+        }
+        
+        logWithTimestamp(`🎯 Edit target: ${editTarget}`);
+        logWithTimestamp(`📝 Edit instructions: ${editInstructions.slice(0, 50)}...`);
+        logWithTimestamp(`📏 Original HTML length: ${originalHtml.length} chars`);
+        logWithTimestamp(`📝 Original HTML preview: ${originalHtml.slice(0, 100)}...`);
+        
+        // Create edit prompt for Claude
+        const editPrompt = `Please modify the following HTML code according to these instructions: "${editInstructions}"
+
+IMPORTANT REQUIREMENTS:
+- Keep all existing functionality intact
+- Only modify what's requested in the instructions
+- Maintain the same overall structure and design aesthetic
+- Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks
+- Do not add explanatory text outside the code block
+
+Original HTML:
+${originalHtml}`;
+
+        logWithTimestamp(`📏 Edit prompt length: ${editPrompt.length} chars`);
+        logWithTimestamp(`📝 Edit prompt preview: ${editPrompt.slice(0, 200)}...`);
+
+        // Send to Claude
+        const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt);
+        
+        // Extract code blocks
+        const modifiedCode = extractCodeBlocks(result);
+        if (!modifiedCode.trim()) {
+            logWarning("No code block found in edit response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Update the existing page in Supabase
+        const { updatePageInSupabase } = await import('./storage-manager.js');
+        const success = await updatePageInSupabase(userSlug, editTarget, modifiedCode);
+        
+        if (success) {
+            // Get the URL for notification - include user slug for correct WTAF path
+            const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${editTarget}`;
+            await sendSuccessNotification(pageUrl, null, senderPhone);
+            logSuccess(`✅ Edit completed successfully: ${pageUrl}`);
+            return true;
+        } else {
+            logError("Failed to update page in database");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+        
+    } catch (error) {
+        logError(`Edit processing error: ${error instanceof Error ? error.message : String(error)}`);
+        await sendFailureNotification("generic", senderPhone);
+        return false;
+    }
+}
+
+/**
  * Main controller loop
  * Replaces monitor.py monitor_loop function
  */
@@ -330,6 +450,8 @@ async function mainControllerLoop() {
             try {
                 if (requestInfo.type === 'wtaf' || requestInfo.type === 'code') {
                     success = await processWtafRequest(processingPath, fileData, requestInfo);
+                } else if (requestInfo.type === 'edit') {
+                    success = await processEditRequest(processingPath, fileData, requestInfo);
                 } else {
                     logWarning(`Unknown request type: ${requestInfo.type}`);
                     success = false;
