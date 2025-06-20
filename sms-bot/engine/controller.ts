@@ -18,7 +18,7 @@ import {
     logWarning 
 } from './shared/logger.js';
 import { extractCodeBlocks } from './shared/utils.js';
-import { generateCompletePrompt, callClaude } from './ai-client.js';
+import { generateCompletePrompt, callClaude } from './wtaf-processor.js';
 import { 
     saveCodeToSupabase, 
     saveCodeToFile, 
