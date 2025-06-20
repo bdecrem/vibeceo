@@ -5,24 +5,11 @@ import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/log
 // Initialize OpenAI client
 const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Type definitions
-interface PromptMessage {
-    role: string;
-    content: string;
-}
-
-interface AnthropicResponse {
-    content?: Array<{
-        text: string;
-    }>;
-    [key: string]: any;
-}
-
 /**
  * Load prompt from JSON file
  * Extracted from monitor.py load_prompt_json function
  */
-export async function loadPromptJson(filename: string): Promise<any | null> {
+export async function loadPromptJson(filename) {
     try {
         const { readFile } = await import('fs/promises');
         const { join, dirname } = await import('path');
@@ -34,7 +21,7 @@ export async function loadPromptJson(filename: string): Promise<any | null> {
         
         const content = await readFile(promptPath, 'utf8');
         return JSON.parse(content);
-    } catch (error: any) {
+    } catch (error) {
         logWarning(`Error loading prompt ${filename}: ${error.message}`);
         return null;
     }
@@ -44,7 +31,7 @@ export async function loadPromptJson(filename: string): Promise<any | null> {
  * Generate complete prompt for Claude (Prompt 1)
  * Extracted from monitor.py generate_prompt_2 function
  */
-export async function generateCompletePrompt(userInput: string): Promise<string> {
+export async function generateCompletePrompt(userInput) {
     logWithTimestamp("=" + "=".repeat(79));
     logWithTimestamp("🎯 PROMPT 1: Creating complete prompt for Claude...");
     logWithTimestamp(`📥 ORIGINAL INPUT: ${userInput}`);
@@ -52,7 +39,7 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
     
     // Parse coach from user prompt before sending to Claude (WTAF syntax: "wtaf -coach- request")
     const coachMatch = userInput.match(/wtaf\s+-([a-z]+)-\s+(.+)/i);
-    let coach: string | null = null;
+    let coach = null;
     let cleanedInput = userInput;
     
     if (coachMatch) {
@@ -75,7 +62,7 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
         userMessage += `\n\nCOACH_HANDLE: ${coach}`;
     }
     
-    const messages: PromptMessage[] = [
+    const messages = [
         prompt1Data,
         { "role": "user", "content": userMessage }
     ];
@@ -83,19 +70,19 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
     try {
         const response = await openaiClient.chat.completions.create({
             model: "gpt-4o",
-            messages: messages as any,
+            messages: messages,
             temperature: 0.7,
             max_tokens: 1000
         });
         
-        const completePrompt = response.choices[0].message.content?.trim() || '';
+        const completePrompt = response.choices[0].message.content.trim();
         logWithTimestamp(`📤 COMPLETE PROMPT: ${completePrompt.slice(0, 200)}...`);
         logSuccess("Prompt 1 complete!");
         logWithTimestamp("=" + "=".repeat(79));
         
         return completePrompt;
             
-    } catch (error: any) {
+    } catch (error) {
         logWarning(`Error generating prompt, using original: ${error.message}`);
         logWithTimestamp("=" + "=".repeat(79));
         return userInput; // Fallback to original if generation fails
@@ -106,7 +93,7 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
  * Call Claude API with fallback models
  * Extracted from monitor.py Claude API call logic
  */
-export async function callClaude(systemPrompt: string, userPrompt: string, maxTokens: number = 8192): Promise<string> {
+export async function callClaude(systemPrompt, userPrompt, maxTokens = 8192) {
     const model = "claude-3-5-sonnet-20241022";
     const fallbackModel = "claude-3-5-haiku-20241022";
     
@@ -117,8 +104,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
             throw new Error("ANTHROPIC_API_KEY not found in environment");
         }
         
-        const headers: HeadersInit = {
-            "x-api-key": ANTHROPIC_API_KEY!,
+        const headers = {
+            "x-api-key": ANTHROPIC_API_KEY,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01"
         };
@@ -147,7 +134,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
             body: JSON.stringify(payload)
         });
         
-        const responseJson: AnthropicResponse = await response.json();
+        const responseJson = await response.json();
         logWithTimestamp(`📊 Claude response received - status code: ${response.status}`);
         
         // Debug response structure
@@ -163,7 +150,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
             throw new Error("Invalid Claude response structure");
         }
         
-    } catch (error: any) {
+    } catch (error) {
         logWarning(`Claude ${model} error, trying fallback: ${error.message}`);
         
         // Try Claude fallback model first
@@ -172,7 +159,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
             
             // Adjust max tokens for fallback model if needed
             let fallbackMaxTokens = maxTokens;
-            if (fallbackModel === "claude-3-5-haiku-20241022") {
+            if (fallbackModel === "claude-3-5-sonnet-20241022") {
+                fallbackMaxTokens = Math.min(maxTokens, 8100);
+            } else if (fallbackModel === "claude-3-5-haiku-20241022") {
                 fallbackMaxTokens = Math.min(maxTokens, 4000);
             }
             
@@ -192,14 +181,14 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
             const response = await fetch("https://api.anthropic.com/v1/messages", {
                 method: 'POST',
                 headers: {
-                    "x-api-key": ANTHROPIC_API_KEY!,
+                    "x-api-key": ANTHROPIC_API_KEY,
                     "Content-Type": "application/json",
                     "anthropic-version": "2023-06-01"
-                } as HeadersInit,
+                },
                 body: JSON.stringify(payload)
             });
             
-            const responseJson: AnthropicResponse = await response.json();
+            const responseJson = await response.json();
             logWithTimestamp(`📊 Claude fallback response - status: ${response.status}`);
             
             if (responseJson.content && responseJson.content.length > 0) {
@@ -210,7 +199,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
                 throw new Error("Invalid Claude fallback response structure");
             }
                 
-        } catch (fallbackError: any) {
+        } catch (fallbackError) {
             logWarning(`Claude fallback also failed, using GPT-4o: ${fallbackError.message}`);
             
             // Final fallback to GPT-4o
@@ -229,11 +218,11 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
                     max_tokens: gptMaxTokens
                 });
                 
-                const result = response.choices[0].message.content || '';
+                const result = response.choices[0].message.content;
                 logSuccess(`GPT-4o response received, length: ${result.length} chars`);
                 return result;
                 
-            } catch (gptError: any) {
+            } catch (gptError) {
                 logError(`All models failed - GPT error: ${gptError.message}`);
                 throw new Error(`All AI models failed: ${gptError.message}`);
             }

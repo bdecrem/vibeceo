@@ -3,7 +3,7 @@
  * Extracted from monitor.py log_with_timestamp function
  */
 
-export function logWithTimestamp(message: string): void {
+export function logWithTimestamp(message) {
     const timestamp = new Date().toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit',
@@ -16,43 +16,42 @@ export function logWithTimestamp(message: string): void {
     
     console.log(`[${timestamp}] ${message}`);
     // Flush output for Railway logs
-    // Note: flush() may not be available in all Node.js environments
-    if (process.stdout && 'flush' in process.stdout && typeof (process.stdout as any).flush === 'function') {
-        (process.stdout as any).flush();
+    if (process.stdout && process.stdout.flush) {
+        process.stdout.flush();
     }
 }
 
 // Convenience methods for different log levels
-export function logInfo(message: string): void {
+export function logInfo(message) {
     logWithTimestamp(`ℹ️ ${message}`);
 }
 
-export function logSuccess(message: string): void {
+export function logSuccess(message) {
     logWithTimestamp(`✅ ${message}`);
 }
 
-export function logWarning(message: string): void {
+export function logWarning(message) {
     logWithTimestamp(`⚠️ ${message}`);
 }
 
-export function logError(message: string): void {
+export function logError(message) {
     logWithTimestamp(`❌ ${message}`);
 }
 
-export function logDebug(message: string): void {
+export function logDebug(message) {
     logWithTimestamp(`🔧 ${message}`);
 }
 
-export function logStartup(message: string): void {
+export function logStartup(message) {
     logWithTimestamp(`🚀 ${message}`);
 }
 
-export function logProcess(message: string): void {
+export function logProcess(message) {
     logWithTimestamp(`🔄 ${message}`);
 }
 
 // Startup logging helper
-export function logStartupInfo(webAppUrl: string, wtafDomain: string, webOutputDir: string): void {
+export function logStartupInfo(webAppUrl, wtafDomain, webOutputDir) {
     logStartup("Monitor engine starting up...");
     logWithTimestamp(`📁 Current working directory: ${process.cwd()}`);
     logWithTimestamp(`🌐 WEB_APP_URL: ${webAppUrl}`);

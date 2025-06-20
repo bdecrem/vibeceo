@@ -5,7 +5,7 @@ import { logWithTimestamp } from './logger.js';
  * Generate fun slug for apps
  * Extracted from monitor.py generate_fun_slug function
  */
-export function generateFunSlug(): string {
+export function generateFunSlug() {
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
     const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
@@ -16,7 +16,7 @@ export function generateFunSlug(): string {
  * Extract code blocks from AI response
  * Extracted from monitor.py extract_code_blocks function
  */
-export function extractCodeBlocks(text: string): string {
+export function extractCodeBlocks(text) {
     // First try to extract content between ```html and ``` markers (most specific)
     let matches = text.match(/```html\s*([\s\S]*?)```/g);
     if (matches) {
@@ -79,36 +79,35 @@ export function extractCodeBlocks(text: string): string {
  * Inject Supabase credentials into HTML placeholders
  * Extracted from monitor.py inject_supabase_credentials function
  */
-export function injectSupabaseCredentials(html: string, supabaseUrl: string, supabaseAnonKey?: string): string {
-    let anonKey = supabaseAnonKey;
-    if (!anonKey) {
+export function injectSupabaseCredentials(html, supabaseUrl, supabaseAnonKey) {
+    if (!supabaseAnonKey) {
         // Check for other common key variable names
-        anonKey = process.env.SUPABASE_PUBLIC_KEY || '';
-        if (!anonKey) {
+        supabaseAnonKey = process.env.SUPABASE_PUBLIC_KEY || '';
+        if (!supabaseAnonKey) {
             // Last resort: Use service key (not ideal but allows forms to work)
-            anonKey = process.env.SUPABASE_SERVICE_KEY || '';
+            supabaseAnonKey = process.env.SUPABASE_SERVICE_KEY || '';
             logWithTimestamp("⚠️ Using SUPABASE_SERVICE_KEY for frontend (should use SUPABASE_ANON_KEY)");
         }
     }
     
     // Replace standard placeholders
     html = html.replace(/YOUR_SUPABASE_URL/g, supabaseUrl);
-    html = html.replace(/YOUR_SUPABASE_ANON_KEY/g, anonKey);
+    html = html.replace(/YOUR_SUPABASE_ANON_KEY/g, supabaseAnonKey);
     
     // More robust replacement for cases where Claude doesn't use exact placeholders
     // Look for createClient calls with empty or placeholder API keys
     html = html.replace(
         /createClient\(\s*['"]([^'"]+)['"],\s*['"]["']?\s*\)/g,
-        `createClient('${supabaseUrl}', '${anonKey}')`
+        `createClient('${supabaseUrl}', '${supabaseAnonKey}')`
     );
     
     // Also handle cases where URL might be missing
     html = html.replace(
         /createClient\(\s*['"]["'],?\s*['"]([^'"]*)['"]?\s*\)/g,
-        `createClient('${supabaseUrl}', '${anonKey}')`
+        `createClient('${supabaseUrl}', '${supabaseAnonKey}')`
     );
     
-    logWithTimestamp(`🔑 Injected Supabase credentials: URL=${supabaseUrl.slice(0, 20)}..., Key=${anonKey.slice(0, 10)}...`);
+    logWithTimestamp(`🔑 Injected Supabase credentials: URL=${supabaseUrl.slice(0, 20)}..., Key=${supabaseAnonKey.slice(0, 10)}...`);
     
     return html;
 }
@@ -117,24 +116,22 @@ export function injectSupabaseCredentials(html: string, supabaseUrl: string, sup
  * Replace APP_TABLE_ID placeholder with actual app_slug
  * Extracted from monitor.py save_code_to_supabase function
  */
-export function replaceAppTableId(html: string, appSlug: string): string {
+export function replaceAppTableId(html, appSlug) {
     html = html.replace(/'APP_TABLE_ID'/g, `'${appSlug}'`);
     html = html.replace(/"APP_TABLE_ID"/g, `"${appSlug}"`);
     logWithTimestamp(`🔧 Replaced APP_TABLE_ID with: ${appSlug}`);
     return html;
 }
 
-type RequestType = 'game' | 'app';
-
 /**
  * Detect request type from user prompt
  * Extracted from monitor.py detect_request_type function
  */
-export function detectRequestType(userPrompt: string): RequestType {
+export function detectRequestType(userPrompt) {
     const promptLower = userPrompt.toLowerCase();
     
     // Game keywords
-    const gameKeywords: readonly string[] = ['game', 'pong', 'tetris', 'snake', 'tic-tac-toe', 'memory game', 
+    const gameKeywords = ['game', 'pong', 'tetris', 'snake', 'tic-tac-toe', 'memory game', 
                          'quiz', 'trivia', 'puzzle', 'arcade', 'solitaire', 'blackjack',
                          'breakout', 'flappy', 'platformer', 'shooter', 'racing', 'cards'];
     
