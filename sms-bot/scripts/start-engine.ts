@@ -5,4 +5,12 @@
  * This replaces the old Python monitor.py
  */
 
-import '../engine/controller.js'; 
+import { mainControllerLoop } from '../engine/controller.js';
+
+console.log('🚀 Starting WTAF Engine...');
+
+// Start the main controller loop
+mainControllerLoop().catch(error => {
+    console.error(`❌ Fatal error: ${error.message}`);
+    process.exit(1);
+}); 

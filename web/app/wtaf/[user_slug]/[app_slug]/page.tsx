@@ -72,8 +72,11 @@ export async function generateMetadata({ params }: PageProps) {
       `${data.original_prompt.substring(0, 150)}...` : 
       'Vibecoded chaos, shipped via SMS.'
 
-    // Use simpler query-parameter based OG image route
-    const ogImageUrl = `/api/og-wtaf?user=${encodeURIComponent(user_slug)}&app=${encodeURIComponent(app_slug)}`
+    // Use the working cached OG image route with full public URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'https://theaf-web.ngrok.io'
+    const ogImageUrl = `${baseUrl}/api/generate-og-cached?user=${encodeURIComponent(user_slug)}&app=${encodeURIComponent(app_slug)}`
 
     return {
       title,
@@ -105,7 +108,7 @@ export async function generateMetadata({ params }: PageProps) {
       openGraph: {
         title: 'WTAF - Delusional App Generator',
         description: 'Vibecoded chaos, shipped via SMS.',
-        images: ['/api/og-wtaf?user=default&app=wtaf'],
+        images: [`${process.env.NEXT_PUBLIC_APP_URL || 'https://theaf-web.ngrok.io'}/api/generate-og-cached?user=default&app=wtaf`],
       },
     }
   }

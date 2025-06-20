@@ -1,0 +1,306 @@
+I'll create two pages - a public greeting page and an admin view, incorporating all the luxury design elements requested.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi Bart | Luxury Greeting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 3rem 4rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.1s ease;
+        }
+
+        .emoji-1 { top: 20%; left: 20%; }
+        .emoji-2 { top: 30%; right: 20%; }
+        .emoji-3 { bottom: 20%; left: 30%; }
+        .emoji-4 { bottom: 30%; right: 30%; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">🎉</span>
+        <span class="emoji-2" data-value="3">✨</span>
+        <span class="emoji-3" data-value="1">🥂</span>
+        <span class="emoji-4" data-value="4">🗼</span>
+    </div>
+
+    <div class="container">
+        <h1>Hi Bart</h1>
+        <p>Welcome to your personalized luxury greeting experience.</p>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi Bart | Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #1a1a1a, #2a2a2a, #333333, #1a1a1a);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            padding: 2rem;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .admin-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #ffffff;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .floating-emojis span {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: all 0.1s ease;
+        }
+
+        .emoji-1 { top: 10%; left: 10%; }
+        .emoji-2 { top: 20%; right: 10%; }
+        .emoji-3 { bottom: 10%; left: 15%; }
+        .emoji-4 { bottom: 20%; right: 15%; }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emojis">
+        <span class="emoji-1" data-value="2">📊</span>
+        <span class="emoji-2" data-value="3">📈</span>
+        <span class="emoji-3" data-value="1">💫</span>
+        <span class="emoji-4" data-value="4">✨</span>
+    </div>
+
+    <div class="admin-container">
+        <h1>Hi Bart - Admin Dashboard</h1>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3 id="viewCount">0</h3>
+                <p>Total Views</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="uniqueVisitors">0</h3>
+                <p>Unique Visitors</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="avgTime">0:00</h3>
+                <p>Average Time on Page</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emojis span').forEach((elem) => {
+                const speed = elem.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        async function fetchAnalytics() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'hi_bart_greeting')
+                if (error) throw error
+                
+                // Update stats (mock data for demonstration)
+                document.getElementById('viewCount').textContent = '1,234'
+                document.getElementById('uniqueVisitors').textContent = '987'
+                document.getElementById('avgTime').textContent = '1:45'
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load analytics data')
+            }
+        }
+
+        fetchAnalytics()
+    </script>
+</body>
+</html>
+```
+
+This creates two pages:
+
+1. A public greeting page with:
+- Animated gradient background
+- Glass morphism container
+- Luxury typography
+- Floating emoji parallax effects
+- Fully responsive design
+
+2. An admin dashboard with:
+- Dark theme with gradient background
+- Analytics cards with mock data
+- Supabase integration for data fetching
+- Different floating emojis for admin context
+- Glass morphism containers
+
+Both pages feature:
+- Space Grotesk for headlines
+- Inter for body text
+- Parallax emoji effects
+- Animated backgrounds
+- Glass morphism effects
+- Responsive design
+- Professional color schemes
+
+The admin page includes Supabase integration for future analytics implementation. The app_id is set to 'hi_bart_greeting' for database tracking.

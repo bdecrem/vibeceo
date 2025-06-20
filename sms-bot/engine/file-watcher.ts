@@ -33,7 +33,7 @@ export async function getNewestFile(watchDirectories = WATCH_DIRS) {
                 }
             }
         } catch (dirError) {
-            logWarning(`Error reading directory ${directory}: ${dirError.message}`);
+            logWarning(`Error reading directory ${directory}: ${dirError instanceof Error ? dirError.message : String(dirError)}`);
             continue;
         }
     }
@@ -49,10 +49,51 @@ export async function getNewestFile(watchDirectories = WATCH_DIRS) {
 }
 
 /**
+ * Get all unprocessed files (not just the newest)
+ * This ensures we process ALL waiting files, not just the newest one
+ */
+export async function getAllUnprocessedFiles(watchDirectories = WATCH_DIRS) {
+    const allFiles = [];
+    
+    for (const directory of watchDirectories) {
+        try {
+            const files = await readdir(directory);
+            
+            for (const file of files) {
+                const fullPath = join(directory, file);
+                
+                try {
+                    const stats = await stat(fullPath);
+                    
+                    // Only include .txt files that don't start with "PROCESSING_"
+                    if (file.endsWith('.txt') && stats.isFile() && !file.startsWith('PROCESSING_')) {
+                        allFiles.push({
+                            path: fullPath,
+                            mtime: stats.mtime
+                        });
+                    }
+                } catch (statError) {
+                    // File might have been deleted/moved, skip it
+                    continue;
+                }
+            }
+        } catch (dirError) {
+            logWarning(`Error reading directory ${directory}: ${dirError instanceof Error ? dirError.message : String(dirError)}`);
+            continue;
+        }
+    }
+    
+    // Sort by modification time (oldest first) to process in order
+    return allFiles
+        .sort((a, b) => a.mtime.getTime() - b.mtime.getTime())
+        .map(file => file.path);
+}
+
+/**
  * Parse file content and extract metadata
  * Extracted from monitor.py file parsing logic
  */
-export async function parseFileContent(filePath) {
+export async function parseFileContent(filePath: string): Promise<any> {
     try {
         const rawContent = await readFile(filePath, 'utf8');
         const lines = rawContent.trim().split('\n');
@@ -128,7 +169,7 @@ export async function parseFileContent(filePath) {
         };
         
     } catch (error) {
-        logError(`Error parsing file ${filePath}: ${error.message}`);
+        logError(`Error parsing file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -137,7 +178,7 @@ export async function parseFileContent(filePath) {
  * Determine request type from user prompt
  * Extracted from monitor.py prompt parsing logic
  */
-export function determineRequestType(userPrompt) {
+export function determineRequestType(userPrompt: string): { type: string; slug: string | null; coach: string; cleanPrompt: string } {
     try {
         // Check if raw prompt starts with 'CODE:' or 'CODE ' (case insensitive)
         const isCodeCommand = userPrompt.trim().toUpperCase().startsWith('CODE:') || 
@@ -171,7 +212,7 @@ export function determineRequestType(userPrompt) {
             };
         }
     } catch (error) {
-        logWarning(`Prompt parsing error: ${error.message}`);
+        logWarning(`Prompt parsing error: ${error instanceof Error ? error.message : String(error)}`);
         return {
             type: 'wtaf',
             coach: 'default',
@@ -194,7 +235,7 @@ function generateCodeSlug() {
  * Clean CODE command prompt
  * Helper function for code request processing  
  */
-function cleanCodePrompt(userPrompt) {
+function cleanCodePrompt(userPrompt: string): string {
     // Remove the CODE: prefix for cleaner prompt
     let cleanPrompt;
     if (userPrompt.trim().toUpperCase().startsWith('CODE:')) {
@@ -231,7 +272,7 @@ IMPORTANT: Return complete HTML wrapped in code blocks with \`\`\`html tag.`;
  * Lock file for processing (atomic rename to prevent race conditions)
  * Extracted from monitor.py file locking logic
  */
-export async function lockFileForProcessing(filePath) {
+export async function lockFileForProcessing(filePath: string): Promise<string | null> {
     const timestamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
     const processingName = `PROCESSING_${timestamp}_${basename(filePath)}`;
     const processingPath = join(dirname(filePath), processingName);
@@ -252,7 +293,7 @@ export async function lockFileForProcessing(filePath) {
  * Move processed file to final location
  * Extracted from monitor.py file management logic
  */
-export async function moveProcessedFile(processingPath, success = true) {
+export async function moveProcessedFile(processingPath: string, success: boolean = true): Promise<string | null> {
     try {
         const originalName = basename(processingPath).replace(/^PROCESSING_\d+_/, '');
         const finalName = success ? originalName : `FAILED_${originalName}`;
@@ -262,7 +303,7 @@ export async function moveProcessedFile(processingPath, success = true) {
         logSuccess(`Moved processed file: ${finalPath}`);
         return finalPath;
     } catch (error) {
-        logError(`Error moving processed file: ${error.message}`);
+        logError(`Error moving processed file: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -352,7 +393,7 @@ export async function* watchForFiles() {
             await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL * 1000));
             
         } catch (error) {
-            logError(`Error in file monitoring loop: ${error.message}`);
+            logError(`Error in file monitoring loop: ${error instanceof Error ? error.message : String(error)}`);
             // Clean up processing set on error
             currentlyProcessing.clear();
             await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL * 1000));
