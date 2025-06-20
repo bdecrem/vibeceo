@@ -25,7 +25,7 @@ export async function loadPromptJson(filename: string): Promise<ChatCompletionMe
         const content = await readFile(promptPath, 'utf8');
         return JSON.parse(content);
     } catch (error) {
-        logWarning(`Error loading prompt ${filename}: ${error.message}`);
+        logWarning(`Error loading prompt ${filename}: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -65,9 +65,9 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
         userMessage += `\n\nCOACH_HANDLE: ${coach}`;
     }
     
-    const messages = [
+    const messages: ChatCompletionMessageParam[] = [
         prompt1Data,
-        { "role": "user", "content": userMessage }
+        { role: "user", content: userMessage } as ChatCompletionMessageParam
     ];
     
     try {
@@ -78,7 +78,11 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
             max_tokens: 1000
         });
         
-        const completePrompt = response.choices[0].message.content.trim();
+        const content = response.choices[0].message.content;
+        if (!content) {
+            throw new Error("No content in GPT response");
+        }
+        const completePrompt = content.trim();
         logWithTimestamp(`📤 COMPLETE PROMPT: ${completePrompt.slice(0, 200)}...`);
         logSuccess("Prompt 1 complete!");
         logWithTimestamp("=" + "=".repeat(79));

@@ -7,13 +7,16 @@ import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/log
 import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId } from './shared/utils.js';
 
 // Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabase = createClient(
+    SUPABASE_URL || '', 
+    SUPABASE_SERVICE_KEY || ''
+);
 
 /**
  * Generate unique app slug for this user
  * Extracted from monitor.py generate_unique_app_slug function
  */
-export async function generateUniqueAppSlug(userSlug) {
+export async function generateUniqueAppSlug(userSlug: string): Promise<string> {
     const maxAttempts = 50;
     let attempts = 0;
     
@@ -40,7 +43,7 @@ export async function generateUniqueAppSlug(userSlug) {
                 return appSlug;
             }
         } catch (error) {
-            logWarning(`Error checking app slug uniqueness: ${error.message}`);
+            logWarning(`Error checking app slug uniqueness: ${error instanceof Error ? error.message : String(error)}`);
             // Continue to next attempt
         }
         
@@ -59,7 +62,7 @@ export async function generateUniqueAppSlug(userSlug) {
  * Get user ID from sms_subscribers table
  * Helper function for database operations
  */
-async function getUserId(userSlug) {
+async function getUserId(userSlug: string): Promise<string | null> {
     try {
         const { data, error } = await supabase
             .from('sms_subscribers')
@@ -80,7 +83,7 @@ async function getUserId(userSlug) {
         logSuccess(`Found user_id: ${userId} for slug: ${userSlug}`);
         return userId;
     } catch (error) {
-        logError(`Error finding user: ${error.message}`);
+        logError(`Error finding user: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -89,7 +92,14 @@ async function getUserId(userSlug) {
  * Save HTML content to Supabase database
  * Extracted from monitor.py save_code_to_supabase function
  */
-export async function saveCodeToSupabase(code, coach, userSlug, senderPhone, originalPrompt, adminTableId = null) {
+export async function saveCodeToSupabase(
+    code: string, 
+    coach: string, 
+    userSlug: string, 
+    senderPhone: string | null, 
+    originalPrompt: string, 
+    adminTableId: string | null = null
+): Promise<{ appSlug: string | null; publicUrl: string | null }> {
     logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
@@ -113,7 +123,7 @@ export async function saveCodeToSupabase(code, coach, userSlug, senderPhone, ori
     const publicUrl = `${WTAF_DOMAIN}/${userSlug}/${appSlug}`;
     
     // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     
     // Replace APP_TABLE_ID placeholder with actual app_slug
     code = replaceAppTableId(code, appSlug);
@@ -160,7 +170,7 @@ export async function saveCodeToSupabase(code, coach, userSlug, senderPhone, ori
         return { appSlug, publicUrl };
         
     } catch (error) {
-        logError(`Error saving to Supabase: ${error.message}`);
+        logError(`Error saving to Supabase: ${error instanceof Error ? error.message : String(error)}`);
         return { appSlug: null, publicUrl: null };
     }
 }
@@ -169,14 +179,19 @@ export async function saveCodeToSupabase(code, coach, userSlug, senderPhone, ori
  * Save code to legacy file system (for non-WTAF content)
  * Extracted from monitor.py save_code_to_file function
  */
-export async function saveCodeToFile(code, coach, slug, webOutputDir) {
+export async function saveCodeToFile(
+    code: string, 
+    coach: string, 
+    slug: string, 
+    webOutputDir: string
+): Promise<{ filename: string | null; publicUrl: string | null }> {
     const filename = `${slug}.html`;
     logWithTimestamp(`💾 Starting save_code_to_file: coach=${coach}, slug=${slug}`);
     
     const publicUrl = `${WEB_APP_URL}/lab/${filename}`;
     
     // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     
     // Inject OpenGraph tags into HTML  
     const ogImageUrl = `${WEB_APP_URL}/api/og-htmlcss?app=${slug}`;
@@ -201,7 +216,7 @@ export async function saveCodeToFile(code, coach, slug, webOutputDir) {
         logSuccess(`Saved HTML to: ${filepath}`);
         return { filename, publicUrl };
     } catch (error) {
-        logError(`Error writing file: ${error.message}`);
+        logError(`Error writing file: ${error instanceof Error ? error.message : String(error)}`);
         return { filename: null, publicUrl: null };
     }
 }
@@ -210,7 +225,12 @@ export async function saveCodeToFile(code, coach, slug, webOutputDir) {
  * Create required directories
  * Extracted from monitor.py directory creation logic
  */
-export async function createRequiredDirectories(processedDir, claudeOutputDir, webOutputDir, watchDirs) {
+export async function createRequiredDirectories(
+    processedDir: string, 
+    claudeOutputDir: string, 
+    webOutputDir: string, 
+    watchDirs: string[]
+): Promise<boolean> {
     logWithTimestamp("📁 Creating required directories...");
     
     try {
@@ -224,7 +244,7 @@ export async function createRequiredDirectories(processedDir, claudeOutputDir, w
                 }
                 logSuccess(`Created/verified: ${dir}`);
             } catch (error) {
-                logError(`Error creating directory ${dir}: ${error.message}`);
+                logError(`Error creating directory ${dir}: ${error instanceof Error ? error.message : String(error)}`);
                 throw error;
             }
         }
@@ -232,7 +252,7 @@ export async function createRequiredDirectories(processedDir, claudeOutputDir, w
         logSuccess("All directories created successfully");
         return true;
     } catch (error) {
-        logError(`Error creating directories: ${error.message}`);
+        logError(`Error creating directories: ${error instanceof Error ? error.message : String(error)}`);
         logError(`Current working directory: ${process.cwd()}`);
         throw error;
     }
