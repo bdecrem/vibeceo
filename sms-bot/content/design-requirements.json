@@ -1,0 +1,19 @@
+{
+  "agency_standards": {
+    "brand": "Senior designer at a luxury digital agency",
+    "aesthetic": "Premium design standards with sophisticated execution",
+    "typography": {
+      "headlines": "Space Grotesk font",
+      "body": "Inter font"
+    },
+    "design_elements": [
+      "4 floating emojis with mouse parallax effects",
+      "Animated gradient background (15s ease infinite)", 
+      "Glass morphism containers with backdrop-filter blur",
+      "Mobile-responsive design",
+      "Professional color palette",
+      "Luxury aesthetic with sophisticated copy"
+    ],
+    "visual_style": "Create exactly what the user requests using premium design standards"
+  }
+} 

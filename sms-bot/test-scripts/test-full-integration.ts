@@ -33,15 +33,18 @@ async function testFullIntegration() {
     
     for (let i = 0; i < tests.length; i++) {
         const test = tests[i];
-        console.log(`\n🔬 TEST ${i + 1}: ${test.name}`);
+        console.log(`\n🧪 Test ${i + 1}: ${test.input}`);
         console.log('-'.repeat(40));
-        console.log('Input:', test.input);
         
         try {
-            // Step 1: Test prompt generation
-            const expandedPrompt = await generateCompletePrompt(test.input);
-            console.log('✅ Prompt generation successful');
-            console.log('Expanded length:', expandedPrompt.length, 'chars');
+            const expandedPrompt = await generateCompletePrompt(test.input, {
+                classifierModel: 'gpt-4o',
+                classifierMaxTokens: 1000,
+                classifierTemperature: 0.7
+            });
+            
+            console.log(`📋 Expanded prompt (${expandedPrompt.length} chars):`, 
+                       expandedPrompt.slice(0, 100) + '...');
             
             if (test.expectsCoach) {
                 if (expandedPrompt.includes(`COACH_HANDLE: ${test.expectsCoach}`)) {
@@ -51,8 +54,14 @@ async function testFullIntegration() {
                 }
             }
             
-            // Step 2: Test HTML generation (same as controller.ts uses)
-            const htmlResult = await callClaude("", expandedPrompt);
+            // Step 2: Builder stage
+            console.log('\n🔧 Step 2: Builder stage...');
+            const htmlResult = await callClaude("", expandedPrompt, {
+                model: 'claude-3-5-sonnet-20241022',
+                maxTokens: 8192,
+                temperature: 0.7
+            });
+            
             console.log('✅ HTML generation successful');
             console.log('HTML result length:', htmlResult.length, 'chars');
             

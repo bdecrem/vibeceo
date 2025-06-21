@@ -1,0 +1,81 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bart Decrem - A Testimonial</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .testimonial-box {
+            border: 3px solid #ff3366;
+            padding: 30px;
+            margin-top: 50px;
+            background-color: #2a2a2a;
+            box-shadow: 8px 8px 0 #ff3366;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-transform: uppercase;
+            color: #ff3366;
+            text-shadow: 3px 3px #000;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .quote {
+            font-size: 1.2em;
+            border-left: 4px solid #ff3366;
+            padding-left: 20px;
+            margin: 20px 0;
+        }
+
+        .author {
+            font-size: 1.1em;
+            color: #ff3366;
+            text-align: right;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .safety-pin {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background-color: #ff3366;
+            border-radius: 50%;
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>// Bart Decrem //</h1>
+        
+        <div class="testimonial-box">
+            <div class="safety-pin"></div>
+            <div class="quote">
+                "Working with Bart Decrem was a transformative experience that shaped my understanding of leadership and innovation. His unique approach to problem-solving and ability to bring people together created an environment where creativity flourished. Bart's vision and dedication to excellence have left an indelible mark on everyone who has had the privilege of collaborating with him."
+            </div>
+            <div class="author">- ROHAN</div>
+        </div>
+    </div>
+</body>
+</html>
+```

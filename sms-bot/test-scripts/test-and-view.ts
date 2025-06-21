@@ -6,14 +6,22 @@ async function testAndView() {
   console.log('Testing new WTAF processor...');
   console.log('='.repeat(50));
   
-  const testInput = "wtaf -rohan- make a bio page for Bart Decrem that's just a testimonial from rohan";
-  console.log('Input:', testInput);
+  const testInput = "wtaf -rohan- build me a bio page about myself";
+  console.log(`\n🧪 Testing input: ${testInput}`);
   console.log('-'.repeat(30));
   
   try {
-    // Test the new 2-step process (same as controller.ts uses)
-    const expandedPrompt = await generateCompletePrompt(testInput);
-    const htmlResult = await callClaude("", expandedPrompt);
+    // Test the processor with sample input
+    const expandedPrompt = await generateCompletePrompt(testInput, {
+        classifierModel: 'gpt-4o',
+        classifierMaxTokens: 1000,
+        classifierTemperature: 0.7
+    });
+    const htmlResult = await callClaude("", expandedPrompt, {
+        model: 'claude-3-5-sonnet-20241022',
+        maxTokens: 8192,
+        temperature: 0.7
+    });
     
     console.log('AI Result length:', htmlResult.length, 'chars');
     
