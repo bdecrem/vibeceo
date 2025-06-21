@@ -1,0 +1,59 @@
+SENDER:+16508989508
+USER_SLUG:bart
+EDIT_TARGET:azure-lion-jumping
+EDIT_INSTRUCTIONS:make the background rainbow colors
+
+ORIGINAL_HTML:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-azure-lion-jumping.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/azure-lion-jumping" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <title>Punk Hello World</title>
+    <style>
+        body {
+            background-color: #ffff00;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Courier New", monospace;
+        }
+
+        .hello-text {
+            font-size: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #000;
+            text-shadow: 
+                3px 3px 0 #ff0000,
+                -3px -3px 0 #000;
+            transform: rotate(-5deg);
+            animation: punkPulse 1.5s infinite;
+        }
+
+        @keyframes punkPulse {
+            0% { transform: rotate(-5deg) scale(1); }
+            50% { transform: rotate(-5deg) scale(1.1); }
+            100% { transform: rotate(-5deg) scale(1); }
+        }
+
+        .hello-text:hover {
+            transform: rotate(5deg);
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="hello-text">Hello, World!</div>
+</body>
+</html>

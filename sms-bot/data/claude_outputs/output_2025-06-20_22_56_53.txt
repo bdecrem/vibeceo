@@ -1,0 +1,110 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bart Decrem | Testimonial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: #000;
+            color: #fff;
+            font-family: 'Special Elite', cursive;
+            background-image: url('data:image/svg+xml,%3Csvg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M8 16c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm33.414-6l5.95-5.95L45.95.636 40 6.586 34.05.636 32.636 2.05 38.586 8l-5.95 5.95 1.414 1.414L40 9.414l5.95 5.95 1.414-1.414L41.414 8zM40 48c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zM9.414 40l5.95-5.95-1.414-1.414L8 38.586l-5.95-5.95L.636 34.05 6.586 40l-5.95 5.95 1.414 1.414L8 41.414l5.95 5.95 1.414-1.414L9.414 40z" fill="%23222" fill-opacity="0.4" fill-rule="evenodd"/%3E%3C/svg%3E');
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            border-bottom: 3px solid #ff0066;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #ff0066;
+            text-shadow: 2px 2px #000;
+        }
+
+        .testimonial {
+            background: rgba(0,0,0,0.7);
+            padding: 40px;
+            border: 2px solid #ff0066;
+            position: relative;
+        }
+
+        .testimonial:before {
+            content: '"';
+            font-size: 120px;
+            position: absolute;
+            top: -40px;
+            left: 20px;
+            color: #ff0066;
+            opacity: 0.5;
+        }
+
+        .quote {
+            font-size: 24px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .author {
+            text-align: right;
+            font-size: 20px;
+            color: #ff0066;
+        }
+
+        .title {
+            font-size: 16px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 36px;
+            }
+            
+            .quote {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bart Decrem</h1>
+        </div>
+        
+        <div class="testimonial">
+            <div class="quote">
+                "Bart Decrem is a visionary leader who transformed how we think about mobile gaming. His work at Digital Chocolate and later founding Tapulous showed incredible foresight into the future of entertainment. What sets Bart apart is his unique ability to build teams that create magical experiences. He doesn't just see where technology is going - he helps shape its direction."
+            </div>
+            <div class="author">
+                - Rohan Chandran
+                <div class="title">Tech Industry Executive & Former Colleague</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```

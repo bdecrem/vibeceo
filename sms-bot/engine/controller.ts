@@ -18,7 +18,7 @@ import {
     logWarning 
 } from './shared/logger.js';
 import { extractCodeBlocks } from './shared/utils.js';
-import { generateCompletePrompt, callClaude } from './wtaf-processor.js';
+import { generateCompletePrompt, callClaude, type ClassifierConfig, type BuilderConfig } from './wtaf-processor.js';
 import { 
     saveCodeToSupabase, 
     saveCodeToFile, 
@@ -36,8 +36,41 @@ import {
 } from './file-watcher.js';
 
 /**
+ * REQUEST CONFIGURATIONS
+ * Controller (Restaurant Manager) decides business requirements:
+ * - What type of request is this?
+ * - Which model and settings should be used?
+ * - What are the token limits and temperature?
+ * 
+ * Processor (Chef) executes with provided config and handles fallbacks.
+ */
+const REQUEST_CONFIGS = {
+    creation: {
+        classifierModel: 'gpt-4o',
+        classifierMaxTokens: 1000,
+        classifierTemperature: 0.7,
+        builderModel: 'claude-3-5-sonnet-20241022',
+        builderMaxTokens: 8192,
+        builderTemperature: 0.7
+    },
+    edit: {
+        builderModel: 'claude-3-5-sonnet-20241022',
+        builderMaxTokens: 4096,  // Edits typically need less
+        builderTemperature: 0.5   // More conservative for edits
+    },
+    game: {
+        classifierModel: 'gpt-4o',
+        classifierMaxTokens: 1000,
+        classifierTemperature: 0.8,
+        builderModel: 'gpt-4o',    // Games might work better with GPT?
+        builderMaxTokens: 16000,
+        builderTemperature: 0.8
+    }
+} as const;
+
+/**
  * System prompt for creating new WTAF apps
- * Extracted from monitor.py system prompt
+ * TECHNICAL REQUIREMENTS ONLY - Design/brand requirements come from app-tech-spec.json cookbook
  */
 const CREATION_SYSTEM_PROMPT = `🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨
 🚨🚨🚨 READ THIS FIRST BEFORE ANYTHING ELSE 🚨🚨🚨
@@ -50,16 +83,7 @@ THIS IS NON-NEGOTIABLE
 
 🚨🚨🚨 END CRITICAL INSTRUCTION 🚨🚨🚨
 
-You are a senior designer at a luxury digital agency. Create exactly what the user requests using premium design standards.
-
-REQUIRED DESIGN ELEMENTS:
-- 4 floating emojis with mouse parallax effects
-- Animated gradient background (15s ease infinite)
-- Glass morphism containers with backdrop-filter blur
-- Space Grotesk font for headlines, Inter for body text
-- Mobile-responsive design
-- Professional color palette
-- Luxury aesthetic with sophisticated copy
+You are creating exactly what the user requests. Follow the WTAF Cookbook & Style Guide provided in the user message for all design and brand requirements.
 
 TECHNICAL REQUIREMENTS FOR APPS WITH FORMS:
 
@@ -106,22 +130,6 @@ a.click()
 5. Required script tag:
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-6. Floating emojis with parallax:
-<span class="emoji-1" data-value="2">🎉</span>
-<span class="emoji-2" data-value="3">✨</span>
-<span class="emoji-3" data-value="1">🥂</span>
-<span class="emoji-4" data-value="4">🗼</span>
-
-7. Parallax effect:
-document.addEventListener('mousemove', (e) => {
-  document.querySelectorAll('.floating-emojis span').forEach((elem) => {
-    const speed = elem.getAttribute('data-value')
-    const x = (e.clientX * speed) / 100
-    const y = (e.clientY * speed) / 100
-    elem.style.transform = \`translateX(\${x}px) translateY(\${y}px)\`
-  })
-})
-
 Use 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY' exactly as placeholders.
 Replace 'APP_TABLE_ID' with a unique identifier for this app.
 
@@ -163,16 +171,36 @@ async function processWtafRequest(processingPath: string, fileData: any, request
     const { coach, cleanPrompt } = requestInfo;
     
     try {
-        // Step 1: Generate complete prompt (Prompt 1 → Prompt 2)
+        // Determine request configuration based on content type
+        const isGameRequest = userPrompt.toLowerCase().includes('game') || 
+                             userPrompt.toLowerCase().includes('pong') ||
+                             userPrompt.toLowerCase().includes('puzzle') ||
+                             userPrompt.toLowerCase().includes('arcade');
+        
+        const configType = isGameRequest ? 'game' : 'creation';
+        const config = REQUEST_CONFIGS[configType];
+        
+        logWithTimestamp(`🎯 Using ${configType} configuration`);
+        logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
+        
+        // Step 1: Generate complete prompt with config
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
-        const completePrompt = await generateCompletePrompt(userPrompt);
+        const completePrompt = await generateCompletePrompt(userPrompt, {
+            classifierModel: config.classifierModel || 'gpt-4o',
+            classifierMaxTokens: config.classifierMaxTokens || 1000,
+            classifierTemperature: config.classifierTemperature || 0.7
+        });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
-        // Step 2: Send complete prompt to Claude (Prompt 2)
+        // Step 2: Send complete prompt to Claude with config
         logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
         logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
         
-        const result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt);
+        const result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
         
         // Step 3: Save Claude output to file
         const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
@@ -386,8 +414,16 @@ ${originalHtml}`;
         logWithTimestamp(`📏 Edit prompt length: ${editPrompt.length} chars`);
         logWithTimestamp(`📝 Edit prompt preview: ${editPrompt.slice(0, 200)}...`);
 
-        // Send to Claude
-        const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt);
+        // Send to Claude with edit configuration
+        const config = REQUEST_CONFIGS.edit;
+        logWithTimestamp(`🎯 Using edit configuration`);
+        logWithTimestamp(`🤖 Model: ${config.builderModel} (${config.builderMaxTokens} tokens)`);
+        
+        const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
         
         // Extract code blocks
         const modifiedCode = extractCodeBlocks(result);
@@ -496,4 +532,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         logError(`Fatal error: ${error.message}`);
         process.exit(1);
     });
-} 
+}

@@ -1,0 +1,62 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUNK HELLO WORLD</title>
+    <style>
+        body {
+            background-color: #000;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Courier New", monospace;
+        }
+
+        .container {
+            text-align: center;
+            animation: glitch 1s infinite;
+        }
+
+        h1 {
+            color: #0f0;
+            font-size: 4rem;
+            text-transform: uppercase;
+            text-shadow: 
+                2px 2px #f00,
+                -2px -2px #0ff;
+            letter-spacing: 5px;
+            margin: 0;
+            padding: 20px;
+            border: 3px solid #0f0;
+            background: rgba(0,255,0,0.1);
+        }
+
+        @keyframes glitch {
+            0% {transform: skew(0deg);}
+            20% {transform: skew(2deg);}
+            40% {transform: skew(-2deg);}
+            60% {transform: skew(1deg);}
+            80% {transform: skew(-1deg);}
+            100% {transform: skew(0deg);}
+        }
+
+        .safety-pin {
+            font-size: 2rem;
+            color: #fff;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="safety-pin">⚡</span>
+        <h1>Hello, World!</h1>
+        <span class="safety-pin">⚡</span>
+    </div>
+</body>
+</html>
+```
