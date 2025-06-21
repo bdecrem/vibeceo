@@ -98,7 +98,7 @@ async function loadWtafCookbook(): Promise<string | null> {
         
         // Convert cookbook to readable format for AI
         const cookbookText = `
-WTAF COOKBOOK & STYLE GUIDE:
+WTAF COOKBOOK & STYLE FUCKGUIDE:
 
 BRAND IDENTITY: ${cookbook.wtaf_design_system_prompt}
 
@@ -318,11 +318,24 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(`🎭 Coach detected for builder: ${coach}`);
     }
     
-    // STEP 3: Load the appropriate specialized builder
-    const builderFile = requestType === 'game' ? 'builder-game.json' : 'builder-app.json';
+    // STEP 3: Detect Zero Admin Data apps from classifier metadata
+    const zadMatch = userPrompt.match(/ZERO_ADMIN_DATA:\s*true/i);
+    const isZeroAdminData = zadMatch !== null;
+    
+    // STEP 4: Load the appropriate specialized builder
+    let builderFile: string;
+    if (requestType === 'game') {
+        builderFile = 'builder-game.json';
+    } else if (isZeroAdminData) {
+        builderFile = 'builder-zad-app.json';
+        logWithTimestamp(`🤝 ZERO ADMIN DATA app detected - using collaborative builder`);
+    } else {
+        builderFile = 'builder-app.json';
+    }
+    
     const builderPrompt = await loadPrompt(builderFile);
     
-    // STEP 4: Load WTAF Cookbook for app requests
+    // STEP 5: Load WTAF Cookbook for app requests (including ZAD apps)
     let wtafCookbook = null;
     if (requestType === 'app') {
         wtafCookbook = await loadWtafCookbook();
@@ -331,7 +344,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         }
     }
     
-    // STEP 5: Prepare coach-aware user prompt for builder
+    // STEP 6: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
     if (coach && coachPersonality) {
         builderUserPrompt += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
@@ -367,7 +380,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
 - ALWAYS use the exact placeholder [CONTACT_EMAIL] - this will be replaced later`;
     }
     
-    // STEP 6: Call AI with provided config and fallback logic
+    // STEP 7: Call AI with provided config and fallback logic
     logWithTimestamp(`🧠 Using ${config.model} with ${config.maxTokens} tokens...`);
     
     try {
