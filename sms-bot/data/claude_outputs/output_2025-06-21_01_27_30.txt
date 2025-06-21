@@ -1,0 +1,181 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>David Domenici | Educational Punk Revolutionary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --punk-red: #ff2e2e;
+            --punk-black: #111;
+            --punk-white: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--punk-black);
+            color: var(--punk-white);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(45deg, #111, #333);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjMDAwIi8+CjxwYXRoIGQ9Ik0wIDVMNSAwWk02IDRMNCA2Wk0tMSAxTDEgLTFaIiBzdHJva2U9IiNmZjJlMmUiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4=');
+            opacity: 0.1;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            line-height: 1;
+            text-shadow: 3px 3px var(--punk-red);
+        }
+
+        .glitch-text {
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            2% { transform: translate(2px, 0) skew(3deg); }
+            4% { transform: translate(-2px, 0) skew(-3deg); }
+            6% { transform: translate(0, 0) skew(0deg); }
+        }
+
+        .bio-section {
+            background: var(--punk-white);
+            color: var(--punk-black);
+            padding: 4rem 2rem;
+            clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%);
+        }
+
+        .bio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .bio-card {
+            background: var(--punk-black);
+            color: var(--punk-white);
+            padding: 2rem;
+            border: 2px solid var(--punk-red);
+            transform: rotate(-1deg);
+            transition: transform 0.3s ease;
+        }
+
+        .bio-card:hover {
+            transform: rotate(1deg) scale(1.02);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--punk-red);
+            padding: 1rem 2rem;
+            border: none;
+            color: var(--punk-white);
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transform: rotate(-2deg);
+        }
+
+        .cta:hover {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1 class="glitch-text">David Domenici</h1>
+            <h2>Educational Punk Revolutionary & Breakdancing Enthusiast</h2>
+            <p>Breaking free from the system since Stanford Law ⚡</p>
+        </div>
+        <span class="floating-emoji" style="top: 20%; left: 20%">🎓</span>
+        <span class="floating-emoji" style="top: 40%; right: 30%">⚡</span>
+        <span class="floating-emoji" style="bottom: 30%; left: 40%">💥</span>
+    </div>
+
+    <section class="bio-section">
+        <div class="container">
+            <div class="bio-grid">
+                <div class="bio-card">
+                    <h3>The Revolutionary</h3>
+                    <p>Executive Director of BreakFree Education, turning juvenile detention centers into academies of hope. Founded Maya Angelou Schools because the system needed a wake-up call.</p>
+                </div>
+                <div class="bio-card">
+                    <h3>The Human</h3>
+                    <p>DC resident. Dog dad to three. Recently emptied nester. Self-proclaimed worst breakdancer in the capital (but still trying). Married to the amazing Cheryl Mills.</p>
+                </div>
+                <div class="bio-card">
+                    <h3>The Legacy</h3>
+                    <p>Travis Hill School in NOLA? That's his jam. Maya Angelou Academy? "One of the best schools we've ever seen" - Not his words, the accreditors'.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <button class="cta">Text START to +1-866-330-0015 to join the revolution</button>
+
+    <script>
+        // Easter egg: Type 'WTAF' anywhere on the page
+        let keys = [];
+        document.addEventListener('keyup', (e) => {
+            keys.push(e.key);
+            if (keys.join('').toLowerCase().includes('wtaf')) {
+                alert('🎉 You found the secret! Welcome to the educational resistance!');
+                keys = [];
+            }
+        });
+    </script>
+</body>
+</html>
+```

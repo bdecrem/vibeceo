@@ -1844,7 +1844,7 @@ ${response}`;
 
     // Check for commands that should end the conversation
     const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i)) {
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -2057,6 +2057,79 @@ ${response}`;
         );
       }
       return;
+    }
+    
+    // 🪄 PARTY TRICK: Detect email address automatically - Magic email completion
+    const emailRegex = /([^\s@]+@[^\s@]+\.[^\s@]+)/;
+    const emailMatch = message.match(emailRegex);
+    
+    if (emailMatch) {
+      const email = emailMatch[1].trim();
+      console.log(`🪄 Auto-detected email address: ${email} from ${from}`);
+      
+      try {
+        // Get subscriber info
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || !subscriber.slug) {
+          // User doesn't have WTAF pages, just continue with normal processing
+          console.log(`User ${normalizedPhoneNumber} sent email but has no WTAF pages - continuing with normal flow`);
+        } else {
+          const userSlug = subscriber.slug;
+          
+          // Find the most recent page that needs an email (simplified detection)
+          const { data: emailPages, error } = await supabase
+            .from('wtaf_content')
+            .select('app_slug, html_content, original_prompt, created_at')
+            .eq('user_slug', userSlug)
+            .is('email', null)  // Email not already filled
+            .ilike('html_content', '%[CONTACT_EMAIL]%')  // Contains placeholders
+            .order('created_at', { ascending: false })
+            .limit(1);
+            
+          if (error) {
+            console.error(`Error finding email-needed pages: ${error}`);
+            // Continue with normal processing instead of showing error
+          } else if (emailPages && emailPages.length > 0) {
+            const page = emailPages[0];
+            console.log(`🪄 Found email-needed page: ${page.app_slug}`);
+            
+            // Replace [CONTACT_EMAIL] placeholders with real email
+            const updatedHtml = page.html_content.replace(/\[CONTACT_EMAIL\]/g, email);
+            
+            // Verify replacement actually happened
+            if (updatedHtml !== page.html_content) {
+              // Update the database with the new HTML and email
+              const { error: updateError } = await supabase
+                .from('wtaf_content')
+                .update({ 
+                  html_content: updatedHtml,
+                  email: email,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('user_slug', userSlug)
+                .eq('app_slug', page.app_slug);
+                
+                             if (!updateError) {
+                  // 🎉 MAGIC SUCCESS! 
+                  await sendSmsResponse(
+                    from,
+                    `🪄✨`,
+                    twilioClient
+                  );
+                  
+                  console.log(`🎉 PARTY TRICK SUCCESS: ${normalizedPhoneNumber} completed ${page.app_slug} with email ${email}`);
+                  return; // End processing here - magic complete!
+              } else {
+                console.error(`Error updating page with email: ${updateError}`);
+                // Continue with normal processing instead of showing error
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error in email auto-detection: ${error}`);
+        // Continue with normal processing instead of showing error
+      }
     }
     
     // Check for interactive commands

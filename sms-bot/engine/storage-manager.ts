@@ -193,6 +193,7 @@ async function getUserId(userSlug: string): Promise<string | null> {
 /**
  * Save HTML content to Supabase database
  * Extracted from monitor.py save_code_to_supabase function
+ * PARTY TRICK: Email detection happens via HTML content analysis (no extra columns needed)
  */
 export async function saveCodeToSupabase(
     code: string, 
@@ -257,6 +258,7 @@ export async function saveCodeToSupabase(
             original_prompt: originalPrompt,
             html_content: code,
             status: 'published'
+            // PARTY TRICK: No extra columns needed - we detect via HTML content + email column
         };
         
         const { error } = await getSupabaseClient()

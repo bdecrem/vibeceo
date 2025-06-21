@@ -1,0 +1,187 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>David Domenici | Educational Punk Revolutionary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: linear-gradient(45deg, #FF2E93, #7C3AED);
+            --gradient-2: linear-gradient(135deg, #3F88FF, #00FFC6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: var(--gradient-1);
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+            animation: glitch 3s infinite;
+        }
+
+        .section {
+            margin: 4rem 0;
+            padding: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        .achievements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .achievement-card {
+            background: var(--gradient-2);
+            padding: 2rem;
+            border-radius: 10px;
+            transform: skew(-5deg);
+            transition: transform 0.3s;
+        }
+
+        .achievement-card:hover {
+            transform: skew(-5deg) scale(1.05);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>DAVID DOMENICI</h1>
+        <p>Educational Punk Revolutionary & Breakdancing Scholar</p>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>PROFESSIONAL CHAOS 🚀</h2>
+            <div class="achievements">
+                <div class="achievement-card">
+                    <h3>BreakFree Education</h3>
+                    <p>Smashing educational barriers like a pedagogical punk rocker</p>
+                </div>
+                <div class="achievement-card">
+                    <h3>Travis Hill School</h3>
+                    <p>Turned a detention center into Louisiana's most radical learning lab</p>
+                </div>
+                <div class="achievement-card">
+                    <h3>Maya Angelou Schools</h3>
+                    <p>Co-founded DC's most revolutionary educational experiment</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>PERSONAL REBELLION 💥</h2>
+            <p>DC resident. Husband to Cheryl Mills. Dog dad x3. Wannabe baller with questionable breakdancing skills that would make your grandmother cringe (in the best way possible).</p>
+        </div>
+    </div>
+
+    <div class="cta">
+        📱 Text START to +1-866-330-0015 to join the educational revolution
+    </div>
+
+    <div class="floating-emoji" style="top: 20%; left: 20%">🎓</div>
+    <div class="floating-emoji" style="top: 40%; right: 30%">⚡</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 40%">🚀</div>
+    <div class="floating-emoji" style="bottom: 20%; right: 20%">💥</div>
+
+    <script>
+        // Easter egg - type "WTAF" to trigger
+        let keys = [];
+        document.addEventListener('keyup', (e) => {
+            keys.push(e.key);
+            if (keys.join('').includes('WTAF')) {
+                alert('🎉 YOU FOUND THE SECRET! Welcome to the educational resistance!');
+                keys = [];
+            }
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 50;
+                const offsetY = (mouseY - 0.5) * 50;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

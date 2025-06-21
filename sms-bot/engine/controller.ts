@@ -35,6 +35,8 @@ import {
     moveProcessedFile 
 } from './file-watcher.js';
 
+
+
 /**
  * REQUEST CONFIGURATIONS
  * Controller (Restaurant Manager) decides business requirements:
@@ -84,6 +86,16 @@ THIS IS NON-NEGOTIABLE
 🚨🚨🚨 END CRITICAL INSTRUCTION 🚨🚨🚨
 
 You are creating exactly what the user requests. Follow the WTAF Cookbook & Style Guide provided in the user message for all design and brand requirements.
+
+📧 EMAIL PLACEHOLDER SYSTEM:
+IF YOU SEE "EMAIL_NEEDED: true" IN THE USER MESSAGE METADATA:
+- Use [CONTACT_EMAIL] as placeholder in ALL email contexts
+- Examples: 
+  * Contact links: <a href="mailto:[CONTACT_EMAIL]">Email me: [CONTACT_EMAIL]</a>
+  * Contact info: "Questions? Email us at [CONTACT_EMAIL]"
+  * Business contact: "Hire me: [CONTACT_EMAIL]"
+- NEVER use fake emails like "example@email.com" or "your-email@domain.com"
+- ALWAYS use the exact placeholder [CONTACT_EMAIL] - this will be replaced later
 
 TECHNICAL REQUIREMENTS FOR APPS WITH FORMS:
 
@@ -192,6 +204,8 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
+        // PARTY TRICK: Email detection happens via HTML content analysis later
+        
         // Step 2: Send complete prompt to Claude with config
         logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
         logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
@@ -296,7 +310,9 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                     logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
                 
-                await sendSuccessNotification(publicUrl, adminUrl, senderPhone);
+                // PARTY TRICK: Check if page needs email completion (simplified detection)
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(publicUrl, adminUrl, senderPhone, needsEmail);
                 logWithTimestamp("=" + "=".repeat(79));
                 logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
                 logWithTimestamp(`🌐 Final URL: ${publicUrl}`);
@@ -332,7 +348,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                     logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
                 
-                await sendSuccessNotification(result.publicUrl, null, senderPhone);
+                await sendSuccessNotification(result.publicUrl, null, senderPhone, false);
                 logWithTimestamp("=" + "=".repeat(79));
                 logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
                 logWithTimestamp(`🌐 Final URL: ${result.publicUrl}`);
@@ -440,7 +456,7 @@ ${originalHtml}`;
         if (success) {
             // Get the URL for notification - include user slug for correct WTAF path
             const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${editTarget}`;
-            await sendSuccessNotification(pageUrl, null, senderPhone);
+            await sendSuccessNotification(pageUrl, null, senderPhone, false);
             logSuccess(`✅ Edit completed successfully: ${pageUrl}`);
             return true;
         } else {
