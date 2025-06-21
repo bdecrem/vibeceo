@@ -74,13 +74,24 @@ export async function sendConfirmationSms(message: string, phoneNumber: string |
  * Send success notification with URLs
  * Helper function for successful WTAF creation
  */
-export async function sendSuccessNotification(publicUrl: string, adminUrl: string | null = null, senderPhone: string | null = null): Promise<boolean> {
+export async function sendSuccessNotification(publicUrl: string, adminUrl: string | null = null, senderPhone: string | null = null, emailNeeded: boolean = false): Promise<boolean> {
     try {
         let message;
-        if (adminUrl) {
-            message = `📱 Your app: ${publicUrl}\n📊 View data: ${adminUrl}`;
+        
+        if (emailNeeded) {
+            // PARTY TRICK: Send "one more thing" message for email-only pages
+            if (adminUrl) {
+                message = `🎉 Your app: ${publicUrl}\n📊 View data: ${adminUrl}\n\n✨ For 👨‍🍳💋 text back with your email.`;
+            } else {
+                message = `🎉 Your app: ${publicUrl}\n\n✨ For 👨‍🍳💋 text back with your email.`;
+            }
         } else {
-            message = `📱 Your app is ready to use: ${publicUrl}`;
+            // Normal success message
+            if (adminUrl) {
+                message = `📱 Your app: ${publicUrl}\n📊 View data: ${adminUrl}`;
+            } else {
+                message = `📱 Your app is ready to use: ${publicUrl}`;
+            }
         }
         
         await sendConfirmationSms(message, senderPhone);

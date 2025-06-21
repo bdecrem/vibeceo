@@ -353,6 +353,20 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         systemPrompt = (builderPrompt as any).content || systemPrompt;
     }
     
+    // PARTY TRICK: Inject email placeholder instructions when needed
+    const emailMetadataMatch = userPrompt.match(/EMAIL_NEEDED:\s*true/i);
+    if (emailMetadataMatch && requestType === 'app') {
+        logWithTimestamp(`✨ PARTY TRICK: Injecting email placeholder instructions`);
+        systemPrompt += `\n\n📧 EMAIL PLACEHOLDER SYSTEM:
+- Use [CONTACT_EMAIL] as placeholder in ALL email contexts
+- Examples: 
+  * Contact links: <a href="mailto:[CONTACT_EMAIL]">Email me: [CONTACT_EMAIL]</a>
+  * Contact info: "Questions? Email us at [CONTACT_EMAIL]"
+  * Business contact: "Hire me: [CONTACT_EMAIL]"
+- NEVER use fake emails like "example@email.com" or "your-email@domain.com"
+- ALWAYS use the exact placeholder [CONTACT_EMAIL] - this will be replaced later`;
+    }
+    
     // STEP 6: Call AI with provided config and fallback logic
     logWithTimestamp(`🧠 Using ${config.model} with ${config.maxTokens} tokens...`);
     

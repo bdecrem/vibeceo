@@ -1,0 +1,153 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO_WORLD.EXE // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 2;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, #FF2E93, #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glitch 3s ease infinite;
+        }
+
+        .contact-btn {
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 46, 147, 0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            40% { transform: skew(-10deg); }
+            60% { transform: skew(5deg); }
+            80% { transform: skew(-5deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 46, 147, 0.2);
+            padding: 1rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">HELLO_WORLD.EXE</h1>
+        <a href="mailto:[CONTACT_EMAIL]" class="contact-btn">INITIATE CONTACT PROTOCOL ⚡</a>
+    </div>
+
+    <span class="floating-emoji" style="top: 20%; left: 20%">✨</span>
+    <span class="floating-emoji" style="top: 70%; left: 80%">🚀</span>
+    <span class="floating-emoji" style="top: 40%; left: 85%">💀</span>
+    <span class="floating-emoji" style="top: 80%; left: 15%">⚡</span>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: Create a punk "Hello World" contact page
+    </div>
+
+    <script>
+        // Easter egg: Type 'WTAF' for surprise
+        let buffer = '';
+        document.addEventListener('keypress', (e) => {
+            buffer += e.key;
+            if (buffer.toLowerCase().includes('wtaf')) {
+                document.body.style.animation = 'glitch 0.3s infinite';
+                setTimeout(() => {
+                    alert('🎉 CHAOS MODE ACTIVATED 🎉');
+                    document.body.style.animation = '';
+                }, 1000);
+                buffer = '';
+            }
+        });
+
+        // Parallax effect on emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 50;
+                const offsetY = (mouseY - 0.5) * 50;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
