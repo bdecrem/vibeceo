@@ -1,0 +1,340 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ Async Chat Confetti</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gradient: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #111;
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient 15s ease infinite;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .onboarding {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .chat-container {
+      display: none;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .messages {
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 2rem;
+      padding: 1rem;
+    }
+
+    .message {
+      background: rgba(255,255,255,0.1);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      animation: confetti-drop 0.5s ease-out;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 1rem;
+    }
+
+    input, button {
+      padding: 1rem;
+      border-radius: 8px;
+      border: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    input {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    button {
+      background: var(--gradient);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      filter: brightness(1.2);
+    }
+
+    .floating-emoji {
+      position: fixed;
+      pointer-events: none;
+      font-size: 2rem;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    @keyframes confetti-drop {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="2">✨</div>
+  <div class="floating-emoji" style="top: 20%; right: 20%;" data-value="3">🌈</div>
+  <div class="floating-emoji" style="bottom: 15%; left: 15%;" data-value="4">💫</div>
+  <div class="floating-emoji" style="bottom: 25%; right: 25%;" data-value="5">⚡</div>
+
+  <div class="container">
+    <div class="onboarding" id="onboarding">
+      <h1>async confetti chat ✨</h1>
+      <div id="start-join-choice">
+        <h2>are you...</h2>
+        <button onclick="showStartFlow()">starting a new chat</button>
+        <button onclick="showJoinFlow()">joining an existing chat</button>
+      </div>
+      <div id="start-flow" style="display:none;">
+        <h2>pick your emoji identity:</h2>
+        <div id="emoji-choices">
+          🐱 🐶 🐰 🦊 🐼 🐨
+        </div>
+        <p id="passcode-display"></p>
+      </div>
+      <div id="join-flow" style="display:none;">
+        <h2>enter the secret passcode:</h2>
+        <input type="text" id="passcode-input" placeholder="passcode">
+        <div id="emoji-choices-join">
+          🐱 🐶 🐰 🦊 🐼 🐨
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chat">
+      <div class="messages" id="messages"></div>
+      <div class="input-area">
+        <input type="text" id="message-input" placeholder="type your message...">
+        <button onclick="sendMessage()">Cast It ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const APP_ID = 'async_confetti_chat';
+    const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+    
+    let currentEmoji = '';
+    let currentPasscode = '';
+
+    async function saveUser(emoji, passcode) {
+      const { data, error } = await supabase
+        .from('wtaf_zero_admin_collaborative')
+        .insert({
+          app_id: APP_ID,
+          action_type: 'join',
+          participant_id: emoji,
+          participant_data: { passcode: passcode },
+          content_data: null
+        });
+      
+      if (error) {
+        console.error('Error saving user:', error);
+        return false;
+      }
+      return true;
+    }
+
+    async function saveMessage(emoji, content) {
+      const { data, error } = await supabase
+        .from('wtaf_zero_admin_collaborative')
+        .insert({
+          app_id: APP_ID,
+          action_type: 'message',
+          participant_id: emoji,
+          participant_data: null,
+          content_data: { message: content, timestamp: new Date().toISOString() }
+        });
+      
+      if (error) {
+        console.error('Error saving message:', error);
+        return false;
+      }
+      return true;
+    }
+
+    async function loadData() {
+      const { data, error } = await supabase
+        .from('wtaf_zero_admin_collaborative')
+        .select('*')
+        .eq('app_id', APP_ID)
+        .order('created_at', { ascending: true });
+        
+      if (error) {
+        console.error('Database error:', error);
+        return [];
+      }
+      
+      return data || [];
+    }
+
+    async function validateUser(emoji, passcode) {
+      const { data, error } = await supabase
+        .from('wtaf_zero_admin_collaborative')
+        .select('*')
+        .eq('app_id', APP_ID)
+        .eq('action_type', 'join')
+        .eq('participant_id', emoji);
+        
+      if (error) {
+        console.error('Validation error:', error);
+        return false;
+      }
+      
+      if (data && data.length > 0) {
+        const user = data[0];
+        return user.participant_data && user.participant_data.passcode === passcode;
+      }
+      
+      return false;
+    }
+
+    function generatePasscode() {
+      return Math.random().toString(36).substring(2, 8);
+    }
+
+    function showStartFlow() {
+      document.getElementById('start-join-choice').style.display = 'none';
+      document.getElementById('start-flow').style.display = 'block';
+      
+      const emojis = document.getElementById('emoji-choices').children;
+      for (let emoji of emojis) {
+        emoji.onclick = async () => {
+          currentEmoji = emoji.textContent;
+          currentPasscode = generatePasscode();
+          document.getElementById('passcode-display').textContent = 
+            `You are ${currentEmoji}! Your passcode is: ${currentPasscode}`;
+          
+          await saveUser(currentEmoji, currentPasscode);
+          startChat();
+        };
+      }
+    }
+
+    function showJoinFlow() {
+      document.getElementById('start-join-choice').style.display = 'none';
+      document.getElementById('join-flow').style.display = 'block';
+      
+      const emojis = document.getElementById('emoji-choices-join').children;
+      for (let emoji of emojis) {
+        emoji.onclick = async () => {
+          const passcode = document.getElementById('passcode-input').value;
+          if (await validateUser(emoji.textContent, passcode)) {
+            currentEmoji = emoji.textContent;
+            currentPasscode = passcode;
+            startChat();
+          } else {
+            alert('Invalid passcode!');
+          }
+        };
+      }
+    }
+
+    async function startChat() {
+      document.getElementById('onboarding').style.display = 'none';
+      document.getElementById('chat').style.display = 'block';
+      await refreshMessages();
+    }
+
+    async function refreshMessages() {
+      const messages = await loadData();
+      const messageContainer = document.getElementById('messages');
+      messageContainer.innerHTML = '';
+      
+      if (messages && Array.isArray(messages)) {
+        messages.forEach(msg => {
+          if (msg.action_type === 'message' && msg.content_data && msg.content_data.message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `${msg.participant_id}: ${msg.content_data.message}`;
+            messageContainer.appendChild(messageDiv);
+          }
+        });
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value.trim();
+      
+      if (message) {
+        await saveMessage(currentEmoji, message);
+        input.value = '';
+        await refreshMessages();
+      }
+    }
+
+    // Easter egg
+    let clicks = 0;
+    document.querySelector('h1').addEventListener('click', () => {
+      clicks++;
+      if (clicks === 5) {
+        document.body.style.animation = 'gradient 5s ease infinite';
+        alert('🎉 You found the secret rainbow mode!');
+      }
+    });
+
+    // Parallax floating emojis
+    document.addEventListener('mousemove', (e) => {
+      document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+        const speed = emoji.getAttribute('data-value') || 2;
+        const x = (e.clientX * speed) / 100;
+        const y = (e.clientY * speed) / 100;
+        emoji.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    });
+  </script>
+</body>
+</html>
+```

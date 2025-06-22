@@ -1,0 +1,285 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Secret Chat Space</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .onboarding {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .onboarding h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 15s ease infinite;
+        }
+
+        .chat-container {
+            display: none;
+            height: 80vh;
+            background: rgba(255,255,255,0.05);
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+        }
+
+        .messages {
+            height: calc(100% - 80px);
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-width: 80%;
+            animation: messageIn 0.3s ease-out;
+        }
+
+        .message.sent {
+            background: var(--gradient);
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: rgba(255,255,255,0.1);
+            margin-right: auto;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        input, button {
+            padding: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        button {
+            background: var(--gradient);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease-out;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes messageIn {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="onboarding" id="onboarding">
+            <h1>✨ Your Secret Chat Space</h1>
+            <div id="start-options">
+                <button onclick="showStartNew()">Start New Space</button>
+                <button onclick="showJoinSpace()">Join Space</button>
+            </div>
+            <div id="emoji-select" style="display:none;">
+                <h2>Pick your emoji identity:</h2>
+                <div id="emoji-grid"></div>
+            </div>
+            <div id="passcode-display" style="display:none;"></div>
+            <div id="join-form" style="display:none;">
+                <input type="text" id="join-passcode" placeholder="Enter passcode">
+                <button onclick="validatePasscode()">Join Space</button>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chat">
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type your message...">
+                <button onclick="sendMessage()">Cast It ✨</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const APP_ID = 'secret_chat_' + window.location.pathname.slice(1);
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        
+        let currentEmoji = '';
+        let currentPasscode = '';
+
+        const emojis = ['🌸', '🌟', '🦋', '🌈', '🍀', '🌙'];
+        
+        function showStartNew() {
+            document.getElementById('start-options').style.display = 'none';
+            document.getElementById('emoji-select').style.display = 'block';
+            
+            const emojiGrid = document.getElementById('emoji-grid');
+            emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.textContent = emoji;
+                btn.onclick = () => selectEmoji(emoji, true);
+                emojiGrid.appendChild(btn);
+            });
+        }
+
+        function showJoinSpace() {
+            document.getElementById('start-options').style.display = 'none';
+            document.getElementById('join-form').style.display = 'block';
+        }
+
+        async function selectEmoji(emoji, isNew) {
+            currentEmoji = emoji;
+            if (isNew) {
+                currentPasscode = 'moon' + Math.floor(Math.random() * 100);
+                await saveUser(emoji, currentPasscode);
+                document.getElementById('emoji-select').style.display = 'none';
+                document.getElementById('passcode-display').style.display = 'block';
+                document.getElementById('passcode-display').innerHTML = 
+                    `You are ${emoji}<br>Your passcode is: ${currentPasscode}`;
+                setTimeout(startChat, 2000);
+            }
+        }
+
+        async function validatePasscode() {
+            const passcode = document.getElementById('join-passcode').value;
+            const isValid = await validateUser(currentEmoji, passcode);
+            if (isValid) {
+                currentPasscode = passcode;
+                startChat();
+            }
+        }
+
+        async function startChat() {
+            document.getElementById('onboarding').style.display = 'none';
+            document.getElementById('chat').style.display = 'block';
+            loadMessages();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            if (message) {
+                await saveMessage(currentEmoji, message);
+                input.value = '';
+                loadMessages();
+            }
+        }
+
+        async function loadMessages() {
+            const messages = await loadData();
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            
+            messages.forEach(msg => {
+                if (msg.action_type === 'message' && msg.content_data?.message) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.participant_id === currentEmoji ? 'sent' : 'received'}`;
+                    messageDiv.innerHTML = `
+                        <div>${msg.participant_id} ${msg.content_data.message}</div>
+                        <small>${new Date(msg.created_at).toLocaleTimeString()}</small>
+                    `;
+                    messagesDiv.appendChild(messageDiv);
+                }
+            });
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Add floating emojis
+        emojis.forEach((emoji, i) => {
+            const floating = document.createElement('div');
+            floating.className = 'floating-emoji';
+            floating.textContent = emoji;
+            floating.style.left = `${Math.random() * 100}vw`;
+            floating.style.top = `${Math.random() * 100}vh`;
+            floating.style.animation = `float ${3 + i}s ease-in-out infinite`;
+            document.body.appendChild(floating);
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.background = 'var(--gradient)';
+                setTimeout(() => document.body.style.background = '#111', 1000);
+            }
+        });
+    </script>
+</body>
+</html>
+```

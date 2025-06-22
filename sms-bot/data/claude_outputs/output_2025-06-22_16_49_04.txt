@@ -1,0 +1,193 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMOJI CHAOS CHAT // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            --gradient-2: linear-gradient(45deg, #3F88FF, #6E7FFF, #ABF7FF);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-shift 8s ease infinite;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .chat-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-input {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        input, button {
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        button {
+            background: var(--gradient-2);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gradient-1);
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>EMOJI CHAOS CHAT</h1>
+            <p>because regular messaging apps are for COWARDS</p>
+            <div class="floating-emoji" style="top: 20%; left: 20%">✨</div>
+            <div class="floating-emoji" style="top: 30%; right: 25%">🌀</div>
+            <div class="floating-emoji" style="bottom: 40%; left: 30%">🚀</div>
+            <div class="floating-emoji" style="bottom: 20%; right: 20%">🦄</div>
+        </div>
+
+        <div class="chat-container">
+            <h2>SELECT YOUR CHAOS IDENTITY</h2>
+            <div class="message-input">
+                <input type="text" placeholder="Pick your emoji warrior name...">
+                <button>UNLEASH CHAOS ⚡</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt-display">
+        Generated from: Chat page request with punk aesthetic
+    </div>
+
+    <script>
+        // Easter egg: Type 'WTAF' anywhere
+        let wtafBuffer = '';
+        document.addEventListener('keypress', (e) => {
+            wtafBuffer += e.key;
+            if(wtafBuffer.toLowerCase().includes('wtaf')) {
+                alert('🎉 YOU FOUND THE CHAOS CODE! WELCOME TO THE VOID!');
+                document.body.style.animation = 'gradient-shift 2s infinite';
+                wtafBuffer = '';
+            }
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth - 0.5;
+            const mouseY = e.clientY / window.innerHeight - 0.5;
+
+            emojis.forEach(emoji => {
+                const speed = 20;
+                emoji.style.transform = `translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

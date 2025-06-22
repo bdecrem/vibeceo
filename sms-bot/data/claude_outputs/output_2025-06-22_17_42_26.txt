@@ -1,0 +1,305 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Note Wall</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #111;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 15s ease infinite;
+        }
+
+        .onboarding {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .choice-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--gradient);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-container {
+            display: none;
+            padding: 2rem;
+        }
+
+        .messages {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 1rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .message {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 20%; right: 20%;" data-value="3">🌸</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 30%;" data-value="4">💫</div>
+    <div class="floating-emoji" style="bottom: 10%; right: 10%;" data-value="5">🌟</div>
+
+    <div class="container">
+        <div id="onboarding" class="onboarding">
+            <h1>✨ Your Secret Note Wall ✨</h1>
+            <div class="choice-buttons">
+                <button class="btn" onclick="startNew()">Start New Space</button>
+                <button class="btn" onclick="joinExisting()">Join Existing</button>
+            </div>
+            <div id="setup-form" style="display: none;">
+                <input type="text" id="emoji-input" placeholder="Choose your emoji" class="message-input">
+                <input type="text" id="passcode-input" placeholder="Enter passcode" class="message-input">
+                <button class="btn" onclick="authenticate()">Cast It ✨</button>
+            </div>
+        </div>
+
+        <div id="chat" class="chat-container">
+            <h2>Your Sticky Note Wall</h2>
+            <div id="messages" class="messages"></div>
+            <input type="text" id="message-input" placeholder="Leave a note..." class="message-input">
+            <button class="btn" onclick="sendMessage()">Cast It ✨</button>
+        </div>
+    </div>
+
+    <div class="easter-egg">Type 'WTAF' for a surprise ✨</div>
+
+    <script>
+        const APP_ID = 'sticky_note_wall';
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        let currentUser = null;
+        let isNewSpace = false;
+
+        function startNew() {
+            isNewSpace = true;
+            document.getElementById('setup-form').style.display = 'block';
+            document.getElementById('emoji-input').placeholder = 'Choose your emoji';
+            document.getElementById('passcode-input').value = generatePasscode();
+            document.getElementById('passcode-input').readOnly = true;
+        }
+
+        function joinExisting() {
+            isNewSpace = false;
+            document.getElementById('setup-form').style.display = 'block';
+            document.getElementById('passcode-input').readOnly = false;
+            document.getElementById('passcode-input').value = '';
+        }
+
+        function generatePasscode() {
+            return Math.random().toString(36).substring(2, 8);
+        }
+
+        async function authenticate() {
+            const emoji = document.getElementById('emoji-input').value;
+            const passcode = document.getElementById('passcode-input').value;
+
+            if (!emoji || !passcode) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            try {
+                if (isNewSpace) {
+                    await saveUser(emoji, passcode);
+                } else {
+                    const { data, error } = await supabase
+                        .from('wtaf_zero_admin_collaborative')
+                        .select('*')
+                        .eq('app_id', APP_ID)
+                        .eq('passcode', passcode);
+
+                    if (!data || data.length === 0) {
+                        alert('Invalid passcode!');
+                        return;
+                    }
+                }
+
+                currentUser = emoji;
+                document.getElementById('onboarding').style.display = 'none';
+                document.getElementById('chat').style.display = 'block';
+                loadMessages();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Something went wrong!');
+            }
+        }
+
+        async function saveUser(emoji, passcode) {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .insert({
+                    app_id: APP_ID,
+                    action_type: 'join',
+                    user_identifier: emoji,
+                    passcode: passcode,
+                    content: null
+                });
+
+            if (error) throw error;
+        }
+
+        async function sendMessage() {
+            const content = document.getElementById('message-input').value;
+            if (!content) return;
+
+            try {
+                await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .insert({
+                        app_id: APP_ID,
+                        action_type: 'message',
+                        user_identifier: currentUser,
+                        content: content
+                    });
+
+                document.getElementById('message-input').value = '';
+                loadMessages();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to send message!');
+            }
+        }
+
+        async function loadMessages() {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'message')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            
+            data.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `${msg.user_identifier}: ${msg.content}`;
+                messagesDiv.appendChild(messageDiv);
+            });
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Easter egg
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if (wtafCode.endsWith('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 You found the secret! Welcome to the WTAF dimension!');
+                wtafCode = '';
+            }
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

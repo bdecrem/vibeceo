@@ -1,0 +1,195 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .sent {
+            background: #FF2E93;
+            margin-left: auto;
+        }
+
+        .received {
+            background: #3F88FF;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Easter egg animation */
+        .rage-mode {
+            animation: rage 0.1s infinite;
+        }
+
+        @keyframes rage {
+            0% { transform: translate(-2px, -2px); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, 2px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%">💀</div>
+    <div class="floating-emoji" data-value="3" style="top: 20%; right: 20%">⚡</div>
+    <div class="floating-emoji" data-value="4" style="bottom: 15%; left: 25%">🔥</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 30%; right: 15%">💣</div>
+
+    <div class="container">
+        <h1>CHAT OR DIE</h1>
+        <div class="chat-container" id="chat">
+            <div class="message received">sup rebel</div>
+            <div class="message sent">ready to rage?</div>
+        </div>
+        <div class="input-container">
+            <input type="text" placeholder="Type your chaos..." id="messageInput">
+            <button onclick="sendMessage()">SEND IT</button>
+        </div>
+    </div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const chat = document.getElementById('chat');
+            
+            if(input.value.trim()) {
+                const message = document.createElement('div');
+                message.className = 'message sent';
+                message.textContent = input.value;
+                chat.appendChild(message);
+                input.value = '';
+                chat.scrollTop = chat.scrollHeight;
+            }
+        }
+
+        // Easter egg: Type "RAGE" to activate rage mode
+        let typed = '';
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase();
+            if(typed.includes('rage')) {
+                document.body.classList.add('rage-mode');
+                setTimeout(() => {
+                    document.body.classList.remove('rage-mode');
+                }, 1000);
+                typed = '';
+            }
+        });
+
+        // Enter key to send
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,171 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOXIC TIPS 💅 | Your New Nail Obsession</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .hero {
+            background: var(--gradient);
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            text-shadow: 3px 3px 0px #FF2E93;
+            animation: glitch 3s infinite;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .services {
+            padding: 4rem 2rem;
+            background: #222;
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .contact {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: var(--gradient);
+        }
+
+        .contact a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.5rem;
+            border: 2px solid #fff;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .contact a:hover {
+            background: #fff;
+            color: #FF2E93;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>TOXIC TIPS 💅</h1>
+        <p style="font-size: 1.5rem;">WHERE BASIC NAILS GO TO DIE</p>
+        <span class="floating-emoji" style="top: 10%; left: 10%">💅</span>
+        <span class="floating-emoji" style="top: 20%; right: 20%">✨</span>
+        <span class="floating-emoji" style="bottom: 15%; left: 30%">🦄</span>
+        <span class="floating-emoji" style="bottom: 25%; right: 15%">💫</span>
+    </div>
+
+    <div class="services">
+        <h2>MENU OF MAYHEM</h2>
+        <div class="service-grid">
+            <div class="service-card">
+                <h3>BASIC B*TCH UPGRADE</h3>
+                <p>Regular mani but make it RIOT</p>
+            </div>
+            <div class="service-card">
+                <h3>CHAOS PEDI</h3>
+                <p>Your toes never saw it coming</p>
+            </div>
+            <div class="service-card">
+                <h3>GLITTER GUILLOTINE</h3>
+                <p>Full set acrylics that could kill a man</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="contact">
+        <h2>READY TO GET TOXIC?</h2>
+        <a href="mailto:[CONTACT_EMAIL]">BOOK YOUR DOOM ➜</a>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <script>
+        // Easter egg: Type 'WTAF' for surprise
+        let keys = [];
+        document.addEventListener('keydown', (e) => {
+            keys.push(e.key);
+            if (keys.join('').includes('WTAF')) {
+                alert('🎉 CONGRATS BESTIE! You've unlocked our secret menu of illegal nail art techniques!');
+                keys = [];
+            }
+        });
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,156 @@
+Certainly! Below is a simple Pong game implemented using HTML5 Canvas and JavaScript. It includes basic scoring, win conditions, and both keyboard and touch controls for mobile-friendliness.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+        canvas {
+            border: 2px solid #fff;
+        }
+        #info {
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>Pong Game</h1>
+        <p>Use Arrow keys or touch the screen to move the paddle</p>
+    </div>
+    <canvas id="pongCanvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const paddleWidth = 10, paddleHeight = 75, ballSize = 10;
+        let playerY = (canvas.height - paddleHeight) / 2;
+        let aiY = (canvas.height - paddleHeight) / 2;
+        let ballX = canvas.width / 2, ballY = canvas.height / 2;
+        let ballSpeedX = 2, ballSpeedY = 2;
+        let upPressed = false, downPressed = false;
+        let playerScore = 0, aiScore = 0;
+        const winningScore = 5;
+
+        function drawRect(x, y, width, height, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+        }
+
+        function drawCircle(x, y, radius, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+            ctx.fill();
+        }
+
+        function drawNet() {
+            for (let i = 0; i < canvas.height; i += 20) {
+                drawRect(canvas.width / 2 - 1, i, 2, 10, 'white');
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawNet();
+            drawRect(0, playerY, paddleWidth, paddleHeight, 'white');
+            drawRect(canvas.width - paddleWidth, aiY, paddleWidth, paddleHeight, 'white');
+            drawCircle(ballX, ballY, ballSize, 'white');
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Player: ${playerScore}`, 50, 30);
+            ctx.fillText(`AI: ${aiScore}`, canvas.width - 100, 30);
+        }
+
+        function move() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            if (ballY <= 0 || ballY >= canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            if (ballX <= paddleWidth) {
+                if (ballY > playerY && ballY < playerY + paddleHeight) {
+                    ballSpeedX = -ballSpeedX;
+                } else if (ballX < 0) {
+                    aiScore++;
+                    resetBall();
+                }
+            }
+
+            if (ballX >= canvas.width - paddleWidth) {
+                if (ballY > aiY && ballY < aiY + paddleHeight) {
+                    ballSpeedX = -ballSpeedX;
+                } else if (ballX > canvas.width) {
+                    playerScore++;
+                    resetBall();
+                }
+            }
+
+            if (upPressed && playerY > 0) {
+                playerY -= 5;
+            }
+
+            if (downPressed && playerY < canvas.height - paddleHeight) {
+                playerY += 5;
+            }
+
+            aiY = ballY - paddleHeight / 2;
+        }
+
+        function resetBall() {
+            if (playerScore >= winningScore || aiScore >= winningScore) {
+                playerScore = 0;
+                aiScore = 0;
+            }
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = -ballSpeedX;
+        }
+
+        function gameLoop() {
+            move();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') upPressed = true;
+            if (e.key === 'ArrowDown') downPressed = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp') upPressed = false;
+            if (e.key === 'ArrowDown') downPressed = false;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            const touchY = e.touches[0].clientY;
+            playerY = touchY - paddleHeight / 2;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            playerY = touchY - paddleHeight / 2;
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
+```
+
+This code creates a simple Pong game where you control the left paddle using arrow keys or touch input. The AI controls the right paddle. First to reach the winning score (5 in this case) wins the game. The game resets once the winning score is reached. Enjoy!

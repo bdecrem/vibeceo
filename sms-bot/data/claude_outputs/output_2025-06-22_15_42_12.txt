@@ -1,0 +1,206 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BESTIE CHAT PORTAL // JUST US TWO BB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientFlow 15s ease infinite;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .chat-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .chat-column {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            height: 70vh;
+            position: relative;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .message-input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .message {
+            background: rgba(124,58,237,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: messagePopIn 0.3s ease-out;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes messagePopIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            padding: 1rem;
+            border-radius: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <span class="floating-emoji" style="top: 20px; left: 10%;">💫</span>
+            <span class="floating-emoji" style="top: 50px; right: 20%;">✨</span>
+            <span class="floating-emoji" style="top: 80px; left: 30%;">🌙</span>
+            <span class="floating-emoji" style="top: 30px; right: 40%;">⚡</span>
+            <h1>BESTIE CHAT PORTAL</h1>
+            <p>just you + them // no normies allowed</p>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-column">
+                <h2>YOUR VOID</h2>
+                <div class="messages">
+                    <div class="message">hey bestie, this void is yours</div>
+                </div>
+                <div class="message-input">
+                    <input type="text" placeholder="spill the tea...">
+                </div>
+            </div>
+            <div class="chat-column">
+                <h2>THEIR VOID</h2>
+                <div class="messages">
+                    <div class="message">their chaotic energy goes here</div>
+                </div>
+                <div class="message-input">
+                    <input type="text" placeholder="their thoughts manifest here...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="easter-egg">
+        type 'WTAF' for chaos mode
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to unlock the void
+    </div>
+
+    <script>
+        // Easter egg activation
+        let buffer = '';
+        document.addEventListener('keypress', (e) => {
+            buffer += e.key;
+            if (buffer.includes('WTAF')) {
+                document.body.style.animation = 'gradientFlow 2s infinite';
+                alert('🎉 CHAOS MODE ACTIVATED 🎉');
+                buffer = '';
+            }
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 50;
+                const offsetY = (mouseY - 0.5) * 50;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

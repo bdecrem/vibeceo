@@ -126,6 +126,42 @@ export function replaceAppTableId(html: string, appSlug: string): string {
 }
 
 /**
+ * Fix ZAD APP_ID generation to be deterministic
+ * ZAD apps need predictable APP_IDs so users can connect to each other
+ */
+export function fixZadAppId(html: string, appSlug: string): string {
+    // Replace random APP_ID generation with deterministic one based on app slug
+    // This ensures all users connecting to the same ZAD app use the same APP_ID
+    
+    // Pattern 1: const APP_ID = 'PREFIX_' + Math.random()...
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
+        `const APP_ID = '${appSlug}';`
+    );
+    
+    // Pattern 2: let APP_ID = 'PREFIX_' + Math.random()...
+    html = html.replace(
+        /let\s+APP_ID\s*=\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^;]+;?/g,
+        `let APP_ID = '${appSlug}';`
+    );
+    
+    // Pattern 3: var APP_ID = 'PREFIX_' + Math.random()...
+    html = html.replace(
+        /var\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
+        `var APP_ID = '${appSlug}';`
+    );
+    
+    // Pattern 4: Direct usage in Supabase calls
+    html = html.replace(
+        /app_id:\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^,}]+/g,
+        `app_id: '${appSlug}'`
+    );
+    
+    logWithTimestamp(`🤝 Fixed ZAD APP_ID to be deterministic: ${appSlug}`);
+    return html;
+}
+
+/**
  * Detect request type from user prompt
  * Extracted from monitor.py detect_request_type function
  */
