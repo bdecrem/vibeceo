@@ -1,0 +1,43 @@
+{
+  "classification_type": "zero-admin-data",
+  "description": "Multi-user collaborative apps that store shared data without needing accounts or dashboards",
+  "examples": {
+    "good_examples": [
+      "\"Make a discussion board for my study group\" → everyone posts, no admin",
+      "\"Create an idea dump for my team\" → team brainstorms together",
+      "\"Build a memory wall for my family\" → shared stories, no accounts",
+      "\"build a place where me and my friends can share ideas\" → text-based social app for small group",
+      "\"build a thought sharing app for my book club\" → group discussion and idea exchange",
+      "\"make a brainstorm space for my family\" → family idea sharing and discussion"
+    ],
+    "bad_examples": [
+      "\"Create a newsletter signup\" → collects emails, owner needs dashboard",
+      "\"Build me a contact form\" → collects messages from users",
+      "\"Create a survey\" → collects structured responses",
+      "\"build me a contact form\" → Data Collection (business collects from customers)",
+      "\"create my business card\" → Simple Email (just display contact info)",
+      "\"make a newsletter signup\" → Data Collection (business collects emails)",
+      "\"build my portfolio\" → Simple Email (just display contact info)",
+      "\"create a survey for customers\" → Data Collection (business collects responses)"
+    ],
+    "rejection_criteria": [
+      "Require real-time sync or notifications",
+      "Require accounts or file uploads", 
+      "Involve more than 5 users",
+      "Need payment, admin roles, or moderation"
+    ],
+    "key_indicators": [
+      "Social context: \"me and my friends\", \"my team\", \"our group\"",
+      "Equal participation: everyone contributes, no owner collecting",
+      "Small group: 2–5 people",
+      "Goal is discussion, sharing, coordination, or creativity",
+      "Social interaction verbs: \"share\", \"discuss\", \"brainstorm\", \"collaborate\"",
+      "Collaborative language: \"me and my friends\", \"our group\", \"my team\", \"study group\""
+    ]
+  },
+  "metadata_output": {
+    "ZERO_ADMIN_DATA": "true",
+    "ZERO_ADMIN_CONTEXT": "Multi-user social features for collaborative group",
+    "APP_TYPE": "zero_admin_data"
+  }
+} 
