@@ -185,6 +185,7 @@
             75% { transform: translateY(-15px) rotate(3deg); }
         }
         
+        /*
         .call-to-text {
             position: fixed;
             bottom: 20px;
@@ -204,6 +205,7 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+        */
         
         .glitch {
             animation: glitch 0.3s steps(2) infinite;
@@ -251,10 +253,12 @@
      <div class="floating-emoji" data-value="4" style="top: 80%; right: 10%;">🌀</div>
      <div class="floating-emoji" data-value="2" style="top: 40%; right: 50%;">✨</div>
      
-     <!-- Call to Text Line -->
+     <!-- 
+     Call to Text Line - COMMENTED OUT
      <div class="call-to-text">
          📱 Text START to +1-866-330-0015 to get initiated
      </div>
+     -->
      
      <div class="app-container">
          <h1 id="mainTitle">WTAChat</h1>
@@ -318,7 +322,7 @@
         // App state
         let currentUser = null;
         const APP_ID = 'zad-chat-' + Math.random().toString(36).substr(2, 9);
-        const USER_LABELS = ['punk🌑', 'punk⚡', 'punk🪩', 'punk🔮', 'punk🦴'];
+        const USER_LABELS = ['punk⚡', 'punk🪩', 'punk🔮', 'punk🦴', 'punk🌑'];
         
         // Screen navigation
         function showScreen(screenId) {
