@@ -354,8 +354,6 @@
                     .eq('action_type', 'join');
                 
                 const usedLabels = participants?.map(p => p.participant_data?.userLabel).filter(Boolean) || [];
-                console.log('DEBUG: usedLabels:', usedLabels);
-                console.log('DEBUG: USER_LABELS:', USER_LABELS);
                 const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label)) || USER_LABELS[0];
                 
                 document.getElementById('newUserLabel').textContent = availableLabel;
@@ -368,7 +366,6 @@
                 };
             } catch (error) {
                 // Fallback if query fails
-                console.log('DEBUG: Query failed, using first label:', USER_LABELS[0]);
                 const availableLabel = USER_LABELS[0];
                 document.getElementById('newUserLabel').textContent = availableLabel;
                 document.getElementById('newUserCode').textContent = code;
