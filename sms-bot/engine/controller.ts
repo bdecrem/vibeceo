@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { writeFile } from 'fs/promises';
-import { join, basename } from 'path';
+import { writeFile, readFile } from 'fs/promises';
+import { join, basename, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { 
     WEB_APP_URL, 
     WTAF_DOMAIN, 
@@ -35,7 +36,28 @@ import {
     moveProcessedFile 
 } from './file-watcher.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
+// Global WTAF cookbook loaded once at startup
+let wtafCookbook: string | null = null;
+
+/**
+ * Load WTAF Cookbook & Style Guide
+ * Controller loads this once at startup and passes it to processor when needed
+ */
+async function loadWtafCookbook(): Promise<string | null> {
+    try {
+        const cookbookPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+        const content = await readFile(cookbookPath, 'utf8');
+        
+        logWithTimestamp("📖 WTAF Cookbook loaded successfully by controller");
+        return content; // Return raw JSON - let the AI figure out how to use it
+    } catch (error) {
+        logWarning(`Error loading WTAF cookbook: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
 
 /**
  * REQUEST CONFIGURATIONS
@@ -204,22 +226,35 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
-        // PARTY TRICK: Email detection happens via HTML content analysis later
+        let result: string;
         
-        // Step 2: Send complete prompt to Claude with config
-        logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
-        logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
+        // Check if generateCompletePrompt returned final HTML (ZAD template)
+        if (completePrompt.startsWith('```html')) {
+            logWithTimestamp("🤝 ZAD template detected - skipping AI builder stage entirely");
+            result = completePrompt; // Use the template directly, no AI call needed
+        } else {
+            // PARTY TRICK: Email detection happens via HTML content analysis later
+            
+            // Step 2: Send complete prompt to Claude with config
+            logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
+            logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
+            
+            result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
+                model: config.builderModel,
+                maxTokens: config.builderMaxTokens,
+                temperature: config.builderTemperature,
+                cookbook: wtafCookbook || undefined
+            });
+        }
         
-        const result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
-        });
-        
-        // Step 3: Save Claude output to file
+        // Step 3: Save output to file for debugging
         const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
         await writeFile(outputFile, result, 'utf8');
-        logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
+        if (completePrompt.startsWith('```html')) {
+            logWithTimestamp(`💾 ZAD template output saved to: ${outputFile}`);
+        } else {
+            logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
+        }
         
         // Step 4: Extract code blocks
         const code = extractCodeBlocks(result);
@@ -438,7 +473,8 @@ ${originalHtml}`;
         const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt, {
             model: config.builderModel,
             maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
+            temperature: config.builderTemperature,
+            cookbook: wtafCookbook || undefined
         });
         
         // Extract code blocks
@@ -478,6 +514,18 @@ ${originalHtml}`;
  */
 async function mainControllerLoop() {
     logStartupInfo(WEB_APP_URL, WTAF_DOMAIN, WEB_OUTPUT_DIR);
+    
+    // Load WTAF cookbook once at startup
+    try {
+        wtafCookbook = await loadWtafCookbook();
+        if (wtafCookbook) {
+            logSuccess("📖 WTAF Cookbook loaded and ready for processing");
+        } else {
+            logWarning("⚠️ WTAF Cookbook failed to load - proceeding without brand guidelines");
+        }
+    } catch (error) {
+        logWarning(`Cookbook loading error: ${error instanceof Error ? error.message : String(error)}`);
+    }
     
     // Create required directories
     try {

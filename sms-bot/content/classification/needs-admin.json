@@ -1,0 +1,37 @@
+{
+  "classification_type": "needs-admin",
+  "description": "Forms/systems that collect data and need an admin dashboard",
+  "examples": {
+    "good_examples": [
+      "\"Build me a newsletter signup\" → collects emails FROM users → dual-page admin system",
+      "\"Create a contact form\" → collects messages FROM users → dual-page admin system",
+      "\"Make a booking system\" → collects appointment data → complex form",
+      "\"Build a registration page\" → collects user data → complex form",
+      "\"Create a survey\" → collects responses → complex form",
+      "\"Make an e-commerce store\" → collects orders → complex system"
+    ],
+    "data_flow": "FROM users TO business owner",
+    "indicators": [
+      "Newsletter signups",
+      "Contact forms",
+      "Booking systems",
+      "Registration pages",
+      "Surveys",
+      "E-commerce stores",
+      "Event RSVPs",
+      "Application forms",
+      "Feedback collection"
+    ]
+  },
+  "dual_page_system": {
+    "public_page": "User-facing form for data submission",
+    "admin_page": "Dashboard for data management and CSV export",
+    "delimiter": "<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->",
+    "database_table": "wtaf_submissions"
+  },
+  "metadata_output": {
+    "EMAIL_NEEDED": "false",
+    "ZERO_ADMIN_DATA": "false",
+    "APP_TYPE": "data_collection"
+  }
+} 

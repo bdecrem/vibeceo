@@ -40,6 +40,7 @@ export interface BuilderConfig {
     model: string;
     maxTokens: number;
     temperature: number;
+    cookbook?: string; // Optional WTAF cookbook content for apps
 }
 
 // Initialize OpenAI client with lazy loading (same pattern as ai-client.ts)
@@ -71,6 +72,29 @@ async function loadPrompt(filename: string): Promise<ChatCompletionMessageParam 
 }
 
 /**
+ * Load ZAD template HTML from builder-zad-v0.json
+ * Returns complete HTML ready for deployment
+ */
+async function loadZadTemplate(): Promise<string | null> {
+    try {
+        const templatePath = join(__dirname, '..', '..', 'content', 'builder-zad-v0.json');
+        const content = await readFile(templatePath, 'utf8');
+        
+        // The template file contains raw HTML, need to wrap it properly
+        const completeHtml = `<!DOCTYPE html>
+<html lang="en">
+${content}
+</html>`;
+        
+        logWithTimestamp("📖 ZAD template loaded successfully");
+        return completeHtml;
+    } catch (error) {
+        logWarning(`Error loading ZAD template: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
  * Load coach personality from coaches/ folder
  * Returns the personality text for the classifier to interpret
  */
@@ -86,93 +110,7 @@ async function loadCoachPersonality(coachHandle: string): Promise<string | null>
     }
 }
 
-/**
- * Load WTAF Cookbook & Style Guide
- * Returns the complete WTAF design system and brand requirements
- */
-async function loadWtafCookbook(): Promise<string | null> {
-    try {
-        const cookbookPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
-        const content = await readFile(cookbookPath, 'utf8');
-        const cookbook = JSON.parse(content);
-        
-        // Convert cookbook to readable format for AI
-        const cookbookText = `
-WTAF COOKBOOK & STYLE FUCKGUIDE:
 
-BRAND IDENTITY: ${cookbook.wtaf_design_system_prompt}
-
-WRITING STYLE: ${cookbook.writing_style.name}
-${cookbook.writing_style.description}
-Elements: ${cookbook.writing_style.elements.join(', ')}
-
-COPY GUIDELINES:
-- Big Attitude: ${cookbook.copy_guidelines?.big_attitude || cookbook.writing_style.copy_guidelines.big_attitude}
-- Punchy Weird: ${cookbook.copy_guidelines?.punchy_weird || cookbook.writing_style.copy_guidelines.punchy_weird}
-- Hyper Specific: ${cookbook.copy_guidelines?.hyper_specific || cookbook.writing_style.copy_guidelines.hyper_specific}
-- Textable: ${cookbook.copy_guidelines?.textable || cookbook.writing_style.copy_guidelines.textable}
-
-DESIGN EXTENSIONS: ${cookbook.design_system_extensions.poolsuite_additions.join(', ')}
-
-LAYOUT ARCHETYPES: ${cookbook.layout_variants.archetypes.join(' | ')}
-
-🚨 NON-NEGOTIABLE REQUIREMENTS:
-${cookbook.wtaf_content_mandates.non_negotiable_requirements ? cookbook.wtaf_content_mandates.non_negotiable_requirements.map((item: string) => `${item}`).join('\n') : ''}
-
-REQUIRED CONTENT:
-${cookbook.wtaf_content_mandates.required_additions.map((item: string) => `- ${item}`).join('\n')}
-${cookbook.wtaf_content_mandates.mouse_parallax_required ? `- Mouse Parallax: ${cookbook.wtaf_content_mandates.mouse_parallax_required}` : ''}
-
-INTERACTION RULES: ${cookbook.wtaf_content_mandates.interaction_rules.join(', ')}
-
-TECHNICAL FRAMEWORK:
-- Fonts: ${cookbook.technical_framework.fonts}
-- Floating Emojis: ${cookbook.technical_framework.floating_emojis}
-
-HOUSE GRADIENT SYSTEM:
-${cookbook.technical_framework.house_gradient_system ? `
-- Laser Pinks: ${cookbook.technical_framework.house_gradient_system.gradients.laser_pinks}
-- Glitch Blues: ${cookbook.technical_framework.house_gradient_system.gradients.glitch_blues}
-- Vapor Corals: ${cookbook.technical_framework.house_gradient_system.gradients.vapor_corals}
-- Riot Violets: ${cookbook.technical_framework.house_gradient_system.gradients.riot_violets}
-- Techno Neons: ${cookbook.technical_framework.house_gradient_system.gradients.techno_neons}
-- Animation Rule: ${cookbook.technical_framework.house_gradient_system.animation_rule}` : 'Use WTAF house gradients'}
-
-CURATED EMOJI PALETTES:
-${cookbook.technical_framework.curated_emoji_palettes ? `
-- Core Set: ${cookbook.technical_framework.curated_emoji_palettes.palettes.core_set}
-- Tech Startup: ${cookbook.technical_framework.curated_emoji_palettes.palettes.tech_startup}
-- Party App: ${cookbook.technical_framework.curated_emoji_palettes.palettes.party_app}
-- Tattoo Chaos: ${cookbook.technical_framework.curated_emoji_palettes.palettes.tattoo_chaos}
-- Wellness Cult: ${cookbook.technical_framework.curated_emoji_palettes.palettes.wellness_cult}
-- Cafe Chill: ${cookbook.technical_framework.curated_emoji_palettes.palettes.cafe_chill}
-- Style Rule: ${cookbook.technical_framework.curated_emoji_palettes.style_rule}` : 'Use themed emoji sets'}
-
-ANIMATION SNIPPETS:
-${cookbook.technical_framework.animation_snippets ? `
-- Float Drift: ${cookbook.technical_framework.animation_snippets.examples.float_drift}
-- Glitch Flicker: ${cookbook.technical_framework.animation_snippets.examples.glitch_flicker}
-- Button Pulse: ${cookbook.technical_framework.animation_snippets.examples.button_pulse}
-- Mouse Parallax: ${cookbook.technical_framework.animation_snippets.examples.mouse_parallax}` : 'Use WTAF animations'}
-
-IMPLEMENTATION EXAMPLES:
-${cookbook.technical_framework.implementation_examples ? `
-- Call-to-Text: ${cookbook.technical_framework.implementation_examples.call_to_text_line}
-- Prompt Display: ${cookbook.technical_framework.implementation_examples.prompt_display}
-- Easter Egg (Click Logo): ${cookbook.technical_framework.implementation_examples.easter_egg_examples.click_logo}` : 'Use WTAF attitude elements'}
-
-- JS Effects: ${cookbook.technical_framework.js_effects.join(', ')}
-
-BRAND REMINDER: ${cookbook.brand_reminder}
-        `;
-        
-        logWithTimestamp("📖 WTAF Cookbook loaded successfully");
-        return cookbookText.trim();
-    } catch (error) {
-        logWarning(`Error loading WTAF cookbook: ${error instanceof Error ? error.message : String(error)}`);
-        return null;
-    }
-}
 
 /**
  * GENERATE COMPLETE PROMPT (Drop-in replacement for ai-client.ts function)
@@ -224,11 +162,12 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
 
     if (requestType === 'app') {
         // APP PATH: Use classifier to expand and clarify the request
-        logWithTimestamp("📋 APP detected - using classifier to expand prompt...");
+        logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
         
-        const classifierPrompt = await loadPrompt('classifier.json');
+        const { buildClassifierPrompt } = await import('./classifier-builder.js');
+        const classifierPrompt = await buildClassifierPrompt();
         if (!classifierPrompt) {
-            logWarning("Failed to load classifier prompt, using original input");
+            logWarning("Failed to build classifier prompt, using original input");
             expandedPrompt = cleanedInput;
         } else {
             try {
@@ -253,8 +192,29 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                 
                 const content = response.choices[0].message.content;
                 if (content) {
-                    expandedPrompt = content.trim();
-                    logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
+                    // Check if classifier detected a ZAD request by looking for metadata
+                    if (content.includes('ZERO_ADMIN_DATA: true') || content.includes('ZAD_DETECTED')) {
+                        logWithTimestamp("🤝 ZAD detected by classifier - loading pre-made template");
+                        
+                        // Load the ZAD template HTML directly
+                        const zadTemplate = await loadZadTemplate();
+                        if (zadTemplate) {
+                            logWithTimestamp("🚀 ZAD template loaded - skipping AI builder stage");
+                            // Return the complete HTML wrapped in proper format for extractCodeBlocks
+                            return `\`\`\`html\n${zadTemplate}\n\`\`\``;
+                        } else {
+                            logWarning("Failed to load ZAD template, falling back to AI generation");
+                            expandedPrompt = content.trim();
+                        }
+                    } else {
+                        expandedPrompt = content.trim();
+                        logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
+                        
+                        // ZAD apps now have comprehensive product briefs from classifier
+                        if (expandedPrompt.includes('ZERO_ADMIN_DATA: true')) {
+                            logWithTimestamp("🤝 ZAD app detected - comprehensive product brief included from classifier");
+                        }
+                    }
                 } else {
                     logWarning("No content in classifier response, using original");
                     expandedPrompt = cleanedInput;
@@ -318,43 +278,29 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(`🎭 Coach detected for builder: ${coach}`);
     }
     
-    // STEP 3: Detect Zero Admin Data apps from classifier metadata
-    const zadMatch = userPrompt.match(/ZERO_ADMIN_DATA:\s*true/i);
-    const isZeroAdminData = zadMatch !== null;
-    
-    // STEP 4: Load the appropriate specialized builder
+    // STEP 3: Load the appropriate specialized builder
     let builderFile: string;
     if (requestType === 'game') {
         builderFile = 'builder-game.json';
-    } else if (isZeroAdminData) {
-        builderFile = 'builder-zad-app.json';
-        logWithTimestamp(`🤝 ZERO ADMIN DATA app detected - using collaborative builder`);
     } else {
+        // Standard app - ZAD apps are handled earlier in generateCompletePrompt
         builderFile = 'builder-app.json';
+        logWithTimestamp(`📱 Standard app detected - using general app builder`);
     }
     
     const builderPrompt = await loadPrompt(builderFile);
     
-    // STEP 5: Load WTAF Cookbook for app requests (including ZAD apps)
-    let wtafCookbook = null;
-    if (requestType === 'app') {
-        wtafCookbook = await loadWtafCookbook();
-        if (wtafCookbook) {
-            logWithTimestamp(`📖 WTAF Cookbook loaded for app generation`);
-        }
-    }
-    
-    // STEP 6: Prepare coach-aware user prompt for builder
+    // STEP 5: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
     if (coach && coachPersonality) {
         builderUserPrompt += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
         logWithTimestamp(`🎭 Prepared ${coach}'s full personality data for builder`);
     }
     
-    // Add WTAF Cookbook to the prompt for apps
-    if (wtafCookbook && requestType === 'app') {
-        builderUserPrompt += `\n\n${wtafCookbook}`;
-        logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt`);
+    // Add WTAF Cookbook if provided by controller (only for apps)
+    if (config.cookbook && requestType === 'app') {
+        builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${config.cookbook}`;
+        logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt (provided by controller)`);
     }
     
     if (!builderPrompt) {

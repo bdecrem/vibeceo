@@ -1,0 +1,30 @@
+{
+  "classification_type": "needs-email",
+  "description": "Pages that only need a contact email displayed",
+  "examples": {
+    "good_examples": [
+      "\"Build me a business card\" → just needs \"Contact: email@domain.com\"",
+      "\"Create an about page for my consulting firm\" → just needs contact email displayed",
+      "\"Make a landing page for my photography business\" → just needs \"Hire me: email@domain.com\"",
+      "\"Build a coming soon page\" → just needs \"Questions? email@domain.com\"",
+      "\"Create a personal portfolio\" → just needs contact email shown",
+      "\"Make a small business website\" → just needs business contact email",
+      "\"Build a freelancer page\" → just needs \"Contact me: email@domain.com\"",
+      "\"Create a team member profile\" → just needs individual contact email"
+    ],
+    "indicators": [
+      "Personal/business cards",
+      "Portfolio pages",
+      "About pages",
+      "Coming soon pages",
+      "Consulting firm pages",
+      "Photography business pages",
+      "Freelancer pages",
+      "Team member profiles"
+    ]
+  },
+  "metadata_output": {
+    "EMAIL_NEEDED": "true",
+    "EMAIL_CONTEXT": "Display contact information for business/personal contact"
+  }
+} 
