@@ -318,7 +318,7 @@
         // App state
         let currentUser = null;
         const APP_ID = 'zad-chat-' + Math.random().toString(36).substr(2, 9);
-        const USER_LABELS = ['punk⚡', 'punk🪩', 'punk🔮', 'punk🦴', 'punk🌑'];
+        const USER_LABELS = ['punk🌑', 'punk⚡', 'punk🪩', 'punk🔮', 'punk🦴'];
         
         // Screen navigation
         function showScreen(screenId) {
@@ -354,7 +354,7 @@
                     .eq('action_type', 'join');
                 
                 const usedLabels = participants?.map(p => p.participant_data?.userLabel).filter(Boolean) || [];
-                const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label)) || USER_LABELS[0];
+                const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label)) || 'punk🌑';
                 
                 document.getElementById('newUserLabel').textContent = availableLabel;
                 document.getElementById('newUserCode').textContent = code;
@@ -366,7 +366,7 @@
                 };
             } catch (error) {
                 // Fallback if query fails
-                const availableLabel = USER_LABELS[0];
+                const availableLabel = 'punk🌑';
                 document.getElementById('newUserLabel').textContent = availableLabel;
                 document.getElementById('newUserCode').textContent = code;
                 
