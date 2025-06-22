@@ -1,0 +1,176 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO FROM THE VOID</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #3F88FF, #00FFC6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: glitch 3s infinite;
+            margin-bottom: 2rem;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            21% { transform: skew(-10deg); }
+            23% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .message {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            margin-bottom: 3rem;
+        }
+
+        .contact {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .contact:hover {
+            transform: scale(1.02);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .email-link {
+            color: #00FFC6;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+            position: relative;
+        }
+
+        .email-link:hover {
+            text-shadow: 0 0 10px #00FFC6;
+        }
+
+        .floating {
+            position: absolute;
+            animation: float 6s ease-in-out infinite;
+            user-select: none;
+            font-size: 2rem;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 20%; animation-delay: 1s; }
+        #emoji3 { bottom: 30%; left: 15%; animation-delay: 2s; }
+        #emoji4 { bottom: 10%; right: 10%; animation-delay: 3s; }
+
+        .cta-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="floating" id="emoji1">⚡</span>
+        <span class="floating" id="emoji2">💀</span>
+        <span class="floating" id="emoji3">🔥</span>
+        <span class="floating" id="emoji4">✨</span>
+
+        <h1>HELLO</h1>
+        <div class="message">
+            Welcome to the digital thunderdome, where pixels come to party and code goes to get weird.
+        </div>
+        <div class="contact">
+            <p>Ready to join the chaos?</p>
+            <a href="mailto:[CONTACT_EMAIL]" class="email-link">[CONTACT_EMAIL]</a>
+        </div>
+    </div>
+
+    <div class="cta-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: A simple hello page that got struck by lightning
+    </div>
+
+    <script>
+        // Easter egg - type 'WTAF' anywhere
+        let buffer = '';
+        document.addEventListener('keyup', (e) => {
+            buffer += e.key;
+            if (buffer.toLowerCase().includes('wtaf')) {
+                alert('🎉 YOU FOUND THE SECRET! NOW YOU'RE REALLY IN TROUBLE!');
+                buffer = '';
+            }
+            if (buffer.length > 10) buffer = '';
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const floaters = document.querySelectorAll('.floating');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            floaters.forEach(floater => {
+                const offsetX = (mouseX - 0.5) * 50;
+                const offsetY = (mouseY - 0.5) * 50;
+                floater.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

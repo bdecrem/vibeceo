@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
-import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId } from './shared/utils.js';
+import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId } from './shared/utils.js';
 
 // Lazy initialization of Supabase client
 let supabase: SupabaseClient | null = null;
@@ -230,6 +230,12 @@ export async function saveCodeToSupabase(
     
     // Replace APP_TABLE_ID placeholder with actual app_slug
     code = replaceAppTableId(code, appSlug);
+    
+    // Fix ZAD APP_ID generation to be deterministic (for collaborative apps)
+    if (code.includes('wtaf_zero_admin_collaborative')) {
+        logWithTimestamp(`🤝 ZAD app detected - fixing APP_ID generation`);
+        code = fixZadAppId(code, appSlug);
+    }
     
     // Use fallback OG image URL initially - will be updated after OG generation
     const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;

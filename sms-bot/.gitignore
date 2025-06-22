@@ -32,3 +32,6 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Generated test files with credentials
+test-scripts/*-generated.html

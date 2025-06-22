@@ -1,0 +1,369 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Two-Person Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #3F88FF, #6E7FFF);
+            --neon-glow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .onboarding {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            min-height: 100vh;
+            justify-content: center;
+            background: var(--gradient);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .chat-container {
+            display: none;
+            height: 100vh;
+            padding: 1rem;
+        }
+
+        .messages {
+            height: calc(100vh - 150px);
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 20px;
+            max-width: 80%;
+            animation: messageIn 0.3s ease;
+        }
+
+        .message.sent {
+            background: #FF2E93;
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: #3F88FF;
+            margin-right: auto;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        input, button {
+            padding: 1rem;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input {
+            flex-grow: 1;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        button {
+            background: var(--gradient);
+            background-size: 400% 400%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: var(--neon-glow);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes messageIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding" id="onboarding">
+        <h1>✨ Your Secret Chat Dimension ✨</h1>
+        <div id="step1">
+            <h2>Pick your emoji identity</h2>
+            <input type="text" id="emojiInput" placeholder="Enter an emoji" maxlength="2">
+            <button onclick="nextStep(1)">That's me!</button>
+        </div>
+        <div id="step2" style="display:none;">
+            <h2>Create your secret passcode</h2>
+            <input type="password" id="passcodeInput" placeholder="Enter passcode">
+            <button onclick="nextStep(2)">Lock it in!</button>
+        </div>
+        <div id="step3" style="display:none;">
+            <h2>Return to your dimension</h2>
+            <input type="text" id="loginEmoji" placeholder="Your emoji">
+            <input type="password" id="loginPasscode" placeholder="Your passcode">
+            <button onclick="nextStep(3)">Beam me up!</button>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button onclick="sendMessage()">Beam it!</button>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <script>
+        const APP_ID = 'two_person_chat_v1';
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        
+        let currentEmoji = '';
+        let currentStep = 1;
+
+        // Create floating emojis
+        const emojis = ['✨', '💫', '🌟', '⚡'];
+        emojis.forEach((emoji, index) => {
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.textContent = emoji;
+            el.style.left = `${Math.random() * 100}vw`;
+            el.style.top = `${Math.random() * 100}vh`;
+            el.setAttribute('data-value', index + 1);
+            document.body.appendChild(el);
+        });
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 1;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        async function nextStep(step) {
+            switch(step) {
+                case 1:
+                    const emoji = document.getElementById('emojiInput').value;
+                    if (!emoji) return alert('Please enter an emoji!');
+                    currentEmoji = emoji;
+                    document.getElementById('step1').style.display = 'none';
+                    document.getElementById('step2').style.display = 'block';
+                    break;
+                case 2:
+                    const passcode = document.getElementById('passcodeInput').value;
+                    if (!passcode) return alert('Please enter a passcode!');
+                    const saved = await saveUser(currentEmoji, passcode);
+                    if (saved) {
+                        document.getElementById('step2').style.display = 'none';
+                        document.getElementById('step3').style.display = 'block';
+                    }
+                    break;
+                case 3:
+                    const loginEmoji = document.getElementById('loginEmoji').value;
+                    const loginPasscode = document.getElementById('loginPasscode').value;
+                    const valid = await validateUser(loginEmoji, loginPasscode);
+                    if (valid) {
+                        currentEmoji = loginEmoji;
+                        document.getElementById('onboarding').style.display = 'none';
+                        document.getElementById('chatContainer').style.display = 'block';
+                        loadMessages();
+                    } else {
+                        alert('Invalid emoji or passcode!');
+                    }
+                    break;
+            }
+        }
+
+        async function saveUser(emoji, passcode) {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .insert({
+                    app_id: APP_ID,
+                    action_type: 'join',
+                    participant_id: emoji,
+                    participant_data: { passcode: passcode },
+                    content_data: null
+                });
+
+            if (error) {
+                console.error('Error saving user:', error);
+                return false;
+            }
+            return true;
+        }
+
+        async function saveMessage(emoji, content) {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .insert({
+                    app_id: APP_ID,
+                    action_type: 'message',
+                    participant_id: emoji,
+                    participant_data: null,
+                    content_data: { message: content, timestamp: new Date().toISOString() }
+                });
+
+            if (error) {
+                console.error('Error saving message:', error);
+                return false;
+            }
+            return true;
+        }
+
+        async function loadData() {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Database error:', error);
+                return [];
+            }
+
+            return data || [];
+        }
+
+        async function validateUser(emoji, passcode) {
+            const { data, error } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join')
+                .eq('participant_id', emoji);
+
+            if (error) {
+                console.error('Validation error:', error);
+                return false;
+            }
+
+            if (data && data.length > 0) {
+                const user = data[0];
+                return user.participant_data && user.participant_data.passcode === passcode;
+            }
+
+            return false;
+        }
+
+        async function loadMessages() {
+            const messages = await loadData();
+            const messageContainer = document.getElementById('messages');
+            messageContainer.innerHTML = '';
+
+            if (messages && Array.isArray(messages)) {
+                messages.forEach(msg => {
+                    if (msg.action_type === 'message' && msg.content_data && msg.content_data.message) {
+                        const messageEl = document.createElement('div');
+                        messageEl.className = `message ${msg.participant_id === currentEmoji ? 'sent' : 'received'}`;
+                        messageEl.textContent = `${msg.participant_id}: ${msg.content_data.message}`;
+                        messageContainer.appendChild(messageEl);
+                    }
+                });
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const sent = await saveMessage(currentEmoji, message);
+            if (sent) {
+                input.value = '';
+                loadMessages();
+            }
+        }
+
+        // Easter egg: Type WTAF
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key.toLowerCase();
+            if (secretCode.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                secretCode = '';
+            }
+        });
+
+        // Enter key to send message
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
+```

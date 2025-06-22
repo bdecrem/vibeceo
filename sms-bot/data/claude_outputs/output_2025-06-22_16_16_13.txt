@@ -1,0 +1,206 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BESTIE CHAOS CHAT 💀✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: linear-gradient(45deg, #FF2E93, #FF61C7);
+            --gradient-2: linear-gradient(45deg, #3F88FF, #6E7FFF);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textGlow 2s ease-in-out infinite;
+        }
+
+        .chat-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            position: relative;
+        }
+
+        .chat-column {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            height: 600px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .message-input {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 1rem;
+        }
+
+        input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: var(--gradient-1);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+            animation: buttonPulse 2s infinite;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,46,147,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,46,147,0.8); }
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gradient-2);
+            padding: 1rem;
+            border-radius: 10px;
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="logo">BESTIE CHAOS CHAT</h1>
+            <p>because regular messaging apps aren't unhinged enough 🔮</p>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-column">
+                <h2>YOU 🦄</h2>
+                <div class="message-input">
+                    <input type="text" placeholder="Spill the tea...">
+                    <button>FIRE IT OFF 🚀</button>
+                </div>
+            </div>
+            <div class="chat-column">
+                <h2>BESTIE 💫</h2>
+                <div class="message-input">
+                    <input type="text" placeholder="Drop some chaos...">
+                    <button>YEET IT 💥</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 20%; left: 10%">✨</div>
+    <div class="floating-emoji" style="top: 40%; right: 15%">🌀</div>
+    <div class="floating-emoji" style="top: 70%; left: 20%">🚀</div>
+    <div class="floating-emoji" style="top: 30%; right: 25%">🦄</div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="easter-egg">
+        Generated from: A chaotic bestie chat app prompt
+    </div>
+
+    <script>
+        // Logo click easter egg
+        let clicks = 0;
+        document.getElementById('logo').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                alert('🎉 CONGRATULATIONS! YOU'VE UNLOCKED CHAOS MODE!');
+                document.body.style.animation = 'spin 1s linear';
+            }
+        });
+
+        // Floating emoji parallax
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 40;
+                const offsetY = (mouseY - 0.5) * 40;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
