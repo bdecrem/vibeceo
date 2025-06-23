@@ -192,19 +192,30 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                 
                 const content = response.choices[0].message.content;
                 if (content) {
-                    // Check if classifier detected a ZAD request by looking for metadata
-                    if (content.includes('ZERO_ADMIN_DATA: true') || content.includes('ZAD_DETECTED')) {
-                        logWithTimestamp("🤝 ZAD detected by classifier - loading pre-made template");
+                    // Check if classifier detected a ZAD request with custom title
+                    if (content.includes('ZAD_DETECTED')) {
+                        logWithTimestamp("🤝 ZAD detected by classifier");
                         
-                        // Load the ZAD template HTML directly
-                        const zadTemplate = await loadZadTemplate();
-                        if (zadTemplate) {
-                            logWithTimestamp("🚀 ZAD template loaded - skipping AI builder stage");
-                            // Return the complete HTML wrapped in proper format for extractCodeBlocks
-                            return `\`\`\`html\n${zadTemplate}\n\`\`\``;
-                        } else {
-                            logWarning("Failed to load ZAD template, falling back to AI generation");
+                        // Extract custom title if provided
+                        const titleMatch = content.match(/ZAD_TITLE:\s*(.+)/);
+                        if (titleMatch) {
+                            const customTitle = titleMatch[1].trim();
+                            logWithTimestamp(`🎨 Custom ZAD title extracted: ${customTitle}`);
+                            
+                            // Continue to Builder with remix instructions
                             expandedPrompt = content.trim();
+                            expandedPrompt += `\n\nZAD_REMIX_TITLE: ${customTitle}`;
+                            logWithTimestamp("🎨 ZAD remix mode - will customize template with Builder");
+                        } else {
+                            // No custom title, use static template
+                            const zadTemplate = await loadZadTemplate();
+                            if (zadTemplate) {
+                                logWithTimestamp("🚀 ZAD template loaded - using static version");
+                                return `\`\`\`html\n${zadTemplate}\n\`\`\``;
+                            } else {
+                                logWarning("Failed to load ZAD template, falling back to AI generation");
+                                expandedPrompt = content.trim();
+                            }
                         }
                     } else {
                         expandedPrompt = content.trim();
@@ -282,8 +293,42 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     let builderFile: string;
     if (requestType === 'game') {
         builderFile = 'builder-game.json';
+    } else if (userPrompt.includes('ZAD_REMIX_TITLE:')) {
+        // ZAD REMIX MODE: Load template and prepare for title customization
+        logWithTimestamp("🎨 ZAD remix detected - preparing template for title customization");
+        
+        const titleMatch = userPrompt.match(/ZAD_REMIX_TITLE:\s*(.+)/);
+        const customTitle = titleMatch ? titleMatch[1].trim() : 'Custom Chat';
+        
+        const zadTemplate = await loadZadTemplate();
+        if (zadTemplate) {
+            logWithTimestamp(`🎨 ZAD template loaded, will change title to: ${customTitle}`);
+            
+            // Create specialized remix instructions
+            const remixInstructions = `You are a precise HTML editor. Your task is to make ONLY the title change requested.
+
+ORIGINAL HTML TEMPLATE:
+${zadTemplate}
+
+INSTRUCTION: Change the title from "WTAChat" to "${customTitle}". 
+
+REQUIREMENTS:
+- Find the <h1 id="mainTitle">WTAChat</h1> element
+- Change ONLY the text "WTAChat" to "${customTitle}"
+- DO NOT change the h1 tag, id attribute, or any other code
+- DO NOT modify any other HTML, CSS, or JavaScript
+- Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks`;
+
+            logWithTimestamp("🎨 ZAD remix instructions prepared");
+            
+            // Skip normal builder loading and use direct Claude call
+            return await callClaudeAPI(config.model, "You are a precise HTML editor.", remixInstructions, config.maxTokens, config.temperature);
+        } else {
+            logWarning("Failed to load ZAD template for remix, falling back to standard builder");
+            builderFile = 'builder-app.json';
+        }
     } else {
-        // Standard app - ZAD apps are handled earlier in generateCompletePrompt
+        // Standard app
         builderFile = 'builder-app.json';
         logWithTimestamp(`📱 Standard app detected - using general app builder`);
     }
