@@ -202,10 +202,10 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                             const customTitle = titleMatch[1].trim();
                             logWithTimestamp(`🎨 Custom ZAD title extracted: ${customTitle}`);
                             
-                            // Continue to Builder with remix instructions
-                            expandedPrompt = content.trim();
+                            // For ZAD remix, return minimal prompt - don't include verbose classifier response
+                            expandedPrompt = `ZAD_REMIX_REQUEST: Change title to "${customTitle}"`;
                             expandedPrompt += `\n\nZAD_REMIX_TITLE: ${customTitle}`;
-                            logWithTimestamp("🎨 ZAD remix mode - will customize template with Builder");
+                            logWithTimestamp("🎨 ZAD remix mode - using clean prompt for Builder");
                         } else {
                             // No custom title, use static template
                             const zadTemplate = await loadZadTemplate();
