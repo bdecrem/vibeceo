@@ -1,0 +1,118 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO_WORLD.exe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .container {
+            text-align: center;
+            animation: glitch 5s infinite;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #0f0;
+            text-shadow: 
+                2px 2px #f0f,
+                -2px -2px #0ff;
+            animation: textGlitch 0.3s infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            21% { transform: skew(-10deg); }
+            22% { transform: skew(0deg); }
+            90% { transform: skew(0deg); }
+            91% { transform: skew(20deg); }
+            92% { transform: skew(-20deg); }
+            93% { transform: skew(0deg); }
+        }
+
+        @keyframes textGlitch {
+            0% { text-shadow: 2px 2px #f0f, -2px -2px #0ff; }
+            25% { text-shadow: -2px 2px #f0f, 2px -2px #0ff; }
+            50% { text-shadow: 2px -2px #f0f, -2px 2px #0ff; }
+            75% { text-shadow: -2px -2px #f0f, 2px 2px #0ff; }
+        }
+
+        .secret {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            color: #0f0;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="hello">HELLO WORLD</h1>
+    </div>
+    <div id="secret" class="secret">SYSTEM BREACHED 🔓</div>
+
+    <script>
+        // Add floating emojis
+        const emojis = ['💀', '⚡', '🔥', '💻'];
+        emojis.forEach((emoji, index) => {
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.textContent = emoji;
+            el.style.left = `${Math.random() * 100}vw`;
+            el.style.top = `${Math.random() * 100}vh`;
+            el.setAttribute('data-value', index + 1);
+            document.body.appendChild(el);
+        });
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const value = emoji.getAttribute('data-value');
+                const x = (e.clientX * value) / 250;
+                const y = (e.clientY * value) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.getElementById('hello').addEventListener('click', () => {
+            clicks++;
+            if(clicks >= 5) {
+                document.getElementById('secret').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+```

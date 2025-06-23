@@ -1,5 +1,7 @@
 {
   "classification_type": "zero-admin-data",
+  "step_title": "ZAD (Zero Admin Data)",
+  "step_description": "Check if this is a collaborative app for small groups:",
   "description": "Multi-user collaborative apps that store shared data without needing accounts or dashboards",
   "examples": {
     "good_examples": [
@@ -34,6 +36,10 @@
       "Social interaction verbs: \"share\", \"discuss\", \"brainstorm\", \"collaborate\"",
       "Collaborative language: \"me and my friends\", \"our group\", \"my team\", \"study group\""
     ]
+  },
+  "decision_logic": {
+    "if_yes": "Just return \"ZAD_DETECTED\" - no detailed brief needed for ZAD apps.\\nSet: ZERO_ADMIN_DATA=true, APP_TYPE=zero_admin_data, STOP HERE",
+    "if_no": "Continue to Step 3"
   },
   "metadata_output": {
     "ZERO_ADMIN_DATA": "true",

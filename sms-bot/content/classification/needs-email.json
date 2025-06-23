@@ -1,5 +1,7 @@
 {
   "classification_type": "needs-email",
+  "step_title": "EMAIL DISPLAY",
+  "step_description": "Check if this is a simple page that only needs to show contact information:",
   "description": "Pages that only need a contact email displayed",
   "examples": {
     "good_examples": [
@@ -22,6 +24,10 @@
       "Freelancer pages",
       "Team member profiles"
     ]
+  },
+  "decision_logic": {
+    "if_yes": "EMAIL_NEEDED=true, APP_TYPE=simple_email, STOP HERE",
+    "if_no": "Continue to Step 2"
   },
   "metadata_output": {
     "EMAIL_NEEDED": "true",
