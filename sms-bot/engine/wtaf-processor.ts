@@ -196,18 +196,18 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                     if (content.includes('ZAD_DETECTED')) {
                         logWithTimestamp("🤝 ZAD detected by classifier");
                         
-                        // Extract custom title if provided
-                        const titleMatch = content.match(/ZAD_TITLE:\s*(.+)/);
-                        if (titleMatch) {
-                            const customTitle = titleMatch[1].trim();
-                            logWithTimestamp(`🎨 Custom ZAD title extracted: ${customTitle}`);
+                        // Extract custom instruction if provided
+                        const instructionMatch = content.match(/ZAD_INSTRUCTION:\s*(.+)/);
+                        if (instructionMatch) {
+                            const classifierInstruction = instructionMatch[1].trim();
+                            logWithTimestamp(`🎨 Classifier instruction extracted: ${classifierInstruction}`);
                             
-                            // For ZAD remix, return minimal prompt - don't include verbose classifier response
-                            expandedPrompt = `ZAD_REMIX_REQUEST: Change title to "${customTitle}"`;
-                            expandedPrompt += `\n\nZAD_REMIX_TITLE: ${customTitle}`;
-                            logWithTimestamp("🎨 ZAD remix mode - using clean prompt for Builder");
+                            // For ZAD remix, pass through the classifier's exact instruction
+                            expandedPrompt = `ZAD_REMIX_REQUEST: ${classifierInstruction}`;
+                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${classifierInstruction}`;
+                            logWithTimestamp("🎨 ZAD remix mode - using classifier instruction for Builder");
                         } else {
-                            // No custom title, use static template
+                            // No custom instruction, use static template
                             const zadTemplate = await loadZadTemplate();
                             if (zadTemplate) {
                                 logWithTimestamp("🚀 ZAD template loaded - using static version");
@@ -293,24 +293,24 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     let builderFile: string;
     if (requestType === 'game') {
         builderFile = 'builder-game.json';
-    } else if (userPrompt.includes('ZAD_REMIX_TITLE:')) {
-        // ZAD REMIX MODE: Load template and prepare for title customization
-        logWithTimestamp("🎨 ZAD remix detected - preparing template for title customization");
+    } else if (userPrompt.includes('ZAD_REMIX_INSTRUCTION:')) {
+        // ZAD REMIX MODE: Load template and prepare for surgical edit
+        logWithTimestamp("🎨 ZAD remix detected - preparing template for surgical edit");
         
-        const titleMatch = userPrompt.match(/ZAD_REMIX_TITLE:\s*(.+)/);
-        const customTitle = titleMatch ? titleMatch[1].trim() : 'Custom Chat';
+        const instructionMatch = userPrompt.match(/ZAD_REMIX_INSTRUCTION:\s*(.+)/);
+        const classifierInstruction = instructionMatch ? instructionMatch[1].trim() : 'Change the title';
         
         const zadTemplate = await loadZadTemplate();
         if (zadTemplate) {
-            logWithTimestamp(`🎨 ZAD template loaded, will change title to: ${customTitle}`);
+            logWithTimestamp(`🎨 ZAD template loaded, instruction: ${classifierInstruction}`);
             
             // Load ZAD remix builder prompt
             const zadRemixBuilder = await loadPrompt('builder-zad-remix.json');
             if (zadRemixBuilder) {
                 logWithTimestamp("🎨 ZAD remix builder loaded from JSON");
                 
-                // Prepare user prompt with template and title
-                const remixUserPrompt = `Change the title to "${customTitle}".
+                // Use classifier's exact instruction
+                const remixUserPrompt = `${classifierInstruction}
 
 ${zadTemplate}
 

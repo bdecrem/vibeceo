@@ -38,7 +38,7 @@
     ]
   },
   "decision_logic": {
-    "if_yes": "YES, it's a ZAD. Extract a catchy title from the user's request (e.g., 'Warriors Chat' from 'build a chat for my Warriors team'). Return: ZAD_DETECTED\\nZAD_TITLE: [extracted_title]\\nSet: ZERO_ADMIN_DATA=true, APP_TYPE=zero_admin_data, STOP HERE",
+    "if_yes": "YES, it's a ZAD. Extract a catchy title from the user's request (e.g., 'Warriors Chat' from 'build a chat for my Warriors team'). Return: ZAD_DETECTED\\nZAD_INSTRUCTION: Change the <h1 id=\\\"mainTitle\\\">WTAChat</h1> text to '[extracted_title]'\\nSet: ZERO_ADMIN_DATA=true, APP_TYPE=zero_admin_data, STOP HERE",
     "if_no": "Continue to Step 3"
   },
   "metadata_output": {
