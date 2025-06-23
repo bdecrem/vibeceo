@@ -304,25 +304,23 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         if (zadTemplate) {
             logWithTimestamp(`🎨 ZAD template loaded, will change title to: ${customTitle}`);
             
-            // Create specialized remix instructions
-            const remixInstructions = `You are a precise HTML editor. Your task is to make ONLY the title change requested.
-
-ORIGINAL HTML TEMPLATE:
+            // Load ZAD remix builder prompt
+            const zadRemixBuilder = await loadPrompt('builder-zad-remix.json');
+            if (zadRemixBuilder) {
+                logWithTimestamp("🎨 ZAD remix builder loaded from JSON");
+                
+                // Prepare user prompt with template and title
+                const remixUserPrompt = `ORIGINAL HTML TEMPLATE:
 ${zadTemplate}
 
-INSTRUCTION: Change the title from "WTAChat" to "${customTitle}". 
+INSTRUCTION: Change the title from "WTAChat" to "${customTitle}".`;
 
-REQUIREMENTS:
-- Find the <h1 id="mainTitle">WTAChat</h1> element
-- Change ONLY the text "WTAChat" to "${customTitle}"
-- DO NOT change the h1 tag, id attribute, or any other code
-- DO NOT modify any other HTML, CSS, or JavaScript
-- Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks`;
-
-            logWithTimestamp("🎨 ZAD remix instructions prepared");
-            
-            // Skip normal builder loading and use direct Claude call
-            return await callClaudeAPI(config.model, "You are a precise HTML editor.", remixInstructions, config.maxTokens, config.temperature);
+                // Use the loaded builder prompt and call Claude
+                return await callClaudeAPI(config.model, (zadRemixBuilder as any).content, remixUserPrompt, config.maxTokens, config.temperature);
+            } else {
+                logWarning("Failed to load ZAD remix builder, falling back to standard builder");
+                builderFile = 'builder-app.json';
+            }
         } else {
             logWarning("Failed to load ZAD template for remix, falling back to standard builder");
             builderFile = 'builder-app.json';

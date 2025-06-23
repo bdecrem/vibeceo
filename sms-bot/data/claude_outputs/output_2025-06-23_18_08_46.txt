@@ -1,0 +1,207 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARTY - Chaotic Group Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: glitch 3s infinite;
+            text-align: center;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(3deg); }
+            21% { transform: skew(-3deg); }
+            23% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .tagline {
+            font-size: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .chat-window {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 4rem auto;
+            max-width: 800px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .message {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            transform: translateX(0);
+            transition: transform 0.3s;
+        }
+
+        .message:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s;
+        }
+
+        .cta-button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 2rem auto;
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255,46,147,0.5);
+        }
+
+        #party-mode {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 4rem; }
+            .tagline { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>PARTY</h1>
+            <p class="tagline">Your group chat just got chaotic</p>
+            
+            <div class="chat-window">
+                <div class="message">🎉 Welcome to the party! Who's bringing the chaos?</div>
+                <div class="message">🔥 Just crashed through the digital wall like the Kool-Aid man</div>
+                <div class="message">💀 This chat is giving me life rn</div>
+            </div>
+
+            <button class="cta-button" id="start-party">START THE MAYHEM</button>
+        </div>
+
+        <div class="floating-emoji" style="top: 20%; left: 10%;" data-value="3">🎉</div>
+        <div class="floating-emoji" style="top: 60%; left: 80%;" data-value="5">🔥</div>
+        <div class="floating-emoji" style="top: 30%; left: 70%;" data-value="2">🪩</div>
+        <div class="floating-emoji" style="top: 80%; left: 20%;" data-value="4">💃</div>
+        <div class="floating-emoji" style="top: 10%; left: 90%;" data-value="6">🎈</div>
+    </div>
+
+    <button id="party-mode" class="cta-button">PARTY MODE</button>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Party mode easter egg
+        let partyMode = false;
+        document.getElementById('party-mode').addEventListener('click', () => {
+            partyMode = !partyMode;
+            if(partyMode) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                createConfetti();
+            } else {
+                document.body.style.animation = '';
+            }
+        });
+
+        function createConfetti() {
+            for(let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'floating-emoji';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = -20 + 'px';
+                confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear`;
+                confetti.innerHTML = ['🎉','✨','🎈','🎪','🎭'][Math.floor(Math.random() * 5)];
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // WTAF Easter Egg
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key;
+            if(wtafCode.toLowerCase().includes('wtaf')) {
+                alert('🎉 YOU FOUND THE SECRET! WELCOME TO THE REAL PARTY! 🎉');
+                createConfetti();
+                wtafCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```
