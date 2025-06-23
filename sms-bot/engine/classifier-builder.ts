@@ -38,6 +38,16 @@ interface ClassificationLogic {
     [key: string]: any; // Allow additional fields
 }
 
+interface DecisionStep {
+    stepNumber: number;
+    stepTitle: string;
+    description: string;
+    examples: string[];
+    indicators?: string[];
+    rejectionCriteria?: string[];
+    decision: string;
+}
+
 /**
  * Load a classification logic file
  */
@@ -53,78 +63,145 @@ async function loadClassificationLogic(filename: string): Promise<Classification
 }
 
 /**
- * Build complete classifier prompt from modular components
- * Returns the same format as the old classifier.json for drop-in replacement
+ * Load all classification modules in the correct order
  */
-export async function buildClassifierPrompt(): Promise<ChatCompletionMessageParam | null> {
-    logWithTimestamp("🔧 Building modular classifier prompt...");
-    
-    try {
-        // Load the 3 classification logic files (removed ZAD briefing - no longer needed)
-        const [needsEmail, isZad, needsAdmin] = await Promise.all([
-            loadClassificationLogic('needs-email.json'),
-            loadClassificationLogic('is-it-a-zad.json'),
-            loadClassificationLogic('needs-admin.json')
-        ]);
+async function loadAllModules(): Promise<ClassificationLogic[]> {
+    const moduleFiles = [
+        { file: 'needs-email.json', title: 'EMAIL DISPLAY' },
+        { file: 'is-it-a-zad.json', title: 'ZERO ADMIN DATA' },
+        { file: 'needs-admin.json', title: 'ADMIN URL' }
+    ];
 
-        if (!needsEmail || !isZad || !needsAdmin) {
-            logWarning("Failed to load one or more classification logic files");
-            return null;
+    const modules = await Promise.all(
+        moduleFiles.map(async ({ file, title }) => {
+            const module = await loadClassificationLogic(file);
+            if (module) {
+                module._stepTitle = title; // Add step title for composition
+            }
+            return module;
+        })
+    );
+
+    return modules.filter(Boolean) as ClassificationLogic[];
+}
+
+/**
+ * Build a decision step section for a module
+ */
+function buildDecisionStep(module: ClassificationLogic, stepNumber: number): DecisionStep {
+    const examples = module.examples.good_examples || [];
+    const indicators = module.examples.key_indicators || module.examples.indicators || [];
+    const rejectionCriteria = module.examples.rejection_criteria || [];
+
+    return {
+        stepNumber,
+        stepTitle: module._stepTitle || module.classification_type,
+        description: module.description,
+        examples,
+        indicators,
+        rejectionCriteria,
+        decision: buildDecisionText(module)
+    };
+}
+
+/**
+ * Build decision text for each module type
+ */
+function buildDecisionText(module: ClassificationLogic): string {
+    switch (module.classification_type) {
+        case 'needs-email':
+            return '→ If YES: EMAIL_NEEDED=true, APP_TYPE=simple_email, STOP HERE\n→ If NO: Continue to Step 2';
+        
+        case 'zero-admin-data':
+            return '→ If YES: Just return "ZAD_DETECTED" - no detailed brief needed for ZAD apps.\nSet: ZERO_ADMIN_DATA=true, APP_TYPE=zero_admin_data, STOP HERE\n→ If NO: Continue to Step 3';
+        
+        case 'needs-admin':
+            return '→ If YES: APP_TYPE=data_collection, STOP HERE\n→ If NO: Continue to Step 4';
+        
+        default:
+            return '→ Process as standard app';
+    }
+}
+
+/**
+ * Format examples list
+ */
+function formatExamples(examples: string[]): string {
+    return examples.map(example => `- ${example}`).join('\n');
+}
+
+/**
+ * Format indicators list
+ */
+function formatIndicators(indicators: string[]): string {
+    return indicators.map(indicator => `- ${indicator}`).join('\n');
+}
+
+/**
+ * Build a complete decision step section
+ */
+function buildStepSection(step: DecisionStep): string {
+    // Step-specific titles and descriptions
+    const stepInfo = {
+        1: { 
+            title: "EMAIL DISPLAY",
+            description: "Check if this is a simple page that only needs to show contact information:"
+        },
+        2: { 
+            title: "ZAD (Zero Admin Data)",
+            description: "Check if this is a collaborative app for small groups:"
+        },
+        3: { 
+            title: "ADMIN URL",
+            description: "Check if this collects data FROM users and needs owner management:"
         }
+    };
 
-        logWithTimestamp(`✅ Loaded 3 classification modules: ${needsEmail.classification_type}, ${isZad.classification_type}, ${needsAdmin.classification_type}`);
+    const info = stepInfo[step.stepNumber as keyof typeof stepInfo];
+    const title = info?.title || step.stepTitle;
+    const description = info?.description || 'Check the request type:';
 
-        // Build the simplified classifier prompt content using sequential decision tree
-        const classifierContent = `You are a request analyzer. Take the user's request and return a clear, detailed description of what they want built. If a coach personality is provided, incorporate their voice and style into your description of what should be built. The final description should include both the content requirements AND the personality/voice that should be used.
+    let section = `🔍 STEP ${step.stepNumber}: Does it just need one thing (${title})?\n`;
+    section += `${description}\n\n`;
+    section += `${step.description}\n\n`;
+    
+    if (step.examples.length > 0) {
+        section += `Examples:\n${formatExamples(step.examples)}\n\n`;
+    }
+    
+    if (step.indicators && step.indicators.length > 0) {
+        section += `Key Indicators:\n${formatIndicators(step.indicators)}\n\n`;
+    }
+    
+    if (step.rejectionCriteria && step.rejectionCriteria.length > 0) {
+        section += `Rejection Criteria:\n${formatIndicators(step.rejectionCriteria)}\n\n`;
+    }
+    
+    section += `${step.decision}\n`;
+    
+    return section;
+}
+
+/**
+ * Build the complete classifier prompt content
+ */
+function assembleClassifierPrompt(steps: DecisionStep[]): string {
+    const instructions = `You are a request analyzer. Take the user's request and return a clear, detailed description of what they want built. If a coach personality is provided, incorporate their voice and style into your description of what should be built. The final description should include both the content requirements AND the personality/voice that should be used.
 
 After providing the expanded description, classify the request using this SEQUENTIAL DECISION TREE:
 
-🔍 STEP 1: Does it just need one thing (EMAIL DISPLAY)?
-Check if this is a simple page that only needs to show contact information:
+`;
 
-${needsEmail.description}
-
-Examples:
-${needsEmail.examples.good_examples?.map(example => `- ${example}`).join('\n')}
-
-→ If YES: EMAIL_NEEDED=true, APP_TYPE=simple_email, STOP HERE
-→ If NO: Continue to Step 2
-
-🔍 STEP 2: Is it a ZAD (Zero Admin Data)?  
-Check if this is a collaborative app for small groups:
-
-${isZad.description}
-
-Examples:
-${isZad.examples.good_examples?.map(example => `- ${example}`).join('\n')}
-
-Key Indicators:
-${isZad.examples.key_indicators?.map(indicator => `- ${indicator}`).join('\n')}
-
-Rejection Criteria:
-${isZad.examples.rejection_criteria?.map(criteria => `- ${criteria}`).join('\n')}
-
-→ If YES: Just return "ZAD_DETECTED" - no detailed brief needed for ZAD apps.
-Set: ZERO_ADMIN_DATA=true, APP_TYPE=zero_admin_data, STOP HERE
-→ If NO: Continue to Step 3
-
-🔍 STEP 3: Does it need an admin URL?
-Check if this collects data FROM users and needs owner management:
-
-${needsAdmin.description}
-
-Examples:
-${needsAdmin.examples.good_examples?.map(example => `- ${example}`).join('\n')}
-
-→ If YES: APP_TYPE=data_collection, STOP HERE
-→ If NO: Continue to Step 4
-
-🔍 STEP 4: Standard app design (fallback)
+    const stepsContent = steps.map(step => buildStepSection(step)).join('\n');
+    
+    const fallbackStep = `🔍 STEP 4: Standard app design (fallback)
 This is a regular app that doesn't fit the above categories.
 
 → APP_TYPE=standard_app
 
-After your expanded description, add this exact format:
+`;
+
+    const metadataFormat = `After your expanded description, add this exact format:
 
 ---WTAF_METADATA---
 EMAIL_NEEDED: [true/false]
@@ -134,7 +211,34 @@ ZERO_ADMIN_CONTEXT: [brief description of multi-user social features needed, or 
 APP_TYPE: [simple_email|data_collection|zero_admin_data|standard_app]
 ---END_METADATA---`;
 
-        logSuccess("🔧 Simplified classifier prompt built successfully");
+    return instructions + stepsContent + fallbackStep + metadataFormat;
+}
+
+/**
+ * Build complete classifier prompt from modular components
+ * Returns the same format as the old classifier.json for drop-in replacement
+ */
+export async function buildClassifierPrompt(): Promise<ChatCompletionMessageParam | null> {
+    logWithTimestamp("🔧 Building modular classifier prompt...");
+    
+    try {
+        // Load all classification modules
+        const modules = await loadAllModules();
+
+        if (modules.length !== 3) {
+            logWarning("Failed to load all classification logic files");
+            return null;
+        }
+
+        logWithTimestamp(`✅ Loaded ${modules.length} classification modules: ${modules.map(m => m.classification_type).join(', ')}`);
+
+        // Build decision steps from modules
+        const steps = modules.map((module, index) => buildDecisionStep(module, index + 1));
+
+        // Assemble the final prompt
+        const classifierContent = assembleClassifierPrompt(steps);
+
+        logSuccess("🔧 Modular classifier prompt built successfully");
         
         // Return in the same format as old classifier.json
         return {
@@ -148,28 +252,21 @@ APP_TYPE: [simple_email|data_collection|zero_admin_data|standard_app]
     }
 }
 
-// ZAD creative prompt function removed - instructions now integrated into classifier
-
 /**
  * Get classification examples for debugging/testing
  */
 export async function getClassificationExamples(): Promise<Record<string, ClassificationLogic> | null> {
     try {
-        const [needsEmail, isZad, needsAdmin] = await Promise.all([
-            loadClassificationLogic('needs-email.json'),
-            loadClassificationLogic('is-it-a-zad.json'),
-            loadClassificationLogic('needs-admin.json')
-        ]);
+        const modules = await loadAllModules();
 
-        if (!needsEmail || !isZad || !needsAdmin) {
+        if (modules.length === 0) {
             return null;
         }
 
-        return {
-            'needs-email': needsEmail,
-            'zero-admin-data': isZad,
-            'needs-admin': needsAdmin
-        };
+        return modules.reduce((acc, module) => {
+            acc[module.classification_type] = module;
+            return acc;
+        }, {} as Record<string, ClassificationLogic>);
     } catch (error) {
         logWarning(`Error getting classification examples: ${error instanceof Error ? error.message : String(error)}`);
         return null;
