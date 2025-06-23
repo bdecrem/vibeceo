@@ -1,0 +1,215 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARTY - Your Digital Mosh Pit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .chat-window {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,46,147,0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .message-area {
+            height: 300px;
+            overflow-y: auto;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        #emoji1 { top: 10%; left: 10%; animation: float 6s ease-in-out infinite; }
+        #emoji2 { top: 20%; right: 15%; animation: float 7s ease-in-out infinite; }
+        #emoji3 { bottom: 15%; left: 20%; animation: float 5s ease-in-out infinite; }
+        #emoji4 { bottom: 25%; right: 10%; animation: float 8s ease-in-out infinite; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 10px #FF2E93; }
+            50% { box-shadow: 0 0 20px #FF2E93; }
+            100% { box-shadow: 0 0 10px #FF2E93; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="floating-emoji" id="emoji1" data-value="2">🎉</div>
+        <div class="floating-emoji" id="emoji2" data-value="3">🪩</div>
+        <div class="floating-emoji" id="emoji3" data-value="4">💃</div>
+        <div class="floating-emoji" id="emoji4" data-value="2">🎈</div>
+
+        <div class="chat-window">
+            <h1>PARTY</h1>
+            <p>Your digital mosh pit for chaotic good times</p>
+            
+            <div class="message-area" id="messages">
+                <!-- Messages will appear here -->
+            </div>
+
+            <div class="input-area">
+                <input type="text" placeholder="Say something wild..." id="message-input">
+                <button onclick="sendMessage()">SEND IT</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="prompt-display">Generated from: Create a chat app called "PARTY"</div>
+    <div class="call-to-text">📱 Text START to +1-866-330-0015 to get initiated</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 YOU FOUND THE PARTY DIMENSION!');
+            }
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const messages = document.getElementById('messages');
+            if(input.value.trim()) {
+                messages.innerHTML += `<p>${input.value}</p>`;
+                input.value = '';
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
+```
