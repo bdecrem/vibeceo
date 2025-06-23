@@ -310,10 +310,11 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 logWithTimestamp("🎨 ZAD remix builder loaded from JSON");
                 
                 // Prepare user prompt with template and title
-                const remixUserPrompt = `ORIGINAL HTML TEMPLATE:
+                const remixUserPrompt = `Change the title to "${customTitle}".
+
 ${zadTemplate}
 
-INSTRUCTION: Change the title from "WTAChat" to "${customTitle}".`;
+Do NOT rewrite the code. Do not make other changes. KEEP EVERYTHING ELSE THE SAME.`;
 
                 // Use the loaded builder prompt and call Claude
                 return await callClaudeAPI(config.model, (zadRemixBuilder as any).content, remixUserPrompt, config.maxTokens, config.temperature);
