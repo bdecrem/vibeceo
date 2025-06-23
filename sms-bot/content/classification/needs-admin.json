@@ -1,5 +1,7 @@
 {
   "classification_type": "needs-admin",
+  "step_title": "ADMIN URL",
+  "step_description": "Check if this collects data FROM users and needs owner management:",
   "description": "Forms/systems that collect data and need an admin dashboard",
   "examples": {
     "good_examples": [
@@ -22,6 +24,10 @@
       "Application forms",
       "Feedback collection"
     ]
+  },
+  "decision_logic": {
+    "if_yes": "APP_TYPE=data_collection, STOP HERE",
+    "if_no": "Continue to Step 4"
   },
   "dual_page_system": {
     "public_page": "User-facing form for data submission",

@@ -1,0 +1,141 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEATH BEFORE DECAF ☠️ Coffee Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --punk-red: #ff2d2d;
+            --punk-black: #1a1a1a;
+            --punk-white: #f4f4f4;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--punk-black);
+            color: var(--punk-white);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: var(--punk-red);
+            padding: 2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 5px solid var(--punk-white);
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0;
+            text-shadow: 3px 3px 0 var(--punk-black);
+            animation: throb 2s infinite;
+        }
+
+        @keyframes throb {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .info-box {
+            background: var(--punk-white);
+            color: var(--punk-black);
+            padding: 2rem;
+            border: 3px solid var(--punk-red);
+            transform: rotate(-2deg);
+        }
+
+        .contact-box {
+            background: var(--punk-red);
+            padding: 2rem;
+            text-align: center;
+            transform: rotate(2deg);
+        }
+
+        .contact-link {
+            display: inline-block;
+            background: var(--punk-white);
+            color: var(--punk-black);
+            padding: 1rem 2rem;
+            text-decoration: none;
+            font-size: 1.5rem;
+            border: 3px solid var(--punk-black);
+            transform: rotate(-2deg);
+            transition: all 0.3s ease;
+        }
+
+        .contact-link:hover {
+            transform: rotate(2deg) scale(1.1);
+            background: var(--punk-black);
+            color: var(--punk-white);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            background: var(--punk-black);
+            border-top: 5px solid var(--punk-red);
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DEATH BEFORE DECAF ☠️</h1>
+        <p>YOUR NEW CAFFEINE ADDICTION STARTS HERE</p>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="info-box">
+                <h2>WAKE UP AND SMELL THE ANARCHY</h2>
+                <p>We serve coffee that kicks your brain into overdrive. No fancy nonsense, just pure liquid rebellion.</p>
+                <p>Open 6AM - 10PM<br>
+                7 days a week<br>
+                Because sleep is for the weak</p>
+            </div>
+
+            <div class="contact-box">
+                <h2>NEED A FIX?</h2>
+                <p>Hit us up for catering, events, or just to tell us how our coffee changed your life</p>
+                <a href="mailto:[CONTACT_EMAIL]" class="contact-link">EMAIL US NOW</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>☠️ DEATH BEFORE DECAF COFFEE CO. ☠️</p>
+        <p>Fueling the revolution since 2023</p>
+    </footer>
+</body>
+</html>
+```
