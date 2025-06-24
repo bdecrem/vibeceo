@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+[Previous head section remains exactly the same...]
+<body>
+     <!-- Floating Emojis -->
+     <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%;">⚡</div>
+     <div class="floating-emoji" data-value="3" style="top: 20%; right: 15%;">🚀</div>
+     <div class="floating-emoji" data-value="1" style="top: 60%; left: 5%;">💎</div>
+     <div class="floating-emoji" data-value="4" style="top: 80%; right: 10%;">🌀</div>
+     <div class="floating-emoji" data-value="2" style="top: 40%; right: 50%;">✨</div>
+     
+     <!-- 
+     Call to Text Line - COMMENTED OUT
+     <div class="call-to-text">
+         📱 Text START to +1-866-330-0015 to get initiated
+     </div>
+     -->
+     
+     <div class="app-container">
+         <h1 id="mainTitle">Party Chat</h1>
+         
+[Rest of the body section remains exactly the same...]
+</body>
+</html>

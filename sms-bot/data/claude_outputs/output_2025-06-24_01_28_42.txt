@@ -1,0 +1,148 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎧 Techno Syndicate HQ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #1b1b1b, #33334d, #4d4d66);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0 0 10px #ff00ff;
+            animation: pulse 2s infinite;
+        }
+
+        .chat-container {
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #ff00ff;
+            box-shadow: 0 0 20px rgba(255,0,255,0.2);
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-top: 1rem;
+            border: 1px solid #4a4a4a;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255,0,255,0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        /* Floating emojis */
+        #emoji1 { top: 10%; left: 10%; animation-delay: 0s; }
+        #emoji2 { top: 20%; right: 15%; animation-delay: 0.5s; }
+        #emoji3 { bottom: 15%; left: 20%; animation-delay: 1s; }
+        #emoji4 { bottom: 25%; right: 10%; animation-delay: 1.5s; }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" id="emoji1">🎧</div>
+    <div class="floating-emoji" id="emoji2">🎵</div>
+    <div class="floating-emoji" id="emoji3">🔊</div>
+    <div class="floating-emoji" id="emoji4">💊</div>
+
+    <div class="container">
+        <header>
+            <h1>🎧 Techno Syndicate HQ</h1>
+        </header>
+
+        <div class="chat-container" id="chat">
+            <!-- Messages will appear here -->
+        </div>
+
+        <input type="text" class="message-input" placeholder="Drop your beats or club ideas..." id="messageInput">
+    </div>
+
+    <div class="easter-egg">Type "RAVE" for a surprise...</div>
+
+    <script>
+        // Easter egg
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key;
+            if(secretCode.toLowerCase().includes('rave')) {
+                document.body.style.animation = 'rainbow 1s infinite';
+                secretCode = '';
+            }
+        });
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

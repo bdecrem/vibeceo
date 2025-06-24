@@ -1,0 +1,46 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Techno Tribe 🎧</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(#000000, #111111, #2c003e);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            color: white;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .message { 
+            margin: 15px 0; 
+            padding: 15px 20px; 
+            border-radius: 20px; 
+            background: #333333;
+            color: #b200ff;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        .message strong:after {
+            content: " 🎧";
+        }
+
+        [Rest of file exactly the same...]
+    </style>
+</head>
+[Rest of file exactly the same...]
+</html>
+```
