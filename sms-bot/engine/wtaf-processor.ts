@@ -34,6 +34,9 @@ export interface ClassifierConfig {
     classifierModel: string;
     classifierMaxTokens: number;
     classifierTemperature: number;
+    classifierTopP?: number;
+    classifierPresencePenalty?: number;
+    classifierFrequencyPenalty?: number;
 }
 
 export interface BuilderConfig {
@@ -72,10 +75,10 @@ async function loadPrompt(filename: string): Promise<ChatCompletionMessageParam 
 }
 
 /**
- * Load ZAD template HTML from builder-zad-v0.json
- * Returns complete HTML ready for deployment
+ * Load FULL ZAD template from builder-zad-v0.json file
+ * Returns the complete HTML template for surgical edits
  */
-async function loadZadTemplate(): Promise<string | null> {
+async function loadFullZadTemplate(): Promise<string | null> {
     try {
         const templatePath = join(__dirname, '..', '..', 'content', 'builder-zad-v0.json');
         const content = await readFile(templatePath, 'utf8');
@@ -86,10 +89,10 @@ async function loadZadTemplate(): Promise<string | null> {
 ${content}
 </html>`;
         
-        logWithTimestamp("📖 ZAD template loaded successfully");
+        logWithTimestamp("📖 FULL ZAD template loaded from builder-zad-v0.json");
         return completeHtml;
     } catch (error) {
-        logWarning(`Error loading ZAD template: ${error instanceof Error ? error.message : String(error)}`);
+        logWarning(`Error loading FULL ZAD template: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -110,7 +113,64 @@ async function loadCoachPersonality(coachHandle: string): Promise<string | null>
     }
 }
 
+/**
+ * Handle ZAD remix - surgical edit of existing template
+ * Sends exactly 4 components to Builder: system prompt + full classifier context + HTML template + preservation warning
+ */
+async function handleZadRemix(fullClassifierContext: string, config: BuilderConfig): Promise<string> {
+    // 1. System prompt from file
+    const systemPrompt = await loadPrompt('builder-zad-remix.json');
+    if (!systemPrompt) {
+        throw new Error("Failed to load ZAD remix system prompt");
+    }
+    
+    // 2. Full classifier context (creative brief + instructions)
+    const creativeContext = fullClassifierContext;
+    
+    // 3. The HTML template from file  
+    const htmlTemplate = await loadFullZadTemplate();
+    if (!htmlTemplate) {
+        throw new Error("Failed to load ZAD template");
+    }
+    
+    // 4. Preservation instructions
+    const preservationWarning = "YOU MUST RETURN A COMPLETE WORKING VERSION of the entire HTML file with the requested changes applied. Do NOT return just the changed lines or a diff or placeholder comments like '[Previous head section remains exactly the same...]'. Return the FULL HTML document with ALL modifications included. KEEP EVERYTHING ELSE THE SAME but return the COMPLETE file.";
 
+    // Assemble user prompt (2 + 3 + 4)
+    const userPrompt = `${creativeContext}
+
+${htmlTemplate}
+
+${preservationWarning}`;
+
+    logWithTimestamp("\n🎨 ZAD REMIX: Sending full context to Builder");
+    
+    // Send to Builder with maximum token limit for complete file output
+    const zadRemixTokens = Math.max(config.maxTokens, 8192); // Use maximum allowed for complete file
+    logWithTimestamp(`🎨 ZAD remix using ${zadRemixTokens} tokens (maximum for complete file)`);
+    logWithTimestamp(`📋 ZAD REMIX SYSTEM PROMPT: ${(systemPrompt as any).content?.length || 0} chars (frontend remixer)`);
+    logWithTimestamp(`📤 ZAD REMIX USER PROMPT: ${userPrompt.length} chars (context + template + instructions)`);
+    
+    // Add verbose logging to see exactly what we're sending
+    logWithTimestamp(`\n🔍 ZAD REMIX SYSTEM PROMPT CONTENT:`);
+    logWithTimestamp("=" + "=".repeat(80));
+    logWithTimestamp((systemPrompt as any).content || "No system prompt content");
+    logWithTimestamp("=" + "=".repeat(80));
+    
+    logWithTimestamp(`\n📤 ZAD REMIX USER PROMPT CONTENT (first 2000 chars):`);
+    logWithTimestamp("-" + "-".repeat(80));
+    logWithTimestamp(userPrompt.substring(0, 2000) + (userPrompt.length > 2000 ? "\n... [TRUNCATED]" : ""));
+    logWithTimestamp("-" + "-".repeat(80));
+    
+    const result = await callClaudeAPI(config.model, (systemPrompt as any).content, userPrompt, zadRemixTokens, config.temperature);
+    
+    logWithTimestamp(`\n📥 ZAD REMIX BUILDER RESPONSE (${result.length} chars):`);
+    logWithTimestamp("=" + "=".repeat(80));
+    logWithTimestamp(result.substring(0, 1000) + (result.length > 1000 ? "\n... [TRUNCATED - showing first 1000 chars] ..." : ""));
+    logWithTimestamp("=" + "=".repeat(80));
+    
+    return result;
+}
 
 /**
  * GENERATE COMPLETE PROMPT (Drop-in replacement for ai-client.ts function)
@@ -183,48 +243,50 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                     { role: "user", content: userMessage } as ChatCompletionMessageParam
                 ];
                 
+                logWithTimestamp(`\n🔍 SENDING TO GPT-4o CLASSIFIER:`);
+                logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
+                logWithTimestamp(`📋 SYSTEM PROMPT: ${(classifierPrompt as any).content?.length || 0} chars (includes ZAD template)`);
+                logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage}`);
+                
                 const response = await getOpenAIClient().chat.completions.create({
                     model: config.classifierModel,
                     messages: messages,
                     temperature: config.classifierTemperature,
-                    max_tokens: config.classifierMaxTokens
+                    max_tokens: config.classifierMaxTokens,
+                    top_p: config.classifierTopP || 1,
+                    presence_penalty: config.classifierPresencePenalty || 0,
+                    frequency_penalty: config.classifierFrequencyPenalty || 0
                 });
                 
                 const content = response.choices[0].message.content;
+                logWithTimestamp(`\n📥 CLASSIFIER RESPONSE (${content?.length || 0} chars):`);
+                logWithTimestamp("=" + "=".repeat(80));
+                logWithTimestamp(content || "No content");
+                logWithTimestamp("=" + "=".repeat(80));
                 if (content) {
-                    // Check if classifier detected a ZAD request with custom title
-                    if (content.includes('ZAD_DETECTED')) {
-                        logWithTimestamp("🤝 ZAD detected by classifier");
+                    // Check if classifier detected a ZAD request by looking for ZERO_ADMIN_DATA: true
+                    if (content.includes('ZERO_ADMIN_DATA: true')) {
+                        logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                         
-                        // Extract custom instruction if provided
-                        const instructionMatch = content.match(/ZAD_INSTRUCTION:\s*(.+)/);
-                        if (instructionMatch) {
-                            const classifierInstruction = instructionMatch[1].trim();
-                            logWithTimestamp(`🎨 Classifier instruction extracted: ${classifierInstruction}`);
+                        // Extract the full classifier response through metadata
+                        const metadataEndMatch = content.match(/---WTAF_METADATA---[\s\S]*?---END_METADATA---/);
+                        if (metadataEndMatch) {
+                            // Send the ENTIRE classifier response to builder for full context
+                            const fullResponse = content.substring(0, content.indexOf('---END_METADATA---') + '---END_METADATA---'.length);
+                            logWithTimestamp(`🎨 ZAD remix mode - sending FULL classifier response (${fullResponse.length} chars) to Builder`);
                             
-                            // For ZAD remix, pass through the classifier's exact instruction
-                            expandedPrompt = `ZAD_REMIX_REQUEST: ${classifierInstruction}`;
-                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${classifierInstruction}`;
-                            logWithTimestamp("🎨 ZAD remix mode - using classifier instruction for Builder");
+                            // For ZAD remix, pass through the complete classifier response
+                            expandedPrompt = `ZAD_REMIX_REQUEST: FULL_CONTEXT`;
+                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${fullResponse}`;
+                            logWithTimestamp("🎨 ZAD remix mode - using complete classifier context for Builder");
                         } else {
-                            // No custom instruction, use static template
-                            const zadTemplate = await loadZadTemplate();
-                            if (zadTemplate) {
-                                logWithTimestamp("🚀 ZAD template loaded - using static version");
-                                return `\`\`\`html\n${zadTemplate}\n\`\`\``;
-                            } else {
-                                logWarning("Failed to load ZAD template, falling back to AI generation");
-                                expandedPrompt = content.trim();
-                            }
+                            logWarning("ZAD detected but no metadata section found, falling back to full content");
+                            expandedPrompt = `ZAD_REMIX_REQUEST: FULL_CONTEXT`;
+                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${content.trim()}`;
                         }
                     } else {
                         expandedPrompt = content.trim();
                         logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
-                        
-                        // ZAD apps now have comprehensive product briefs from classifier
-                        if (expandedPrompt.includes('ZERO_ADMIN_DATA: true')) {
-                            logWithTimestamp("🤝 ZAD app detected - comprehensive product brief included from classifier");
-                        }
                     }
                 } else {
                     logWarning("No content in classifier response, using original");
@@ -291,48 +353,40 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     
     // STEP 3: Load the appropriate specialized builder
     let builderFile: string;
+    let builderType: string;
+    
     if (requestType === 'game') {
         builderFile = 'builder-game.json';
+        builderType = 'Game Builder';
+        logWithTimestamp(`🎮 Game detected - using game builder`);
     } else if (userPrompt.includes('ZAD_REMIX_INSTRUCTION:')) {
-        // ZAD REMIX MODE: Load template and prepare for surgical edit
-        logWithTimestamp("🎨 ZAD remix detected - preparing template for surgical edit");
-        
-        const instructionMatch = userPrompt.match(/ZAD_REMIX_INSTRUCTION:\s*(.+)/);
-        const classifierInstruction = instructionMatch ? instructionMatch[1].trim() : 'Change the title';
-        
-        const zadTemplate = await loadZadTemplate();
-        if (zadTemplate) {
-            logWithTimestamp(`🎨 ZAD template loaded, instruction: ${classifierInstruction}`);
-            
-            // Load ZAD remix builder prompt
-            const zadRemixBuilder = await loadPrompt('builder-zad-remix.json');
-            if (zadRemixBuilder) {
-                logWithTimestamp("🎨 ZAD remix builder loaded from JSON");
-                
-                // Use classifier's exact instruction
-                const remixUserPrompt = `${classifierInstruction}
-
-${zadTemplate}
-
-Do NOT rewrite the code. Do not make other changes. KEEP EVERYTHING ELSE THE SAME.`;
-
-                // Use the loaded builder prompt and call Claude
-                return await callClaudeAPI(config.model, (zadRemixBuilder as any).content, remixUserPrompt, config.maxTokens, config.temperature);
-            } else {
-                logWarning("Failed to load ZAD remix builder, falling back to standard builder");
-                builderFile = 'builder-app.json';
-            }
-        } else {
-            logWarning("Failed to load ZAD template for remix, falling back to standard builder");
-            builderFile = 'builder-app.json';
+        logWithTimestamp(`🎨 ZAD_REMIX_INSTRUCTION detected - using surgical editor`);
+        // Extract the full classifier context
+        const instructionMatch = userPrompt.match(/ZAD_REMIX_INSTRUCTION:\s*([\s\S]+)/);
+        if (!instructionMatch) {
+            throw new Error("ZAD_REMIX_INSTRUCTION detected but no content found - classifier parsing error");
         }
+        const fullClassifierContext = instructionMatch[1].trim();
+        logWithTimestamp(`🎨 Extracted full context: ${fullClassifierContext.length} chars`);
+        
+        return await handleZadRemix(fullClassifierContext, config);
     } else {
         // Standard app
         builderFile = 'builder-app.json';
+        builderType = 'Standard App Builder';
         logWithTimestamp(`📱 Standard app detected - using general app builder`);
     }
     
+    logWithTimestamp(`🔧 Loading builder: ${builderFile} (${builderType})`);
     const builderPrompt = await loadPrompt(builderFile);
+    
+    if (builderPrompt) {
+        const promptContent = (builderPrompt as any).content || '';
+        logWithTimestamp(`📋 Builder system prompt loaded (${promptContent.length} chars):`);
+        logWithTimestamp(`📝 First 200 chars: ${promptContent.substring(0, 200)}...`);
+    } else {
+        logWarning(`❌ Failed to load builder prompt from ${builderFile}`);
+    }
     
     // STEP 5: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
@@ -371,16 +425,32 @@ Do NOT rewrite the code. Do not make other changes. KEEP EVERYTHING ELSE THE SAM
     }
     
     // STEP 7: Call AI with provided config and fallback logic
-    logWithTimestamp(`🧠 Using ${config.model} with ${config.maxTokens} tokens...`);
+    logWithTimestamp(`\n🧠 SENDING TO BUILDER: ${config.model} with ${config.maxTokens} tokens...`);
+    logWithTimestamp(`📋 BUILDER SYSTEM PROMPT (${systemPrompt.length} chars):`);
+    logWithTimestamp("=" + "=".repeat(80));
+    logWithTimestamp(systemPrompt);
+    logWithTimestamp("=" + "=".repeat(80));
+    logWithTimestamp(`📤 BUILDER USER PROMPT (${builderUserPrompt.length} chars):`);
+    logWithTimestamp("-" + "-".repeat(80));
+    logWithTimestamp(builderUserPrompt);
+    logWithTimestamp("-" + "-".repeat(80));
     
     try {
+        let result: string;
         if (config.model.startsWith('claude')) {
-            return await callClaudeAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
+            result = await callClaudeAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
         } else if (config.model.startsWith('gpt')) {
-            return await callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
+            result = await callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
         } else {
             throw new Error(`Unsupported model: ${config.model}`);
         }
+        
+        logWithTimestamp(`\n📥 BUILDER RESPONSE (${result.length} chars):`);
+        logWithTimestamp("=" + "=".repeat(80));
+        logWithTimestamp(result.substring(0, 1000) + (result.length > 1000 ? "\n... [TRUNCATED - showing first 1000 chars] ..." : ""));
+        logWithTimestamp("=" + "=".repeat(80));
+        
+        return result;
     } catch (error) {
         logWarning(`Primary model ${config.model} failed, trying fallbacks: ${error instanceof Error ? error.message : String(error)}`);
         
@@ -452,7 +522,7 @@ async function callClaudeAPI(model: string, systemPrompt: string, userPrompt: st
     
     if (responseJson.content && responseJson.content.length > 0) {
         const result = responseJson.content[0].text;
-        logSuccess(`${model} response received, length: ${result.length} chars`);
+        logSuccess(`✅ ${model} response received, length: ${result.length} chars`);
         return result;
     } else {
         logWarning(`Unexpected Claude API response structure: ${JSON.stringify(responseJson)}`);
@@ -463,7 +533,7 @@ async function callClaudeAPI(model: string, systemPrompt: string, userPrompt: st
 /**
  * Call OpenAI API directly
  */
-async function callOpenAIAPI(model: string, systemPrompt: string, userPrompt: string, maxTokens: number, temperature: number): Promise<string> {
+async function callOpenAIAPI(model: string, systemPrompt: string, userPrompt: string, maxTokens: number, temperature: number, topP?: number, presencePenalty?: number, frequencyPenalty?: number): Promise<string> {
     const response = await getOpenAIClient().chat.completions.create({
         model: model,
         messages: [
@@ -471,13 +541,16 @@ async function callOpenAIAPI(model: string, systemPrompt: string, userPrompt: st
             { role: "user", content: userPrompt }
         ],
         temperature: temperature,
-        max_tokens: maxTokens
+        max_tokens: maxTokens,
+        top_p: topP || 1,
+        presence_penalty: presencePenalty || 0,
+        frequency_penalty: frequencyPenalty || 0
     });
     
     const result = response.choices[0].message.content;
     if (!result) {
         throw new Error("No content in OpenAI response");
     }
-    logSuccess(`${model} response received, length: ${result.length} chars`);
+    logSuccess(`✅ ${model} response received, length: ${result.length} chars`);
     return result;
 } 

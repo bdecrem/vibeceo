@@ -153,7 +153,7 @@ function formatIndicators(indicators: string[]): string {
 /**
  * Build a complete decision step section
  */
-function buildStepSection(step: DecisionStep): string {
+async function buildStepSection(step: DecisionStep): Promise<string> {
     let section = `🔍 STEP ${step.stepNumber}: Does it just need one thing (${step.stepTitle})?\n`;
     section += `${step.stepDescription}\n\n`;
     section += `${step.description}\n\n`;
@@ -170,7 +170,22 @@ function buildStepSection(step: DecisionStep): string {
         section += `Rejection Criteria:\n${formatIndicators(step.rejectionCriteria)}\n\n`;
     }
     
-    section += `${step.decision}\n`;
+    let decision = step.decision;
+    
+    // Special handling for ZAD step: inject template content for smart recommendations
+    if (step.stepTitle.includes('ZAD') && decision.includes('[TEMPLATE_CONTENT_PLACEHOLDER]')) {
+        try {
+            const templatePath = join(__dirname, '..', '..', 'content', 'builder-zad-v0.json');
+            const templateContent = await readFile(templatePath, 'utf8');
+            decision = decision.replace('[TEMPLATE_CONTENT_PLACEHOLDER]', templateContent);
+            logWithTimestamp("📖 ZAD template injected into classifier for smart recommendations");
+        } catch (error) {
+            logWarning(`Failed to load ZAD template: ${error instanceof Error ? error.message : String(error)}`);
+            decision = decision.replace('[TEMPLATE_CONTENT_PLACEHOLDER]', '[Template could not be loaded]');
+        }
+    }
+    
+    section += `${decision}\n`;
     
     return section;
 }
@@ -178,15 +193,16 @@ function buildStepSection(step: DecisionStep): string {
 /**
  * Build the complete classifier prompt content
  */
-function assembleClassifierPrompt(steps: DecisionStep[], config: ClassifierConfig): string {
+async function assembleClassifierPrompt(steps: DecisionStep[], config: ClassifierConfig): Promise<string> {
     const instructions = `${config.main_instructions}\n\n`;
-    const stepsContent = steps.map(step => buildStepSection(step)).join('\n');
+    const stepsContent = await Promise.all(steps.map(step => buildStepSection(step)));
+    const stepsText = stepsContent.join('\n');
     
     const fallbackStep = `🔍 STEP ${config.fallback_step.step_number}: ${config.fallback_step.title}\n${config.fallback_step.description}\n\n→ ${config.fallback_step.decision}\n\n`;
 
     const metadataFormat = `${config.metadata_format.intro}\n\n${config.metadata_format.template}`;
 
-    return instructions + stepsContent + fallbackStep + metadataFormat;
+    return instructions + stepsText + fallbackStep + metadataFormat;
 }
 
 /**
@@ -219,7 +235,7 @@ export async function buildClassifierPrompt(): Promise<ChatCompletionMessagePara
         const steps = modules.map((module, index) => buildDecisionStep(module, index + 1));
 
         // Assemble the final prompt
-        const classifierContent = assembleClassifierPrompt(steps, config);
+        const classifierContent = await assembleClassifierPrompt(steps, config);
 
         logSuccess("🔧 Modular classifier prompt built successfully");
         
