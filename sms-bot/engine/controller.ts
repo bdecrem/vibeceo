@@ -71,8 +71,11 @@ async function loadWtafCookbook(): Promise<string | null> {
 const REQUEST_CONFIGS = {
     creation: {
         classifierModel: 'gpt-4o',
-        classifierMaxTokens: 1000,
+        classifierMaxTokens: 600,
         classifierTemperature: 0.7,
+        classifierTopP: 1,
+        classifierPresencePenalty: 0.3,
+        classifierFrequencyPenalty: 0,
         builderModel: 'claude-3-5-sonnet-20241022',
         builderMaxTokens: 8192,
         builderTemperature: 0.7
@@ -84,8 +87,11 @@ const REQUEST_CONFIGS = {
     },
     game: {
         classifierModel: 'gpt-4o',
-        classifierMaxTokens: 1000,
-        classifierTemperature: 0.8,
+        classifierMaxTokens: 600,
+        classifierTemperature: 0.7,
+        classifierTopP: 1,
+        classifierPresencePenalty: 0.3,
+        classifierFrequencyPenalty: 0,
         builderModel: 'gpt-4o',    // Games might work better with GPT?
         builderMaxTokens: 16000,
         builderTemperature: 0.8
@@ -221,8 +227,11 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
         const completePrompt = await generateCompletePrompt(userPrompt, {
             classifierModel: config.classifierModel || 'gpt-4o',
-            classifierMaxTokens: config.classifierMaxTokens || 1000,
-            classifierTemperature: config.classifierTemperature || 0.7
+            classifierMaxTokens: config.classifierMaxTokens || 600,
+            classifierTemperature: config.classifierTemperature || 0.7,
+            classifierTopP: config.classifierTopP || 1,
+            classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
+            classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
