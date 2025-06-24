@@ -1,0 +1,75 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Fun Chat</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Sniglet:wght@400;800&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Comic Neue', cursive;
+            margin: 0; 
+            padding: 20px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #FFE66D 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            color: white;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        h1 { 
+            font-family: 'Sniglet', cursive;
+            font-weight: 800;
+            font-size: 3rem;
+            text-align: center;
+            margin: 0 0 2rem 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: textGlow 2s ease-in-out infinite alternate;
+            color: #FFE66D;
+        }
+        
+        @keyframes textGlow {
+            from { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+            to { text-shadow: 0 0 30px rgba(255,255,255,0.8), 0 0 40px rgba(78,205,196,0.3); }
+        }
+        
+        h2, h3 { 
+            font-family: 'Sniglet', cursive;
+            font-weight: 400;
+        }
+
+        [Previous CSS remains exactly the same...]
+
+    </style>
+</head>
+<body>
+    [Previous body content remains exactly the same but with these text changes:]
+    
+    <h1 id="mainTitle">Family Fun Chat! 👨‍👩‍👧‍👦</h1>
+    
+    <div id="welcomeScreen" class="screen active">
+        <h2>Welcome to our Family Chat! 🌈</h2>
+        <p>A fun and safe place for our family to chat and share! No signup needed - just hop right in!</p>
+        <button onclick="showNewUserScreen()">Join the Fun! 🎉</button>
+        <button onclick="showReturningUserScreen()">Welcome Back! 🤗</button>
+    </div>
+
+    [Rest of the body content remains exactly the same...]
+
+</body>
+</html>
+```

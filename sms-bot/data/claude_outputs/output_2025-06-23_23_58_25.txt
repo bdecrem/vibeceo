@@ -1,0 +1,577 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berlin Beats - Underground Chat</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            color: white;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        h1 { 
+            font-family: 'Space Grotesk', sans-serif; 
+            font-weight: 700; 
+            font-size: 3rem; 
+            text-align: center; 
+            margin: 0 0 2rem 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes textGlow {
+            from { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+            to { text-shadow: 0 0 30px rgba(255,255,255,0.8), 0 0 40px rgba(255,46,147,0.3); }
+        }
+        
+        h2, h3 { 
+            font-family: 'Space Grotesk', sans-serif; 
+            font-weight: 600;
+        }
+        
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        .emoji-picker { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px; 
+            margin: 20px 0; 
+        }
+        
+        .emoji-option { 
+            font-size: 16px; 
+            font-weight: 600;
+            cursor: pointer; 
+            padding: 15px; 
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .emoji-option:hover, .emoji-option.selected { 
+            border-color: #00FFC6; 
+            background: rgba(0,255,198,0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,255,198,0.3);
+        }
+        
+        .user-info { 
+            background: linear-gradient(135deg, rgba(0,255,198,0.2), rgba(87,226,229,0.2));
+            padding: 20px; 
+            border-radius: 15px; 
+            margin: 20px 0;
+            border: 1px solid rgba(0,255,198,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .message { 
+            margin: 15px 0; 
+            padding: 15px 20px; 
+            border-radius: 20px; 
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: messageSlide 0.3s ease-out;
+        }
+        
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.mine { 
+            background: linear-gradient(135deg, #FF2E93, #FF61C7);
+            color: white; 
+            text-align: right;
+            border: 1px solid rgba(255,46,147,0.5);
+            box-shadow: 0 5px 15px rgba(255,46,147,0.3);
+        }
+        
+        button { 
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            padding: 15px 30px; 
+            margin: 10px 5px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,255,198,0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,255,198,0.4);
+            background: linear-gradient(135deg, #57E2E5, #8CFFDA);
+        }
+        
+        input, textarea { 
+            font-family: 'Inter', sans-serif;
+            padding: 15px; 
+            margin: 10px 0; 
+            width: 100%; 
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            font-size: 16px;
+            -webkit-appearance: none;
+            -webkit-border-radius: 15px;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0,255,198,0.3);
+        }
+        
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 1000;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(-10px) rotate(-5deg); }
+            75% { transform: translateY(-15px) rotate(3deg); }
+        }
+        
+        .glitch {
+            animation: glitch 0.3s steps(2) infinite;
+        }
+        
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 #00FFC6, -0.03em -0.04em 0 #FF2E93, 0.025em 0.04em 0 #7C3AED; }
+            15% { text-shadow: 0.05em 0 0 #00FFC6, -0.03em -0.04em 0 #FF2E93, 0.025em 0.04em 0 #7C3AED; }
+            16% { text-shadow: -0.05em -0.025em 0 #00FFC6, 0.025em 0.035em 0 #FF2E93, -0.05em -0.05em 0 #7C3AED; }
+            49% { text-shadow: -0.05em -0.025em 0 #00FFC6, 0.025em 0.035em 0 #FF2E93, -0.05em -0.05em 0 #7C3AED; }
+            50% { text-shadow: 0.05em 0.035em 0 #00FFC6, 0.03em 0 0 #FF2E93, 0 -0.04em 0 #7C3AED; }
+            99% { text-shadow: 0.05em 0.035em 0 #00FFC6, 0.03em 0 0 #FF2E93, 0 -0.04em 0 #7C3AED; }
+            100% { text-shadow: -0.05em 0 0 #00FFC6, -0.025em -0.04em 0 #FF2E93, -0.04em -0.025em 0 #7C3AED; }
+        }
+        
+        .spark {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .spark::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0,255,198,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: sparkBurst 0.6s ease-out;
+        }
+        
+        @keyframes sparkBurst {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 100px; height: 100px; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+     <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%;">⚡</div>
+     <div class="floating-emoji" data-value="3" style="top: 20%; right: 15%;">🚀</div>
+     <div class="floating-emoji" data-value="1" style="top: 60%; left: 5%;">💎</div>
+     <div class="floating-emoji" data-value="4" style="top: 80%; right: 10%;">🌀</div>
+     <div class="floating-emoji" data-value="2" style="top: 40%; right: 50%;">✨</div>
+     
+     <div class="app-container">
+         <h1 id="mainTitle">Berlin Beats</h1>
+         
+         <div id="welcomeScreen" class="screen active">
+             <h2>Welcome to the Underground</h2>
+             <p>Secret rave chat for up to 5 ravers. No signup. No rules. Just pure techno vibes.</p>
+             <button onclick="showNewUserScreen()">Drop Into The Bass</button>
+             <button onclick="showReturningUserScreen()">Back To The Beat</button>
+         </div>
+    
+         <div id="newUserScreen" class="screen">
+             <h2>Welcome to the Rave!</h2>
+             <div class="user-info">
+                 <h3>Your Rave Name: <span id="newUserLabel"></span></h3>
+                 <h3>Your Underground Code: <span id="newUserCode"></span></h3>
+                 <p><strong>Save these credentials!</strong> This is your VIP access to the next location. No email. No reset. Pure underground vibes only.</p>
+             </div>
+             <button onclick="joinAsNewUser()">Enter The Warehouse</button>
+             <button onclick="showWelcomeScreen()">Need Some Air</button>
+         </div>
+         
+         <div id="returningUserScreen" class="screen">
+             <h2>The Beat Goes On!</h2>
+             <h3>Select Your Rave Avatar:</h3>
+             <div class="emoji-picker" id="emojiPicker">
+                 <div class="emoji-option" data-user="raver⚡">raver⚡</div>
+                 <div class="emoji-option" data-user="raver🪩">raver🪩</div>
+                 <div class="emoji-option" data-user="raver🔮">raver🔮</div>
+                 <div class="emoji-option" data-user="raver🦴">raver🦴</div>
+                 <div class="emoji-option" data-user="raver🌑">raver🌑</div>
+             </div>
+             <label>Enter your underground code:</label>
+             <input type="text" id="returningCode" placeholder="Your 4-digit rave key">
+             <br><br>
+             <button onclick="signInReturningUser()">Drop The Bass</button>
+             <button onclick="showWelcomeScreen()">Back To Reality</button>
+         </div>
+         
+         <div id="chatScreen" class="screen">
+             <div id="userStatus"></div>
+             <hr style="border: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+             <div id="messages">Loading underground transmissions...</div>
+             <hr style="border: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+             <form id="messageForm">
+                 <textarea id="messageInput" rows="2" placeholder="What's the next beat drop?"></textarea>
+                 <button type="submit">Drop It</button>
+             </form>
+             <button onclick="leaveChat()">Exit The Rave</button>
+         </div>
+     </div>
+    
+    <script>
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient('https://tqniseocczttrfwtpbdr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350');
+        
+        // App state
+        let currentUser = null;
+        const APP_ID = 'zad-chat-' + Math.random().toString(36).substr(2, 9);
+        const USER_LABELS = ['raver⚡', 'raver🪩', 'raver🔮', 'raver🦴', 'raver🌑'];
+        
+        // Screen navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+        
+        function showWelcomeScreen() { showScreen('welcomeScreen'); }
+        async function showNewUserScreen() { 
+            await generateNewUser();
+            showScreen('newUserScreen'); 
+        }
+        function showReturningUserScreen() { 
+            setupEmojiPicker();
+            showScreen('returningUserScreen'); 
+        }
+        function showChatScreen() { 
+            updateUserStatus();
+            loadMessages();
+            showScreen('chatScreen'); 
+        }
+        
+        // Generate new user credentials
+        async function generateNewUser() {
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            
+            try {
+                const { data: participants } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('participant_data')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const usedLabels = participants?.map(p => p.participant_data?.userLabel).filter(Boolean) || [];
+                const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label)) || 'raver🌑';
+                
+                document.getElementById('newUserLabel').textContent = availableLabel;
+                document.getElementById('newUserCode').textContent = code;
+                
+                currentUser = {
+                    userLabel: availableLabel,
+                    passcode: code,
+                    participantId: availableLabel + '_' + code
+                };
+            } catch (error) {
+                const availableLabel = 'raver🌑';
+                document.getElementById('newUserLabel').textContent = availableLabel;
+                document.getElementById('newUserCode').textContent = code;
+                
+                currentUser = {
+                    userLabel: availableLabel,
+                    passcode: code,
+                    participantId: availableLabel + '_' + code
+                };
+            }
+        }
+        
+        function setupEmojiPicker() {
+            document.querySelectorAll('.emoji-option').forEach(option => {
+                ['click', 'touchend'].forEach(eventType => {
+                    option.addEventListener(eventType, function(e) {
+                        e.preventDefault();
+                        document.querySelectorAll('.emoji-option').forEach(o => o.classList.remove('selected'));
+                        this.classList.add('selected');
+                    });
+                });
+            });
+        }
+        
+        async function joinAsNewUser() {
+            try {
+                const { data: participants } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('participant_id')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const uniqueParticipants = [...new Set(participants?.map(p => p.participant_id) || [])];
+                
+                if (uniqueParticipants.length >= 5) {
+                    alert('Rave is at capacity! Maximum 5 ravers allowed.');
+                    return;
+                }
+                
+                if (uniqueParticipants.includes(currentUser.participantId)) {
+                    alert('This raver+code combination already exists. Try again.');
+                    await generateNewUser();
+                    return;
+                }
+                
+                await joinChat();
+                showChatScreen();
+                
+            } catch (error) {
+                console.error('Error joining:', error);
+                alert('Failed to join rave: ' + error.message);
+            }
+        }
+        
+        async function signInReturningUser() {
+            const selectedUser = document.querySelector('.emoji-option.selected');
+            const code = document.getElementById('returningCode').value.trim();
+            
+            if (!selectedUser) {
+                alert('Select your rave avatar');
+                return;
+            }
+            
+            if (!code) {
+                alert('Enter your underground code');
+                return;
+            }
+            
+            const participantId = selectedUser.dataset.user + '_' + code;
+            
+            try {
+                const { data: userExists } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('participant_id', participantId)
+                    .eq('action_type', 'join')
+                    .limit(1);
+                
+                if (!userExists || userExists.length === 0) {
+                    alert('Invalid raver+code combination. Check your credentials.');
+                    return;
+                }
+                
+                currentUser = {
+                    userLabel: selectedUser.dataset.user,
+                    passcode: code,
+                    participantId: participantId
+                };
+                
+                showChatScreen();
+                
+            } catch (error) {
+                console.error('Error signing in:', error);
+                alert('Failed to enter rave: ' + error.message);
+            }
+        }
+        
+        async function joinChat() {
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'join',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode,
+                        join_time: Date.now()
+                    },
+                    content_data: {
+                        message: 'Joined the underground',
+                        timestamp: Date.now()
+                    }
+                });
+        }
+        
+        function updateUserStatus() {
+            document.getElementById('userStatus').innerHTML = 
+                `<strong>Rave Name: ${currentUser.userLabel} | Underground Code: ${currentUser.passcode}</strong>`;
+        }
+        
+        document.getElementById('messageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                alert('Drop a message');
+                return;
+            }
+            
+            try {
+                await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .insert({
+                        app_id: APP_ID,
+                        participant_id: currentUser.participantId,
+                        action_type: 'message',
+                        content_data: {
+                            message: message,
+                            timestamp: Date.now(),
+                            userLabel: currentUser.userLabel
+                        }
+                    });
+                
+                messageInput.value = '';
+                loadMessages();
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to drop message: ' + error.message);
+            }
+        });
+        
+        async function loadMessages() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .in('action_type', ['join', 'message'])
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                const messagesDiv = document.getElementById('messages');
+                
+                if (data && data.length > 0) {
+                    messagesDiv.innerHTML = data.map(row => {
+                        const isMyMessage = row.participant_id === currentUser.participantId;
+                        const userLabel = row.content_data?.userLabel || row.participant_data?.userLabel || 'Unknown Raver';
+                        const message = row.content_data?.message || '';
+                        const time = new Date(row.created_at).toLocaleTimeString();
+                        
+                        return `<div class="message ${isMyMessage ? 'mine' : ''}">
+                            <strong>${userLabel} ${time}:</strong> ${message}
+                        </div>`;
+                    }).join('');
+                } else {
+                    messagesDiv.innerHTML = '<p>The warehouse is quiet. Drop the first beat!</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messages').innerHTML = '<p>Error loading beats: ' + error.message + '</p>';
+            }
+        }
+        
+        function leaveChat() {
+            currentUser = null;
+            showWelcomeScreen();
+        }
+        
+        setInterval(() => {
+            if (currentUser && document.getElementById('chatScreen').classList.contains('active')) {
+                loadMessages();
+            }
+        }, 3000);
+        
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+        
+        let titleClicks = 0;
+        document.getElementById('mainTitle').addEventListener('click', () => {
+            titleClicks++;
+            if (titleClicks === 5) {
+                document.getElementById('mainTitle').classList.add('glitch');
+                console.log('🔥 UNDERGROUND MODE ACTIVATED! Welcome to the bass dimension!');
+                setTimeout(() => {
+                    document.getElementById('mainTitle').classList.remove('glitch');
+                    titleClicks = 0;
+                }, 3000);
+            }
+        });
+        
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function() {
+                this.classList.add('spark');
+                setTimeout(() => {
+                    this.classList.remove('spark');
+                }, 600);
+            });
+        });
+        
+        console.log('%c🚀 Berlin Underground Chat 🚀', 'color: #FF2E93; font-size: 20px; font-weight: bold;');
+        console.log('%cYou found the secret room! Try clicking the title 5 times...', 'color: #00FFC6; font-size: 14px;');
+    </script>
+</body>
+</html>
+```

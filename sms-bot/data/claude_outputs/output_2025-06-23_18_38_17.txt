@@ -1,0 +1,208 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARTY - Your Chaotic Group Chat Vibe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            background: #00FFC6;
+            color: #111;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0,255,198,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .features {
+            padding: 4rem 0;
+            background: #222;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .text-alert {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 4rem; }
+            .tagline { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="hero-content">
+            <h1>PARTY</h1>
+            <p class="tagline">because your group chat deserves a glow up 💅</p>
+            <button class="cta-button">START THE CHAOS</button>
+        </div>
+        <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%">🎉</div>
+        <div class="floating-emoji" data-value="3" style="top: 60%; left: 80%">🪩</div>
+        <div class="floating-emoji" data-value="4" style="top: 80%; left: 30%">💃</div>
+        <div class="floating-emoji" data-value="5" style="top: 30%; left: 70%">🍾</div>
+        <div class="floating-emoji" data-value="6" style="top: 50%; left: 50%">✨</div>
+    </div>
+
+    <div class="features">
+        <div class="container">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>CHAOS MODE</h3>
+                    <p>Messages explode with glitter. Reactions rain from the sky. Your phone might actually catch fire.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>VIBE CHECK™</h3>
+                    <p>AI-powered mood lighting that syncs with your chat energy. Red for drama, blue for chill, rainbow for pure chaos.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>NO ADULTS ALLOWED</h3>
+                    <p>Zero admins. Zero rules. Just pure, unfiltered friend energy in its natural habitat.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-alert">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt-display">
+        Generated from: Create a chat app for friends called PARTY
+    </div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg: Type PARTY for confetti
+        let partyCode = '';
+        document.addEventListener('keydown', (e) => {
+            partyCode += e.key.toLowerCase();
+            if (partyCode.includes('party')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                partyCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```
