@@ -170,8 +170,7 @@ export function detectRequestType(userPrompt: string): 'game' | 'app' {
     
     // Game keywords
     const gameKeywords = ['game', 'pong', 'tetris', 'snake', 'tic-tac-toe', 'memory game', 
-                         'quiz', 'trivia', 'puzzle', 'arcade', 'solitaire', 'blackjack',
-                         'breakout', 'flappy', 'platformer', 'shooter', 'racing', 'cards'];
+                         'arcade', 'solitaire', 'blackjack', 'breakout', 'flappy', 'platformer'];
     
     // Use word boundary matching to avoid false positives
     // Check for game keywords
