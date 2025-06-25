@@ -1,30 +1,28 @@
 {
   "classification_type": "needs-admin",
   "step_title": "ADMIN URL",
-  "step_description": "Check if this collects data FROM users and needs owner management:",
-  "description": "Forms/systems that collect data and need an admin dashboard",
-  "examples": {
-    "good_examples": [
-      "\"Build me a newsletter signup\" → collects emails FROM users → dual-page admin system",
-      "\"Create a contact form\" → collects messages FROM users → dual-page admin system",
-      "\"Make a booking system\" → collects appointment data → complex form",
-      "\"Build a registration page\" → collects user data → complex form",
-      "\"Create a survey\" → collects responses → complex form",
-      "\"Make an e-commerce store\" → collects orders → complex system"
-    ],
-    "data_flow": "FROM users TO business owner",
-    "indicators": [
-      "Newsletter signups",
-      "Contact forms",
-      "Booking systems",
-      "Registration pages",
-      "Surveys",
-      "E-commerce stores",
-      "Event RSVPs",
-      "Application forms",
-      "Feedback collection"
-    ]
-  },
+  "step_description": "Check if this app asks users to enter data that needs to be passed on to the app creator:",
+  "description": "Forms/systems that ask users to enter data that needs to be passed on to the app creator",
+  "good_examples": [
+    "\"Build me a newsletter signup\" → collects emails from users and the creator needs to receive those → dual-page admin system",
+    "\"Create a contact form\" → collects messages from users and the creator needs to receive those → dual-page admin system",
+    "\"Make a booking system\" → collects appointment data and the creator needs to receive those → complex form",
+    "\"Build a registration page\" → collects user data and the creator needs to receive it → complex form",
+    "\"Create a survey\" → collects responses and the creator needs to receive those → complex form",
+    "\"Make an e-commerce store\" → collects orders and the creator needs to receive those → complex system"
+  ],
+  "data_flow": "FROM users TO business owner",
+  "indicators": [
+    "Newsletter signups",
+    "Contact forms",
+    "Booking systems",
+    "Registration pages",
+    "Surveys",
+    "E-commerce stores",
+    "Event RSVPs",
+    "Application forms",
+    "Feedback collection"
+  ],
   "decision_logic": {
     "if_yes": "APP_TYPE=data_collection, STOP HERE",
     "if_no": "Continue to Step 4"

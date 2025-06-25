@@ -228,24 +228,13 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                              userPrompt.toLowerCase().includes('puzzle') ||
                              userPrompt.toLowerCase().includes('arcade');
         
-        // Check if this will be detected as a ZAD by running a quick classifier check
-        let isZadRequest = false;
-        try {
-            // Quick ZAD detection by checking for collaborative indicators
-            const zadIndicators = ['me and my friends', 'my team', 'our team', 'our group', 'study group', 'my family', 'book club'];
-            isZadRequest = zadIndicators.some(indicator => userPrompt.toLowerCase().includes(indicator));
-        } catch (error) {
-            // If detection fails, default to false
-            isZadRequest = false;
-        }
-        
+        // Determine config type based on basic request analysis
+        // ZAD detection will happen in the classifier step
         let configType: keyof typeof REQUEST_CONFIGS;
         if (isGameRequest) {
             configType = 'game';
-        } else if (isZadRequest) {
-            configType = 'zad';
         } else {
-            configType = 'creation';
+            configType = 'creation';  // Default to creation, classifier will determine if ZAD is needed
         }
         
         const config = REQUEST_CONFIGS[configType];

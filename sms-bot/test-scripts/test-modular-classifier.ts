@@ -39,7 +39,9 @@ async function testModularClassifier() {
         
         Object.entries(examples).forEach(([key, logic]) => {
             console.log(`📋 ${key}: ${logic.description}`);
-            console.log(`   Examples: ${logic.examples.good_examples?.length || 0} good, ${logic.examples.bad_examples?.length || 0} bad`);
+            const goodExamples = (logic as any).good_examples || logic.examples?.good_examples || [];
+            const badExamples = (logic as any).bad_examples || logic.examples?.bad_examples || [];
+            console.log(`   Examples: ${goodExamples.length} good, ${badExamples.length} bad`);
         });
         console.log();
     } else {

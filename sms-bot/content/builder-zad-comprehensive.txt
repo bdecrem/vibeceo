@@ -92,7 +92,7 @@ const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5�
 </div>
 ```
 
-**Authentication Functions** (COPY THESE EXACTLY):
+**Authentication Functions** (MANDATORY - YOU MUST INCLUDE ALL OF THESE FUNCTIONS EXACTLY AS WRITTEN - DO NOT SUMMARIZE OR SKIP):
 ```javascript
 let currentUser = null;
 
@@ -290,9 +290,10 @@ async function loadLatestData() {
 - All users should see updates within 2-3 seconds
 
 **CRITICAL CODE PATTERNS TO FOLLOW:**
-- Never use inline onclick="${...}" with template literals - use addEventListener or element.onclick = 
+- Use the provided onclick handlers exactly as shown - they are tested and working
 - Always update existing records, don't create separate event records
 - Store all related data (reactions, comments) inside content_data of the main record
+- All authentication functions must be defined in the global scope
 
 ### 5. User Capacity
 - **Minimum**: 1 user (app works with just one person)

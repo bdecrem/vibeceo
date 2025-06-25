@@ -1,49 +1,41 @@
 {
   "classification_type": "zero-admin-data",
   "step_title": "ZAD (Zero Admin Data)",
-  "step_description": "Check if this is a collaborative app for small groups:",
-  "description": "Multi-user collaborative apps that store shared data without needing accounts or dashboards",
-  "examples": {
-    "good_examples": [
-      "\"Make a discussion board for my study group\" → everyone posts, no admin",
-      "\"Create an idea dump for my team\" → team brainstorms together",
-      "\"Build a memory wall for my family\" → shared stories, no accounts",
-      "\"build a place where me and my friends can share ideas\" → text-based social app for small group",
-      "\"build a thought sharing app for my book club\" → group discussion and idea exchange",
-      "\"make a brainstorm space for my family\" → family idea sharing and discussion"
-    ],
-    "bad_examples": [
-      "\"Create a newsletter signup\" → collects emails, owner needs dashboard",
-      "\"Build me a contact form\" → collects messages from users",
-      "\"Create a survey\" → collects structured responses",
-      "\"build me a contact form\" → Data Collection (business collects from customers)",
-      "\"create my business card\" → Simple Email (just display contact info)",
-      "\"make a newsletter signup\" → Data Collection (business collects emails)",
-      "\"build my portfolio\" → Simple Email (just display contact info)",
-      "\"create a survey for customers\" → Data Collection (business collects responses)"
-    ],
-    "rejection_criteria": [
-      "Require real-time sync or notifications",
-      "Require accounts or file uploads", 
-      "Involve more than 5 users",
-      "Need payment, admin roles, or moderation"
-    ],
-    "key_indicators": [
-      "Social context: \"me and my friends\", \"my team\", \"our group\"",
-      "Equal participation: everyone contributes, no owner collecting",
-      "Small group: 2–5 people",
-      "Goal is discussion, sharing, coordination, or creativity",
-      "Social interaction verbs: \"share\", \"discuss\", \"brainstorm\", \"collaborate\"",
-      "Collaborative language: \"me and my friends\", \"our group\", \"my team\", \"study group\""
-    ]
-  },
+  "step_description": "Check if this is a web app that could work with 5 or fewer people",
+  "description": "Accept if: The request is for a web app that could work with 5 or fewer people.",
+  
+  "good_examples": [
+    "a simple voting app → 5 people can vote together",
+    "personal journal for my thoughts → 1 person using it", 
+    "chat app to talk with my friends → Friend group of 5 or fewer",
+    "expense tracker for our roommates → Roommates = typically 2-5 people",
+    "group decision maker for weekend plans → Small group planning together"
+  ],
+  
+  "bad_examples": [
+    "social media platform like Instagram → Needs thousands/millions of users",
+    "dating app to meet new people → Large user base to match against", 
+    "marketplace for buying and selling → Needs many buyers and sellers",
+    "enterprise CRM for our 200-person company → Explicitly more than 5 people",
+    "public forum for discussing politics → Designed for large public audience"
+  ],
+  
+  "rejection_criteria": [
+    "Designed for large public audience",
+    "Requires complex user management",
+    "Enterprise or business-scale features",
+    "Public marketplace or social platform"
+  ],
+  
+  "key_indicators": [
+    "Small group size (5 or fewer people)",
+    "Personal or small team use",
+    "Simple collaboration needs",
+    "No complex business features required"
+  ],
+  
   "decision_logic": {
-      "if_yes": "ZAD_DETECTED\n\nThis is a ZAD (Zero Admin Data) collaborative app request. Route to the comprehensive ZAD builder for full app generation.\n\n---WTAF_METADATA---\nEMAIL_NEEDED: false\nEMAIL_CONTEXT: none\nZERO_ADMIN_DATA: true\nZERO_ADMIN_CONTEXT: Multi-user collaborative app\nAPP_TYPE: zero_admin_data\n---END_METADATA---",
-    "if_no": "Continue to Step 3"
-  },
-  "metadata_output": {
-    "ZERO_ADMIN_DATA": "true",
-    "ZERO_ADMIN_CONTEXT": "Multi-user social features for collaborative group",
-    "APP_TYPE": "zero_admin_data"
+    "if_yes": "ZAD_DETECTED: This request is for a small-scale web application suitable for 5 or fewer people.\n\nThis will be built as a collaborative app with simple authentication and data sharing.",
+    "if_no": "STANDARD_REQUEST: This request should be handled by the standard app builder.\n\nReason: Designed for larger audience or requires complex features beyond small group collaboration."
   }
 } 
