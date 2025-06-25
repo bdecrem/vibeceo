@@ -184,6 +184,10 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                 logWithTimestamp(`\n🔍 SENDING TO GPT-4o CLASSIFIER:`);
                 logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
                 logWithTimestamp(`📋 SYSTEM PROMPT: ${(classifierPrompt as any).content?.length || 0} chars (includes ZAD template)`);
+                logWithTimestamp(`📋 FULL CLASSIFIER SYSTEM PROMPT CONTENT:`);
+                logWithTimestamp("=" + "=".repeat(80));
+                logWithTimestamp((classifierPrompt as any).content || "No content");
+                logWithTimestamp("=" + "=".repeat(80));
                 logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage}`);
                 
                 const response = await getOpenAIClient().chat.completions.create({
@@ -202,7 +206,7 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                 logWithTimestamp(content || "No content");
                 logWithTimestamp("=" + "=".repeat(80));
                 if (content) {
-                    // Check if classifier detected a ZAD request by looking for ZERO_ADMIN_DATA: true
+                    // Check if classifier detected a ZAD request by looking for ZERO_ADMIN_DATA: true in metadata
                     if (content.includes('ZERO_ADMIN_DATA: true')) {
                         logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                         
@@ -353,8 +357,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(`🎭 Prepared ${coach}'s full personality data for builder`);
     }
     
-    // Add WTAF Cookbook if provided by controller (only for apps)
-    if (config.cookbook && requestType === 'app') {
+    // Add WTAF Cookbook if provided by controller (only for non-ZAD apps)
+    if (config.cookbook && requestType === 'app' && !userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${config.cookbook}`;
         logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt (provided by controller)`);
     }
