@@ -74,6 +74,22 @@ async function loadPrompt(filename: string): Promise<ChatCompletionMessageParam 
     }
 }
 
+/**
+ * Load text prompt from .txt file (for comprehensive prompts)
+ */
+async function loadTextPrompt(filename: string): Promise<string | null> {
+    try {
+        // When compiled, this runs from dist/engine/, so we need to go up 2 levels to reach sms-bot/
+        const promptPath = join(__dirname, '..', '..', 'content', filename);
+        const content = await readFile(promptPath, 'utf8');
+        logWithTimestamp(`📖 Text prompt loaded: ${filename} (${content.length} chars)`);
+        return content;
+    } catch (error) {
+        logWarning(`Error loading text prompt ${filename}: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
 
 
 /**
@@ -270,7 +286,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderType = 'Game Builder';
         logWithTimestamp(`🎮 Game detected - using game builder`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
-        logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder`);
+        logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
         const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
         if (!requestMatch) {
@@ -279,10 +295,10 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         const userRequest = requestMatch[1].trim();
         logWithTimestamp(`🎨 Extracted user request: ${userRequest}`);
         
-        // Use the comprehensive ZAD builder
-        builderFile = 'builder-zad-comprehensive.json';
-        builderType = 'Comprehensive ZAD Builder';
-        logWithTimestamp(`🎨 Using comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
+        // Use the comprehensive ZAD builder (.txt format to avoid JSON escaping issues)
+        builderFile = 'builder-zad-comprehensive.txt';
+        builderType = 'Comprehensive ZAD Builder (.txt)';
+        logWithTimestamp(`🎨 Using .txt comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
     } else {
         // Standard app
         builderFile = 'builder-app.json';
@@ -291,14 +307,32 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     
     logWithTimestamp(`🔧 Loading builder: ${builderFile} (${builderType})`);
-    const builderPrompt = await loadPrompt(builderFile);
     
-    if (builderPrompt) {
-        const promptContent = (builderPrompt as any).content || '';
-        logWithTimestamp(`📋 Builder system prompt loaded (${promptContent.length} chars):`);
-        logWithTimestamp(`📝 First 200 chars: ${promptContent.substring(0, 200)}...`);
+    let builderPrompt: ChatCompletionMessageParam | null = null;
+    let promptContent = '';
+    
+    // Handle different file formats
+    if (builderFile.endsWith('.txt')) {
+        // Load text file directly for comprehensive prompts
+        const textContent = await loadTextPrompt(builderFile);
+        if (textContent) {
+            builderPrompt = { role: 'system', content: textContent } as ChatCompletionMessageParam;
+            promptContent = textContent;
+            logWithTimestamp(`📋 Text builder prompt loaded (${promptContent.length} chars):`);
+            logWithTimestamp(`📝 First 200 chars: ${promptContent.substring(0, 200)}...`);
+        } else {
+            logWarning(`❌ Failed to load text builder prompt from ${builderFile}`);
+        }
     } else {
-        logWarning(`❌ Failed to load builder prompt from ${builderFile}`);
+        // Load JSON file for regular prompts
+        builderPrompt = await loadPrompt(builderFile);
+        if (builderPrompt) {
+            promptContent = (builderPrompt as any).content || '';
+            logWithTimestamp(`📋 JSON builder prompt loaded (${promptContent.length} chars):`);
+            logWithTimestamp(`📝 First 200 chars: ${promptContent.substring(0, 200)}...`);
+        } else {
+            logWarning(`❌ Failed to load JSON builder prompt from ${builderFile}`);
+        }
     }
     
     // STEP 5: Prepare coach-aware user prompt for builder
@@ -331,7 +365,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else {
         logWithTimestamp(`🔧 Using specialized builder: ${builderFile}`);
         // Use specialized builder prompt directly - classifier handles coach interpretation
-        systemPrompt = (builderPrompt as any).content || systemPrompt;
+        systemPrompt = promptContent || systemPrompt;
     }
     
     // PARTY TRICK: Inject email placeholder instructions when needed

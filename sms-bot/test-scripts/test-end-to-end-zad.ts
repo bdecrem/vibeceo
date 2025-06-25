@@ -83,15 +83,14 @@ Features needed: Discussion threads, shared posting, no accounts required`;
     console.log('\n📖 Test 4: Builder Prompt Loading');
     
     try {
-        const builderPath = join(__dirname, '..', '..', 'content', 'builder-zad-comprehensive.json');
+        const builderPath = join(__dirname, '..', '..', 'content', 'builder-zad-comprehensive.txt');
         const builderContent = await readFile(builderPath, 'utf8');
-        const builder = JSON.parse(builderContent);
         
-        console.log(`✅ Builder prompt loaded: ${builder.content.length} characters`);
-        console.log(`✅ Contains [USER REQUEST] placeholder: ${builder.content.includes('[USER REQUEST]')}`);
-        console.log(`✅ Contains authentication system: ${builder.content.includes('Authentication System')}`);
-        console.log(`✅ Contains WTAF design: ${builder.content.includes('WTAF Visual Style')}`);
-        console.log(`✅ Contains database integration: ${builder.content.includes('wtaf_zero_admin_collaborative')}`);
+        console.log(`✅ Builder prompt (.txt) loaded: ${builderContent.length} characters`);
+        console.log(`✅ Contains [USER REQUEST] placeholder: ${builderContent.includes('[USER REQUEST]')}`);
+        console.log(`✅ Contains authentication system: ${builderContent.includes('Authentication System')}`);
+        console.log(`✅ Contains WTAF design: ${builderContent.includes('WTAF Visual Style')}`);
+        console.log(`✅ Contains database integration: ${builderContent.includes('wtaf_zero_admin_collaborative')}`);
         
         // Test that critical elements are present
         const requiredElements = [
@@ -103,7 +102,7 @@ Features needed: Discussion threads, shared posting, no accounts required`;
             'Easter Egg'
         ];
         
-        const missingElements = requiredElements.filter(element => !builder.content.includes(element));
+        const missingElements = requiredElements.filter(element => !builderContent.includes(element));
         if (missingElements.length > 0) {
             console.log(`❌ Missing elements: ${missingElements.join(', ')}`);
             return false;
@@ -123,7 +122,7 @@ Features needed: Discussion threads, shared posting, no accounts required`;
     console.log('3. Sends to classifier with is-it-a-zad.json');
     console.log('4. Classifier responds with ZAD_DETECTED + user request');
     console.log('5. wtaf-processor detects ZAD_DETECTED');
-    console.log('6. Loads builder-zad-comprehensive.json'); 
+    console.log('6. Loads builder-zad-comprehensive.txt (clean formatting)'); 
     console.log('7. Sends comprehensive prompt + user request to Claude');
     console.log('8. Claude generates complete collaborative app');
     console.log('9. Result stored in Supabase with proper metadata');
