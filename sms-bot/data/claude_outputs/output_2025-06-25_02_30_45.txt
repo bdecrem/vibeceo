@@ -1,0 +1,123 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 120px;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255,46,147,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        #secret {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            background: #FF2E93;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HELLO WORLD</h1>
+    </div>
+
+    <div class="floating-emoji" data-value="3" style="top: 20%; left: 20%">🌀</div>
+    <div class="floating-emoji" data-value="2" style="top: 70%; left: 80%">✨</div>
+    <div class="floating-emoji" data-value="4" style="top: 30%; left: 70%">💥</div>
+    <div class="floating-emoji" data-value="1" style="top: 60%; left: 30%">⚡</div>
+
+    <div class="footer">Generated from: Simple Hello World request</div>
+    <div id="secret">🎉 YOU FOUND THE SECRET!</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 1;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg - type "hello"
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key.toLowerCase();
+            if (typed.includes('hello')) {
+                document.getElementById('secret').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('secret').style.display = 'none';
+                    typed = '';
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
+```
