@@ -29,10 +29,10 @@ RUN npm run build
 RUN pip3 install openai requests python-dotenv pathlib supabase
 
 # Make startup script executable
-RUN chmod +x start-production.sh
+RUN chmod +x start-production-typescript.sh
 
 # Expose port (Railway will override this)
 EXPOSE 3000
 
 # Start the application
-CMD ["./start-production.sh"] 
+CMD ["./start-production-typescript.sh"] 
