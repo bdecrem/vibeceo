@@ -73,4 +73,4 @@ npm run test:sms
 - `lib/sms/ai.ts`: AI integration (OpenAI/Anthropic)
 - `lib/sms/config.ts`: Configuration settings
 
-Last updated: 2025-06-04 19:30 (restored working version)
+Last updated: 2025-06-25 14:45 (stable main branch - working APP_ID assignment)
