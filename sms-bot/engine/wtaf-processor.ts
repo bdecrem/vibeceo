@@ -74,28 +74,7 @@ async function loadPrompt(filename: string): Promise<ChatCompletionMessageParam 
     }
 }
 
-/**
- * Load FULL ZAD template from builder-zad-v0.json file
- * Returns the complete HTML template for surgical edits
- */
-async function loadFullZadTemplate(): Promise<string | null> {
-    try {
-        const templatePath = join(__dirname, '..', '..', 'content', 'builder-zad-v0.json');
-        const content = await readFile(templatePath, 'utf8');
-        
-        // The template file contains raw HTML, need to wrap it properly
-        const completeHtml = `<!DOCTYPE html>
-<html lang="en">
-${content}
-</html>`;
-        
-        logWithTimestamp("📖 FULL ZAD template loaded from builder-zad-v0.json");
-        return completeHtml;
-    } catch (error) {
-        logWarning(`Error loading FULL ZAD template: ${error instanceof Error ? error.message : String(error)}`);
-        return null;
-    }
-}
+
 
 /**
  * Load coach personality from coaches/ folder
@@ -113,64 +92,7 @@ async function loadCoachPersonality(coachHandle: string): Promise<string | null>
     }
 }
 
-/**
- * Handle ZAD remix - surgical edit of existing template
- * Sends exactly 4 components to Builder: system prompt + full classifier context + HTML template + preservation warning
- */
-async function handleZadRemix(fullClassifierContext: string, config: BuilderConfig): Promise<string> {
-    // 1. System prompt from file
-    const systemPrompt = await loadPrompt('builder-zad-remix.json');
-    if (!systemPrompt) {
-        throw new Error("Failed to load ZAD remix system prompt");
-    }
-    
-    // 2. Full classifier context (creative brief + instructions)
-    const creativeContext = fullClassifierContext;
-    
-    // 3. The HTML template from file  
-    const htmlTemplate = await loadFullZadTemplate();
-    if (!htmlTemplate) {
-        throw new Error("Failed to load ZAD template");
-    }
-    
-    // 4. Preservation instructions
-    const preservationWarning = "YOU MUST RETURN A COMPLETE WORKING VERSION of the entire HTML file with the requested changes applied. Do NOT return just the changed lines or a diff or placeholder comments like '[Previous head section remains exactly the same...]'. Return the FULL HTML document with ALL modifications included. KEEP EVERYTHING ELSE THE SAME but return the COMPLETE file.";
 
-    // Assemble user prompt (2 + 3 + 4)
-    const userPrompt = `${creativeContext}
-
-${htmlTemplate}
-
-${preservationWarning}`;
-
-    logWithTimestamp("\n🎨 ZAD REMIX: Sending full context to Builder");
-    
-    // Send to Builder with maximum token limit for complete file output
-    const zadRemixTokens = Math.max(config.maxTokens, 8192); // Use maximum allowed for complete file
-    logWithTimestamp(`🎨 ZAD remix using ${zadRemixTokens} tokens (maximum for complete file)`);
-    logWithTimestamp(`📋 ZAD REMIX SYSTEM PROMPT: ${(systemPrompt as any).content?.length || 0} chars (frontend remixer)`);
-    logWithTimestamp(`📤 ZAD REMIX USER PROMPT: ${userPrompt.length} chars (context + template + instructions)`);
-    
-    // Add verbose logging to see exactly what we're sending
-    logWithTimestamp(`\n🔍 ZAD REMIX SYSTEM PROMPT CONTENT:`);
-    logWithTimestamp("=" + "=".repeat(80));
-    logWithTimestamp((systemPrompt as any).content || "No system prompt content");
-    logWithTimestamp("=" + "=".repeat(80));
-    
-    logWithTimestamp(`\n📤 ZAD REMIX USER PROMPT CONTENT (first 2000 chars):`);
-    logWithTimestamp("-" + "-".repeat(80));
-    logWithTimestamp(userPrompt.substring(0, 2000) + (userPrompt.length > 2000 ? "\n... [TRUNCATED]" : ""));
-    logWithTimestamp("-" + "-".repeat(80));
-    
-    const result = await callClaudeAPI(config.model, (systemPrompt as any).content, userPrompt, zadRemixTokens, config.temperature);
-    
-    logWithTimestamp(`\n📥 ZAD REMIX BUILDER RESPONSE (${result.length} chars):`);
-    logWithTimestamp("=" + "=".repeat(80));
-    logWithTimestamp(result.substring(0, 1000) + (result.length > 1000 ? "\n... [TRUNCATED - showing first 1000 chars] ..." : ""));
-    logWithTimestamp("=" + "=".repeat(80));
-    
-    return result;
-}
 
 /**
  * GENERATE COMPLETE PROMPT (Drop-in replacement for ai-client.ts function)
@@ -268,22 +190,10 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                     if (content.includes('ZERO_ADMIN_DATA: true')) {
                         logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                         
-                        // Extract the full classifier response through metadata
-                        const metadataEndMatch = content.match(/---WTAF_METADATA---[\s\S]*?---END_METADATA---/);
-                        if (metadataEndMatch) {
-                            // Send the ENTIRE classifier response to builder for full context
-                            const fullResponse = content.substring(0, content.indexOf('---END_METADATA---') + '---END_METADATA---'.length);
-                            logWithTimestamp(`🎨 ZAD remix mode - sending FULL classifier response (${fullResponse.length} chars) to Builder`);
-                            
-                            // For ZAD remix, pass through the complete classifier response
-                            expandedPrompt = `ZAD_REMIX_REQUEST: FULL_CONTEXT`;
-                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${fullResponse}`;
-                            logWithTimestamp("🎨 ZAD remix mode - using complete classifier context for Builder");
-                        } else {
-                            logWarning("ZAD detected but no metadata section found, falling back to full content");
-                            expandedPrompt = `ZAD_REMIX_REQUEST: FULL_CONTEXT`;
-                            expandedPrompt += `\n\nZAD_REMIX_INSTRUCTION: ${content.trim()}`;
-                        }
+                        // NEW ELEGANT ZAD SYSTEM: Route to comprehensive builder
+                        // Pass the original user input for the comprehensive ZAD builder
+                        expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
+                        logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
                     } else {
                         expandedPrompt = content.trim();
                         logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
@@ -359,17 +269,20 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-game.json';
         builderType = 'Game Builder';
         logWithTimestamp(`🎮 Game detected - using game builder`);
-    } else if (userPrompt.includes('ZAD_REMIX_INSTRUCTION:')) {
-        logWithTimestamp(`🎨 ZAD_REMIX_INSTRUCTION detected - using surgical editor`);
-        // Extract the full classifier context
-        const instructionMatch = userPrompt.match(/ZAD_REMIX_INSTRUCTION:\s*([\s\S]+)/);
-        if (!instructionMatch) {
-            throw new Error("ZAD_REMIX_INSTRUCTION detected but no content found - classifier parsing error");
+    } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
+        logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder`);
+        // Extract the user request from the comprehensive ZAD request
+        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("ZAD_COMPREHENSIVE_REQUEST detected but no content found - parsing error");
         }
-        const fullClassifierContext = instructionMatch[1].trim();
-        logWithTimestamp(`🎨 Extracted full context: ${fullClassifierContext.length} chars`);
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🎨 Extracted user request: ${userRequest}`);
         
-        return await handleZadRemix(fullClassifierContext, config);
+        // Use the comprehensive ZAD builder
+        builderFile = 'builder-zad-comprehensive.json';
+        builderType = 'Comprehensive ZAD Builder';
+        logWithTimestamp(`🎨 Using comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
     } else {
         // Standard app
         builderFile = 'builder-app.json';
@@ -390,6 +303,17 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     
     // STEP 5: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
+    
+    // For ZAD comprehensive requests, replace with the actual user request
+    if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
+        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
+            logWithTimestamp(`🎨 ZAD: Using clean user request for comprehensive builder: ${userRequest.slice(0, 50)}...`);
+        }
+    }
+    
     if (coach && coachPersonality) {
         builderUserPrompt += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
         logWithTimestamp(`🎭 Prepared ${coach}'s full personality data for builder`);

@@ -95,6 +95,17 @@ const REQUEST_CONFIGS = {
         builderModel: 'gpt-4o',    // Games might work better with GPT?
         builderMaxTokens: 16000,
         builderTemperature: 0.8
+    },
+    zad: {
+        classifierModel: 'gpt-4o',
+        classifierMaxTokens: 600,
+        classifierTemperature: 0.7,
+        classifierTopP: 1,
+        classifierPresencePenalty: 0.3,
+        classifierFrequencyPenalty: 0,
+        builderModel: 'claude-3-5-sonnet-20241022',  // From test script
+        builderMaxTokens: 8000,                      // From test script (higher for complete apps)
+        builderTemperature: 0.2                      // From test script (more focused)
     }
 } as const;
 
@@ -217,7 +228,26 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                              userPrompt.toLowerCase().includes('puzzle') ||
                              userPrompt.toLowerCase().includes('arcade');
         
-        const configType = isGameRequest ? 'game' : 'creation';
+        // Check if this will be detected as a ZAD by running a quick classifier check
+        let isZadRequest = false;
+        try {
+            // Quick ZAD detection by checking for collaborative indicators
+            const zadIndicators = ['me and my friends', 'my team', 'our team', 'our group', 'study group', 'my family', 'book club'];
+            isZadRequest = zadIndicators.some(indicator => userPrompt.toLowerCase().includes(indicator));
+        } catch (error) {
+            // If detection fails, default to false
+            isZadRequest = false;
+        }
+        
+        let configType: keyof typeof REQUEST_CONFIGS;
+        if (isGameRequest) {
+            configType = 'game';
+        } else if (isZadRequest) {
+            configType = 'zad';
+        } else {
+            configType = 'creation';
+        }
+        
         const config = REQUEST_CONFIGS[configType];
         
         logWithTimestamp(`🎯 Using ${configType} configuration`);
