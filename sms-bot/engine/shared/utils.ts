@@ -133,25 +133,37 @@ export function fixZadAppId(html: string, appSlug: string): string {
     // Replace random APP_ID generation with deterministic one based on app slug
     // This ensures all users connecting to the same ZAD app use the same APP_ID
     
-    // Pattern 1: const APP_ID = 'PREFIX_' + Math.random()...
+    // Pattern 1: const APP_ID = 'PREFIX_' + Math.random().toString(36).substr(2, 9);
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)\.toString\(36\)\.substr\(2,\s*9\);?/g,
+        `const APP_ID = '${appSlug}';`
+    );
+    
+    // Pattern 2: const APP_ID = 'PREFIX_' + Math.random()...  (more general)
     html = html.replace(
         /const\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
         `const APP_ID = '${appSlug}';`
     );
     
-    // Pattern 2: let APP_ID = 'PREFIX_' + Math.random()...
+    // Pattern 3: let APP_ID = 'PREFIX_' + Math.random()...
     html = html.replace(
         /let\s+APP_ID\s*=\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^;]+;?/g,
         `let APP_ID = '${appSlug}';`
     );
     
-    // Pattern 3: var APP_ID = 'PREFIX_' + Math.random()...
+    // Pattern 4: var APP_ID = 'PREFIX_' + Math.random()...
     html = html.replace(
         /var\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
         `var APP_ID = '${appSlug}';`
     );
     
-    // Pattern 4: Direct usage in Supabase calls
+    // Pattern 5: APP_ID = 'test1'; (comprehensive builder placeholder)
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"]test1['"];?/g,
+        `const APP_ID = '${appSlug}';`
+    );
+    
+    // Pattern 6: Direct usage in Supabase calls
     html = html.replace(
         /app_id:\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^,}]+/g,
         `app_id: '${appSlug}'`

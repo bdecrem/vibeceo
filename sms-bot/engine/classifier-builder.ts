@@ -29,7 +29,13 @@ interface ClassificationLogic {
     step_title: string;
     step_description: string;
     description: string;
-    examples: {
+    // Support both old nested format and new top-level format
+    good_examples?: string[];
+    bad_examples?: string[];
+    indicators?: string[];
+    key_indicators?: string[];
+    rejection_criteria?: string[];
+    examples?: {
         good_examples?: string[];
         bad_examples?: string[];
         indicators?: string[];
@@ -40,7 +46,7 @@ interface ClassificationLogic {
         if_yes: string;
         if_no: string;
     };
-    metadata_output: Record<string, string>;
+    metadata_output?: Record<string, string>;
     [key: string]: any; // Allow additional fields
 }
 
@@ -118,9 +124,10 @@ async function loadAllModules(): Promise<ClassificationLogic[]> {
  * Build a decision step section for a module
  */
 function buildDecisionStep(module: ClassificationLogic, stepNumber: number): DecisionStep {
-    const examples = module.examples.good_examples || [];
-    const indicators = module.examples.key_indicators || module.examples.indicators || [];
-    const rejectionCriteria = module.examples.rejection_criteria || [];
+    // Support both old nested format and new top-level format
+    const examples = (module as any).good_examples || module.examples?.good_examples || [];
+    const indicators = (module as any).indicators || (module as any).key_indicators || module.examples?.key_indicators || module.examples?.indicators || [];
+    const rejectionCriteria = (module as any).rejection_criteria || module.examples?.rejection_criteria || [];
     
     const decision = `→ If YES: ${module.decision_logic.if_yes}\n→ If NO: ${module.decision_logic.if_no}`;
 
