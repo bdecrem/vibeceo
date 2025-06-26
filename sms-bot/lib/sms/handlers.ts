@@ -1870,7 +1870,7 @@ ${response}`;
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List your pages and set index page';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List your pages and set index page\n• FAVE [number] - Mark/unmark page as favorite\n• FORGET [number] - Hide page from INDEX (URL still works)';
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
@@ -1998,11 +1998,12 @@ ${response}`;
           // It's a number - convert to slug using same logic as INDEX
           const indexNumber = parseInt(pageIdentifier);
           
-          // Use IDENTICAL query to INDEX command
+          // Use IDENTICAL query to INDEX command (excluding forgotten pages)
           const { data: userContent, error } = await supabase
             .from('wtaf_content')
             .select('app_slug, original_prompt, created_at')
             .eq('user_slug', userSlug)
+            .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
             .order('created_at', { ascending: false });
             
           if (error || !userContent || userContent.length === 0) {
@@ -2439,11 +2440,12 @@ ${response}`;
           return;
         }
         
-        // Get all user's WTAF content
+        // Get all user's WTAF content (excluding forgotten pages)
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at')
+          .select('app_slug, original_prompt, created_at, fave')
           .eq('user_slug', userSlug)
+          .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
           .order('created_at', { ascending: false });
           
         if (error) {
@@ -2534,13 +2536,32 @@ ${response}`;
         const endIndex = Math.min(startIndex + PAGES_PER_MESSAGE, totalPages);
         const pagesToShow = userContent.slice(startIndex, endIndex);
         
-        // Build the message with URLs
+        // Build the message with URLs, showing favorites first
         let pageList = `📄 Your pages (${totalPages} total) - Page ${requestedPage}/${totalMessagePages}:\n\n`;
+        
+        // Show favorites first if any exist
+        const favorites = userContent.filter(content => content.fave === true);
+        if (favorites.length > 0) {
+          pageList += `⭐ FAVORITES:\n`;
+          favorites.forEach(content => {
+            const pageIndex = userContent.indexOf(content) + 1;
+            const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${content.app_slug}`;
+            pageList += `${pageIndex}. ${pageUrl}\n`;
+          });
+          pageList += `\n`; // Add spacing between favorites and regular list
+        }
+        
+        // Show regular page list
+        if (favorites.length > 0) {
+          pageList += `📄 ALL PAGES:\n`;
+        }
         
         pagesToShow.forEach((content, index) => {
           const actualIndex = startIndex + index + 1;
           const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${content.app_slug}`;
-          pageList += `${actualIndex}. ${pageUrl}\n`;
+          const isFavorite = content.fave === true;
+          const emoji = isFavorite ? '⭐' : '📄';
+          pageList += `${emoji} ${actualIndex}. ${pageUrl}\n`;
         });
         
         const domainForDisplay = WTAF_DOMAIN.replace(/^https?:\/\//, '');
@@ -2573,6 +2594,249 @@ ${response}`;
         await sendSmsResponse(
           from,
           `❌ INDEX: Failed to process command - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
+    // Handle FAVE command - mark a page as favorite
+    if (message.match(/^FAVE\s+\d+$/i)) {
+      console.log(`Processing FAVE command from ${from}`);
+      
+      try {
+        // Check user role for FAVE command (same as INDEX)
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen privileges`);
+          // Silent ignore - don't reveal command to non-coder/degen users
+          return;
+        }
+        
+        const userSlug = subscriber.slug;
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Parse the page number
+        const faveMatch = message.match(/^FAVE\s+(\d+)$/i);
+        if (!faveMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ FAVE: Please specify a page number. Example: FAVE 1\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const pageNumber = parseInt(faveMatch[1]);
+        
+        // Get user's pages using IDENTICAL query to INDEX command (excluding forgotten pages)
+        const { data: userContent, error } = await supabase
+          .from('wtaf_content')
+          .select('app_slug, original_prompt, created_at, fave')
+          .eq('user_slug', userSlug)
+          .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error(`Error fetching user content: ${error}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to fetch your pages. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        if (!userContent || userContent.length === 0) {
+          await sendSmsResponse(
+            from,
+            `📄 You don't have any pages yet. Use WTAF command to create your first page!`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Validate page number
+        if (pageNumber < 1 || pageNumber > userContent.length) {
+          await sendSmsResponse(
+            from,
+            `❌ Invalid page number. You have ${userContent.length} pages. Use INDEX to see them.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Convert to 0-based index and get the page
+        const selectedPage = userContent[pageNumber - 1];
+        const currentFaveStatus = selectedPage.fave || false;
+        const newFaveStatus = !currentFaveStatus; // Toggle the fave status
+
+        // Update the fave column in database
+        const { error: updateError } = await supabase
+          .from('wtaf_content')
+          .update({ fave: newFaveStatus })
+          .eq('user_slug', userSlug)
+          .eq('app_slug', selectedPage.app_slug);
+          
+        if (updateError) {
+          console.error(`Error updating fave status: ${updateError}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to update favorite status. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Send confirmation message
+        const statusEmoji = newFaveStatus ? '⭐' : '📄';
+        const statusText = newFaveStatus ? 'added to favorites' : 'removed from favorites';
+        
+        await sendSmsResponse(
+          from,
+          `${statusEmoji} Page ${pageNumber} (${selectedPage.app_slug}) ${statusText}!`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) set fave=${newFaveStatus} for page: ${selectedPage.app_slug}`);
+        return;
+        
+      } catch (error) {
+        console.error(`Error processing FAVE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ FAVE: Failed to process command - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
+    // Handle FORGET command - soft delete a page
+    if (message.match(/^FORGET\s+\d+$/i)) {
+      console.log(`Processing FORGET command from ${from}`);
+      
+      try {
+        // Check user role for FORGET command (same as INDEX/FAVE)
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted FORGET command without coder/degen privileges`);
+          // Silent ignore - don't reveal command to non-coder/degen users
+          return;
+        }
+        
+        const userSlug = subscriber.slug;
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Parse the page number
+        const forgetMatch = message.match(/^FORGET\s+(\d+)$/i);
+        if (!forgetMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ FORGET: Please specify a page number. Example: FORGET 1\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const pageNumber = parseInt(forgetMatch[1]);
+        
+        // Get user's pages using IDENTICAL query to INDEX command (excluding forgotten pages)
+        const { data: userContent, error } = await supabase
+          .from('wtaf_content')
+          .select('app_slug, original_prompt, created_at, forget')
+          .eq('user_slug', userSlug)
+          .or('forget.is.null,forget.eq.false')  // Only show non-forgotten pages
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error(`Error fetching user content: ${error}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to fetch your pages. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        if (!userContent || userContent.length === 0) {
+          await sendSmsResponse(
+            from,
+            `📄 You don't have any pages to forget. Use WTAF command to create your first page!`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Validate page number
+        if (pageNumber < 1 || pageNumber > userContent.length) {
+          await sendSmsResponse(
+            from,
+            `❌ Invalid page number. You have ${userContent.length} visible pages. Use INDEX to see them.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Convert to 0-based index and get the page
+        const selectedPage = userContent[pageNumber - 1];
+        
+        // Check if already forgotten
+        if (selectedPage.forget) {
+          await sendSmsResponse(
+            from,
+            `❌ Page ${pageNumber} (${selectedPage.app_slug}) is already forgotten.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Soft delete: Set forget = true in database
+        const { error: updateError } = await supabase
+          .from('wtaf_content')
+          .update({ forget: true })
+          .eq('user_slug', userSlug)
+          .eq('app_slug', selectedPage.app_slug);
+          
+        if (updateError) {
+          console.error(`Error updating forget status: ${updateError}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to forget page. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Send confirmation message
+        await sendSmsResponse(
+          from,
+          `🗑️ Page ${pageNumber} (${selectedPage.app_slug}) forgotten!\n\nNote: The URL still works but won't appear in INDEX.`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) forgot page: ${selectedPage.app_slug}`);
+        return;
+        
+      } catch (error) {
+        console.error(`Error processing FORGET command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ FORGET: Failed to process command - ${error instanceof Error ? error.message : 'Unknown error'}`,
           twilioClient
         );
         return;
