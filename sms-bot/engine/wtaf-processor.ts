@@ -37,6 +37,7 @@ export interface ClassifierConfig {
     classifierTopP?: number;
     classifierPresencePenalty?: number;
     classifierFrequencyPenalty?: number;
+    forceAdminOverride?: boolean; // 🔧 Admin override flag
 }
 
 export interface BuilderConfig {
@@ -206,15 +207,35 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
                 logWithTimestamp(content || "No content");
                 logWithTimestamp("=" + "=".repeat(80));
                 if (content) {
-                    // Check if classifier detected a ZAD request by looking for ZERO_ADMIN_DATA: true in metadata
-                    if (content.includes('ZERO_ADMIN_DATA: true')) {
+                    // 🔧 STEP 1: Check for admin override FIRST (before ZAD detection)
+                    if (config.forceAdminOverride) {
+                        logWithTimestamp("🔧 ADMIN OVERRIDE: Forcing admin dual-page creation");
+                        expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: false
+APP_TYPE: data_collection`;
+                        logWithTimestamp("🔧 Admin override: Created admin dual-page prompt");
+                    }
+                    // STEP 2: Check if classifier detected a ZAD request (only if no admin override)
+                    else if (content.includes('ZERO_ADMIN_DATA: true')) {
                         logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                         
                         // NEW ELEGANT ZAD SYSTEM: Route to comprehensive builder
                         // Pass the original user input for the comprehensive ZAD builder
                         expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
                         logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
-                    } else {
+                    }
+                    // STEP 3: Check if classifier detected admin need (APP_TYPE: data_collection)
+                    else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
+                        logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
+                        expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+
+${content.trim()}`;
+                        logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
+                    }
+                    // STEP 4: Normal expanded prompt
+                    else {
                         expandedPrompt = content.trim();
                         logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
                     }
@@ -289,6 +310,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-game.json';
         builderType = 'Game Builder';
         logWithTimestamp(`🎮 Game detected - using game builder`);
+    } else if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
+        logWithTimestamp(`📊 ADMIN_DUAL_PAGE_REQUEST detected - using admin dual-page builder`);
+        // Extract the user request from the admin request
+        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("ADMIN_DUAL_PAGE_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`📊 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-admin-technical.json';
+        builderType = 'Admin Technical Builder';
+        logWithTimestamp(`📊 Using admin dual-page builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
@@ -342,8 +376,17 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     // STEP 5: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
     
+    // For admin dual-page requests, replace with the actual user request but preserve metadata
+    if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
+        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            builderUserPrompt = userRequest; // Use the clean user request for the admin builder
+            logWithTimestamp(`📊 ADMIN: Using clean user request for admin builder: ${userRequest.slice(0, 50)}...`);
+        }
+    }
     // For ZAD comprehensive requests, replace with the actual user request
-    if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
+    else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
@@ -357,11 +400,27 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(`🎭 Prepared ${coach}'s full personality data for builder`);
     }
     
-    // Add WTAF Cookbook if provided by controller (only for non-ZAD apps)
-    if (config.cookbook && requestType === 'app' && !userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
-        builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${config.cookbook}`;
-        logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt (provided by controller)`);
+    // 🔧 ADMIN STITCHING: For admin requests, stitch together 3 pieces dynamically
+    if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
+        try {
+            // Load app-tech-spec.json dynamically
+            const appTechSpecPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+            const appTechSpecContent = await readFile(appTechSpecPath, 'utf8');
+            const appTechSpec = JSON.parse(appTechSpecContent);
+            
+            // Stitch together: User request + App tech spec + Admin technical (already in systemPrompt)
+            builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${JSON.stringify(appTechSpec, null, 2)}`;
+            logWithTimestamp(`📖 Added app-tech-spec.json dynamically for admin request`);
+        } catch (error) {
+            logWarning(`Failed to load app-tech-spec.json: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
+    
+    // DEPRECATED: Old cookbook approach - bad architecture, do not use
+    // if (config.cookbook && requestType === 'app' && !userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
+    //     builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${config.cookbook}`;
+    //     logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt (provided by controller)`);
+    // }
     
     if (!builderPrompt) {
         logWarning(`Failed to load ${builderFile}, falling back to system prompt`);

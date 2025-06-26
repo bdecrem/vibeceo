@@ -1,0 +1,225 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDEACORE™ // Your Digital Fever Dream Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-bg: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6, #FF7C5C);
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            --glow: 0 0 15px rgba(255,46,147,0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease;
+        }
+
+        .idea-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .idea-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .tag-feature { background: #FF2E93; }
+        .tag-bug { background: #FF7C5C; }
+        .tag-enhancement { background: #00FFC6; }
+        .tag-question { background: #7C3AED; }
+
+        .reactions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
+        }
+
+        .add-idea {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-idea:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating-emoji {
+            animation: float 6s ease-in-out infinite;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>IDEACORE™</h1>
+            <p>WHERE YOUR WILDEST FEATURE DREAMS COME TO PARTY 🎪</p>
+        </header>
+
+        <div class="idea-grid">
+            <!-- Sample Cards -->
+            <div class="idea-card">
+                <div class="card-header">
+                    <span class="tag tag-feature">Feature</span>
+                    <span>@pixelrebel</span>
+                </div>
+                <p>AI-powered mood lighting that syncs with your team's caffeine levels 🎯</p>
+                <div class="reactions">
+                    <button class="reaction-btn">💡 42</button>
+                    <button class="reaction-btn">🔥 23</button>
+                    <button class="reaction-btn">👍 15</button>
+                </div>
+            </div>
+
+            <div class="idea-card">
+                <div class="card-header">
+                    <span class="tag tag-enhancement">Enhancement</span>
+                    <span>@cyberwhisperer</span>
+                </div>
+                <p>Quantum entangled notifications that arrive before you need them ⚡</p>
+                <div class="reactions">
+                    <button class="reaction-btn">💡 56</button>
+                    <button class="reaction-btn">🔥 34</button>
+                    <button class="reaction-btn">🤔 12</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="add-idea">+ DROP YOUR GENIUS</button>
+    </div>
+
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 10%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 60%; left: 80%">🚀</div>
+    <div class="floating-emoji" data-value="4" style="top: 30%; left: 90%">💡</div>
+    <div class="floating-emoji" data-value="5" style="top: 80%; left: 20%">🔮</div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg - type WTAF
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key;
+            if(secretCode.toLowerCase().includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 YOU FOUND THE SECRET SAUCE!');
+                secretCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```
