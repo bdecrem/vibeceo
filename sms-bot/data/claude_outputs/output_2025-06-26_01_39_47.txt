@@ -1,0 +1,256 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Message Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-bg: linear-gradient(120deg, #FF2E93, #7C3AED, #00FFC6);
+            --card-bg: rgba(255,255,255,0.1);
+            --neon-glow: 0 0 10px rgba(255,46,147,0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--gradient-bg);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: var(--neon-glow);
+            animation: textGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 10px rgba(255,46,147,0.5); }
+            to { text-shadow: 0 0 20px rgba(255,46,147,0.8); }
+        }
+
+        .new-post-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .new-post-btn:hover {
+            background: white;
+            color: #FF2E93;
+            transform: scale(1.05);
+            box-shadow: var(--neon-glow);
+        }
+
+        .post-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .post-author {
+            font-weight: 600;
+        }
+
+        .post-timestamp {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .post-content {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .reaction-bar {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .reaction-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        .reply-btn {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reply-btn:hover {
+            background: white;
+            color: #FF2E93;
+        }
+
+        .replies {
+            margin-left: 2rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            z-index: -1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WTAF MESSAGE BOARD 💀</h1>
+        <button class="new-post-btn">+ NEW RANT</button>
+
+        <div class="post-card">
+            <div class="post-header">
+                <span class="post-author">CyberPunkGhost</span>
+                <span class="post-timestamp">2 hours ago</span>
+            </div>
+            <div class="post-content">
+                Just hacked my toaster. Now it mines crypto while making avocado toast. The future is now! 🔥
+            </div>
+            <div class="post-actions">
+                <div class="reaction-bar">
+                    <button class="reaction-btn">👍 42</button>
+                    <button class="reaction-btn">❤️ 23</button>
+                    <button class="reaction-btn">😂 15</button>
+                    <button class="reaction-btn">🤔 8</button>
+                    <button class="reaction-btn">🔥 31</button>
+                </div>
+                <button class="reply-btn">Reply</button>
+            </div>
+            <div class="replies">
+                <div class="post-card">
+                    <div class="post-header">
+                        <span class="post-author">NeonRebel</span>
+                        <span class="post-timestamp">1 hour ago</span>
+                    </div>
+                    <div class="post-content">
+                        But does it play Doom? 🎮
+                    </div>
+                    <div class="post-actions">
+                        <div class="reaction-bar">
+                            <button class="reaction-btn">👍 12</button>
+                            <button class="reaction-btn">😂 8</button>
+                        </div>
+                        <button class="reply-btn">Reply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <span class="floating-emoji" style="top: 20%; left: 10%;" data-value="3">🔥</span>
+    <span class="floating-emoji" style="top: 40%; right: 15%;" data-value="2">💀</span>
+    <span class="floating-emoji" style="bottom: 30%; left: 20%;" data-value="4">⚡</span>
+    <span class="floating-emoji" style="bottom: 20%; right: 10%;" data-value="5">🦄</span>
+
+    <div class="easter-egg">Type 'WTAF' for chaos mode</div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if (wtafCode.endsWith('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                    emoji.style.animation = 'float 2s ease-in-out infinite';
+                });
+                wtafCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

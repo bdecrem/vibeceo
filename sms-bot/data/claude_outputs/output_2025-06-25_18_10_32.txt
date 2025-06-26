@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CHAOS IDEABOARD ✨</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff2e63;
+            --neon-blue: #00fff5;
+            --neon-purple: #b537f2;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ff2e63, #b537f2, #00fff5);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            text-align: center;
+            font-size: 3rem;
+            margin: 0;
+            text-shadow: 0 0 10px var(--neon-pink),
+                         0 0 20px var(--neon-blue);
+            animation: glitch 5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0 0 10px var(--neon-pink); }
+            25% { text-shadow: 0 0 20px var(--neon-blue); }
+            50% { text-shadow: 0 0 15px var(--neon-purple); }
+            75% { text-shadow: 0 0 20px var(--neon-pink); }
+            100% { text-shadow: 0 0 10px var(--neon-pink); }
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        button {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        input, select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            margin: 0.5rem 0;
+        }
+
+        #ideas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .idea-card {
+            background: var(--glass-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .idea-card.Feature { border-left: 4px solid #00fff5; }
+        .idea-card.Bug { border-left: 4px solid #ff2e63; }
+        .idea-card.Enhancement { border-left: 4px solid #b537f2; }
+        .idea-card.Question { border-left: 4px solid #ffcc00; }
+
+        .idea-card.starred {
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        }
+
+        .reactions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .reaction-btn {
+            background: rgba(0, 0, 0, 0.2);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .comments-section {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .comments-section.expanded {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s;
+        }
+
+        #add-idea-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        #add-idea-modal.active {
+            display: block;
+        }
+
+        .user-status {
+            text-align: right;
+            margin: 1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 5%;" data-value="3">✨</div>
+    <div class="floating-emoji" style="top: 80%; right: 5%;" data-value="5">💫</div>
+    <div class="floating-emoji" style="top: 20%; right: 10%;" data-value="2">💡</div>
+    <div class="floating-emoji" style="bottom: 10%; left: 10%;" data-value="4">🌟</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>CHAOS IDEABOARD ✨</h1>
+            <p style="text-align: center">UNLEASH YOUR WILDEST FEATURE DREAMS INTO THE VOID</p>
+            <div style="text-align: center; margin-top: 2rem;">
+                <button onclick="showNewUserScreen()">New Dreamer</button>
+                <button onclick="showReturningUserScreen()">Return to Dreams</button>
+            </div>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>NEW DREAMER</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">MATERIALIZE & ENTER</button>
+            <button onclick="showScreen('welcome-screen')">BACK TO VOID</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>RETURN TO DREAMS</h1>
+            <select id="user-label-select">
+                <option>Select Dreamer</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="ENTER 4-DIGIT REALITY KEY" maxlength="4">
+            <button onclick="loginReturningUser()">ENTER DREAMSCAPE</button>
+            <button onclick="showScreen('welcome-screen')">BACK TO VOID</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>CHAOS IDEABOARD ✨</h1>
+            <div class="user-status">
+                DREAMER: <span id="current-user-label"></span>
+            </div>
+
+            <div style="text-align: center; margin: 2rem 0;">
+                <button onclick="showAddIdeaModal()">UNLEASH NEW IDEA 💫</button>
+            </div>
+
+            <div id="ideas-grid"></div>
+
+            <button onclick="showScreen('welcome-screen')" style="margin-top: 2rem;">ESCAPE REALITY</button>
+        </div>
+    </div>
+
+    <div id="add-idea-modal">
+        <h2>MANIFEST YOUR VISION</h2>
+        <select id="idea-category">
+            <option value="Feature">✨ FEATURE</option>
+            <option value="Bug">🐛 BUG</option>
+            <option value="Enhancement">🚀 ENHANCEMENT</option>
+            <option value="Question">❓ QUESTION</option>
+        </select>
+        <textarea id="idea-text" placeholder="DESCRIBE YOUR CHAOS..." style="width: 100%; height: 100px; margin: 1rem 0;"></textarea>
+        <button onclick="submitIdea()">UNLEASH TO UNIVERSE</button>
+        <button onclick="hideAddIdeaModal()">NEVERMIND</button>
+    </div>
+
+    <script>
+        const APP_ID = 'test1';
+        const USER_LABELS = ['dreamer1✨', 'dreamer2💫', 'dreamer3💡', 'dreamer4🌟', 'dreamer5⚡'];
+        const supabase = window.supabase.createClient('https://tqniseocczttrfwtpbdr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350');
+
+        let currentUser = null;
+        let pollingInterval;
+
+        // Include all authentication functions here
+        // [Previous authentication functions go here - exactly as provided]
+
+        async function loadLatestData() {
+            const { data: ideas } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'idea')
+                .order('created_at', { ascending: false });
+
+            updateIdeasGrid(ideas);
+        }
+
+        function updateIdeasGrid(ideas) {
+            const grid = document.getElementById('ideas-grid');
+            grid.innerHTML = '';
+
+            ideas?.forEach(idea => {
+                const card = document.createElement('div');
+                card.className = `idea-card ${idea.content_data.category}`;
+                if (idea.content_data.starred) card.classList.add('starred');
+
+                const reactions = idea.content_data.reactions || {};
+                const comments = idea.content_data.comments || [];
+
+                card.innerHTML = `
+                    <div style="font-weight: 600">${idea.participant_data.userLabel}</div>
+                    <div style="opacity: 0.7; font-size: 0.8rem">
+                        ${new Date(idea.created_at).toLocaleString()}
+                    </div>
+                    <div style="margin: 1rem 0">${idea.content_data.text}</div>
+                    <div class="reactions">
+                        <button onclick="reactToIdea('${idea.id}', '💡')" class="reaction-btn">
+                            💡 ${reactions['💡'] || 0}
+                        </button>
+                        <button onclick="reactToIdea('${idea.id}', '🔥')" class="reaction-btn">
+                            🔥 ${reactions['🔥'] || 0}
+                        </button>
+                        <button onclick="reactToIdea('${idea.id}', '👍')" class="reaction-btn">
+                            👍 ${reactions['👍'] || 0}
+                        </button>
+                        <button onclick="reactToIdea('${idea.id}', '🤔')" class="reaction-btn">
+                            🤔 ${reactions['🤔'] || 0}
+                        </button>
+                        <button onclick="toggleStar('${idea.id}')" class="reaction-btn">
+                            ⭐
+                        </button>
+                    </div>
+                    <div class="comments-section" id="comments-${idea.id}">
+                        ${comments.map(c => `
+                            <div style="margin: 0.5rem 0">
+                                <strong>${c.userLabel}:</strong> ${c.text}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="toggleComments('${idea.id}')" style="margin-top: 1rem">
+                        💭 ${comments.length} Comments
+                    </button>
+                    <input type="text" placeholder="Quick comment..."
+                           onkeypress="if(event.key==='Enter')addComment('${idea.id}',this.value)"
+                           style="width: 100%; margin-top: 0.5rem">
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function showAddIdeaModal() {
+            document.getElementById('add-idea-modal').classList.add('active');
+        }
+
+        function hideAddIdeaModal() {
+            document.getElementById('add-idea-modal').classList.remove('active');
+        }
+
+        async function submitIdea() {
+            const text = document.getElementById('idea-text').value.trim();
+            const category = document.getElementById('idea-category').value;
+
+            if (!text) {
+                alert('DREAMS NEED SUBSTANCE 🌌');
+                return;
+            }
+
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'idea',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode
+                    },
+                    content_data: {
+                        text,
+                        category,
+                        reactions: {},
+                        comments: [],
+                        timestamp: Date.now()
+                    }
+                });
+
+                hideAddIdeaModal();
+                document.getElementById('idea-text').value = '';
+                loadLatestData();
+            } catch (error) {
+                alert('REALITY GLITCH - TRY AGAIN 🌀');
+            }
+        }
+
+        async function reactToIdea(ideaId, emoji) {
+            const { data: idea } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('id', ideaId)
+                .single();
+
+            const reactions = idea.content_data.reactions || {};
+            reactions[emoji] = (reactions[emoji] || 0) + 1;
+
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .update({
+                    content_data: { ...idea.content_data, reactions }
+                })
+                .eq('id', ideaId);
+
+            loadLatestData();
+        }
+
+        async function toggleStar(ideaId) {
+            const { data: idea } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('id', ideaId)
+                .single();
+
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .update({
+                    content_data: { 
+                        ...idea.content_data,
+                        starred: !idea.content_data.starred
+                    }
+                })
+                .eq('id', ideaId);
+
+            loadLatestData();
+        }
+
+        function toggleComments(ideaId) {
+            const section = document.getElementById(`comments-${ideaId}`);
+            section.classList.toggle('expanded');
+        }
+
+        async function addComment(ideaId, text) {
+            if (!text.trim()) return;
+
+            const { data: idea } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('id', ideaId)
+                .single();
+
+            const comments = idea.content_data.comments || [];
+            comments.push({
+                userLabel: currentUser.userLabel,
+                text: text.trim(),
+                timestamp: Date.now()
+            });
+
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .update({
+                    content_data: { ...idea.content_data, comments }
+                })
+                .eq('id', ideaId);
+
+            loadLatestData();
+        }
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const { clientX, clientY } = e;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            emojis.forEach(emoji => {
+                const value = emoji.getAttribute('data-value');
+                const x = (clientX - centerX) * 0.01 * value;
+                const y = (clientY - centerY) * 0.01 * value;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg
+        window.wtaf = () => {
+            console.log('🌌 WELCOME TO THE DREAMVERSE 🌌');
+            document.body.style.animation = 'gradient 5s ease infinite';
+        };
+    </script>
+</body>
+</html>

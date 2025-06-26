@@ -1,0 +1,352 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Hello World Generator</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8vw;
+            text-align: center;
+            mix-blend-mode: difference;
+            color: white;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .save-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        #text-cta {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+    <button class="save-btn">❤️ Save This One</button>
+    <div id="text-cta">📱 Text START to +1-866-330-0015</div>
+    <div id="prompt-display">Generated from: Hello World Generator with Easter Eggs</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        
+        const gradients = [
+            'linear-gradient(45deg, #FF2E93, #FF61C7)',
+            'linear-gradient(45deg, #3F88FF, #6E7FFF)',
+            'linear-gradient(45deg, #FF7C5C, #FFB178)',
+            'linear-gradient(135deg, #7C3AED, #A855F7)',
+            'linear-gradient(45deg, #00FFC6, #57E2E5)'
+        ];
+
+        const emojis = ['✨', '🌀', '🚀', '🦄', '💫', '⚡', '🔮', '💎'];
+        let currentStyle = {};
+
+        function generateRandomStyle() {
+            const gradient = gradients[Math.floor(Math.random() * gradients.length)];
+            document.body.style.background = gradient;
+            
+            // Clear existing emojis
+            document.querySelectorAll('.floating-emoji').forEach(e => e.remove());
+            
+            // Add new floating emojis
+            for(let i = 0; i < 6; i++) {
+                const emoji = document.createElement('div');
+                emoji.className = 'floating-emoji';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = `${Math.random() * 90}vw`;
+                emoji.style.top = `${Math.random() * 90}vh`;
+                emoji.setAttribute('data-value', Math.random() * 4 + 1);
+                document.body.appendChild(emoji);
+            }
+
+            // Random text effects
+            const h1 = document.querySelector('h1');
+            h1.style.letterSpacing = `${Math.random() * 20 - 10}px`;
+            h1.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+
+            currentStyle = {
+                gradient,
+                emojis: Array.from(document.querySelectorAll('.floating-emoji')).map(e => ({
+                    text: e.textContent,
+                    left: e.style.left,
+                    top: e.style.top
+                }))
+            };
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value');
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Click to regenerate
+        document.addEventListener('click', (e) => {
+            if(!e.target.classList.contains('save-btn')) {
+                generateRandomStyle();
+            }
+        });
+
+        // Save favorite style
+        document.querySelector('.save-btn').addEventListener('click', async () => {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'hello_world_generator',
+                    submission_data: currentStyle
+                });
+                if (error) throw error;
+                alert('Saved your favorite style! ✨');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save. Try again!');
+            }
+        });
+
+        // Easter egg: Type WTAF
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key.toLowerCase();
+            if(secretCode.includes('wtaf')) {
+                document.body.style.animation = 'rainbow 1s infinite';
+                alert('🎉 You found the secret code!');
+                secretCode = '';
+            }
+        });
+
+        // Initial generation
+        generateRandomStyle();
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Hello World Admin</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 2rem;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #222;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .preview {
+            width: 200px;
+            height: 100px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello World Styles Admin</h1>
+    
+    <div class="controls">
+        <button onclick="loadSubmissions()">Refresh Data</button>
+        <button onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <table id="submissions-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Style Preview</th>
+                <th>Gradient</th>
+                <th>Emoji Count</th>
+            </tr>
+        </thead>
+        <tbody id="submissions-body"></tbody>
+    </table>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        async function loadSubmissions() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'hello_world_generator')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('submissions-body');
+                tbody.innerHTML = '';
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(row.created_at).toLocaleString()}</td>
+                        <td>
+                            <div class="preview" style="background: ${row.submission_data.gradient}"></div>
+                        </td>
+                        <td>${row.submission_data.gradient}</td>
+                        <td>${row.submission_data.emojis.length}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load submissions');
+            }
+        }
+
+        function exportCSV() {
+            try {
+                const rows = Array.from(document.querySelectorAll('#submissions-table tr'));
+                const csvContent = 'Date,Gradient,Emoji Count\n' + 
+                    rows.slice(1).map(row => {
+                        const cells = Array.from(row.cells);
+                        return `${cells[0].textContent},${cells[2].textContent},${cells[3].textContent}`;
+                    }).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'hello_world_styles.csv';
+                a.click();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export CSV');
+            }
+        }
+
+        // Load data on page load
+        loadSubmissions();
+    </script>
+</body>
+</html>
+```

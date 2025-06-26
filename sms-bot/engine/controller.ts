@@ -212,8 +212,18 @@ async function processWtafRequest(processingPath: string, fileData: any, request
     logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing file: ${processingPath}`);
     
-    const { senderPhone, userSlug, userPrompt } = fileData;
+    let { senderPhone, userSlug, userPrompt } = fileData;
     const { coach, cleanPrompt } = requestInfo;
+    
+    // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
+    let forceAdminPath = false;
+    if (userPrompt && userPrompt.includes('--admin')) {
+        logWithTimestamp("🔧 ADMIN OVERRIDE DETECTED: Forcing admin classification");
+        // Clean the prompt by removing the admin flag
+        userPrompt = userPrompt.replace(/--admin\s*/g, '').trim();
+        forceAdminPath = true;
+        logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
     
     try {
         // Determine request configuration based on content type
@@ -236,7 +246,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🎯 Using ${configType} configuration`);
         logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
-        // Step 1: Generate complete prompt with config
+        // Step 1: Generate complete prompt with config (including admin override flag)
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
         const completePrompt = await generateCompletePrompt(userPrompt, {
             classifierModel: config.classifierModel || 'gpt-4o',
@@ -244,7 +254,8 @@ async function processWtafRequest(processingPath: string, fileData: any, request
             classifierTemperature: config.classifierTemperature || 0.7,
             classifierTopP: config.classifierTopP || 1,
             classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
-            classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0
+            classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0,
+            forceAdminOverride: forceAdminPath // 🔧 Pass admin override flag to processor
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         

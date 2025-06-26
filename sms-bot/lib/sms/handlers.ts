@@ -3260,6 +3260,25 @@ function saveConversationHistory(
 }
 
 /**
+ * Check if a phone number is a test/dev number that should skip actual SMS sending
+ * @param phoneNumber Phone number to check
+ */
+function isTestPhoneNumber(phoneNumber: string): boolean {
+  // Remove any whatsapp: prefix for checking
+  const cleanNumber = phoneNumber.replace(/^whatsapp:/, '');
+  
+  // List of test phone numbers that should skip SMS sending
+  const testNumbers = [
+    '+1234567890',    // Dev reroute script default
+    '+15555551234',   // Common test number
+    '+12345678901',   // Variation
+    '+1555123456'     // Another common test pattern
+  ];
+  
+  return testNumbers.includes(cleanNumber);
+}
+
+/**
  * Send message response to user (SMS or WhatsApp)
  * @param to Recipient's phone number (with or without whatsapp: prefix)
  * @param message Message content
@@ -3272,6 +3291,21 @@ async function sendSmsResponse(
 ): Promise<any> {
   try {
     const platform = detectMessagePlatform(to);
+    
+    // Check if this is a test phone number - if so, skip actual SMS sending
+    if (isTestPhoneNumber(to)) {
+      console.log(`🧪 DEV MODE: Skipping actual SMS to test number ${to}`);
+      console.log(`🧪 Mock ${platform.toUpperCase()} response: ${message.substring(0, 100)}...`);
+      
+      // Return a mock response that looks like a real Twilio response
+      return {
+        sid: `TEST${Date.now()}`,
+        to: to,
+        body: message,
+        status: 'delivered',
+        mock: true
+      };
+    }
     
     // For WhatsApp, use sandbox number (for development) or configured WhatsApp number
     const fromNumber = platform === 'whatsapp' 

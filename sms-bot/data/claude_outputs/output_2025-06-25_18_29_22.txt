@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Idea Board 💡🔥</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
+            background-size: 600% 600%;
+            animation: gradientAnimation 10s ease infinite;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .app-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            text-align: center;
+            margin-top: 0;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: glitchAnimation 2s infinite;
+        }
+
+        @keyframes glitchAnimation {
+            0% { text-shadow: 2px 2px 2px rgba(255, 0, 255, 0.8), -2px -2px 2px rgba(0, 255, 255, 0.8); }
+            50% { text-shadow: -2px -2px 2px rgba(255, 0, 255, 0.8), 2px 2px 2px rgba(0, 255, 255, 0.8); }
+            100% { text-shadow: 2px 2px 2px rgba(255, 0, 255, 0.8), -2px -2px 2px rgba(0, 255, 255, 0.8); }
+        }
+
+        button {
+            background-color: #fff;
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        button:hover {
+            background-color: #000;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="text"] {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        #user-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 24px;
+            animation: floatingAnimation 3s ease-in-out infinite;
+        }
+
+        @keyframes floatingAnimation {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        #idea-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .idea-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .idea-card.featured {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .idea-card h3 {
+            margin-top: 0;
+        }
+
+        .idea-card p {
+            margin-bottom: 10px;
+        }
+
+        .idea-card .reactions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .idea-card .reactions button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .idea-card .reactions button:hover {
+            transform: scale(1.2);
+        }
+
+        .idea-card .comments {
+            margin-top: 10px;
+        }
+
+        .idea-card .comments p {
+            margin: 5px 0;
+        }
+
+        .idea-card .category {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .idea-card .category.feature {
+            background-color: rgba(0, 255, 0, 0.2);
+        }
+
+        .idea-card .category.bug {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+
+        .idea-card .category.enhancement {
+            background-color: rgba(0, 0, 255, 0.2);
+        }
+
+        .idea-card .category.question {
+            background-color: rgba(255, 255, 0, 0.2);
+        }
+
+        #add-idea-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #add-idea-form textarea {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px;
+            width: 100%;
+            min-height: 100px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #add-idea-form textarea:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        #add-idea-form select {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #add-idea-form select:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Welcome to WTAF Idea Board 💡🔥</h1>
+            <p>Unleash your inner chaos and share your wildest ideas!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>WTAF Idea Board 💡🔥</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div id="idea-board"></div>
+                <button onclick="showAddIdeaForm()">Add Idea 💡</button>
+                <div id="add-idea-form" style="display: none;">
+                    <textarea id="idea-text" placeholder="Share your wild idea..."></textarea>
+                    <select id="idea-category">
+                        <option value="feature">🚀 Feature</option>
+                        <option value="bug">🐞 Bug</option>
+                        <option value="enhancement">✨ Enhancement</option>
+                        <option value="question">❓ Question</option>
+                    </select>
+                    <button onclick="addIdea()">Post Idea</button>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+
+        <div class="floating-emoji" style="top: 20px; left: 20px; transform: translate(0, 0);" data-value="-2">💡</div>
+        <div class="floating-emoji" style="bottom: 20px; right: 20px; transform: translate(0, 0);" data-value="3">🔥</div>
+        <div class="floating-emoji" style="top: 50%; left: 20px; transform: translate(0, -50%);" data-value="1">👍</div>
+        <div class="floating-emoji" style="top: 50%; right: 20px; transform: translate(0, -50%);" data-value="-1">🤔</div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://tqniseocczttrfwtpbdr.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        );
+
+        const APP_ID = 'test1';
+        const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
+
+        let currentUser = null;
+        let pollingInterval;
+
+        // Check capacity and generate new user
+        async function generateNewUser() {
+            // First check existing users
+            const { data: existingUsers } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('participant_data')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join');
+            
+            const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+            
+            if (usedLabels.length >= 5) {
+                alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            // Display credentials to user
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+            
+            return true;
+        }
+
+        // Register new user in database
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero

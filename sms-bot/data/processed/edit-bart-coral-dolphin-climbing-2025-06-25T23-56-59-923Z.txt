@@ -1,0 +1,131 @@
+SENDER:+16508989508
+USER_SLUG:bart
+EDIT_TARGET:coral-dolphin-climbing
+EDIT_INSTRUCTIONS:make the background yellow
+
+ORIGINAL_HTML:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-coral-dolphin-climbing.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/coral-dolphin-climbing" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            text-shadow: 
+                0 0 10px #FF2E93,
+                0 0 20px #FF2E93,
+                0 0 40px #FF2E93;
+            animation: glitch 3s infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            filter: blur(0.5px);
+            transition: transform 0.1s ease-out;
+        }
+
+        #emoji1 { top: 20%; left: 20%; }
+        #emoji2 { top: 30%; right: 20%; }
+        #emoji3 { bottom: 20%; left: 30%; }
+        #emoji4 { bottom: 30%; right: 30%; }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+
+    <div class="floating-emoji" id="emoji1" data-value="2">⚡</div>
+    <div class="floating-emoji" id="emoji2" data-value="3">💀</div>
+    <div class="floating-emoji" id="emoji3" data-value="4">🔥</div>
+    <div class="floating-emoji" id="emoji4" data-value="5">💥</div>
+
+    <div class="easter-egg">type 'punk' for chaos</div>
+    <div class="prompt">Generated from: Simple Hello World page request</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('punk')) {
+                document.body.style.animation = 'glitch 0.1s infinite';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                    typed = '';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
