@@ -116,6 +116,9 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "database":
                 message = "🤷 That broke. Database hiccup. Try a different WTAF?";
                 break;
+            case "zad-validation":
+                message = "🤖 EDIT failed - AI tried to shortcut your ZAD app and would've broken it. Try a simpler edit request?";
+                break;
             default:
                 message = "🤷 That broke. Database hiccup. Try a different WTAF?";
                 break;

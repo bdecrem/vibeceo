@@ -187,28 +187,22 @@ Replace 'APP_TABLE_ID' with a unique identifier for this app.
 Return complete HTML wrapped in \`\`\`html code blocks.`;
 
 /**
- * Edit system prompt - exact copy from working prompts/edits.json
+ * Load EDIT system prompt from edits.json file
  */
-const EDIT_SYSTEM_PROMPT = `You are an expert web developer and UI/UX designer tasked with editing an existing HTML page based on specific user instructions.
-
-Your role is to:
-1. Carefully analyze the existing HTML structure, styling, and functionality
-2. Make precise edits according to the user's instructions
-3. Preserve the overall design integrity unless specifically asked to change it
-4. Maintain all existing functionality that isn't being modified
-5. Ensure the changes integrate seamlessly with the existing code
-6. Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks
-
-IMPORTANT GUIDELINES:
-- Keep the same overall layout and structure unless specifically requested to change it
-- Preserve existing CSS classes and IDs unless they conflict with requested changes
-- Maintain responsive design principles
-- Ensure all interactive elements continue to work properly
-- If the request is unclear, make the most logical interpretation
-- Focus on clean, maintainable code
-- Test-worthy: ensure the modified page will render and function correctly
-
-Return the complete, modified HTML page wrapped in \`\`\`html and \`\`\` tags. Do not include explanations or comments outside the code blocks.`;
+async function loadEditSystemPrompt(): Promise<string> {
+    try {
+        const { readFile } = await import('fs/promises');
+        const { join } = await import('path');
+        const editsPath = join(__dirname, '..', 'content', 'edits.json');
+        const editsContent = await readFile(editsPath, 'utf8');
+        const editsConfig = JSON.parse(editsContent);
+        return editsConfig.content;
+    } catch (error) {
+        logWarning(`Failed to load edits.json: ${error instanceof Error ? error.message : String(error)}`);
+        // Fallback to basic prompt
+        return `You are an expert web developer tasked with editing HTML pages. Make only the requested changes while preserving all existing functionality. Return ONLY the complete modified HTML wrapped in \`\`\`html code blocks.`;
+    }
+}
 
 /**
  * Process WTAF creation workflow
@@ -498,7 +492,10 @@ ${originalHtml}`;
         logWithTimestamp(`🎯 Using edit configuration`);
         logWithTimestamp(`🤖 Model: ${config.builderModel} (${config.builderMaxTokens} tokens)`);
         
-        const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt, {
+        // Load the enhanced edit system prompt (includes ZAD detection)
+        const editSystemPrompt = await loadEditSystemPrompt();
+        
+        const result = await callClaude(editSystemPrompt, editPrompt, {
             model: config.builderModel,
             maxTokens: config.builderMaxTokens,
             temperature: config.builderTemperature,
@@ -511,6 +508,50 @@ ${originalHtml}`;
             logWarning("No code block found in edit response.");
             await sendFailureNotification("no-code", senderPhone);
             return false;
+        }
+        
+        // Check if this is a ZAD page and validate response
+        const isZadPage = originalHtml.includes('wtaf_zero_admin_collaborative');
+        if (isZadPage) {
+            logWithTimestamp("🔍 ZAD page detected - validating response for shortcuts");
+            
+            // Check for forbidden shortcuts in ZAD responses
+            const forbiddenPatterns = [
+                '<!-- Original',
+                '<!-- Rest of',
+                '<!-- JavaScript remains',
+                '/* Original',
+                '/* Rest of',
+                '...',
+                'remains unchanged',
+                'remains exactly the same',
+                'unchanged content'
+            ];
+            
+            const hasShortcuts = forbiddenPatterns.some(pattern => 
+                modifiedCode.toLowerCase().includes(pattern.toLowerCase())
+            );
+            
+            if (hasShortcuts) {
+                logError("🚨 ZAD VALIDATION FAILED: Claude used forbidden shortcuts");
+                logError("📝 Response contained abbreviated content instead of full HTML");
+                await sendFailureNotification("zad-validation", senderPhone);
+                return false;
+            }
+            
+            // Check that response is reasonably complete (should be similar length to original)
+            const originalLength = originalHtml.length;
+            const responseLength = modifiedCode.length;
+            const lengthRatio = responseLength / originalLength;
+            
+            if (lengthRatio < 0.8) {
+                logError(`🚨 ZAD VALIDATION FAILED: Response too short (${responseLength} vs ${originalLength} chars)`);
+                logError("📝 Response appears to be abbreviated, rejecting");
+                await sendFailureNotification("zad-validation", senderPhone);
+                return false;
+            }
+            
+            logSuccess("✅ ZAD validation passed - response appears complete");
         }
         
         // Update the existing page in Supabase
