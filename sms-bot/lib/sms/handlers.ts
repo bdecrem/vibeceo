@@ -1998,15 +1998,15 @@ ${response}`;
           // It's a number - convert to slug using same logic as INDEX
           const indexNumber = parseInt(pageIdentifier);
           
-          // Use IDENTICAL query to INDEX command (excluding forgotten pages)
+          // Use IDENTICAL query to INDEX command
           const { data: userContent, error } = await supabase
             .from('wtaf_content')
-            .select('app_slug, original_prompt, created_at')
+            .select('app_slug, original_prompt, created_at, forget')
             .eq('user_slug', userSlug)
-            .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
             .order('created_at', { ascending: false });
             
-          if (error || !userContent || userContent.length === 0) {
+          if (error) {
+            console.error(`Error fetching user content:`, JSON.stringify(error, null, 2));
             await sendSmsResponse(
               from,
               `❌ Failed to fetch your pages. Please try again later.`,
@@ -2015,17 +2015,29 @@ ${response}`;
             return;
           }
           
-          if (indexNumber < 1 || indexNumber > userContent.length) {
+          // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
+          const filteredContent = userContent?.filter(content => !content.forget) || [];
+          
+          if (!filteredContent || filteredContent.length === 0) {
             await sendSmsResponse(
               from,
-              `❌ Invalid index ${indexNumber}. You have ${userContent.length} pages. Use INDEX to see them.`,
+              `❌ No pages available. Please try again later.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          if (indexNumber < 1 || indexNumber > filteredContent.length) {
+            await sendSmsResponse(
+              from,
+              `❌ Invalid index ${indexNumber}. You have ${filteredContent.length} pages. Use INDEX to see them.`,
               twilioClient
             );
             return;
           }
           
           // Convert to slug (1-based index to 0-based array)
-          targetSlug = userContent[indexNumber - 1].app_slug;
+          targetSlug = filteredContent[indexNumber - 1].app_slug;
           console.log(`🔢 EDIT ${indexNumber} -> converted to slug: ${targetSlug}`);
         }
         
@@ -2443,13 +2455,12 @@ ${response}`;
         // Get all user's WTAF content (excluding forgotten pages)
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at, fave')
+          .select('app_slug, original_prompt, created_at, fave, forget')
           .eq('user_slug', userSlug)
-          .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
           .order('created_at', { ascending: false });
           
         if (error) {
-          console.error(`Error fetching user content: ${error}`);
+          console.error(`Error fetching user content:`, JSON.stringify(error, null, 2));
           await sendSmsResponse(
             from,
             `❌ Failed to fetch your pages. Please try again later.`,
@@ -2458,7 +2469,10 @@ ${response}`;
           return;
         }
         
-        if (!userContent || userContent.length === 0) {
+        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        
+        if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
             from,
             `📄 You don't have any pages yet. Use WTAF command to create your first page!`,
@@ -2472,16 +2486,16 @@ ${response}`;
         if (numMatch) {
           const selectedIndex = parseInt(numMatch[1]) - 1; // Convert to 0-based index
           
-          if (selectedIndex < 0 || selectedIndex >= userContent.length) {
+          if (selectedIndex < 0 || selectedIndex >= filteredContent.length) {
             await sendSmsResponse(
               from,
-              `❌ Invalid selection. Please choose a number between 1 and ${userContent.length}.`,
+              `❌ Invalid selection. Please choose a number between 1 and ${filteredContent.length}.`,
               twilioClient
             );
             return;
           }
           
-          const selectedPage = userContent[selectedIndex];
+          const selectedPage = filteredContent[selectedIndex];
           const indexFileName = `${selectedPage.app_slug}.html`;
           
           console.log(`Setting index for user ${from} (${userSlug}): ${indexFileName}`);
@@ -2515,7 +2529,7 @@ ${response}`;
         
         // Show URLs instead of prompts - more useful and compact
         const PAGES_PER_MESSAGE = 15; // Can show more URLs since they're shorter
-        const totalPages = userContent.length;
+        const totalPages = filteredContent.length;
         const totalMessagePages = Math.ceil(totalPages / PAGES_PER_MESSAGE);
         
         // Check if user specified a page number (INDEX PAGE 2)
@@ -2534,17 +2548,17 @@ ${response}`;
         // Calculate which pages to show
         const startIndex = (requestedPage - 1) * PAGES_PER_MESSAGE;
         const endIndex = Math.min(startIndex + PAGES_PER_MESSAGE, totalPages);
-        const pagesToShow = userContent.slice(startIndex, endIndex);
+        const pagesToShow = filteredContent.slice(startIndex, endIndex);
         
         // Build the message with URLs, showing favorites first
         let pageList = `📄 Your pages (${totalPages} total) - Page ${requestedPage}/${totalMessagePages}:\n\n`;
         
         // Show favorites first if any exist
-        const favorites = userContent.filter(content => content.fave === true);
+        const favorites = filteredContent.filter(content => content.fave === true);
         if (favorites.length > 0) {
           pageList += `⭐ FAVORITES:\n`;
           favorites.forEach(content => {
-            const pageIndex = userContent.indexOf(content) + 1;
+            const pageIndex = filteredContent.indexOf(content) + 1;
             const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${content.app_slug}`;
             pageList += `${pageIndex}. ${pageUrl}\n`;
           });
@@ -2586,7 +2600,7 @@ ${response}`;
         pageList += `To set index: INDEX [number]`;
         
         await sendSmsResponse(from, pageList, twilioClient);
-        console.log(`Listed ${userContent.length} pages for user ${from} (${userSlug})`);
+        console.log(`Listed ${filteredContent.length} pages for user ${from} (${userSlug})`);
         return;
         
       } catch (error) {
@@ -2636,16 +2650,15 @@ ${response}`;
 
         const pageNumber = parseInt(faveMatch[1]);
         
-        // Get user's pages using IDENTICAL query to INDEX command (excluding forgotten pages)
+        // Get user's pages using IDENTICAL query to INDEX command
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at, fave')
+          .select('app_slug, original_prompt, created_at, fave, forget')
           .eq('user_slug', userSlug)
-          .or('forget.is.null,forget.eq.false')  // Exclude forgotten pages
           .order('created_at', { ascending: false });
           
         if (error) {
-          console.error(`Error fetching user content: ${error}`);
+          console.error(`Error fetching user content:`, JSON.stringify(error, null, 2));
           await sendSmsResponse(
             from,
             `❌ Failed to fetch your pages. Please try again later.`,
@@ -2654,7 +2667,10 @@ ${response}`;
           return;
         }
         
-        if (!userContent || userContent.length === 0) {
+        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        
+        if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
             from,
             `📄 You don't have any pages yet. Use WTAF command to create your first page!`,
@@ -2664,17 +2680,17 @@ ${response}`;
         }
 
         // Validate page number
-        if (pageNumber < 1 || pageNumber > userContent.length) {
+        if (pageNumber < 1 || pageNumber > filteredContent.length) {
           await sendSmsResponse(
             from,
-            `❌ Invalid page number. You have ${userContent.length} pages. Use INDEX to see them.`,
+            `❌ Invalid page number. You have ${filteredContent.length} pages. Use INDEX to see them.`,
             twilioClient
           );
           return;
         }
 
         // Convert to 0-based index and get the page
-        const selectedPage = userContent[pageNumber - 1];
+        const selectedPage = filteredContent[pageNumber - 1];
         const currentFaveStatus = selectedPage.fave || false;
         const newFaveStatus = !currentFaveStatus; // Toggle the fave status
 
@@ -2755,16 +2771,15 @@ ${response}`;
 
         const pageNumber = parseInt(forgetMatch[1]);
         
-        // Get user's pages using IDENTICAL query to INDEX command (excluding forgotten pages)
+        // Get user's pages using IDENTICAL query to INDEX command
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
           .select('app_slug, original_prompt, created_at, forget')
           .eq('user_slug', userSlug)
-          .or('forget.is.null,forget.eq.false')  // Only show non-forgotten pages
           .order('created_at', { ascending: false });
           
         if (error) {
-          console.error(`Error fetching user content: ${error}`);
+          console.error(`Error fetching user content:`, JSON.stringify(error, null, 2));
           await sendSmsResponse(
             from,
             `❌ Failed to fetch your pages. Please try again later.`,
@@ -2773,7 +2788,10 @@ ${response}`;
           return;
         }
         
-        if (!userContent || userContent.length === 0) {
+        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        
+        if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
             from,
             `📄 You don't have any pages to forget. Use WTAF command to create your first page!`,
@@ -2783,17 +2801,17 @@ ${response}`;
         }
 
         // Validate page number
-        if (pageNumber < 1 || pageNumber > userContent.length) {
+        if (pageNumber < 1 || pageNumber > filteredContent.length) {
           await sendSmsResponse(
             from,
-            `❌ Invalid page number. You have ${userContent.length} visible pages. Use INDEX to see them.`,
+            `❌ Invalid page number. You have ${filteredContent.length} visible pages. Use INDEX to see them.`,
             twilioClient
           );
           return;
         }
 
         // Convert to 0-based index and get the page
-        const selectedPage = userContent[pageNumber - 1];
+        const selectedPage = filteredContent[pageNumber - 1];
         
         // Check if already forgotten
         if (selectedPage.forget) {
