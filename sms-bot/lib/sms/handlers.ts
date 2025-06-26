@@ -2001,7 +2001,7 @@ ${response}`;
           // Use IDENTICAL query to INDEX command
           const { data: userContent, error } = await supabase
             .from('wtaf_content')
-            .select('app_slug, original_prompt, created_at, forget')
+            .select('app_slug, original_prompt, created_at, Forget')
             .eq('user_slug', userSlug)
             .order('created_at', { ascending: false });
             
@@ -2015,8 +2015,8 @@ ${response}`;
             return;
           }
           
-          // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
-          const filteredContent = userContent?.filter(content => !content.forget) || [];
+          // Filter out forgotten pages in JavaScript (in case Forget column doesn't exist yet)
+          const filteredContent = userContent?.filter(content => !content.Forget) || [];
           
           if (!filteredContent || filteredContent.length === 0) {
             await sendSmsResponse(
@@ -2455,7 +2455,7 @@ ${response}`;
         // Get all user's WTAF content (excluding forgotten pages)
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at, fave, forget')
+          .select('app_slug, original_prompt, created_at, Fave, Forget')
           .eq('user_slug', userSlug)
           .order('created_at', { ascending: false });
           
@@ -2469,8 +2469,8 @@ ${response}`;
           return;
         }
         
-        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
-        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        // Filter out forgotten pages in JavaScript (in case Forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.Forget) || [];
         
         if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
@@ -2554,7 +2554,7 @@ ${response}`;
         let pageList = `📄 Your pages (${totalPages} total) - Page ${requestedPage}/${totalMessagePages}:\n\n`;
         
         // Show favorites first if any exist
-        const favorites = filteredContent.filter(content => content.fave === true);
+        const favorites = filteredContent.filter(content => content.Fave === true);
         if (favorites.length > 0) {
           pageList += `⭐ FAVORITES:\n`;
           favorites.forEach(content => {
@@ -2573,7 +2573,7 @@ ${response}`;
         pagesToShow.forEach((content, index) => {
           const actualIndex = startIndex + index + 1;
           const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${content.app_slug}`;
-          const isFavorite = content.fave === true;
+          const isFavorite = content.Fave === true;
           const emoji = isFavorite ? '⭐' : '📄';
           pageList += `${emoji} ${actualIndex}. ${pageUrl}\n`;
         });
@@ -2653,7 +2653,7 @@ ${response}`;
         // Get user's pages using IDENTICAL query to INDEX command
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at, fave, forget')
+          .select('app_slug, original_prompt, created_at, Fave, Forget')
           .eq('user_slug', userSlug)
           .order('created_at', { ascending: false });
           
@@ -2667,8 +2667,8 @@ ${response}`;
           return;
         }
         
-        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
-        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        // Filter out forgotten pages in JavaScript (in case Forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.Forget) || [];
         
         if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
@@ -2691,13 +2691,13 @@ ${response}`;
 
         // Convert to 0-based index and get the page
         const selectedPage = filteredContent[pageNumber - 1];
-        const currentFaveStatus = selectedPage.fave || false;
+        const currentFaveStatus = selectedPage.Fave || false;
         const newFaveStatus = !currentFaveStatus; // Toggle the fave status
 
-        // Update the fave column in database
+        // Update the Fave column in database
         const { error: updateError } = await supabase
           .from('wtaf_content')
-          .update({ fave: newFaveStatus })
+          .update({ Fave: newFaveStatus })
           .eq('user_slug', userSlug)
           .eq('app_slug', selectedPage.app_slug);
           
@@ -2774,7 +2774,7 @@ ${response}`;
         // Get user's pages using IDENTICAL query to INDEX command
         const { data: userContent, error } = await supabase
           .from('wtaf_content')
-          .select('app_slug, original_prompt, created_at, forget')
+          .select('app_slug, original_prompt, created_at, Forget')
           .eq('user_slug', userSlug)
           .order('created_at', { ascending: false });
           
@@ -2788,8 +2788,8 @@ ${response}`;
           return;
         }
         
-        // Filter out forgotten pages in JavaScript (in case forget column doesn't exist yet)
-        const filteredContent = userContent?.filter(content => !content.forget) || [];
+        // Filter out forgotten pages in JavaScript (in case Forget column doesn't exist yet)
+        const filteredContent = userContent?.filter(content => !content.Forget) || [];
         
         if (!filteredContent || filteredContent.length === 0) {
           await sendSmsResponse(
@@ -2814,7 +2814,7 @@ ${response}`;
         const selectedPage = filteredContent[pageNumber - 1];
         
         // Check if already forgotten
-        if (selectedPage.forget) {
+        if (selectedPage.Forget) {
           await sendSmsResponse(
             from,
             `❌ Page ${pageNumber} (${selectedPage.app_slug}) is already forgotten.`,
@@ -2823,10 +2823,10 @@ ${response}`;
           return;
         }
 
-        // Soft delete: Set forget = true in database
+        // Soft delete: Set Forget = true in database
         const { error: updateError } = await supabase
           .from('wtaf_content')
-          .update({ forget: true })
+          .update({ Forget: true })
           .eq('user_slug', userSlug)
           .eq('app_slug', selectedPage.app_slug);
           
