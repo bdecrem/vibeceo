@@ -6,6 +6,7 @@
   
   "good_examples": [
     "a simple voting app → 5 people can vote together",
+    "A simple message board → a few people can discussed ideas", 
     "personal journal for my thoughts → 1 person using it", 
     "chat app to talk with my friends → Friend group of 5 or fewer",
     "expense tracker for our roommates → Roommates = typically 2-5 people",
