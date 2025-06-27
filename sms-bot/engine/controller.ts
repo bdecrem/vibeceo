@@ -27,20 +27,72 @@ import {
     generateOGImage,
     updateOGImageInHTML 
 } from './storage-manager.js';
-import { 
-    sendSuccessNotification, 
-    sendFailureNotification 
+import {
+    sendSuccessNotification,
+    sendFailureNotification,
+    sendConfirmationSms
 } from './notification-client.js';
 import { 
     watchForFiles, 
     moveProcessedFile 
 } from './file-watcher.js';
+import { ANTHROPIC_API_KEY } from './shared/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Global WTAF cookbook loaded once at startup
 let wtafCookbook: string | null = null;
+
+/**
+ * Call Claude API directly for stackables (bypass wtaf-processor)
+ * Simple Claude call without complex builder logic
+ */
+async function callClaudeDirectly(systemPrompt: string, userPrompt: string, config: { model: string; maxTokens: number; temperature: number }): Promise<string> {
+    if (!ANTHROPIC_API_KEY) {
+        throw new Error("ANTHROPIC_API_KEY not found in environment");
+    }
+    
+    logWithTimestamp(`🤖 Calling Claude directly: ${config.model} with ${config.maxTokens} tokens`);
+    logWithTimestamp(`📋 System prompt length: ${systemPrompt.length} characters`);
+    logWithTimestamp(`📤 User prompt length: ${userPrompt.length} characters`);
+    
+    const headers: Record<string, string> = {
+        "x-api-key": ANTHROPIC_API_KEY!,
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01"
+    };
+    
+    const payload = {
+        model: config.model,
+        max_tokens: config.maxTokens,
+        temperature: config.temperature,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }]
+    };
+    
+    try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Claude API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const result = data.content[0].text;
+        
+        logWithTimestamp(`✅ Claude response received: ${result.length} characters`);
+        return result;
+        
+    } catch (error) {
+        logError(`Claude API call failed: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
+    }
+}
 
 /**
  * Load WTAF Cookbook & Style Guide
@@ -225,29 +277,235 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
-    // 🧱 STACKABLES: Check for --stack flag to enable aesthetic inheritance
-    let stackablesData = null;
-    if (userPrompt && userPrompt.includes('--stack')) {
-        logWithTimestamp("🧱 STACKABLES DETECTED: Processing aesthetic inheritance");
+    // 🗃️ STACKDATA: Check for --stackdata flag (process BEFORE stackables)
+    let isStackDataRequest = false;
+    if (userPrompt && userPrompt.includes('--stackdata')) {
+        logWithTimestamp("🗃️ STACKDATA DETECTED: Processing with submission data approach");
         
-        // Import stackables manager dynamically
-        const { processStackablesRequest } = await import('./stackables-manager.js');
-        const stackResult = await processStackablesRequest(userSlug, userPrompt);
+        // Import stackdata functions dynamically
+        const { parseStackDataCommand, loadStackedDataContent, buildEnhancedDataPrompt } = await import('./stackables-manager.js');
         
-        if (stackResult.success) {
-            logWithTimestamp(`✅ Stackables processing successful`);
-            stackablesData = {
-                userRequest: stackResult.userRequest,
-                aestheticData: stackResult.aestheticData,
-                enhancedPrompt: stackResult.enhancedPrompt
-            };
-            // Use the cleaned user request from stackables
-            userPrompt = stackResult.userRequest || userPrompt;
-            logWithTimestamp(`🧱 Using enhanced prompt for aesthetic inheritance`);
+        // Parse the stackdata command
+        const parsed = parseStackDataCommand(userPrompt);
+        if (!parsed) {
+            logError(`❌ Invalid stackdata command format`);
+            await sendFailureNotification("stackdata-format", senderPhone);
+            return false;
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🗃️ Stackdata request: ${appSlug} → "${userRequest}"`);
+        
+        // Load names from submission data (includes ownership verification)
+        const names = await loadStackedDataContent(userSlug, appSlug);
+        if (names === null) {
+            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+            await sendFailureNotification("stackdata-ownership", senderPhone);
+            return false;
+        }
+        
+        // Build enhanced prompt with names data + WTAF design system
+        const enhancedPrompt = await buildEnhancedDataPrompt(userRequest, names);
+        
+        // Load stacker system prompt (same as stackables for now)
+        const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
+        const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
+        logWithTimestamp(`📄 Stackdata system prompt loaded: ${stackerSystemPrompt.length} characters`);
+        
+        // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
+        logWithTimestamp("🚀 Sending stackdata request directly to Claude (bypassing wtaf-processor)");
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdata_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Stackdata output saved to: ${outputFile}`);
+        
+        // Extract code blocks and deploy normally
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackdata response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Deploy stackdata result
+        const deployResult = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userRequest);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const appSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackdata: ${userSlug}/${appSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackdata HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackdata: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKDATA PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            return true;
         } else {
-            logError(`❌ Stackables error: ${stackResult.error}`);
-            // Continue with original prompt if stackables fails
-            stackablesData = { error: stackResult.error };
+            logError("Failed to deploy stackdata content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+    
+    // 📧 STACKEMAIL: Check for --stackemail flag to send emails to app submitters
+    if (userPrompt && userPrompt.includes('--stackemail')) {
+        logWithTimestamp("📧 STACKEMAIL DETECTED: Processing email to app submitters");
+        
+        // Import stackemail functions dynamically
+        const { checkDegenRole, parseStackEmailCommand, loadSubmissionEmails } = await import('./stackables-manager.js');
+        const { sendToCustomEmailList } = await import('../lib/email/sendgrid.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stackemail requires DEGEN access`);
+            await sendFailureNotification("stackemail-permission", senderPhone);
+            return false;
+        }
+        
+        // Parse the stackemail command
+        const parsed = parseStackEmailCommand(userPrompt);
+        if (!parsed) {
+            logError(`❌ Invalid stackemail command format`);
+            await sendFailureNotification("stackemail-format", senderPhone);
+            return false;
+        }
+        
+        const { appSlug, emailMessage } = parsed;
+        logWithTimestamp(`📧 Stackemail request: ${appSlug} → "${emailMessage}"`);
+        
+        // Load email addresses from submission data (includes ownership verification)
+        const emails = await loadSubmissionEmails(userSlug, appSlug);
+        if (emails === null) {
+            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+            await sendFailureNotification("stackemail-ownership", senderPhone);
+            return false;
+        }
+        
+        if (emails.length === 0) {
+            logError(`❌ No email submissions found for app '${appSlug}'`);
+            await sendFailureNotification("stackemail-no-emails", senderPhone);
+            return false;
+        }
+        
+        // Send emails to all submitters
+        logWithTimestamp(`📧 Sending stackemail to ${emails.length} recipients...`);
+        const emailResult = await sendToCustomEmailList(emails, emailMessage, appSlug);
+        
+        if (emailResult.success) {
+            logWithTimestamp("🎉 STACKEMAIL PROCESSING COMPLETE!");
+            logWithTimestamp(`📧 Sent to ${emailResult.sentCount} recipients, ${emailResult.failedCount} failed`);
+            
+            // Send SMS confirmation to user
+            const confirmationMessage = `📧 Email sent to ${emailResult.sentCount} people who submitted to ${appSlug}!${emailResult.failedCount > 0 ? ` (${emailResult.failedCount} failed)` : ''}`;
+            await sendConfirmationSms(confirmationMessage, senderPhone);
+            return true;
+        } else {
+            logError("Failed to send stackemail");
+            await sendFailureNotification("stackemail-send", senderPhone);
+            return false;
+        }
+    }
+    
+    // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
+    let isStackablesRequest = false;
+    if (userPrompt && userPrompt.includes('--stack')) {
+        logWithTimestamp("🧱 STACKABLES DETECTED: Processing with HTML template approach");
+        
+        // Import stackables functions dynamically
+        const { parseStackCommand, loadStackedHTMLContent, buildEnhancedPrompt } = await import('./stackables-manager.js');
+        
+        // Parse the stack command
+        const parsed = parseStackCommand(userPrompt);
+        if (!parsed) {
+            logError(`❌ Invalid stack command format`);
+            await sendFailureNotification("stackables-format", senderPhone);
+            return false;
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🧱 Stack request: ${appSlug} → "${userRequest}"`);
+        
+        // Load HTML content (includes ownership verification)
+        const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
+        if (htmlContent === null) {
+            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+            await sendFailureNotification("stackables-ownership", senderPhone);
+            return false;
+        }
+        
+        // Build enhanced prompt with HTML template
+        const enhancedPrompt = buildEnhancedPrompt(userRequest, htmlContent);
+        
+        // Load stacker system prompt
+        const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
+        const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
+        logWithTimestamp(`📄 Stacker system prompt loaded: ${stackerSystemPrompt.length} characters`);
+        
+        // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
+        logWithTimestamp("🚀 Sending stackables request directly to Claude (bypassing wtaf-processor)");
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackables_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Stackables output saved to: ${outputFile}`);
+        
+        // Extract code blocks and deploy normally
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackables response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Deploy stackables result
+        const deployResult = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userRequest);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const appSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackables: ${userSlug}/${appSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackables HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackables: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKABLES PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            return true;
+        } else {
+            logError("Failed to deploy stackables content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
         }
     }
     
@@ -272,7 +530,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🎯 Using ${configType} configuration`);
         logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
-        // Step 1: Generate complete prompt with config (including admin override and stackables)
+        // Step 1: Generate complete prompt with config (including admin override)
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
         const completePrompt = await generateCompletePrompt(userPrompt, {
             classifierModel: config.classifierModel || 'gpt-4o',
@@ -281,8 +539,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
             classifierTopP: config.classifierTopP || 1,
             classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
             classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0,
-            forceAdminOverride: forceAdminPath, // 🔧 Pass admin override flag to processor
-            stackablesData: stackablesData // 🧱 Pass stackables data to processor
+            forceAdminOverride: forceAdminPath // 🔧 Pass admin override flag to processor
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         

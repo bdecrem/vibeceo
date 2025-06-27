@@ -286,6 +286,116 @@ export async function sendToSendGridList(message: string): Promise<{success: boo
   };
 }
 
+// Send custom message to specific email list (for stackemail)
+export async function sendToCustomEmailList(
+  emails: string[], 
+  message: string, 
+  appName: string
+): Promise<{success: boolean, sentCount: number, failedCount: number}> {
+  console.log(`📧 Sending stackemail to ${emails.length} recipients for app: ${appName}`);
+  
+  try {
+    const today = new Date().toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      timeZone: 'America/Los_Angeles' 
+    });
+    
+    let sentCount = 0;
+    let failedCount = 0;
+    
+    // Send emails in batches to avoid rate limits
+    const batchSize = 10;
+    for (let i = 0; i < emails.length; i += batchSize) {
+      const batch = emails.slice(i, i + batchSize);
+      
+      const promises = batch.map(async (email) => {
+        try {
+          const msg = {
+            to: email,
+            from: 'WTAF App Creator <bot@advisorsfoundry.ai>',
+            replyTo: 'noreply@advisorsfoundry.ai',
+            subject: `Message from ${appName} creator`,
+            text: formatStackEmailAsText(message, appName),
+            html: formatStackEmailAsHtml(message, appName),
+            tracking_settings: {
+              click_tracking: { enable: false },
+              open_tracking: { enable: false }
+            }
+          };
+          
+          await sgMail.send(msg);
+          sentCount++;
+          console.log(`📧 Sent stackemail to ${email}`);
+        } catch (error: any) {
+          failedCount++;
+          console.error(`📧 Failed to send stackemail to ${email}:`, error.response?.body || error.message);
+        }
+      });
+      
+      await Promise.all(promises);
+      
+      // Add delay between batches to be nice to SendGrid
+      if (i + batchSize < emails.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+      }
+    }
+    
+    console.log(`📧 Stackemail broadcast complete! Sent: ${sentCount}, Failed: ${failedCount}`);
+    
+    return {
+      success: sentCount > 0,
+      sentCount,
+      failedCount
+    };
+    
+  } catch (error) {
+    console.error('📧 Error sending stackemail:', error);
+    return { success: false, sentCount: 0, failedCount: 0 };
+  }
+}
+
+function formatStackEmailAsText(message: string, appName: string): string {
+  return `Hi there!
+
+The creator of "${appName}" sent this message to everyone who participated:
+
+"${message}"
+
+You're receiving this because you submitted to this WTAF app.
+
+---
+WTAF - Where Apps Find Their Voice
+advisorsfoundry.ai`;
+}
+
+function formatStackEmailAsHtml(message: string, appName: string): string {
+  return `
+  <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 24px; background-color: #fffaf5; color: #1a1a1a; max-width: 600px; margin: auto;">
+    <p style="margin-bottom: 16px; font-size: 16px;">Hi there!</p>
+
+    <p style="margin-bottom: 16px; font-size: 16px;">
+      The creator of "<strong>${appName}</strong>" sent this message to everyone who participated:
+    </p>
+
+    <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 16px 0; border-radius: 4px;">
+      <p style="margin: 0; font-size: 16px; font-style: italic;">"${message}"</p>
+    </div>
+
+    <p style="margin-bottom: 16px; font-size: 14px; color: #666;">
+      You're receiving this because you submitted to this WTAF app.
+    </p>
+
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #ddd;" />
+
+    <p style="font-size: 12px; color: #888;">
+      WTAF - Where Apps Find Their Voice<br>
+      <a href="https://advisorsfoundry.ai" style="color: #888;">advisorsfoundry.ai</a>
+    </p>
+  </div>
+  `;
+}
+
 function formatMessageAsText(message: string): string {
   const today = new Date().toLocaleDateString('en-US', { 
     month: 'long', 

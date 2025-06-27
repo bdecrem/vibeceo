@@ -1,0 +1,120 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Name Blobs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .blob {
+            position: absolute;
+            font-size: 4rem;
+            color: white;
+            text-shadow: 0 0 20px rgba(255,255,255,0.8);
+            animation: float 6s ease-in-out infinite;
+            filter: url(#goo);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .blob:hover {
+            transform: scale(1.2);
+            text-shadow: 0 0 30px rgba(255,255,255,1);
+        }
+
+        #amy {
+            top: 30%;
+            left: 30%;
+            animation-delay: 0s;
+        }
+
+        #james {
+            top: 50%;
+            left: 60%;
+            animation-delay: 2s;
+        }
+
+        #bart {
+            top: 70%;
+            left: 40%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .goo {
+            position: fixed;
+            visibility: hidden;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="amy" class="blob" data-value="2">amy</div>
+    <div id="james" class="blob" data-value="3">james</div>
+    <div id="bart" class="blob" data-value="4">bart</div>
+
+    <svg class="goo">
+        <defs>
+            <filter id="goo">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="prompt">Generated from: floating blobs of names</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.blob').forEach((blob) => {
+                const speed = blob.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                blob.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let clicks = 0;
+        document.querySelectorAll('.blob').forEach(blob => {
+            blob.addEventListener('click', () => {
+                clicks++;
+                if(clicks === 5) {
+                    document.body.style.animation = 'gradient 5s ease infinite';
+                    alert('🎉 BLOB MASTER UNLOCKED!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+```
