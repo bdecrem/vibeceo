@@ -1,0 +1,311 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WTAF Hello World Generator</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      transition: all 0.5s ease;
+    }
+
+    #hello {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 5rem;
+      text-align: center;
+      color: white;
+      text-shadow: 0 0 20px rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .floating-emoji {
+      position: fixed;
+      font-size: 4rem;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    #save-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 2rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    #prompt {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      color: white;
+    }
+
+    .secret {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="hello">Hello World</div>
+  <button id="save-btn">❤️</button>
+  <div id="prompt">Generated from: Hello World Generator with Chaotic Energy</div>
+  <div class="secret">🎉 YOU FOUND THE SECRET! 🎉</div>
+
+  <script>
+    const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+    
+    const emojis = ['✨', '🌈', '🚀', '💫', '⚡', '🌟', '🔮', '🎨']
+    const fonts = ['Space Grotesk', 'Helvetica Neue', 'Arial Black', 'Impact']
+    let clicks = 0
+    
+    function createEmoji() {
+      const emoji = document.createElement('div')
+      emoji.className = 'floating-emoji'
+      emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+      emoji.style.left = Math.random() * 100 + 'vw'
+      emoji.style.top = Math.random() * 100 + 'vh'
+      emoji.setAttribute('data-value', Math.random() * 4 - 2)
+      document.body.appendChild(emoji)
+    }
+
+    function generateGradient() {
+      const hue1 = Math.random() * 360
+      const hue2 = (hue1 + 180) % 360
+      return `linear-gradient(${Math.random() * 360}deg, 
+        hsl(${hue1}, 100%, 60%), 
+        hsl(${hue2}, 100%, 60%))`
+    }
+
+    function regenerate() {
+      document.body.style.background = generateGradient()
+      document.getElementById('hello').style.fontFamily = fonts[Math.floor(Math.random() * fonts.length)]
+      
+      document.querySelectorAll('.floating-emoji').forEach(e => e.remove())
+      for(let i = 0; i < 6; i++) {
+        createEmoji()
+      }
+
+      clicks++
+      if(clicks === 10) {
+        document.querySelector('.secret').style.opacity = '1'
+        setTimeout(() => document.querySelector('.secret').style.opacity = '0', 2000)
+      }
+    }
+
+    document.addEventListener('click', regenerate)
+    document.addEventListener('touchstart', regenerate)
+
+    document.addEventListener('mousemove', (e) => {
+      document.querySelectorAll('.floating-emoji').forEach((elem) => {
+        const speed = elem.getAttribute('data-value')
+        const x = (e.clientX * speed) / 100
+        const y = (e.clientY * speed) / 100
+        elem.style.transform = `translate(${x}px, ${y}px)`
+      })
+    })
+
+    document.getElementById('save-btn').addEventListener('click', async (e) => {
+      e.stopPropagation()
+      try {
+        const styleData = {
+          background: document.body.style.background,
+          font: document.getElementById('hello').style.fontFamily,
+          emojis: Array.from(document.querySelectorAll('.floating-emoji')).map(e => e.textContent)
+        }
+        
+        const { data, error } = await supabase.from('wtaf_submissions').insert({
+          app_id: 'hello_world_generator',
+          submission_data: styleData
+        })
+        
+        if (error) throw error
+        alert('Style saved! ✨')
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Failed to save style. Try again!')
+      }
+    })
+
+    regenerate()
+  </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WTAF Hello World Admin</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 2rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #000;
+      color: white;
+    }
+
+    .preview {
+      width: 100px;
+      height: 50px;
+      border-radius: 4px;
+    }
+
+    .export-btn {
+      margin-bottom: 1rem;
+      padding: 0.5rem 1rem;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .export-btn:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Saved Hello World Styles</h1>
+  <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Background</th>
+        <th>Font</th>
+        <th>Emojis</th>
+      </tr>
+    </thead>
+    <tbody id="submissions"></tbody>
+  </table>
+
+  <script>
+    const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+    async function loadSubmissions() {
+      try {
+        const { data, error } = await supabase.from('wtaf_submissions')
+          .select('*')
+          .eq('app_id', 'hello_world_generator')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+
+        const tbody = document.getElementById('submissions')
+        tbody.innerHTML = data.map(row => `
+          <tr>
+            <td>${new Date(row.created_at).toLocaleString()}</td>
+            <td>
+              <div class="preview" style="background: ${row.submission_data.background}"></div>
+            </td>
+            <td>${row.submission_data.font}</td>
+            <td>${row.submission_data.emojis.join(' ')}</td>
+          </tr>
+        `).join('')
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Failed to load submissions')
+      }
+    }
+
+    async function exportCSV() {
+      try {
+        const { data, error } = await supabase.from('wtaf_submissions')
+          .select('*')
+          .eq('app_id', 'hello_world_generator')
+        
+        if (error) throw error
+
+        const csvContent = 'Date,Background,Font,Emojis\n' + data.map(row => 
+          `${new Date(row.created_at).toLocaleString()},${row.submission_data.background},${row.submission_data.font},"${row.submission_data.emojis.join(' ')}"`
+        ).join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'hello_world_styles.csv'
+        a.click()
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Failed to export data')
+      }
+    }
+
+    loadSubmissions()
+  </script>
+</body>
+</html>
+```

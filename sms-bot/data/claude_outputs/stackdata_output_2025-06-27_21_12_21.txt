@@ -1,0 +1,129 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Name Blobs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            font-family: "Inter", sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .blob {
+            position: absolute;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: float 6s ease-in-out infinite;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .blob:hover {
+            transform: scale(1.1);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="blob" style="top: 20%; left: 30%">ALICE</div>
+    <div class="blob" style="top: 50%; left: 60%">BOB</div>
+    <div class="blob" style="top: 70%; left: 20%">CHARLIE</div>
+    <div class="blob" style="top: 30%; left: 70%">DIANA</div>
+    <div class="blob" style="top: 60%; left: 40%">EVE</div>
+
+    <div class="floating-emoji" data-value="2" style="top: 10%; left: 20%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 80%; left: 80%">🌀</div>
+    <div class="floating-emoji" data-value="4" style="top: 40%; left: 90%">💫</div>
+    <div class="floating-emoji" data-value="5" style="top: 70%; left: 10%">⚡</div>
+
+    <div class="prompt">Generated from: floating blobs of names</div>
+    <div class="cta">📱 Text START to +1-866-330-0015 to get initiated</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg: Type 'WTAF' for chaos mode
+        let buffer = '';
+        document.addEventListener('keydown', (e) => {
+            buffer += e.key;
+            if(buffer.toLowerCase().includes('wtaf')) {
+                document.querySelectorAll('.blob').forEach(blob => {
+                    blob.style.animation = 'float 1s ease-in-out infinite';
+                });
+                buffer = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

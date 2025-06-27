@@ -38,7 +38,6 @@ export interface ClassifierConfig {
     classifierPresencePenalty?: number;
     classifierFrequencyPenalty?: number;
     forceAdminOverride?: boolean; // 🔧 Admin override flag
-    stackablesData?: any; // 🧱 Stackables aesthetic inheritance data
 }
 
 export interface BuilderConfig {
@@ -171,12 +170,7 @@ ZERO_ADMIN_DATA: false
 APP_TYPE: data_collection`;
             logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
         }
-        // 🧱 STACKABLES CHECK: Use enhanced prompt if available
-        else if (config.stackablesData && config.stackablesData.enhancedPrompt) {
-            logWithTimestamp("🧱 STACKABLES: Using enhanced prompt with aesthetic inheritance");
-            expandedPrompt = config.stackablesData.enhancedPrompt;
-            logWithTimestamp(`🎨 Enhanced prompt length: ${expandedPrompt.length} characters`);
-        } else {
+        else {
             // APP PATH: Use classifier to expand and clarify the request
             logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
             

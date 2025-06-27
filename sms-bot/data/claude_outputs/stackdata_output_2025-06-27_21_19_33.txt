@@ -1,0 +1,116 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WTAF Signups</title>
+<style>
+body {
+  background: linear-gradient(-45deg, #FF2E93, #FF61C7, #3F88FF, #6E7FFF);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Space Grotesk", sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.container {
+  text-align: center;
+  position: relative;
+}
+
+.name {
+  font-size: 4rem;
+  margin: 1rem;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  animation: float 3s ease-in-out infinite;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.name:hover {
+  transform: scale(1.1);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+.floating-emoji {
+  position: fixed;
+  font-size: 3rem;
+  pointer-events: none;
+  transition: all 0.1s ease;
+}
+
+#prompt {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+#cta {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #FF2E93;
+  padding: 1rem;
+  border-radius: 5px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="name">amy</div>
+  <div class="name">james</div>
+  <div class="name">bart</div>
+</div>
+
+<div class="floating-emoji" data-value="2">✨</div>
+<div class="floating-emoji" data-value="3">🌀</div>
+<div class="floating-emoji" data-value="4">🚀</div>
+<div class="floating-emoji" data-value="5">💫</div>
+
+<div id="prompt">Generated from: floating names of the people who signed up</div>
+<div id="cta">📱 Text START to +1-866-330-0015 to get initiated</div>
+
+<script>
+document.addEventListener('mousemove', (e) => {
+  document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+    const speed = emoji.getAttribute('data-value') || 2;
+    const x = (e.clientX * speed) / 100;
+    const y = (e.clientY * speed) / 100;
+    emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+  });
+});
+
+let clicks = 0;
+document.querySelector('.container').addEventListener('click', () => {
+  clicks++;
+  if(clicks === 5) {
+    document.body.style.animation = 'gradient 5s ease infinite';
+    alert('🎉 WELCOME TO THE PARTY!');
+  }
+});
+</script>
+
+</body>
+</html>
+```

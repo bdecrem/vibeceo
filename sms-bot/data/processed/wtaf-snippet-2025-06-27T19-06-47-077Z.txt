@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+--stack silver-deer-singing build me an ABOUT ME page with just my name and title: Malcolm McLaren, Viral Culture Hacker. I also need you to add two links, to my Bluesky and my current project: https://bsky.app/profile/did:plc:m3nvqatwunwj3onvysaufpp3 and www.wtaf.me but do it in a simple, low-key way that matches the current barebones aesthetic

@@ -1,0 +1,396 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF SMS Portal 📱</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(120deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .sms-form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: linear-gradient(90deg, #3F88FF, #6E7FFF);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes gradient {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+
+        @keyframes float {
+            0% {transform: translateY(0px);}
+            50% {transform: translateY(-20px);}
+            100% {transform: translateY(0px);}
+        }
+
+        @keyframes pulse {
+            0% {transform: scale(1.05);}
+            50% {transform: scale(1.1);}
+            100% {transform: scale(1.05);}
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(90deg, #FF2E93, #FF61C7);
+            padding: 1rem;
+            border-radius: 8px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>SMS PORTAL 3000</h1>
+            <p>Like iMessage but make it chaotic and expensive</p>
+            <div class="floating-emoji" data-value="2">📱</div>
+            <div class="floating-emoji" data-value="4">💫</div>
+            <div class="floating-emoji" data-value="3">🌀</div>
+            <div class="floating-emoji" data-value="5">⚡</div>
+        </div>
+
+        <div class="sms-form">
+            <h2>Send Your Message</h2>
+            <form id="smsForm">
+                <input type="text" id="name" placeholder="Your name" required>
+                <input type="tel" id="phone" placeholder="Your phone number" required>
+                <textarea id="message" placeholder="Your message" required></textarea>
+                <button type="submit">BEAM IT UP 🚀</button>
+            </form>
+            <div id="successMessage" class="success-message">
+                Message sent to the flip-phone future! 🎉
+            </div>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt-display">
+        Generated from: SENDER_PHONE: +15551234567
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Form submission
+        document.getElementById('smsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                message: document.getElementById('message').value
+            };
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'sms_portal',
+                    submission_data: formData
+                });
+
+                if (error) throw error;
+
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('smsForm').reset();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Submission failed. Please try again.');
+            }
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.background = '#000';
+                alert('🎉 YOU FOUND THE VOID! Welcome to the flip-phone dimension.');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF SMS Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(120deg, #3F88FF, #6E7FFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .admin-controls {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: linear-gradient(90deg, #3F88FF, #6E7FFF);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(0,0,0,0.3);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>SMS Portal Admin Dashboard</h1>
+        
+        <div class="admin-controls">
+            <button onclick="refreshData()">Refresh Data</button>
+            <button onclick="exportCSV()">Export CSV</button>
+        </div>
+
+        <table id="submissionsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="4" class="loading">Loading submissions...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        async function loadSubmissions() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'sms_portal')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(row.created_at).toLocaleString()}</td>
+                        <td>${row.submission_data.name}</td>
+                        <td>${row.submission_data.phone}</td>
+                        <td>${row.submission_data.message}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load submissions');
+            }
+        }
+
+        function exportCSV() {
+            try {
+                const rows = Array.from(document.querySelectorAll('#submissionsTable tr'));
+                const csvContent = rows.map(row => {
+                    return Array.from(row.cells)
+                        .map(cell => `"${cell.textContent.replace(/"/g, '""')}"`)
+                        .join(',');
+                }).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sms_submissions.csv';
+                a.click();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export CSV');
+            }
+        }
+
+        function refreshData() {
+            loadSubmissions();
+        }
+
+        // Initial load
+        loadSubmissions();
+    </script>
+</body>
+</html>
+```

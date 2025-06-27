@@ -1,6 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Lazy initialization of Supabase client
 let supabase: SupabaseClient | null = null;
@@ -17,27 +23,40 @@ function getSupabaseClient(): SupabaseClient {
 /**
  * Parse stackable command from user input
  * Extracts app slug and cleaned user request
+ * Supports both "wtaf --stack" and "--stack" formats
  */
 export function parseStackCommand(input: string): { appSlug: string; userRequest: string } | null {
-    // Expected format: "wtaf --stack app-slug user request here"
-    const match = input.match(/^wtaf\s+--stack\s+([a-z-]+)\s+(.+)$/i);
-    if (!match) {
-        return null;
+    // Try "wtaf --stack app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stack\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
     }
     
+    // Try "--stack app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stack\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
     return {
         appSlug: match[1],
         userRequest: match[2]
     };
 }
+    
+    return null;
+}
+
+
 
 /**
- * Verify user owns the specified app and get its UUID
- * Returns the app's UUID if ownership is verified, null otherwise
+ * Load HTML content from Supabase (simple template approach)
+ * Returns the raw HTML content to use as a template
  */
-export async function verifyOwnershipAndGetUUID(userSlug: string, appSlug: string): Promise<string | null> {
+export async function loadStackedHTMLContent(userSlug: string, appSlug: string): Promise<string | null> {
     try {
-        logWithTimestamp(`🔍 Verifying ownership: ${userSlug} owns ${appSlug}`);
+        logWithTimestamp(`📡 Loading HTML content from Supabase`);
+        logWithTimestamp(`Looking for app_slug: "${appSlug}"`);
         
         // Get user_id from sms_subscribers table
         const { data: userData, error: userError } = await getSupabaseClient()
@@ -52,11 +71,12 @@ export async function verifyOwnershipAndGetUUID(userSlug: string, appSlug: strin
         }
         
         const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
         
-        // Check app ownership and get UUID
+        // Load HTML content
         const { data: appData, error: appError } = await getSupabaseClient()
             .from('wtaf_content')
-            .select('id, app_slug')
+            .select('html_content')
             .eq('app_slug', appSlug)
             .eq('user_id', userId)
             .single();
@@ -66,256 +86,450 @@ export async function verifyOwnershipAndGetUUID(userSlug: string, appSlug: strin
             return null;
         }
         
-        logSuccess(`✅ Ownership verified: ${userSlug} owns ${appSlug}`);
-        logWithTimestamp(`🆔 App UUID: ${appData.id}`);
-        return appData.id;
+        logSuccess(`✅ HTML content loaded: ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+        return appData.html_content;
         
     } catch (error) {
-        logError(`Error verifying ownership: ${error instanceof Error ? error.message : String(error)}`);
+        logError(`Error loading HTML content: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
 
 /**
- * Load aesthetic data from submission tables using smart UUID/slug lookup
- * Preserves legacy data while using secure UUID for new apps
+ * Build enhanced prompt with user request + HTML template (simple approach)
+ * Matches the exact logic from test-stackables.cjs
  */
-export async function loadStackedAestheticData(contentUuid: string, appSlug: string): Promise<any> {
-    try {
-        logWithTimestamp(`📊 Loading aesthetic data using smart lookup...`);
-        
-        // Try new secure method first (UUID in wtaf_submissions)
-        logWithTimestamp(`🔒 Primary lookup: Using secure UUID (${contentUuid})`);
-        let { data: submissions, error: subError } = await getSupabaseClient()
-            .from('wtaf_submissions')
-            .select('submission_data, created_at')
-            .eq('app_id', contentUuid)
-            .order('created_at', { ascending: false })
-            .limit(10); // Get more samples for better aesthetic analysis
-        
-        if (submissions && submissions.length > 0) {
-            logSuccess(`✅ Found ${submissions.length} submissions using secure UUID method`);
-            return extractAestheticPatterns(submissions, 'admin');
-        }
-        
-        logWithTimestamp(`⚠️  No submissions found with secure UUID, trying legacy slug lookup for backward compatibility...`);
-        
-        // Fallback to legacy method (slug in wtaf_submissions)
-        const { data: legacySubmissions, error: legacyError } = await getSupabaseClient()
-            .from('wtaf_submissions')
-            .select('submission_data, created_at')
-            .eq('app_id', appSlug)
-            .order('created_at', { ascending: false })
-            .limit(10);
-            
-        if (legacySubmissions && legacySubmissions.length > 0) {
-            logSuccess(`✅ Found ${legacySubmissions.length} submissions using legacy slug method`);
-            return extractAestheticPatterns(legacySubmissions, 'admin');
-        }
-        
-        // Try ZAD collaborative table (UUID first, then slug)
-        logWithTimestamp(`🤝 Checking ZAD collaborative data...`);
-        
-        let { data: zadData } = await getSupabaseClient()
-            .from('wtaf_zero_admin_collaborative')
-            .select('participant_data, session_data, created_at')
-            .eq('app_id', contentUuid)
-            .order('created_at', { ascending: false })
-            .limit(10);
-            
-        if (!zadData || zadData.length === 0) {
-            // Try legacy slug for ZAD data
-            const { data: legacyZadData } = await getSupabaseClient()
-                .from('wtaf_zero_admin_collaborative')
-                .select('participant_data, session_data, created_at')
-                .eq('app_id', appSlug)
-                .order('created_at', { ascending: false })
-                .limit(10);
-                
-            zadData = legacyZadData || [];
-        }
-        
-        if (zadData && zadData.length > 0) {
-            logSuccess(`✅ Found ${zadData.length} ZAD collaborative entries`);
-            return extractAestheticPatterns(zadData, 'zad');
-        }
-        
-        // No data found - return default aesthetic
-        logWithTimestamp(`⚠️  No aesthetic data found - using WTAF default style`);
+export function buildEnhancedPrompt(userRequest: string, htmlContent: string | null): string {
+    logWithTimestamp(`🔧 Building enhanced prompt`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`HTML content included: ${htmlContent ? 'YES' : 'NO'}`);
+    
+    let prompt = userRequest;
+    
+    if (htmlContent && htmlContent.trim()) {
+        prompt += `\n\nHTML to use as template:\n\`\`\`html\n${htmlContent}\n\`\`\``;
+    }
+    
+    logWithTimestamp(`Final prompt length: ${prompt.length} characters`);
+    
+    return prompt;
+}
+
+/**
+ * Parse stackdata command from user input (clone of parseStackCommand)
+ * Extracts app slug and cleaned user request
+ * Supports both "wtaf --stackdata" and "--stackdata" formats
+ */
+export function parseStackDataCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --stackdata app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stackdata\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
         return {
-            gradients: ["linear-gradient(45deg, #3F88FF, #6E7FFF)"],
-            emojis: ["✨", "🌟", "💫"],
-            colors: ["hsl(220, 100%, 60%)"],
-            hasData: false,
-            dataSource: 'default',
-            sampleCount: 0
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--stackdata app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stackdata\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Load submission data from wtaf_submissions table and extract names
+ * Returns array of names from people who submitted to the app
+ */
+export async function loadStackedDataContent(userSlug: string, appSlug: string): Promise<string[] | null> {
+    try {
+        logWithTimestamp(`📊 Loading submission data from wtaf_submissions for stackdata`);
+        logWithTimestamp(`Looking for app submissions to: "${appSlug}"`);
+        
+        // Get user_id from sms_subscribers table
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return null;
+        }
+        
+        const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
+        
+        // First verify the user owns this app and get its UUID
+        const { data: appData, error: appError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id')
+            .eq('app_slug', appSlug)
+            .eq('user_id', userId)
+            .single();
+        
+        if (appError || !appData) {
+            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+            return null;
+        }
+        
+        const appUuid = appData.id;
+        logWithTimestamp(`🆔 App UUID for submissions lookup: ${appUuid}`);
+        
+        // Now load submissions for this app using the UUID
+        const { data: submissions, error: submissionError } = await getSupabaseClient()
+            .from('wtaf_submissions')
+            .select('submission_data')
+            .eq('app_id', appUuid)
+            .order('created_at', { ascending: false });
+        
+        if (submissionError) {
+            logError(`Error loading submissions: ${submissionError.message}`);
+            return null;
+        }
+        
+        if (!submissions || submissions.length === 0) {
+            logWithTimestamp(`⚠️ No submissions found for app '${appSlug}'`);
+            return [];
+        }
+        
+        // Extract names from submission data
+        const names: string[] = [];
+        submissions.forEach((submission, index) => {
+            try {
+                const data = submission.submission_data;
+                if (data && typeof data === 'object') {
+                    // Look for common name fields
+                    const name = data.name || data.Name || data.full_name || data.fullName || 
+                                data.firstName || data.first_name || data.username || data.email;
+                    if (name && typeof name === 'string') {
+                        names.push(name.trim());
+                        logWithTimestamp(`  📝 Submission ${index + 1}: Found name "${name}"`);
+                    }
+                }
+            } catch (error) {
+                logWithTimestamp(`  ⚠️ Submission ${index + 1}: Could not parse data`);
+            }
+        });
+        
+        // Remove duplicates and empty names
+        const uniqueNames = [...new Set(names.filter(name => name.length > 0))];
+        
+        logSuccess(`✅ Extracted ${uniqueNames.length} unique names from ${submissions.length} submissions`);
+        logWithTimestamp(`📋 Names found: ${uniqueNames.slice(0, 5).join(', ')}${uniqueNames.length > 5 ? '...' : ''}`);
+        
+        return uniqueNames;
+        
+    } catch (error) {
+        logError(`Error loading submission data for stackdata: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Build enhanced prompt for stackdata with names from submissions + WTAF design system
+ * Takes user request and array of names, creates prompt for Claude
+ */
+export async function buildEnhancedDataPrompt(userRequest: string, names: string[] | null): Promise<string> {
+    logWithTimestamp(`🔧 Building enhanced prompt for stackdata`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`Names included: ${names ? names.length : 0}`);
+    
+    let prompt = userRequest;
+    
+    // Add available data structure
+    if (names && names.length > 0) {
+        prompt += `\n\nAvailable data from app submissions:\nNames: ${names.join(', ')}\n\nUse this data to fulfill the user's request. Create whatever the user is asking for, populated with these real names from the submission data.`;
+    } else {
+        prompt += `\n\nNote: No submission data found for this app. Create the app structure the user requested but use placeholder names since no real data is available.`;
+    }
+    
+    // Load and add WTAF design system
+    try {
+        const appTechSpecPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+        const appTechSpecContent = await readFile(appTechSpecPath, 'utf8');
+        const appTechSpec = JSON.parse(appTechSpecContent);
+        
+        prompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${JSON.stringify(appTechSpec, null, 2)}`;
+        logWithTimestamp(`📖 Added app-tech-spec.json to stackdata prompt`);
+    } catch (error) {
+        logWarning(`Failed to load app-tech-spec.json for stackdata: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    logWithTimestamp(`Final stackdata prompt length: ${prompt.length} characters`);
+    
+    return prompt;
+}
+
+/**
+ * Process stackdata request end-to-end (reads submission names from wtaf_submissions)
+ * Main function that orchestrates the entire stackdata workflow
+ */
+export async function processStackDataRequest(userSlug: string, stackCommand: string): Promise<{ 
+    success: boolean; 
+    userRequest?: string; 
+    names?: string[] | null;
+    enhancedPrompt?: string; 
+    error?: string 
+}> {
+    try {
+        // Step 1: Parse the stackdata command
+        const parsed = parseStackDataCommand(stackCommand);
+        if (!parsed) {
+            return { 
+                success: false, 
+                error: 'Invalid stackdata command format. Use: --stackdata app-slug your request here (or: wtaf --stackdata app-slug your request here)' 
+            };
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🗃️ Processing stackdata request: ${appSlug} → "${userRequest}"`);
+        
+        // Step 2: Load names from submission data (includes ownership verification)
+        const names = await loadStackedDataContent(userSlug, appSlug);
+        if (names === null) {
+            return { 
+                success: false, 
+                error: `You don't own app '${appSlug}' or it doesn't exist` 
+            };
+        }
+        
+        // Step 3: Build enhanced prompt with names data + WTAF design system
+        const enhancedPrompt = await buildEnhancedDataPrompt(userRequest, names);
+        
+        logSuccess(`✅ Stackdata request processed successfully`);
+        return {
+            success: true,
+            userRequest,
+            names,
+            enhancedPrompt
         };
         
     } catch (error) {
-        logError(`Error loading aesthetic data: ${error instanceof Error ? error.message : String(error)}`);
-        throw error;
+        logError(`Error processing stackdata request: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
     }
 }
 
 /**
- * Extract aesthetic patterns from submission data
- * Handles both admin submissions and ZAD collaborative data
+ * Parse stackemail command from user input
+ * Extracts app slug and email message
+ * Supports both "wtaf --stackemail" and "--stackemail" formats
  */
-function extractAestheticPatterns(dataArray: any[], dataType: 'admin' | 'zad'): any {
-    const aestheticData = {
-        gradients: [] as string[],
-        emojis: [] as string[],
-        colors: [] as string[],
-        themes: [] as string[],
-        hasData: true,
-        dataSource: dataType,
-        sampleCount: dataArray.length
-    };
+export function parseStackEmailCommand(input: string): { appSlug: string; emailMessage: string } | null {
+    // Try "wtaf --stackemail app-slug email message here" format first
+    let match = input.match(/^wtaf\s+--stackemail\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            emailMessage: match[2]
+        };
+    }
     
-    dataArray.forEach((entry, index) => {
-        logWithTimestamp(`  📝 ${dataType.toUpperCase()} Entry ${index + 1}: ${JSON.stringify(entry).substring(0, 100)}...`);
+    // Try "--stackemail app-slug email message here" format (direct SMS format)
+    match = input.match(/^--stackemail\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            emailMessage: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Load email addresses from submission data for stackemail
+ * Returns array of email addresses from people who submitted to the app
+ */
+export async function loadSubmissionEmails(userSlug: string, appSlug: string): Promise<string[] | null> {
+    try {
+        logWithTimestamp(`📧 Loading submission emails for stackemail`);
+        logWithTimestamp(`Looking for app submissions to: "${appSlug}"`);
         
-        let data;
-        if (dataType === 'admin') {
-            data = entry.submission_data;
-        } else {
-            // ZAD data - extract from participant_data or session_data
-            data = entry.participant_data || entry.session_data || {};
+        // Get user_id from sms_subscribers table
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return null;
         }
         
-        if (!data) return;
+        const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
         
-        // Extract gradients
-        if (data.gradient) {
-            aestheticData.gradients.push(data.gradient);
-        }
-        if (data.background && data.background.includes('gradient')) {
-            aestheticData.gradients.push(data.background);
-        }
+        // First verify the user owns this app and get its UUID
+        const { data: appData, error: appError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id')
+            .eq('app_slug', appSlug)
+            .eq('user_id', userId)
+            .single();
         
-        // Extract colors
-        if (data.backgroundColor) {
-            aestheticData.colors.push(data.backgroundColor);
-        }
-        if (data.color) {
-            aestheticData.colors.push(data.color);
-        }
-        if (data.primaryColor) {
-            aestheticData.colors.push(data.primaryColor);
+        if (appError || !appData) {
+            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+            return null;
         }
         
-        // Extract emojis
-        if (data.emojis) {
-            if (Array.isArray(data.emojis)) {
-                data.emojis.forEach((emoji: any) => {
-                    const emojiText = typeof emoji === 'string' ? emoji : emoji.text;
-                    if (emojiText && !aestheticData.emojis.includes(emojiText)) {
-                        aestheticData.emojis.push(emojiText);
+        const appUuid = appData.id;
+        logWithTimestamp(`🆔 App UUID for email lookup: ${appUuid}`);
+        
+        // Now load submissions for this app using the UUID
+        const { data: submissions, error: submissionError } = await getSupabaseClient()
+            .from('wtaf_submissions')
+            .select('submission_data')
+            .eq('app_id', appUuid)
+            .order('created_at', { ascending: false });
+        
+        if (submissionError) {
+            logError(`Error loading submissions: ${submissionError.message}`);
+            return null;
+        }
+        
+        if (!submissions || submissions.length === 0) {
+            logWithTimestamp(`⚠️ No submissions found for app '${appSlug}'`);
+            return [];
+        }
+        
+        // Extract email addresses from submission data
+        const emails: string[] = [];
+        submissions.forEach((submission, index) => {
+            try {
+                const data = submission.submission_data;
+                if (data && typeof data === 'object') {
+                    // Look for email fields
+                    const email = data.email || data.Email || data.emailAddress || data.email_address;
+                    if (email && typeof email === 'string' && email.includes('@')) {
+                        emails.push(email.trim());
+                        logWithTimestamp(`  📧 Submission ${index + 1}: Found email "${email}"`);
                     }
-                });
+                }
+            } catch (error) {
+                logWithTimestamp(`  ⚠️ Submission ${index + 1}: Could not parse data`);
             }
-        }
-        if (data.emoji && !aestheticData.emojis.includes(data.emoji)) {
-            aestheticData.emojis.push(data.emoji);
-        }
+        });
         
-        // Extract themes or styles
-        if (data.theme) {
-            aestheticData.themes.push(data.theme);
-        }
-        if (data.style) {
-            aestheticData.themes.push(data.style);
-        }
-    });
-    
-    // Remove duplicates and limit counts
-    aestheticData.gradients = [...new Set(aestheticData.gradients)].slice(0, 5);
-    aestheticData.colors = [...new Set(aestheticData.colors)].slice(0, 8);
-    aestheticData.emojis = [...new Set(aestheticData.emojis)].slice(0, 12);
-    aestheticData.themes = [...new Set(aestheticData.themes)].slice(0, 3);
-    
-    logWithTimestamp(`🎨 Extracted aesthetic patterns:`);
-    logWithTimestamp(`   Gradients: ${aestheticData.gradients.length} unique`);
-    logWithTimestamp(`   Colors: ${aestheticData.colors.length} unique`);
-    logWithTimestamp(`   Emojis: ${aestheticData.emojis.length} unique`);
-    logWithTimestamp(`   Themes: ${aestheticData.themes.length} unique`);
-    
-    return aestheticData;
-}
-
-/**
- * Enhance user prompt with inherited aesthetic data
- * Creates a rich prompt that guides the AI to use the same design DNA
- */
-export function enhancePromptWithAesthetics(userRequest: string, aestheticData: any): string {
-    let enhancedPrompt = `Build: ${userRequest}
-
-AESTHETIC INHERITANCE FROM PREVIOUS APP:
-`;
-
-    if (aestheticData.hasData) {
-        enhancedPrompt += `
-🎨 INHERITED DESIGN DNA (${aestheticData.dataSource.toUpperCase()} data, ${aestheticData.sampleCount} samples):`;
-
-        if (aestheticData.gradients.length > 0) {
-            enhancedPrompt += `
-- Color Gradients: ${aestheticData.gradients.join(', ')}`;
-        }
+        // Remove duplicates
+        const uniqueEmails = [...new Set(emails.filter(email => email.length > 0))];
         
-        if (aestheticData.colors.length > 0) {
-            enhancedPrompt += `
-- Color Palette: ${aestheticData.colors.join(', ')}`;
-        }
+        logSuccess(`✅ Extracted ${uniqueEmails.length} unique emails from ${submissions.length} submissions`);
+        logWithTimestamp(`📧 Emails found: ${uniqueEmails.slice(0, 3).join(', ')}${uniqueEmails.length > 3 ? '...' : ''}`);
         
-        if (aestheticData.emojis.length > 0) {
-            enhancedPrompt += `
-- Emoji Library: ${aestheticData.emojis.join(' ')}`;
-        }
+        return uniqueEmails;
         
-        if (aestheticData.themes.length > 0) {
-            enhancedPrompt += `
-- Style Themes: ${aestheticData.themes.join(', ')}`;
-        }
-
-        enhancedPrompt += `
-
-CRITICAL INHERITANCE REQUIREMENTS:
-1. Use the SAME color gradients and palette from the inherited design
-2. Use emojis ONLY from the provided emoji library 
-3. Maintain the same aesthetic "feel" and visual energy
-4. Apply this design DNA to the new request while making it functional
-5. Keep the visual style consistent with the original app's aesthetic DNA
-
-The new app should feel like it belongs to the same design family as the original.`;
-    } else {
-        enhancedPrompt += `
-⚠️  NO INHERITED DATA - using default WTAF aesthetic:
-- Gradient: linear-gradient(45deg, #3F88FF, #6E7FFF)  
-- Emojis: ✨ 🌟 💫
-- Style: Clean, modern, tech-forward, slightly chaotic-chic
-
-Use WTAF's signature style: premium but rebellious, clean but with personality.`;
+    } catch (error) {
+        logError(`Error loading submission emails: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
     }
-    
-    enhancedPrompt += `
-
-TECHNICAL REQUIREMENTS:
-- Return complete HTML with embedded CSS and JavaScript
-- Make it responsive and production-ready
-- Include proper error handling for all interactive features
-- Follow modern web development best practices`;
-
-    return enhancedPrompt;
 }
 
 /**
- * Process stackables request end-to-end
+ * Check if user has DEGEN role (required for stackemail)
+ */
+export async function checkDegenRole(userSlug: string): Promise<boolean> {
+    try {
+        logWithTimestamp(`🔒 Checking DEGEN role for user: ${userSlug}`);
+        
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('role')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return false;
+        }
+        
+        const hasDegenRole = userData.role === 'degen';
+        logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | DEGEN access: ${hasDegenRole}`);
+        
+        return hasDegenRole;
+        
+    } catch (error) {
+        logError(`Error checking DEGEN role: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
+ * Process stackemail request end-to-end
+ * Main function that orchestrates the entire stackemail workflow
+ */
+export async function processStackEmailRequest(userSlug: string, stackCommand: string): Promise<{ 
+    success: boolean; 
+    appSlug?: string;
+    emailMessage?: string;
+    emails?: string[];
+    error?: string 
+}> {
+    try {
+        // Step 1: Parse the stackemail command
+        const parsed = parseStackEmailCommand(stackCommand);
+        if (!parsed) {
+            return { 
+                success: false, 
+                error: 'Invalid stackemail command format. Use: --stackemail app-slug your email message here' 
+            };
+        }
+        
+        const { appSlug, emailMessage } = parsed;
+        logWithTimestamp(`📧 Processing stackemail request: ${appSlug} → "${emailMessage}"`);
+        
+        // Step 2: Load email addresses from submission data (includes ownership verification)
+        const emails = await loadSubmissionEmails(userSlug, appSlug);
+        if (emails === null) {
+            return { 
+                success: false, 
+                error: `You don't own app '${appSlug}' or it doesn't exist` 
+            };
+        }
+        
+        if (emails.length === 0) {
+            return { 
+                success: false, 
+                error: `No email submissions found for app '${appSlug}' - no one to email` 
+            };
+        }
+        
+        logSuccess(`✅ Stackemail request processed successfully`);
+        return {
+            success: true,
+            appSlug,
+            emailMessage,
+            emails
+        };
+        
+    } catch (error) {
+        logError(`Error processing stackemail request: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
+/**
+ * Process stackables request end-to-end (simple template approach)
  * Main function that orchestrates the entire stackables workflow
  */
 export async function processStackablesRequest(userSlug: string, stackCommand: string): Promise<{ 
     success: boolean; 
     userRequest?: string; 
-    aestheticData?: any; 
+    htmlContent?: string | null;
     enhancedPrompt?: string; 
     error?: string 
 }> {
@@ -325,33 +539,30 @@ export async function processStackablesRequest(userSlug: string, stackCommand: s
         if (!parsed) {
             return { 
                 success: false, 
-                error: 'Invalid stack command format. Use: wtaf --stack app-slug your request here' 
+                error: 'Invalid stack command format. Use: --stack app-slug your request here (or: wtaf --stack app-slug your request here)' 
             };
         }
         
         const { appSlug, userRequest } = parsed;
         logWithTimestamp(`🧱 Processing stackables request: ${appSlug} → "${userRequest}"`);
         
-        // Step 2: Verify ownership and get UUID
-        const contentUuid = await verifyOwnershipAndGetUUID(userSlug, appSlug);
-        if (!contentUuid) {
+        // Step 2: Load HTML content from Supabase (includes ownership verification)
+        const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
+        if (htmlContent === null) {
             return { 
                 success: false, 
                 error: `You don't own app '${appSlug}' or it doesn't exist` 
             };
         }
         
-        // Step 3: Load aesthetic data with smart lookup
-        const aestheticData = await loadStackedAestheticData(contentUuid, appSlug);
-        
-        // Step 4: Enhance prompt with aesthetic inheritance
-        const enhancedPrompt = enhancePromptWithAesthetics(userRequest, aestheticData);
+        // Step 3: Build enhanced prompt with HTML template
+        const enhancedPrompt = buildEnhancedPrompt(userRequest, htmlContent);
         
         logSuccess(`✅ Stackables request processed successfully`);
         return {
             success: true,
             userRequest,
-            aestheticData,
+            htmlContent,
             enhancedPrompt
         };
         

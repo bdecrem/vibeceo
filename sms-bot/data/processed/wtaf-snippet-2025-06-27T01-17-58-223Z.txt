@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+--admin an app that generates a completely different looking Hello World page with different gradients or color and emojis and easter eggs each time I tap or click, and a ❤️ icon to save the key style information (background color, fonts etc etc) so we can use it later
