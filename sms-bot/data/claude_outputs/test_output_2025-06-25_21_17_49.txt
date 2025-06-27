@@ -1,0 +1,166 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            width: 80vmin;
+            height: 80vmin;
+            background-color: #111;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            width: 44px;
+            height: 44px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            <button id="left">←</button>
+            <button id="up">↑</button>
+            <button id="down">↓</button>
+            <button id="right">→</button>
+        </div>
+        <div id="score">Score: 0</div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const btnLeft = document.getElementById('left');
+        const btnUp = document.getElementById('up');
+        const btnDown = document.getElementById('down');
+        const btnRight = document.getElementById('right');
+        let snake = [{ x: 10, y: 10 }];
+        let direction = { x: 0, y: 0 };
+        let food = { x: 15, y: 15 };
+        let gridSize = 20;
+        let score = 0;
+        let speed = 100;
+        let gameInterval;
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 0, y: 0 };
+            food = { x: 15, y: 15 };
+            score = 0;
+            scoreElement.textContent = 'Score: 0';
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, speed);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+        }
+
+        function update() {
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize || snake.some(s => s.x === head.x && s.y === head.y)) {
+                resetGame();
+                return;
+            }
+
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = `Score: ${score}`;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0f0';
+            snake.forEach(part => ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize, gridSize));
+
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+        }
+
+        function placeFood() {
+            food = {
+                x: Math.floor(Math.random() * (canvas.width / gridSize)),
+                y: Math.floor(Math.random() * (canvas.height / gridSize))
+            };
+            if (snake.some(s => s.x === food.x && s.y === food.y)) {
+                placeFood();
+            }
+        }
+
+        function changeDirection(newDirection) {
+            if (newDirection.x !== -direction.x || newDirection.y !== -direction.y) {
+                direction = newDirection;
+            }
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') changeDirection({ x: -1, y: 0 });
+            if (e.key === 'ArrowUp') changeDirection({ x: 0, y: -1 });
+            if (e.key === 'ArrowDown') changeDirection({ x: 0, y: 1 });
+            if (e.key === 'ArrowRight') changeDirection({ x: 1, y: 0 });
+        });
+
+        btnLeft.addEventListener('click', () => changeDirection({ x: -1, y: 0 }));
+        btnUp.addEventListener('click', () => changeDirection({ x: 0, y: -1 }));
+        btnDown.addEventListener('click', () => changeDirection({ x: 0, y: 1 }));
+        btnRight.addEventListener('click', () => changeDirection({ x: 1, y: 0 }));
+
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        });
+
+        window.dispatchEvent(new Event('resize'));
+        resetGame();
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,143 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Snake Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 80vmin;
+            height: 80vmin;
+            background: #111;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            background: #222;
+            border: 2px solid #fff;
+        }
+        #controls {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            background: #444;
+            border: none;
+            color: #fff;
+            padding: 10px;
+            margin: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+        }
+        @media (min-width: 768px) {
+            #controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="controls">
+            <button id="left">Left</button>
+            <button id="right">Right</button>
+            <button id="up">Up</button>
+            <button id="down">Down</button>
+            <button id="pause">Pause</button>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        let snake = [{x: 5, y: 5}];
+        let direction = {x: 0, y: 0};
+        let food = {x: 10, y: 10};
+        let score = 0;
+        let isPaused = false;
+        let gameOver = false;
+
+        function main() {
+            if (!gameOver) {
+                requestAnimationFrame(main);
+                if (!isPaused) {
+                    update();
+                    draw();
+                }
+            }
+        }
+
+        function update() {
+            const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+            
+            if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver = true;
+                localStorage.setItem('snakeHighScore', Math.max(score, localStorage.getItem('snakeHighScore') || 0));
+                alert('Game Over! Score: ' + score + ' High Score: ' + localStorage.getItem('snakeHighScore'));
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                food = {x: Math.floor(Math.random() * canvas.width / gridSize), y: Math.floor(Math.random() * canvas.height / gridSize)};
+            } else {
+                snake.pop();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            snake.forEach(segment => {
+                ctx.fillStyle = 'lime';
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+            });
+
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 1, gridSize - 1);
+
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Score: ' + score, 10, 10);
+        }
+
+        document.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'ArrowUp': if (direction.y === 0) direction = {x: 0, y: -1}; break;
+                case 'ArrowDown': if (direction.y === 0) direction = {x: 0, y: 1}; break;
+                case 'ArrowLeft': if (direction.x === 0) direction = {x: -1, y: 0}; break;
+                case 'ArrowRight': if (direction.x === 0) direction = {x: 1, y: 0}; break;
+                case ' ': isPaused = !isPaused; break;
+            }
+        });
+
+        document.getElementById('up').addEventListener('click', () => { if (direction.y === 0) direction = {x: 0, y: -1}; });
+        document.getElementById('down').addEventListener('click', () => { if (direction.y === 0) direction = {x: 0, y: 1}; });
+        document.getElementById('left').addEventListener('click', () => { if (direction.x === 0) direction = {x: -1, y: 0}; });
+        document.getElementById('right').addEventListener('click', () => { if (direction.x === 0) direction = {x: 1, y: 0}; });
+        document.getElementById('pause').addEventListener('click', () => { isPaused = !isPaused; });
+
+        main();
+    </script>
+</body>
+</html>
+```

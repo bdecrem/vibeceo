@@ -1,0 +1,121 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas { display: block; margin: auto; background: #111; }
+        #controls { 
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
+            display: flex; gap: 10px; z-index: 10;
+        }
+        .btn { 
+            background: #333; color: #fff; border: none; padding: 10px; 
+            font-size: 16px; border-radius: 5px; touch-action: manipulation;
+        }
+        #score { color: white; font-family: Arial, sans-serif; position: fixed; top: 10px; left: 10px; }
+        @media (min-width: 768px) {
+            #controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="controls">
+        <button class="btn" id="up">UP</button>
+        <button class="btn" id="down">DOWN</button>
+        <button class="btn" id="left">LEFT</button>
+        <button class="btn" id="right">RIGHT</button>
+        <button class="btn" id="pause">PAUSE</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gridSize = 20, tileCount = 20, snake = [{ x: 10, y: 10 }];
+        let apple = { x: 15, y: 15 }, direction = { x: 0, y: 0 };
+        let score = 0, gameLoop, isPaused = false;
+
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth, window.innerHeight) * 0.8;
+            canvas.height = canvas.width;
+            gridSize = Math.floor(canvas.width / tileCount);
+        }
+        
+        function saveHighScore() {
+            const highScore = localStorage.getItem('snakeHighScore') || 0;
+            if (score > highScore) localStorage.setItem('snakeHighScore', score);
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            apple = { x: 15, y: 15 };
+            direction = { x: 0, y: 0 };
+            score = 0;
+            document.getElementById('score').innerText = 'Score: 0';
+        }
+        
+        function gameOver() {
+            saveHighScore();
+            alert(`Game Over! Your score: ${score}`);
+            resetGame();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'lime';
+            snake.forEach(part => ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize, gridSize));
+            ctx.fillStyle = 'red';
+            ctx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize, gridSize);
+        }
+
+        function update() {
+            if (isPaused) return;
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            if (head.x < 0 || head.y < 0 || head.x >= tileCount || head.y >= tileCount || snake.some(part => part.x === head.x && part.y === head.y)) {
+                gameOver();
+                return;
+            }
+            snake.unshift(head);
+            if (head.x === apple.x && head.y === apple.y) {
+                score++;
+                document.getElementById('score').innerText = 'Score: ' + score;
+                apple.x = Math.floor(Math.random() * tileCount);
+                apple.y = Math.floor(Math.random() * tileCount);
+            } else {
+                snake.pop();
+            }
+        }
+
+        function gameLoopFunc() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoopFunc);
+        }
+
+        window.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'ArrowUp': if (direction.y === 0) direction = { x: 0, y: -1 }; break;
+                case 'ArrowDown': if (direction.y === 0) direction = { x: 0, y: 1 }; break;
+                case 'ArrowLeft': if (direction.x === 0) direction = { x: -1, y: 0 }; break;
+                case 'ArrowRight': if (direction.x === 0) direction = { x: 1, y: 0 }; break;
+                case ' ': isPaused = !isPaused; break;
+            }
+        });
+
+        document.getElementById('up').addEventListener('click', () => { if (direction.y === 0) direction = { x: 0, y: -1 }; });
+        document.getElementById('down').addEventListener('click', () => { if (direction.y === 0) direction = { x: 0, y: 1 }; });
+        document.getElementById('left').addEventListener('click', () => { if (direction.x === 0) direction = { x: -1, y: 0 }; });
+        document.getElementById('right').addEventListener('click', () => { if (direction.x === 0) direction = { x: 1, y: 0 }; });
+        document.getElementById('pause').addEventListener('click', () => { isPaused = !isPaused; });
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        requestAnimationFrame(gameLoopFunc);
+    </script>
+</body>
+</html>
+```

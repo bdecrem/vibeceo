@@ -1,0 +1,187 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #000;
+        }
+        canvas {
+            background: #222;
+        }
+        button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #fff;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pongCanvas"></canvas>
+    <button id="startButton">Start Game</button>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const context = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+
+        // Set canvas size
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let isPlaying = false;
+        let playerScore = 0;
+        let computerScore = 0;
+
+        const player = {
+            width: 10,
+            height: 100,
+            x: 0,
+            y: canvas.height / 2 - 50,
+            speed: 8,
+            dy: 0,
+        };
+
+        const computer = {
+            width: 10,
+            height: 100,
+            x: canvas.width - 10,
+            y: canvas.height / 2 - 50,
+            speed: 4
+        };
+
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 8,
+            speed: 4,
+            dx: 4,
+            dy: 4
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.y = canvas.height / 2 - player.height / 2;
+            computer.y = canvas.height / 2 - computer.height / 2;
+        }
+
+        function drawRect(x, y, w, h) {
+            context.fillStyle = "#fff";
+            context.fillRect(x, y, w, h);
+        }
+
+        function drawBall(x, y, radius) {
+            context.fillStyle = "#fff";
+            context.beginPath();
+            context.arc(x, y, radius, 0, Math.PI * 2);
+            context.fill();
+            context.closePath();
+        }
+
+        function drawText(text, x, y) {
+            context.fillStyle = "#fff";
+            context.font = "35px Arial";
+            context.fillText(text, x, y);
+        }
+
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawRect(player.x, player.y, player.width, player.height);
+            drawRect(computer.x, computer.y, computer.width, computer.height);
+            drawBall(ball.x, ball.y, ball.radius);
+            drawText(playerScore, canvas.width / 4, 50);
+            drawText(computerScore, 3 * canvas.width / 4, 50);
+        }
+
+        function move() {
+            player.y += player.dy;
+
+            if (player.y < 0) {
+                player.y = 0;
+            } else if (player.y > canvas.height - player.height) {
+                player.y = canvas.height - player.height;
+            }
+
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+
+            if (ball.x + ball.radius > canvas.width) {
+                playerScore++;
+                resetBall();
+            } else if (ball.x - ball.radius < 0) {
+                computerScore++;
+                resetBall();
+            }
+
+            if (collision(ball, player)) {
+                ball.dx *= -1;
+            } else if (collision(ball, computer)) {
+                ball.dx *= -1;
+            }
+
+            computer.y += ball.y < computer.y + computer.height / 2 ? -computer.speed : computer.speed;
+
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+        }
+
+        function collision(ball, paddle) {
+            return ball.x < paddle.x + paddle.width && ball.x + ball.radius > paddle.x &&
+                ball.y < paddle.y + paddle.height && ball.y + ball.radius > paddle.y;
+        }
+
+        function update() {
+            if (isPlaying) {
+                move();
+                draw();
+            }
+            requestAnimationFrame(update);
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = -ball.dx;
+        }
+
+        canvas.addEventListener('mousemove', function (e) {
+            const canvasPosition = canvas.getBoundingClientRect();
+            player.y = e.clientY - canvasPosition.top - player.height / 2;
+        });
+
+        canvas.addEventListener('touchmove', function (e) {
+            const touchY = e.touches[0].clientY;
+            const canvasPosition = canvas.getBoundingClientRect();
+            player.y = touchY - canvasPosition.top - player.height / 2;
+        });
+
+        startButton.addEventListener('click', function () {
+            playerScore = 0;
+            computerScore = 0;
+            isPlaying = true;
+            startButton.style.display = 'none';
+        });
+
+        update();
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,185 @@
+I'll create a punk-styled calculator with basic arithmetic operations. Here's the HTML with embedded CSS and JavaScript:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PUNK CALCULATOR</title>
+    <style>
+        body {
+            background-color: #000;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+
+        .calculator {
+            background: #222;
+            border: 3px solid #f00;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #f00;
+        }
+
+        #display {
+            width: 100%;
+            height: 60px;
+            margin-bottom: 20px;
+            background: #0f0;
+            border: none;
+            font-size: 2em;
+            text-align: right;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            color: #000;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            padding: 20px;
+            font-size: 1.2em;
+            border: 2px solid #f00;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #f00;
+            color: #000;
+            box-shadow: 0 0 10px #f00;
+        }
+
+        .operator {
+            background: #500;
+        }
+
+        .equals {
+            background: #f00;
+            color: #000;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f00;
+            text-shadow: 0 0 10px #f00;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>PUNK CALC</h1>
+        <input type="text" id="display" readonly>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendOperator('/')">/</button>
+            <button onclick="appendOperator('*')">*</button>
+            <button onclick="backspace()">←</button>
+            
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button onclick="appendOperator('-')" class="operator">-</button>
+            
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button onclick="appendOperator('+')" class="operator">+</button>
+            
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button onclick="calculate()" class="equals">=</button>
+            
+            <button onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+            <button onclick="appendNumber('.')">.</button>
+            <button onclick="calculatePercent()">%</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+
+        function appendNumber(num) {
+            display.value += num;
+        }
+
+        function appendOperator(op) {
+            display.value += op;
+        }
+
+        function clearDisplay() {
+            display.value = '';
+        }
+
+        function calculate() {
+            try {
+                display.value = eval(display.value);
+            } catch {
+                display.value = 'ERROR!';
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+
+        function backspace() {
+            display.value = display.value.slice(0, -1);
+        }
+
+        function calculatePercent() {
+            try {
+                display.value = eval(display.value) / 100;
+            } catch {
+                display.value = 'ERROR!';
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            if (event.key >= '0' && event.key <= '9') appendNumber(event.key);
+            if (event.key === '.') appendNumber('.');
+            if (['+', '-', '*', '/'].includes(event.key)) appendOperator(event.key);
+            if (event.key === 'Enter') calculate();
+            if (event.key === 'Backspace') backspace();
+            if (event.key === 'Escape') clearDisplay();
+        });
+    </script>
+</body>
+</html>
+```
+
+This calculator features:
+
+1. A punk aesthetic with red borders and neon green display
+2. Basic arithmetic operations (+, -, *, /)
+3. Percentage calculation
+4. Clear and backspace functionality
+5. Keyboard support
+6. Error handling
+7. Responsive design
+8. Hover effects on buttons
+9. Grid layout for button arrangement
+
+The design includes:
+- Black background with red accents
+- Neon-style text effects
+- Monospace font for that classic punk/tech feel
+- Glowing effects on buttons and display
+- High contrast colors for better visibility
+
+The calculator supports both mouse clicks and keyboard input, making it accessible and user-friendly while maintaining its punk aesthetic.

@@ -1,0 +1,235 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tetris</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #game {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(20, 30px);
+            gap: 1px;
+            background-color: #222;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #444;
+        }
+        .active {
+            background-color: #0f0;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            text-align: right;
+        }
+        .mobile-control {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .mobile-control {
+                display: inline-block;
+                margin: 5px;
+                padding: 10px;
+                background-color: #333;
+                border: 1px solid #555;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="controls">
+        <div>Controls:</div>
+        <div>Move Left: <kbd>Left Arrow</kbd> <span class="mobile-control" id="left">◀️</span></div>
+        <div>Move Right: <kbd>Right Arrow</kbd> <span class="mobile-control" id="right">▶️</span></div>
+        <div>Rotate: <kbd>Up Arrow</kbd> <span class="mobile-control" id="rotate">🔄</span></div>
+        <div>Down: <kbd>Down Arrow</kbd> <span class="mobile-control" id="down">⬇️</span></div>
+        <div>Score: <span id="score">0</span></div>
+    </div>
+    <script>
+        const COLS = 10, ROWS = 20;
+        const game = document.getElementById('game');
+        const scoreDisplay = document.getElementById('score');
+        let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let currentPiece = null;
+        let score = 0;
+        const shapes = [
+            [[1, 1, 1, 1]],  // I
+            [[1, 1], [1, 1]],  // O
+            [[0, 1, 1], [1, 1, 0]],  // Z
+            [[1, 1, 0], [0, 1, 1]],  // S
+            [[0, 1, 0], [1, 1, 1]],  // T
+            [[1, 0, 0], [1, 1, 1]],  // L
+            [[0, 0, 1], [1, 1, 1]]   // J
+        ];
+
+        function createGrid() {
+            game.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell' + (grid[r][c] ? ' active' : '');
+                    game.appendChild(cell);
+                }
+            }
+        }
+
+        function drawPiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        grid[currentPiece.y + y][currentPiece.x + x] = 1;
+                    }
+                });
+            });
+        }
+
+        function undrawPiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        grid[currentPiece.y + y][currentPiece.x + x] = 0;
+                    }
+                });
+            });
+        }
+
+        function movePiece(dx, dy) {
+            undrawPiece();
+            currentPiece.x += dx;
+            currentPiece.y += dy;
+            if (collision()) {
+                currentPiece.x -= dx;
+                currentPiece.y -= dy;
+            }
+            drawPiece();
+        }
+
+        function rotatePiece() {
+            undrawPiece();
+            const shape = currentPiece.shape;
+            currentPiece.shape = shape[0].map((_, index) => shape.map(row => row[index])).reverse();
+            if (collision()) {
+                currentPiece.shape = shape;
+            }
+            drawPiece();
+        }
+
+        function collision() {
+            return currentPiece.shape.some((row, y) =>
+                row.some((value, x) =>
+                    value && (grid[currentPiece.y + y] && grid[currentPiece.y + y][currentPiece.x + x]) !== 0
+                )
+            );
+        }
+
+        function freezePiece() {
+            if (currentPiece.y === 0 && collision()) {
+                alert('Game Over');
+                resetGame();
+            }
+
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value && currentPiece.y + y >= 0) {
+                        grid[currentPiece.y + y][currentPiece.x + x] = value;
+                    }
+                });
+            });
+            removeFullLines();
+            currentPiece = nextPiece();
+        }
+
+        function removeFullLines() {
+            grid = grid.reduce((acc, row) => {
+                if (row.every(value => value !== 0)) {
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    acc.unshift(Array(COLS).fill(0));
+                } else {
+                    acc.push(row);
+                }
+                return acc;
+            }, []);
+        }
+
+        function nextPiece() {
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            return {
+                x: Math.floor((COLS - shape[0].length) / 2),
+                y: 0,
+                shape: shape
+            };
+        }
+
+        function resetGame() {
+            grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0;
+            scoreDisplay.textContent = score;
+            currentPiece = nextPiece();
+            createGrid();
+        }
+
+        function update() {
+            if (!currentPiece) {
+                currentPiece = nextPiece();
+            }
+            undrawPiece();
+            currentPiece.y += 1;
+            if (collision()) {
+                currentPiece.y -= 1;
+                drawPiece();
+                freezePiece();
+            } else {
+                drawPiece();
+            }
+            createGrid();
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('keydown', event => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    movePiece(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    movePiece(1, 0);
+                    break;
+                case 'ArrowDown':
+                    movePiece(0, 1);
+                    break;
+                case 'ArrowUp':
+                    rotatePiece();
+                    break;
+            }
+        });
+
+        document.getElementById('left').addEventListener('click', () => movePiece(-1, 0));
+        document.getElementById('right').addEventListener('click', () => movePiece(1, 0));
+        document.getElementById('down').addEventListener('click', () => movePiece(0, 1));
+        document.getElementById('rotate').addEventListener('click', rotatePiece);
+
+        resetGame();
+        update();
+    </script>
+</body>
+</html>
+```

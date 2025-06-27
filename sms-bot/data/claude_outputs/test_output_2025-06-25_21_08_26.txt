@@ -1,0 +1,164 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: "Courier New", monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            background-color: black;
+            box-shadow: 0 0 15px lime;
+        }
+        #controls {
+            margin-top: 10px;
+            color: cyan;
+            text-shadow: 0 0 5px magenta;
+        }
+        .control-button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: lime;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 0 10px lime;
+            color: black;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .control-button:active {
+            box-shadow: none;
+        }
+        @media (max-width: 768px) {
+            .control-button {
+                display: block;
+                width: 100px;
+                margin: 10px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="controls">
+            <span>Arrow Keys: Move | SPACEBAR: Pause/Resume | R: Reset</span>
+            <button class="control-button" id="upButton">UP</button>
+            <button class="control-button" id="downButton">DOWN</button>
+            <button class="control-button" id="leftButton">LEFT</button>
+            <button class="control-button" id="rightButton">RIGHT</button>
+            <button class="control-button" id="pauseButton">PAUSE</button>
+            <button class="control-button" id="resetButton">RESET</button>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const tileSize = 20;
+        const canvasSize = canvas.width;
+        
+        let snake = [{ x: 10, y: 10 }];
+        let direction = { x: 0, y: 0 };
+        let food = { x: 15, y: 15 };
+        let gameInterval;
+        let gameState = "playing";
+        let score = 0;
+
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+            ctx.fillStyle = "lime";
+            snake.forEach(segment => ctx.fillRect(segment.x * tileSize, segment.y * tileSize, tileSize, tileSize));
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x * tileSize, food.y * tileSize, tileSize, tileSize);
+        }
+
+        function update() {
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            if (head.x < 0 || head.x >= canvasSize / tileSize || head.y < 0 || head.y >= canvasSize / tileSize || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                clearInterval(gameInterval);
+                alert("Game Over! Your score: " + score);
+                resetGame();
+            }
+
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function placeFood() {
+            food.x = Math.floor(Math.random() * canvasSize / tileSize);
+            food.y = Math.floor(Math.random() * canvasSize / tileSize);
+        }
+
+        function gameLoop() {
+            if (gameState === "playing") {
+                update();
+                draw();
+            }
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 0, y: 0 };
+            score = 0;
+            gameState = "playing";
+            placeFood();
+            gameInterval = setInterval(gameLoop, 150);
+        }
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "ArrowUp" && direction.y === 0) {
+                direction = { x: 0, y: -1 };
+            } else if (event.key === "ArrowDown" && direction.y === 0) {
+                direction = { x: 0, y: 1 };
+            } else if (event.key === "ArrowLeft" && direction.x === 0) {
+                direction = { x: -1, y: 0 };
+            } else if (event.key === "ArrowRight" && direction.x === 0) {
+                direction = { x: 1, y: 0 };
+            } else if (event.key === " ") {
+                gameState = gameState === "paused" ? "playing" : "paused";
+            } else if (event.key.toLowerCase() === "r") {
+                clearInterval(gameInterval);
+                resetGame();
+            }
+        });
+
+        document.getElementById("upButton").addEventListener("click", () => direction = { x: 0, y: -1 });
+        document.getElementById("downButton").addEventListener("click", () => direction = { x: 0, y: 1 });
+        document.getElementById("leftButton").addEventListener("click", () => direction = { x: -1, y: 0 });
+        document.getElementById("rightButton").addEventListener("click", () => direction = { x: 1, y: 0 });
+        document.getElementById("pauseButton").addEventListener("click", () => gameState = gameState === "paused" ? "playing" : "paused");
+        document.getElementById("resetButton").addEventListener("click", () => {
+            clearInterval(gameInterval);
+            resetGame();
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
+```

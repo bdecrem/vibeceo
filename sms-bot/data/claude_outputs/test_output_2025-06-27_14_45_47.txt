@@ -1,0 +1,349 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tetris Chaos</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 90vw;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(0,255,198,0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(123,58,237,0.4);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            color: #00FFC6;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+        }
+
+        .control-legend {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,255,198,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #00FFC6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-legend h4 {
+            margin: 0 0 10px 0;
+            color: #FF2E93;
+        }
+
+        .mobile-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 18px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,255,198,0.4);
+            touch-action: manipulation;
+            user-select: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,255,198,0.6);
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #FF2E93, #FF61C7);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-ui">
+            <div class="score">CHAOS POINTS: <span id="score">0</span></div>
+            <div class="high-score">BEST: <span id="highScore">0</span></div>
+        </div>
+
+        <canvas id="gameCanvas" width="320" height="640"></canvas>
+
+        <div class="control-legend">
+            <h4>🎮 CHAOS CONTROLS</h4>
+            <div>SPACE/TAP: Drop • ARROWS/SWIPE: Move • P: Pause</div>
+        </div>
+
+        <div class="mobile-controls">
+            <button class="control-button" id="leftBtn">◀</button>
+            <button class="control-button" id="rightBtn">▶</button>
+            <button class="control-button" id="rotateBtn">🔃</button>
+            <button class="control-button" id="dropBtn">⏬</button>
+            <button class="control-button" id="pauseBtn">⏸</button>
+        </div>
+
+        <button class="restart-button" onclick="restartGame()" style="display: none;" id="restartBtn">
+            🔄 RESTART CHAOS
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 20;
+        const rows = canvas.height / scale;
+        const columns = canvas.width / scale;
+        const tetrominoes = [
+            [[1,1,1,1]],
+            [[1,1,1],[0,1,0]],
+            [[0,1,1],[1,1,0]],
+            [[1,1,0],[0,1,1]],
+            [[1,1],[1,1]],
+            [[1,0,0],[1,1,1]],
+            [[0,0,1],[1,1,1]]
+        ];
+        let board, currentPiece, gameState, score, highScore;
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.getElementById('leftBtn').addEventListener('touchstart', () => move(-1));
+        document.getElementById('rightBtn').addEventListener('touchstart', () => move(1));
+        document.getElementById('rotateBtn').addEventListener('touchstart', rotate);
+        document.getElementById('dropBtn').addEventListener('touchstart', drop);
+        document.getElementById('pauseBtn').addEventListener('touchstart', togglePause);
+
+        function initializeGame() {
+            board = Array.from({ length: rows }, () => Array(columns).fill(0));
+            score = 0;
+            highScore = localStorage.getItem('tetrisHighScore') || 0;
+            updateHighScore();
+            spawnPiece();
+            gameState = 'playing';
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (gameState === 'playing') {
+                update();
+                render();
+                setTimeout(() => requestAnimationFrame(gameLoop), 500);
+            }
+        }
+
+        function update() {
+            if (!move(0, 1)) {
+                merge();
+                clearLines();
+                spawnPiece();
+                if (!isValidMove(currentPiece, 0, 0)) {
+                    gameOver();
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            board.forEach((row, y) => row.forEach((value, x) => {
+                if (value) {
+                    ctx.fillStyle = '#3F88FF';
+                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                }
+            }));
+            currentPiece.shape.forEach((row, y) => row.forEach((value, x) => {
+                if (value) {
+                    ctx.fillStyle = '#FF2E93';
+                    ctx.fillRect((currentPiece.x + x) * scale, (currentPiece.y + y) * scale, scale, scale);
+                }
+            }));
+        }
+
+        function handleKeyDown(e) {
+            if (gameState === 'gameOver') return;
+            switch (e.keyCode) {
+                case 37: move(-1); break; // Left
+                case 39: move(1); break;  // Right
+                case 40: drop(); break;   // Down
+                case 38: rotate(); break; // Up
+                case 80: togglePause(); break; // P
+            }
+        }
+
+        function move(dirX, dirY = 0) {
+            if (isValidMove(currentPiece, dirX, dirY)) {
+                currentPiece.x += dirX;
+                currentPiece.y += dirY;
+                return true;
+            }
+            return false;
+        }
+
+        function rotate() {
+            const newShape = currentPiece.shape[0].map((_, index) => currentPiece.shape.map(row => row[index]).reverse());
+            if (isValidMove({ ...currentPiece, shape: newShape }, 0, 0)) {
+                currentPiece.shape = newShape;
+            }
+        }
+
+        function isValidMove(piece, offsetX, offsetY) {
+            return piece.shape.every((row, y) =>
+                row.every((value, x) => {
+                    const newX = piece.x + x + offsetX;
+                    const newY = piece.y + y + offsetY;
+                    return (
+                        value === 0 ||
+                        (newY >= 0 &&
+                        newX >= 0 &&
+                        newX < columns &&
+                        newY < rows &&
+                        board[newY][newX] === 0)
+                    );
+                })
+            );
+        }
+
+        function merge() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        board[currentPiece.y + y][currentPiece.x + x] = value;
+                    }
+                });
+            });
+        }
+
+        function spawnPiece() {
+            currentPiece = {
+                x: Math.floor(columns / 2) - 1,
+                y: 0,
+                shape: JSON.parse(JSON.stringify(tetrominoes[Math.floor(Math.random() * tetrominoes.length)]))
+            };
+        }
+
+        function clearLines() {
+            board = board.reduce((acc, row) => {
+                if (row.every(value => value !== 0)) {
+                    score += 10;
+                    document.getElementById('score').textContent = score;
+                    acc.unshift(Array(columns).fill(0));
+                } else {
+                    acc.push(row);
+                }
+                return acc;
+            }, []);
+            updateHighScore();
+        }
+
+        function drop() {
+            while (move(0, 1));
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                gameLoop();
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('restartBtn').style.display = 'block';
+        }
+
+        function restartGame() {
+            document.getElementById('restartBtn').style.display = 'none';
+            initializeGame();
+        }
+
+        function updateHighScore() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('tetrisHighScore', highScore);
+            }
+            document.getElementById('highScore').textContent = highScore;
+        }
+
+        initializeGame();
+    </script>
+</body>
+</html>
+```

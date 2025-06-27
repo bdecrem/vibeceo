@@ -1,0 +1,145 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Retro Snake Game</title>
+<style>
+  body {
+    margin: 0;
+    background-color: black;
+    color: lime;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  canvas {
+    box-shadow: 0 0 20px cyan, 0 0 10px cyan inset;
+  }
+  .controls {
+    text-align: center;
+    margin-top: 20px;
+  }
+  .controls p {
+    margin: 5px;
+    text-shadow: 0 0 5px magenta;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+<div class="controls">
+  <p>Controls: Arrow keys to move | SPACE to pause | R to reset</p>
+  <p>Score: <span id="score">0</span></p>
+</div>
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const gridSize = 20;
+  const canvasSize = canvas.width;
+  let snake = [{x: gridSize * 5, y: gridSize * 5}];
+  let direction = {x: gridSize, y: 0};
+  let apple = {x: gridSize * 10, y: gridSize * 10};
+  let score = 0;
+  let gameRunning = true;
+  
+  if (localStorage.getItem('highScore')) {
+    score = parseInt(localStorage.getItem('highScore'));
+    document.getElementById('score').innerText = score;
+  }
+  
+  function resetGame() {
+    snake = [{x: gridSize * 5, y: gridSize * 5}];
+    direction = {x: gridSize, y: 0};
+    placeApple();
+    score = 0;
+    gameRunning = true;
+    document.getElementById('score').innerText = score;
+  }
+
+  function placeApple() {
+    apple.x = Math.floor(Math.random() * (canvasSize / gridSize)) * gridSize;
+    apple.y = Math.floor(Math.random() * (canvasSize / gridSize)) * gridSize;
+  }
+
+  function update() {
+    if (!gameRunning) return;
+
+    const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+
+    if (head.x === apple.x && head.y === apple.y) {
+      score += 10;
+      document.getElementById('score').innerText = score;
+      placeApple();
+    } else {
+      snake.pop();
+    }
+    
+    if (head.x < 0 || head.x >= canvasSize || head.y < 0 || head.y >= canvasSize || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+      gameRunning = false;
+      if (score > parseInt(localStorage.getItem('highScore'))) {
+        localStorage.setItem('highScore', score);
+      }
+      return;
+    }
+
+    snake.unshift(head);
+
+    ctx.clearRect(0, 0, canvasSize, canvasSize);
+    ctx.fillStyle = 'lime';
+    snake.forEach(segment => ctx.fillRect(segment.x, segment.y, gridSize, gridSize));
+
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(apple.x, apple.y, gridSize, gridSize);
+  }
+
+  function handleKey(e) {
+    switch(e.key) {
+      case 'ArrowUp': if (direction.y === 0) direction = {x: 0, y: -gridSize}; break;
+      case 'ArrowDown': if (direction.y === 0) direction = {x: 0, y: gridSize}; break;
+      case 'ArrowLeft': if (direction.x === 0) direction = {x: -gridSize, y: 0}; break;
+      case 'ArrowRight': if (direction.x === 0) direction = {x: gridSize, y: 0}; break;
+      case ' ': gameRunning = !gameRunning; break;
+      case 'r': resetGame(); break;
+    }
+  }
+
+  document.addEventListener('keydown', handleKey);
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  canvas.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  });
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+  }, {passive: false});
+
+  canvas.addEventListener('touchend', e => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const dx = touchEndX - touchStartX;
+    const dy = touchEndY - touchStartY;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0 && direction.x === 0) direction = {x: gridSize, y: 0};
+      else if (dx < 0 && direction.x === 0) direction = {x: -gridSize, y: 0};
+    } else {
+      if (dy > 0 && direction.y === 0) direction = {x: 0, y: gridSize};
+      else if (dy < 0 && direction.y === 0) direction = {x: 0, y: -gridSize};
+    }
+  });
+
+  setInterval(update, 150);
+</script>
+</body>
+</html>
+```

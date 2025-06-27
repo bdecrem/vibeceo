@@ -1,0 +1,212 @@
+Here's a simple Pong game created using HTML5 Canvas and JavaScript. This game includes basic controls for desktop (arrow keys) and touch controls for mobile devices.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Pong Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+        }
+        canvas {
+            background-color: #111;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pongCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const context = canvas.getContext('2d');
+
+        // Set initial canvas size
+        canvas.width = 800;
+        canvas.height = 400;
+
+        // Paddle properties
+        const paddleWidth = 10, paddleHeight = 80;
+        const playerX = 10, aiX = canvas.width - 20;
+        let playerY = (canvas.height - paddleHeight) / 2;
+        let aiY = playerY, playerSpeed = 0;
+
+        // Ball properties
+        const ballSize = 10;
+        let ballX, ballY, ballSpeedX, ballSpeedY;
+
+        // Game properties
+        let playerScore = 0, aiScore = 0;
+        const winningScore = 5;
+        let showingWinScreen = false;
+
+        // Initialize game
+        function resetBall() {
+            if (playerScore >= winningScore || aiScore >= winningScore) {
+                showingWinScreen = true;
+            }
+            ballSpeedX = -ballSpeedX;
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+        }
+
+        function startGame() {
+            playerScore = 0;
+            aiScore = 0;
+            showingWinScreen = false;
+            resetBall();
+        }
+
+        function moveEverything() {
+            if (showingWinScreen) return;
+
+            // Player paddle movement
+            playerY += playerSpeed;
+
+            // AI paddle movement
+            if (aiY + paddleHeight / 2 < ballY - 35) {
+                aiY += 6;
+            } else if (aiY + paddleHeight / 2 > ballY + 35) {
+                aiY -= 6;
+            }
+
+            // Ball movement
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Ball collision with top and bottom
+            if (ballY < 0 || ballY > canvas.height - ballSize) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Ball collision with paddles
+            if (ballX < playerX + paddleWidth && 
+                ballY > playerY && 
+                ballY < playerY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            } else if (ballX > aiX - ballSize && 
+                       ballY > aiY && 
+                       ballY < aiY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Ball went out of bounds
+            if (ballX < 0) {
+                aiScore++;
+                resetBall();
+            } else if (ballX > canvas.width) {
+                playerScore++;
+                resetBall();
+            }
+        }
+
+        function drawEverything() {
+            // Background
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (showingWinScreen) {
+                context.fillStyle = 'white';
+                context.fillText("Click to continue", 350, 200);
+                return;
+            }
+
+            // Net
+            for (let i = 0; i < canvas.height; i += 40) {
+                context.fillStyle = 'white';
+                context.fillRect(canvas.width / 2 - 1, i, 2, 20);
+            }
+
+            // Paddles
+            context.fillStyle = 'white';
+            context.fillRect(playerX, playerY, paddleWidth, paddleHeight);
+            context.fillRect(aiX, aiY, paddleWidth, paddleHeight);
+
+            // Ball
+            context.fillStyle = 'white';
+            context.fillRect(ballX, ballY, ballSize, ballSize);
+
+            // Score
+            context.fillText(playerScore, 100, 100);
+            context.fillText(aiScore, canvas.width - 100, 100);
+        }
+
+        canvas.addEventListener('mousemove', function(evt) {
+            const mousePos = calculateMousePos(evt);
+            playerY = mousePos.y - paddleHeight / 2;
+        });
+
+        function calculateMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const root = document.documentElement;
+            const mouseX = evt.clientX - rect.left - root.scrollLeft;
+            const mouseY = evt.clientY - rect.top - root.scrollTop;
+            return {
+                x: mouseX,
+                y: mouseY
+            };
+        }
+
+        canvas.addEventListener('click', function() {
+            if (showingWinScreen) {
+                startGame();
+            }
+        });
+
+        // Keyboard controls
+        window.addEventListener('keydown', function(event) {
+            switch (event.key) {
+                case "ArrowUp":
+                    playerSpeed = -8;
+                    break;
+                case "ArrowDown":
+                    playerSpeed = 8;
+                    break;
+            }
+        });
+
+        window.addEventListener('keyup', function(event) {
+            playerSpeed = 0;
+        });
+
+        // Touch controls
+        let touchStartY = null;
+        canvas.addEventListener('touchstart', function(event) {
+            touchStartY = event.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', function(event) {
+            const touchY = event.touches[0].clientY;
+            const touchDiff = touchY - touchStartY;
+            playerY += touchDiff * 0.1;
+            touchStartY = touchY;
+            event.preventDefault();
+        });
+
+        // Set initial ball properties
+        ballX = canvas.width / 2;
+        ballY = canvas.height / 2;
+        ballSpeedX = 5;
+        ballSpeedY = 4;
+
+        function gameLoop() {
+            moveEverything();
+            drawEverything();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        startGame();
+        gameLoop();
+    </script>
+</body>
+</html>
+```
+
+This code provides a basic Pong game with simple AI and user control. You can use arrow keys on a desktop or touch the screen on a mobile device to control the paddle. The game has a simple scoring system, and it ends when a player reaches a score of 5. Click on the screen to restart the game after it ends.

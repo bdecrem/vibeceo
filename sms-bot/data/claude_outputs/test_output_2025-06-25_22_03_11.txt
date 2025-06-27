@@ -1,0 +1,305 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Snake Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 90vw;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(0, 255, 198, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(123, 58, 237, 0.4);
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            color: #00FFC6;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+        }
+
+        .control-legend {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 198, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #00FFC6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-legend h4 {
+            margin: 0 0 10px 0;
+            color: #FF2E93;
+        }
+
+        .mobile-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 18px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 255, 198, 0.4);
+            touch-action: manipulation;
+            user-select: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0, 255, 198, 0.6);
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #FF2E93, #FF61C7);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 46, 147, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-ui">
+            <div class="score">CHAOS POINTS: <span id="score">0</span></div>
+            <div class="high-score">BEST: <span id="highScore">0</span></div>
+        </div>
+
+        <canvas id="gameCanvas" width="300" height="300"></canvas>
+
+        <div class="control-legend">
+            <h4>🎮 CHAOS CONTROLS</h4>
+            <div>SPACE/TAP: Action • ARROWS/SWIPE: Move • P: Pause</div>
+        </div>
+
+        <div class="mobile-controls">
+            <button class="control-button" id="upBtn">▲</button>
+            <button class="control-button" id="leftBtn">◀</button>
+            <button class="control-button" id="downBtn">▼</button>
+            <button class="control-button" id="rightBtn">▶</button>
+            <button class="control-button" id="pauseBtn">⏸</button>
+        </div>
+
+        <button class="restart-button" onclick="restartGame()" style="display: none;" id="restartBtn">
+            🔄 RESTART CHAOS
+        </button>
+    </div>
+    <script>
+        let canvas, ctx, gameState, score, snake, food, direction;
+        const gridSize = 20;
+        let highScore = localStorage.getItem('highScore') || 0;
+
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+        function initializeGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            document.getElementById('highScore').innerText = highScore;
+
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('keydown', handleKeyDown);
+
+            document.getElementById('upBtn').addEventListener('click', () => setDirection('UP'));
+            document.getElementById('downBtn').addEventListener('click', () => setDirection('DOWN'));
+            document.getElementById('leftBtn').addEventListener('click', () => setDirection('LEFT'));
+            document.getElementById('rightBtn').addEventListener('click', () => setDirection('RIGHT'));
+            document.getElementById('pauseBtn').addEventListener('click', togglePause);
+
+            restartGame();
+        }
+
+        function restartGame() {
+            score = 0;
+            gameState = 'playing';
+            snake = [{x: 5, y: 5}];
+            direction = 'RIGHT';
+            placeFood();
+            document.getElementById('restartBtn').style.display = 'none';
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop() {
+            if (gameState === 'playing') {
+                update();
+                render();
+                setTimeout(() => requestAnimationFrame(gameLoop), 1000 / 15);
+            }
+        }
+
+        function update() {
+            moveSnake();
+            checkCollisions();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00FFC6';
+            snake.forEach(segment => ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize));
+            ctx.fillStyle = '#FF2E93';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+            document.getElementById('score').innerText = score;
+        }
+
+        function moveSnake() {
+            const head = {x: snake[0].x, y: snake[0].y};
+            switch (direction) {
+                case 'UP': head.y--; break;
+                case 'DOWN': head.y++; break;
+                case 'LEFT': head.x--; break;
+                case 'RIGHT': head.x++; break;
+            }
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function checkCollisions() {
+            const head = snake[0];
+            if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize) {
+                gameOver();
+            }
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    gameOver();
+                }
+            }
+        }
+
+        function placeFood() {
+            food = {x: Math.floor(Math.random() * (canvas.width / gridSize)), y: Math.floor(Math.random() * (canvas.height / gridSize))};
+        }
+
+        function setDirection(newDirection) {
+            const opposites = {UP: 'DOWN', DOWN: 'UP', LEFT: 'RIGHT', RIGHT: 'LEFT'};
+            if (newDirection !== opposites[direction]) {
+                direction = newDirection;
+            }
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+            } else {
+                gameState = 'playing';
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                document.getElementById('highScore').innerText = highScore;
+            }
+            document.getElementById('restartBtn').style.display = 'block';
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            if (x < rect.width / 3) {
+                setDirection('LEFT');
+            } else if (x > rect.width * 2 / 3) {
+                setDirection('RIGHT');
+            } else if (y < rect.height / 3) {
+                setDirection('UP');
+            } else {
+                setDirection('DOWN');
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+        }
+
+        function handleKeyDown(e) {
+            switch (e.key) {
+                case 'ArrowUp': setDirection('UP'); break;
+                case 'ArrowDown': setDirection('DOWN'); break;
+                case 'ArrowLeft': setDirection('LEFT'); break;
+                case 'ArrowRight': setDirection('RIGHT'); break;
+                case 'p': togglePause(); break;
+            }
+        }
+    </script>
+</body>
+</html>
+```

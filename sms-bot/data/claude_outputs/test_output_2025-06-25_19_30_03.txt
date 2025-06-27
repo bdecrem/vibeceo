@@ -1,0 +1,173 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Snake Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            background-color: black;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: auto;
+            background-color: black;
+            image-rendering: pixelated;
+            box-shadow: 0 0 20px cyan;
+            border-radius: 5px;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: lime;
+            font-size: 16px;
+            text-shadow: 0 0 5px lime;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px lime;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: yellow;
+            font-size: 24px;
+            text-shadow: 0 0 5px yellow;
+        }
+
+        #scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0) 0px,
+                rgba(0, 0, 0, 0) 3px,
+                rgba(0, 0, 0, 0.2) 4px
+            );
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="controls">
+        <strong>CONTROLS:</strong><br>
+        Arrow Keys - Move<br>
+        SPACEBAR - Pause<br>
+        R - Reset
+    </div>
+    <div id="score">Score: 0</div>
+    <div id="scanlines"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        let gridSize = 20;
+        let tileCountX = 20;
+        let tileCountY = 20;
+        let snake = [{ x: 10, y: 10 }];
+        let fruit = { x: 15, y: 15 };
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameRunning = false;
+
+        function initCanvasSize() {
+            const size = Math.min(window.innerWidth, window.innerHeight);
+            canvas.width = size;
+            canvas.height = size;
+            tileCountX = tileCountY = Math.floor(size / gridSize);
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            fruit = { x: Math.floor(Math.random() * tileCountX), y: Math.floor(Math.random() * tileCountY) };
+            dx = dy = 0;
+            score = 0;
+            scoreDisplay.innerText = "Score: " + score;
+            gameRunning = true;
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+            if (head.x === fruit.x && head.y === fruit.y) {
+                score++;
+                scoreDisplay.innerText = "Score: " + score;
+                fruit = { x: Math.floor(Math.random() * tileCountX), y: Math.floor(Math.random() * tileCountY) };
+            } else {
+                snake.pop();
+            }
+
+            if (head.x < 0 || head.x >= tileCountX || head.y < 0 || head.y >= tileCountY || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameRunning = false;
+            } else {
+                snake.unshift(head);
+            }
+
+            localStorage.setItem('highscore', Math.max(score, localStorage.getItem('highscore') || 0));
+        }
+
+        function draw() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = 'lime';
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+            });
+
+            ctx.fillStyle = 'magenta';
+            ctx.fillRect(fruit.x * gridSize, fruit.y * gridSize, gridSize, gridSize);
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowUp' && dy === 0) {
+                dx = 0; dy = -1;
+            } else if (e.code === 'ArrowDown' && dy === 0) {
+                dx = 0; dy = 1;
+            } else if (e.code === 'ArrowLeft' && dx === 0) {
+                dx = -1; dy = 0;
+            } else if (e.code === 'ArrowRight' && dx === 0) {
+                dx = 1; dy = 0;
+            } else if (e.code === 'Space') {
+                gameRunning = !gameRunning;
+            } else if (e.code === 'KeyR') {
+                resetGame();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            initCanvasSize();
+        });
+
+        initCanvasSize();
+        resetGame();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
+```

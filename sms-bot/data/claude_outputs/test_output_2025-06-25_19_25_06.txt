@@ -1,0 +1,168 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Snake Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+        canvas {
+            background-color: #333;
+        }
+        button {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <button id="resetButton">Reset Game (R)</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const context = canvas.getContext('2d');
+        const resetButton = document.getElementById('resetButton');
+        let gameRunning = false;
+        let snake = [{ x: 10, y: 10 }];
+        let direction = { x: 0, y: 0 };
+        let food = { x: 5, y: 5 };
+        let score = 0;
+        const cellSize = 20;
+
+        function init() {
+            resizeCanvas();
+            document.addEventListener('keydown', handleKeyPress);
+            window.addEventListener('resize', resizeCanvas);
+            resetButton.addEventListener('click', resetGame);
+            document.addEventListener('touchstart', handleTouchStart);
+            document.addEventListener('touchmove', handleTouchMove);
+            resetGame();
+        }
+
+        function handleKeyPress(e) {
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction.y === 0) direction = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown':
+                    if (direction.y === 0) direction = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x === 0) direction = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight':
+                    if (direction.x === 0) direction = { x: 1, y: 0 };
+                    break;
+                case 'r':
+                case 'R':
+                    resetGame();
+                    break;
+                case ' ':
+                    gameRunning = !gameRunning;
+                    if (gameRunning) requestAnimationFrame(gameLoop);
+                    break;
+            }
+        }
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        function handleTouchStart(e) {
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(e) {
+            if (!gameRunning) return;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0 && direction.x === 0) direction = { x: 1, y: 0 };
+                else if (deltaX < 0 && direction.x === 0) direction = { x: -1, y: 0 };
+            } else {
+                if (deltaY > 0 && direction.y === 0) direction = { x: 0, y: 1 };
+                else if (deltaY < 0 && direction.y === 0) direction = { x: 0, y: -1 };
+            }
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            draw();
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 0, y: 0 };
+            placeFood();
+            score = 0;
+            localStorage.setItem('snakeScore', score);
+            gameRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function placeFood() {
+            food.x = Math.floor(Math.random() * canvas.width / cellSize);
+            food.y = Math.floor(Math.random() * canvas.height / cellSize);
+        }
+
+        function drawCell(x, y, color) {
+            context.fillStyle = color;
+            context.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            snake.forEach(segment => drawCell(segment.x, segment.y, 'lime'));
+            drawCell(food.x, food.y, 'red');
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            if (head.x < 0 || head.y < 0 || head.x >= canvas.width / cellSize || head.y >= canvas.height / cellSize || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameRunning = false;
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                localStorage.setItem('snakeScore', score);
+                placeFood();
+            } else {
+                snake.pop();
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        init();
+    </script>
+</body>
+</html>
+```

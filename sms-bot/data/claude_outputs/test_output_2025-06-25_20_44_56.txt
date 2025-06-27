@@ -1,0 +1,142 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Snake Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: black;
+            color: lime;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameCanvas {
+            border: 2px solid lime;
+            box-shadow: 0 0 8px lime;
+        }
+        #controls {
+            position: fixed;
+            bottom: 10px;
+            text-align: center;
+            width: 100%;
+            color: cyan;
+            text-shadow: 0 0 5px cyan;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="controls">
+        Controls: Arrow Keys - Move | SPACE - Pause | R - Reset
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        let snake = [{x: 200, y: 200}];
+        let direction = {x: 0, y: 0};
+        let food = {x: 0, y: 0};
+        let score = 0;
+        let gameRunning = false;
+        let interval;
+        
+        function getRandomFoodPosition() {
+            return {
+                x: Math.floor(Math.random() * canvas.width / gridSize) * gridSize,
+                y: Math.floor(Math.random() * canvas.height / gridSize) * gridSize
+            };
+        }
+
+        function draw() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'lime';
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+            });
+
+            ctx.fillStyle = 'magenta';
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+
+            ctx.fillStyle = 'yellow';
+            ctx.fillText(`Score: ${score}`, 10, 10);
+        }
+
+        function update() {
+            const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
+                snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameRunning = false;
+                clearInterval(interval);
+                alert('Game Over! Your score was ' + score);
+                return;
+            }
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                food = getRandomFoodPosition();
+            } else {
+                snake.pop();
+            }
+            
+            snake.unshift(head);
+            draw();
+        }
+
+        function startGame() {
+            snake = [{x: 200, y: 200}];
+            direction = {x: gridSize, y: 0};
+            food = getRandomFoodPosition();
+            score = 0;
+            gameRunning = true;
+            interval = setInterval(update, 150);
+            draw();
+        }
+
+        function resetGame() {
+            clearInterval(interval);
+            startGame();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' && direction.y === 0) direction = {x: 0, y: -gridSize};
+            if (e.key === 'ArrowDown' && direction.y === 0) direction = {x: 0, y: gridSize};
+            if (e.key === 'ArrowLeft' && direction.x === 0) direction = {x: -gridSize, y: 0};
+            if (e.key === 'ArrowRight' && direction.x === 0) direction = {x: gridSize, y: 0};
+            if (e.key === ' ' && gameRunning) {
+                gameRunning = false;
+                clearInterval(interval);
+            } else if (e.key === ' ' && !gameRunning) {
+                gameRunning = true;
+                interval = setInterval(update, 150);
+            }
+            if (e.key.toLowerCase() === 'r') resetGame();
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            if (touchX < canvas.width / 2 && direction.x === 0) direction = {x: -gridSize, y: 0};
+            if (touchX > canvas.width / 2 && direction.x === 0) direction = {x: gridSize, y: 0};
+            if (touchY < canvas.height / 2 && direction.y === 0) direction = {x: 0, y: -gridSize};
+            if (touchY > canvas.height / 2 && direction.y === 0) direction = {x: 0, y: gridSize};
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,246 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>WTAF Tetris</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(0,255,198,0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(123,58,237,0.4);
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00FFC6;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-button {
+            position: absolute;
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,255,198,0.4);
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,255,198,0.6);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .score {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: #00FFC6;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="360" height="640"></canvas>
+    <div class="game-ui">
+        <button class="control-button" style="bottom: 20px; left: 20px;" id="leftBtn">←</button>
+        <button class="control-button" style="bottom: 20px; left: 100px;" id="rightBtn">→</button>
+        <button class="control-button" style="bottom: 20px; left: 180px;" id="rotateBtn">⟳</button>
+        <button class="control-button" style="bottom: 20px; left: 260px;" id="dropBtn">↓</button>
+    </div>
+    <div class="score" id="scoreBoard">CHAOS POINTS: 0</div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        const shapes = [
+            [[1, 1, 1, 1]], // I
+            [[1, 1, 1], [0, 1, 0]], // T
+            [[1, 1, 0], [0, 1, 1]], // Z
+            [[0, 1, 1], [1, 1, 0]], // S
+            [[1, 1], [1, 1]], // O
+            [[1, 1, 1], [1, 0, 0]], // L
+            [[1, 1, 1], [0, 0, 1]]  // J
+        ];
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let currentPiece = getNewPiece();
+        let score = 0;
+        let gameOver = false;
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c]) {
+                        drawBlock(c, r, '#00FFC6');
+                    }
+                }
+            }
+            drawPiece(currentPiece);
+        }
+
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+        }
+
+        function drawPiece(piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c]) {
+                        drawBlock(piece.x + c, piece.y + r, '#FF2E93');
+                    }
+                }
+            }
+        }
+
+        function getNewPiece() {
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            return {
+                shape,
+                x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
+                y: -shape.length
+            };
+        }
+
+        function rotatePiece(piece) {
+            const newShape = piece.shape[0].map((_, i) => piece.shape.map(row => row[i])).reverse();
+            if (!isColliding({ ...piece, shape: newShape })) {
+                piece.shape = newShape;
+            }
+        }
+
+        function isColliding(piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c] && (
+                        board[piece.y + r] && board[piece.y + r][piece.x + c]) !== 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function mergePiece(piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c]) {
+                        board[piece.y + r][piece.x + c] = 1;
+                    }
+                }
+            }
+        }
+
+        function clearLines() {
+            board = board.filter(row => row.some(cell => cell === 0));
+            while (board.length < ROWS) {
+                board.unshift(Array(COLS).fill(0));
+                score += 100;
+                document.getElementById('scoreBoard').innerText = `CHAOS POINTS: ${score}`;
+            }
+        }
+
+        function dropPiece() {
+            if (!isColliding({ ...currentPiece, y: currentPiece.y + 1 })) {
+                currentPiece.y++;
+            } else {
+                mergePiece(currentPiece);
+                clearLines();
+                currentPiece = getNewPiece();
+                if (isColliding(currentPiece)) {
+                    gameOver = true;
+                    document.getElementById('scoreBoard').innerText = "REALITY GLITCHED 💥";
+                }
+            }
+        }
+
+        function updateGame() {
+            if (!gameOver) {
+                dropPiece();
+                drawBoard();
+                requestAnimationFrame(updateGame);
+            }
+        }
+
+        function handleControls(e) {
+            if (gameOver) return;
+            switch (e.currentTarget.id || e.code) {
+                case 'ArrowLeft':
+                case 'leftBtn':
+                    if (!isColliding({ ...currentPiece, x: currentPiece.x - 1 })) {
+                        currentPiece.x--;
+                    }
+                    break;
+                case 'ArrowRight':
+                case 'rightBtn':
+                    if (!isColliding({ ...currentPiece, x: currentPiece.x + 1 })) {
+                        currentPiece.x++;
+                    }
+                    break;
+                case 'ArrowUp':
+                case 'rotateBtn':
+                    rotatePiece(currentPiece);
+                    break;
+                case 'ArrowDown':
+                case 'dropBtn':
+                    dropPiece();
+                    break;
+            }
+            drawBoard();
+        }
+
+        window.addEventListener('keydown', handleControls, { passive: false });
+        document.getElementById('leftBtn').addEventListener('click', handleControls);
+        document.getElementById('rightBtn').addEventListener('click', handleControls);
+        document.getElementById('rotateBtn').addEventListener('click', handleControls);
+        document.getElementById('dropBtn').addEventListener('click', handleControls);
+
+        requestAnimationFrame(updateGame);
+    </script>
+</body>
+</html>
+```
+
+This code creates a Tetris game using HTML5 canvas with WTAF's chaotic-chic aesthetic. It includes touch controls for mobile and keyboard controls for desktop. The game features core mechanics such as rotating, moving, and dropping Tetris pieces, checking for collisions, merging pieces into the board, clearing lines, and updating the score. The game is performance-optimized and uses a neon theme to match the WTAF style.

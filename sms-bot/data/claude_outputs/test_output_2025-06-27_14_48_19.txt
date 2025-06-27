@@ -1,0 +1,283 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tic Tac Toe Chaos</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 90vw;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(0,255,198,0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(123,58,237,0.4);
+            width: 300px;
+            height: 300px;
+        }
+
+        .game-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            color: #00FFC6;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+        }
+
+        .control-legend {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,255,198,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #00FFC6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-legend h4 {
+            margin: 0 0 10px 0;
+            color: #FF2E93;
+        }
+
+        .mobile-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 18px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,255,198,0.4);
+            touch-action: manipulation;
+            user-select: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,255,198,0.6);
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #FF2E93, #FF61C7);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-ui">
+            <div id="status">PLAYER X TURN</div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="control-legend">
+            <h4>🎮 CHAOS CONTROLS</h4>
+            <div>TAP: Place • R: Restart Game</div>
+        </div>
+
+        <div class="mobile-controls">
+            <button class="control-button" id="restartBtn">🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDisplay = document.getElementById('status');
+        const restartButton = document.getElementById('restartBtn');
+
+        const CELL_SIZE = 100;
+        const LINE_WIDTH = 4;
+        const X_COLOR = '#00FFC6';
+        const O_COLOR = '#FF2E93';
+
+        let gameState = 'playing';
+        let currentPlayer = 'X';
+        let board = Array(9).fill(null);
+        const winningCombinations = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
+
+        canvas.addEventListener('click', handleTouchStart, { passive: false });
+        document.addEventListener('keydown', handleKeyDown);
+
+        function initializeGame() {
+            drawGrid();
+            updateStatus();
+        }
+
+        function handleTouchStart(e) {
+            if (gameState !== 'playing') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            const index = y * 3 + x;
+
+            if (board[index] === null) {
+                board[index] = currentPlayer;
+                if (checkWin(currentPlayer)) {
+                    gameState = 'gameOver';
+                    statusDisplay.textContent = `PLAYER ${currentPlayer} WINS!`;
+                } else if (board.every(cell => cell !== null)) {
+                    gameState = 'gameOver';
+                    statusDisplay.textContent = 'DRAW!';
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateStatus();
+                }
+                drawGrid();
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'r' || e.key === 'R') {
+                restartGame();
+            }
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = LINE_WIDTH;
+            ctx.strokeStyle = '#FFFFFF';
+
+            for (let i = 1; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            board.forEach((cell, index) => {
+                const x = (index % 3) * CELL_SIZE;
+                const y = Math.floor(index / 3) * CELL_SIZE;
+                if (cell === 'X') {
+                    drawX(x, y);
+                } else if (cell === 'O') {
+                    drawO(x, y);
+                }
+            });
+        }
+
+        function drawX(x, y) {
+            ctx.strokeStyle = X_COLOR;
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y + 20);
+            ctx.lineTo(x + CELL_SIZE - 20, y + CELL_SIZE - 20);
+            ctx.moveTo(x + CELL_SIZE - 20, y + 20);
+            ctx.lineTo(x + 20, y + CELL_SIZE - 20);
+            ctx.stroke();
+        }
+
+        function drawO(x, y) {
+            ctx.strokeStyle = O_COLOR;
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE / 2 - 20, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function checkWin(player) {
+            return winningCombinations.some(combination => {
+                return combination.every(index => board[index] === player);
+            });
+        }
+
+        function updateStatus() {
+            statusDisplay.textContent = `PLAYER ${currentPlayer} TURN`;
+        }
+
+        function restartGame() {
+            gameState = 'playing';
+            currentPlayer = 'X';
+            board = Array(9).fill(null);
+            drawGrid();
+            updateStatus();
+        }
+
+        restartButton.addEventListener('click', restartGame);
+
+        initializeGame();
+    </script>
+</body>
+</html>
+```

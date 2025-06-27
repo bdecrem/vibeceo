@@ -1,0 +1,177 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+    <title>Retro Arcade Tic Tac Toe</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: black;
+            font-family: 'Courier New', Monaco, 'Lucida Console', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 300px;
+            height: 300px;
+            gap: 5px;
+            box-shadow: 0 0 20px lime;
+            position: relative;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            color: cyan;
+            font-size: 3rem;
+            text-shadow: 0 0 10px cyan;
+            cursor: pointer;
+            box-shadow: 0 0 10px magenta;
+            border: none;
+        }
+
+        .cell:hover {
+            background-color: #222;
+        }
+
+        #controls {
+            margin-top: 20px;
+            color: lime;
+            text-align: center;
+            text-shadow: 0 0 10px lime;
+        }
+
+        #controls div {
+            margin: 5px 0;
+        }
+
+        #controls .glow {
+            display: inline-block;
+            padding: 5px 10px;
+            border: 1px solid lime;
+            box-shadow: 0 0 10px yellow;
+            font-size: 1.2rem;
+        }
+
+        .scanlines {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.1) 50%, transparent 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="controls">
+        <div>Controls:</div>
+        <div class="glow">Arrow Keys</div>
+        <div class="glow">Spacebar: Pause</div>
+        <div class="glow">R: Reset</div>
+        <div class="glow">Touch to play</div>
+    </div>
+    <div class="scanlines"></div>
+
+    <script>
+        const game = document.getElementById('game');
+        const SIZE = 3;
+        let board = Array(SIZE).fill().map(() => Array(SIZE).fill(''));
+        let currentPlayer = 'X';
+        let gameRunning = true;
+
+        function createBoard() {
+            game.innerHTML = '';
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE; j++) {
+                    const cell = document.createElement('button');
+                    cell.classList.add('cell');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', handleMove);
+                    game.appendChild(cell);
+                }
+            }
+        }
+
+        function handleMove(e) {
+            if (!gameRunning) return;
+
+            const row = e.target.dataset.row;
+            const col = e.target.dataset.col;
+
+            if (board[row][col] !== '') return;
+
+            board[row][col] = currentPlayer;
+            e.target.textContent = currentPlayer;
+
+            if (checkWin()) {
+                setTimeout(() => alert(`${currentPlayer} Wins!`), 10);
+                gameRunning = false;
+            } else if (board.flat().every(cell => cell !== '')) {
+                setTimeout(() => alert('Draw!'), 10);
+                gameRunning = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
+        }
+
+        function checkWin() {
+            const lines = [
+                // Rows
+                [[0, 0], [0, 1], [0, 2]],
+                [[1, 0], [1, 1], [1, 2]],
+                [[2, 0], [2, 1], [2, 2]],
+                // Columns
+                [[0, 0], [1, 0], [2, 0]],
+                [[0, 1], [1, 1], [2, 1]],
+                [[0, 2], [1, 2], [2, 2]],
+                // Diagonals
+                [[0, 0], [1, 1], [2, 2]],
+                [[0, 2], [1, 1], [2, 0]]
+            ];
+
+            return lines.some(line => line.every(([r, c]) => board[r][c] === currentPlayer));
+        }
+
+        function resetGame() {
+            board = Array(SIZE).fill().map(() => Array(SIZE).fill(''));
+            currentPlayer = 'X';
+            gameRunning = true;
+            createBoard();
+        }
+
+        function handleKeyPress(e) {
+            switch(e.code) {
+                case 'Space':
+                    gameRunning = !gameRunning;
+                    break;
+                case 'KeyR':
+                    resetGame();
+                    break;
+            }
+        }
+
+        createBoard();
+        document.addEventListener('keydown', handleKeyPress);
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,171 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: "Courier New", monospace;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #gameCanvas {
+            background-color: black;
+            box-shadow: 0 0 20px lime;
+            touch-action: none;
+        }
+        #controls {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: lime;
+            text-shadow: 0 0 10px magenta;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="controls">
+        Arrow keys to move | SPACEBAR to pause | R to reset
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+        let snake = [{ x: 9 * box, y: 10 * box }];
+        let food = createFood();
+        let score = 0;
+        let direction = '';
+        let gameRunning = true;
+        let gameInterval;
+
+        document.addEventListener('keydown', control);
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+
+        if (localStorage.getItem('snakeHighScore')) {
+            score = parseInt(localStorage.getItem('snakeHighScore'), 10);
+        } else {
+            localStorage.setItem('snakeHighScore', '0');
+        }
+
+        function control(event) {
+            if (event.keyCode === 37 && direction !== 'RIGHT') direction = 'LEFT';
+            else if (event.keyCode === 38 && direction !== 'DOWN') direction = 'UP';
+            else if (event.keyCode === 39 && direction !== 'LEFT') direction = 'RIGHT';
+            else if (event.keyCode === 40 && direction !== 'UP') direction = 'DOWN';
+            else if (event.keyCode === 32) gameRunning = !gameRunning;
+            else if (event.keyCode === 82) resetGame();
+        }
+
+        let xDown = null;
+        let yDown = null;
+
+        function handleTouchStart(evt) {
+            const firstTouch = evt.touches[0];
+            xDown = firstTouch.clientX;
+            yDown = firstTouch.clientY;
+        }
+
+        function handleTouchMove(evt) {
+            if (!xDown || !yDown) return;
+            const xUp = evt.touches[0].clientX;
+            const yUp = evt.touches[0].clientY;
+            const xDiff = xDown - xUp;
+            const yDiff = yDown - yUp;
+
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > 0 && direction !== 'RIGHT') direction = 'LEFT';
+                else if (xDiff < 0 && direction !== 'LEFT') direction = 'RIGHT';
+            } else {
+                if (yDiff > 0 && direction !== 'DOWN') direction = 'UP';
+                else if (yDiff < 0 && direction !== 'UP') direction = 'DOWN';
+            }
+            xDown = null;
+            yDown = null;
+        }
+
+        function createFood() {
+            return {
+                x: Math.floor(Math.random() * 19 + 1) * box,
+                y: Math.floor(Math.random() * 19 + 1) * box
+            };
+        }
+
+        function collision(newHead, snake) {
+            for (let i = 0; i < snake.length; i++) {
+                if (newHead.x === snake[i].x && newHead.y === snake[i].y) return true;
+            }
+            return false;
+        }
+
+        function drawGame() {
+            if (!gameRunning) return;
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i === 0) ? 'lime' : 'limegreen';
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if (direction === 'LEFT') snakeX -= box;
+            if (direction === 'UP') snakeY -= box;
+            if (direction === 'RIGHT') snakeX += box;
+            if (direction === 'DOWN') snakeY += box;
+
+            if (snakeX === food.x && snakeY === food.y) {
+                score++;
+                food = createFood();
+                localStorage.setItem('snakeHighScore', score.toString());
+            } else {
+                snake.pop();
+            }
+
+            const newHead = { x: snakeX, y: snakeY };
+
+            if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(gameInterval);
+                gameRunning = false;
+                return;
+            }
+
+            snake.unshift(newHead);
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Courier New';
+            ctx.fillText('Score: ' + score, box * 1.5, box * 1.5);
+        }
+
+        function resetGame() {
+            clearInterval(gameInterval);
+            snake = [{ x: 9 * box, y: 10 * box }];
+            food = createFood();
+            score = 0;
+            direction = '';
+            gameRunning = true;
+            gameInterval = setInterval(drawGame, 150);
+        }
+
+        gameInterval = setInterval(drawGame, 150);
+    </script>
+</body>
+</html>
+```

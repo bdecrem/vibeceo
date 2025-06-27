@@ -1,0 +1,204 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Snake Game</title>
+    <style>
+        body {
+            background-color: black;
+            color: lime;
+            font-family: "Courier New", monospace;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 20px auto;
+            background-color: black;
+            border: 2px solid cyan;
+            box-shadow: 0 0 20px magenta;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .controls p {
+            margin: 5px 0;
+            text-shadow: 0 0 5px yellow;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <p>Use Arrow Keys to Move</p>
+        <p>Press SPACEBAR to Pause</p>
+        <p>Press R to Reset</p>
+        <p>Score: <span id="score">0</span></p>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const tileSize = 20;
+        let snake = [{ x: 200, y: 200 }];
+        let food = {};
+        let dx = tileSize;
+        let dy = 0;
+        let score = 0;
+        let gameRunning = true;
+        let speed = 150;
+        let directionChanged = false;
+        let highScore = localStorage.getItem("highScore") || 0;
+        document.getElementById("score").textContent = score;
+
+        function initGame() {
+            placeFood();
+            document.addEventListener("keydown", changeDirection);
+            document.addEventListener("touchstart", handleTouchStart, false);
+            document.addEventListener("touchmove", handleTouchMove, false);
+            setInterval(gameLoop, speed);
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                updateSnake();
+                drawGame();
+            }
+        }
+
+        function updateSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                document.getElementById("score").textContent = score;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+            if (checkCollision(head)) {
+                gameRunning = false;
+                if (score > highScore) {
+                    localStorage.setItem("highScore", score);
+                }
+                alert("Game Over! Your score: " + score);
+                resetGame();
+            }
+            directionChanged = false;
+        }
+
+        function checkCollision(head) {
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    return true;
+                }
+            }
+            return head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height;
+        }
+
+        function placeFood() {
+            food.x = Math.floor(Math.random() * canvas.width / tileSize) * tileSize;
+            food.y = Math.floor(Math.random() * canvas.height / tileSize) * tileSize;
+            snake.forEach(part => {
+                if (part.x === food.x && part.y === food.y) placeFood();
+            });
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "lime";
+            snake.forEach(part => ctx.fillRect(part.x, part.y, tileSize, tileSize));
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, tileSize, tileSize);
+        }
+
+        function changeDirection(event) {
+            if (directionChanged) return;
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+            const SPACEBAR = 32;
+            const R_KEY = 82;
+
+            if (event.keyCode === LEFT_KEY && dx === 0) {
+                dx = -tileSize;
+                dy = 0;
+            }
+            if (event.keyCode === RIGHT_KEY && dx === 0) {
+                dx = tileSize;
+                dy = 0;
+            }
+            if (event.keyCode === UP_KEY && dy === 0) {
+                dx = 0;
+                dy = -tileSize;
+            }
+            if (event.keyCode === DOWN_KEY && dy === 0) {
+                dx = 0;
+                dy = tileSize;
+            }
+            if (event.keyCode === SPACEBAR) {
+                gameRunning = !gameRunning;
+            }
+            if (event.keyCode === R_KEY) {
+                resetGame();
+            }
+            directionChanged = true;
+        }
+
+        function resetGame() {
+            snake = [{ x: 200, y: 200 }];
+            dx = tileSize;
+            dy = 0;
+            score = 0;
+            gameRunning = true;
+            placeFood();
+            document.getElementById("score").textContent = score;
+        }
+
+        let xDown = null;
+        let yDown = null;
+
+        function handleTouchStart(evt) {
+            const firstTouch = evt.touches[0];
+            xDown = firstTouch.clientX;
+            yDown = firstTouch.clientY;
+        }
+
+        function handleTouchMove(evt) {
+            if (!xDown || !yDown) {
+                return;
+            }
+            const xUp = evt.touches[0].clientX;
+            const yUp = evt.touches[0].clientY;
+            const xDiff = xDown - xUp;
+            const yDiff = yDown - yUp;
+
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > 0 && dx === 0) {
+                    dx = -tileSize;
+                    dy = 0;
+                } else if (xDiff < 0 && dx === 0) {
+                    dx = tileSize;
+                    dy = 0;
+                }
+            } else {
+                if (yDiff > 0 && dy === 0) {
+                    dx = 0;
+                    dy = -tileSize;
+                } else if (yDiff < 0 && dy === 0) {
+                    dx = 0;
+                    dy = tileSize;
+                }
+            }
+            xDown = null;
+            yDown = null;
+            directionChanged = true;
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
+```

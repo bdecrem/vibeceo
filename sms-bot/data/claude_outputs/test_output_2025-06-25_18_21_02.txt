@@ -1,0 +1,178 @@
+I'll create a punk-styled calculator with basic operations. The design will feature a dark theme with neon accents and an edgy feel.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PUNK CALCULATOR</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .calculator {
+            background: #000;
+            border: 3px solid #ff0066;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px #ff0066;
+        }
+
+        .display {
+            background: #333;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-size: 2em;
+            padding: 10px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-family: 'Digital', 'Courier New', monospace;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            background: #333;
+            border: 2px solid #ff0066;
+            color: #fff;
+            padding: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #ff0066;
+            box-shadow: 0 0 10px #ff0066;
+        }
+
+        .operator {
+            background: #444;
+            border-color: #00ff00;
+        }
+
+        .operator:hover {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .equals {
+            background: #ff0066;
+            grid-column: span 2;
+        }
+
+        .equals:hover {
+            background: #ff3399;
+            box-shadow: 0 0 15px #ff0066;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">0</div>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendOperator('/')" class="operator">÷</button>
+            <button onclick="appendOperator('*')" class="operator">×</button>
+            <button onclick="backspace()">←</button>
+            
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button onclick="appendOperator('-')" class="operator">-</button>
+            
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button onclick="appendOperator('+')" class="operator">+</button>
+            
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button onclick="calculate()" class="equals">=</button>
+            
+            <button onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+            <button onclick="appendNumber('.')">.</button>
+        </div>
+    </div>
+
+    <script>
+        let display = document.querySelector('.display');
+        let currentExpression = '0';
+
+        function updateDisplay() {
+            display.textContent = currentExpression;
+        }
+
+        function appendNumber(num) {
+            if (currentExpression === '0') {
+                currentExpression = num;
+            } else {
+                currentExpression += num;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            currentExpression += ` ${op} `;
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentExpression = '0';
+            updateDisplay();
+        }
+
+        function backspace() {
+            currentExpression = currentExpression.slice(0, -1);
+            if (currentExpression === '') currentExpression = '0';
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                currentExpression = eval(currentExpression).toString();
+                updateDisplay();
+            } catch (error) {
+                currentExpression = 'Error';
+                updateDisplay();
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+This punk calculator features:
+
+1. Neon pink and green color scheme
+2. Edgy design with sharp corners and glowing effects
+3. Responsive buttons with hover animations
+4. Basic arithmetic operations
+5. Clear and backspace functionality
+6. Error handling
+7. Dark theme for that underground feel
+
+The calculator has a cyberpunk aesthetic with:
+- Glowing borders
+- Neon text
+- Dark background
+- Hover effects that make buttons pulse with light
+- Monospace font for that tech feel
+
+The interface is simple to use but looks rebellious and edgy. The buttons are large and easy to click, with clear visual feedback when pressed. The display shows the current calculation in a digital-style green text that gives it a retro-futuristic look.
