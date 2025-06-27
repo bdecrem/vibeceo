@@ -39,6 +39,7 @@ import {
 	CLAUDE_OUTPUT_DIR,
 	PROCESSED_DIR,
 	WATCH_DIRS,
+	REQUEST_CONFIGS,
 } from "./engine/shared/config.js";
 import {
 	logStartupInfo,
@@ -141,47 +142,7 @@ async function loadWtafCookbook(): Promise<string | null> {
 	}
 }
 
-// REQUEST_CONFIGS - exact copy from controller.ts
-const REQUEST_CONFIGS = {
-	creation: {
-		classifierModel: "gpt-4o",
-		classifierMaxTokens: 600,
-		classifierTemperature: 0.7,
-		classifierTopP: 1,
-		classifierPresencePenalty: 0.3,
-		classifierFrequencyPenalty: 0,
-		builderModel: "claude-3-5-sonnet-20241022",
-		builderMaxTokens: 8192,
-		builderTemperature: 0.7,
-	},
-	edit: {
-		builderModel: "claude-3-5-sonnet-20241022",
-		builderMaxTokens: 4096,
-		builderTemperature: 0.5,
-	},
-	game: {
-		classifierModel: "gpt-4o",
-		classifierMaxTokens: 600,
-		classifierTemperature: 0.7,
-		classifierTopP: 1,
-		classifierPresencePenalty: 0.3,
-		classifierFrequencyPenalty: 0,
-		builderModel: "gpt-4o",
-		builderMaxTokens: 16000,
-		builderTemperature: 0.8,
-	},
-	zad: {
-		classifierModel: "gpt-4o",
-		classifierMaxTokens: 600,
-		classifierTemperature: 0.7,
-		classifierTopP: 1,
-		classifierPresencePenalty: 0.3,
-		classifierFrequencyPenalty: 0,
-		builderModel: "claude-3-5-sonnet-20241022",
-		builderMaxTokens: 8000,
-		builderTemperature: 0.2,
-	},
-} as const;
+// REQUEST_CONFIGS imported from shared config
 
 // CREATION_SYSTEM_PROMPT - exact copy from controller.ts
 const CREATION_SYSTEM_PROMPT = `🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨

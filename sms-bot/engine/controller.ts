@@ -1,40 +1,43 @@
 #!/usr/bin/env node
 
-import { writeFile, readFile } from 'fs/promises';
-import { join, basename, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { 
-    WEB_APP_URL, 
-    WTAF_DOMAIN, 
-    WEB_OUTPUT_DIR, 
-    CLAUDE_OUTPUT_DIR,
-    PROCESSED_DIR,
-    WATCH_DIRS
-} from './shared/config.js';
-import { 
-    logStartupInfo, 
-    logWithTimestamp, 
-    logSuccess, 
-    logError, 
-    logWarning 
-} from './shared/logger.js';
-import { extractCodeBlocks } from './shared/utils.js';
-import { generateCompletePrompt, callClaude, type ClassifierConfig, type BuilderConfig } from './wtaf-processor.js';
-import { 
-    saveCodeToSupabase, 
-    saveCodeToFile, 
-    createRequiredDirectories,
-    generateOGImage,
-    updateOGImageInHTML 
-} from './storage-manager.js';
-import { 
-    sendSuccessNotification, 
-    sendFailureNotification 
-} from './notification-client.js';
-import { 
-    watchForFiles, 
-    moveProcessedFile 
-} from './file-watcher.js';
+import { writeFile, readFile } from "fs/promises";
+import { join, basename, dirname } from "path";
+import { fileURLToPath } from "url";
+import {
+	WEB_APP_URL,
+	WTAF_DOMAIN,
+	WEB_OUTPUT_DIR,
+	CLAUDE_OUTPUT_DIR,
+	PROCESSED_DIR,
+	WATCH_DIRS,
+	REQUEST_CONFIGS,
+} from "./shared/config.js";
+import {
+	logStartupInfo,
+	logWithTimestamp,
+	logSuccess,
+	logError,
+	logWarning,
+} from "./shared/logger.js";
+import { extractCodeBlocks } from "./shared/utils.js";
+import {
+	generateCompletePrompt,
+	callClaude,
+	type ClassifierConfig,
+	type BuilderConfig,
+} from "./wtaf-processor.js";
+import {
+	saveCodeToSupabase,
+	saveCodeToFile,
+	createRequiredDirectories,
+	generateOGImage,
+	updateOGImageInHTML,
+} from "./storage-manager.js";
+import {
+	sendSuccessNotification,
+	sendFailureNotification,
+} from "./notification-client.js";
+import { watchForFiles, moveProcessedFile } from "./file-watcher.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,16 +50,26 @@ let wtafCookbook: string | null = null;
  * Controller loads this once at startup and passes it to processor when needed
  */
 async function loadWtafCookbook(): Promise<string | null> {
-    try {
-        const cookbookPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
-        const content = await readFile(cookbookPath, 'utf8');
-        
-        logWithTimestamp("📖 WTAF Cookbook loaded successfully by controller");
-        return content; // Return raw JSON - let the AI figure out how to use it
-    } catch (error) {
-        logWarning(`Error loading WTAF cookbook: ${error instanceof Error ? error.message : String(error)}`);
-        return null;
-    }
+	try {
+		const cookbookPath = join(
+			__dirname,
+			"..",
+			"..",
+			"content",
+			"app-tech-spec.json"
+		);
+		const content = await readFile(cookbookPath, "utf8");
+
+		logWithTimestamp("📖 WTAF Cookbook loaded successfully by controller");
+		return content; // Return raw JSON - let the AI figure out how to use it
+	} catch (error) {
+		logWarning(
+			`Error loading WTAF cookbook: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+		return null;
+	}
 }
 
 /**
@@ -65,49 +78,10 @@ async function loadWtafCookbook(): Promise<string | null> {
  * - What type of request is this?
  * - Which model and settings should be used?
  * - What are the token limits and temperature?
- * 
+ *
  * Processor (Chef) executes with provided config and handles fallbacks.
  */
-const REQUEST_CONFIGS = {
-    creation: {
-        classifierModel: 'gpt-4o',
-        classifierMaxTokens: 600,
-        classifierTemperature: 0.7,
-        classifierTopP: 1,
-        classifierPresencePenalty: 0.3,
-        classifierFrequencyPenalty: 0,
-        builderModel: 'claude-3-5-sonnet-20241022',
-        builderMaxTokens: 8192,
-        builderTemperature: 0.7
-    },
-    edit: {
-        builderModel: 'claude-3-5-sonnet-20241022',
-        builderMaxTokens: 4096,  // Edits typically need less
-        builderTemperature: 0.5   // More conservative for edits
-    },
-    game: {
-        classifierModel: 'gpt-4o',
-        classifierMaxTokens: 600,
-        classifierTemperature: 0.7,
-        classifierTopP: 1,
-        classifierPresencePenalty: 0.3,
-        classifierFrequencyPenalty: 0,
-        builderModel: 'gpt-4o',    // Games might work better with GPT?
-        builderMaxTokens: 16000,
-        builderTemperature: 0.8
-    },
-    zad: {
-        classifierModel: 'gpt-4o',
-        classifierMaxTokens: 600,
-        classifierTemperature: 0.7,
-        classifierTopP: 1,
-        classifierPresencePenalty: 0.3,
-        classifierFrequencyPenalty: 0,
-        builderModel: 'claude-3-5-sonnet-20241022',  // From test script
-        builderMaxTokens: 8000,                      // From test script (higher for complete apps)
-        builderTemperature: 0.2                      // From test script (more focused)
-    }
-} as const;
+// REQUEST_CONFIGS imported from shared config
 
 /**
  * System prompt for creating new WTAF apps
@@ -129,7 +103,7 @@ You are creating exactly what the user requests. Follow the WTAF Cookbook & Styl
 📧 EMAIL PLACEHOLDER SYSTEM:
 IF YOU SEE "EMAIL_NEEDED: true" IN THE USER MESSAGE METADATA:
 - Use [CONTACT_EMAIL] as placeholder in ALL email contexts
-- Examples: 
+- Examples:
   * Contact links: <a href="mailto:[CONTACT_EMAIL]">Email me: [CONTACT_EMAIL]</a>
   * Contact info: "Questions? Email us at [CONTACT_EMAIL]"
   * Business contact: "Hire me: [CONTACT_EMAIL]"
@@ -168,7 +142,7 @@ try {
 }
 
 4. CSV Export (manual implementation):
-const csvContent = 'Name,Email,Message\\n' + data.map(row => 
+const csvContent = 'Name,Email,Message\\n' + data.map(row =>
   \`\${row.submission_data.name || ''},\${row.submission_data.email || ''},\${row.submission_data.message || ''}\`
 ).join('\\n')
 const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -214,271 +188,354 @@ Return the complete, modified HTML page wrapped in \`\`\`html and \`\`\` tags. D
  * Process WTAF creation workflow
  * Main workflow extracted from monitor.py execute_gpt4o function
  */
-async function processWtafRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
-    logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
-    logWithTimestamp(`📖 Processing file: ${processingPath}`);
-    
-    const { senderPhone, userSlug, userPrompt } = fileData;
-    const { coach, cleanPrompt } = requestInfo;
-    
-    try {
-        // Determine request configuration based on content type
-        const isGameRequest = userPrompt.toLowerCase().includes('game') || 
-                             userPrompt.toLowerCase().includes('pong') ||
-                             userPrompt.toLowerCase().includes('puzzle') ||
-                             userPrompt.toLowerCase().includes('arcade');
-        
-        // Determine config type based on basic request analysis
-        // ZAD detection will happen in the classifier step
-        let configType: keyof typeof REQUEST_CONFIGS;
-        if (isGameRequest) {
-            configType = 'game';
-        } else {
-            configType = 'creation';  // Default to creation, classifier will determine if ZAD is needed
-        }
-        
-        const config = REQUEST_CONFIGS[configType];
-        
-        logWithTimestamp(`🎯 Using ${configType} configuration`);
-        logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
-        
-        // Step 1: Generate complete prompt with config
-        logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
-        const completePrompt = await generateCompletePrompt(userPrompt, {
-            classifierModel: config.classifierModel || 'gpt-4o',
-            classifierMaxTokens: config.classifierMaxTokens || 600,
-            classifierTemperature: config.classifierTemperature || 0.7,
-            classifierTopP: config.classifierTopP || 1,
-            classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
-            classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0
-        });
-        logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
-        
-        let result: string;
-        
-        // Check if generateCompletePrompt returned final HTML (ZAD template)
-        if (completePrompt.startsWith('```html')) {
-            logWithTimestamp("🤝 ZAD template detected - skipping AI builder stage entirely");
-            result = completePrompt; // Use the template directly, no AI call needed
-        } else {
-            // PARTY TRICK: Email detection happens via HTML content analysis later
-            
-            // Step 2: Send complete prompt to Claude with config
-            logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
-            logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
-            
-            result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
-                model: config.builderModel,
-                maxTokens: config.builderMaxTokens,
-                temperature: config.builderTemperature,
-                cookbook: wtafCookbook || undefined
-            });
-        }
-        
-        // Step 3: Save output to file for debugging
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        if (completePrompt.startsWith('```html')) {
-            logWithTimestamp(`💾 ZAD template output saved to: ${outputFile}`);
-        } else {
-            logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
-        }
-        
-        // Step 4: Extract code blocks
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // Step 5: Deploy the content
-        if (userSlug) {
-            // Use Supabase save function for WTAF content
-            logWithTimestamp(`🎯 Using Supabase save for user_slug: ${userSlug}`);
-            
-            // Check if Claude generated dual pages by looking for the delimiter
-            const delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->';
-            logWithTimestamp(`🔍 Checking for delimiter in code (length: ${code.length} chars)`);
-            logWithTimestamp(`🔍 Code preview: ${code.slice(0, 200)}...`);
-            
-            let isDualPage = false;
-            let publicUrl = null;
-            let adminUrl = null;
-            
-            if (code.includes(delimiter)) {
-                logWithTimestamp(`📊 Dual-page app detected - deploying both pages`);
-                
-                // Split HTML on the delimiter
-                const [publicHtml, adminHtml] = code.split(delimiter, 2);
-                logWithTimestamp(`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`);
-                
-                // Deploy public page (normal app)
-                const publicResult = await saveCodeToSupabase(
-                    publicHtml.trim(), 
-                    coach, 
-                    userSlug, 
-                    senderPhone, 
-                    userPrompt
-                );
-                
-                if (publicResult.appSlug && publicResult.publicUrl) {
-                    publicUrl = publicResult.publicUrl;
-                    
-                    // Deploy admin page with admin prefix
-                    const adminResult = await saveCodeToSupabase(
-                        adminHtml.trim(), 
-                        coach, 
-                        userSlug, 
-                        senderPhone, 
-                        `Admin dashboard for ${userPrompt}`, 
-                        publicResult.appSlug
-                    );
-                    
-                    if (adminResult.publicUrl) {
-                        adminUrl = adminResult.publicUrl;
-                        isDualPage = true;
-                    }
-                }
-            } else {
-                // Single page deployment
-                logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userPrompt);
-                publicUrl = result.publicUrl;
-            }
-            
-            // Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)
-            if (publicUrl) {
-                try {
-                    // Extract app slug from URL for OG generation
-                    const urlParts = publicUrl.split('/');
-                    const appSlug = urlParts[urlParts.length - 1];
-                    
-                    logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
-                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
-                    
-                    if (actualImageUrl) {
-                        logSuccess(`✅ Generated OG image: ${actualImageUrl}`);
-                        // Update the saved HTML with the actual image URL
-                        const updateSuccess = await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                        if (updateSuccess) {
-                            logSuccess(`✅ Updated HTML with correct OG image URL`);
-                        } else {
-                            logWarning(`⚠️ Failed to update HTML with OG image URL`);
-                        }
-                    } else {
-                        logWarning(`⚠️ OG generation failed, keeping fallback URL`);
-                    }
-                } catch (error) {
-                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
-                }
-                
-                // PARTY TRICK: Check if page needs email completion (simplified detection)
-                const needsEmail = code.includes('[CONTACT_EMAIL]');
-                await sendSuccessNotification(publicUrl, adminUrl, senderPhone, needsEmail);
-                logWithTimestamp("=" + "=".repeat(79));
-                logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
-                logWithTimestamp(`🌐 Final URL: ${publicUrl}`);
-                if (adminUrl) {
-                    logWithTimestamp(`📊 Admin URL: ${adminUrl}`);
-                }
-                logWithTimestamp("=" + "=".repeat(79));
-                return true;
-            } else {
-                logError("Failed to save content");
-                await sendFailureNotification("database", senderPhone);
-                return false;
-            }
-        } else {
-            // Use legacy file save for non-WTAF content
-            logWithTimestamp(`📁 Using legacy file save for non-WTAF content`);
-            const result = await saveCodeToFile(code, coach, requestInfo.slug, WEB_OUTPUT_DIR);
-            
-            if (result.publicUrl) {
-                // Generate OG image for legacy files too (before SMS)
-                try {
-                    logWithTimestamp(`🖼️ Generating OG image for legacy file: lab/${requestInfo.slug}`);
-                    const actualImageUrl = await generateOGImage("lab", requestInfo.slug);
-                    
-                    if (actualImageUrl) {
-                        logSuccess(`✅ Generated OG image for legacy file: ${actualImageUrl}`);
-                        // Note: Legacy files don't get HTML updates since they're file-based, not database-based
-                        logWithTimestamp(`📝 Legacy files use API endpoint in meta tags (file-based storage)`);
-                    } else {
-                        logWarning(`⚠️ OG generation failed for legacy file`);
-                    }
-                } catch (error) {
-                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
-                }
-                
-                await sendSuccessNotification(result.publicUrl, null, senderPhone, false);
-                logWithTimestamp("=" + "=".repeat(79));
-                logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
-                logWithTimestamp(`🌐 Final URL: ${result.publicUrl}`);
-                logWithTimestamp("=" + "=".repeat(79));
-                return true;
-            } else {
-                logError("Failed to save content");
-                await sendFailureNotification("database", senderPhone);
-                return false;
-            }
-        }
-        
-    } catch (error) {
-        logError(`WTAF processing error: ${error instanceof Error ? error.message : String(error)}`);
-        await sendFailureNotification("generic", senderPhone);
-        return false;
-    }
+async function processWtafRequest(
+	processingPath: string,
+	fileData: any,
+	requestInfo: any
+): Promise<boolean> {
+	logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
+	logWithTimestamp(`📖 Processing file: ${processingPath}`);
+
+	const { senderPhone, userSlug, userPrompt } = fileData;
+	const { coach, cleanPrompt } = requestInfo;
+
+	try {
+		// Determine request configuration based on content type
+		const isGameRequest =
+			userPrompt.toLowerCase().includes("game") ||
+			userPrompt.toLowerCase().includes("pong") ||
+			userPrompt.toLowerCase().includes("puzzle") ||
+			userPrompt.toLowerCase().includes("arcade");
+
+		// Determine config type based on basic request analysis
+		// ZAD detection will happen in the classifier step
+		let configType: keyof typeof REQUEST_CONFIGS;
+		if (isGameRequest) {
+			configType = "game";
+		} else {
+			configType = "creation"; // Default to creation, classifier will determine if ZAD is needed
+		}
+
+		const config = REQUEST_CONFIGS[configType];
+
+		logWithTimestamp(`🎯 Using ${configType} configuration`);
+		logWithTimestamp(
+			`🤖 Models: Classifier=${config.classifierModel || "N/A"}, Builder=${
+				config.builderModel
+			}`
+		);
+
+		// Step 1: Generate complete prompt with config
+		logWithTimestamp(
+			`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`
+		);
+		const completePrompt = await generateCompletePrompt(userPrompt, {
+			classifierModel: config.classifierModel || "gpt-4o",
+			classifierMaxTokens: config.classifierMaxTokens || 600,
+			classifierTemperature: config.classifierTemperature || 0.7,
+			classifierTopP: config.classifierTopP || 1,
+			classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
+			classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0,
+		});
+		logWithTimestamp(
+			`🔧 Complete prompt generated: ${
+				completePrompt.slice(0, 100) || "None"
+			}...`
+		);
+
+		let result: string;
+
+		// Check if generateCompletePrompt returned final HTML (ZAD template)
+		if (completePrompt.startsWith("```html")) {
+			logWithTimestamp(
+				"🤝 ZAD template detected - skipping AI builder stage entirely"
+			);
+			result = completePrompt; // Use the template directly, no AI call needed
+		} else {
+			// PARTY TRICK: Email detection happens via HTML content analysis later
+
+			// Step 2: Send complete prompt to Claude with config
+			logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
+			logWithTimestamp(
+				`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`
+			); // Last 300 chars
+
+			result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
+				model: config.builderModel,
+				maxTokens: config.builderMaxTokens,
+				temperature: config.builderTemperature,
+				cookbook: wtafCookbook || undefined,
+			});
+		}
+
+		// Step 3: Save output to file for debugging
+		const outputFile = join(
+			CLAUDE_OUTPUT_DIR,
+			`output_${new Date()
+				.toISOString()
+				.slice(0, 19)
+				.replace(/[:T]/g, "_")}.txt`
+		);
+		await writeFile(outputFile, result, "utf8");
+		if (completePrompt.startsWith("```html")) {
+			logWithTimestamp(`💾 ZAD template output saved to: ${outputFile}`);
+		} else {
+			logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
+		}
+
+		// Step 4: Extract code blocks
+		const code = extractCodeBlocks(result);
+		if (!code.trim()) {
+			logWarning("No code block found.");
+			await sendFailureNotification("no-code", senderPhone);
+			return false;
+		}
+
+		// Step 5: Deploy the content
+		if (userSlug) {
+			// Use Supabase save function for WTAF content
+			logWithTimestamp(`🎯 Using Supabase save for user_slug: ${userSlug}`);
+
+			// Check if Claude generated dual pages by looking for the delimiter
+			const delimiter = "<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->";
+			logWithTimestamp(
+				`🔍 Checking for delimiter in code (length: ${code.length} chars)`
+			);
+			logWithTimestamp(`🔍 Code preview: ${code.slice(0, 200)}...`);
+
+			let isDualPage = false;
+			let publicUrl = null;
+			let adminUrl = null;
+
+			if (code.includes(delimiter)) {
+				logWithTimestamp(`📊 Dual-page app detected - deploying both pages`);
+
+				// Split HTML on the delimiter
+				const [publicHtml, adminHtml] = code.split(delimiter, 2);
+				logWithTimestamp(
+					`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`
+				);
+
+				// Deploy public page (normal app)
+				const publicResult = await saveCodeToSupabase(
+					publicHtml.trim(),
+					coach,
+					userSlug,
+					senderPhone,
+					userPrompt
+				);
+
+				if (publicResult.appSlug && publicResult.publicUrl) {
+					publicUrl = publicResult.publicUrl;
+
+					// Deploy admin page with admin prefix
+					const adminResult = await saveCodeToSupabase(
+						adminHtml.trim(),
+						coach,
+						userSlug,
+						senderPhone,
+						`Admin dashboard for ${userPrompt}`,
+						publicResult.appSlug
+					);
+
+					if (adminResult.publicUrl) {
+						adminUrl = adminResult.publicUrl;
+						isDualPage = true;
+					}
+				}
+			} else {
+				// Single page deployment
+				logWithTimestamp(`📱 Single-page app - deploying one page`);
+				const result = await saveCodeToSupabase(
+					code,
+					coach,
+					userSlug,
+					senderPhone,
+					userPrompt
+				);
+				publicUrl = result.publicUrl;
+			}
+
+			// Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)
+			if (publicUrl) {
+				try {
+					// Extract app slug from URL for OG generation
+					const urlParts = publicUrl.split("/");
+					const appSlug = urlParts[urlParts.length - 1];
+
+					logWithTimestamp(
+						`🖼️ Generating OG image for: ${userSlug}/${appSlug}`
+					);
+					const actualImageUrl = await generateOGImage(userSlug, appSlug);
+
+					if (actualImageUrl) {
+						logSuccess(`✅ Generated OG image: ${actualImageUrl}`);
+						// Update the saved HTML with the actual image URL
+						const updateSuccess = await updateOGImageInHTML(
+							userSlug,
+							appSlug,
+							actualImageUrl
+						);
+						if (updateSuccess) {
+							logSuccess(`✅ Updated HTML with correct OG image URL`);
+						} else {
+							logWarning(`⚠️ Failed to update HTML with OG image URL`);
+						}
+					} else {
+						logWarning(`⚠️ OG generation failed, keeping fallback URL`);
+					}
+				} catch (error) {
+					logWarning(
+						`OG generation failed: ${
+							error instanceof Error ? error.message : String(error)
+						}`
+					);
+				}
+
+				// PARTY TRICK: Check if page needs email completion (simplified detection)
+				const needsEmail = code.includes("[CONTACT_EMAIL]");
+				await sendSuccessNotification(
+					publicUrl,
+					adminUrl,
+					senderPhone,
+					needsEmail
+				);
+				logWithTimestamp("=" + "=".repeat(79));
+				logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
+				logWithTimestamp(`🌐 Final URL: ${publicUrl}`);
+				if (adminUrl) {
+					logWithTimestamp(`📊 Admin URL: ${adminUrl}`);
+				}
+				logWithTimestamp("=" + "=".repeat(79));
+				return true;
+			} else {
+				logError("Failed to save content");
+				await sendFailureNotification("database", senderPhone);
+				return false;
+			}
+		} else {
+			// Use legacy file save for non-WTAF content
+			logWithTimestamp(`📁 Using legacy file save for non-WTAF content`);
+			const result = await saveCodeToFile(
+				code,
+				coach,
+				requestInfo.slug,
+				WEB_OUTPUT_DIR
+			);
+
+			if (result.publicUrl) {
+				// Generate OG image for legacy files too (before SMS)
+				try {
+					logWithTimestamp(
+						`🖼️ Generating OG image for legacy file: lab/${requestInfo.slug}`
+					);
+					const actualImageUrl = await generateOGImage("lab", requestInfo.slug);
+
+					if (actualImageUrl) {
+						logSuccess(
+							`✅ Generated OG image for legacy file: ${actualImageUrl}`
+						);
+						// Note: Legacy files don't get HTML updates since they're file-based, not database-based
+						logWithTimestamp(
+							`📝 Legacy files use API endpoint in meta tags (file-based storage)`
+						);
+					} else {
+						logWarning(`⚠️ OG generation failed for legacy file`);
+					}
+				} catch (error) {
+					logWarning(
+						`OG generation failed: ${
+							error instanceof Error ? error.message : String(error)
+						}`
+					);
+				}
+
+				await sendSuccessNotification(
+					result.publicUrl,
+					null,
+					senderPhone,
+					false
+				);
+				logWithTimestamp("=" + "=".repeat(79));
+				logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
+				logWithTimestamp(`🌐 Final URL: ${result.publicUrl}`);
+				logWithTimestamp("=" + "=".repeat(79));
+				return true;
+			} else {
+				logError("Failed to save content");
+				await sendFailureNotification("database", senderPhone);
+				return false;
+			}
+		}
+	} catch (error) {
+		logError(
+			`WTAF processing error: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+		await sendFailureNotification("generic", senderPhone);
+		return false;
+	}
 }
 
 /**
  * Process EDIT workflow
  * Handles edit-* files created by handlers.ts EDIT command
  */
-async function processEditRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
-    logWithTimestamp("🎨 STARTING EDIT PROCESSING WORKFLOW");
-    logWithTimestamp(`📖 Processing edit file: ${processingPath}`);
-    
-    const { senderPhone, userPrompt } = fileData;
-    
-    try {
-        // Parse EDIT file format (from degen_commands.ts)
-        const lines = fileData.rawContent.split('\n');
-        let editTarget = null;
-        let editInstructions = null;
-        let originalHtml = null;
-        let userSlug = null;
-        
-        // Parse the file structure
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith('USER_SLUG:')) {
-                userSlug = lines[i].replace('USER_SLUG:', '').trim();
-            }
-            if (lines[i].startsWith('EDIT_TARGET:')) {
-                editTarget = lines[i].replace('EDIT_TARGET:', '').trim();
-            }
-            if (lines[i].startsWith('EDIT_INSTRUCTIONS:')) {
-                editInstructions = lines[i].replace('EDIT_INSTRUCTIONS:', '').trim();
-            }
-            if (lines[i] === 'ORIGINAL_HTML:') {
-                originalHtml = lines.slice(i + 1).join('\n');
-                break;
-            }
-        }
-        
-        if (!userSlug || !editTarget || !editInstructions || !originalHtml) {
-            logError("Invalid EDIT file format - missing user_slug, target, instructions, or HTML");
-            await sendFailureNotification("invalid-edit", senderPhone);
-            return false;
-        }
-        
-        logWithTimestamp(`🎯 Edit target: ${editTarget}`);
-        logWithTimestamp(`📝 Edit instructions: ${editInstructions.slice(0, 50)}...`);
-        logWithTimestamp(`📏 Original HTML length: ${originalHtml.length} chars`);
-        logWithTimestamp(`📝 Original HTML preview: ${originalHtml.slice(0, 100)}...`);
-        
-        // Create edit prompt for Claude
-        const editPrompt = `Please modify the following HTML code according to these instructions: "${editInstructions}"
+async function processEditRequest(
+	processingPath: string,
+	fileData: any,
+	requestInfo: any
+): Promise<boolean> {
+	logWithTimestamp("🎨 STARTING EDIT PROCESSING WORKFLOW");
+	logWithTimestamp(`📖 Processing edit file: ${processingPath}`);
+
+	const { senderPhone, userPrompt } = fileData;
+
+	try {
+		// Parse EDIT file format (from degen_commands.ts)
+		const lines = fileData.rawContent.split("\n");
+		let editTarget = null;
+		let editInstructions = null;
+		let originalHtml = null;
+		let userSlug = null;
+
+		// Parse the file structure
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].startsWith("USER_SLUG:")) {
+				userSlug = lines[i].replace("USER_SLUG:", "").trim();
+			}
+			if (lines[i].startsWith("EDIT_TARGET:")) {
+				editTarget = lines[i].replace("EDIT_TARGET:", "").trim();
+			}
+			if (lines[i].startsWith("EDIT_INSTRUCTIONS:")) {
+				editInstructions = lines[i].replace("EDIT_INSTRUCTIONS:", "").trim();
+			}
+			if (lines[i] === "ORIGINAL_HTML:") {
+				originalHtml = lines.slice(i + 1).join("\n");
+				break;
+			}
+		}
+
+		if (!userSlug || !editTarget || !editInstructions || !originalHtml) {
+			logError(
+				"Invalid EDIT file format - missing user_slug, target, instructions, or HTML"
+			);
+			await sendFailureNotification("invalid-edit", senderPhone);
+			return false;
+		}
+
+		logWithTimestamp(`🎯 Edit target: ${editTarget}`);
+		logWithTimestamp(
+			`📝 Edit instructions: ${editInstructions.slice(0, 50)}...`
+		);
+		logWithTimestamp(`📏 Original HTML length: ${originalHtml.length} chars`);
+		logWithTimestamp(
+			`📝 Original HTML preview: ${originalHtml.slice(0, 100)}...`
+		);
+
+		// Create edit prompt for Claude
+		const editPrompt = `Please modify the following HTML code according to these instructions: "${editInstructions}"
 
 IMPORTANT REQUIREMENTS:
 - Keep all existing functionality intact
@@ -490,50 +547,62 @@ IMPORTANT REQUIREMENTS:
 Original HTML:
 ${originalHtml}`;
 
-        logWithTimestamp(`📏 Edit prompt length: ${editPrompt.length} chars`);
-        logWithTimestamp(`📝 Edit prompt preview: ${editPrompt.slice(0, 200)}...`);
+		logWithTimestamp(`📏 Edit prompt length: ${editPrompt.length} chars`);
+		logWithTimestamp(`📝 Edit prompt preview: ${editPrompt.slice(0, 200)}...`);
 
-        // Send to Claude with edit configuration
-        const config = REQUEST_CONFIGS.edit;
-        logWithTimestamp(`🎯 Using edit configuration`);
-        logWithTimestamp(`🤖 Model: ${config.builderModel} (${config.builderMaxTokens} tokens)`);
-        
-        const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature,
-            cookbook: wtafCookbook || undefined
-        });
-        
-        // Extract code blocks
-        const modifiedCode = extractCodeBlocks(result);
-        if (!modifiedCode.trim()) {
-            logWarning("No code block found in edit response.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // Update the existing page in Supabase
-        const { updatePageInSupabase } = await import('./storage-manager.js');
-        const success = await updatePageInSupabase(userSlug, editTarget, modifiedCode);
-        
-        if (success) {
-            // Get the URL for notification - include user slug for correct WTAF path
-            const pageUrl = `${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/${editTarget}`;
-            await sendSuccessNotification(pageUrl, null, senderPhone, false);
-            logSuccess(`✅ Edit completed successfully: ${pageUrl}`);
-            return true;
-        } else {
-            logError("Failed to update page in database");
-            await sendFailureNotification("database", senderPhone);
-            return false;
-        }
-        
-    } catch (error) {
-        logError(`Edit processing error: ${error instanceof Error ? error.message : String(error)}`);
-        await sendFailureNotification("generic", senderPhone);
-        return false;
-    }
+		// Send to Claude with edit configuration
+		const config = REQUEST_CONFIGS.edit;
+		logWithTimestamp(`🎯 Using edit configuration`);
+		logWithTimestamp(
+			`🤖 Model: ${config.builderModel} (${config.builderMaxTokens} tokens)`
+		);
+
+		const result = await callClaude(EDIT_SYSTEM_PROMPT, editPrompt, {
+			model: config.builderModel,
+			maxTokens: config.builderMaxTokens,
+			temperature: config.builderTemperature,
+			cookbook: wtafCookbook || undefined,
+		});
+
+		// Extract code blocks
+		const modifiedCode = extractCodeBlocks(result);
+		if (!modifiedCode.trim()) {
+			logWarning("No code block found in edit response.");
+			await sendFailureNotification("no-code", senderPhone);
+			return false;
+		}
+
+		// Update the existing page in Supabase
+		const { updatePageInSupabase } = await import("./storage-manager.js");
+		const success = await updatePageInSupabase(
+			userSlug,
+			editTarget,
+			modifiedCode
+		);
+
+		if (success) {
+			// Get the URL for notification - include user slug for correct WTAF path
+			const pageUrl = `${WTAF_DOMAIN.replace(
+				/^https?:\/\//,
+				""
+			)}/${userSlug}/${editTarget}`;
+			await sendSuccessNotification(pageUrl, null, senderPhone, false);
+			logSuccess(`✅ Edit completed successfully: ${pageUrl}`);
+			return true;
+		} else {
+			logError("Failed to update page in database");
+			await sendFailureNotification("database", senderPhone);
+			return false;
+		}
+	} catch (error) {
+		logError(
+			`Edit processing error: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+		await sendFailureNotification("generic", senderPhone);
+		return false;
+	}
 }
 
 /**
@@ -541,78 +610,113 @@ ${originalHtml}`;
  * Replaces monitor.py monitor_loop function
  */
 async function mainControllerLoop() {
-    logStartupInfo(WEB_APP_URL, WTAF_DOMAIN, WEB_OUTPUT_DIR);
-    
-    // Load WTAF cookbook once at startup
-    try {
-        wtafCookbook = await loadWtafCookbook();
-        if (wtafCookbook) {
-            logSuccess("📖 WTAF Cookbook loaded and ready for processing");
-        } else {
-            logWarning("⚠️ WTAF Cookbook failed to load - proceeding without brand guidelines");
-        }
-    } catch (error) {
-        logWarning(`Cookbook loading error: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    
-    // Create required directories
-    try {
-        await createRequiredDirectories(PROCESSED_DIR, CLAUDE_OUTPUT_DIR, WEB_OUTPUT_DIR, WATCH_DIRS);
-    } catch (error) {
-        logError(`Failed to create directories: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
-    }
-    
-    logWithTimestamp("🌀 WTAF Engine running...");
-    logWithTimestamp(`👀 Watching directories: ${WATCH_DIRS.join(', ')}`);
-    
-    try {
-        // Start file monitoring
-        for await (const fileInfo of watchForFiles()) {
-            const { processingPath, fileData, requestInfo } = fileInfo;
-            
-            logWithTimestamp(`🚨 Processing new request: ${requestInfo.type.toUpperCase()}`);
-            
-            let success = false;
-            
-            try {
-                if (requestInfo.type === 'wtaf' || requestInfo.type === 'code') {
-                    success = await processWtafRequest(processingPath, fileData, requestInfo);
-                } else if (requestInfo.type === 'edit') {
-                    success = await processEditRequest(processingPath, fileData, requestInfo);
-                } else {
-                    logWarning(`Unknown request type: ${requestInfo.type}`);
-                    success = false;
-                }
-            } catch (processingError) {
-                logError(`Processing error: ${processingError instanceof Error ? processingError.message : String(processingError)}`);
-                success = false;
-            }
-            
-            // Move processed file to final location
-            await moveProcessedFile(processingPath, success);
-            
-            if (success) {
-                logSuccess(`Successfully processed and moved file`);
-            } else {
-                logError(`Failed to process file`);
-            }
-        }
-    } catch (error) {
-        logError(`Controller loop error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
-    }
+	logStartupInfo(WEB_APP_URL, WTAF_DOMAIN, WEB_OUTPUT_DIR);
+
+	// Load WTAF cookbook once at startup
+	try {
+		wtafCookbook = await loadWtafCookbook();
+		if (wtafCookbook) {
+			logSuccess("📖 WTAF Cookbook loaded and ready for processing");
+		} else {
+			logWarning(
+				"⚠️ WTAF Cookbook failed to load - proceeding without brand guidelines"
+			);
+		}
+	} catch (error) {
+		logWarning(
+			`Cookbook loading error: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+	}
+
+	// Create required directories
+	try {
+		await createRequiredDirectories(
+			PROCESSED_DIR,
+			CLAUDE_OUTPUT_DIR,
+			WEB_OUTPUT_DIR,
+			WATCH_DIRS
+		);
+	} catch (error) {
+		logError(
+			`Failed to create directories: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+		process.exit(1);
+	}
+
+	logWithTimestamp("🌀 WTAF Engine running...");
+	logWithTimestamp(`👀 Watching directories: ${WATCH_DIRS.join(", ")}`);
+
+	try {
+		// Start file monitoring
+		for await (const fileInfo of watchForFiles()) {
+			const { processingPath, fileData, requestInfo } = fileInfo;
+
+			logWithTimestamp(
+				`🚨 Processing new request: ${requestInfo.type.toUpperCase()}`
+			);
+
+			let success = false;
+
+			try {
+				if (requestInfo.type === "wtaf" || requestInfo.type === "code") {
+					success = await processWtafRequest(
+						processingPath,
+						fileData,
+						requestInfo
+					);
+				} else if (requestInfo.type === "edit") {
+					success = await processEditRequest(
+						processingPath,
+						fileData,
+						requestInfo
+					);
+				} else {
+					logWarning(`Unknown request type: ${requestInfo.type}`);
+					success = false;
+				}
+			} catch (processingError) {
+				logError(
+					`Processing error: ${
+						processingError instanceof Error
+							? processingError.message
+							: String(processingError)
+					}`
+				);
+				success = false;
+			}
+
+			// Move processed file to final location
+			await moveProcessedFile(processingPath, success);
+
+			if (success) {
+				logSuccess(`Successfully processed and moved file`);
+			} else {
+				logError(`Failed to process file`);
+			}
+		}
+	} catch (error) {
+		logError(
+			`Controller loop error: ${
+				error instanceof Error ? error.message : String(error)
+			}`
+		);
+		process.exit(1);
+	}
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', () => {
-    logWithTimestamp("🛑 Received SIGINT. Shutting down gracefully...");
-    process.exit(0);
+process.on("SIGINT", () => {
+	logWithTimestamp("🛑 Received SIGINT. Shutting down gracefully...");
+	process.exit(0);
 });
 
-process.on('SIGTERM', () => {
-    logWithTimestamp("🛑 Received SIGTERM. Shutting down gracefully...");
-    process.exit(0);
+process.on("SIGTERM", () => {
+	logWithTimestamp("🛑 Received SIGTERM. Shutting down gracefully...");
+	process.exit(0);
 });
 
 // Export the main function for use by start-engine script
@@ -620,8 +724,8 @@ export { mainControllerLoop };
 
 // Start the controller if run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-    mainControllerLoop().catch(error => {
-        logError(`Fatal error: ${error.message}`);
-        process.exit(1);
-    });
+	mainControllerLoop().catch((error) => {
+		logError(`Fatal error: ${error.message}`);
+		process.exit(1);
+	});
 }
