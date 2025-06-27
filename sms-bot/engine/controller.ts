@@ -18,7 +18,7 @@ import {
     logError, 
     logWarning 
 } from './shared/logger.js';
-import { extractCodeBlocks } from './shared/utils.js';
+import { extractCodeBlocks, injectSubmissionUuid } from './shared/utils.js';
 import { generateCompletePrompt, callClaude, type ClassifierConfig, type BuilderConfig } from './wtaf-processor.js';
 import { 
     saveCodeToSupabase, 
@@ -225,6 +225,32 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // 🧱 STACKABLES: Check for --stack flag to enable aesthetic inheritance
+    let stackablesData = null;
+    if (userPrompt && userPrompt.includes('--stack')) {
+        logWithTimestamp("🧱 STACKABLES DETECTED: Processing aesthetic inheritance");
+        
+        // Import stackables manager dynamically
+        const { processStackablesRequest } = await import('./stackables-manager.js');
+        const stackResult = await processStackablesRequest(userSlug, userPrompt);
+        
+        if (stackResult.success) {
+            logWithTimestamp(`✅ Stackables processing successful`);
+            stackablesData = {
+                userRequest: stackResult.userRequest,
+                aestheticData: stackResult.aestheticData,
+                enhancedPrompt: stackResult.enhancedPrompt
+            };
+            // Use the cleaned user request from stackables
+            userPrompt = stackResult.userRequest || userPrompt;
+            logWithTimestamp(`🧱 Using enhanced prompt for aesthetic inheritance`);
+        } else {
+            logError(`❌ Stackables error: ${stackResult.error}`);
+            // Continue with original prompt if stackables fails
+            stackablesData = { error: stackResult.error };
+        }
+    }
+    
     try {
         // Determine request configuration based on content type
         const isGameRequest = userPrompt.toLowerCase().includes('game') || 
@@ -246,7 +272,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🎯 Using ${configType} configuration`);
         logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
-        // Step 1: Generate complete prompt with config (including admin override flag)
+        // Step 1: Generate complete prompt with config (including admin override and stackables)
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
         const completePrompt = await generateCompletePrompt(userPrompt, {
             classifierModel: config.classifierModel || 'gpt-4o',
@@ -255,7 +281,8 @@ async function processWtafRequest(processingPath: string, fileData: any, request
             classifierTopP: config.classifierTopP || 1,
             classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
             classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0,
-            forceAdminOverride: forceAdminPath // 🔧 Pass admin override flag to processor
+            forceAdminOverride: forceAdminPath, // 🔧 Pass admin override flag to processor
+            stackablesData: stackablesData // 🧱 Pass stackables data to processor
         });
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
@@ -327,12 +354,16 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                     userPrompt
                 );
                 
-                if (publicResult.appSlug && publicResult.publicUrl) {
+                if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
                     publicUrl = publicResult.publicUrl;
+                    
+                    // Configure admin page to use main app's UUID for data operations
+                    const adminHtmlWithMainUuid = injectSubmissionUuid(adminHtml.trim(), publicResult.uuid);
+                    logWithTimestamp(`🔗 Admin page configured to use main app UUID: ${publicResult.uuid}`);
                     
                     // Deploy admin page with admin prefix
                     const adminResult = await saveCodeToSupabase(
-                        adminHtml.trim(), 
+                        adminHtmlWithMainUuid, 
                         coach, 
                         userSlug, 
                         senderPhone, 
@@ -343,6 +374,10 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                     if (adminResult.publicUrl) {
                         adminUrl = adminResult.publicUrl;
                         isDualPage = true;
+                        logWithTimestamp(`✅ Dual-page setup complete:`);
+                        logWithTimestamp(`   📱 Main app: ${publicUrl} (UUID: ${publicResult.uuid})`);
+                        logWithTimestamp(`   📊 Admin page: ${adminUrl} (UUID: ${adminResult.uuid})`);
+                        logWithTimestamp(`   💾 Data storage: Uses main app UUID ${publicResult.uuid}`);
                     }
                 }
             } else {
@@ -350,6 +385,9 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
                 const result = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userPrompt);
                 publicUrl = result.publicUrl;
+                if (result.uuid) {
+                    logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
+                }
             }
             
             // Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)

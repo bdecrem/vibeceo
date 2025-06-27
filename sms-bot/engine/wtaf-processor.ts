@@ -38,6 +38,7 @@ export interface ClassifierConfig {
     classifierPresencePenalty?: number;
     classifierFrequencyPenalty?: number;
     forceAdminOverride?: boolean; // 🔧 Admin override flag
+    stackablesData?: any; // 🧱 Stackables aesthetic inheritance data
 }
 
 export interface BuilderConfig {
@@ -160,92 +161,99 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
     }
 
     if (requestType === 'app') {
-        // APP PATH: Use classifier to expand and clarify the request
-        logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
-        
-        const { buildClassifierPrompt } = await import('./classifier-builder.js');
-        const classifierPrompt = await buildClassifierPrompt();
-        if (!classifierPrompt) {
-            logWarning("Failed to build classifier prompt, using original input");
-            expandedPrompt = cleanedInput;
-        } else {
-            try {
-                // Pass coach info as part of user message for classifier to interpret
-                let userMessage = cleanedInput;
-                if (coach && coachPersonality) {
-                    userMessage += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
-                    logWithTimestamp(`🎭 Passing ${coach}'s personality to classifier for interpretation`);
-                }
-                
-                const messages: ChatCompletionMessageParam[] = [
-                    classifierPrompt,
-                    { role: "user", content: userMessage } as ChatCompletionMessageParam
-                ];
-                
-                logWithTimestamp(`\n🔍 SENDING TO GPT-4o CLASSIFIER:`);
-                logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
-                logWithTimestamp(`📋 SYSTEM PROMPT: ${(classifierPrompt as any).content?.length || 0} chars (includes ZAD template)`);
-                logWithTimestamp(`📋 FULL CLASSIFIER SYSTEM PROMPT CONTENT:`);
-                logWithTimestamp("=" + "=".repeat(80));
-                logWithTimestamp((classifierPrompt as any).content || "No content");
-                logWithTimestamp("=" + "=".repeat(80));
-                logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage}`);
-                
-                const response = await getOpenAIClient().chat.completions.create({
-                    model: config.classifierModel,
-                    messages: messages,
-                    temperature: config.classifierTemperature,
-                    max_tokens: config.classifierMaxTokens,
-                    top_p: config.classifierTopP || 1,
-                    presence_penalty: config.classifierPresencePenalty || 0,
-                    frequency_penalty: config.classifierFrequencyPenalty || 0
-                });
-                
-                const content = response.choices[0].message.content;
-                logWithTimestamp(`\n📥 CLASSIFIER RESPONSE (${content?.length || 0} chars):`);
-                logWithTimestamp("=" + "=".repeat(80));
-                logWithTimestamp(content || "No content");
-                logWithTimestamp("=" + "=".repeat(80));
-                if (content) {
-                    // 🔧 STEP 1: Check for admin override FIRST (before ZAD detection)
-                    if (config.forceAdminOverride) {
-                        logWithTimestamp("🔧 ADMIN OVERRIDE: Forcing admin dual-page creation");
-                        expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+        // 🔧 ADMIN OVERRIDE CHECK: Skip classifier entirely if admin override is set
+        if (config.forceAdminOverride) {
+            logWithTimestamp("🔧 ADMIN OVERRIDE: Skipping classifier entirely, going straight to admin generation");
+            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
 
 EMAIL_NEEDED: false
 ZERO_ADMIN_DATA: false
 APP_TYPE: data_collection`;
-                        logWithTimestamp("🔧 Admin override: Created admin dual-page prompt");
+            logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
+        }
+        // 🧱 STACKABLES CHECK: Use enhanced prompt if available
+        else if (config.stackablesData && config.stackablesData.enhancedPrompt) {
+            logWithTimestamp("🧱 STACKABLES: Using enhanced prompt with aesthetic inheritance");
+            expandedPrompt = config.stackablesData.enhancedPrompt;
+            logWithTimestamp(`🎨 Enhanced prompt length: ${expandedPrompt.length} characters`);
+        } else {
+            // APP PATH: Use classifier to expand and clarify the request
+            logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
+            
+            const { buildClassifierPrompt } = await import('./classifier-builder.js');
+            const classifierPrompt = await buildClassifierPrompt();
+            if (!classifierPrompt) {
+                logWarning("Failed to build classifier prompt, using original input");
+                expandedPrompt = cleanedInput;
+            } else {
+                try {
+                    // Pass coach info as part of user message for classifier to interpret
+                    let userMessage = cleanedInput;
+                    if (coach && coachPersonality) {
+                        userMessage += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
+                        logWithTimestamp(`🎭 Passing ${coach}'s personality to classifier for interpretation`);
                     }
-                    // STEP 2: Check if classifier detected a ZAD request (only if no admin override)
-                    else if (content.includes('ZERO_ADMIN_DATA: true')) {
-                        logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
-                        
-                        // NEW ELEGANT ZAD SYSTEM: Route to comprehensive builder
-                        // Pass the original user input for the comprehensive ZAD builder
-                        expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
-                        logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
-                    }
-                    // STEP 3: Check if classifier detected admin need (APP_TYPE: data_collection)
-                    else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
-                        logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
-                        expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+                    
+                    const messages: ChatCompletionMessageParam[] = [
+                        classifierPrompt,
+                        { role: "user", content: userMessage } as ChatCompletionMessageParam
+                    ];
+                    
+                    logWithTimestamp(`\n🔍 SENDING TO GPT-4o CLASSIFIER:`);
+                    logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
+                    logWithTimestamp(`📋 SYSTEM PROMPT: ${(classifierPrompt as any).content?.length || 0} chars (includes ZAD template)`);
+                    logWithTimestamp(`📋 FULL CLASSIFIER SYSTEM PROMPT CONTENT:`);
+                    logWithTimestamp("=" + "=".repeat(80));
+                    logWithTimestamp((classifierPrompt as any).content || "No content");
+                    logWithTimestamp("=" + "=".repeat(80));
+                    logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage}`);
+                    
+                    const response = await getOpenAIClient().chat.completions.create({
+                        model: config.classifierModel,
+                        messages: messages,
+                        temperature: config.classifierTemperature,
+                        max_tokens: config.classifierMaxTokens,
+                        top_p: config.classifierTopP || 1,
+                        presence_penalty: config.classifierPresencePenalty || 0,
+                        frequency_penalty: config.classifierFrequencyPenalty || 0
+                    });
+                    
+                    const content = response.choices[0].message.content;
+                    logWithTimestamp(`\n📥 CLASSIFIER RESPONSE (${content?.length || 0} chars):`);
+                    logWithTimestamp("=" + "=".repeat(80));
+                    logWithTimestamp(content || "No content");
+                    logWithTimestamp("=" + "=".repeat(80));
+                    if (content) {
+                        // STEP 1: Check if classifier detected a ZAD request
+                        if (content.includes('ZERO_ADMIN_DATA: true')) {
+                            logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
+                            
+                            // NEW ELEGANT ZAD SYSTEM: Route to comprehensive builder
+                            // Pass the original user input for the comprehensive ZAD builder
+                            expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
+                            logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
+                        }
+                        // STEP 2: Check if classifier detected admin need (APP_TYPE: data_collection)
+                        else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
+                            logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
+                            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
 
 ${content.trim()}`;
-                        logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
+                            logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
+                        }
+                        // STEP 3: Normal expanded prompt
+                        else {
+                            expandedPrompt = content.trim();
+                            logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
+                        }
+                    } else {
+                        logWarning("No content in classifier response, using original");
+                        expandedPrompt = cleanedInput;
                     }
-                    // STEP 4: Normal expanded prompt
-                    else {
-                        expandedPrompt = content.trim();
-                        logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
-                    }
-                } else {
-                    logWarning("No content in classifier response, using original");
+                } catch (error) {
+                    logWarning(`Classifier error, using original: ${error instanceof Error ? error.message : String(error)}`);
                     expandedPrompt = cleanedInput;
                 }
-            } catch (error) {
-                logWarning(`Classifier error, using original: ${error instanceof Error ? error.message : String(error)}`);
-                expandedPrompt = cleanedInput;
             }
         }
     } else {
