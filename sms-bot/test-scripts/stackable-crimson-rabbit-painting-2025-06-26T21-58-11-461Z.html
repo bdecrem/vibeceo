@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Me</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        .emoji {
+            font-size: 2em;
+            display: inline-block;
+            margin: 0 5px;
+            transition: transform 0.2s ease;
+        }
+
+        .emoji:hover {
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>About Me ✨</h1>
+        <p>
+            Hello! I'm a passionate web designer and developer with a love for creating beautiful, functional websites. 🌟 I enjoy exploring the latest technologies and applying them to solve real-world problems. 💫
+        </p>
+        <p>
+            In my free time, I love hiking, reading, and experimenting with new design trends. I'm always eager to learn and grow in my field, and I believe that the best designs come from a blend of creativity and technical expertise.
+        </p>
+        <div>
+            <span class="emoji">✨</span>
+            <span class="emoji">🌟</span>
+            <span class="emoji">💫</span>
+        </div>
+    </div>
+    <script>
+        // You can add any JavaScript functionality here if needed
+        console.log("Welcome to my About Me page! Feel free to reach out if you have any questions.");
+    </script>
+</body>
+</html>

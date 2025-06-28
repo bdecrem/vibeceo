@@ -1,0 +1,225 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHNO BUDDY // Berlin Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111111;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .chat-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #FF2E93, #00FFC6);
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .chat-window {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 1.5rem;
+            height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.sent {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: #333;
+        }
+
+        .input-area {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #222;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 10px;
+            display: none;
+        }
+
+        /* Easter egg */
+        .secret {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FF2E93;
+            padding: 2rem;
+            border-radius: 15px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-header">
+            <h1>TECHNO BUDDY</h1>
+            <p>Your Berlin Underground Connection 🎧</p>
+        </div>
+
+        <div class="chat-window">
+            <div class="message received">
+                Yo! Found this sick warehouse party in Kreuzberg 🏭
+            </div>
+            <div class="message sent">
+                Send location! Is it near Berghain? 🎵
+            </div>
+            <div class="message received">
+                2 blocks away. Starting at 3AM. Lineup is insane! 🔥
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" placeholder="Drop your techno thoughts...">
+            <button>SEND IT</button>
+        </div>
+    </div>
+
+    <div class="notification">
+        New message from your Techno Buddy! 🎵
+    </div>
+
+    <div class="secret">
+        🎧 UNLOCKED: SECRET AFTER-HOURS MODE 🎧
+    </div>
+
+    <div class="floating-emoji" data-value="3">🎧</div>
+    <div class="floating-emoji" data-value="2">⚡</div>
+    <div class="floating-emoji" data-value="4">🔊</div>
+    <div class="floating-emoji" data-value="1">🎵</div>
+
+    <script>
+        // Floating emoji parallax
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg - type "TECHNO"
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key.toLowerCase();
+            if (secretCode.includes('techno')) {
+                document.querySelector('.secret').style.display = 'block';
+                setTimeout(() => {
+                    document.querySelector('.secret').style.display = 'none';
+                }, 3000);
+                secretCode = '';
+            }
+        });
+
+        // Basic message sending
+        const button = document.querySelector('button');
+        const input = document.querySelector('input');
+        const chatWindow = document.querySelector('.chat-window');
+
+        button.addEventListener('click', () => {
+            if (input.value.trim()) {
+                const message = document.createElement('div');
+                message.className = 'message sent';
+                message.textContent = input.value;
+                chatWindow.appendChild(message);
+                input.value = '';
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
+```

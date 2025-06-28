@@ -1,0 +1,226 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDEA RIOT 🔥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff2e93;
+            --neon-blue: #3f88ff;
+            --neon-purple: #7c3aed;
+            --dark-bg: #0a0a0a;
+            --card-bg: #161616;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            z-index: 1000;
+        }
+
+        .idea-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .idea-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .idea-card.popular {
+            animation: golden-pulse 2s infinite;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .tag-feature { background: var(--neon-pink); }
+        .tag-bug { background: #ff4545; }
+        .tag-enhancement { background: var(--neon-blue); }
+        .tag-question { background: var(--neon-purple); }
+
+        .idea-content {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .reactions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
+        }
+
+        .add-idea-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--neon-pink);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .add-idea-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255,46,147,0.8);
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,46,147,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,46,147,0.8); }
+        }
+
+        @keyframes golden-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+            50% { box-shadow: 0 0 40px rgba(255,215,0,0.6); }
+        }
+
+        .comments {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comment {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2">💡</div>
+    <div class="floating-emoji" data-value="3">🔥</div>
+    <div class="floating-emoji" data-value="4">✨</div>
+    <div class="floating-emoji" data-value="5">🚀</div>
+
+    <header class="header">
+        <h1>IDEA RIOT</h1>
+        <p>where chaos meets innovation</p>
+    </header>
+
+    <div class="idea-grid">
+        <div class="idea-card popular">
+            <span class="category-tag tag-feature">Feature</span>
+            <div class="idea-content">
+                <h3>AI-Powered Chaos Generator</h3>
+                <p>What if we had an AI that deliberately creates controlled chaos in the UI? Like, randomly reorganizing elements but in a way that still makes sense.</p>
+            </div>
+            <div class="reactions">
+                <button class="reaction-btn">💡 42</button>
+                <button class="reaction-btn">🔥 23</button>
+                <button class="reaction-btn">👍 15</button>
+            </div>
+            <div class="comments">
+                <div class="comment">@chaos_lover: This is exactly what we need!</div>
+                <div class="comment">@ui_punk: Let's make it happen 🚀</div>
+            </div>
+        </div>
+
+        <!-- More idea cards would be dynamically generated here -->
+    </div>
+
+    <button class="add-idea-btn">+</button>
+
+    <script>
+        // Floating emoji parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg: Type "WTAF" for chaos mode
+        let wtafBuffer = '';
+        document.addEventListener('keydown', (e) => {
+            wtafBuffer += e.key.toLowerCase();
+            if (wtafBuffer.includes('wtaf')) {
+                document.body.style.animation = 'golden-pulse 0.5s infinite';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 2000);
+                wtafBuffer = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

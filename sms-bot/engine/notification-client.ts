@@ -116,6 +116,24 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "database":
                 message = "🤷 That broke. Database hiccup. Try a different WTAF?";
                 break;
+            case "zad-validation":
+                message = "🤖 EDIT failed - AI tried to shortcut your ZAD app and would've broken it. Try a simpler edit request?";
+                break;
+            case "stackemail-permission":
+                message = "🔒 Stackemail requires DEGEN role access. Contact support if you need this feature.";
+                break;
+            case "stackemail-format":
+                message = "📧 Invalid stackemail format. Use: --stackemail app-slug your message here";
+                break;
+            case "stackemail-ownership":
+                message = "🔒 You can only send stackemail to apps you own.";
+                break;
+            case "stackemail-no-emails":
+                message = "📧 No email submissions found for that app - no one to email.";
+                break;
+            case "stackemail-send":
+                message = "📧 Failed to send stackemail. Try again in a few minutes.";
+                break;
             default:
                 message = "🤷 That broke. Database hiccup. Try a different WTAF?";
                 break;

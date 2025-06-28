@@ -1,0 +1,119 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Malcolm McLaren – Viral Culture Hacker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #ff0059, #ff00ff, #00ff00);
+            animation: gradientShift 10s ease infinite;
+            background-size: 400% 400%;
+            font-family: 'Permanent Marker', cursive;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 
+                3px 3px 0 #000,
+                -3px -3px 0 #000,
+                3px -3px 0 #000,
+                -3px 3px 0 #000,
+                0 0 15px rgba(255,255,255,0.7);
+            letter-spacing: 4px;
+            transform: skew(-5deg);
+            animation: glitch 2s infinite;
+        }
+
+        h2 {
+            font-size: 4vw;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+            margin-top: 20px;
+            transform: skew(-5deg);
+        }
+
+        .links {
+            margin-top: 40px;
+        }
+
+        .links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 2vw;
+            margin: 0 15px;
+            text-shadow: 1px 1px 0 #000;
+            transition: transform 0.3s ease;
+        }
+
+        .links a:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(-5deg); }
+            20% { transform: skew(-5deg) translateX(-2px); }
+            40% { transform: skew(-5deg) translateX(2px); }
+            60% { transform: skew(-5deg) translateX(-2px); }
+            80% { transform: skew(-5deg) translateX(2px); }
+            100% { transform: skew(-5deg); }
+        }
+
+        .safety-pin {
+            position: absolute;
+            font-size: 2em;
+            color: silver;
+            transform: rotate(45deg);
+            animation: swing 3s ease-in-out infinite;
+        }
+
+        .pin1 { top: -30px; right: -20px; }
+        .pin2 { bottom: -30px; left: -20px; }
+
+        @keyframes swing {
+            0% { transform: rotate(45deg); }
+            50% { transform: rotate(35deg); }
+            100% { transform: rotate(45deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="safety-pin pin1">⚡</span>
+        <h1>Malcolm McLaren</h1>
+        <h2>Viral Culture Hacker</h2>
+        <div class="links">
+            <a href="https://bsky.app/profile/did:plc:m3nvqatwunwj3onvysaufpp3">bluesky</a>
+            <a href="http://www.wtaf.me">wtaf.me</a>
+        </div>
+        <span class="safety-pin pin2">⚡</span>
+    </div>
+</body>
+</html>
+```

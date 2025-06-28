@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+A visual idea board where users submit one-line ideas. Each idea appears as a card with their name, timestamp, and the idea. Others can react with emojis (💡🔥👍🤔) — counts are shown. Cards appear in a grid, newest first. Cards with 3+ reactions get a special glow.

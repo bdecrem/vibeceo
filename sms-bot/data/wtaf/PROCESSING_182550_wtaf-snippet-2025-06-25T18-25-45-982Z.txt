@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+A visual idea board where users post feature ideas as colorful cards and others can react with emoji (💡🔥👍🤔) or quick comments. Display ideas as medium-sized cards in a grid layout with the poster's name, timestamp, and idea text. Show emoji reaction counts on each card, and display comments in a small expandable section below each idea. Include 'Add Idea' button that opens a simple text input, category tags (Feature, Bug, Enhancement, Question) with different card colors, and a star button to highlight important ideas. Newest ideas appear at top left, and cards with most reactions get a golden glow effect.

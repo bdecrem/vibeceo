@@ -1,0 +1,195 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERLIN TECHNO CHAT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            background: linear-gradient(to right, #FF2E93, #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .chat-container {
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 1rem;
+            height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .message-input {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 1rem;
+            background: #222;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            animation: pulse 1s infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.sent {
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: #333;
+            margin-right: auto;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BERLIN TECHNO CHAT</h1>
+        <div class="chat-container" id="chat">
+            <div class="message received">Berghain tonight? 🕺</div>
+            <div class="message sent">Already in line lol 💃</div>
+        </div>
+        <div class="message-input">
+            <input type="text" placeholder="Drop the techno plans..." id="messageInput">
+            <button onclick="sendMessage()">RAVE ON</button>
+        </div>
+    </div>
+
+    <div class="floating-emoji" data-value="2">🎧</div>
+    <div class="floating-emoji" data-value="3">🔊</div>
+    <div class="floating-emoji" data-value="4">💊</div>
+    <div class="floating-emoji" data-value="5">🌙</div>
+    <div class="floating-emoji" data-value="6">⚡</div>
+
+    <div class="easter-egg">Type 'TECHNO' for a surprise...</div>
+
+    <script>
+        // Floating emoji parallax
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Position emojis randomly
+        document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+            emoji.style.left = Math.random() * window.innerWidth + 'px';
+            emoji.style.top = Math.random() * window.innerHeight + 'px';
+        });
+
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if(input.value.trim()) {
+                const chat = document.getElementById('chat');
+                const message = document.createElement('div');
+                message.className = 'message sent';
+                message.textContent = input.value;
+                chat.appendChild(message);
+                input.value = '';
+                chat.scrollTop = chat.scrollHeight;
+            }
+        }
+
+        // Easter egg
+        let technoCode = '';
+        document.addEventListener('keydown', (e) => {
+            technoCode += e.key.toLowerCase();
+            if(technoCode.includes('techno')) {
+                document.body.style.animation = 'pulse 0.5s infinite';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 3000);
+                technoCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

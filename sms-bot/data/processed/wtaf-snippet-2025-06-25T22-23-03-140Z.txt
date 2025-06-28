@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+Build a simple app called WTAF Brain Dumpster where my friend and I can post ideas for our app. Let us comment and upvote them as much as we want, and sort them by the number of upvotes. Give it a hipster techno vibe

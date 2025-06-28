@@ -59,6 +59,74 @@ export function setupTwilioWebhooks(app: Application): void {
   app.get('/sms/webhook', (req: Request, res: Response) => {
     res.status(200).send('SMS Webhook endpoint is active');
   });
+
+  // Dev webhook endpoint that captures and returns bot responses
+  app.post('/dev/webhook', async (req: Request, res: Response) => {
+    try {
+      // Extract message details from dev reroute request
+      const { From, Body } = req.body;
+      
+      if (!From || !Body) {
+        console.error('Invalid dev webhook payload:', req.body);
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      if (!twilioClient) {
+        console.error('Twilio client not initialized');
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+      
+      console.log(`🧪 DEV WEBHOOK: Processing message from ${From}: "${Body}"`);
+      
+      // Track responses for this dev request
+      const devResponses: string[] = [];
+      
+      // Create a mock Twilio client that captures responses
+      const realTwilioClient = twilioClient; // Safe reference since we already checked for null
+      const mockTwilioClient = {
+        ...twilioClient,
+        messages: {
+          create: async (params: any) => {
+            // For dev webhook, always just capture the response (no real SMS)
+            console.log(`🧪 DEV: Captured response: ${params.body.substring(0, 100)}...`);
+            devResponses.push(params.body);
+            return {
+              sid: `DEV${Date.now()}`,
+              to: params.to,
+              body: params.body,
+              status: 'mock',
+              mock: true
+            };
+          }
+        }
+      } as any;
+      
+      // Process the message and wait for completion
+      try {
+        await processIncomingSms(From, Body, mockTwilioClient);
+        
+        // Return the captured responses
+        console.log(`🧪 DEV WEBHOOK: Returning ${devResponses.length} responses`);
+        return res.status(200).json({
+          success: true,
+          responses: devResponses,
+          message: `Processed message from ${From}`
+        });
+        
+      } catch (processingError) {
+        console.error('Error in dev processing:', processingError);
+        return res.status(200).json({
+          success: false,
+          error: processingError instanceof Error ? processingError.message : 'Processing error',
+          responses: devResponses // Return any responses we did capture
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error in dev webhook:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
   
   console.log('Twilio webhooks configured successfully');
 }

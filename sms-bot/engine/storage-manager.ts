@@ -201,9 +201,10 @@ export async function saveCodeToSupabase(
     userSlug: string, 
     senderPhone: string | null, 
     originalPrompt: string, 
-    adminTableId: string | null = null
-): Promise<{ appSlug: string | null; publicUrl: string | null }> {
-    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}`);
+    adminTableId: string | null = null,
+    skipUuidReplacement: boolean = false
+): Promise<{ appSlug: string | null; publicUrl: string | null; uuid: string | null }> {
+    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
     // For admin pages, use the admin_table_id as the app_slug
@@ -219,7 +220,7 @@ export async function saveCodeToSupabase(
     // Get user_id from sms_subscribers table
     const userId = await getUserId(userSlug);
     if (!userId) {
-        return { appSlug: null, publicUrl: null };
+        return { appSlug: null, publicUrl: null, uuid: null };
     }
     
     // Inject OpenGraph tags into HTML
@@ -227,15 +228,6 @@ export async function saveCodeToSupabase(
     
     // Inject Supabase credentials into HTML
     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
-    
-    // Replace APP_TABLE_ID placeholder with actual app_slug
-    code = replaceAppTableId(code, appSlug);
-    
-    // Fix ZAD APP_ID generation to be deterministic (for collaborative apps)
-    if (code.includes('wtaf_zero_admin_collaborative')) {
-        logWithTimestamp(`🤝 ZAD app detected - fixing APP_ID generation`);
-        code = fixZadAppId(code, appSlug);
-    }
     
     // Use fallback OG image URL initially - will be updated after OG generation
     const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
@@ -253,7 +245,7 @@ export async function saveCodeToSupabase(
         code = code.replace('<head>', `<head>\n    ${ogTags}`);
     }
     
-    // Save to Supabase
+    // Save to Supabase FIRST to get the UUID
     try {
         const data = {
             user_id: userId,
@@ -262,26 +254,63 @@ export async function saveCodeToSupabase(
             coach: coach,
             sender_phone: senderPhone,
             original_prompt: originalPrompt,
-            html_content: code,
+            html_content: code, // Save initial HTML without UUID replacement
             status: 'published'
-            // PARTY TRICK: No extra columns needed - we detect via HTML content + email column
         };
         
-        const { error } = await getSupabaseClient()
+        const { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
-            .insert(data);
+            .insert(data)
+            .select('id')
+            .single();
             
-        if (error) {
-            logError(`Error saving to Supabase: ${error.message}`);
-            return { appSlug: null, publicUrl: null };
+        if (error || !savedData) {
+            logError(`Error saving to Supabase: ${error?.message || 'No data returned'}`);
+            return { appSlug: null, publicUrl: null, uuid: null };
         }
         
-        logSuccess(`Saved to Supabase: /wtaf/${userSlug}/${appSlug}`);
-        return { appSlug, publicUrl };
+        const contentUuid = savedData.id;
+        logWithTimestamp(`🆔 Generated UUID for app: ${contentUuid}`);
+        
+        // For admin pages, skip UUID replacement since it was already done with main app's UUID
+        // For stackdb requests, also skip since UUID was already set to origin app's UUID
+        if (!adminTableId && !skipUuidReplacement) {
+            // Only replace APP_TABLE_ID for normal app creation
+            code = replaceAppTableId(code, contentUuid);
+            
+            // Fix ZAD APP_ID generation to be deterministic (for collaborative apps)
+            if (code.includes('wtaf_zero_admin_collaborative')) {
+                logWithTimestamp(`🤝 ZAD app detected - fixing APP_ID generation with UUID`);
+                code = fixZadAppId(code, contentUuid);
+            }
+        } else if (skipUuidReplacement) {
+            logWithTimestamp(`🔄 Stackdb page - skipping UUID replacement (already configured with origin app UUID)`);
+        } else {
+            logWithTimestamp(`📊 Admin page - skipping UUID replacement (already configured with main app UUID)`);
+        }
+        
+        // Update the HTML content with the UUID-injected version
+        const { error: updateError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .update({ html_content: code })
+            .eq('id', contentUuid);
+            
+        if (updateError) {
+            logError(`Error updating HTML with UUID: ${updateError.message}`);
+            return { appSlug: null, publicUrl: null, uuid: null };
+        }
+        
+        logSuccess(`✅ Saved to Supabase with secure UUID: /wtaf/${userSlug}/${appSlug}`);
+        if (skipUuidReplacement) {
+            logWithTimestamp(`🔒 APP_ID in HTML preserved with origin app UUID (stackdb)`);
+        } else {
+            logWithTimestamp(`🔒 APP_ID in HTML set to secure UUID: ${contentUuid}`);
+        }
+        return { appSlug, publicUrl, uuid: contentUuid };
         
     } catch (error) {
         logError(`Error saving to Supabase: ${error instanceof Error ? error.message : String(error)}`);
-        return { appSlug: null, publicUrl: null };
+        return { appSlug: null, publicUrl: null, uuid: null };
     }
 }
 

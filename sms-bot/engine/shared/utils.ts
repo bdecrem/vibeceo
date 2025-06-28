@@ -116,12 +116,41 @@ export function injectSupabaseCredentials(html: string, supabaseUrl: string, sup
 
 /**
  * Replace APP_TABLE_ID placeholder with actual app_slug
- * Extracted from monitor.py save_code_to_supabase function
+ * Uses regex to catch ANY app_id value Claude generates, not just specific placeholders
  */
 export function replaceAppTableId(html: string, appSlug: string): string {
+    // Replace standard placeholder first
     html = html.replace(/'APP_TABLE_ID'/g, `'${appSlug}'`);
     html = html.replace(/"APP_TABLE_ID"/g, `"${appSlug}"`);
-    logWithTimestamp(`🔧 Replaced APP_TABLE_ID with: ${appSlug}`);
+    
+    // Use regex to replace ANY hardcoded app_id values in Supabase calls
+    // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
+    html = html.replace(/\.eq\(\s*['"]app_id['"]\s*,\s*['"][^'"]*['"]\s*\)/g, `.eq('app_id', '${appSlug}')`);
+    
+    // Pattern: app_id: 'any_value' -> app_id: 'uuid'  
+    html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${appSlug}'`);
+    
+    logWithTimestamp(`🔧 Replaced ANY app_id values with: ${appSlug}`);
+    return html;
+}
+
+/**
+ * Inject submission UUID for admin pages
+ * Admin pages use their own UUID for the page, but main app's UUID for data operations
+ */
+export function injectSubmissionUuid(html: string, submissionUuid: string): string {
+    // Replace standard placeholder
+    html = html.replace(/'APP_TABLE_ID'/g, `'${submissionUuid}'`);
+    html = html.replace(/"APP_TABLE_ID"/g, `"${submissionUuid}"`);
+    
+    // Use regex to replace any hardcoded app_id values in Supabase calls
+    // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
+    html = html.replace(/\.eq\(\s*['"]app_id['"]\s*,\s*['"][^'"]*['"]\s*\)/g, `.eq('app_id', '${submissionUuid}')`);
+    
+    // Pattern: app_id: 'any_value' -> app_id: 'uuid'
+    html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${submissionUuid}'`);
+    
+    logWithTimestamp(`📊 Admin page configured to use submission UUID: ${submissionUuid}`);
     return html;
 }
 

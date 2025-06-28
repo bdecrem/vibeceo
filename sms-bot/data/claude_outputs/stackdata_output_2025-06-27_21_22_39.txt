@@ -1,0 +1,96 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  font-family: "Courier New", monospace;
+  overflow: hidden;
+  color: white;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.name {
+  position: absolute;
+  font-size: 8vw;
+  text-transform: uppercase;
+  text-shadow: 2px 2px #ff0066;
+  animation: shake 0.5s infinite;
+  cursor: pointer;
+}
+
+#amy { 
+  top: 20%;
+  left: 30%;
+}
+
+#james {
+  top: 50%;
+  left: 60%; 
+}
+
+#bart {
+  top: 70%;
+  left: 20%;
+}
+
+.name:hover {
+  color: #ff0066;
+  text-shadow: 2px 2px white;
+}
+
+.safety-pin {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 40px;
+  transform: rotate(45deg);
+}
+</style>
+</head>
+<body>
+
+<div id="amy" class="name">AMY</div>
+<div id="james" class="name">JAMES</div>
+<div id="bart" class="name">BART</div>
+
+<div class="safety-pin">🔗</div>
+
+<script>
+document.querySelectorAll('.name').forEach(name => {
+  name.addEventListener('click', () => {
+    name.style.animation = 'none';
+    setTimeout(() => {
+      name.style.animation = 'shake 0.5s infinite';
+    }, 50);
+  });
+});
+</script>
+
+</body>
+</html>
+```
