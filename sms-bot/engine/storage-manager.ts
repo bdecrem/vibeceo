@@ -201,9 +201,10 @@ export async function saveCodeToSupabase(
     userSlug: string, 
     senderPhone: string | null, 
     originalPrompt: string, 
-    adminTableId: string | null = null
+    adminTableId: string | null = null,
+    skipUuidReplacement: boolean = false
 ): Promise<{ appSlug: string | null; publicUrl: string | null; uuid: string | null }> {
-    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}`);
+    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
     // For admin pages, use the admin_table_id as the app_slug
@@ -272,8 +273,9 @@ export async function saveCodeToSupabase(
         logWithTimestamp(`🆔 Generated UUID for app: ${contentUuid}`);
         
         // For admin pages, skip UUID replacement since it was already done with main app's UUID
-        if (!adminTableId) {
-            // Only replace APP_TABLE_ID for non-admin pages
+        // For stackdb requests, also skip since UUID was already set to origin app's UUID
+        if (!adminTableId && !skipUuidReplacement) {
+            // Only replace APP_TABLE_ID for normal app creation
             code = replaceAppTableId(code, contentUuid);
             
             // Fix ZAD APP_ID generation to be deterministic (for collaborative apps)
@@ -281,6 +283,8 @@ export async function saveCodeToSupabase(
                 logWithTimestamp(`🤝 ZAD app detected - fixing APP_ID generation with UUID`);
                 code = fixZadAppId(code, contentUuid);
             }
+        } else if (skipUuidReplacement) {
+            logWithTimestamp(`🔄 Stackdb page - skipping UUID replacement (already configured with origin app UUID)`);
         } else {
             logWithTimestamp(`📊 Admin page - skipping UUID replacement (already configured with main app UUID)`);
         }
@@ -297,7 +301,11 @@ export async function saveCodeToSupabase(
         }
         
         logSuccess(`✅ Saved to Supabase with secure UUID: /wtaf/${userSlug}/${appSlug}`);
-        logWithTimestamp(`🔒 APP_ID in HTML set to secure UUID: ${contentUuid}`);
+        if (skipUuidReplacement) {
+            logWithTimestamp(`🔒 APP_ID in HTML preserved with origin app UUID (stackdb)`);
+        } else {
+            logWithTimestamp(`🔒 APP_ID in HTML set to secure UUID: ${contentUuid}`);
+        }
         return { appSlug, publicUrl, uuid: contentUuid };
         
     } catch (error) {

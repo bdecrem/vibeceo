@@ -18,7 +18,7 @@ import {
     logError, 
     logWarning 
 } from './shared/logger.js';
-import { extractCodeBlocks, injectSubmissionUuid } from './shared/utils.js';
+import { extractCodeBlocks, injectSubmissionUuid, replaceAppTableId } from './shared/utils.js';
 import { generateCompletePrompt, callClaude, type ClassifierConfig, type BuilderConfig } from './wtaf-processor.js';
 import { 
     saveCodeToSupabase, 
@@ -277,9 +277,94 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
+    let isStackDBRequest = false;
+    if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
+        logWithTimestamp("🗄️ STACKDB DETECTED: Processing with live database connection approach");
+        
+        // Import stackdb functions dynamically
+        const { processStackDBRequest } = await import('./stackables-manager.js');
+        
+        const stackResult = await processStackDBRequest(userSlug, userPrompt);
+        
+        if (!stackResult.success) {
+            logError(`❌ Invalid stackdb command format`);
+            await sendFailureNotification("stackdb-format", senderPhone);
+            return false;
+        }
+        
+        const { userRequest, appUuid: originAppUuid, enhancedPrompt } = stackResult;
+        
+        if (!enhancedPrompt || !originAppUuid) {
+            logError(`❌ You don't own app or stackdb processing failed`);
+            await sendFailureNotification("stackdb-ownership", senderPhone);
+            return false;
+        }
+        
+        // Load stackdb system prompt
+        logWithTimestamp("📄 Loading stackdb system prompt");
+        const stackdbPromptPath = join(__dirname, '..', 'content', 'stackdb-gpt-prompt.txt');
+        const stackdbSystemPrompt = await readFile(stackdbPromptPath, 'utf8');
+        logWithTimestamp(`📄 Stackdb system prompt loaded: ${stackdbSystemPrompt.length} characters`);
+        
+        // Send directly to Claude with stackdb prompt (bypass wtaf-processor entirely)
+        logWithTimestamp("🚀 Sending stackdb request directly to Claude (bypassing wtaf-processor)");
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackdbSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdb_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Stackdb output saved to: ${outputFile}`);
+        
+        // Extract code blocks and deploy normally
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackdb response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // ⚡ CRITICAL FIX: Use ORIGIN app UUID for live data connection (not new app UUID)
+        logWithTimestamp(`🔄 Replacing app_id with origin app UUID: ${originAppUuid}`);
+        const codeWithUuid = replaceAppTableId(code, originAppUuid);
+        
+        // Deploy stackdb result with skipUuidReplacement=true to prevent double replacement
+        const deployResult = await saveCodeToSupabase(codeWithUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackdb request", null, true);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const appSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackdb: ${userSlug}/${appSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackdb HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackdb: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKDB PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            return true;
+        } else {
+            logError("Failed to deploy stackdb content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+
     // 🗃️ STACKDATA: Check for --stackdata flag (process BEFORE stackables)
     let isStackDataRequest = false;
-    if (userPrompt && userPrompt.includes('--stackdata')) {
+    if (userPrompt && (userPrompt.startsWith('--stackdata ') || userPrompt.startsWith('wtaf --stackdata '))) {
         logWithTimestamp("🗃️ STACKDATA DETECTED: Processing with submission data approach");
         
         // Import stackdata functions dynamically
@@ -335,7 +420,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         }
         
         // Deploy stackdata result
-        const deployResult = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userRequest);
+        const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackdata request");
         if (deployResult.publicUrl) {
             // Generate OG image
             try {
@@ -364,7 +449,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
     }
     
     // 📧 STACKEMAIL: Check for --stackemail flag to send emails to app submitters
-    if (userPrompt && userPrompt.includes('--stackemail')) {
+    if (userPrompt && (userPrompt.startsWith('--stackemail ') || userPrompt.startsWith('wtaf --stackemail '))) {
         logWithTimestamp("📧 STACKEMAIL DETECTED: Processing email to app submitters");
         
         // Import stackemail functions dynamically
@@ -425,7 +510,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
     
     // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
     let isStackablesRequest = false;
-    if (userPrompt && userPrompt.includes('--stack')) {
+    if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {
         logWithTimestamp("🧱 STACKABLES DETECTED: Processing with HTML template approach");
         
         // Import stackables functions dynamically
@@ -481,7 +566,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         }
         
         // Deploy stackables result
-        const deployResult = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userRequest);
+        const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackables request");
         if (deployResult.publicUrl) {
             // Generate OG image
             try {
@@ -605,7 +690,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                 // Deploy public page (normal app)
                 const publicResult = await saveCodeToSupabase(
                     publicHtml.trim(), 
-                    coach, 
+                    coach || "unknown", 
                     userSlug, 
                     senderPhone, 
                     userPrompt
@@ -621,7 +706,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
                     // Deploy admin page with admin prefix
                     const adminResult = await saveCodeToSupabase(
                         adminHtmlWithMainUuid, 
-                        coach, 
+                        coach || "unknown", 
                         userSlug, 
                         senderPhone, 
                         `Admin dashboard for ${userPrompt}`, 
@@ -640,7 +725,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
             } else {
                 // Single page deployment
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach, userSlug, senderPhone, userPrompt);
+                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userPrompt);
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
@@ -692,7 +777,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         } else {
             // Use legacy file save for non-WTAF content
             logWithTimestamp(`📁 Using legacy file save for non-WTAF content`);
-            const result = await saveCodeToFile(code, coach, requestInfo.slug, WEB_OUTPUT_DIR);
+            const result = await saveCodeToFile(code, coach || "unknown", requestInfo.slug, WEB_OUTPUT_DIR);
             
             if (result.publicUrl) {
                 // Generate OG image for legacy files too (before SMS)
