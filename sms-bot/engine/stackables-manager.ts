@@ -219,7 +219,7 @@ export async function loadStackedDataContent(userSlug: string, appSlug: string):
         });
         
         // Remove duplicates and empty names
-        const uniqueNames = [...new Set(names.filter(name => name.length > 0))];
+        const uniqueNames = Array.from(new Set(names.filter(name => name.length > 0)));
         
         logSuccess(`✅ Extracted ${uniqueNames.length} unique names from ${submissions.length} submissions`);
         logWithTimestamp(`📋 Names found: ${uniqueNames.slice(0, 5).join(', ')}${uniqueNames.length > 5 ? '...' : ''}`);
@@ -423,7 +423,7 @@ export async function loadSubmissionEmails(userSlug: string, appSlug: string): P
         });
         
         // Remove duplicates
-        const uniqueEmails = [...new Set(emails.filter(email => email.length > 0))];
+        const uniqueEmails = Array.from(new Set(emails.filter(email => email.length > 0)));
         
         logSuccess(`✅ Extracted ${uniqueEmails.length} unique emails from ${submissions.length} submissions`);
         logWithTimestamp(`📧 Emails found: ${uniqueEmails.slice(0, 3).join(', ')}${uniqueEmails.length > 3 ? '...' : ''}`);
@@ -515,6 +515,166 @@ export async function processStackEmailRequest(userSlug: string, stackCommand: s
         
     } catch (error) {
         logError(`Error processing stackemail request: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
+/**
+ * Parse stackdb command from user input
+ * Extracts app slug and cleaned user request
+ * Supports both "wtaf --stackdb" and "--stackdb" formats
+ */
+export function parseStackDBCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --stackdb app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stackdb\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--stackdb app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stackdb\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Get app UUID for stackdb (includes ownership verification)
+ * Returns the app UUID needed for live Supabase queries
+ */
+export async function getAppUUIDForStackDB(userSlug: string, appSlug: string): Promise<string | null> {
+    try {
+        logWithTimestamp(`🗄️ Getting app UUID for stackdb`);
+        logWithTimestamp(`Looking for app: "${appSlug}"`);
+        
+        // Get user_id from sms_subscribers table
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return null;
+        }
+        
+        const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
+        
+        // Verify the user owns this app and get its UUID
+        const { data: appData, error: appError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id')
+            .eq('app_slug', appSlug)
+            .eq('user_id', userId)
+            .single();
+        
+        if (appError || !appData) {
+            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+            return null;
+        }
+        
+        const appUuid = appData.id;
+        logWithTimestamp(`🆔 App UUID for stackdb: ${appUuid}`);
+        
+        logSuccess(`✅ App UUID retrieved for stackdb`);
+        return appUuid;
+        
+    } catch (error) {
+        logError(`Error getting app UUID for stackdb: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Build enhanced prompt for stackdb with app UUID for live Supabase queries + WTAF design system
+ * Takes user request and app UUID, creates prompt for Claude to build dynamic app
+ */
+export async function buildEnhancedDBPrompt(userRequest: string, appUuid: string): Promise<string> {
+    logWithTimestamp(`🔧 Building enhanced prompt for stackdb`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`Origin app UUID: ${appUuid} (will be injected post-processing)`);
+    
+    let prompt = userRequest;
+    
+    // Add dynamic data instructions (no specific UUIDs - post-processing will handle this)
+    prompt += `\n\nBuild an app that reads LIVE DATA from Supabase wtaf_submissions table. Use standard Supabase patterns - the app_id will be configured automatically.`;
+    
+    // Load and add WTAF design system
+    try {
+        const appTechSpecPath = join(__dirname, '..', 'content', 'app-tech-spec.json');
+        const appTechSpecContent = await readFile(appTechSpecPath, 'utf8');
+        const appTechSpec = JSON.parse(appTechSpecContent);
+        
+        prompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${JSON.stringify(appTechSpec, null, 2)}`;
+        logWithTimestamp(`📖 Added app-tech-spec.json to stackdb prompt`);
+    } catch (error) {
+        logWarning(`Failed to load app-tech-spec.json for stackdb: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    logWithTimestamp(`Final stackdb prompt length: ${prompt.length} characters`);
+    
+    return prompt;
+}
+
+/**
+ * Process stackdb request end-to-end (creates dynamic Supabase-connected apps)
+ * Main function that orchestrates the entire stackdb workflow
+ */
+export async function processStackDBRequest(userSlug: string, stackCommand: string): Promise<{ 
+    success: boolean; 
+    userRequest?: string; 
+    appUuid?: string;
+    enhancedPrompt?: string; 
+    error?: string 
+}> {
+    try {
+        // Step 1: Parse the stackdb command
+        const parsed = parseStackDBCommand(stackCommand);
+        if (!parsed) {
+            return { 
+                success: false, 
+                error: 'Invalid stackdb command format. Use: --stackdb app-slug your request here (or: wtaf --stackdb app-slug your request here)' 
+            };
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🗄️ Processing stackdb request: ${appSlug} → "${userRequest}"`);
+        
+        // Step 2: Get app UUID (includes ownership verification)
+        const appUuid = await getAppUUIDForStackDB(userSlug, appSlug);
+        if (appUuid === null) {
+            return { 
+                success: false, 
+                error: `You don't own app '${appSlug}' or it doesn't exist` 
+            };
+        }
+        
+        // Step 3: Build enhanced prompt with app UUID for live data connection + WTAF design system
+        const enhancedPrompt = await buildEnhancedDBPrompt(userRequest, appUuid);
+        
+        logSuccess(`✅ Stackdb request processed successfully`);
+        return {
+            success: true,
+            userRequest,
+            appUuid,
+            enhancedPrompt
+        };
+        
+    } catch (error) {
+        logError(`Error processing stackdb request: ${error instanceof Error ? error.message : String(error)}`);
         return {
             success: false,
             error: error instanceof Error ? error.message : String(error)
