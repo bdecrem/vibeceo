@@ -10,6 +10,7 @@ import {
 	CLAUDE_OUTPUT_DIR,
 	PROCESSED_DIR,
 	WATCH_DIRS,
+	REQUEST_CONFIGS,
 } from "./shared/config.js";
 import {
 	logStartupInfo,

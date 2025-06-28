@@ -387,9 +387,9 @@ export async function callClaude(
 	let builderType: string;
 
 	if (requestType === "game") {
-		builderFile = "builder-game.json";
-		builderType = "Game Builder";
-		logWithTimestamp(`🎮 Game detected - using game builder`);
+		builderFile = "builder-game.txt";
+		builderType = "Game Builder (.txt)";
+		logWithTimestamp(`🎮 Game detected - using builder-game.txt`);
 	} else if (userPrompt.includes("ADMIN_DUAL_PAGE_REQUEST:")) {
 		logWithTimestamp(
 			`📊 ADMIN_DUAL_PAGE_REQUEST detected - using admin dual-page builder`
