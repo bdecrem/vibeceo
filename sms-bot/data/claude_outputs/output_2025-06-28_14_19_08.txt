@@ -1,0 +1,61 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Punk Hello World</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: "Courier New", monospace;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+
+        h1 {
+            font-size: 5em;
+            color: #0f0;
+            text-transform: uppercase;
+            text-shadow: 2px 2px #f00;
+            letter-spacing: 5px;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.05;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANgpLnAAAACHRSTlMzMzMzMzMzM85JBgUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAwSURBVDjLY2AYBaNg8ANTC4Q0NAChpgYIaQgHQzgYGsAQjoQGdIVQhaMK8YJRMPAAAGjmr6Sw3nYgAAAAAElFTkSuQmCC');
+        }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+</body>
+</html>
+```

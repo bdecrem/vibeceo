@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAD Gallery Mode Demo - Skip Auth, Show Action</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .mode-demo {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .mode-header {
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .mode-header.live {
+            background: rgba(255,0,102,0.2);
+        }
+        
+        .mode-header.gallery {
+            background: rgba(255,102,0,0.2);
+        }
+        
+        .mode-header h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0;
+        }
+        
+        .app-screen {
+            min-height: 400px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        /* Auth Screen Styles */
+        .auth-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .auth-screen h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .auth-button {
+            background: linear-gradient(45deg, #333, #555);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* Main App Styles */
+        .main-app {
+            display: none;
+        }
+        
+        .main-app.active {
+            display: block;
+        }
+        
+        .chat-header {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .messages {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .message.demo {
+            background: rgba(255,102,0,0.15);
+            border-left: 3px solid #ff6600;
+        }
+        
+        .message.real {
+            background: rgba(255,0,102,0.15);
+            border-left: 3px solid #ff0066;
+        }
+        
+        .username {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .username.demo {
+            color: #ff6600;
+        }
+        
+        .username.real {
+            color: #ff0066;
+        }
+        
+        .message-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .input-area button {
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .mode-switch {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .switch-button {
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0 10px;
+        }
+        
+        .flow-explanation {
+            background: rgba(255,102,0,0.1);
+            border: 1px solid rgba(255,102,0,0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .flow-explanation h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #ff6600;
+            margin-bottom: 15px;
+        }
+        
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .flow-step {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .step-number {
+            background: #ff6600;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ZAD Gallery Mode: Skip Auth, Show Action</h1>
+            <p>How collaborative apps bypass login and show the main interface with demo data</p>
+        </div>
+
+        <div class="comparison">
+            <!-- Live Mode (shows auth screen) -->
+            <div class="mode-demo">
+                <div class="mode-header live">
+                    <h3>🔴 Normal Access (Live Mode)</h3>
+                    <p>Users must sign up/login first</p>
+                </div>
+                <div class="app-screen">
+                    <div class="auth-screen" id="live-auth">
+                        <h2>🎵 K-Pop Journal</h2>
+                        <p>Join the conversation about your favorite artists!</p>
+                        <div class="auth-buttons">
+                            <button class="auth-button">New User</button>
+                            <button class="auth-button">Returning User</button>
+                        </div>
+                        <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 20px;">
+                            ❌ Gallery visitors get stuck here
+                        </p>
+                    </div>
+                    
+                    <div class="main-app" id="live-main">
+                        <div class="chat-header">
+                            <h3>Welcome, RealUser!</h3>
+                        </div>
+                        <div class="messages">
+                            <div class="message real">
+                                <div class="username real">sarah_bts_army</div>
+                                <div class="message-text">OMG did you see Jimin's new post? 😭</div>
+                            </div>
+                            <div class="message real">
+                                <div class="username real">felix_my_sunshine</div>
+                                <div class="message-text">Felix's voice in the new song hits different</div>
+                            </div>
+                        </div>
+                        <div class="input-area">
+                            <input type="text" placeholder="Share your thoughts...">
+                            <button>Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gallery Mode (skips to main app) -->
+            <div class="mode-demo">
+                <div class="mode-header gallery">
+                    <h3>🎨 Gallery Mode</h3>
+                    <p>Auto-skips to main app with demo data</p>
+                </div>
+                <div class="app-screen">
+                    <div class="main-app active" id="gallery-main">
+                        <div class="chat-header">
+                            <h3>🎵 K-Pop Journal (Gallery Preview)</h3>
+                            <div style="font-size: 0.8rem; color: #ff6600;">
+                                🎨 Gallery Mode Active - Demo Data
+                            </div>
+                        </div>
+                        <div class="messages" id="gallery-messages">
+                            <div class="message demo">
+                                <div class="username demo">DemoUser1🎵</div>
+                                <div class="message-text">This is how real conversations would look! 🎉</div>
+                            </div>
+                            <div class="message demo">
+                                <div class="username demo">SampleFan⭐</div>
+                                <div class="message-text">Gallery mode shows the app in action with demo data ✨</div>
+                            </div>
+                            <div class="message demo">
+                                <div class="username demo">TestUser💜</div>
+                                <div class="message-text">No real user data is shown - perfect for browsing!</div>
+                            </div>
+                        </div>
+                        <div class="input-area">
+                            <input type="text" placeholder="Gallery Mode: Try typing to see demo interactions!" disabled>
+                            <button disabled>Demo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-switch">
+            <button class="switch-button" onclick="showLiveMode()">Show Live Mode Flow</button>
+            <button class="switch-button" onclick="showGalleryMode()">Show Gallery Mode Flow</button>
+        </div>
+
+        <div class="flow-explanation">
+            <h3>🎯 Gallery Mode Implementation</h3>
+            <p>When someone visits a ZAD app with <code>?gallery=true</code>, here's what happens:</p>
+            
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <h4>Detect Gallery Mode</h4>
+                    <p>Check URL parameter <code>?gallery=true</code></p>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <h4>Skip Authentication</h4>
+                    <p>Hide login screens, auto-create demo user</p>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <h4>Show Main Interface</h4>
+                    <p>Jump directly to chat/collaboration screens</p>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <h4>Load Demo Data</h4>
+                    <p>Populate with fake conversations and users</p>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-number">5</div>
+                    <h4>Simulate Activity</h4>
+                    <p>Add new demo messages every 15 seconds</p>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-number">6</div>
+                    <h4>Disable Interactions</h4>
+                    <p>Prevent real data modification, show gallery indicator</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+                <h4 style="color: #ff6600;">💡 Key Benefits:</h4>
+                <ul>
+                    <li>Gallery visitors see the <strong>actual app in action</strong>, not a boring signup screen</li>
+                    <li>Demo conversations show what <strong>real collaboration looks like</strong></li>
+                    <li>No private data is exposed - everything is safely simulated</li>
+                    <li>Users can explore the interface and understand the app's value</li>
+                    <li>Perfect for showcasing complex collaborative features</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showLiveMode() {
+            // Show live mode auth screen
+            document.getElementById('live-auth').style.display = 'block';
+            document.getElementById('live-main').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('live-auth').style.display = 'none';
+                document.getElementById('live-main').style.display = 'block';
+            }, 2000);
+        }
+        
+        function showGalleryMode() {
+            // Gallery mode always shows main app immediately
+            document.getElementById('gallery-main').style.display = 'block';
+            
+            // Simulate new demo message
+            const messages = document.getElementById('gallery-messages');
+            const newMessage = document.createElement('div');
+            newMessage.className = 'message demo';
+            newMessage.innerHTML = `
+                <div class="username demo">GalleryBot🤖</div>
+                <div class="message-text">🎨 Gallery mode keeps the conversation flowing with demo data!</div>
+            `;
+            messages.insertBefore(newMessage, messages.firstChild);
+        }
+        
+        // Auto-demonstrate gallery mode activity
+        setInterval(() => {
+            const galleryMessages = [
+                "✨ This is how real conversations would flow",
+                "🚀 Gallery viewers can see the app in action", 
+                "💬 No signup required - just pure functionality",
+                "🎯 Perfect for showcasing collaborative features"
+            ];
+            
+            const randomMessage = galleryMessages[Math.floor(Math.random() * galleryMessages.length)];
+            const messages = document.getElementById('gallery-messages');
+            const newMessage = document.createElement('div');
+            newMessage.className = 'message demo';
+            newMessage.innerHTML = `
+                <div class="username demo">GalleryBot🤖</div>
+                <div class="message-text">${randomMessage}</div>
+            `;
+            messages.insertBefore(newMessage, messages.firstChild);
+            
+            // Keep only last 4 messages
+            while (messages.children.length > 4) {
+                messages.removeChild(messages.lastChild);
+            }
+        }, 8000);
+    </script>
+</body>
+</html> 

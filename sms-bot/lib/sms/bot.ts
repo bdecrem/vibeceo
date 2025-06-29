@@ -33,8 +33,8 @@ export async function startSmsBot(): Promise<void> {
   // Initialize Twilio client
   const twilioClient = initializeTwilioClient();
   
-  // Start the daily scheduler
-  await startDailyScheduler(twilioClient);
+  // COMMENTED OUT: Start the daily scheduler
+  // await startDailyScheduler(twilioClient);
   
   // Setup Twilio webhooks
   setupTwilioWebhooks(server);

@@ -1,0 +1,142 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f06, #4a90e2);
+            font-family: system-ui, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            background: #000;
+            display: block;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
+        }
+        .controls div {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .controls div:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <div class="btn-up">↑</div>
+        <div class="btn-left">←</div>
+        <div class="btn-right">→</div>
+        <div class="btn-down">↓</div>
+    </div>
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d', { alpha: false });
+        canvas.width = window.innerWidth * devicePixelRatio;
+        canvas.height = window.innerHeight * devicePixelRatio;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.scale(devicePixelRatio, devicePixelRatio);
+
+        var paddleWidth = 10, paddleHeight = 100;
+        var ballSize = 10;
+        var playerY = (window.innerHeight - paddleHeight) / 2;
+        var aiY = playerY;
+        var ballX = window.innerWidth / 2, ballY = window.innerHeight / 2;
+        var ballSpeedX = 4, ballSpeedY = 4;
+        var playerScore = 0, aiScore = 0;
+        var gameOver = false;
+
+        function draw() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+            ctx.fillRect(window.innerWidth - paddleWidth, aiY, paddleWidth, paddleHeight);
+            ctx.fillRect(ballX, ballY, ballSize, ballSize);
+            ctx.font = '20px system-ui';
+            ctx.fillText('Player: ' + playerScore, 20, 30);
+            ctx.fillText('AI: ' + aiScore, window.innerWidth - 100, 30);
+        }
+
+        function update() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            if (ballY <= 0 || ballY + ballSize >= window.innerHeight) ballSpeedY = -ballSpeedY;
+
+            if (ballX <= paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            } else if (ballX + ballSize >= window.innerWidth - paddleWidth && ballY > aiY && ballY < aiY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            } else if (ballX < 0) {
+                aiScore++;
+                resetBall();
+            } else if (ballX + ballSize > window.innerWidth) {
+                playerScore++;
+                resetBall();
+            }
+
+            aiY += (ballY - (aiY + paddleHeight / 2)) * 0.1;
+        }
+
+        function resetBall() {
+            ballX = window.innerWidth / 2;
+            ballY = window.innerHeight / 2;
+            ballSpeedX = -ballSpeedX;
+        }
+
+        function gameLoop(currentTime) {
+            update();
+            draw();
+            if (!gameOver) requestAnimationFrame(gameLoop);
+        }
+
+        function movePlayer(direction) {
+            if (direction === 'up' && playerY > 0) playerY -= 20;
+            if (direction === 'down' && playerY < window.innerHeight - paddleHeight) playerY += 20;
+        }
+
+        document.querySelector('.btn-up').addEventListener('click', function() { movePlayer('up'); });
+        document.querySelector('.btn-down').addEventListener('click', function() { movePlayer('down'); });
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp') movePlayer('up');
+            if (e.key === 'ArrowDown') movePlayer('down');
+        });
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+```

@@ -138,15 +138,9 @@ const REQUEST_CONFIGS = {
         builderTemperature: 0.5   // More conservative for edits
     },
     game: {
-        classifierModel: 'gpt-4o',
-        classifierMaxTokens: 600,
-        classifierTemperature: 0.7,
-        classifierTopP: 1,
-        classifierPresencePenalty: 0.3,
-        classifierFrequencyPenalty: 0,
         builderModel: 'gpt-4o',    // Games might work better with GPT?
         builderMaxTokens: 16000,
-        builderTemperature: 0.8
+        builderTemperature: 0.3
     },
     zad: {
         classifierModel: 'gpt-4o',
@@ -613,19 +607,31 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         const config = REQUEST_CONFIGS[configType];
         
         logWithTimestamp(`🎯 Using ${configType} configuration`);
-        logWithTimestamp(`🤖 Models: Classifier=${config.classifierModel || 'N/A'}, Builder=${config.builderModel}`);
+        logWithTimestamp(`🤖 Models: Classifier=${(config as any).classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
         // Step 1: Generate complete prompt with config (including admin override)
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
-        const completePrompt = await generateCompletePrompt(userPrompt, {
-            classifierModel: config.classifierModel || 'gpt-4o',
-            classifierMaxTokens: config.classifierMaxTokens || 600,
-            classifierTemperature: config.classifierTemperature || 0.7,
-            classifierTopP: config.classifierTopP || 1,
-            classifierPresencePenalty: config.classifierPresencePenalty || 0.3,
-            classifierFrequencyPenalty: config.classifierFrequencyPenalty || 0,
-            forceAdminOverride: forceAdminPath // 🔧 Pass admin override flag to processor
-        });
+        
+        // For games, classifier config is not needed since games skip the classifier entirely
+        const classifierConfig = configType === 'game' ? {
+            classifierModel: 'gpt-4o', // Default fallback (not used for games)
+            classifierMaxTokens: 600,
+            classifierTemperature: 0.7,
+            classifierTopP: 1,
+            classifierPresencePenalty: 0.3,
+            classifierFrequencyPenalty: 0,
+            forceAdminOverride: forceAdminPath
+        } : {
+            classifierModel: (config as any).classifierModel || 'gpt-4o',
+            classifierMaxTokens: (config as any).classifierMaxTokens || 600,
+            classifierTemperature: (config as any).classifierTemperature || 0.7,
+            classifierTopP: (config as any).classifierTopP || 1,
+            classifierPresencePenalty: (config as any).classifierPresencePenalty || 0.3,
+            classifierFrequencyPenalty: (config as any).classifierFrequencyPenalty || 0,
+            forceAdminOverride: forceAdminPath
+        };
+        
+        const completePrompt = await generateCompletePrompt(userPrompt, classifierConfig);
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
         let result: string;

@@ -1844,7 +1844,7 @@ ${response}`;
 
     // Check for commands that should end the conversation
     const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)) {
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -1877,10 +1877,12 @@ ${response}`;
       const hasDegen = subscriber && subscriber.role === 'degen';
       if (hasDegen) {
         helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n\nExample: EDIT 2 change the background to blue';
+        
+        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n\nExample: --stackdb my-form build me a live dashboard';
       }
       
       if (isAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast\n• CODE [text] - Save code snippet to file';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast\n• CODE [text] - Save code snippet to file\n• --admin - Force admin page generation';
       }
       
       await sendSmsResponse(from, helpText, twilioClient);

@@ -1,8 +1,8 @@
 import sgMail from '@sendgrid/mail';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
+import * as path from 'path';
+import * as fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // Environment setup

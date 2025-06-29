@@ -1,0 +1,213 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris WTAF</title>
+<style>
+  body, html { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(135deg, #ff9a9e, #fad0c4); }
+  canvas { display: block; background: #222; }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 10px;
+  }
+  .btn-up, .btn-left, .btn-right, .btn-down {
+    width: 60px; height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+  }
+  .btn-up { grid-column: 2; grid-row: 1; }
+  .btn-left { grid-column: 1; grid-row: 2; }
+  .btn-right { grid-column: 3; grid-row: 2; }
+  .btn-down { grid-column: 2; grid-row: 3; }
+  .btn-up:active, .btn-left:active, .btn-right:active, .btn-down:active {
+    background: rgba(255, 255, 255, 0.4);
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="controls">
+  <div class="btn-up"></div>
+  <div class="btn-left"></div>
+  <div class="btn-right"></div>
+  <div class="btn-down"></div>
+</div>
+<script>
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  var COLS = 10, ROWS = 20, BLOCK_SIZE = Math.floor(window.innerWidth / COLS);
+  var board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  var currentPiece, gameOver = false, score = 0;
+
+  function drawBlock(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+  }
+
+  function drawBoard() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (var y = 0; y < ROWS; y++) {
+      for (var x = 0; x < COLS; x++) {
+        if (board[y][x]) drawBlock(x, y, board[y][x]);
+      }
+    }
+  }
+
+  function drawPiece(piece) {
+    piece.shape.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value) drawBlock(piece.x + x, piece.y + y, piece.color);
+      });
+    });
+  }
+
+  function createPiece() {
+    var shapes = [
+      [[1, 1, 1, 1]],
+      [[1, 1], [1, 1]],
+      [[0, 1, 0], [1, 1, 1]],
+      [[1, 1, 0], [0, 1, 1]],
+      [[0, 1, 1], [1, 1, 0]]
+    ];
+    var colors = ['#ff9a9e', '#fad0c4', '#fbc2eb', '#a6c1ee', '#fbc2eb'];
+    var index = Math.floor(Math.random() * shapes.length);
+    return { shape: shapes[index], color: colors[index], x: 3, y: 0 };
+  }
+
+  function rotate(piece) {
+    var newShape = piece.shape[0].map((_, index) => piece.shape.map(row => row[index]).reverse());
+    if (!collides({ ...piece, shape: newShape })) piece.shape = newShape;
+  }
+
+  function collides(piece) {
+    return piece.shape.some((row, y) => {
+      return row.some((value, x) => {
+        if (value) {
+          var newX = piece.x + x;
+          var newY = piece.y + y;
+          return newX < 0 || newX >= COLS || newY >= ROWS || board[newY][newX];
+        }
+        return false;
+      });
+    });
+  }
+
+  function merge(piece) {
+    piece.shape.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value) board[piece.y + y][piece.x + x] = piece.color;
+      });
+    });
+  }
+
+  function removeLines() {
+    var lines = 0;
+    for (var y = ROWS - 1; y >= 0; y--) {
+      if (board[y].every(value => value)) {
+        board.splice(y, 1);
+        board.unshift(Array(COLS).fill(0));
+        lines++;
+        y++;
+      }
+    }
+    score += lines * 10;
+  }
+
+  function update() {
+    if (!currentPiece) currentPiece = createPiece();
+    var newPiece = { ...currentPiece, y: currentPiece.y + 1 };
+    if (!collides(newPiece)) {
+      currentPiece = newPiece;
+    } else {
+      merge(currentPiece);
+      removeLines();
+      currentPiece = createPiece();
+      if (collides(currentPiece)) gameOver = true;
+    }
+  }
+
+  function draw() {
+    drawBoard();
+    if (currentPiece) drawPiece(currentPiece);
+    if (gameOver) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '30px sans-serif';
+      ctx.fillText('Game Over', canvas.width / 4, canvas.height / 2);
+      ctx.fillText('Score: ' + score, canvas.width / 4, canvas.height / 2 + 40);
+    }
+  }
+
+  function gameLoop(currentTime) {
+    if (!gameOver) {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (gameOver) return;
+    if (e.keyCode === 37) move(-1); // left
+    if (e.keyCode === 39) move(1);  // right
+    if (e.keyCode === 40) drop();   // down
+    if (e.keyCode === 38) rotate(currentPiece); // up
+  });
+
+  function move(dir) {
+    var newPiece = { ...currentPiece, x: currentPiece.x + dir };
+    if (!collides(newPiece)) currentPiece = newPiece;
+  }
+
+  function drop() {
+    var newPiece = { ...currentPiece, y: currentPiece.y + 1 };
+    if (!collides(newPiece)) {
+      currentPiece = newPiece;
+    } else {
+      merge(currentPiece);
+      removeLines();
+      currentPiece = createPiece();
+      if (collides(currentPiece)) gameOver = true;
+    }
+  }
+
+  document.querySelector('.btn-left').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    move(-1);
+  });
+
+  document.querySelector('.btn-right').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    move(1);
+  });
+
+  document.querySelector('.btn-down').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    drop();
+  });
+
+  document.querySelector('.btn-up').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    rotate(currentPiece);
+  });
+
+  requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```
