@@ -41,9 +41,6 @@ import { ANTHROPIC_API_KEY } from './shared/config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Global WTAF cookbook loaded once at startup
-let wtafCookbook: string | null = null;
-
 /**
  * Call Claude API directly for stackables (bypass wtaf-processor)
  * Simple Claude call without complex builder logic
@@ -95,18 +92,18 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
 }
 
 /**
- * Load WTAF Cookbook & Style Guide
- * Controller loads this once at startup and passes it to processor when needed
+ * Load WTAF Design System dynamically when needed
+ * Returns parsed JSON content for injection into builder prompts
  */
-async function loadWtafCookbook(): Promise<string | null> {
+async function loadWtafDesignSystem(): Promise<string | null> {
     try {
-        const cookbookPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
-        const content = await readFile(cookbookPath, 'utf8');
+        const designSystemPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+        const content = await readFile(designSystemPath, 'utf8');
         
-        logWithTimestamp("📖 WTAF Cookbook loaded successfully by controller");
+        logWithTimestamp("🎨 WTAF Design System loaded dynamically");
         return content; // Return raw JSON - let the AI figure out how to use it
     } catch (error) {
-        logWarning(`Error loading WTAF cookbook: ${error instanceof Error ? error.message : String(error)}`);
+        logWarning(`Error loading WTAF design system: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -157,7 +154,7 @@ const REQUEST_CONFIGS = {
 
 /**
  * System prompt for creating new WTAF apps
- * TECHNICAL REQUIREMENTS ONLY - Design/brand requirements come from app-tech-spec.json cookbook
+ * TECHNICAL REQUIREMENTS ONLY - Design/brand requirements injected dynamically from app-tech-spec.json
  */
 const CREATION_SYSTEM_PROMPT = `🚨🚨🚨 ABSOLUTE TOP PRIORITY 🚨🚨🚨
 🚨🚨🚨 READ THIS FIRST BEFORE ANYTHING ELSE 🚨🚨🚨
@@ -170,7 +167,7 @@ THIS IS NON-NEGOTIABLE
 
 🚨🚨🚨 END CRITICAL INSTRUCTION 🚨🚨🚨
 
-You are creating exactly what the user requests. Follow the WTAF Cookbook & Style Guide provided in the user message for all design and brand requirements.
+You are creating exactly what the user requests. Follow the WTAF Design System & Style Guide provided in the user message for all design and brand requirements.
 
 📧 EMAIL PLACEHOLDER SYSTEM:
 IF YOU SEE "EMAIL_NEEDED: true" IN THE USER MESSAGE METADATA:
@@ -647,11 +644,29 @@ async function processWtafRequest(processingPath: string, fileData: any, request
             logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
             logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
             
+            // Dynamic WTAF Design System injection - load only for standard web pages
+            let designSystemContent = null;
+            const isSpecializedRequest = completePrompt.includes('ADMIN_DUAL_PAGE_REQUEST:') || 
+                                       completePrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') ||
+                                       completePrompt.includes('--stack') ||
+                                       completePrompt.includes('--remix') ||
+                                       completePrompt.includes('--stackdb') ||
+                                       completePrompt.includes('--stackdata');
+            
+            if (!isSpecializedRequest && configType === 'creation') {
+                designSystemContent = await loadWtafDesignSystem();
+                if (designSystemContent) {
+                    logWithTimestamp("🎨 Dynamic WTAF Design System loaded for standard web page");
+                } else {
+                    logWarning("⚠️ WTAF Design System failed to load - proceeding without brand guidelines");
+                }
+            }
+            
             result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
                 model: config.builderModel,
                 maxTokens: config.builderMaxTokens,
                 temperature: config.builderTemperature,
-                cookbook: wtafCookbook || undefined
+                designSystem: designSystemContent || undefined
             });
         }
         
@@ -895,8 +910,7 @@ ${originalHtml}`;
         const result = await callClaude(editSystemPrompt, editPrompt, {
             model: config.builderModel,
             maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature,
-            cookbook: wtafCookbook || undefined
+            temperature: config.builderTemperature
         });
         
         // Extract code blocks
@@ -981,17 +995,7 @@ ${originalHtml}`;
 async function mainControllerLoop() {
     logStartupInfo(WEB_APP_URL, WTAF_DOMAIN, WEB_OUTPUT_DIR);
     
-    // Load WTAF cookbook once at startup
-    try {
-        wtafCookbook = await loadWtafCookbook();
-        if (wtafCookbook) {
-            logSuccess("📖 WTAF Cookbook loaded and ready for processing");
-        } else {
-            logWarning("⚠️ WTAF Cookbook failed to load - proceeding without brand guidelines");
-        }
-    } catch (error) {
-        logWarning(`Cookbook loading error: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    // WTAF Design System will be loaded dynamically when needed for standard web pages
     
     // Create required directories
     try {
