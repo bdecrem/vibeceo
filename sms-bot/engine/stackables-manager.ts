@@ -733,4 +733,97 @@ export async function processStackablesRequest(userSlug: string, stackCommand: s
             error: error instanceof Error ? error.message : String(error)
         };
     }
+}
+
+/**
+ * Parse remix command from user input
+ * Extracts app slug and cleaned user request
+ * Supports both "wtaf --remix" and "--remix" formats
+ */
+export function parseRemixCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --remix app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--remix\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--remix app-slug user request here" format (direct SMS format)
+    match = input.match(/^--remix\s+([a-z-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Load HTML content from Supabase for remix
+ * Returns the raw HTML content to use as a template for remixing
+ */
+export async function loadRemixHTMLContent(userSlug: string, appSlug: string): Promise<string | null> {
+    try {
+        logWithTimestamp(`🎨 Loading HTML content for remix from Supabase`);
+        logWithTimestamp(`Looking for app_slug: "${appSlug}"`);
+        
+        // Get user_id from sms_subscribers table
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return null;
+        }
+        
+        const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
+        
+        // Load HTML content
+        const { data: appData, error: appError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('html_content')
+            .eq('app_slug', appSlug)
+            .eq('user_id', userId)
+            .single();
+        
+        if (appError || !appData) {
+            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+            return null;
+        }
+        
+        logSuccess(`✅ HTML content loaded for remix: ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+        return appData.html_content;
+        
+    } catch (error) {
+        logError(`Error loading HTML content for remix: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Build remix prompt with user request + HTML template
+ * Creates a remix-specific prompt for modifying existing designs
+ */
+export function buildRemixPrompt(userRequest: string, htmlContent: string | null): string {
+    logWithTimestamp(`🎨 Building remix prompt`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`HTML content included: ${htmlContent ? 'YES' : 'NO'}`);
+    
+    let prompt = userRequest;
+    
+    if (htmlContent && htmlContent.trim()) {
+        prompt += `\n\nHTML to use as template:\n\`\`\`html\n${htmlContent}\n\`\`\``;
+    }
+    
+    logWithTimestamp(`Final remix prompt length: ${prompt.length} characters`);
+    
+    return prompt;
 } 

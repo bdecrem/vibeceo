@@ -190,6 +190,16 @@ export function determineRequestType(userPrompt: string, filename?: string): { t
             };
         }
         
+        // Check if this is a REMIX file by filename pattern
+        if (filename && filename.includes('remix-')) {
+            return {
+                type: 'remix',
+                slug: null,
+                coach: 'remix',
+                cleanPrompt: userPrompt.trim()
+            };
+        }
+        
         // Check if raw prompt starts with 'CODE:' or 'CODE ' (case insensitive)
         const isCodeCommand = userPrompt.trim().toUpperCase().startsWith('CODE:') || 
                              userPrompt.trim().toUpperCase().startsWith('CODE ');
