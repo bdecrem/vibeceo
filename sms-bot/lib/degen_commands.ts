@@ -14,6 +14,37 @@ function logWithTimestamp(message: string): void {
   console.log(`[DEGEN ${new Date().toISOString()}] ${message}`);
 }
 
+/**
+ * Check if user has elevated role (coder, degen, or admin)
+ * These roles can remix ANY app in the system, not just their own
+ */
+async function checkElevatedRole(userSlug: string): Promise<boolean> {
+  try {
+    logWithTimestamp(`🔒 Checking elevated role for user: ${userSlug}`);
+    
+    const { data: userData, error: userError } = await supabase
+      .from('sms_subscribers')
+      .select('role')
+      .eq('slug', userSlug)
+      .single();
+        
+    if (userError || !userData) {
+      logWithTimestamp(`❌ User not found: ${userSlug}`);
+      return false;
+    }
+    
+    const elevatedRoles = ['coder', 'degen', 'admin'];
+    const hasElevatedRole = elevatedRoles.includes(userData.role);
+    logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | Elevated access: ${hasElevatedRole}`);
+    
+    return hasElevatedRole;
+    
+  } catch (error) {
+    logWithTimestamp(`❌ Error checking elevated role: ${error}`);
+    return false;
+  }
+}
+
 export async function queueEditRequest(
   userSlug: string,
   indexNumber: number,
@@ -168,17 +199,43 @@ export async function queueRemixRequest(
   try {
     logWithTimestamp(`🎨 Queueing remix request: user=${userSlug}, slug=${targetSlug}`);
     
-    // Verify the user owns the target app
-    const { data: appData, error: appError } = await supabase
-      .from('wtaf_content')
-      .select('html_content')
-      .eq('user_slug', userSlug)
-      .eq('app_slug', targetSlug)
-      .single();
+    // Check if user has elevated role (coder/degen/admin)
+    const hasElevatedRole = await checkElevatedRole(userSlug);
+    
+    if (hasElevatedRole) {
+      // Elevated roles can remix ANY app - just verify the app exists
+      logWithTimestamp(`🔓 User ${userSlug} has elevated role - allowing remix of any app`);
       
-    if (appError || !appData) {
-      logWithTimestamp(`❌ App '${targetSlug}' not found or not owned by user ${userSlug}`);
-      return false;
+      const { data: appData, error: appError } = await supabase
+        .from('wtaf_content')
+        .select('html_content')
+        .eq('app_slug', targetSlug)
+        .single();
+        
+      if (appError || !appData) {
+        logWithTimestamp(`❌ App '${targetSlug}' not found in system`);
+        return false;
+      }
+      
+      logWithTimestamp(`✅ App '${targetSlug}' exists - allowing elevated remix`);
+      
+    } else {
+      // Regular users can only remix their own apps - verify ownership
+      logWithTimestamp(`🔒 User ${userSlug} does not have elevated role - checking ownership`);
+      
+      const { data: appData, error: appError } = await supabase
+        .from('wtaf_content')
+        .select('html_content')
+        .eq('user_slug', userSlug)
+        .eq('app_slug', targetSlug)
+        .single();
+        
+      if (appError || !appData) {
+        logWithTimestamp(`❌ App '${targetSlug}' not found or not owned by user ${userSlug}`);
+        return false;
+      }
+      
+      logWithTimestamp(`✅ App '${targetSlug}' owned by user - allowing remix`);
     }
     
     // Create remix request file for WTAF engine processing

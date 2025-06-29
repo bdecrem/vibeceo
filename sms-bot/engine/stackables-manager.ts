@@ -466,6 +466,37 @@ export async function checkDegenRole(userSlug: string): Promise<boolean> {
 }
 
 /**
+ * Check if user has elevated role (coder, degen, or admin)
+ * These roles can remix ANY app in the system, not just their own
+ */
+export async function checkElevatedRole(userSlug: string): Promise<boolean> {
+    try {
+        logWithTimestamp(`🔒 Checking elevated role for user: ${userSlug}`);
+        
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('role')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return false;
+        }
+        
+        const elevatedRoles = ['coder', 'degen', 'admin'];
+        const hasElevatedRole = elevatedRoles.includes(userData.role);
+        logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | Elevated access: ${hasElevatedRole}`);
+        
+        return hasElevatedRole;
+        
+    } catch (error) {
+        logError(`Error checking elevated role: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
  * Process stackemail request end-to-end
  * Main function that orchestrates the entire stackemail workflow
  */
@@ -765,42 +796,69 @@ export function parseRemixCommand(input: string): { appSlug: string; userRequest
 /**
  * Load HTML content from Supabase for remix
  * Returns the raw HTML content to use as a template for remixing
+ * Elevated roles (coder/degen/admin) can remix ANY app, not just their own
  */
 export async function loadRemixHTMLContent(userSlug: string, appSlug: string): Promise<string | null> {
     try {
         logWithTimestamp(`🎨 Loading HTML content for remix from Supabase`);
         logWithTimestamp(`Looking for app_slug: "${appSlug}"`);
         
-        // Get user_id from sms_subscribers table
-        const { data: userData, error: userError } = await getSupabaseClient()
-            .from('sms_subscribers')
-            .select('id')
-            .eq('slug', userSlug)
-            .single();
+        // Check if user has elevated role (coder/degen/admin)
+        const hasElevatedRole = await checkElevatedRole(userSlug);
+        
+        if (hasElevatedRole) {
+            // Elevated roles can remix ANY app - no ownership verification needed
+            logWithTimestamp(`🔓 User ${userSlug} has elevated role - allowing remix of any app`);
             
-        if (userError || !userData) {
-            logError(`User not found: ${userSlug}`);
-            return null;
+            const { data: appData, error: appError } = await getSupabaseClient()
+                .from('wtaf_content')
+                .select('html_content')
+                .eq('app_slug', appSlug)
+                .single();
+            
+            if (appError || !appData) {
+                logWarning(`App '${appSlug}' not found in system`);
+                return null;
+            }
+            
+            logSuccess(`✅ HTML content loaded for remix (elevated access): ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+            return appData.html_content;
+            
+        } else {
+            // Regular users can only remix their own apps - verify ownership
+            logWithTimestamp(`🔒 User ${userSlug} does not have elevated role - checking ownership`);
+            
+            // Get user_id from sms_subscribers table
+            const { data: userData, error: userError } = await getSupabaseClient()
+                .from('sms_subscribers')
+                .select('id')
+                .eq('slug', userSlug)
+                .single();
+                
+            if (userError || !userData) {
+                logError(`User not found: ${userSlug}`);
+                return null;
+            }
+            
+            const userId = userData.id;
+            logWithTimestamp(`User ID: "${userId}"`);
+            
+            // Load HTML content with ownership verification
+            const { data: appData, error: appError } = await getSupabaseClient()
+                .from('wtaf_content')
+                .select('html_content')
+                .eq('app_slug', appSlug)
+                .eq('user_id', userId)
+                .single();
+            
+            if (appError || !appData) {
+                logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+                return null;
+            }
+            
+            logSuccess(`✅ HTML content loaded for remix (ownership verified): ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+            return appData.html_content;
         }
-        
-        const userId = userData.id;
-        logWithTimestamp(`User ID: "${userId}"`);
-        
-        // Load HTML content
-        const { data: appData, error: appError } = await getSupabaseClient()
-            .from('wtaf_content')
-            .select('html_content')
-            .eq('app_slug', appSlug)
-            .eq('user_id', userId)
-            .single();
-        
-        if (appError || !appData) {
-            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
-            return null;
-        }
-        
-        logSuccess(`✅ HTML content loaded for remix: ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
-        return appData.html_content;
         
     } catch (error) {
         logError(`Error loading HTML content for remix: ${error instanceof Error ? error.message : String(error)}`);
