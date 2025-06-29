@@ -12,8 +12,8 @@
 
 ### Backend Services
 - **SMS Bot:** Node.js/Express server (port 3030)
-- **Engine System:** Node.js microservices architecture (replaces Python monitor.py)
-  - **Deployment:** `node scripts/controller.js` instead of `python3 scripts/monitor.py`
+- **Engine System:** TypeScript microservices architecture  
+- **Deployment:** `node dist/scripts/start-engine.js`
   - **Architecture:** Modular design with single-responsibility components
   - **Benefits:** Code Agent friendly, easier to maintain and modify
 - **Database:** Supabase (PostgreSQL with real-time features)
@@ -178,7 +178,7 @@ SMS_BOT_URL=http://localhost:3030
 ### Development Setup
 1. **SMS Bot:** `cd sms-bot && npm install && npm start`
 2. **Web Platform:** `cd web && npm install && npm run dev`
-3. **Monitor:** `cd monitoring && python monitor.py`
+3. **Engine:** `npm run build && node dist/scripts/start-engine.js`
 4. **Database:** Supabase project with proper tables
 
 ## Database Schema
@@ -299,7 +299,7 @@ This technical stack enables rapid development while maintaining production stab
 ## NEW: Engine Microservices Architecture
 
 ### Technology Shift
-**Previous:** Monolithic Python script (monitor.py, 1133 lines)
+**Previous:** Legacy Python system (fully replaced by TypeScript)
 **Current:** Node.js microservices with focused modules
 
 ### Module Structure
