@@ -44,7 +44,7 @@ export interface BuilderConfig {
     model: string;
     maxTokens: number;
     temperature: number;
-    cookbook?: string; // Optional WTAF cookbook content for apps
+    designSystem?: string; // Optional WTAF design system content for apps
 }
 
 // Initialize OpenAI client with lazy loading (same pattern as ai-client.ts)
@@ -418,11 +418,11 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         }
     }
     
-    // DEPRECATED: Old cookbook approach - bad architecture, do not use
-    // if (config.cookbook && requestType === 'app' && !userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
-    //     builderUserPrompt += `\n\nWTAF STYLE GUIDE & DESIGN SYSTEM:\n${config.cookbook}`;
-    //     logWithTimestamp(`📖 Added WTAF Cookbook to builder prompt (provided by controller)`);
-    // }
+    // Dynamic WTAF Design System injection for standard apps
+    if (config.designSystem && requestType === 'app' && !userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') && !userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
+        builderUserPrompt += `\n\nWTAF DESIGN SYSTEM & STYLE GUIDE:\n${config.designSystem}`;
+        logWithTimestamp(`🎨 Added WTAF Design System to builder prompt (${config.designSystem.length} chars)`);
+    }
     
     if (!builderPrompt) {
         logWarning(`Failed to load ${builderFile}, falling back to system prompt`);
