@@ -37,10 +37,37 @@ export const SUPABASE_ANON_KEY: string | undefined = process.env.SUPABASE_ANON_K
 export const OPENAI_API_KEY: string | undefined = process.env.OPENAI_API_KEY;
 export const ANTHROPIC_API_KEY: string | undefined = process.env.ANTHROPIC_API_KEY;
 
-// Fun slug generation data
-export const COLORS: readonly string[] = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"] as const;
-export const ANIMALS: readonly string[] = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"] as const;
-export const ACTIONS: readonly string[] = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"] as const;
+// Load slug generation dictionaries from JSON file
+import { readFileSync } from 'fs';
+
+const CONTENT_DIR = join(__dirname, '..', '..', 'content');
+const slugDictionariesPath = join(CONTENT_DIR, 'slug-dictionaries.json');
+
+// Lazy-load dictionaries to avoid loading on every import
+let dictionaries: { colors: string[], animals: string[], actions: string[] } | null = null;
+
+function loadDictionaries() {
+  if (!dictionaries) {
+    try {
+      const data = readFileSync(slugDictionariesPath, 'utf8');
+      dictionaries = JSON.parse(data);
+    } catch (error) {
+      console.error('Failed to load slug dictionaries, falling back to minimal set:', error);
+      // Fallback to minimal dictionaries if file loading fails
+      dictionaries = {
+        colors: ["golden", "crimson", "azure", "emerald", "violet"],
+        animals: ["fox", "owl", "wolf", "bear", "eagle"],
+        actions: ["dancing", "flying", "running", "jumping", "swimming"]
+      };
+    }
+  }
+  return dictionaries;
+}
+
+// Export as readonly arrays - loaded on demand
+export const COLORS: readonly string[] = loadDictionaries().colors;
+export const ANIMALS: readonly string[] = loadDictionaries().animals;
+export const ACTIONS: readonly string[] = loadDictionaries().actions;
 
 // File paths
 // When compiled, this runs from dist/engine/shared/, so we need to go up 3 levels to reach sms-bot/

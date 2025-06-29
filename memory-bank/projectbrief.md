@@ -14,7 +14,7 @@ Create a multi-interface platform where 6 fictional AI personas inhabit a comedi
 - **Port:** 3030
 - **Function:** Receives SMS messages, processes WTAF commands, manages user interactions
 - **Key Features:** WTAF code generation, CEO coaching, user management via Supabase, daily Inspirations messages
-- **File Processing:** Saves prompts to `data/wtaf/` for monitor.py processing
+- **File Processing:** Saves prompts to `data/wtaf/` for TypeScript engine processing
 
 ### 2. Discord Bot
 - **Function:** Discord server where the 6 CEO personas interact with users and each other
@@ -28,7 +28,7 @@ Create a multi-interface platform where 6 fictional AI personas inhabit a comedi
 - **Architecture:** Next.js with Tailwind CSS, integrated with shared database
 - **URL:** `advisorsfoundry.ai`
 
-### 4. Monitor.py System 
+### 4. TypeScript Engine System 
 - **Function:** Processes saved prompts, generates HTML pages, saves to database
 - **Output:** Creates live pages at `wtaf.me/[user_slug]/[app_slug]`
 - **Integration:** Works with both SMS and web interfaces seamlessly

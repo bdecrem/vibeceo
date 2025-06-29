@@ -1234,7 +1234,8 @@ async function handleLeoConversation(message: string, twilioClient: TwilioClient
   return handleCoachConversation(message, twilioClient, from, leoData);
 }
 
-// Handle default conversation by selecting a random coach based on distribution
+// COMMENTED OUT: Handle default conversation by selecting a random coach based on distribution
+/*
 async function handleDefaultConversation(message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   try {
     // 40% chance for Leo, 60% chance for other coaches
@@ -1273,6 +1274,7 @@ async function handleDefaultConversation(message: string, twilioClient: TwilioCl
     return false;
   }
 }
+*/
 
 // Legacy coach conversation handler for explicit coach requests
 async function handleExplicitCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
@@ -3164,7 +3166,8 @@ ${response}`;
     }
 
     
-    // Check for active conversation first, before deciding to use a random coach
+    // COMMENTED OUT: Check for active conversation first, before deciding to use a random coach
+    /*
     const existingConversation = getActiveConversation(from);
     if (existingConversation && existingConversation.coachName) {
       console.log(`🔄 Continuing existing conversation with ${existingConversation.coachName}`);
@@ -3188,8 +3191,10 @@ ${response}`;
         }
       }
     }
+    */
     
-    // No active conversation - use sophisticated coach selection logic (40% Leo, 60% other coaches)
+    // COMMENTED OUT: No active conversation - use sophisticated coach selection logic (40% Leo, 60% other coaches)
+    /*
     console.log('🎲 Using sophisticated coach selection for default response...');
     const handled = await handleDefaultConversation(message, twilioClient, from);
     if (handled) {
@@ -3204,6 +3209,7 @@ ${response}`;
       );
       console.log('Fallback response sent (all coach handlers failed)');
     }
+    */
     
   } catch (error) {
     console.error('Error handling SMS message:', error);

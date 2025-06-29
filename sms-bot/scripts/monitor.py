@@ -33,9 +33,33 @@ CLOUD_STORAGE_BUCKET = os.getenv("CLOUD_STORAGE_BUCKET", "")
 CLOUD_STORAGE_PREFIX = os.getenv("CLOUD_STORAGE_PREFIX", "wtaf-files")
 
 # Fun slug generation
-COLORS = ["golden", "crimson", "azure", "emerald", "violet", "coral", "amber", "silver", "ruby", "sapphire", "bronze", "pearl", "turquoise", "jade", "rose"]
-ANIMALS = ["fox", "owl", "wolf", "bear", "eagle", "lion", "tiger", "deer", "rabbit", "hawk", "dolphin", "whale", "elephant", "jaguar", "falcon"]
-ACTIONS = ["dancing", "flying", "running", "jumping", "swimming", "climbing", "singing", "painting", "coding", "dreaming", "exploring", "creating", "building", "racing", "soaring"]
+# Load slug generation dictionaries from JSON file
+import json
+import os
+
+def load_slug_dictionaries():
+    """Load slug dictionaries from JSON file with fallback"""
+    try:
+        # Get the directory containing this script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one level to sms-bot, then to content directory
+        json_path = os.path.join(script_dir, '..', 'content', 'slug-dictionaries.json')
+        
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+        
+        return data['colors'], data['animals'], data['actions']
+    except Exception as e:
+        print(f"⚠️ Failed to load slug dictionaries: {e}")
+        print("🔄 Using fallback dictionaries")
+        # Fallback to minimal dictionaries
+        colors = ["golden", "crimson", "azure", "emerald", "violet"]
+        animals = ["fox", "owl", "wolf", "bear", "eagle"]
+        actions = ["dancing", "flying", "running", "jumping", "swimming"]
+        return colors, animals, actions
+
+# Load dictionaries
+COLORS, ANIMALS, ACTIONS = load_slug_dictionaries()
 
 def detect_request_type(user_prompt):
     """Detect what type of application the user wants"""
