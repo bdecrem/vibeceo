@@ -822,6 +822,13 @@ export async function loadRemixHTMLContent(userSlug: string, appSlug: string): P
             }
             
             logSuccess(`✅ HTML content loaded for remix (elevated access): ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+            
+            // Strip existing OG tags to prevent duplicates in remixed apps
+            if (appData.html_content) {
+                const { stripOGTags } = await import('./shared/utils.js');
+                return stripOGTags(appData.html_content);
+            }
+            
             return appData.html_content;
             
         } else {
@@ -857,6 +864,13 @@ export async function loadRemixHTMLContent(userSlug: string, appSlug: string): P
             }
             
             logSuccess(`✅ HTML content loaded for remix (ownership verified): ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
+            
+            // Strip existing OG tags to prevent duplicates in remixed apps
+            if (appData.html_content) {
+                const { stripOGTags } = await import('./shared/utils.js');
+                return stripOGTags(appData.html_content);
+            }
+            
             return appData.html_content;
         }
         

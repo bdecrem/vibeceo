@@ -231,4 +231,27 @@ export function detectRequestType(userPrompt: string): 'game' | 'app' {
     
     // Everything else is an app (with data collection by default)
     return 'app';
+}
+
+/**
+ * Strip existing OG (Open Graph) tags from HTML
+ * Prevents duplicate OG images when remixing apps
+ */
+export function stripOGTags(html: string): string {
+    logWithTimestamp('🧹 Stripping existing OG tags from HTML to prevent duplicates');
+    
+    // Remove Open Graph meta tags
+    html = html.replace(/<meta\s+property\s*=\s*["']og:[^"']*["'][^>]*>/gi, '');
+    
+    // Remove Twitter Card meta tags
+    html = html.replace(/<meta\s+name\s*=\s*["']twitter:[^"']*["'][^>]*>/gi, '');
+    
+    // Remove generic title tag (will be replaced with new one)
+    html = html.replace(/<title[^>]*>.*?<\/title>/gi, '');
+    
+    // Clean up any multiple consecutive newlines left by removal
+    html = html.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    logWithTimestamp('✅ Existing OG tags stripped successfully');
+    return html;
 } 
