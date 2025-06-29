@@ -502,6 +502,91 @@ async function processWtafRequest(processingPath: string, fileData: any, request
         }
     }
     
+    // 🎨 REMIX: Check for --remix flag to remix existing apps
+    if (userPrompt && (userPrompt.startsWith('--remix ') || userPrompt.startsWith('wtaf --remix '))) {
+        logWithTimestamp("🎨 REMIX DETECTED: Processing with remix approach");
+        
+        // Import remix functions dynamically
+        const { parseRemixCommand, loadRemixHTMLContent, buildRemixPrompt } = await import('./stackables-manager.js');
+        
+        // Parse the remix command
+        const parsed = parseRemixCommand(userPrompt);
+        if (!parsed) {
+            logError(`❌ Invalid remix command format`);
+            await sendFailureNotification("remix-format", senderPhone);
+            return false;
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
+        
+        // Load HTML content (includes ownership verification)
+        const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
+        if (htmlContent === null) {
+            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+            await sendFailureNotification("remix-ownership", senderPhone);
+            return false;
+        }
+        
+        // Build remix prompt with HTML template
+        const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+        
+        // Load remix system prompt
+        const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
+        const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
+        logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
+        
+        // Send directly to Claude with remix prompt (bypass wtaf-processor entirely)
+        logWithTimestamp("🚀 Sending remix request directly to Claude (using remix approach)");
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `remix_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
+        
+        // Extract code blocks and deploy normally
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in remix response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Deploy remix result
+        const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const newAppSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for remix: ${userSlug}/${newAppSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                    logSuccess(`✅ Updated remix HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 REMIX PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            return true;
+        } else {
+            logError("Failed to deploy remix content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+    
     // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
     let isStackablesRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {
@@ -975,6 +1060,144 @@ ${originalHtml}`;
 }
 
 /**
+ * Process REMIX workflow
+ * Handles remix-* files created by handlers.ts REMIX command
+ * Extracts the stack command and processes it using stackables system
+ */
+async function processRemixRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+    logWithTimestamp("🎨 STARTING REMIX PROCESSING WORKFLOW");
+    logWithTimestamp(`📖 Processing remix file: ${processingPath}`);
+    
+    const { senderPhone } = fileData;
+    
+    try {
+        // Parse REMIX file format (from degen_commands.ts)
+        const lines = fileData.rawContent.split('\n');
+        let remixCommand = null;
+        let userSlug = null;
+        let originalRequest = null;
+        
+        // Parse the file structure
+        for (const line of lines) {
+            if (line.startsWith('USER_SLUG:')) {
+                userSlug = line.replace('USER_SLUG:', '').trim();
+            }
+            if (line.startsWith('REMIX_COMMAND:')) {
+                remixCommand = line.replace('REMIX_COMMAND:', '').trim();
+            }
+            if (line.startsWith('ORIGINAL_REQUEST:')) {
+                originalRequest = line.replace('ORIGINAL_REQUEST:', '').trim();
+            }
+        }
+        
+        if (!userSlug || !remixCommand || !originalRequest) {
+            logError("Invalid REMIX file format - missing user_slug, remix_command, or original_request");
+            await sendFailureNotification("invalid-remix", senderPhone);
+            return false;
+        }
+        
+        logWithTimestamp(`🎯 REMIX command: ${remixCommand}`);
+        logWithTimestamp(`👤 User slug: ${userSlug}`);
+        logWithTimestamp(`📝 Original request: ${originalRequest}`);
+        
+        // Process the remix command using the new remix system
+        // The remix command is formatted as: --remix target-slug remix instructions
+        if (remixCommand.startsWith('--remix ') || remixCommand.startsWith('wtaf --remix ')) {
+            logWithTimestamp("🎨 REMIX using new remix system");
+            
+            // Import remix functions dynamically
+            const { parseRemixCommand, loadRemixHTMLContent, buildRemixPrompt } = await import('./stackables-manager.js');
+            
+            // Parse the remix command
+            const parsed = parseRemixCommand(remixCommand);
+            if (!parsed) {
+                logError(`❌ Invalid remix command format in remix: ${remixCommand}`);
+                await sendFailureNotification("remix-format", senderPhone);
+                return false;
+            }
+            
+            const { appSlug, userRequest } = parsed;
+            logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
+            
+            // Load HTML content (includes ownership verification)
+            const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
+            if (htmlContent === null) {
+                logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+                await sendFailureNotification("remix-ownership", senderPhone);
+                return false;
+            }
+            
+            // Build remix prompt with HTML template
+            const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            
+            // Load remix system prompt
+            const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
+            const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
+            logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
+            
+            // Send directly to Claude with remix prompt (dedicated remix approach)
+            logWithTimestamp("🚀 Sending remix request directly to Claude (using dedicated remix approach)");
+            const config = REQUEST_CONFIGS.creation;
+            const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
+                model: config.builderModel,
+                maxTokens: config.builderMaxTokens,
+                temperature: config.builderTemperature
+            });
+            
+            // Continue with normal deployment workflow
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `remix_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
+            
+            // Extract code blocks and deploy normally
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found in remix response.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // Deploy remix result
+            const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
+            if (deployResult.publicUrl) {
+                // Generate OG image
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const newAppSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for remix: ${userSlug}/${newAppSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                    if (actualImageUrl) {
+                        await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                        logSuccess(`✅ Updated remix HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+                logWithTimestamp("🎉 REMIX PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+                return true;
+            } else {
+                logError("Failed to deploy remix content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
+            }
+        } else {
+            logError(`❌ Unsupported remix command format: ${remixCommand} (expected --remix format)`);
+            await sendFailureNotification("remix-unsupported", senderPhone);
+            return false;
+        }
+        
+    } catch (error) {
+        logError(`Remix processing error: ${error instanceof Error ? error.message : String(error)}`);
+        await sendFailureNotification("generic", senderPhone);
+        return false;
+    }
+}
+
+/**
  * Main controller loop
  * Replaces monitor.py monitor_loop function
  */
@@ -1018,6 +1241,8 @@ async function mainControllerLoop() {
                     success = await processWtafRequest(processingPath, fileData, requestInfo);
                 } else if (requestInfo.type === 'edit') {
                     success = await processEditRequest(processingPath, fileData, requestInfo);
+                } else if (requestInfo.type === 'remix') {
+                    success = await processRemixRequest(processingPath, fileData, requestInfo);
                 } else {
                     logWarning(`Unknown request type: ${requestInfo.type}`);
                     success = false;

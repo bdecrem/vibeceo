@@ -159,6 +159,62 @@ export async function queueEditRequestBySlug(
   }
 }
 
+export async function queueRemixRequest(
+  userSlug: string,
+  targetSlug: string,
+  remixInstructions: string,
+  senderPhone: string
+): Promise<boolean> {
+  try {
+    logWithTimestamp(`🎨 Queueing remix request: user=${userSlug}, slug=${targetSlug}`);
+    
+    // Verify the user owns the target app
+    const { data: appData, error: appError } = await supabase
+      .from('wtaf_content')
+      .select('html_content')
+      .eq('user_slug', userSlug)
+      .eq('app_slug', targetSlug)
+      .single();
+      
+    if (appError || !appData) {
+      logWithTimestamp(`❌ App '${targetSlug}' not found or not owned by user ${userSlug}`);
+      return false;
+    }
+    
+    // Create remix request file for WTAF engine processing
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `remix-${userSlug}-${targetSlug}-${timestamp}.txt`;
+    
+    // Build the file content for WTAF engine processing using --remix format
+    const fileContent = [
+      `SENDER:${senderPhone}`,
+      `USER_SLUG:${userSlug}`,
+      `REMIX_COMMAND:--remix ${targetSlug} ${remixInstructions}`,
+      ``,
+      `ORIGINAL_REQUEST:REMIX ${targetSlug} ${remixInstructions}`
+    ].join('\n');
+    
+    // Write to the wtaf directory that the WTAF engine watches
+    const smsDir = path.resolve(__dirname, '..', '..');
+    const wtafDir = path.join(smsDir, 'data', 'wtaf');
+    
+    // Ensure directory exists
+    if (!fs.existsSync(wtafDir)) {
+      fs.mkdirSync(wtafDir, { recursive: true });
+    }
+    
+    const filePath = path.join(wtafDir, filename);
+    fs.writeFileSync(filePath, fileContent, 'utf8');
+    
+    logWithTimestamp(`✅ Remix request queued at: ${filePath}`);
+    return true;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error queueing remix request: ${error}`);
+    return false;
+  }
+}
+
 // Note: Direct processing functions removed - we now use file-based queueing
 // to integrate with monitor.py's existing workflow. Edit processing happens
 // in monitor.py using the prompts/edits.json template. 

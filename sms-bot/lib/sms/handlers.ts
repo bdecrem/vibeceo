@@ -3211,6 +3211,95 @@ ${response}`;
     }
     */
     
+    // Handle REMIX command - for coder/degen/admin users only
+    if (message.match(/^REMIX(?:\s|$)/i)) {
+      // Check if the command has the required arguments (slug and instruction)
+      if (!message.match(/^REMIX\s+.+\s+.+$/i)) {
+        await sendSmsResponse(
+          from,
+          `❌ REMIX: Please specify an app slug and instructions.\n\nExample: REMIX emerald-eagle-flying make it more colorful\n\nUse INDEX to see your pages.`,
+          twilioClient
+        );
+        return;
+      }
+      console.log(`Processing REMIX command from ${from}`);
+      console.log(`Message content: "${message}"`);
+      
+      try {
+        // Check user role for REMIX command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        console.log(`Subscriber data:`, JSON.stringify(subscriber, null, 2));
+        
+        if (!subscriber) {
+          console.log(`❌ No subscriber found for ${normalizedPhoneNumber}`);
+          return;
+        }
+        
+        if (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'admin') {
+          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'coder/degen/admin' required`);
+          // Silent ignore - don't reveal command to non-coder/degen/admin users
+          return;
+        }
+        
+        console.log(`✅ User ${normalizedPhoneNumber} has '${subscriber.role}' role, proceeding with REMIX command`);
+        
+        // Parse the command: REMIX slug instruction
+        const remixMatch = message.match(/^REMIX\s+([a-z-]+)\s+(.+)$/i);
+        
+        if (!remixMatch || !remixMatch[1] || !remixMatch[2]) {
+          console.error('Failed to parse REMIX command:', message);
+          await sendSmsResponse(
+            from,
+            '❌ Invalid REMIX command format. Use: REMIX [app-slug] [instructions]',
+            twilioClient
+          );
+          return;
+        }
+        
+        const targetSlug = remixMatch[1].trim();
+        const instructions = remixMatch[2].trim();
+        
+        const userSlug = subscriber.slug;
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Queue the remix request to WTAF engine
+        const { queueRemixRequest } = await import('../degen_commands.js');
+        const success = await queueRemixRequest(userSlug, targetSlug, instructions, normalizedPhoneNumber);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `🎨 Processing your remix request... You'll get a link in about 30 seconds!`,
+            twilioClient
+          );
+          console.log(`✅ REMIX command queued for processing: ${normalizedPhoneNumber}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Failed to queue your remix request. App '${targetSlug}' not found or you don't own it.`,
+            twilioClient
+          );
+          console.log(`❌ Failed to queue REMIX command for ${normalizedPhoneNumber}`);
+        }
+        
+      } catch (error) {
+        console.error(`Error processing REMIX command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ REMIX: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
   } catch (error) {
     console.error('Error handling SMS message:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
