@@ -1,0 +1,217 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SCRAPPILE</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff2e93;
+            --neon-blue: #3f88ff;
+            --neon-green: #00ffc6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 5rem;
+            text-align: center;
+            margin: 2rem 0;
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+            animation: glitch 3s infinite;
+        }
+
+        .subheader {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 4rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+
+        .links-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            position: relative;
+        }
+
+        .link-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid var(--neon-blue);
+            padding: 1.5rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .link-card a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .link-card a:hover {
+            color: var(--neon-pink);
+            text-shadow: 0 0 5px var(--neon-pink);
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            z-index: 100;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+            transition: transform 0.1s ease;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 2rem;
+            margin: 4rem 0;
+            color: var(--neon-green);
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) }
+            50% { transform: translateY(-20px) }
+            100% { transform: translateY(0px) }
+        }
+
+        .easter-egg {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: var(--neon-pink);
+            text-shadow: 0 0 20px var(--neon-pink);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>THE SCRAPPILE</h1>
+        <div class="subheader">→ A lovingly welded junkyard of vibes</div>
+        <div id="linksContainer" class="links-container">
+            <div class="loading">Loading the chaos...</div>
+        </div>
+    </div>
+
+    <div class="easter-egg" id="easterEgg">🎸 PUNK'S NOT DEAD 🎸</div>
+
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">🔧</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%;" data-value="4">⚡</div>
+    <div class="floating-emoji" style="bottom: 15%; left: 20%;" data-value="2">🎸</div>
+    <div class="floating-emoji" style="bottom: 25%; right: 10%;" data-value="5">💀</div>
+
+    <script>
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        async function loadLinks() {
+            const { data: submissions, error } = await supabaseClient
+                .from('wtaf_submissions')
+                .select('submission_data, created_at')
+                .eq('app_id', '7d970033-5ab3-4ceb-9f89-910c8c0c0925')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            const linksContainer = document.getElementById('linksContainer');
+            linksContainer.innerHTML = '';
+
+            if (!submissions || submissions.length === 0) {
+                linksContainer.innerHTML = '<div class="loading">No links in the pile yet...</div>';
+                return;
+            }
+
+            submissions.forEach(sub => {
+                const data = sub.submission_data;
+                const card = document.createElement('div');
+                card.className = 'link-card';
+                card.innerHTML = `
+                    <a href="${data.url || '#'}" target="_blank">${data.name || 'Mystery Link'}</a>
+                    <div class="timestamp">${new Date(sub.created_at).toLocaleDateString()}</div>
+                `;
+                linksContainer.appendChild(card);
+            });
+        }
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg - type "PUNK"
+        let punkCode = '';
+        document.addEventListener('keydown', (e) => {
+            punkCode += e.key.toLowerCase();
+            if (punkCode.includes('punk')) {
+                const easterEgg = document.getElementById('easterEgg');
+                easterEgg.style.display = 'block';
+                setTimeout(() => {
+                    easterEgg.style.display = 'none';
+                    punkCode = '';
+                }, 2000);
+            }
+        });
+
+        // Load links on page load
+        loadLinks();
+    </script>
+</body>
+</html>
+```

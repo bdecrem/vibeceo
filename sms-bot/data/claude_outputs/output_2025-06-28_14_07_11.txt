@@ -1,0 +1,159 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris Dreamscape</title>
+<style>
+  body, html { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); }
+  canvas { display: block; background: #222; }
+  .controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .button { width: 60px; height: 60px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; }
+  .button:active { background: rgba(255, 255, 255, 0.4); }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="controls">
+  <div class="button" id="left">←</div>
+  <div class="button" id="right">→</div>
+  <div class="button" id="rotate">⟳</div>
+  <div class="button" id="down">↓</div>
+</div>
+<script>
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  var devicePixelRatio = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  var gridWidth = 10;
+  var gridHeight = 20;
+  var cellSize = Math.floor(window.innerWidth / gridWidth);
+  var grid = Array.from({ length: gridHeight }, () => Array(gridWidth).fill(0));
+  var tetrominoes = [
+    [[1, 1, 1, 1]],
+    [[1, 1], [1, 1]],
+    [[0, 1, 0], [1, 1, 1]],
+    [[1, 1, 0], [0, 1, 1]],
+    [[0, 1, 1], [1, 1, 0]]
+  ];
+  var colors = ['#ff9a9e', '#fad0c4', '#fbc2eb', '#a6c1ee', '#fcb69f'];
+  var currentTetromino, currentColor, currentX, currentY;
+  var gameOver = false;
+  var lastTime = 0;
+  var gameSpeed = 500;
+
+  function resetTetromino() {
+    var index = Math.floor(Math.random() * tetrominoes.length);
+    currentTetromino = tetrominoes[index];
+    currentColor = colors[index];
+    currentX = Math.floor(gridWidth / 2) - Math.ceil(currentTetromino[0].length / 2);
+    currentY = 0;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (var y = 0; y < gridHeight; y++) {
+      for (var x = 0; x < gridWidth; x++) {
+        if (grid[y][x]) {
+          ctx.fillStyle = grid[y][x];
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    ctx.fillStyle = currentColor;
+    for (var y = 0; y < currentTetromino.length; y++) {
+      for (var x = 0; x < currentTetromino[y].length; x++) {
+        if (currentTetromino[y][x]) {
+          ctx.fillRect((currentX + x) * cellSize, (currentY + y) * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+  }
+
+  function collide() {
+    for (var y = 0; y < currentTetromino.length; y++) {
+      for (var x = 0; x < currentTetromino[y].length; x++) {
+        if (currentTetromino[y][x] && (grid[currentY + y] && grid[currentY + y][currentX + x]) !== 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function merge() {
+    for (var y = 0; y < currentTetromino.length; y++) {
+      for (var x = 0; x < currentTetromino[y].length; x++) {
+        if (currentTetromino[y][x]) {
+          grid[currentY + y][currentX + x] = currentColor;
+        }
+      }
+    }
+  }
+
+  function rotate() {
+    var rotated = currentTetromino[0].map((_, index) => currentTetromino.map(row => row[index]).reverse());
+    var prevX = currentX;
+    if (collide()) {
+      currentX = prevX;
+      return;
+    }
+    currentTetromino = rotated;
+  }
+
+  function removeFullRows() {
+    for (var y = gridHeight - 1; y >= 0; y--) {
+      if (grid[y].every(value => value !== 0)) {
+        grid.splice(y, 1);
+        grid.unshift(Array(gridWidth).fill(0));
+        y++;
+      }
+    }
+  }
+
+  function update() {
+    currentY++;
+    if (collide()) {
+      currentY--;
+      merge();
+      removeFullRows();
+      resetTetromino();
+      if (collide()) {
+        gameOver = true;
+      }
+    }
+  }
+
+  function gameLoop(currentTime) {
+    if (currentTime - lastTime > gameSpeed) {
+      lastTime = currentTime;
+      update();
+    }
+    draw();
+    if (!gameOver) requestAnimationFrame(gameLoop);
+  }
+
+  function move(dir) {
+    currentX += dir;
+    if (collide()) {
+      currentX -= dir;
+    }
+  }
+
+  document.getElementById('left').addEventListener('click', function() { move(-1); });
+  document.getElementById('right').addEventListener('click', function() { move(1); });
+  document.getElementById('rotate').addEventListener('click', function() { rotate(); });
+  document.getElementById('down').addEventListener('click', function() { update(); });
+
+  resetTetromino();
+  requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```

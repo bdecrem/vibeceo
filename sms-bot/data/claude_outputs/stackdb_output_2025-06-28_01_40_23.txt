@@ -1,0 +1,243 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SCRAPPILE</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            text-align: center;
+            margin: 2rem 0;
+            color: #ff2e93;
+            text-shadow: 0 0 10px #ff2e93;
+            animation: glitch 3s infinite;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 4rem;
+            color: #57E2E5;
+        }
+
+        .links-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            position: relative;
+        }
+
+        .link-card {
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            border: 2px solid #ff2e93;
+            padding: 1.5rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px #ff2e93;
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, #ff2e93, transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+            opacity: 0.1;
+        }
+
+        .link-card a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .link-card a:hover {
+            color: #ff61c7;
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 100;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+        }
+
+        #loading {
+            text-align: center;
+            font-size: 2rem;
+            margin: 4rem 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0 0 10px #ff2e93; }
+            25% { text-shadow: -2px 0 #ff2e93, 2px 2px #57E2E5; }
+            50% { text-shadow: 2px 0 #ff2e93, -2px -2px #57E2E5; }
+            75% { text-shadow: -2px 0 #ff2e93, 2px 2px #57E2E5; }
+            100% { text-shadow: 0 0 10px #ff2e93; }
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(45deg) translateX(-100%); }
+            100% { transform: rotate(45deg) translateX(100%); }
+        }
+
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff2e93;
+            padding: 1rem;
+            border-radius: 5px;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>THE SCRAPPILE</h1>
+        <h2>→ A lovingly welded junkyard of vibes</h2>
+        <div id="loading">Loading the chaos... 🔧</div>
+        <div class="links-container" id="linksContainer"></div>
+    </div>
+    <div class="easter-egg">🎉 You found the secret!</div>
+
+    <script>
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        const emojis = ['🔧', '⚡', '🔥', '💀', '⛓️', '🦾']
+        const colors = ['#FF2E93', '#57E2E5', '#FF7C5C', '#7C3AED', '#00FFC6']
+
+        // Create floating emojis
+        emojis.forEach((emoji, i) => {
+            const el = document.createElement('div')
+            el.className = 'floating-emoji'
+            el.textContent = emoji
+            el.style.left = `${Math.random() * 100}vw`
+            el.style.top = `${Math.random() * 100}vh`
+            el.style.animation = `float ${3 + i}s ease-in-out infinite`
+            document.body.appendChild(el)
+        })
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji, i) => {
+                const speed = (i + 1) * 0.1
+                const x = (e.clientX - window.innerWidth / 2) * speed
+                const y = (e.clientY - window.innerHeight / 2) * speed
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Easter egg
+        let clicks = 0
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++
+            if(clicks >= 5) {
+                document.querySelector('.easter-egg').style.display = 'block'
+                setTimeout(() => {
+                    document.querySelector('.easter-egg').style.display = 'none'
+                }, 3000)
+            }
+        })
+
+        async function loadLinks() {
+            try {
+                const { data: submissions, error } = await supabaseClient
+                    .from('wtaf_submissions')
+                    .select('submission_data, created_at')
+                    .eq('app_id', '7d970033-5ab3-4ceb-9f89-910c8c0c0925')
+                    .order('created_at', { ascending: false })
+
+                if (error) throw error
+
+                const loading = document.getElementById('loading')
+                const container = document.getElementById('linksContainer')
+                
+                if (!submissions || submissions.length === 0) {
+                    loading.textContent = 'No links in the pile yet... 🔧'
+                    return
+                }
+
+                loading.style.display = 'none'
+
+                submissions.forEach(sub => {
+                    const data = sub.submission_data
+                    const card = document.createElement('div')
+                    card.className = 'link-card'
+                    
+                    const link = document.createElement('a')
+                    link.href = data.url || '#'
+                    link.textContent = data.name || data.title || 'Unnamed Link'
+                    
+                    const timestamp = document.createElement('div')
+                    timestamp.className = 'timestamp'
+                    timestamp.textContent = new Date(sub.created_at).toLocaleDateString()
+                    
+                    card.appendChild(link)
+                    card.appendChild(timestamp)
+                    container.appendChild(card)
+                })
+
+            } catch (error) {
+                console.error('Error:', error)
+                document.getElementById('loading').textContent = 'Error loading links... Try again later!'
+            }
+        }
+
+        loadLinks()
+    </script>
+</body>
+</html>
+```

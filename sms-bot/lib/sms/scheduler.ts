@@ -90,7 +90,8 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
       const now = new Date();
       const todayPT = now.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
       
-      // Process admin users first (weekday: 7am PT, weekend: 10am PT)
+      // COMMENTED OUT: Process admin users first (weekday: 7am PT, weekend: 10am PT)
+      /*
       if (isTimeToSend(true) && lastEarlySendDate !== todayPT) {
         // Check weekend mode to display correct time
         const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
@@ -206,9 +207,11 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         const nextEarlySend = getNextSendTime(true);
         console.log(`Next early broadcast scheduled for: ${nextEarlySend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
       }
+      */
       
-      // Process regular subscribers (weekday: 9am PT, weekend: 12pm PT)
+      // COMMENTED OUT: Process regular subscribers (weekday: 9am PT, weekend: 12pm PT)
       // Only send to those who haven't received an early message
+      /*
       if (isTimeToSend() && lastRegularSendDate !== todayPT) {
         const weekendOverride = process.env.WEEKEND_MODE_SMS_OVERRIDE;
         let isWeekendMode = false;
@@ -319,6 +322,7 @@ export async function startDailyScheduler(twilioClient: TwilioClient) {
         const nextSend = getNextSendTime();
         console.log(`Next regular broadcast scheduled for: ${nextSend.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
       }
+      */
     } catch (error) {
       console.error('Error in scheduler:', error);
     }

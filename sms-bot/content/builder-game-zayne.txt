@@ -1,0 +1,448 @@
+# WTAF Mobile Game Generator - Claude 3.5 Sonnet Optimized
+
+You are creating a **production-ready mobile HTML5 game** using WTAF's signature chaotic-chic aesthetic adapted for gaming. Build a complete, self-contained game that works flawlessly on mobile devices.
+
+## What to Build
+Build: **[USER_REQUEST]**
+
+## Technical Requirements
+
+### 1. Single HTML File Structure
+- Complete HTML5 game in one file with embedded CSS/JS
+- iPhone Safari and Android Chrome compatible
+- No external dependencies except approved CDN libraries
+- Viewport optimized for mobile gameplay
+
+### 2. Mobile-First Game Controls
+**Touch Controls (Choose appropriate for game type):**
+- **Tap/Touch**: Single touch interactions, button presses
+- **Swipe**: Directional gestures with preventDefault()
+- **Virtual D-pad**: On-screen directional buttons (44px minimum)
+- **Drag**: Touch and drag mechanics with proper tracking
+- **Multi-touch**: Pinch, zoom, or dual-finger controls when needed
+
+**REQUIRED: Keyboard & Mobile Button Support:**
+- Every keyboard shortcut MUST have a corresponding mobile button
+- Mobile buttons must be clearly visible and properly sized (44px minimum)
+- Include a control legend showing all keyboard shortcuts
+- Control legend should be positioned near the game area for easy reference
+
+**Control Implementation Pattern:**
+```javascript
+// Touch event handling with mobile optimization
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+// Keyboard event handling
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
+function handleTouchStart(e) {
+    e.preventDefault(); // Prevent zoom/scroll
+    // Touch logic here
+}
+
+function handleKeyDown(e) {
+    // Keyboard logic here
+    // Each key action MUST have mobile button equivalent
+}
+```
+
+### 3. Game Architecture Requirements
+
+**CRITICAL: Game Architecture Requirements**
+
+**MANDATORY STRUCTURE:**
+1. **Declare all variables at top** - canvas, ctx, gameState, score, game objects
+2. **Initialize on DOM ready** - Get canvas, set size, create game objects, start loop
+3. **Core functions required**: `initializeGame()`, `update()`, `render()`, input handlers
+4. **Game loop pattern**: Use requestAnimationFrame, call update() then render() each frame
+5. **Canvas operations**: Always clear canvas before drawing, use ctx.fillRect() for objects
+
+**CORE SYSTEMS REQUIRED:**
+- **Game State Management**: Use gameState variable ('playing', 'paused', 'gameOver')
+- **Frame Rate**: requestAnimationFrame loop that calls update() then render()
+- **Collision Detection**: Rectangle collision for all game objects
+- **Score System**: Track score, save high score to localStorage
+- **Restart Functionality**: Reset all variables and restart game loop
+
+**GAME LOGIC BY TYPE:**
+
+**Snake Games:** Create snake array, move head forward each frame, check food/wall collisions
+**Platformer Games:** Apply gravity, handle jumping, check platform collisions
+**Arcade Games:** Spawn enemies over time, move all objects, check player-enemy collisions
+**Puzzle Games:** Detect matches, clear completed rows/groups, handle piece dropping
+
+**CRITICAL SUCCESS REQUIREMENTS:**
+
+1. **VISIBLE OBJECTS**: Use ctx.fillRect() with bright colors (#00FFC6, #FF2E93, #3F88FF)
+2. **WORKING MOVEMENT**: Objects must move/update each frame in update() function
+3. **FUNCTIONAL CONTROLS**: Arrow keys and mobile buttons control game objects
+4. **GAME LOGIC**: Implement collisions, scoring, win/lose conditions
+5. **COMPLETE CYCLE**: Game starts → plays → ends → restarts
+
+**Performance Optimizations:**
+- Object pooling for frequently created/destroyed objects
+- Efficient rendering (only draw what changed when possible)
+- Battery-conscious frame rate management
+- Memory leak prevention
+
+### 4. WTAF Visual Style for Games
+
+**Base Styling:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700&display=swap');
+
+body {
+    font-family: 'Orbitron', monospace;
+    background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease-in-out infinite;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    max-width: 90vw;
+}
+
+#gameCanvas {
+    display: block;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(0,255,198,0.5);
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(123,58,237,0.4);
+}
+
+.game-ui {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    color: #00FFC6;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 20px;
+}
+
+.control-legend {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(0,255,198,0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #00FFC6;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.control-legend h4 {
+    margin: 0 0 10px 0;
+    color: #FF2E93;
+}
+
+.mobile-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+
+.control-button {
+    background: linear-gradient(135deg, #00FFC6, #57E2E5);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 18px;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,255,198,0.4);
+    touch-action: manipulation;
+    user-select: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.control-button:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0,255,198,0.6);
+}
+
+.restart-button {
+    background: linear-gradient(135deg, #FF2E93, #FF61C7);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin: 20px 0;
+    font-size: 14px;
+}
+
+.restart-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255,46,147,0.5);
+}
+```
+
+**Game-Specific Color Schemes (Adapt to game type):**
+- **Neon Arcade**: `#00FFC6, #FF2E93, #3F88FF, #7C3AED`
+- **Retro Synthwave**: `#FF006E, #8338EC, #3A86FF, #06FFA5`
+- **Glitch Cyberpunk**: `#FF2A6D, #01B4BC, #F1FA3C, #B967DB`
+- **Dark Gaming**: `#0D1421, #1A2332, #00D9FF, #FF0080`
+
+### 5. Required Game Elements
+
+**Game Restart System:**
+```javascript
+function gameOver() {
+    gameState = 'gameOver';
+
+    // Option 1: Automatic restart after delay
+    setTimeout(() => {
+        restartGame();
+    }, 3000);
+
+    // Option 2: Show restart prompt
+    // if (confirm('REALITY GLITCHED 💥\nRESTART THE CHAOS?')) {
+    //     restartGame();
+    // }
+}
+
+function restartGame() {
+    // Reset all game variables
+    score = 0;
+    // Reset player position, enemies, etc.
+    gameState = 'playing';
+    // Clear and restart game loop
+}
+```
+
+**Required HTML Structure:**
+```html
+<div class="game-container">
+    <div class="game-ui">
+        <div class="score">CHAOS POINTS: <span id="score">0</span></div>
+        <div class="high-score">BEST: <span id="highScore">0</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="control-legend">
+        <h4>🎮 CHAOS CONTROLS</h4>
+        <div>SPACE/TAP: Action • ARROWS/SWIPE: Move • P: Pause</div>
+        <!-- Add all your game's specific controls here -->
+    </div>
+
+    <div class="mobile-controls">
+        <button class="control-button" id="actionBtn">FIRE</button>
+        <button class="control-button" id="leftBtn">◀</button>
+        <button class="control-button" id="rightBtn">▶</button>
+        <button class="control-button" id="pauseBtn">⏸</button>
+        <!-- Add buttons for ALL keyboard shortcuts -->
+    </div>
+
+    <button class="restart-button" onclick="restartGame()" style="display: none;" id="restartBtn">
+        🔄 RESTART CHAOS
+    </button>
+</div>
+```
+
+**Particle Effects System:**
+```javascript
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+
+    createExplosion(x, y, color = '#00FFC6') {
+        for(let i = 0; i < 12; i++) {
+            this.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 30,
+                color: color
+            });
+        }
+    }
+
+    update() {
+        this.particles = this.particles.filter(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            return p.life > 0;
+        });
+    }
+
+    render(ctx) {
+        this.particles.forEach(p => {
+            ctx.globalAlpha = p.life / 30;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 3, 3);
+        });
+        ctx.globalAlpha = 1;
+    }
+}
+```
+
+**Screen Shake Effect:**
+```javascript
+let screenShake = { intensity: 0, duration: 0 };
+
+function addScreenShake(intensity, duration) {
+    screenShake.intensity = Math.max(screenShake.intensity, intensity);
+    screenShake.duration = Math.max(screenShake.duration, duration);
+}
+
+function updateScreenShake() {
+    if (screenShake.duration > 0) {
+        const shakeX = (Math.random() - 0.5) * screenShake.intensity;
+        const shakeY = (Math.random() - 0.5) * screenShake.intensity;
+        canvas.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+        screenShake.duration--;
+        screenShake.intensity *= 0.95;
+    } else {
+        canvas.style.transform = 'translate(0, 0)';
+    }
+}
+```
+
+### 6. WTAF Copy Style for Games
+**UI Text Examples:**
+- Score: "CHAOS POINTS: 1337"
+- Game Over: "REALITY GLITCHED 💥"
+- High Score: "DIMENSIONAL LEADER"
+- Pause: "FREEZE THE MATRIX"
+- Resume: "BACK TO THE VOID"
+- Instructions: "TAP TO SURVIVE THE CHAOS"
+
+### 7. Mobile Optimization Checklist
+**Required Meta Tags:**
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+```
+
+**Touch Prevention:**
+```css
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+canvas {
+    touch-action: none;
+}
+```
+
+## Game Templates by Type
+
+### Arcade Games (Flappy Bird, Snake, Tetris)
+- Canvas-based rendering
+- Simple physics system
+- Progressive difficulty
+- Power-ups with neon effects
+- Particle explosions on events
+
+### Puzzle Games (2048, Match-3)
+- Grid-based logic
+- Smooth animations between moves
+- Combo system with screen shake
+- Gradient tile backgrounds
+- Achievement notifications
+
+### Action Games (Platformer, Tower Defense)
+- Real-time collision detection
+- Multiple enemy types
+- Upgrade systems
+- Health/energy bars with glow effects
+- Boss battles with dramatic effects
+
+## Success Criteria
+Your game must:
+- ✅ Work perfectly on mobile (iPhone/Android)
+- ✅ Have intuitive touch controls
+- ✅ Include core gameplay loop with win/lose conditions
+- ✅ Use WTAF aesthetic (neon colors, particle effects, glitch text)
+- ✅ Handle screen orientation changes
+- ✅ Save high scores locally
+- ✅ Have proper game states (menu, play, pause, game over)
+- ✅ Include sound effects with user control
+- ✅ Be performance optimized for mobile devices
+- ✅ Feel polished and production-ready
+- ✅ **REQUIRED: All UI elements centered with the game canvas**
+- ✅ **REQUIRED: Control legend showing all keyboard shortcuts**
+- ✅ **REQUIRED: Mobile buttons for every keyboard shortcut**
+- ✅ **REQUIRED: Proper game restart functionality (auto or manual)**
+
+## Output Requirements
+- Complete HTML5 game in single file
+- All CSS and JavaScript embedded
+- No external dependencies except CDN libraries
+- Mobile-optimized and tested
+- Includes WTAF signature style elements
+- Ready to play immediately
+
+---
+
+**Now build**: [USER_REQUEST]
+
+## CRITICAL OUTPUT INSTRUCTIONS:
+
+**RETURN ONLY HTML CODE - NO EXPLANATORY TEXT**
+
+- Your response must ONLY contain the complete HTML code wrapped in ```html code blocks
+- Do NOT include any explanatory text before the code block
+- Do NOT include any explanatory text after the code block
+- Do NOT include comments about what you built
+- Do NOT explain how the game works
+- Do NOT provide usage instructions
+- Do NOT acknowledge the request
+
+**CORRECT FORMAT:**
+```html
+<!DOCTYPE html>
+<html>
+...complete game code...
+</html>
+```
+
+**WRONG FORMAT:**
+Here's your snake game:
+```html
+...code...
+```
+This game includes...
+
+**ONLY return the HTML code block. Nothing else.** 

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Gallery Demo System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .demo-modes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .mode-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .mode-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 15px;
+            color: #ff6600;
+        }
+        
+        .mode-card.active {
+            border-color: #ff0066;
+            box-shadow: 0 0 20px rgba(255,0,102,0.3);
+        }
+        
+        .switch-button {
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        
+        .demo-app {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .app-header {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .mode-indicator {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .mode-indicator.gallery {
+            background: rgba(255,102,0,0.3);
+            color: #ff6600;
+        }
+        
+        .mode-indicator.live {
+            background: rgba(255,0,102,0.3);
+            color: #ff0066;
+        }
+        
+        .app-content {
+            padding: 25px;
+        }
+        
+        .chat-messages, .user-list, .content-section {
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .message.demo {
+            background: rgba(255,102,0,0.2);
+            border-left: 3px solid #ff6600;
+        }
+        
+        .message.real {
+            background: rgba(255,0,102,0.2);
+            border-left: 3px solid #ff0066;
+        }
+        
+        .username {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .username.demo {
+            color: #ff6600;
+        }
+        
+        .username.real {
+            color: #ff0066;
+        }
+        
+        .data-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .data-column h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .code-block {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            border-left: 3px solid #333;
+        }
+        
+        .highlight {
+            background: rgba(255,255,0,0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WTAF Gallery Demo System</h1>
+            <p>How WTAF pages detect gallery mode and show demo data</p>
+        </div>
+
+        <div class="demo-modes">
+            <div class="mode-card" id="gallery-mode">
+                <h3>🎨 Gallery Mode (?gallery=true)</h3>
+                <p>Shows demo data for safe browsing:</p>
+                <ul>
+                    <li>Fake usernames (DemoUser1, SampleJohn, etc.)</li>
+                    <li>Sample conversations</li>
+                    <li>Mock business data</li>
+                    <li>No private information</li>
+                </ul>
+                <button class="switch-button" onclick="activateMode('gallery')">Switch to Gallery Mode</button>
+            </div>
+            
+            <div class="mode-card active" id="live-mode">
+                <h3>🔴 Live Mode (normal access)</h3>
+                <p>Shows real user data:</p>
+                <ul>
+                    <li>Actual usernames</li>
+                    <li>Real conversations</li>
+                    <li>Private business data</li>
+                    <li>Personal information</li>
+                </ul>
+                <button class="switch-button" onclick="activateMode('live')">Switch to Live Mode</button>
+            </div>
+        </div>
+
+        <div class="demo-app">
+            <div class="app-header">
+                <h3>K-Pop Journal (Collaborative App)</h3>
+                <div class="mode-indicator live" id="current-mode">LIVE MODE</div>
+            </div>
+            
+            <div class="app-content">
+                <div class="chat-messages" id="messages-container">
+                    <!-- Messages will be populated by JavaScript -->
+                </div>
+                
+                <div class="user-list">
+                    <h4>Active Users:</h4>
+                    <div id="users-container">
+                        <!-- Users will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-comparison">
+            <div class="data-column">
+                <h4 style="color: #ff6600;">Gallery Mode Code Implementation</h4>
+                <div class="code-block">
+<span class="highlight">// Detect gallery mode</span>
+const urlParams = new URLSearchParams(window.location.search);
+const isGalleryMode = urlParams.get('gallery') === 'true';
+
+if (isGalleryMode) {
+    <span class="highlight">// Use demo data</span>
+    const demoUsers = [
+        { name: 'DemoUser1', bias: 'Jimin 💜' },
+        { name: 'SampleFan', bias: 'Rosé 🌹' },
+        { name: 'TestK-popper', bias: 'Felix ⭐' }
+    ];
+    
+    const demoMessages = [
+        { user: 'DemoUser1', text: 'OMG new comeback!' },
+        { user: 'SampleFan', text: 'The choreo is amazing' },
+        { user: 'TestK-popper', text: 'Already learned it!' }
+    ];
+    
+    <span class="highlight">// Populate with demo data</span>
+    populateApp(demoUsers, demoMessages);
+} else {
+    <span class="highlight">// Load real user data from Supabase</span>
+    loadRealData();
+}
+                </div>
+            </div>
+            
+            <div class="data-column">
+                <h4 style="color: #ff0066;">Live Mode Code Implementation</h4>
+                <div class="code-block">
+<span class="highlight">// Normal Supabase queries</span>
+const { data: users } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('participant_data')
+    .eq('app_id', APP_ID)
+    .eq('action_type', 'join');
+
+const { data: messages } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .eq('action_type', 'message')
+    .order('created_at', { ascending: false });
+
+<span class="highlight">// Show real user data</span>
+populateApp(users, messages);
+
+<span class="highlight">// Enable real-time updates</span>
+supabase
+    .channel(`app-${APP_ID}`)
+    .on('postgres_changes', 
+        { event: '*', schema: 'public' }, 
+        handleRealTimeUpdate
+    )
+    .subscribe();
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'live';
+        
+        const demoData = {
+            users: [
+                { name: 'DemoUser1 🎵', status: 'Streaming NewJeans' },
+                { name: 'SampleFan ⭐', status: 'Learning choreo' },
+                { name: 'TestK-popper 💜', status: 'Bias wrecked again' }
+            ],
+            messages: [
+                { user: 'DemoUser1', text: 'Anyone else obsessed with this new track? 🔥', time: '2 min ago' },
+                { user: 'SampleFan', text: 'The music video styling is EVERYTHING ✨', time: '5 min ago' },
+                { user: 'TestK-popper', text: 'Already added to my bias playlist 💜', time: '8 min ago' },
+                { user: 'DemoUser1', text: 'Concert tickets go on sale tomorrow! 🎫', time: '12 min ago' }
+            ]
+        };
+        
+        const liveData = {
+            users: [
+                { name: 'sarah_bts_army', status: 'Currently crying over Jimin' },
+                { name: 'felix_my_sunshine', status: 'Streaming God\'s Menu on repeat' },
+                { name: 'rosie_blackpink_stan', status: 'LISA SOLO WHEN' }
+            ],
+            messages: [
+                { user: 'sarah_bts_army', text: 'I can\'t stop watching that Jimin fancam 😭', time: '1 min ago' },
+                { user: 'felix_my_sunshine', text: 'Felix\'s deep voice in the new song hits different', time: '3 min ago' },
+                { user: 'rosie_blackpink_stan', text: 'BLACKPINK comeback rumors are killing me', time: '7 min ago' },
+                { user: 'sarah_bts_army', text: 'Who else is going to the LA concert?', time: '15 min ago' }
+            ]
+        };
+        
+        function activateMode(mode) {
+            currentMode = mode;
+            
+            // Update mode indicator
+            const indicator = document.getElementById('current-mode');
+            const galleryCard = document.getElementById('gallery-mode');
+            const liveCard = document.getElementById('live-mode');
+            
+            if (mode === 'gallery') {
+                indicator.textContent = 'GALLERY MODE';
+                indicator.className = 'mode-indicator gallery';
+                galleryCard.classList.add('active');
+                liveCard.classList.remove('active');
+                populateApp(demoData);
+            } else {
+                indicator.textContent = 'LIVE MODE';
+                indicator.className = 'mode-indicator live';
+                liveCard.classList.add('active');
+                galleryCard.classList.remove('active');
+                populateApp(liveData);
+            }
+        }
+        
+        function populateApp(data) {
+            const messagesContainer = document.getElementById('messages-container');
+            const usersContainer = document.getElementById('users-container');
+            
+            // Clear existing content
+            messagesContainer.innerHTML = '';
+            usersContainer.innerHTML = '';
+            
+            // Populate messages
+            data.messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${currentMode === 'gallery' ? 'demo' : 'real'}`;
+                messageDiv.innerHTML = `
+                    <div class="username ${currentMode === 'gallery' ? 'demo' : 'real'}">${message.user}</div>
+                    <div>${message.text}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 5px;">${message.time}</div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            // Populate users
+            data.users.forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.style.marginBottom = '8px';
+                userDiv.innerHTML = `
+                    <span class="username ${currentMode === 'gallery' ? 'demo' : 'real'}">${user.name}</span>
+                    <span style="opacity: 0.8; font-size: 0.9rem;"> - ${user.status}</span>
+                `;
+                usersContainer.appendChild(userDiv);
+            });
+        }
+        
+        // Initialize with live mode
+        populateApp(liveData);
+        
+        // Demo URL parameter detection
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('demo') === 'gallery') {
+            activateMode('gallery');
+        }
+        
+        // Add gallery mode instructions
+        const instructions = document.createElement('div');
+        instructions.style.cssText = `
+            background: rgba(255,102,0,0.1);
+            border: 1px solid rgba(255,102,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 30px;
+            text-align: center;
+        `;
+        instructions.innerHTML = `
+            <h4 style="color: #ff6600; margin-bottom: 10px;">🎯 Gallery Implementation Guide</h4>
+            <p>To implement this in real WTAF pages:</p>
+            <p>1. Check for <code>?gallery=true</code> parameter</p>
+            <p>2. Replace Supabase queries with demo data generation</p>
+            <p>3. Disable real-time updates and user interactions</p>
+            <p>4. Show "Gallery Mode" indicator to users</p>
+            <p><strong>Try it:</strong> Add <code>?demo=gallery</code> to this page URL and refresh!</p>
+        `;
+        document.querySelector('.container').appendChild(instructions);
+    </script>
+</body>
+</html> 
