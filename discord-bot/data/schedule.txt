@@ -1,24 +1,24 @@
-00:00 waterheater
-01:00 watercooler
+00:00 
+01:00
 02:00 coachquotes
-03:00 simplestaffmeeting
-04:00 upcomingevent
-05:00 watercooler
-06:00 microclass
+03:00 
+04:00 
+05:00 
+06:00 
 07:00 watercooler
-08:00 crowdfaves
+08:00 
 09:00 newschat
-10:00 coachquotes
-11:00 watercooler
-12:00 upcomingevent
-13:00 pitch
+10:00 
+11:00 
+12:00 
+13:00 
 14:00 microclass
-15:00 watercooler
-16:00 crowdfaves
-17:00 watercooler
-18:00 coachquotes
-19:00 tmzchat
+15:00 
+16:00 
+17:00 
+18:00 
+19:00 
 20:00 upcomingevent
-21:00 watercooler
-22:00 microclass
-23:00 watercooler
+21:00 
+22:00 
+23:00 

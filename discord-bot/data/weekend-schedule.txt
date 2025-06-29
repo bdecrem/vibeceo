@@ -1,24 +1,24 @@
-00:00 alextipsy-v2
-01:00 alextipsy-v2
-02:00 crowdfaves-v2
+00:00 
+01:00 
+02:00 
 03:00 watercooler
-04:00 alextipsy-v2
-05:00 watercooler
-06:00 coachquotes-v2
-07:00 watercooler
-08:00 alextipsy-v2
-09:00 watercooler
+04:00 
+05:00
+06:00 
+07:00 
+08:00 
+09:00 
 10:00 microclass-v2
-11:00 watercooler
-12:00 alextipsy-v2
-13:00 watercooler
+11:00 
+12:00 
+13:00 
 14:00 upcomingevent-v2
-15:00 watercooler
-16:00 alextipsy-v2
-17:00 watercooler
+15:00 
+16:00 
+17:00 
 18:00 crowdfaves-v2
-19:00 watercooler
-20:00 alextipsy-v2
-21:00 watercooler
+19:00 
+20:00 
+21:00 
 22:00 coachquotes-v2
-23:00 watercooler
+23:00 
