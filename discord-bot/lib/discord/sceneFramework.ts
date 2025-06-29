@@ -1193,7 +1193,8 @@ export async function playEpisode(
 		const playback = await playScene(scene, channel, episodeContext);
 		scenePlaybacks.push(playback);
 
-		// Post system announcement every 6 scenes (after scenes 5, 11, 17, 23)
+		// COMMENTED OUT: Post system announcement every 6 scenes (after scenes 5, 11, 17, 23)
+		/*
 		if (i === 5 || i === 11 || i === 17 || i === 23) {
 			console.log(`\n\n******************************************************************`);
 			console.log(`***** SCENE ${i} FINISHED - CHECKING IF SYSTEM ANNOUNCEMENT NEEDED *****`);
@@ -1207,6 +1208,7 @@ export async function playEpisode(
 				console.error(`ERROR: System announcement after scene ${i} failed:`, error);
 			}
 		}
+		*/
 
 		// If scene failed, log it but continue with next scene
 		if (playback.status === "failed") {

@@ -366,7 +366,8 @@ export async function sendEventMessage(
 			// Update the story info scene index in bot.ts
 			updateCurrentScene(storyInfoSceneIndex);
 			
-			// Trigger system announcement for specific scene indexes
+			// COMMENTED OUT: Trigger system announcement for specific scene indexes
+			/* 
 			if (storyInfoSceneIndex === 5 || storyInfoSceneIndex === 11 || 
 				storyInfoSceneIndex === 17 || storyInfoSceneIndex === 23) {
 				try {
@@ -376,8 +377,10 @@ export async function sendEventMessage(
 					console.error(`Error posting system announcement for scene ${storyInfoSceneIndex}:`, error);
 				}
 			}
+			*/
 			
-			// Trigger ForReal system announcement twice per 24 scenes (scenes 1 and 12)
+			// COMMENTED OUT: Trigger ForReal system announcement twice per 24 scenes (scenes 1 and 12)
+			/* 
 			if (storyInfoSceneIndex === 1 || storyInfoSceneIndex === 12) {
 				try {
 					console.log(`Triggering ForReal system announcement after scene ${storyInfoSceneIndex}`);
@@ -386,6 +389,7 @@ export async function sendEventMessage(
 					console.error(`Error posting ForReal system announcement for scene ${storyInfoSceneIndex}:`, error);
 				}
 			}
+			*/
 			
 			const locationTime = await getLocationAndTime(gmtHour, gmtMinutes);
 			await addScene({
