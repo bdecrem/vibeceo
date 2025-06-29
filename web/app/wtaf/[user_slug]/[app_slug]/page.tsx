@@ -54,9 +54,59 @@ export default async function WTAFAppPage({ params }: PageProps) {
 	}
 }
 
-// Skip metadata generation entirely - all metadata is embedded in HTML by monitor script
+// Generate proper metadata dynamically instead of relying on embedded HTML tags
 export async function generateMetadata({ params }: PageProps) {
-	// Return empty metadata object to prevent Next.js from generating any meta tags
-	// The monitor script embeds all necessary OpenGraph and meta tags directly in the HTML
-	return {};
+	const { user_slug, app_slug } = await params;
+
+	try {
+		// Fetch the WTAF content to get basic info
+		const { data } = await supabase
+			.from("wtaf_content")
+			.select("original_prompt, coach, created_at")
+			.eq("user_slug", user_slug)
+			.eq("app_slug", app_slug)
+			.eq("status", "published")
+			.single();
+
+		// Generate the OG image URL using our cached system
+		const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.wtaf.me'}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`;
+		const pageUrl = `https://www.wtaf.me/wtaf/${user_slug}/${app_slug}`;
+		
+		// Create a proper title from the original prompt or use default
+		const title = data?.original_prompt 
+			? `${data.original_prompt.slice(0, 60)}${data.original_prompt.length > 60 ? '...' : ''} | WTAF`
+			: 'WTAF – Delusional App Generator';
+
+		return {
+			title,
+			description: "Vibecoded chaos, shipped via SMS.",
+			openGraph: {
+				title: "WTAF by AF",
+				description: "Vibecoded chaos, shipped via SMS.",
+				url: pageUrl,
+				images: [
+					{
+						url: ogImageUrl,
+						width: 1200,
+						height: 630,
+						alt: 'WTAF App Preview',
+					},
+				],
+				type: 'website',
+			},
+			twitter: {
+				card: 'summary_large_image',
+				title: "WTAF by AF",
+				description: "Vibecoded chaos, shipped via SMS.",
+				images: [ogImageUrl],
+			},
+		};
+	} catch (error) {
+		console.error("Error generating metadata:", error);
+		// Fallback metadata
+		return {
+			title: "WTAF – Delusional App Generator",
+			description: "Vibecoded chaos, shipped via SMS.",
+		};
+	}
 }
