@@ -118,28 +118,7 @@ async function ensureTestUser(userSlug: string): Promise<void> {
 	}
 }
 
-// Load WTAF cookbook (same as controller.ts - production only uses app-tech-spec.json)
-let wtafCookbook: string | null = null;
-
-async function loadWtafCookbook(): Promise<string | null> {
-	try {
-		const { readFile } = await import("fs/promises");
-
-		// Load WTAF cookbook from copied content folder (when compiled, content is in dist/content)
-		const cookbookPath = join(__dirname, "content", "app-tech-spec.json");
-		const content = await readFile(cookbookPath, "utf8");
-
-		logWithTimestamp("📖 WTAF Cookbook loaded successfully by test script");
-		return content;
-	} catch (error) {
-		logWarning(
-			`Error loading WTAF cookbook: ${
-				error instanceof Error ? error.message : String(error)
-			}`
-		);
-		return null;
-	}
-}
+// WTAF Design System will be loaded dynamically in wtaf-processor when needed
 
 // REQUEST_CONFIGS - exact copy from controller.ts
 const REQUEST_CONFIGS = {
@@ -195,7 +174,7 @@ THIS IS NON-NEGOTIABLE
 
 🚨🚨🚨 END CRITICAL INSTRUCTION 🚨🚨🚨
 
-You are creating exactly what the user requests. Follow the WTAF Cookbook & Style Guide provided in the user message for all design and brand requirements.
+You are creating exactly what the user requests. Follow the WTAF Design System & Style Guide provided in the user message for all design and brand requirements.
 
 📧 EMAIL PLACEHOLDER SYSTEM:
 IF YOU SEE "EMAIL_NEEDED: true" IN THE USER MESSAGE METADATA:
@@ -379,7 +358,6 @@ async function processWtafRequest(
 				model: config.builderModel,
 				maxTokens: config.builderMaxTokens,
 				temperature: config.builderTemperature,
-				cookbook: wtafCookbook || undefined,
 			});
 		}
 
@@ -598,15 +576,7 @@ async function runTest(userPrompt: string): Promise<void> {
 	logWithTimestamp("=" + "=".repeat(79));
 
 	try {
-		// Initialize like the controller does
-		wtafCookbook = await loadWtafCookbook();
-		if (wtafCookbook) {
-			logSuccess("📖 WTAF Cookbook loaded and ready for testing");
-		} else {
-			logWarning(
-				"⚠️ WTAF Cookbook failed to load - proceeding without brand guidelines"
-			);
-		}
+		// Note: WTAF Design System will be loaded dynamically when needed for standard web pages
 
 		// Create required directories (same as controller.ts)
 		try {
