@@ -1,0 +1,104 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-silver-bear-painting.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/silver-bear-painting" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <title>Ian McCarthy - Product Coauthor & Entrepreneur</title>
+    <style>
+        body {
+            background: #111;
+            color: #FFD700;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 3px solid #FFD700;
+            padding: 20px;
+            box-shadow: 0 0 20px #FFD700;
+        }
+
+        h1 {
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 3px;
+            color: #FFFF00;
+            text-shadow: 2px 2px #B8860B;
+        }
+
+        .wolf-container {
+            background: #222;
+            border: 2px solid #FFD700;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .wolf-art {
+            font-family: monospace;
+            white-space: pre;
+            color: #FFE87C;
+            text-align: center;
+        }
+
+        .remix-info {
+            border-top: 2px dashed #FFD700;
+            margin-top: 20px;
+            padding-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .punk-button {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+
+        .punk-button:hover {
+            background: #FFFF00;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ian McCarthy</h1>
+        <h2>✧ Product Coauthor & Entrepreneur ✧</h2>
+        
+        <div class="wolf-container">
+            <div class="wolf-art">
+              /\___/\
+             (  o o  )
+             (  =^=  ) 
+              (______)
+            </div>
+        </div>
+
+        <div class="remix-info">
+            <h3>BIO DETAILS</h3>
+            <p>Role: Product Coauthor</p>
+            <p>Focus: Entrepreneurship</p>
+            <p>Status: Building Cool Stuff</p>
+        </div>
+
+        <button class="punk-button">CONNECT NOW</button>
+    </div>
+</body>
+</html>
+```

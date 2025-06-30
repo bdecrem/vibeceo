@@ -1,0 +1,131 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            position: relative;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: glitch 1s infinite;
+            text-shadow: 
+                0 0 10px #ff2e93,
+                0 0 20px #ff61c7,
+                0 0 40px #ff2e93;
+            background: linear-gradient(45deg, #ff2e93, #ff61c7, #3f88ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        #emoji1 { top: -100px; left: -100px; animation-delay: 0s; }
+        #emoji2 { top: 100px; right: -50px; animation-delay: 0.5s; }
+        #emoji3 { bottom: -80px; left: 50px; animation-delay: 1s; }
+        #emoji4 { top: 50px; left: -150px; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .secret {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        #punk-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff2e93;
+            padding: 2rem;
+            border-radius: 10px;
+            font-size: 2rem;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <span class="floating-emoji" id="emoji1">🔥</span>
+        <span class="floating-emoji" id="emoji2">💀</span>
+        <span class="floating-emoji" id="emoji3">⚡</span>
+        <span class="floating-emoji" id="emoji4">🌀</span>
+    </div>
+
+    <div class="secret">Type WTAF for chaos</div>
+    <div id="punk-message">SYSTEM OVERRIDE 🎸</div>
+
+    <script>
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if(wtafCode.includes('wtaf')) {
+                document.getElementById('punk-message').style.display = 'block';
+                document.body.style.animation = 'glitch 0.2s infinite';
+                setTimeout(() => {
+                    document.getElementById('punk-message').style.display = 'none';
+                    document.body.style.animation = '';
+                    wtafCode = '';
+                }, 2000);
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (e.clientX - window.innerWidth/2) * speed;
+                const y = (e.clientY - window.innerHeight/2) * speed;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

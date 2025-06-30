@@ -1,0 +1,111 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                3px 3px 0px #FF2E93,
+                6px 6px 0px #7C3AED;
+            animation: glitch 3s infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .secret-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 70%; left: 80%">💀</div>
+    <div class="floating-emoji" data-value="4" style="top: 30%; left: 70%">⚡</div>
+    <div class="floating-emoji" data-value="5" style="top: 80%; left: 30%">🔥</div>
+
+    <div class="secret-msg">Type 'WTAF' for chaos</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if(wtafCode.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                wtafCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

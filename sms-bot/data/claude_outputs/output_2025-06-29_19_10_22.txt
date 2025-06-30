@@ -1,0 +1,128 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEEDLE & INK REBELLION</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: linear-gradient(45deg, #1a1a1a, #4a0404, #1a1a1a);
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 3px solid #ff0000;
+        }
+
+        .logo {
+            font-size: 3.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px #ff0000;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 40px 0;
+        }
+
+        .gallery-item {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #ff0000;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ffffff;
+        }
+
+        .about {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            margin: 40px 0;
+            border: 1px solid #ff0000;
+        }
+
+        .contact {
+            text-align: center;
+            padding: 40px 0;
+            background: rgba(0, 0, 0, 0.7);
+            border-top: 3px solid #ff0000;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #ff0000;
+            color: #ffffff;
+            text-decoration: none;
+            text-transform: uppercase;
+            margin: 20px 0;
+            border: 2px solid #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #ffffff;
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="logo">Needle & Ink Rebellion</h1>
+            <p>WHERE ART MEETS ANARCHY</p>
+        </header>
+
+        <section class="gallery">
+            <div class="gallery-item">
+                <img src="https://placehold.co/400x400/ff0000/ffffff?text=Tattoo+Art" alt="Tattoo Art">
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/400x400/ff0000/ffffff?text=Custom+Design" alt="Custom Design">
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/400x400/ff0000/ffffff?text=Portfolio" alt="Portfolio">
+            </div>
+        </section>
+
+        <section class="about">
+            <h2>ABOUT THE REBELLION</h2>
+            <p>Breaking conventions since 2010, we're not your average tattoo parlor. Our artists specialize in everything from old-school traditional to contemporary abstract designs. Every piece tells a story - what's yours?</p>
+        </section>
+
+        <section class="contact">
+            <h2>JOIN THE REBELLION</h2>
+            <p>Ready to make your mark?</p>
+            <a href="mailto:[CONTACT_EMAIL]" class="btn">Book Your Session</a>
+            <p>Contact us: [CONTACT_EMAIL]</p>
+            <p>123 Punk Rock Avenue, Rebellion District</p>
+            <p>Open Tuesday-Saturday | 12PM-10PM</p>
+        </section>
+    </div>
+</body>
+</html>
+```

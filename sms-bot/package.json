@@ -24,7 +24,8 @@
 		"start:dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run dev'",
 		"subscribers": "npm run build && node dist/scripts/list-subscribers.js",
 		"test:wtaf": "npm run build && node dist/test-wtaf-production.js",
-		"dev:reroute": "npm run build && node dist/scripts/dev-reroute.js"
+		"dev:reroute": "npm run build && node dist/scripts/dev-reroute.js",
+		"dev:reroute:v2": "npm run build && node dist/scripts/dev-reroute-v2.js"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",

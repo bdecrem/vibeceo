@@ -1,0 +1,122 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANARCHY INK TATTOO</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #fff;
+            font-family: 'Special Elite', cursive;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 3px solid #ff0066;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 4em;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px #ff0066;
+        }
+
+        .skull-logo {
+            font-size: 60px;
+            margin: 20px 0;
+        }
+
+        .contact-box {
+            background-color: #1f1f1f;
+            border: 2px solid #ff0066;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #ff0066;
+            color: #fff;
+            padding: 15px 30px;
+            text-decoration: none;
+            margin: 20px 0;
+            border: none;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #fff;
+            color: #ff0066;
+        }
+
+        .social-links {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .social-links a {
+            color: #fff;
+            margin: 0 10px;
+            font-size: 1.2em;
+            text-decoration: none;
+        }
+
+        .social-links a:hover {
+            color: #ff0066;
+        }
+
+        .anarchy {
+            font-size: 2em;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ANARCHY INK</h1>
+            <div class="skull-logo">☠️</div>
+            <p>WHERE REBELLION MEETS SKIN</p>
+        </header>
+
+        <div class="contact-box">
+            <h2>READY TO GET INKED?</h2>
+            <p>BOOK YOUR SPOT NOW</p>
+            <a href="mailto:[CONTACT_EMAIL]" class="cta-button">EMAIL US: [CONTACT_EMAIL]</a>
+        </div>
+
+        <div class="anarchy" style="text-align: center;">Ⓐ</div>
+
+        <div class="social-links">
+            <a href="#">INSTAGRAM</a>
+            <a href="#">TWITTER</a>
+            <a href="#">FACEBOOK</a>
+        </div>
+
+        <footer style="text-align: center; margin-top: 40px; font-size: 0.8em;">
+            <p>NO CONFORMISTS. NO RULES. JUST ART.</p>
+        </footer>
+    </div>
+</body>
+</html>
+```
