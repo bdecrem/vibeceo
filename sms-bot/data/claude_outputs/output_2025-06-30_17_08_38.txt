@@ -1,0 +1,103 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO WORLD // WTAF STYLE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+        
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            margin: 0;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.5),
+                0 0 20px rgba(255,255,255,0.3),
+                0 0 30px rgba(255,255,255,0.2);
+            animation: glitch 3s infinite;
+        }
+
+        .floating {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 6s infinite;
+        }
+
+        #emoji1 { top: 20%; left: 20%; animation-delay: 0s; }
+        #emoji2 { top: 30%; right: 20%; animation-delay: 1s; }
+        #emoji3 { bottom: 20%; left: 30%; animation-delay: 2s; }
+        #emoji4 { bottom: 30%; right: 30%; animation-delay: 3s; }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .secret {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HELLO, WORLD!</h1>
+    </div>
+    
+    <div class="floating" id="emoji1">🚀</div>
+    <div class="floating" id="emoji2">💥</div>
+    <div class="floating" id="emoji3">⚡</div>
+    <div class="floating" id="emoji4">✨</div>
+
+    <div class="secret">Type 'WTAF' for chaos</div>
+
+    <script>
+        let wtaf = '';
+        document.addEventListener('keydown', (e) => {
+            wtaf += e.key.toLowerCase();
+            if(wtaf.includes('wtaf')) {
+                document.body.style.animation = 'gradient 2s ease infinite';
+                wtaf = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

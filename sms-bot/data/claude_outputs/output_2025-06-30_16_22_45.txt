@@ -1,0 +1,113 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            position: relative;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: glitch 3s infinite;
+            text-shadow: 
+                0 0 10px #FF2E93,
+                0 0 20px #FF61C7,
+                0 0 40px #FFA5E5;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg) }
+            50% { transform: translateY(-20px) rotate(10deg) }
+            100% { transform: translateY(0px) rotate(0deg) }
+        }
+
+        .emoji1 { animation: float 4s ease-in-out infinite; top: -100px; left: 20%; }
+        .emoji2 { animation: float 5s ease-in-out infinite; bottom: -80px; right: 25%; }
+        .emoji3 { animation: float 6s ease-in-out infinite; top: 50%; left: 10%; }
+        .emoji4 { animation: float 7s ease-in-out infinite; bottom: 30%; right: 10%; }
+
+        .secret {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating-emoji emoji1" data-value="3">⚡</div>
+        <div class="floating-emoji emoji2" data-value="2">💀</div>
+        <div class="floating-emoji emoji3" data-value="4">🔥</div>
+        <div class="floating-emoji emoji4" data-value="1">💥</div>
+        <h1>Hello World</h1>
+    </div>
+    <div class="secret">Type 'WTAF' for chaos</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key.toLowerCase();
+            if(typed.includes('wtaf')) {
+                document.querySelector('h1').style.animation = 'glitch 0.2s infinite';
+                setTimeout(() => {
+                    document.querySelector('h1').style.animation = 'glitch 3s infinite';
+                }, 1000);
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

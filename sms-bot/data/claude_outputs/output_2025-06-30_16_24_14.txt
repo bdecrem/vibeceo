@@ -1,0 +1,89 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO WORLD // PUNK AF</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anarchy+Distressed&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #ffff00;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Anarchy Distressed', cursive;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 
+                4px 4px 0px #ff0000,
+                -4px -4px 0px #00ff00;
+            animation: shake 0.5s infinite;
+            margin: 0;
+        }
+
+        .safety-pins {
+            position: absolute;
+            font-size: 40px;
+            animation: spin 2s linear infinite;
+        }
+
+        .pin1 { top: -50px; left: 20px; }
+        .pin2 { bottom: -50px; right: 20px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Ripped effect */
+        .container::before,
+        .container::after {
+            content: '';
+            position: absolute;
+            background: #ffff00;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            width: 20px;
+            height: 20px;
+        }
+
+        .container::before {
+            top: -20px;
+            left: 30%;
+        }
+
+        .container::after {
+            bottom: -20px;
+            right: 30%;
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="safety-pins pin1">📌</div>
+        <h1>Hello World</h1>
+        <div class="safety-pins pin2">📌</div>
+    </div>
+</body>
+</html>
+```

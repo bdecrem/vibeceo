@@ -1,0 +1,103 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .main-text {
+            font-size: 120px;
+            color: black;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .main-text:hover {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        #emoji1 { top: 20%; left: 20%; }
+        #emoji2 { top: 70%; left: 80%; }
+        #emoji3 { top: 30%; left: 70%; }
+        #emoji4 { top: 80%; left: 30%; }
+
+        .secret-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="main-text">Hello World</h1>
+    
+    <div class="floating-emoji" id="emoji1" data-value="3">⚡</div>
+    <div class="floating-emoji" id="emoji2" data-value="5">💀</div>
+    <div class="floating-emoji" id="emoji3" data-value="2">🔥</div>
+    <div class="floating-emoji" id="emoji4" data-value="4">💥</div>
+
+    <div class="secret-msg">Type 'WTAF' for chaos</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if(wtafCode.includes('wtaf')) {
+                document.body.style.background = 'black';
+                document.querySelector('.main-text').style.color = 'white';
+                wtafCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

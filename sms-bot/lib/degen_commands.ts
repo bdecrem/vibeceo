@@ -87,8 +87,9 @@ export async function queueEditRequest(
       return false;
     }
     
-    // Create edit request file following monitor.py's expected format
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    // Create edit request file with microsecond precision timestamp for chronological processing
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
     const filename = `edit-${userSlug}-${appSlug}-${timestamp}.txt`;
     
     // Build the file content with all necessary information for monitor.py
@@ -153,8 +154,9 @@ export async function queueEditRequestBySlug(
       return false;
     }
     
-    // Create edit request file following monitor.py's expected format
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    // Create edit request file with microsecond precision timestamp for chronological processing  
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
     const filename = `edit-${userSlug}-${appSlug}-${timestamp}.txt`;
     
     // Build the file content with all necessary information for monitor.py
@@ -238,8 +240,9 @@ export async function queueRemixRequest(
       logWithTimestamp(`✅ App '${targetSlug}' owned by user - allowing remix`);
     }
     
-    // Create remix request file for WTAF engine processing
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    // Create remix request file with microsecond precision timestamp for chronological processing
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
     const filename = `remix-${userSlug}-${targetSlug}-${timestamp}.txt`;
     
     // Build the file content for WTAF engine processing using --remix format

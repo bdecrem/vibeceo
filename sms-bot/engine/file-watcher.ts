@@ -83,10 +83,10 @@ export async function getAllUnprocessedFiles(watchDirectories = WATCH_DIRS) {
         }
     }
     
-    // Sort by modification time (oldest first) to process in order
+    // Sort by filename (which contains microsecond timestamps) for precise chronological order
     return allFiles
-        .sort((a, b) => a.mtime.getTime() - b.mtime.getTime())
-        .map(file => file.path);
+        .map(file => file.path)
+        .sort((a, b) => a.localeCompare(b)); // Alphabetical sort of filenames = chronological order
 }
 
 /**
@@ -344,35 +344,43 @@ export async function* watchForFiles() {
                 logWithTimestamp(`🔄 Monitor loop #${loopCount} - checking for files...`);
             }
             
-            const newest = await getNewestFile();
-            const newestStr = newest ? newest : null;
+            // Get ALL unprocessed files in chronological order (oldest first)
+            const allFiles = await getAllUnprocessedFiles();
             
-            // Check if file exists AND hasn't been processed AND isn't being processed
-            if (newest && !processed.has(newestStr) && !currentlyProcessing.has(newestStr)) {
+            // Process the oldest unprocessed file that isn't currently being processed
+            let fileToProcess = null;
+            for (const filePath of allFiles) {
+                if (!processed.has(filePath) && !currentlyProcessing.has(filePath)) {
+                    fileToProcess = filePath;
+                    break; // Take the first (oldest) available file
+                }
+            }
+            
+            if (fileToProcess) {
                 try {
                     // Verify file still exists (might have been processed by another instance)
-                    await stat(newest);
+                    await stat(fileToProcess);
                     
-                    logProcess(`New file detected: ${newest}`);
-                    const stats = await stat(newest);
+                    logProcess(`New file detected: ${fileToProcess}`);
+                    const stats = await stat(fileToProcess);
                     logWithTimestamp(`📄 File size: ${stats.size} bytes`);
                     
                     // Lock the file for processing
-                    const processingPath = await lockFileForProcessing(newest);
+                    const processingPath = await lockFileForProcessing(fileToProcess);
                     if (!processingPath) {
                         // Another process claimed it
                         continue;
                     }
                     
                     // Mark as currently processing
-                    currentlyProcessing.add(newestStr);
+                    currentlyProcessing.add(fileToProcess);
                     
                     // Parse file content
                     const fileData = await parseFileContent(processingPath);
                     if (!fileData) {
                         logError(`Failed to parse file: ${processingPath}`);
                         await moveProcessedFile(processingPath, false);
-                        currentlyProcessing.delete(newestStr);
+                        currentlyProcessing.delete(fileToProcess);
                         continue;
                     }
                     
@@ -384,28 +392,22 @@ export async function* watchForFiles() {
                         processingPath,
                         fileData,
                         requestInfo,
-                        originalPath: newest
+                        originalPath: fileToProcess
                     };
                     
                     // Mark as processed
-                    processed.add(newestStr);
-                    currentlyProcessing.delete(newestStr);
+                    processed.add(fileToProcess);
+                    currentlyProcessing.delete(fileToProcess);
                     
                 } catch (statError) {
                     // File was deleted/moved by another process
-                    logWarning(`File disappeared during processing: ${newest}`);
-                    currentlyProcessing.delete(newestStr);
+                    logWarning(`File disappeared during processing: ${fileToProcess}`);
+                    currentlyProcessing.delete(fileToProcess);
                     continue;
                 }
             } else {
                 if (loopCount % 10 === 1) { // Only log occasionally to avoid spam
-                    if (newest && processed.has(newestStr)) {
-                        logWithTimestamp(`⏭️ File already processed: ${newest}`);
-                    } else if (newest && currentlyProcessing.has(newestStr)) {
-                        logWithTimestamp(`⚙️ File currently being processed: ${newest}`);
-                    } else {
-                        logWithTimestamp(`📭 No new files found in ${WATCH_DIRS.join(', ')}`);
-                    }
+                    logWithTimestamp(`📭 No new files found in ${WATCH_DIRS.join(', ')}`);
                 }
             }
             

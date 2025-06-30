@@ -1,0 +1,120 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF STYLE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(45deg, #00ff00, #66ff66);
+            animation: gradientMove 15s ease infinite;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: #111;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-shadow: 
+                3px 3px 0 #000,
+                -3px -3px 0 #000;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #emoji1 { top: -100px; left: -100px; animation-delay: 0s; }
+        #emoji2 { top: -80px; right: -80px; animation-delay: 1s; }
+        #emoji3 { bottom: -120px; left: -60px; animation-delay: 2s; }
+        #emoji4 { bottom: -90px; right: -90px; animation-delay: 3s; }
+
+        @keyframes textPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Easter egg animation */
+        .rage {
+            animation: rage 0.1s ease infinite;
+        }
+
+        @keyframes rage {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            25% { transform: translate(5px, 5px) rotate(5deg); }
+            50% { transform: translate(-5px, -5px) rotate(-5deg); }
+            75% { transform: translate(-5px, 5px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <div class="floating-emoji" id="emoji1">💚</div>
+        <div class="floating-emoji" id="emoji2">✨</div>
+        <div class="floating-emoji" id="emoji3">🌟</div>
+        <div class="floating-emoji" id="emoji4">⚡</div>
+    </div>
+
+    <script>
+        // Easter egg: Click text 5 times for rage mode
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks >= 5) {
+                document.querySelector('h1').classList.add('rage');
+            }
+        });
+
+        // Parallax effect on emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 100;
+                const offsetY = (mouseY - 0.5) * 100;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

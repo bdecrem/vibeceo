@@ -1,0 +1,118 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO PUNK</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0011ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: #fff;
+            position: relative;
+        }
+
+        .glitch-container {
+            position: relative;
+        }
+
+        .glitch-text {
+            font-size: 8vw;
+            text-transform: uppercase;
+            position: relative;
+            text-shadow: 
+                0.05em 0 0 rgba(255,0,0,.75),
+                -0.025em -0.05em 0 rgba(0,255,0,.75),
+                0.025em 0.05em 0 rgba(0,0,255,.75);
+            animation: glitch 500ms infinite;
+        }
+
+        @keyframes glitch {
+            0% {
+                text-shadow: 
+                    0.05em 0 0 rgba(255,0,0,.75),
+                    -0.05em -0.025em 0 rgba(0,255,0,.75),
+                    -0.025em 0.05em 0 rgba(0,0,255,.75);
+            }
+            14% {
+                text-shadow: 
+                    0.05em 0 0 rgba(255,0,0,.75),
+                    -0.05em -0.025em 0 rgba(0,255,0,.75),
+                    -0.025em 0.05em 0 rgba(0,0,255,.75);
+            }
+            15% {
+                text-shadow: 
+                    -0.05em -0.025em 0 rgba(255,0,0,.75),
+                    0.025em 0.025em 0 rgba(0,255,0,.75),
+                    -0.05em -0.05em 0 rgba(0,0,255,.75);
+            }
+            49% {
+                text-shadow: 
+                    -0.05em -0.025em 0 rgba(255,0,0,.75),
+                    0.025em 0.025em 0 rgba(0,255,0,.75),
+                    -0.05em -0.05em 0 rgba(0,0,255,.75);
+            }
+            50% {
+                text-shadow: 
+                    0.025em 0.05em 0 rgba(255,0,0,.75),
+                    0.05em 0 0 rgba(0,255,0,.75),
+                    0 -0.05em 0 rgba(0,0,255,.75);
+            }
+            99% {
+                text-shadow: 
+                    0.025em 0.05em 0 rgba(255,0,0,.75),
+                    0.05em 0 0 rgba(0,255,0,.75),
+                    0 -0.05em 0 rgba(0,0,255,.75);
+            }
+            100% {
+                text-shadow: 
+                    -0.025em 0 0 rgba(255,0,0,.75),
+                    -0.025em -0.025em 0 rgba(0,255,0,.75),
+                    -0.025em -0.05em 0 rgba(0,0,255,.75);
+            }
+        }
+
+        .safety-pins {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.7;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+
+        .pin1 { top: 20%; left: 20%; animation-delay: 0s; }
+        .pin2 { top: 70%; left: 80%; animation-delay: 0.5s; }
+        .pin3 { top: 80%; left: 30%; animation-delay: 1s; }
+        .pin4 { top: 30%; left: 70%; animation-delay: 1.5s; }
+    </style>
+</head>
+<body>
+    <div class="safety-pins pin1">🔗</div>
+    <div class="safety-pins pin2">🔗</div>
+    <div class="safety-pins pin3">🔗</div>
+    <div class="safety-pins pin4">🔗</div>
+    
+    <div class="glitch-container">
+        <div class="glitch-text">Hello World</div>
+    </div>
+</body>
+</html>
+```
