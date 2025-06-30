@@ -1,0 +1,82 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HELLO PUNK</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            animation: backgroundPulse 4s ease infinite;
+        }
+
+        @keyframes backgroundPulse {
+            0% { background: #1a1a2e; }
+            50% { background: #2a2a4e; }
+            100% { background: #1a1a2e; }
+        }
+
+        .hello {
+            color: #ff2e93;
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 
+                0 0 10px #ff2e93,
+                0 0 20px #ff2e93,
+                0 0 40px #ff2e93;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(3deg); }
+            21% { transform: skew(-3deg); }
+            23% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .safety-pin {
+            position: fixed;
+            font-size: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        #pin1 { top: 20%; left: 20%; }
+        #pin2 { bottom: 20%; right: 20%; }
+    </style>
+</head>
+<body>
+    <div class="safety-pin">🔗</div>
+    <div class="safety-pin" id="pin1">⚡</div>
+    <div class="safety-pin" id="pin2">💀</div>
+    <div class="hello">Hello, World!</div>
+
+    <script>
+        // Easter egg: Type 'punk' to trigger chaos
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('punk')) {
+                document.body.style.animation = 'backgroundPulse 0.5s infinite';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

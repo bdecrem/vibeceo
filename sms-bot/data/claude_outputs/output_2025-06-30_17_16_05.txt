@@ -1,0 +1,97 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .hello {
+            color: #fff;
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            animation: glitch 3s infinite;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(255,255,255,0.5),
+                0 0 30px rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .hello:hover {
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* Easter egg - type 'wtaf' */
+        .rage-mode {
+            animation: rage 0.5s infinite;
+            color: #ff0000;
+        }
+
+        @keyframes rage {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="hello">Hello World</h1>
+
+    <script>
+        // Easter egg
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('wtaf')) {
+                document.querySelector('.hello').classList.add('rage-mode');
+                setTimeout(() => {
+                    document.querySelector('.hello').classList.remove('rage-mode');
+                    typed = '';
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
+```

@@ -1697,8 +1697,9 @@ ${response}`;
           return;
         }
         
-        // Create filename with timestamp for monitor.py processing
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        // Create filename with microsecond precision timestamp for chronological processing
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
         const filename = `wtaf-snippet-${timestamp}.txt`;
         const filePath = path.join(process.cwd(), 'data', 'wtaf', filename);
         

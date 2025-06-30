@@ -258,11 +258,38 @@ export async function saveCodeToSupabase(
             status: 'published'
         };
         
-        const { data: savedData, error } = await getSupabaseClient()
+        let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
             .insert(data)
             .select('id')
             .single();
+            
+        // Handle constraint violations gracefully (race condition protection)
+        if (error?.code === '23505') { // PostgreSQL unique constraint violation
+            logWarning(`🔄 Database race condition detected: ${error.message}`);
+            logWarning(`Regenerating unique slug for user ${userSlug}...`);
+            
+            // Generate a new unique slug and try again
+            const newAppSlug = await generateUniqueAppSlug(userSlug);
+            const newData = { ...data, app_slug: newAppSlug };
+            
+            const retryResult = await getSupabaseClient()
+                .from('wtaf_content')
+                .insert(newData)
+                .select('id')
+                .single();
+                
+            if (retryResult.error || !retryResult.data) {
+                logError(`Retry failed: ${retryResult.error?.message || 'No data returned'}`);
+                return { appSlug: null, publicUrl: null, uuid: null };
+            }
+            
+            logSuccess(`✅ Race condition resolved with new slug: ${newAppSlug}`);
+            // Update variables for normal processing flow
+            appSlug = newAppSlug;
+            savedData = retryResult.data;
+            error = null; // Clear the error since retry succeeded
+        }
             
         if (error || !savedData) {
             logError(`Error saving to Supabase: ${error?.message || 'No data returned'}`);
