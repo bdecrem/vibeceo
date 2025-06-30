@@ -1,0 +1,114 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WTAF Hello World</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF, #ABF7FF);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.5),
+                0 0 20px rgba(255,255,255,0.3),
+                0 0 30px rgba(255,255,255,0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .secret-msg {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%; animation: float 6s ease-in-out infinite;">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 70%; left: 80%; animation: float 8s ease-in-out infinite;">💫</div>
+    <div class="floating-emoji" data-value="4" style="top: 30%; left: 70%; animation: float 7s ease-in-out infinite;">⚡</div>
+    <div class="floating-emoji" data-value="5" style="top: 80%; left: 30%; animation: float 9s ease-in-out infinite;">🌀</div>
+
+    <div class="secret-msg">You found the secret! 🎉</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg: Type 'hello'
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('hello')) {
+                document.querySelector('.secret-msg').style.display = 'block';
+                setTimeout(() => {
+                    document.querySelector('.secret-msg').style.display = 'none';
+                    typed = '';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,135 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #3F88FF;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            animation: backgroundPulse 4s ease-in-out infinite;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-shadow: 
+                4px 4px 0px #FF2E93,
+                8px 8px 0px #000;
+            animation: glitch 3s infinite;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        #emoji1 { top: -100px; left: -100px; animation-delay: 0s; }
+        #emoji2 { top: 100px; right: -50px; animation-delay: 0.5s; }
+        #emoji3 { bottom: -80px; left: 50px; animation-delay: 1s; }
+        #emoji4 { top: 50px; left: -150px; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(2deg); }
+            40% { transform: skew(-2deg); }
+            60% { transform: skew(1deg); }
+            80% { transform: skew(-1deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        @keyframes backgroundPulse {
+            0%, 100% { background: #3F88FF; }
+            50% { background: #6E7FFF; }
+        }
+
+        .secret-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            opacity: 0.5;
+            font-size: 12px;
+        }
+
+        /* Easter egg animation */
+        .rage-mode {
+            animation: rage 0.1s infinite;
+        }
+
+        @keyframes rage {
+            0% { transform: translate(-5px, -5px); }
+            25% { transform: translate(5px, -5px); }
+            50% { transform: translate(-5px, 5px); }
+            75% { transform: translate(5px, 5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <div class="floating-emoji" id="emoji1">💀</div>
+        <div class="floating-emoji" id="emoji2">⚡</div>
+        <div class="floating-emoji" id="emoji3">🔥</div>
+        <div class="floating-emoji" id="emoji4">💥</div>
+    </div>
+    <div class="secret-msg">Type RAGE for chaos...</div>
+
+    <script>
+        // Easter egg - type RAGE
+        let typed = '';
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase();
+            if(typed.includes('rage')) {
+                document.body.classList.add('rage-mode');
+                setTimeout(() => {
+                    document.body.classList.remove('rage-mode');
+                    typed = '';
+                }, 1000);
+            }
+        });
+
+        // Parallax effect on emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            emojis.forEach(emoji => {
+                const offsetX = (mouseX - 0.5) * 50;
+                const offsetY = (mouseY - 0.5) * 50;
+                emoji.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

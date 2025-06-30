@@ -251,7 +251,7 @@ async function loadEditSystemPrompt(): Promise<string> {
  * Process WTAF creation workflow
  * Main workflow extracted from monitor.py execute_gpt4o function
  */
-async function processWtafRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+export async function processWtafRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
     logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing file: ${processingPath}`);
     
@@ -926,7 +926,7 @@ async function processWtafRequest(processingPath: string, fileData: any, request
  * Process EDIT workflow
  * Handles edit-* files created by handlers.ts EDIT command
  */
-async function processEditRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+export async function processEditRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
     logWithTimestamp("🎨 STARTING EDIT PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing edit file: ${processingPath}`);
     
@@ -1078,7 +1078,7 @@ ${originalHtml}`;
  * Handles remix-* files created by handlers.ts REMIX command
  * Extracts the stack command and processes it using stackables system
  */
-async function processRemixRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+export async function processRemixRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
     logWithTimestamp("🎨 STARTING REMIX PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing remix file: ${processingPath}`);
     
@@ -1212,8 +1212,8 @@ async function processRemixRequest(processingPath: string, fileData: any, reques
 }
 
 /**
- * Main controller loop
- * Replaces monitor.py monitor_loop function
+ * Main controller loop with worker pool
+ * Replaces monitor.py monitor_loop function with concurrent processing
  */
 async function mainControllerLoop() {
     logStartupInfo(WEB_APP_URL, WTAF_DOMAIN, WEB_OUTPUT_DIR);
@@ -1228,57 +1228,79 @@ async function mainControllerLoop() {
         process.exit(1);
     }
     
-    logWithTimestamp("🌀 WTAF Engine running...");
+    // Import worker pool and batch processing
+    const { WorkerPool } = await import('./worker-pool.js');
+    const { getAllUnprocessedFilesBatch } = await import('./file-watcher.js');
+    const { BATCH_CHECK_INTERVAL } = await import('./shared/config.js');
+    
+    // Initialize worker pool
+    const workerPool = new WorkerPool();
+    globalWorkerPool = workerPool; // Store for shutdown handling
+    await workerPool.start();
+    
+    logWithTimestamp("🌀 WTAF Engine running with worker pool...");
     logWithTimestamp(`👀 Watching directories: ${WATCH_DIRS.join(', ')}`);
     
+    let loopCount = 0;
+    
     try {
-        // Start file monitoring
-        for await (const fileInfo of watchForFiles()) {
-            const { processingPath, fileData, requestInfo } = fileInfo;
+        // Main monitoring loop
+        while (true) {
+            loopCount++;
             
-            logWithTimestamp(`🚨 Processing new request: ${requestInfo.type.toUpperCase()}`);
-            
-            let success = false;
+            // Log status every 10 loops
+            if (loopCount % 10 === 1) {
+                const status = workerPool.getStatus();
+                logWithTimestamp(`🔄 Loop #${loopCount} - Workers: ${status.availableWorkers}/${status.workerCount} available, Queue: ${status.queuedTasks}, Active: ${status.activeTasks}`);
+            }
             
             try {
-                if (requestInfo.type === 'wtaf' || requestInfo.type === 'code') {
-                    success = await processWtafRequest(processingPath, fileData, requestInfo);
-                } else if (requestInfo.type === 'edit') {
-                    success = await processEditRequest(processingPath, fileData, requestInfo);
-                } else if (requestInfo.type === 'remix') {
-                    success = await processRemixRequest(processingPath, fileData, requestInfo);
+                // Get all pending files as tasks
+                const tasks = await getAllUnprocessedFilesBatch();
+                
+                if (tasks.length > 0) {
+                    logWithTimestamp(`📋 Found ${tasks.length} files to process`);
+                    workerPool.addTasks(tasks);
                 } else {
-                    logWarning(`Unknown request type: ${requestInfo.type}`);
-                    success = false;
+                    if (loopCount % 10 === 1) {
+                        logWithTimestamp(`📭 No new files found in ${WATCH_DIRS.join(', ')}`);
+                    }
                 }
-            } catch (processingError) {
-                logError(`Processing error: ${processingError instanceof Error ? processingError.message : String(processingError)}`);
-                success = false;
+                
+            } catch (batchError) {
+                logError(`Error getting batch tasks: ${batchError instanceof Error ? batchError.message : String(batchError)}`);
             }
             
-            // Move processed file to final location
-            await moveProcessedFile(processingPath, success);
-            
-            if (success) {
-                logSuccess(`Successfully processed and moved file`);
-            } else {
-                logError(`Failed to process file`);
-            }
+            // Wait before next check
+            await new Promise(resolve => setTimeout(resolve, BATCH_CHECK_INTERVAL * 1000));
         }
+        
     } catch (error) {
         logError(`Controller loop error: ${error instanceof Error ? error.message : String(error)}`);
+        
+        // Cleanup worker pool on error
+        await workerPool.stop();
         process.exit(1);
     }
 }
 
+// Global worker pool reference for shutdown
+let globalWorkerPool: any = null;
+
 // Handle graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     logWithTimestamp("🛑 Received SIGINT. Shutting down gracefully...");
+    if (globalWorkerPool) {
+        await globalWorkerPool.stop();
+    }
     process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
     logWithTimestamp("🛑 Received SIGTERM. Shutting down gracefully...");
+    if (globalWorkerPool) {
+        await globalWorkerPool.stop();
+    }
     process.exit(0);
 });
 

@@ -1,0 +1,115 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hello {
+            font-size: 8vw;
+            position: relative;
+            animation: float 4s ease-in-out infinite;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hello:hover {
+            transform: scale(1.1);
+            color: #FF2E93;
+            text-shadow: 
+                0 0 10px rgba(255,46,147,0.5),
+                0 0 20px rgba(255,46,147,0.3),
+                0 0 30px rgba(255,46,147,0.1);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        #e1 { top: 20%; left: 20%; animation: drift 7s infinite; }
+        #e2 { top: 70%; right: 20%; animation: drift 8s infinite reverse; }
+        #e3 { bottom: 20%; left: 30%; animation: drift 6s infinite; }
+        #e4 { top: 40%; right: 30%; animation: drift 9s infinite reverse; }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(30px, 30px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+
+        .secret {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="hello" id="hello">Hello World</h1>
+    
+    <div class="emoji" id="e1">⚡</div>
+    <div class="emoji" id="e2">💀</div>
+    <div class="emoji" id="e3">🌀</div>
+    <div class="emoji" id="e4">✨</div>
+
+    <div class="secret">Type WTAF for chaos</div>
+
+    <script>
+        let wtafCode = '';
+        document.addEventListener('keydown', (e) => {
+            wtafCode += e.key.toLowerCase();
+            if(wtafCode.includes('wtaf')) {
+                document.body.style.background = '#FF2E93';
+                document.querySelector('.hello').style.color = 'white';
+                document.querySelectorAll('.emoji').forEach(e => {
+                    e.style.fontSize = '8rem';
+                    e.style.animation = 'drift 3s infinite';
+                });
+                wtafCode = '';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.emoji').forEach(emoji => {
+                const x = (e.clientX - window.innerWidth/2) / 20;
+                const y = (e.clientY - window.innerHeight/2) / 20;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

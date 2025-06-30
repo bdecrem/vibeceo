@@ -1,0 +1,91 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO WORLD // WTAF EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #FF2E93;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: white;
+            position: relative;
+        }
+
+        .hello {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: glitch 3s infinite;
+            text-shadow: 
+                3px 3px 0 #00ff00,
+                -3px -3px 0 #ff00ff;
+        }
+
+        .floating {
+            position: absolute;
+            font-size: 5rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #emoji1 { top: 20%; left: 20%; animation-delay: 0s; }
+        #emoji2 { top: 70%; left: 80%; animation-delay: 1s; }
+        #emoji3 { top: 30%; left: 70%; animation-delay: 2s; }
+        #emoji4 { top: 80%; left: 30%; animation-delay: 3s; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .secret {
+            position: fixed;
+            bottom: 20px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating" id="emoji1">💀</div>
+    <div class="floating" id="emoji2">⚡</div>
+    <div class="floating" id="emoji3">🔥</div>
+    <div class="floating" id="emoji4">💥</div>
+    
+    <h1 class="hello">Hello World</h1>
+    
+    <div class="secret">Type 'WTAF' for chaos</div>
+
+    <script>
+        let typed = '';
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase();
+            if(typed.includes('wtaf')) {
+                document.body.style.animation = 'rainbow 1s infinite';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

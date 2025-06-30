@@ -1,0 +1,107 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF STYLE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #ffff00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            text-shadow: 
+                3px 3px 0 #ff00ff,
+                6px 6px 0 #00ffff;
+            animation: glitch 3s infinite;
+            margin: 0;
+            padding: 0;
+        }
+
+        .emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+
+        #secret {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+    
+    <div class="emoji" style="top: 10%; left: 10%;">💥</div>
+    <div class="emoji" style="top: 70%; left: 80%;">⚡</div>
+    <div class="emoji" style="top: 30%; right: 20%;">🔥</div>
+    <div class="emoji" style="bottom: 20%; left: 30%;">✨</div>
+
+    <div id="secret">type WTAF for chaos</div>
+
+    <script>
+        // Parallax effect for emojis
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.emoji');
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let typed = '';
+        document.addEventListener('keydown', (e) => {
+            typed += e.key;
+            if(typed.toLowerCase().includes('wtaf')) {
+                document.body.style.animation = 'rainbow 1s infinite';
+                document.body.style.background = '#ff00ff';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

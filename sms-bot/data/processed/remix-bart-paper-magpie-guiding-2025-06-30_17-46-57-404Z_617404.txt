@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix paper-magpie-guiding make the background white
+
+ORIGINAL_REQUEST:REMIX paper-magpie-guiding make the background white

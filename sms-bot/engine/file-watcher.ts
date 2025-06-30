@@ -90,6 +90,48 @@ export async function getAllUnprocessedFiles(watchDirectories = WATCH_DIRS) {
 }
 
 /**
+ * Get all unprocessed files as batch with task metadata
+ * Returns tasks ready for worker pool processing
+ */
+export async function getAllUnprocessedFilesBatch(watchDirectories = WATCH_DIRS): Promise<Array<{
+    processingPath: string;
+    originalPath: string;
+    taskId: string;
+    timestamp: number;
+}>> {
+    const filePaths = await getAllUnprocessedFiles(watchDirectories);
+    const tasks = [];
+    
+    for (const filePath of filePaths) {
+        try {
+            // Lock the file for processing (atomic rename)
+            const processingPath = await lockFileForProcessing(filePath);
+            if (!processingPath) {
+                // Another process claimed it, skip
+                continue;
+            }
+            
+            // Create task metadata
+            const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const timestamp = Date.now();
+            
+            tasks.push({
+                processingPath,
+                originalPath: filePath,
+                taskId,
+                timestamp
+            });
+            
+        } catch (error) {
+            // File might have been moved/deleted, skip it
+            continue;
+        }
+    }
+    
+    return tasks;
+}
+
+/**
  * Parse file content and extract metadata
  * Extracted from monitor.py file parsing logic
  */

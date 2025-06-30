@@ -1,0 +1,111 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO WORLD // WTAF STYLE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ff0000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            position: relative;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-shadow: 
+                4px 4px 0px #000,
+                -4px -4px 0px #000,
+                8px 8px 0px rgba(0,0,0,0.3);
+            animation: glitch 3s infinite;
+            position: relative;
+        }
+
+        h1::before,
+        h1::after {
+            content: "HELLO WORLD";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        h1::before {
+            color: #0ff;
+            animation: glitch 2s infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+            transform: translate(-2px, 2px);
+            opacity: 0.75;
+        }
+
+        h1::after {
+            color: #f0f;
+            animation: glitch 2.5s infinite;
+            clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+            transform: translate(2px, -2px);
+            opacity: 0.75;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .safety-pins {
+            position: absolute;
+            font-size: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .pin1 { top: -50px; left: 20px; }
+        .pin2 { bottom: -50px; right: 20px; }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .anarchy {
+            position: fixed;
+            bottom: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="safety-pins pin1">🔗</div>
+        <h1>HELLO WORLD</h1>
+        <div class="safety-pins pin2">⚡</div>
+    </div>
+    <div class="anarchy">ANARCHY IN THE HTML</div>
+</body>
+</html>
+```
