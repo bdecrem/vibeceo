@@ -1,0 +1,112 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            color: transparent;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(255,46,147,0.5);
+            animation: pulse 2s ease-in-out infinite;
+            margin: 0;
+            padding: 0;
+            letter-spacing: -2px;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .emoji1 { top: 20%; left: 20%; animation-delay: 0s; }
+        .emoji2 { top: 60%; left: 70%; animation-delay: -1s; }
+        .emoji3 { top: 30%; right: 20%; animation-delay: -2s; }
+        .emoji4 { bottom: 20%; right: 40%; animation-delay: -3s; }
+
+        /* Easter egg */
+        .secret {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #FF2E93;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HELLO WORLD</h1>
+    </div>
+    
+    <div class="floating-emoji emoji1">⚡</div>
+    <div class="floating-emoji emoji2">💀</div>
+    <div class="floating-emoji emoji3">🔥</div>
+    <div class="floating-emoji emoji4">✨</div>
+    
+    <div class="secret">YOU FOUND THE SECRET MESSAGE!</div>
+
+    <script>
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg - type 'wtaf'
+        let secretCode = '';
+        document.addEventListener('keypress', (e) => {
+            secretCode += e.key;
+            if(secretCode.includes('wtaf')) {
+                document.querySelector('.secret').style.display = 'block';
+                setTimeout(() => {
+                    document.querySelector('.secret').style.display = 'none';
+                    secretCode = '';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
+```
