@@ -1,0 +1,140 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>INKED REBELLION TATTOO</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(45deg, #ff0066, #6600ff);
+            padding: 40px 0;
+            text-align: center;
+            border-bottom: 3px solid #fff;
+        }
+
+        h1 {
+            font-size: 4em;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin: 0;
+            text-shadow: 3px 3px #000;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .gallery-item {
+            background: #2a2a2a;
+            padding: 10px;
+            border: 2px solid #ff0066;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            border: 1px solid #fff;
+        }
+
+        .contact {
+            background: #2a2a2a;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+            border: 3px solid #6600ff;
+        }
+
+        .contact-button {
+            background: #ff0066;
+            color: #fff;
+            padding: 15px 30px;
+            text-decoration: none;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .contact-button:hover {
+            background: #6600ff;
+            transform: scale(1.05);
+        }
+
+        .services {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .service-item {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 10px;
+            border-left: 4px solid #ff0066;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Inked Rebellion</h1>
+        <p>WHERE ART MEETS ANARCHY</p>
+    </header>
+
+    <div class="container">
+        <div class="services">
+            <h2>OUR EXPERTISE</h2>
+            <div class="service-item">
+                <h3>Custom Designs</h3>
+                <p>Your vision, our precision</p>
+            </div>
+            <div class="service-item">
+                <h3>Traditional</h3>
+                <p>Old school cool with a modern twist</p>
+            </div>
+            <div class="service-item">
+                <h3>Cover-Ups</h3>
+                <p>Transform the old into something bold</p>
+            </div>
+        </div>
+
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="https://placehold.co/300x300/ff0066/ffffff?text=Tattoo+Art" alt="Tattoo Art">
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/300x300/6600ff/ffffff?text=Custom+Design" alt="Custom Design">
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/300x300/ff0066/ffffff?text=Portfolio" alt="Portfolio">
+            </div>
+        </div>
+
+        <div class="contact">
+            <h2>READY TO GET INKED?</h2>
+            <p>Drop us a line and let's create something legendary</p>
+            <a href="mailto:[CONTACT_EMAIL]" class="contact-button">BOOK NOW</a>
+            <p>Email: [CONTACT_EMAIL]</p>
+            <p>Located in the heart of the underground</p>
+            <p>Walk-ins welcome // Consultations free</p>
+        </div>
+    </div>
+</body>
+</html>
+```

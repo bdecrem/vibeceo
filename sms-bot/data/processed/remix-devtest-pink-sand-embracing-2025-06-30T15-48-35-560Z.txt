@@ -1,0 +1,5 @@
+SENDER:+15555551234
+USER_SLUG:devtest
+REMIX_COMMAND:--remix pink-sand-embracing make the background yellow
+
+ORIGINAL_REQUEST:REMIX pink-sand-embracing make the background yellow

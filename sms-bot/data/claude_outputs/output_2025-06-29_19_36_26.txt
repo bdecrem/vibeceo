@@ -1,0 +1,183 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEEDLE REBELS INK SOCIETY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(45deg, #1a1a1a, #2d142c, #1a1a1a);
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 4rem;
+            color: #ff2e93;
+            text-shadow: 0 0 10px #ff2e93;
+            animation: neonPulse 2s infinite;
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            color: #ABF7FF;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            filter: grayscale(50%);
+        }
+
+        .cta {
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px #FF2E93;
+        }
+
+        .contact {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            z-index: 100;
+        }
+
+        @keyframes neonPulse {
+            0% { text-shadow: 0 0 10px #ff2e93; }
+            50% { text-shadow: 0 0 20px #ff2e93, 0 0 30px #ff2e93; }
+            100% { text-shadow: 0 0 10px #ff2e93; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="3" style="top: 10%; left: 10%;">💀</div>
+    <div class="floating-emoji" data-value="4" style="top: 20%; right: 20%;">⚡</div>
+    <div class="floating-emoji" data-value="2" style="bottom: 30%; left: 30%;">🔥</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 20%; right: 10%;">⛓️</div>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">NEEDLE REBELS INK SOCIETY</h1>
+            <p class="tagline">WHERE SKIN BECOMES LEGEND</p>
+        </header>
+
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="https://source.unsplash.com/random/600x800?tattoo,art" alt="Tattoo art">
+            </div>
+            <div class="gallery-item">
+                <img src="https://source.unsplash.com/random/600x800?tattoo,design" alt="Tattoo design">
+            </div>
+            <div class="gallery-item">
+                <img src="https://source.unsplash.com/random/600x800?ink,art" alt="Ink art">
+            </div>
+        </div>
+
+        <div class="cta">
+            <a href="#" class="btn">BOOK YOUR REBELLION</a>
+        </div>
+
+        <div class="contact">
+            <h2>GET IN TOUCH</h2>
+            <p>Email: <a href="mailto:[CONTACT_EMAIL]" style="color: #FF61C7;">[CONTACT_EMAIL]</a></p>
+            <p>Location: 666 Chaos Street, Punk District</p>
+            <p>Hours: When the moon howls (12PM - 2AM)</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let clicks = 0;
+        document.querySelector('.logo').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.body.style.animation = 'neonPulse 0.5s infinite';
+                alert('🤘 WELCOME TO THE UNDERGROUND! 🤘');
+            }
+        });
+    </script>
+</body>
+</html>
+```

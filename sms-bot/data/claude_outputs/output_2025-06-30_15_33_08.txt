@@ -1,0 +1,111 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hello {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.5),
+                0 0 20px rgba(255,255,255,0.3),
+                0 0 30px rgba(255,255,255,0.2);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #emoji1 { top: 20%; left: 20%; }
+        #emoji2 { top: 70%; left: 80%; }
+        #emoji3 { top: 30%; right: 20%; }
+        #emoji4 { bottom: 20%; left: 40%; }
+
+        .secret {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" id="emoji1" data-value="2">⚡</div>
+    <div class="floating-emoji" id="emoji2" data-value="3">💀</div>
+    <div class="floating-emoji" id="emoji3" data-value="4">🔥</div>
+    <div class="floating-emoji" id="emoji4" data-value="5">💥</div>
+    
+    <h1 class="hello">Hello, World!</h1>
+    
+    <div class="secret">Type WTAF for chaos</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let wtaf = '';
+        document.addEventListener('keydown', (e) => {
+            wtaf += e.key.toLowerCase();
+            if(wtaf.includes('wtaf')) {
+                document.body.style.animation = 'gradient 2s ease infinite';
+                document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                    emoji.style.animation = 'float 1s ease-in-out infinite';
+                });
+                wtaf = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```
