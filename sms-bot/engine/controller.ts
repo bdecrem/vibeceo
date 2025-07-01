@@ -571,6 +571,39 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             } catch (error) {
                 logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
             }
+
+            // 🔗 SOCIAL UPDATES: Handle remix social features
+            try {
+                if (deployResult.uuid) {
+                    logWithTimestamp(`🔗 Processing social updates for remix...`);
+                    const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                    
+                    // Get original app info
+                    const originalAppInfo = await getAppInfoForRemix(appSlug);
+                    if (originalAppInfo) {
+                        const socialSuccess = await handleRemixSocialUpdates(
+                            appSlug, // original app slug
+                            originalAppInfo.userSlug, // original creator
+                            deployResult.uuid, // new remix app UUID
+                            userSlug, // person doing the remix
+                            userRequest // remix instructions
+                        );
+                        
+                        if (socialSuccess) {
+                            logSuccess(`🎉 Social updates completed: remix count incremented, lineage tracked, auto-follow created`);
+                        } else {
+                            logWarning(`⚠️ Some social updates failed, but remix deployed successfully`);
+                        }
+                    } else {
+                        logWarning(`⚠️ Could not find original app info for social updates`);
+                    }
+                } else {
+                    logWarning(`⚠️ No UUID returned from deployment, skipping social updates`);
+                }
+            } catch (error) {
+                logWarning(`Social updates failed: ${error instanceof Error ? error.message : String(error)}`);
+                // Don't fail the entire remix for social update issues
+            }
             
             const needsEmail = code.includes('[CONTACT_EMAIL]');
             await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
@@ -1186,6 +1219,39 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                     }
                 } catch (error) {
                     logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
+                }
+
+                // 🔗 SOCIAL UPDATES: Handle remix social features
+                try {
+                    if (deployResult.uuid) {
+                        logWithTimestamp(`🔗 Processing social updates for remix...`);
+                        const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                        
+                        // Get original app info
+                        const originalAppInfo = await getAppInfoForRemix(appSlug);
+                        if (originalAppInfo) {
+                            const socialSuccess = await handleRemixSocialUpdates(
+                                appSlug, // original app slug
+                                originalAppInfo.userSlug, // original creator
+                                deployResult.uuid, // new remix app UUID
+                                userSlug, // person doing the remix
+                                userRequest // remix instructions
+                            );
+                            
+                            if (socialSuccess) {
+                                logSuccess(`🎉 Social updates completed: remix count incremented, lineage tracked, auto-follow created`);
+                            } else {
+                                logWarning(`⚠️ Some social updates failed, but remix deployed successfully`);
+                            }
+                        } else {
+                            logWarning(`⚠️ Could not find original app info for social updates`);
+                        }
+                    } else {
+                        logWarning(`⚠️ No UUID returned from deployment, skipping social updates`);
+                    }
+                } catch (error) {
+                    logWarning(`Social updates failed: ${error instanceof Error ? error.message : String(error)}`);
+                    // Don't fail the entire remix for social update issues
                 }
                 
                 const needsEmail = code.includes('[CONTACT_EMAIL]');

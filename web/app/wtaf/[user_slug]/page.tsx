@@ -50,6 +50,19 @@ export default async function UserPage({ params }: UserPageProps) {
           <p>This is the front porch. The weirdness lives deeper inside.</p>
           <p>Double-check your URL, or just vibe for a bit.</p>
         </div>
+        
+        {/* Link to creations */}
+        <div className="mt-8">
+          <a
+            href={`/${user_slug}/creations`}
+            className="inline-flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 hover:text-white px-6 py-3 rounded-lg border border-purple-400/30 transition-all duration-200"
+          >
+            🎨 View {user_slug}'s Creations
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
       </div>
     </div>
   )
