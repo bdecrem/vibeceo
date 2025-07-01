@@ -1,0 +1,142 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #00ff00;
+            font-family: system-ui, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-columns: 60px 60px;
+            grid-template-rows: 60px 60px;
+            gap: 10px;
+        }
+        .button {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .button:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <div class="button" id="up">⬆️</div>
+        <div class="button" id="left">⬅️</div>
+        <div class="button" id="right">➡️</div>
+        <div class="button" id="down">⬇️</div>
+    </div>
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d', { alpha: false });
+        var devicePixelRatio = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * devicePixelRatio;
+        canvas.height = window.innerHeight * devicePixelRatio;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.scale(devicePixelRatio, devicePixelRatio);
+
+        var cellSize = 20;
+        var gridWidth = Math.floor(window.innerWidth / cellSize);
+        var gridHeight = Math.floor(window.innerHeight / cellSize);
+        var snake = [{ x: 5, y: 5 }];
+        var direction = { x: 1, y: 0 };
+        var food = {};
+        var gameOver = false;
+        var score = 0;
+
+        function spawnFood() {
+            food = {
+                x: Math.floor(Math.random() * gridWidth),
+                y: Math.floor(Math.random() * gridHeight)
+            };
+            while (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+                food.x = Math.floor(Math.random() * gridWidth);
+                food.y = Math.floor(Math.random() * gridHeight);
+            }
+        }
+
+        function update() {
+            var head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver = true;
+                return;
+            }
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            ctx.fillStyle = '#006400';
+            snake.forEach(segment => ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize));
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+        }
+
+        function gameLoop(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            if (currentTime - lastTime > 100) {
+                lastTime = currentTime;
+                update();
+            }
+            draw();
+            if (!gameOver) requestAnimationFrame(gameLoop);
+            else alert('Game Over! Score: ' + score);
+        }
+
+        var lastTime = 0;
+        spawnFood();
+        requestAnimationFrame(gameLoop);
+
+        function changeDirection(newDirection) {
+            if ((newDirection.x !== -direction.x || snake.length === 1) && (newDirection.y !== -direction.y || snake.length === 1)) {
+                direction = newDirection;
+            }
+        }
+
+        document.getElementById('up').addEventListener('touchstart', function(e) { e.preventDefault(); changeDirection({ x: 0, y: -1 }); });
+        document.getElementById('left').addEventListener('touchstart', function(e) { e.preventDefault(); changeDirection({ x: -1, y: 0 }); });
+        document.getElementById('right').addEventListener('touchstart', function(e) { e.preventDefault(); changeDirection({ x: 1, y: 0 }); });
+        document.getElementById('down').addEventListener('touchstart', function(e) { e.preventDefault(); changeDirection({ x: 0, y: 1 }); });
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp') changeDirection({ x: 0, y: -1 });
+            if (e.key === 'ArrowLeft') changeDirection({ x: -1, y: 0 });
+            if (e.key === 'ArrowRight') changeDirection({ x: 1, y: 0 });
+            if (e.key === 'ArrowDown') changeDirection({ x: 0, y: 1 });
+        });
+    </script>
+</body>
+</html>
+```
