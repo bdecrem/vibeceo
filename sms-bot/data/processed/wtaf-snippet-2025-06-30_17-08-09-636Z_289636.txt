@@ -1,3 +1,0 @@
-SENDER:+15555551234
-USER_SLUG:devtest
-create a random quote generator
