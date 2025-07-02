@@ -247,6 +247,13 @@ export async function saveCodeToSupabase(
     
     // Save to Supabase FIRST to get the UUID
     try {
+        // Detect if this is a ZAD app
+        const isZadApp = code.includes('wtaf_zero_admin_collaborative');
+        
+        if (isZadApp) {
+            logWithTimestamp(`🤝 ZAD app detected - setting type to 'ZAD'`);
+        }
+        
         const data = {
             user_id: userId,
             user_slug: userSlug,
@@ -255,7 +262,8 @@ export async function saveCodeToSupabase(
             sender_phone: senderPhone,
             original_prompt: originalPrompt,
             html_content: code, // Save initial HTML without UUID replacement
-            status: 'published'
+            status: 'published',
+            type: isZadApp ? 'ZAD' : null // Set type to 'ZAD' if ZAD app detected
         };
         
         let { data: savedData, error } = await getSupabaseClient()
@@ -269,7 +277,7 @@ export async function saveCodeToSupabase(
             logWarning(`🔄 Database race condition detected: ${error.message}`);
             logWarning(`Regenerating unique slug for user ${userSlug}...`);
             
-            // Generate a new unique slug and try again
+            // Generate a new unique slug and try again (preserve all original data including type)
             const newAppSlug = await generateUniqueAppSlug(userSlug);
             const newData = { ...data, app_slug: newAppSlug };
             
@@ -285,6 +293,9 @@ export async function saveCodeToSupabase(
             }
             
             logSuccess(`✅ Race condition resolved with new slug: ${newAppSlug}`);
+            if (isZadApp) {
+                logWithTimestamp(`🤝 ZAD type preserved in retry: ${newAppSlug}`);
+            }
             // Update variables for normal processing flow
             appSlug = newAppSlug;
             savedData = retryResult.data;

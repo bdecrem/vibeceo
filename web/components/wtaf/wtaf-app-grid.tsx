@@ -1,6 +1,9 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import RemixButton from '@/components/remix-button'
+import TruncatedPrompt from '@/components/truncated-prompt'
 
 export interface WtafApp {
   id: string
@@ -29,13 +32,15 @@ interface WtafAppGridProps {
   emptyState?: EmptyState
   showRemixButtons?: boolean
   showUserInMeta?: boolean // For trending page to show "By username"
+  layoutStyle?: 'standard' | 'homepage' // Choose layout style
 }
 
 export function WtafAppGrid({ 
   apps, 
   emptyState, 
   showRemixButtons = true,
-  showUserInMeta = false 
+  showUserInMeta = false,
+  layoutStyle = 'standard'
 }: WtafAppGridProps) {
   if (apps.length === 0 && emptyState) {
     return (
@@ -48,30 +53,147 @@ export function WtafAppGrid({
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      {apps.map((app) => (
-        <div 
-          key={app.id} 
-          className="relative bg-gradient-to-br from-purple-900/20 via-black/40 to-pink-900/20 backdrop-blur-sm rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2 border-2"
-          style={{
-            borderImage: 'linear-gradient(135deg, #ff00ff, #00ffff, #ffff00, #ff00ff) 1',
-            boxShadow: '0 8px 32px rgba(255, 0, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2)'
-          }}
-        >
-          <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-12 md:p-8">
-            {/* OG Image with iMessage-style footer */}
-            <div className="flex-shrink-0 w-full md:flex-1 md:max-w-[60%] relative">
+    <>
+      <style jsx>{`
+        .wtaf-service-card {
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(15px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 25px;
+          padding: 45px 35px;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+          margin-bottom: 35px;
+        }
+
+        .wtaf-service-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, #ff0080, #00ffff, #ffff00, #ff0080);
+          background-size: 200% 100%;
+          animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+
+        .wtaf-service-card:hover {
+          transform: translateY(-8px);
+          background: rgba(0, 0, 0, 0.7);
+          box-shadow:
+            0 20px 50px rgba(0, 0, 0, 0.4),
+            0 0 30px rgba(255, 0, 128, 0.2);
+          border-color: rgba(255, 0, 128, 0.3);
+        }
+
+        .wtaf-service-image {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: cover;
+          border-radius: 15px;
+        }
+
+        .wtaf-service-card:hover .wtaf-service-image {
+          transform: scale(1.02);
+          filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.8));
+          border-color: rgba(255, 0, 128, 0.7);
+          box-shadow: 0 10px 40px rgba(255, 0, 128, 0.3);
+        }
+
+        .wtaf-prompt-showcase {
+          color: #00ffff;
+          font-family: 'Space Grotesk', monospace;
+          font-size: 1.8rem;
+          font-weight: 500;
+          background: rgba(0, 255, 255, 0.1);
+          border: 2px solid rgba(0, 255, 255, 0.3);
+          border-radius: 15px;
+          padding: 30px 35px;
+          margin: 0;
+          text-align: left;
+          text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+          backdrop-filter: blur(5px);
+          font-style: italic;
+          line-height: 1.3;
+        }
+
+        .wtaf-prompt-label {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 1.2rem;
+          color: rgba(255, 255, 255, 0.7);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin: 0 0 25px 0;
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+          opacity: 0.8;
+          text-align: left;
+        }
+
+        /* Desktop layout for feature cards with images */
+        @media (min-width: 769px) {
+          .wtaf-service-card.wtaf-image-card {
+            display: flex !important;
+            align-items: center !important;
+            gap: 40px !important;
+            padding: 45px 50px !important;
+            max-width: 1400px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            width: 100% !important;
+          }
+          
+          .wtaf-service-card.wtaf-image-card .wtaf-image-container {
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+            width: 160px !important;
+            max-width: 160px !important;
+            min-width: 160px !important;
+            height: auto !important;
+          }
+          
+          .wtaf-service-card.wtaf-image-card .wtaf-image-content {
+            flex: 2 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            min-height: 200px !important;
+          }
+          
+          .wtaf-service-card.wtaf-image-card .wtaf-prompt-label {
+            margin: 0 0 25px 0 !important;
+            font-size: 1.2rem !important;
+          }
+          
+          .wtaf-service-card.wtaf-image-card .wtaf-prompt-showcase {
+            margin: 0 0 30px 0 !important;
+            font-size: 2.2rem !important;
+            padding: 35px 40px !important;
+            line-height: 1.3 !important;
+          }
+        }
+      `}</style>
+
+      <div className="space-y-6">
+        {apps.map((app) => (
+          <div key={app.id} className="wtaf-service-card wtaf-image-card">
+            <div className="wtaf-image-container">
               <Link href={`/${app.user_slug}/${app.app_slug}`}>
-                {/* Image container with integrated footer */}
                 <div className="rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg">
                   <img
                     src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`}
                     alt={`${app.app_slug} preview`}
-                    className="w-full h-auto"
-                    style={{
-                      aspectRatio: '2/1',
-                      display: 'block'
-                    }}
+                    className="wtaf-service-image"
+                    style={{ margin: 0, width: '100%' }}
                   />
                   {/* iMessage-style metadata footer */}
                   <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-4 py-3">
@@ -83,86 +205,98 @@ export function WtafAppGrid({
                     </div>
                   </div>
                 </div>
-                
-                {/* Favorite Pin Icon */}
-                {app.Fave && (
-                  <div 
-                    className="absolute top-2 right-2 md:top-4 md:right-4 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center backdrop-blur-sm border"
-                    style={{
-                      background: 'rgba(255, 215, 0, 0.9)',
-                      borderColor: 'rgba(255, 215, 0, 0.5)',
-                      boxShadow: '0 0 12px rgba(255, 215, 0, 0.6)'
-                    }}
-                  >
-                    <span className="text-black text-xs md:text-sm">📌</span>
-                  </div>
-                )}
               </Link>
+              
+              {/* User info below image - right aligned */}
+              <div style={{ textAlign: 'right', marginTop: '15px' }}>
+                <div style={{ 
+                  color: 'rgba(255, 255, 255, 0.7)', 
+                  fontSize: '0.9rem',
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  marginBottom: '8px'
+                }}>
+                  By {app.user_slug} • Created {new Date(app.created_at).toLocaleDateString()}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                  {app.recent_remixes && app.recent_remixes > 0 && (
+                    <span style={{
+                      background: 'rgba(255, 165, 0, 0.3)',
+                      color: '#ffcc99',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 165, 0, 0.5)',
+                      fontSize: '0.75rem',
+                      backdropFilter: 'blur(5px)'
+                    }}>
+                      🔥 {app.recent_remixes} recent remix{app.recent_remixes !== 1 ? 'es' : ''}
+                    </span>
+                  )}
+                  {app.remix_count > 0 && (
+                    <span style={{
+                      background: 'rgba(255, 20, 147, 0.3)',
+                      color: '#ffb3d9',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 20, 147, 0.5)',
+                      fontSize: '0.75rem',
+                      backdropFilter: 'blur(5px)'
+                    }}>
+                      💎 {app.remix_count} total remix{app.remix_count !== 1 ? 'es' : ''}
+                    </span>
+                  )}
+                  {app.is_remix && (
+                    <span style={{
+                      background: 'rgba(0, 123, 255, 0.3)',
+                      color: '#99d6ff',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(0, 123, 255, 0.5)',
+                      fontSize: '0.75rem',
+                      backdropFilter: 'blur(5px)'
+                    }}>
+                      🔄 Remix
+                    </span>
+                  )}
+                  {app.Fave && (
+                    <span style={{
+                      background: 'rgba(255, 193, 7, 0.3)',
+                      color: '#fff3cd',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 193, 7, 0.5)',
+                      fontSize: '0.75rem',
+                      backdropFilter: 'blur(5px)'
+                    }}>
+                      📌 Pinned
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-
-            {/* Content */}
-            <div className="flex-1 md:max-w-[40%] space-y-4 md:space-y-6">
-              {/* The Prompt Label */}
-              <div className="text-gray-300 text-base md:text-lg font-semibold tracking-wider uppercase">
-                THE PROMPT:
-              </div>
-
-              {/* Prompt Text */}
-              <div className="bg-gradient-to-br from-black/40 to-purple-900/30 border-2 border-cyan-400/60 rounded-2xl p-4 md:p-6 backdrop-blur-sm">
-                <p 
-                  className="text-cyan-200 text-sm md:text-xl font-medium leading-relaxed"
-                  style={{
-                    fontFamily: 'Space Grotesk, monospace',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  "{app.original_prompt}"
-                </p>
-              </div>
-
-              {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm">
-                <span className="text-gray-300 text-xs">
-                  {showUserInMeta && `By ${app.user_slug} • `}
-                  Created {new Date(app.created_at).toLocaleDateString()}
-                </span>
-                {app.recent_remixes && app.recent_remixes > 0 && (
-                  <span className="bg-orange-500/30 text-orange-200 px-2 py-1 md:px-3 md:py-1 rounded-full border border-orange-400/50 text-xs backdrop-blur-sm">
-                    🔥 {app.recent_remixes} recent remix{app.recent_remixes !== 1 ? 'es' : ''}
-                  </span>
-                )}
-                {app.remix_count > 0 && (
-                  <span className="bg-pink-500/30 text-pink-200 px-2 py-1 md:px-3 md:py-1 rounded-full border border-pink-400/50 text-xs backdrop-blur-sm">
-                    💎 {app.remix_count} total remix{app.remix_count !== 1 ? 'es' : ''}
-                  </span>
-                )}
-                {app.is_remix && (
-                  <span className="bg-blue-500/30 text-blue-200 px-2 py-1 md:px-3 md:py-1 rounded-full border border-blue-400/50 text-xs backdrop-blur-sm">
-                    🔄 Remix
-                  </span>
-                )}
-                {app.is_featured && (
-                  <span className="bg-yellow-500/30 text-yellow-200 px-2 py-1 md:px-3 md:py-1 rounded-full border border-yellow-400/50 text-xs backdrop-blur-sm">
-                    ⭐ Featured
-                  </span>
-                )}
-                {app.Fave && (
-                  <span className="bg-amber-500/30 text-amber-200 px-2 py-1 md:px-3 md:py-1 rounded-full border border-amber-400/50 text-xs backdrop-blur-sm">
-                    📌 Pinned
-                  </span>
-                )}
-              </div>
-
-              {/* Actions */}
+            
+            <div className="wtaf-image-content">
+              <div className="wtaf-prompt-label">The prompt:</div>
+              <TruncatedPrompt
+                prompt={app.original_prompt}
+                maxLength={120}
+                className="wtaf-prompt-showcase"
+                copyOnClick={true}
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+              
+              {/* Actions - positioned at bottom right */}
               {showRemixButtons && (
-                <div className="flex justify-center mt-4">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto' }}>
                   <RemixButton appSlug={app.app_slug} userSlug={app.user_slug} />
                 </div>
               )}
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   )
 } 

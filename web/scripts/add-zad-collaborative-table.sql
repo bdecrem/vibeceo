@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS wtaf_zero_admin_collaborative (
 
 -- Add comments to document the columns
 COMMENT ON TABLE wtaf_zero_admin_collaborative IS 'Collaborative app data for Zero Admin Data (ZAD) apps - no admin interface needed';
-COMMENT ON COLUMN wtaf_zero_admin_collaborative.app_id IS 'Unique identifier for the collaborative app instance';
+COMMENT ON COLUMN wtaf_zero_admin_collaborative.app_id IS 'UUID from wtaf_content.id for the collaborative app instance';
 COMMENT ON COLUMN wtaf_zero_admin_collaborative.action_type IS 'Type of action: join, message, vote, data, etc.';
 COMMENT ON COLUMN wtaf_zero_admin_collaborative.user_identifier IS 'User identification (emoji, username, etc.)';
 COMMENT ON COLUMN wtaf_zero_admin_collaborative.passcode IS 'User authentication code';
