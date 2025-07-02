@@ -789,7 +789,7 @@ export default function WtafLandingPage() {
                 </button>
                 <button 
                   className="cta-button secondary"
-                  onClick={() => window.open('/trending', '_blank')}
+                  onClick={() => window.open('/featured', '_blank')}
                 >
                   Gallery
                 </button>
