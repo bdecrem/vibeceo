@@ -43,7 +43,7 @@ Use this exact pattern:
 
 **App ID Generation**:
 ```javascript
-const APP_ID = 'test1'; // This will be replaced by the script with test1, test2, test3, etc.
+const APP_ID = 'test1'; // This will be replaced with the actual wtaf_content UUID
 ```
 
 **User Labels** (pick 5 themed for your app):

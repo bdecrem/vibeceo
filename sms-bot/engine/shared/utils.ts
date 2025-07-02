@@ -155,50 +155,74 @@ export function injectSubmissionUuid(html: string, submissionUuid: string): stri
 }
 
 /**
- * Fix ZAD APP_ID generation to be deterministic
- * ZAD apps need predictable APP_IDs so users can connect to each other
+ * Fix ZAD APP_ID generation to use actual UUID
+ * ZAD apps need the real wtaf_content.id UUID so users can connect to each other
  */
-export function fixZadAppId(html: string, appSlug: string): string {
-    // Replace random APP_ID generation with deterministic one based on app slug
-    // This ensures all users connecting to the same ZAD app use the same APP_ID
+export function fixZadAppId(html: string, appUuid: string): string {
+    // Replace ANY APP_ID assignment with the actual UUID
+    // This ensures all users connecting to the same ZAD app use the same UUID
     
-    // Pattern 1: const APP_ID = 'PREFIX_' + Math.random().toString(36).substr(2, 9);
+    // Pattern 1: const APP_ID = 'test1'; (builder template placeholder)
     html = html.replace(
-        /const\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)\.toString\(36\)\.substr\(2,\s*9\);?/g,
-        `const APP_ID = '${appSlug}';`
+        /const\s+APP_ID\s*=\s*['"]test\d*['"];?/g,
+        `const APP_ID = '${appUuid}';`
     );
     
-    // Pattern 2: const APP_ID = 'PREFIX_' + Math.random()...  (more general)
+    // Pattern 2: const APP_ID = 'any_string';
     html = html.replace(
-        /const\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
-        `const APP_ID = '${appSlug}';`
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `const APP_ID = '${appUuid}';`
     );
     
-    // Pattern 3: let APP_ID = 'PREFIX_' + Math.random()...
+    // Pattern 3: let APP_ID = 'any_string';
     html = html.replace(
-        /let\s+APP_ID\s*=\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^;]+;?/g,
-        `let APP_ID = '${appSlug}';`
+        /let\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `let APP_ID = '${appUuid}';`
     );
     
-    // Pattern 4: var APP_ID = 'PREFIX_' + Math.random()...
+    // Pattern 4: var APP_ID = 'any_string';
     html = html.replace(
-        /var\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
-        `var APP_ID = '${appSlug}';`
+        /var\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `var APP_ID = '${appUuid}';`
     );
     
-    // Pattern 5: APP_ID = 'test1'; (comprehensive builder placeholder)
+    // Pattern 5: const APP_ID = 'PREFIX_' + Math.random()... (random generation)
     html = html.replace(
-        /const\s+APP_ID\s*=\s*['"]test1['"];?/g,
-        `const APP_ID = '${appSlug}';`
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)\.toString\(36\)\.substr\(2,\s*\d+\)\s*;?/g,
+        `const APP_ID = '${appUuid}';`
     );
     
-    // Pattern 6: Direct usage in Supabase calls
+    // Pattern 5b: More general random generation patterns
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^;]+;?/g,
+        `const APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 6: let/var APP_ID with random generation
+    html = html.replace(
+        /(let|var)\s+APP_ID\s*=\s*['"][^'"]*['"]\s*\+\s*Math\.random\(\)[^;]+;?/g,
+        `let APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 7: Direct usage in Supabase calls with random generation
     html = html.replace(
         /app_id:\s*['"][^'"]*['"][\s]*\+[\s]*Math\.random\(\)[^,}]+/g,
-        `app_id: '${appSlug}'`
+        `app_id: '${appUuid}'`
     );
     
-    logWithTimestamp(`🤝 Fixed ZAD APP_ID to be deterministic: ${appSlug}`);
+    // Pattern 8: .eq('app_id', 'any_value') calls in Supabase queries
+    html = html.replace(
+        /\.eq\(\s*['"]app_id['"]\s*,\s*['"][^'"]*['"]\s*\)/g,
+        `.eq('app_id', '${appUuid}')`
+    );
+    
+    // Pattern 9: Any remaining hardcoded app_id values in database calls
+    // Use RegExp constructor to properly handle UUID in the negative lookahead
+    const escapedUuid = appUuid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const appIdRegex = new RegExp(`app_id:\\s*['"](?!${escapedUuid})[^'"]*['"](?!\\s*\\+)`, 'g');
+    html = html.replace(appIdRegex, `app_id: '${appUuid}'`);
+    
+    logWithTimestamp(`🤝 Fixed ZAD APP_ID to use actual UUID: ${appUuid}`);
     return html;
 }
 
