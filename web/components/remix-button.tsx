@@ -32,7 +32,7 @@ export default function RemixButton({ appSlug, userSlug }: RemixButtonProps) {
   return (
     <button
       onClick={handleRemix}
-      className="relative px-8 py-4 bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white font-bold text-lg rounded-full transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+      className="relative px-8 py-2 bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white font-bold text-lg rounded-full transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
       style={{
         fontFamily: 'Space Grotesk, sans-serif',
         textTransform: 'uppercase',
@@ -41,7 +41,7 @@ export default function RemixButton({ appSlug, userSlug }: RemixButtonProps) {
       }}
     >
       <span className="relative z-10">
-        {justCopied ? '✅ COPIED TO CLIPBOARD!' : '🔥 REMIX THIS CHAOS'}
+        {justCopied ? '✅ COPIED!' : 'REMIX'}
       </span>
       <div 
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-500"

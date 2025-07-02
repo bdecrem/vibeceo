@@ -17,7 +17,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/register') || 
       pathname.startsWith('/link') || 
       pathname.startsWith('/dashboard') ||
-      pathname.startsWith('/trending')) {
+      pathname.startsWith('/trending') ||
+      pathname.startsWith('/featured')) {
     if (host?.includes('localhost') || host?.includes('ngrok')) {
       console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     }

@@ -1,0 +1,184 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffff00;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .palette-generator {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .color-box {
+            height: 80px;
+            border-radius: 10px;
+            margin: 1rem 0;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .color-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        button {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            border: none;
+            padding: 1rem 2rem;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(63,136,255,0.5);
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .wtaf-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <span class="floating-emoji" data-value="3" style="top: 20%; left: 20%">🎨</span>
+            <span class="floating-emoji" data-value="4" style="top: 70%; left: 80%">✨</span>
+            <span class="floating-emoji" data-value="2" style="top: 30%; left: 70%">🌈</span>
+            <span class="floating-emoji" data-value="5" style="top: 80%; left: 30%">💫</span>
+
+            <h1 style="font-size: 4rem; text-align: center; margin-bottom: 1rem">CHAOS PALETTE</h1>
+            <p style="font-size: 1.2rem; text-align: center; margin-bottom: 2rem">because your brand deserves better than millennial pink</p>
+
+            <div class="palette-generator">
+                <div class="color-box" id="color1"></div>
+                <div class="color-box" id="color2"></div>
+                <div class="color-box" id="color3"></div>
+                <div class="color-box" id="color4"></div>
+                <button onclick="generatePalette()">GENERATE NEW CHAOS</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wtaf-text">📱 Text START to +1-866-330-0015 to get initiated</div>
+    <div class="prompt">Generated from: Color palette generator request</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Color generation
+        function generatePalette() {
+            const colors = [
+                `hsl(${Math.random() * 360}, 80%, 60%)`,
+                `hsl(${Math.random() * 360}, 80%, 60%)`,
+                `hsl(${Math.random() * 360}, 80%, 60%)`,
+                `hsl(${Math.random() * 360}, 80%, 60%)`
+            ];
+
+            colors.forEach((color, index) => {
+                document.getElementById(`color${index + 1}`).style.background = color;
+            });
+        }
+
+        // Initial palette
+        generatePalette();
+
+        // Easter egg
+        let konamiCode = [];
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.key);
+            if (konamiCode.slice(-4).join('') === 'WTAF') {
+                document.body.style.animation = 'gradient 1s infinite';
+                alert('🎨 UNLOCKED: Chaos Mode Activated!');
+            }
+        });
+    </script>
+</body>
+</html>
+```
