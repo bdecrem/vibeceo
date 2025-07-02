@@ -40,7 +40,7 @@ export default async function TrendingPage() {
   if (!data) {
     return (
       <WtafPageLayout
-        title="🔥 Trending"
+        title="TRENDING"
         subtitle="Apps going viral via SMS"
       >
         <div className="text-center py-12">
@@ -76,7 +76,7 @@ export default async function TrendingPage() {
 
   return (
     <WtafPageLayout
-      title="🔥 Trending"
+      title="TRENDING"
       subtitle="Apps going viral via SMS (last 7 days)"
       stats={trendingStats}
     >

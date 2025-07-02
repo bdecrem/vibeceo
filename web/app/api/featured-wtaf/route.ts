@@ -1,78 +1,109 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
-);
+)
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '3');
-    
-    console.log(`🎲 Fetching ${limit} random featured pages...`);
-    
-    // First try to fetch pages with feature=true
-    let { data, error } = await supabase
-      .from('wtaf_content')
-      .select('user_slug, app_slug, original_prompt, html_content, created_at')
-      .eq('status', 'published')
-      .eq('feature', true)
-      .order('created_at', { ascending: false })
-      .limit(50); // Get a larger pool to randomize from
-    
-    // If no featured pages or error, fall back to any published pages
-    if (error || !data || data.length === 0) {
-      console.log('🔄 No featured pages found, falling back to recent published pages...');
-      
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('wtaf_content')
-        .select('user_slug, app_slug, original_prompt, html_content, created_at')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      if (fallbackError) {
-        console.error('❌ Supabase fallback error:', fallbackError);
-        return NextResponse.json({ error: 'Failed to fetch any pages' }, { status: 500 });
+    // Get featured apps - first try apps explicitly marked as featured
+    const { data: featuredApps, error: featuredError } = await supabase
+      .from('trending_apps_7d')
+      .select(`
+        id,
+        app_slug,
+        user_slug,
+        original_prompt,
+        created_at,
+        remix_count,
+        last_remixed_at,
+        recent_remixes,
+        is_remix,
+        parent_app_id,
+        is_featured,
+        Fave,
+        Forget
+      `)
+      .eq('is_featured', true)  // Only featured apps
+      .order('created_at', { ascending: false })  // Most recent first
+      .limit(20)
+
+    if (featuredError) {
+      console.error('Error fetching featured apps:', featuredError)
+      return NextResponse.json({ error: 'Failed to fetch featured apps' }, { status: 500 })
+    }
+
+    let allApps = featuredApps || []
+
+    // If we have less than 20 featured apps, backfill with highly remixed apps
+    if (allApps.length < 20) {
+      const { data: popularApps, error: popularError } = await supabase
+        .from('trending_apps_7d')
+        .select(`
+          id,
+          app_slug,
+          user_slug,
+          original_prompt,
+          created_at,
+          remix_count,
+          last_remixed_at,
+          recent_remixes,
+          is_remix,
+          parent_app_id,
+          is_featured,
+          Fave,
+          Forget
+        `)
+        .gt('remix_count', 1)  // Apps with multiple remixes
+        .order('remix_count', { ascending: false })  // Most remixed first
+        .limit(20 - allApps.length)  // Fill remaining slots
+
+      if (!popularError && popularApps) {
+        // Filter out apps already in featuredApps to avoid duplicates
+        const existingSlugs = new Set(allApps.map((app: any) => `${app.user_slug}/${app.app_slug}`))
+        const uniquePopularApps = popularApps.filter((app: any) => 
+          !existingSlugs.has(`${app.user_slug}/${app.app_slug}`)
+        )
+        allApps = [...allApps, ...uniquePopularApps]
       }
+    }
+
+    // Filter out forgotten apps in JavaScript
+    const featuredAppsList = (allApps || []).filter((app: any) => !app.Forget)
+
+    // Get type data for each app
+    for (const app of featuredAppsList) {
+      const { data: contentData } = await supabase
+        .from('wtaf_content')
+        .select('type')
+        .eq('user_slug', app.user_slug)
+        .eq('app_slug', app.app_slug)
+        .single()
       
-      data = fallbackData;
+      ;(app as any).type = contentData?.type || 'web'
     }
-    
-    if (!data || data.length === 0) {
-      console.log('📭 No pages found at all');
-      return NextResponse.json({ pages: [] });
-    }
-    
-    // Randomly shuffle and pick the requested number
-    const shuffled = data.sort(() => Math.random() - 0.5);
-    const selectedPages = shuffled.slice(0, limit);
-    
-    console.log(`✅ Found ${data.length} featured pages, returning ${selectedPages.length}`);
-    
-    // Format the response to match the expected structure
-    const formattedPages = selectedPages.map((page, index) => ({
-      id: `featured-${Date.now()}-${index}`,
-      user_slug: page.user_slug,
-      app_slug: page.app_slug,
-      original_prompt: page.original_prompt,
-      html_content: page.html_content,
-      created_at: page.created_at
-    }));
-    
+
+    const totalFeaturedApps = featuredAppsList.length
+    const totalRemixes = featuredAppsList.reduce((sum: number, app: any) => sum + (app.remix_count || 0), 0)
+    const appsWithRemixes = featuredAppsList.filter((app: any) => (app.remix_count || 0) > 0).length
+
     return NextResponse.json({
-      success: true,
-      pages: formattedPages,
-      total_featured: data.length
-    });
-    
-  } catch (error: any) {
-    console.error('❌ Error fetching featured pages:', error);
-    return NextResponse.json({
-      success: false,
-      error: error.message
-    }, { status: 500 });
+      apps: featuredAppsList,
+      stats: {
+        totalTrendingApps: totalFeaturedApps,
+        totalRemixesThisWeek: totalRemixes,  
+        appsWithRecentActivity: appsWithRemixes,
+        period: 'featured'
+      }
+    })
+
+  } catch (error) {
+    console.error('Error in featured API:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

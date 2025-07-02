@@ -140,7 +140,7 @@ export default async function CreationsPage({ params }: { params: { user_slug: s
 
   return (
     <WtafPageLayout
-      title={`${params.user_slug}'s Creations`}
+      title={`${params.user_slug.toUpperCase()}'S CREATIONS`}
       subtitle="Vibecoded chaos, shipped via SMS"
       stats={userStatsForLayout}
       backLink={{
