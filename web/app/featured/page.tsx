@@ -25,6 +25,11 @@ export default function FeaturedExperimentPage() {
   const [apps, setApps] = useState<WtafApp[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Set page title
+  useEffect(() => {
+    document.title = 'THE GALLERY'
+  }, [])
+
   useEffect(() => {
     fetch('/api/featured-wtaf')
       .then(res => res.json())
@@ -478,7 +483,7 @@ export default function FeaturedExperimentPage() {
         <div className="float-element chains">⛓️</div>
 
         <header>
-          <div className="logo glitch" data-text="FEATURED">FEATURED</div>
+          <div className="logo glitch" data-text="THE GALLERY">THE GALLERY</div>
           <div className="tagline">THEY ASKED FOR A WEBSITE. WE GAVE THEM A MOVEMENT.</div>
         </header>
 
