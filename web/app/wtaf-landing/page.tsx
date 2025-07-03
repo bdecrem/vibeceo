@@ -51,7 +51,7 @@ export default function HomePage() {
               </p>
               <div className="cta-section">
                 <button className="cta-button">Learn More</button>
-                <a href="/gallery" className="cta-button secondary">
+                <a href="/featured" className="cta-button secondary">
                   Gallery
                 </a>
               </div>
