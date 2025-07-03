@@ -11,12 +11,20 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const user_slug = searchParams.get('user_slug')
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const offset = (page - 1) * limit
     
     if (!user_slug) {
       return NextResponse.json({ error: 'Missing user slug' }, { status: 400 })
     }
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 })
+    }
     
-    // Fetch user's published apps with social stats
+    // Fetch user's published apps with social stats and pagination
     const { data: apps, error } = await supabase
       .from('wtaf_content')
       .select(`
@@ -34,10 +42,22 @@ export async function GET(request: NextRequest) {
       .eq('user_slug', user_slug)
       .eq('status', 'published')
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error('Error fetching user apps:', error)
       return NextResponse.json({ error: 'Failed to fetch apps' }, { status: 500 })
+    }
+
+    // Get total count for pagination metadata
+    const { count: totalCount, error: countError } = await supabase
+      .from('wtaf_content')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_slug', user_slug)
+      .eq('status', 'published')
+
+    if (countError) {
+      console.error('Error getting total count:', countError)
     }
 
     // Get user's social stats
@@ -59,9 +79,17 @@ export async function GET(request: NextRequest) {
         follower_count: 0,
         following_count: 0,
         total_remix_credits: 0,
-        apps_created_count: apps?.length || 0,
-        published_apps: apps?.length || 0,
+        apps_created_count: totalCount || 0,
+        published_apps: totalCount || 0,
         total_remixes_received: 0
+      },
+      pagination: {
+        page,
+        limit,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit),
+        hasNextPage: page < Math.ceil((totalCount || 0) / limit),
+        hasPreviousPage: page > 1
       }
     })
     

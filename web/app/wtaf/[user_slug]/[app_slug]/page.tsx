@@ -36,17 +36,30 @@ export default async function WTAFAppPage({ params }: PageProps) {
 			return notFound();
 		}
 
-		// Return the HTML content directly
+		// Return the HTML content in an isolated iframe
 		return (
-			<div
-				dangerouslySetInnerHTML={{ __html: data.html_content }}
-				style={{
-					minHeight: "100vh",
-					width: "100%",
-					margin: 0,
-					padding: 0,
-				}}
-			/>
+			<div style={{
+				width: "100%",
+				height: "100vh",
+				margin: 0,
+				padding: 0,
+				overflow: "hidden"
+			}}>
+				<iframe
+					srcDoc={data.html_content}
+					sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+					style={{
+						width: "100%",
+						height: "100%",
+						border: "none",
+						backgroundColor: "white",
+						display: "block"
+					}}
+					loading="eager"
+					title={`WTAF App: ${app_slug} by ${user_slug}`}
+					allowFullScreen
+				/>
+			</div>
 		);
 	} catch (error) {
 		console.error("Error fetching WTAF content:", error);
