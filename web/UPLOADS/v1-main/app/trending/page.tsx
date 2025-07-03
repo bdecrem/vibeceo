@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 export default function TrendingPage() {
   const apps = [
     {
@@ -84,6 +86,21 @@ export default function TrendingPage() {
     },
   ]
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const appsPerPage = 6
+  const totalPages = Math.ceil(apps.length / appsPerPage)
+
+  // Get current apps for the page
+  const indexOfLastApp = currentPage * appsPerPage
+  const indexOfFirstApp = indexOfLastApp - appsPerPage
+  const currentApps = apps.slice(indexOfFirstApp, indexOfLastApp)
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber)
+    // Scroll to top of gallery
+    document.querySelector(".gallery-grid")?.scrollIntoView({ behavior: "smooth" })
+  }
+
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -158,7 +175,7 @@ export default function TrendingPage() {
           </section>
 
           <section className="gallery-grid">
-            {apps.map((app) => (
+            {currentApps.map((app) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
                   <img src={app.image || "/placeholder.svg"} alt={app.alt} className="gallery-image" />
@@ -188,6 +205,38 @@ export default function TrendingPage() {
               </div>
             ))}
           </section>
+
+          <section className="pagination-section">
+            <div className="pagination">
+              <button
+                className={`pagination-btn prev-btn ${currentPage === 1 ? "disabled" : ""}`}
+                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                ← Previous
+              </button>
+
+              <div className="page-numbers">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    className={`page-btn ${currentPage === pageNumber ? "active" : ""}`}
+                    onClick={() => handlePageChange(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className={`pagination-btn next-btn ${currentPage === totalPages ? "disabled" : ""}`}
+                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
+          </section>
         </main>
 
         <style jsx global>{`
@@ -208,9 +257,15 @@ export default function TrendingPage() {
           }
 
           @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
           }
 
           .float-element {
@@ -254,9 +309,16 @@ export default function TrendingPage() {
           }
 
           @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-30px) rotate(10deg); }
-            66% { transform: translateY(20px) rotate(-7deg); }
+            0%,
+            100% {
+              transform: translateY(0px) rotate(0deg);
+            }
+            33% {
+              transform: translateY(-30px) rotate(10deg);
+            }
+            66% {
+              transform: translateY(20px) rotate(-7deg);
+            }
           }
 
           .glitch {
@@ -287,15 +349,31 @@ export default function TrendingPage() {
           }
 
           @keyframes glitch1 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(-2px, -1px); }
-            20% { transform: translate(1px, 2px); }
+            0%,
+            90%,
+            100% {
+              transform: translate(0);
+            }
+            10% {
+              transform: translate(-2px, -1px);
+            }
+            20% {
+              transform: translate(1px, 2px);
+            }
           }
 
           @keyframes glitch2 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(2px, 1px); }
-            20% { transform: translate(-1px, -2px); }
+            0%,
+            90%,
+            100% {
+              transform: translate(0);
+            }
+            10% {
+              transform: translate(2px, 1px);
+            }
+            20% {
+              transform: translate(-1px, -2px);
+            }
           }
 
           header {
@@ -310,10 +388,7 @@ export default function TrendingPage() {
             font-size: 4rem;
             font-weight: 900;
             color: #ffffff;
-            text-shadow:
-              0 0 10px #ff6600,
-              0 0 20px #ff6600,
-              0 0 30px #ff6600;
+            text-shadow: 0 0 10px #ff6600, 0 0 20px #ff6600, 0 0 30px #ff6600;
             margin-bottom: 15px;
             letter-spacing: -2px;
           }
@@ -367,9 +442,7 @@ export default function TrendingPage() {
             border: 2px solid rgba(255, 102, 0, 0.3);
             border-radius: 30px;
             padding: 50px 40px;
-            box-shadow:
-              0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(255, 102, 0, 0.1);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 102, 0, 0.1);
             max-width: 800px;
             margin: 0 auto;
           }
@@ -423,16 +496,18 @@ export default function TrendingPage() {
           }
 
           @keyframes borderGlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
+            0% {
+              background-position: 0% 50%;
+            }
+            100% {
+              background-position: 200% 50%;
+            }
           }
 
           .gallery-card:hover {
             transform: translateY(-8px);
             background: rgba(0, 0, 0, 0.7);
-            box-shadow:
-              0 20px 50px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(255, 102, 0, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 102, 0, 0.2);
             border-color: rgba(255, 102, 0, 0.3);
           }
 
@@ -493,16 +568,12 @@ export default function TrendingPage() {
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(255, 102, 0, 0.3),
-              0 0 20px rgba(255, 102, 0, 0.2);
+            box-shadow: 0 8px 25px rgba(255, 102, 0, 0.3), 0 0 20px rgba(255, 102, 0, 0.2);
           }
 
           .try-app-btn:hover {
             transform: scale(1.05);
-            box-shadow:
-              0 12px 35px rgba(255, 102, 0, 0.4),
-              0 0 30px rgba(255, 102, 0, 0.3);
+            box-shadow: 0 12px 35px rgba(255, 102, 0, 0.4), 0 0 30px rgba(255, 102, 0, 0.3);
           }
 
           .card-content {
@@ -641,17 +712,13 @@ export default function TrendingPage() {
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(255, 51, 102, 0.2),
-              0 0 20px rgba(255, 51, 102, 0.1);
+            box-shadow: 0 8px 25px rgba(255, 51, 102, 0.2), 0 0 20px rgba(255, 51, 102, 0.1);
           }
 
           .remix-btn:hover {
             background: rgba(255, 51, 102, 0.1);
             transform: translateY(-2px);
-            box-shadow:
-              0 12px 35px rgba(255, 51, 102, 0.3),
-              0 0 30px rgba(255, 51, 102, 0.2);
+            box-shadow: 0 12px 35px rgba(255, 51, 102, 0.3), 0 0 30px rgba(255, 51, 102, 0.2);
           }
 
           .sparks {
@@ -715,32 +782,179 @@ export default function TrendingPage() {
             }
           }
 
+          .pagination-section {
+            margin-top: 60px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+          }
+
+          .pagination {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 102, 0, 0.3);
+            border-radius: 50px;
+            padding: 15px 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 102, 0, 0.1);
+          }
+
+          .pagination-btn {
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff6600;
+            color: #ff6600;
+            border-radius: 25px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2), 0 0 10px rgba(255, 102, 0, 0.1);
+          }
+
+          .pagination-btn:hover:not(.disabled) {
+            background: rgba(255, 102, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 102, 0, 0.3), 0 0 20px rgba(255, 102, 0, 0.2);
+          }
+
+          .pagination-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: rgba(255, 102, 0, 0.3);
+            color: rgba(255, 102, 0, 0.5);
+          }
+
+          .page-numbers {
+            display: flex;
+            gap: 8px;
+          }
+
+          .page-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 102, 0, 0.5);
+            color: #ff9900;
+            border-radius: 50%;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2), 0 0 10px rgba(255, 102, 0, 0.1);
+          }
+
+          .page-btn:hover {
+            background: rgba(255, 102, 0, 0.1);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 102, 0, 0.3), 0 0 20px rgba(255, 102, 0, 0.2);
+          }
+
+          .page-btn.active {
+            background: linear-gradient(45deg, #ff6600, #ff3366);
+            border-color: #ff3366;
+            color: #ffffff;
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4), 0 0 25px rgba(255, 102, 0, 0.3);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .page-btn.active:hover {
+            transform: scale(1.15);
+          }
+
           @media (max-width: 768px) {
             .gallery-grid {
               grid-template-columns: 1fr;
             }
-            .logo { font-size: 3rem; }
-            .gallery-grid { 
+            .logo {
+              font-size: 3rem;
+            }
+            .gallery-grid {
               gap: 30px;
             }
-            .gallery-card { padding: 25px 20px; }
-            .gallery-hero h1 { font-size: 2.5rem; line-height: 1.2; }
-            .gallery-hero p { font-size: 1rem; }
-            .hero-content { padding: 40px 25px; }
+            .gallery-card {
+              padding: 25px 20px;
+            }
+            .gallery-hero h1 {
+              font-size: 2.5rem;
+              line-height: 1.2;
+            }
+            .gallery-hero p {
+              font-size: 1rem;
+            }
+            .hero-content {
+              padding: 40px 25px;
+            }
             .creator-stats {
               flex-direction: column;
               gap: 10px;
               align-items: center;
             }
+
+            .pagination {
+              flex-direction: column;
+              gap: 20px;
+              padding: 20px;
+              border-radius: 25px;
+            }
+
+            .page-numbers {
+              order: -1;
+            }
+
+            .pagination-btn {
+              padding: 12px 25px;
+              font-size: 0.8rem;
+            }
           }
 
           @media (max-width: 480px) {
-            .logo { font-size: 2.5rem; }
-            .gallery-card { padding: 20px 15px; }
-            .gallery-hero h1 { font-size: 2rem; line-height: 1.1; }
-            .hero-content { padding: 30px 20px; }
-            .try-app-btn { padding: 12px 25px; font-size: 0.9rem; }
-            .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
+            .logo {
+              font-size: 2.5rem;
+            }
+            .gallery-card {
+              padding: 20px 15px;
+            }
+            .gallery-hero h1 {
+              font-size: 2rem;
+              line-height: 1.1;
+            }
+            .hero-content {
+              padding: 30px 20px;
+            }
+            .try-app-btn {
+              padding: 12px 25px;
+              font-size: 0.9rem;
+            }
+            .remix-btn {
+              padding: 10px 20px;
+              font-size: 0.8rem;
+            }
+
+            .pagination {
+              padding: 15px;
+            }
+
+            .page-btn {
+              width: 40px;
+              height: 40px;
+              font-size: 0.9rem;
+            }
+
+            .pagination-btn {
+              padding: 10px 20px;
+              font-size: 0.75rem;
+            }
           }
         `}</style>
       </body>
