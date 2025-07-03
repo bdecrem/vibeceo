@@ -8,6 +8,7 @@ interface PaginationProps {
   hasPreviousPage: boolean
   totalCount: number
   limit: number
+  theme?: 'orange' | 'green'
 }
 
 export default function Pagination({
@@ -17,7 +18,8 @@ export default function Pagination({
   hasNextPage,
   hasPreviousPage,
   totalCount,
-  limit
+  limit,
+  theme = 'orange'
 }: PaginationProps) {
   const startItem = (currentPage - 1) * limit + 1
   const endItem = Math.min(currentPage * limit, totalCount)
@@ -49,6 +51,38 @@ export default function Pagination({
   }
 
   if (totalPages <= 1) return null
+
+  // Theme colors
+  const colors = {
+    orange: {
+      border: 'rgba(255, 102, 0, 0.3)',
+      borderGlow: 'rgba(255, 102, 0, 0.1)',
+      primary: '#ff6600',
+      secondary: '#ff9900',
+      gradient: 'linear-gradient(45deg, #ff6600, #ff3366)',
+      shadow: 'rgba(255, 102, 0, 0.2)',
+      shadowStrong: 'rgba(255, 102, 0, 0.3)',
+      shadowActive: 'rgba(255, 102, 0, 0.4)',
+      hover: 'rgba(255, 102, 0, 0.1)',
+      disabled: 'rgba(255, 102, 0, 0.3)',
+      disabledText: 'rgba(255, 102, 0, 0.5)'
+    },
+    green: {
+      border: 'rgba(0, 255, 102, 0.3)',
+      borderGlow: 'rgba(0, 255, 102, 0.1)',
+      primary: '#00ff66',
+      secondary: '#66ff99',
+      gradient: 'linear-gradient(45deg, #00ff66, #9900ff)',
+      shadow: 'rgba(0, 255, 102, 0.2)',
+      shadowStrong: 'rgba(0, 255, 102, 0.3)',
+      shadowActive: 'rgba(0, 255, 102, 0.4)',
+      hover: 'rgba(0, 255, 102, 0.1)',
+      disabled: 'rgba(0, 255, 102, 0.3)',
+      disabledText: 'rgba(0, 255, 102, 0.5)'
+    }
+  }
+
+  const themeColors = colors[theme]
 
   return (
     <>
@@ -98,19 +132,19 @@ export default function Pagination({
           gap: 15px;
           background: rgba(0, 0, 0, 0.6);
           backdrop-filter: blur(15px);
-          border: 2px solid rgba(255, 102, 0, 0.3);
+          border: 2px solid ${themeColors.border};
           border-radius: 50px;
           padding: 15px 25px;
           box-shadow: 
             0 8px 30px rgba(0, 0, 0, 0.4), 
-            inset 0 0 20px rgba(255, 102, 0, 0.1);
+            inset 0 0 20px ${themeColors.borderGlow};
         }
 
         .pagination-btn {
           padding: 10px 20px;
           background: rgba(0, 0, 0, 0.7);
-          border: 2px solid #ff6600;
-          color: #ff6600;
+          border: 2px solid ${themeColors.primary};
+          color: ${themeColors.primary};
           border-radius: 25px;
           font-family: 'Space Grotesk', sans-serif;
           font-weight: 600;
@@ -120,23 +154,23 @@ export default function Pagination({
           text-transform: uppercase;
           letter-spacing: 1px;
           box-shadow: 
-            0 4px 15px rgba(255, 102, 0, 0.2), 
-            0 0 10px rgba(255, 102, 0, 0.1);
+            0 4px 15px ${themeColors.shadow}, 
+            0 0 10px ${themeColors.borderGlow};
         }
 
         .pagination-btn:hover:not(.disabled) {
-          background: rgba(255, 102, 0, 0.1);
+          background: ${themeColors.hover};
           transform: translateY(-2px);
           box-shadow: 
-            0 8px 25px rgba(255, 102, 0, 0.3), 
-            0 0 20px rgba(255, 102, 0, 0.2);
+            0 8px 25px ${themeColors.shadowStrong}, 
+            0 0 20px ${themeColors.shadow};
         }
 
         .pagination-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
-          border-color: rgba(255, 102, 0, 0.3);
-          color: rgba(255, 102, 0, 0.5);
+          border-color: ${themeColors.disabled};
+          color: ${themeColors.disabledText};
         }
 
         .page-numbers {
@@ -148,8 +182,8 @@ export default function Pagination({
           width: 45px;
           height: 45px;
           background: rgba(0, 0, 0, 0.7);
-          border: 2px solid rgba(255, 102, 0, 0.5);
-          color: #ff9900;
+          border: 2px solid ${themeColors.disabled};
+          color: ${themeColors.secondary};
           border-radius: 50%;
           font-family: 'Space Grotesk', sans-serif;
           font-weight: 700;
@@ -160,26 +194,26 @@ export default function Pagination({
           align-items: center;
           justify-content: center;
           box-shadow: 
-            0 4px 15px rgba(255, 102, 0, 0.2), 
-            0 0 10px rgba(255, 102, 0, 0.1);
+            0 4px 15px ${themeColors.shadow}, 
+            0 0 10px ${themeColors.borderGlow};
         }
 
         .page-btn:hover {
-          background: rgba(255, 102, 0, 0.1);
+          background: ${themeColors.hover};
           transform: translateY(-2px) scale(1.05);
           box-shadow: 
-            0 8px 25px rgba(255, 102, 0, 0.3), 
-            0 0 20px rgba(255, 102, 0, 0.2);
+            0 8px 25px ${themeColors.shadowStrong}, 
+            0 0 20px ${themeColors.shadow};
         }
 
         .page-btn.active {
-          background: linear-gradient(45deg, #ff6600, #ff3366);
-          border-color: #ff3366;
+          background: ${themeColors.gradient};
+          border-color: ${themeColors.primary};
           color: #ffffff;
           transform: scale(1.1);
           box-shadow: 
-            0 8px 25px rgba(255, 102, 0, 0.4), 
-            0 0 25px rgba(255, 102, 0, 0.3);
+            0 8px 25px ${themeColors.shadowActive}, 
+            0 0 25px ${themeColors.shadowStrong};
           text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
         }
 
