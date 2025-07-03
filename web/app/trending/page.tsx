@@ -1,7 +1,7 @@
-import React from "react"
-import TrendingUI from "@/components/wtaf/trending-ui"
+"use client"
 
-export const dynamic = 'force-dynamic'
+import React, { useState, useEffect } from "react"
+import TrendingUI from "@/components/wtaf/trending-ui"
 
 interface WtafApp {
   id: string
@@ -31,33 +31,49 @@ interface TrendingData {
   stats: TrendingStats
 }
 
-async function getTrendingData(): Promise<TrendingData | null> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/trending-wtaf`, {
-      cache: 'no-store'
-    })
-    
-    if (!response.ok) {
-      console.error('Failed to fetch trending data:', response.status)
-      return null
-    }
-    
-    return await response.json()
-  } catch (error) {
-    console.error('Error fetching trending data:', error)
-    return null
-  }
-}
+export default function TrendingPage() {
+  const [data, setData] = useState<TrendingData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export default async function TrendingPage() {
-  const data = await getTrendingData()
-  
-  if (!data) {
+  useEffect(() => {
+    const fetchTrendingData = async () => {
+      try {
+        const response = await fetch('/api/trending-wtaf', {
+          cache: 'no-store'
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch trending data: ${response.status}`)
+        }
+        
+        const result = await response.json()
+        setData(result)
+      } catch (err) {
+        console.error('Error fetching trending data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load trending data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTrendingData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={{ padding: '50px', textAlign: 'center', color: '#ff6600' }}>
+        <h1>Loading trending data...</h1>
+        <p>Please wait...</p>
+      </div>
+    )
+  }
+
+  if (error || !data) {
     return (
       <div style={{ padding: '50px', textAlign: 'center', color: '#ff6600' }}>
         <h1>Failed to load trending data</h1>
-        <p>Please try again later</p>
+        <p>{error || 'Please try again later'}</p>
       </div>
     )
   }
