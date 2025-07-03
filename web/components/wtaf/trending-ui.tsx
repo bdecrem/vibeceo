@@ -46,15 +46,15 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
     const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60))
     const diffInDays = Math.floor(diffInHours / 24)
     
-    if (diffInHours < 24) return "✨ Born today"
-    if (diffInDays === 1) return "💿 Dropped yesterday"
-    if (diffInDays <= 6) return `💿 Dropped ${diffInDays} days ago`
-    return `💾 Vintage: ${diffInDays} days old`
+    if (diffInHours < 24) return "Born today"
+    if (diffInDays === 1) return "Dropped yesterday"
+    if (diffInDays <= 6) return `Dropped ${diffInDays} days ago`
+    return `Vintage: ${diffInDays} days old`
   }
 
   const getRemixInfo = (app: WtafApp) => {
     if (app.type === 'ZAD') {
-      return "✨ Born today" // ZADs always show this
+      return "Born today" // ZADs always show this
     }
     if (app.remix_count > 0) {
       return `${app.remix_count} ${app.remix_count === 1 ? 'remix' : 'remixes'}`
