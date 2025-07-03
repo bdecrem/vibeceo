@@ -52,81 +52,66 @@ export default function Pagination({
 
   return (
     <>
-      <div className="pagination-container">
-        <div className="pagination-info">
-          Showing {startItem}-{endItem} of {totalCount} total
-        </div>
-        
-        <div className="pagination-controls">
+      <section className="pagination-section">
+        <div className="pagination">
           <button
-            onClick={() => onPageChange(currentPage - 1)}
+            className={`pagination-btn prev-btn ${!hasPreviousPage ? "disabled" : ""}`}
+            onClick={() => hasPreviousPage && onPageChange(currentPage - 1)}
             disabled={!hasPreviousPage}
-            className="pagination-btn prev-btn"
           >
             ← Previous
           </button>
-          
+
           <div className="page-numbers">
-            {getPageNumbers().map((page) => (
+            {getPageNumbers().map((pageNumber) => (
               <button
-                key={page}
-                onClick={() => onPageChange(page)}
-                className={`page-btn ${page === currentPage ? 'active' : ''}`}
+                key={pageNumber}
+                className={`page-btn ${currentPage === pageNumber ? "active" : ""}`}
+                onClick={() => onPageChange(pageNumber)}
               >
-                {page}
+                {pageNumber}
               </button>
             ))}
           </div>
-          
+
           <button
-            onClick={() => onPageChange(currentPage + 1)}
+            className={`pagination-btn next-btn ${!hasNextPage ? "disabled" : ""}`}
+            onClick={() => hasNextPage && onPageChange(currentPage + 1)}
             disabled={!hasNextPage}
-            className="pagination-btn next-btn"
           >
             Next →
           </button>
         </div>
-      </div>
+      </section>
 
       <style jsx>{`
-        .pagination-container {
+        .pagination-section {
+          margin-top: 60px;
+          margin-bottom: 40px;
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 20px;
-          margin: 40px 0;
-          padding: 30px;
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(15px);
-          border: 2px solid rgba(255, 102, 0, 0.3);
-          border-radius: 20px;
-          box-shadow: 
-            0 12px 40px rgba(0, 0, 0, 0.4),
-            inset 0 0 20px rgba(255, 102, 0, 0.1);
-        }
-
-        .pagination-info {
-          font-family: 'Space Grotesk', sans-serif;
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.7);
-          text-align: center;
-          letter-spacing: 1px;
-        }
-
-        .pagination-controls {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          flex-wrap: wrap;
           justify-content: center;
         }
 
+        .pagination {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(15px);
+          border: 2px solid rgba(255, 102, 0, 0.3);
+          border-radius: 50px;
+          padding: 15px 25px;
+          box-shadow: 
+            0 8px 30px rgba(0, 0, 0, 0.4), 
+            inset 0 0 20px rgba(255, 102, 0, 0.1);
+        }
+
         .pagination-btn {
-          padding: 12px 20px;
+          padding: 10px 20px;
           background: rgba(0, 0, 0, 0.7);
-          border: 2px solid #ff3366;
-          color: #ff3366;
-          border-radius: 10px;
+          border: 2px solid #ff6600;
+          color: #ff6600;
+          border-radius: 25px;
           font-family: 'Space Grotesk', sans-serif;
           font-weight: 600;
           font-size: 0.9rem;
@@ -134,18 +119,24 @@ export default function Pagination({
           transition: all 0.3s ease;
           text-transform: uppercase;
           letter-spacing: 1px;
+          box-shadow: 
+            0 4px 15px rgba(255, 102, 0, 0.2), 
+            0 0 10px rgba(255, 102, 0, 0.1);
         }
 
-        .pagination-btn:hover:not(:disabled) {
-          background: rgba(255, 51, 102, 0.1);
+        .pagination-btn:hover:not(.disabled) {
+          background: rgba(255, 102, 0, 0.1);
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(255, 51, 102, 0.3);
+          box-shadow: 
+            0 8px 25px rgba(255, 102, 0, 0.3), 
+            0 0 20px rgba(255, 102, 0, 0.2);
         }
 
-        .pagination-btn:disabled {
-          opacity: 0.3;
+        .pagination-btn.disabled {
+          opacity: 0.4;
           cursor: not-allowed;
-          transform: none;
+          border-color: rgba(255, 102, 0, 0.3);
+          color: rgba(255, 102, 0, 0.5);
         }
 
         .page-numbers {
@@ -154,64 +145,80 @@ export default function Pagination({
         }
 
         .page-btn {
-          padding: 10px 15px;
-          background: rgba(0, 0, 0, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: rgba(255, 255, 255, 0.7);
-          border-radius: 8px;
+          width: 45px;
+          height: 45px;
+          background: rgba(0, 0, 0, 0.7);
+          border: 2px solid rgba(255, 102, 0, 0.5);
+          color: #ff9900;
+          border-radius: 50%;
           font-family: 'Space Grotesk', sans-serif;
-          font-weight: 500;
+          font-weight: 700;
+          font-size: 1rem;
           cursor: pointer;
           transition: all 0.3s ease;
-          min-width: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 
+            0 4px 15px rgba(255, 102, 0, 0.2), 
+            0 0 10px rgba(255, 102, 0, 0.1);
         }
 
         .page-btn:hover {
           background: rgba(255, 102, 0, 0.1);
-          border-color: #ff6600;
-          color: #ff6600;
-          transform: translateY(-1px);
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 
+            0 8px 25px rgba(255, 102, 0, 0.3), 
+            0 0 20px rgba(255, 102, 0, 0.2);
         }
 
         .page-btn.active {
           background: linear-gradient(45deg, #ff6600, #ff3366);
-          border-color: #ff6600;
+          border-color: #ff3366;
           color: #ffffff;
-          font-weight: 700;
-          box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+          transform: scale(1.1);
+          box-shadow: 
+            0 8px 25px rgba(255, 102, 0, 0.4), 
+            0 0 25px rgba(255, 102, 0, 0.3);
+          text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .page-btn.active:hover {
+          transform: scale(1.15);
         }
 
         @media (max-width: 768px) {
-          .pagination-container {
-            padding: 20px;
-            margin: 30px 0;
-          }
-          
-          .pagination-controls {
+          .pagination {
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            padding: 20px;
+            border-radius: 25px;
           }
-          
+
+          .page-numbers {
+            order: -1;
+          }
+
           .pagination-btn {
-            padding: 10px 18px;
+            padding: 12px 25px;
             font-size: 0.8rem;
-          }
-          
-          .page-btn {
-            padding: 8px 12px;
-            min-width: 35px;
           }
         }
 
         @media (max-width: 480px) {
-          .page-numbers {
-            gap: 5px;
+          .pagination {
+            padding: 15px;
           }
-          
+
           .page-btn {
-            padding: 6px 10px;
-            min-width: 30px;
-            font-size: 0.8rem;
+            width: 40px;
+            height: 40px;
+            font-size: 0.9rem;
+          }
+
+          .pagination-btn {
+            padding: 10px 20px;
+            font-size: 0.75rem;
           }
         }
       `}</style>
