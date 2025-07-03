@@ -126,8 +126,8 @@ export default function GalleryPage() {
         <div className="float-element chains">⛓️</div>
 
         <header>
-          <div className="logo glitch" data-text="GALLERY">
-            GALLERY
+          <div className="logo glitch" data-text="THE GALLERY">
+            THE GALLERY
           </div>
           <div className="tagline">VIBECODED CHAOS UNLEASHED</div>
           <nav className="nav-back">
