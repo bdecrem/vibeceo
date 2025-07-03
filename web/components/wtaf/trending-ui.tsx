@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import { PromptClick } from "@/components/ui/prompt-click"
 
 interface WtafApp {
   id: string
@@ -17,6 +16,7 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
+  type: string
 }
 
 interface TrendingStats {
@@ -32,6 +32,36 @@ interface TrendingUIProps {
 }
 
 export default function TrendingUI({ apps, stats }: TrendingUIProps) {
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
+  }
+
+  const getTimestampLabel = (createdAt: string) => {
+    const now = new Date()
+    const created = new Date(createdAt)
+    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+    
+    if (diffInHours < 24) return "✨ Born today"
+    if (diffInDays === 1) return "💿 Dropped yesterday"
+    if (diffInDays <= 6) return `💿 Dropped ${diffInDays} days ago`
+    return `💾 Vintage: ${diffInDays} days old`
+  }
+
+  const getRemixInfo = (app: WtafApp) => {
+    if (app.type === 'ZAD') {
+      return "✨ Born today" // ZADs always show this
+    }
+    if (app.remix_count > 0) {
+      return `${app.remix_count} ${app.remix_count === 1 ? 'remix' : 'remixes'}`
+    }
+    return getTimestampLabel(app.created_at)
+  }
+
   return (
     <>
       <link
@@ -53,8 +83,8 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
         <div className="float-element chains">⛓️</div>
 
         <header>
-          <div className="logo glitch" data-text="TRENDING">
-            TRENDING
+          <div className="logo glitch" data-text="Trending">
+            Trending
           </div>
           <div className="tagline">HOTTEST CHAOS RIGHT NOW</div>
           <nav className="nav-back">
@@ -81,10 +111,12 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             {apps.map((app: WtafApp) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
-                  <div className="image-overlay">
-                    <button className="try-app-btn">TRY THIS APP</button>
-                  </div>
+                  <a href={`/${app.user_slug}/${app.app_slug}`} className="image-link">
+                    <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
+                    <div className="image-overlay">
+                      <button className="try-app-btn">TRY THIS APP</button>
+                    </div>
+                  </a>
                 </div>
                 <div className="card-content">
                   <div className="creator-stats">
@@ -95,13 +127,16 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                       </a>
                     </div>
                     <div className="remix-count">
-                      <span className="remix-number">{app.remix_count}</span>
-                      <span className="remix-label">remixes</span>
+                      <span className="remix-label">{getRemixInfo(app)}</span>
                     </div>
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <PromptClick prompt={app.original_prompt} />
-                  <button className="remix-btn">REMIX</button>
+                  <div className="prompt-showcase" onClick={() => copyToClipboard(app.original_prompt)}>
+                    "{app.original_prompt}"
+                  </div>
+                  {app.type !== 'ZAD' && (
+                    <button className="remix-btn">REMIX</button>
+                  )}
                 </div>
               </div>
             ))}
@@ -361,6 +396,14 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             border-radius: 15px;
           }
 
+          .image-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+            position: relative;
+          }
+
           .gallery-image {
             width: 100%;
             height: auto;
@@ -454,16 +497,16 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
           .creator-handle {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.9rem;
-            color: #ff9900;
+            color: #ff6600;
             font-weight: 600;
             text-decoration: none;
-            text-shadow: 0 0 8px rgba(255, 153, 0, 0.5);
+            text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
             transition: all 0.3s ease;
           }
 
           .creator-handle:hover {
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(255, 153, 0, 0.8);
+            text-shadow: 0 0 15px rgba(255, 102, 0, 0.8);
           }
 
           .remix-count {
@@ -475,9 +518,9 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
           .remix-number {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1.3rem;
-            color: #ff3366;
+            color: #ff9900;
             font-weight: 700;
-            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+            text-shadow: 0 0 8px rgba(255, 153, 0, 0.5);
           }
 
           .remix-label {
@@ -498,6 +541,52 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             margin-bottom: 12px;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
             opacity: 0.8;
+          }
+
+          .prompt-showcase {
+            color: #ff3366;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff3366;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+            backdrop-filter: blur(5px);
+            font-style: italic;
+            line-height: 1.4;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+          }
+
+          .prompt-showcase:hover {
+            background: rgba(255, 51, 102, 0.1);
+            border-color: rgba(255, 51, 102, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 51, 102, 0.2);
+          }
+
+          .prompt-showcase.clicked {
+            animation: copyPulse 0.6s ease-out;
+          }
+
+          @keyframes copyPulse {
+            0% {
+              transform: scale(1);
+              background: rgba(0, 0, 0, 0.7);
+            }
+            50% {
+              transform: scale(1.02);
+              background: rgba(255, 51, 102, 0.3);
+              box-shadow: 0 0 30px rgba(255, 51, 102, 0.6);
+            }
+            100% {
+              transform: scale(1);
+              background: rgba(0, 0, 0, 0.7);
+            }
           }
 
           .remix-btn {

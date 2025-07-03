@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
         is_remix,
         parent_app_id,
         is_featured,
-        last_remixed_at
+        last_remixed_at,
+        type
       `)
       .eq('user_slug', user_slug)
       .eq('status', 'published')

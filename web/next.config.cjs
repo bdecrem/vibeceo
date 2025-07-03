@@ -2,20 +2,11 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    domains: ['tqniseocczttrfwtpbdr.supabase.co'],
   },
-  // Enable output configuration for production deployment
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Add output configuration for Netlify
+  // output: 'standalone',  // COMMENTED OUT FOR LOCAL DEV
   // Ensure trailing slashes are handled correctly
-  trailingSlash: true,
-  // Enable experimental features for better performance
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
-  // Configure environment variables
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
+  trailingSlash: true
 }
 
 module.exports = nextConfig

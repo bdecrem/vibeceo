@@ -48,7 +48,7 @@ export default async function UserPage({ params }: UserPageProps) {
 
 export function generateMetadata({ params }: UserPageProps) {
   return {
-    title: `${params.user_slug} - WTAF`,
+    title: params.user_slug,
     description: `Welcome to ${params.user_slug}'s corner of the weirdness.`
   }
 }
