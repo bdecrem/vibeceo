@@ -76,8 +76,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch trending apps' }, { status: 500 })
     }
 
-    // Filter out forgotten apps in JavaScript
-    const trendingApps = (allApps || []).filter((app: any) => !app.Forget)
+    // Filter out forgotten apps in JavaScript and add default type
+    const trendingApps = (allApps || [])
+      .filter((app: any) => !app.Forget)
+      .map((app: any) => ({ ...app, type: 'web' })) // Default type for trending apps
 
     const totalTrendingApps = trendingApps.length
     const totalRemixesThisWeek = trendingApps.reduce((sum: number, app: any) => sum + (app.recent_remixes || 0), 0)

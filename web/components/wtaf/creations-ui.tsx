@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import Link from "next/link"
 import { PromptClick } from "@/components/ui/prompt-click"
 
 interface WtafApp {
@@ -17,6 +18,7 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
+  type: string
 }
 
 interface UserStats {
@@ -63,6 +65,28 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
     }, 600)
   }
 
+  const getTimestampLabel = (createdAt: string) => {
+    const now = new Date()
+    const created = new Date(createdAt)
+    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+    
+    if (diffInHours < 24) return "✨ Born today"
+    if (diffInDays === 1) return "💿 Dropped yesterday"
+    if (diffInDays <= 6) return `💿 Dropped ${diffInDays} days ago`
+    return `💾 Vintage: ${diffInDays} days old`
+  }
+
+  const getRemixInfo = (app: WtafApp) => {
+    if (app.type === 'ZAD') {
+      return "✨ Born today" // ZADs always show this
+    }
+    if (app.remix_count > 0) {
+      return `${app.remix_count} ${app.remix_count === 1 ? 'remix' : 'remixes'}`
+    }
+    return getTimestampLabel(app.created_at)
+  }
+
   return (
     <>
       <link
@@ -90,9 +114,9 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
         </div>
         <div className="tagline">DIGITAL CHAOS ARCHITECT</div>
         <nav className="nav-back">
-          <a href="/trending" className="back-link">
+          <Link href="/trending" className="back-link">
             ← Back to Trending
-          </a>
+          </Link>
         </nav>
       </header>
 
@@ -113,7 +137,7 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
               </div>
               <div className="stat">
                 <span className="stat-number">{userStats.total_remixes_received}</span>
-                <span className="stat-label">total remixes</span>
+                <span className="stat-label">total {userStats.total_remixes_received === 1 ? 'remix' : 'remixes'}</span>
               </div>
               <div className="stat">
                 <span className="stat-number">{userData.joinDate}</span>
@@ -136,25 +160,28 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                     <span className="pin-icon-small">📌</span>
                   </div>
                   <div className="image-container">
-                    <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
-                      alt={app.app_slug} 
-                      className="gallery-image" 
-                    />
-                    <div className="image-overlay">
-                      <button className="try-app-btn">TRY THIS APP</button>
-                    </div>
+                    <Link href={`/${app.user_slug}/${app.app_slug}`} className="image-link">
+                      <img 
+                        src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                        alt={app.app_slug} 
+                        className="gallery-image" 
+                      />
+                      <div className="image-overlay">
+                        <button className="try-app-btn">TRY THIS APP</button>
+                      </div>
+                    </Link>
                   </div>
                   <div className="card-content">
                     <div className="remix-count-solo">
-                      <span className="remix-number">{app.remix_count}</span>
-                      <span className="remix-label">remixes</span>
+                      <span className="remix-label">{getRemixInfo(app)}</span>
                     </div>
                     <div className="prompt-label">The prompt:</div>
                     <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
                       "{app.original_prompt}"
                     </div>
-                    <button className="remix-btn">REMIX</button>
+                    {app.type !== 'ZAD' && (
+                      <button className="remix-btn">REMIX</button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -168,25 +195,28 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
             {recentApps.map((app) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <img 
-                    src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
-                    alt={app.app_slug} 
-                    className="gallery-image" 
-                  />
-                  <div className="image-overlay">
-                    <button className="try-app-btn">TRY THIS APP</button>
-                  </div>
+                  <Link href={`/${app.user_slug}/${app.app_slug}`} className="image-link">
+                    <img 
+                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      alt={app.app_slug} 
+                      className="gallery-image" 
+                    />
+                    <div className="image-overlay">
+                      <button className="try-app-btn">TRY THIS APP</button>
+                    </div>
+                  </Link>
                 </div>
                 <div className="card-content">
                   <div className="remix-count-solo">
-                    <span className="remix-number">{app.remix_count}</span>
-                    <span className="remix-label">remixes</span>
+                    <span className="remix-label">{getRemixInfo(app)}</span>
                   </div>
                   <div className="prompt-label">The prompt:</div>
                   <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
                     "{app.original_prompt}"
                   </div>
-                  <button className="remix-btn">REMIX</button>
+                  {app.type !== 'ZAD' && (
+                    <button className="remix-btn">REMIX</button>
+                  )}
                 </div>
               </div>
             ))}
@@ -576,6 +606,14 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
           margin-bottom: 25px;
           overflow: hidden;
           border-radius: 15px;
+        }
+
+        .image-link {
+          display: block;
+          width: 100%;
+          height: 100%;
+          text-decoration: none;
+          position: relative;
         }
 
         .gallery-image {

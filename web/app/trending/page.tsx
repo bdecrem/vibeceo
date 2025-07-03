@@ -17,6 +17,7 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
+  type: string
 }
 
 interface TrendingStats {
@@ -37,6 +38,9 @@ export default function TrendingPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Set page title
+    document.title = "Trending"
+    
     const fetchTrendingData = async () => {
       try {
         const response = await fetch('/api/trending-wtaf', {

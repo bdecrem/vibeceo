@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
+import { Metadata } from 'next'
 import CreationsUI from "@/components/wtaf/creations-ui"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: { user_slug: string } }): Promise<Metadata> {
+  return {
+    title: params.user_slug
+  }
+}
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -25,6 +32,7 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
+  type: string
 }
 
 interface UserStats {
@@ -53,7 +61,8 @@ async function getUserCreations(userSlug: string): Promise<{ apps: WtafApp[], us
         is_featured,
         last_remixed_at,
         Fave,
-        Forget
+        Forget,
+        type
       `)
       .eq('user_slug', userSlug)
       .eq('status', 'published')

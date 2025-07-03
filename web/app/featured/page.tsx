@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import Link from "next/link"
 import { PromptClick } from "@/components/ui/prompt-click"
 
 // Force dynamic rendering
@@ -20,7 +21,7 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
-  type?: string
+  type: string
 }
 
 interface FeaturedStats {
@@ -41,6 +42,9 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Set page title
+    document.title = "The Gallery"
+    
     const fetchFeaturedData = async () => {
       try {
         const response = await fetch('/api/featured-wtaf', {
@@ -103,8 +107,6 @@ export default function GalleryPage() {
 
   const { apps, stats } = data
 
-
-
   return (
     <>
       <link
@@ -131,9 +133,9 @@ export default function GalleryPage() {
           </div>
           <div className="tagline">VIBECODED CHAOS UNLEASHED</div>
           <nav className="nav-back">
-            <a href="/" className="back-link">
+            <Link href="/" className="back-link">
               ← Back to WTAF
-            </a>
+            </Link>
           </nav>
         </header>
 
@@ -154,24 +156,19 @@ export default function GalleryPage() {
             {apps.map((app: WtafApp) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <a href={`/${app.user_slug}/${app.app_slug}`}>
+                  <Link href={`/${app.user_slug}/${app.app_slug}`}>
                     <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
                     <div className="image-overlay">
                       <button className="try-app-btn">TRY THIS APP</button>
                     </div>
-                  </a>
+                  </Link>
                 </div>
                 <div className="card-content">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                                          <a href={`/${app.user_slug}/creations`} className="creator-handle">
-                        @{app.user_slug}
-                      </a>
-                    <span className="remix-count">🔄 {app.remix_count} remixes</span>
-                  </div>
                   <div className="prompt-label">The prompt:</div>
                   <PromptClick prompt={app.original_prompt} />
-                  <button className="remix-btn">REMIX</button>
+                  {app.type !== 'ZAD' && (
+                    <button className="remix-btn">REMIX</button>
+                  )}
                 </div>
               </div>
             ))}
