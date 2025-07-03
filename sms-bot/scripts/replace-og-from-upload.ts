@@ -80,57 +80,33 @@ async function replaceOGFromUpload(uploadFilename: string) {
   try {
     console.log(`🔄 Processing upload: ${uploadFilename}`);
     
-    // Parse filename to extract user and app info
-    // Expected format: user-app-something.extension
-    // Or: user_app_something.extension
+    // Parse filename to extract app slug (since slugs are unique, no username required)
     const nameWithoutExt = path.parse(uploadFilename).name;
     
-    // Split only on the first separator to handle app slugs with multiple dashes
-    let userSlug, appSlug;
+    // Remove common suffixes like 'test', 'custom', 'v2' 
+    const parts = nameWithoutExt.split('-');
+    let appSlug = nameWithoutExt;
     
-    if (nameWithoutExt.includes('-')) {
-      const firstDashIndex = nameWithoutExt.indexOf('-');
-      userSlug = nameWithoutExt.substring(0, firstDashIndex);
-      const remaining = nameWithoutExt.substring(firstDashIndex + 1);
-      
-      // For app slug, remove any suffix after the last dash that might be a version/test identifier
-      // e.g., "coral-jaguar-swimming-test" -> "coral-jaguar-swimming"
-      const parts = remaining.split('-');
-      if (parts[parts.length - 1] === 'test' || parts[parts.length - 1] === 'custom' || parts[parts.length - 1] === 'v2') {
-        appSlug = parts.slice(0, -1).join('-');
-      } else {
-        appSlug = remaining;
-      }
-    } else if (nameWithoutExt.includes('_')) {
-      const firstUnderscoreIndex = nameWithoutExt.indexOf('_');
-      userSlug = nameWithoutExt.substring(0, firstUnderscoreIndex);
-      const remaining = nameWithoutExt.substring(firstUnderscoreIndex + 1);
-      
-      // Same logic for underscores
-      const parts = remaining.split('_');
-      if (parts[parts.length - 1] === 'test' || parts[parts.length - 1] === 'custom' || parts[parts.length - 1] === 'v2') {
-        appSlug = parts.slice(0, -1).join('_');
-      } else {
-        appSlug = remaining;
-      }
-    } else {
-      throw new Error(`Invalid filename format. Expected: user-app-* or user_app_*`);
+    if (parts.length > 1 && ['test', 'custom', 'v2', 'new', 'updated'].includes(parts[parts.length - 1])) {
+      appSlug = parts.slice(0, -1).join('-');
     }
     
-    console.log(`👤 User: ${userSlug}`);
-    console.log(`📱 App: ${appSlug}`);
+    console.log(`📱 App slug: ${appSlug}`);
     
-    // Check if the app exists in database
+    // Look up the app in database to find the user (since slugs are unique)
     const { data: existingApp, error: checkError } = await supabase
       .from('wtaf_content')
       .select('user_slug, app_slug, og_image_url')
-      .eq('user_slug', userSlug)
       .eq('app_slug', appSlug)
       .single();
     
     if (checkError) {
-      throw new Error(`App not found in database: ${userSlug}/${appSlug}`);
+      throw new Error(`App not found in database: ${appSlug}`);
     }
+    
+    const userSlug = existingApp.user_slug;
+    console.log(`👤 Found user: ${userSlug}`);
+    console.log(`📱 Found app: ${appSlug}`);
     
     console.log(`📋 Found existing app in database`);
     console.log(`   Current OG URL: ${existingApp.og_image_url || 'none'}`);
@@ -196,9 +172,20 @@ async function replaceOGFromUpload(uploadFilename: string) {
       console.log(`   Cached at: ${verifyData.og_image_cached_at}`);
     }
     
-    // Optional: Delete the upload file after processing
-    await fs.unlink(uploadPath);
-    console.log(`🗑️ Removed upload file: ${uploadFilename}`);
+    // Move the upload file to processed folder instead of deleting
+    const processedDir = path.join(__dirname, '../../../web/UPLOADS/processed');
+    
+    // Create processed directory if it doesn't exist
+    try {
+      await fs.access(processedDir);
+    } catch {
+      await fs.mkdir(processedDir, { recursive: true });
+      console.log(`📁 Created processed directory: ${processedDir}`);
+    }
+    
+    const processedPath = path.join(processedDir, uploadFilename);
+    await fs.rename(uploadPath, processedPath);
+    console.log(`📦 Moved to processed folder: ${uploadFilename}`);
     
     return ogImageUrl;
     
@@ -261,6 +248,8 @@ if (process.argv.length > 2) {
   // Process specific file
   const filename = process.argv[2];
   console.log('🎯 Processing specific file...');
+  console.log('💡 Expected format: app-slug.extension (e.g., solid-silver-haired-weaving.png)');
+  console.log('💡 Username will be automatically looked up from the database');
   testSupabaseConnection().then(connectionOk => {
     if (connectionOk) {
       console.log('---');
@@ -269,6 +258,8 @@ if (process.argv.length > 2) {
   });
 } else {
   // Process all files in uploads folder
+  console.log('💡 Expected format: app-slug.extension (e.g., solid-silver-haired-weaving.png)');
+  console.log('💡 Username will be automatically looked up from the database');
   processUploads();
 }
 
