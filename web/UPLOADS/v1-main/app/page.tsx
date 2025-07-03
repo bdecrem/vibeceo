@@ -2,11 +2,21 @@
 
 export default function HomePage() {
   return (
-    <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WTAF.me - One-Shot Prompting Over SMS</title>
+        <meta
+          name="description"
+          content="One-shot prompting over SMS. Ship from your flip phone. Vibecoded chaos delivered instantly."
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -761,6 +771,7 @@ export default function HomePage() {
             animation: borderGlow 3s linear infinite;
           }
         `}</style>
-    </>
+      </body>
+    </html>
   )
 }

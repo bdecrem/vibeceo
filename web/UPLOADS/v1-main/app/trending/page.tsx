@@ -1,116 +1,123 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { PromptClick } from "@/components/ui/prompt-click"
+export default function TrendingPage() {
+  const apps = [
+    {
+      id: 1,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Alex Blog",
+      prompt: "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
+      creator: "alex",
+      remixes: 247,
+    },
+    {
+      id: 2,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Berghain Party App",
+      prompt: "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
+      creator: "bart",
+      remixes: 189,
+    },
+    {
+      id: 3,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Pong Game",
+      prompt: "wtaf make a pong-style browser game",
+      creator: "zoe",
+      remixes: 156,
+    },
+    {
+      id: 4,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Alex Blog Variant",
+      prompt: "wtaf -Alex- create a minimalist blog with dark mode for announcing product launches",
+      creator: "alex",
+      remixes: 134,
+    },
+    {
+      id: 5,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Event Signup App",
+      prompt: "wtaf build a sleek event registration system with admin dashboard for underground parties",
+      creator: "kai",
+      remixes: 98,
+    },
+    {
+      id: 6,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Retro Game",
+      prompt: "wtaf create a nostalgic arcade-style game with neon aesthetics and high scores",
+      creator: "nova",
+      remixes: 87,
+    },
+    {
+      id: 7,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Personal Blog",
+      prompt: "wtaf -Alex- design a personal blog with cyberpunk vibes and glitch effects",
+      creator: "alex",
+      remixes: 76,
+    },
+    {
+      id: 8,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Club Management",
+      prompt: "wtaf make a comprehensive club management app with guest lists and door control",
+      creator: "raven",
+      remixes: 65,
+    },
+    {
+      id: 9,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Browser Game",
+      prompt: "wtaf build an addictive browser game with multiplayer capabilities and leaderboards",
+      creator: "pixel",
+      remixes: 54,
+    },
+    {
+      id: 10,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Content Platform",
+      prompt: "wtaf -Alex- create a content platform for tech announcements with social features",
+      creator: "echo",
+      remixes: 43,
+    },
+  ]
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
-interface WtafApp {
-  id: string
-  app_slug: string
-  user_slug: string
-  original_prompt: string
-  created_at: string
-  remix_count: number
-  recent_remixes?: number
-  is_remix: boolean
-  parent_app_id: string | null
-  is_featured: boolean
-  last_remixed_at: string | null
-  Fave?: boolean
-  Forget?: boolean
-  type?: string
-}
-
-interface FeaturedStats {
-  totalTrendingApps: number
-  totalRemixesThisWeek: number
-  appsWithRecentActivity: number
-  period: string
-}
-
-interface FeaturedData {
-  apps: WtafApp[]
-  stats: FeaturedStats
-}
-
-export default function GalleryPage() {
-  const [data, setData] = useState<FeaturedData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchFeaturedData = async () => {
-      try {
-        const response = await fetch('/api/featured-wtaf', {
-          cache: 'no-store'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch featured data: ${response.status}`)
-        }
-        
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        console.error('Error fetching featured data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load featured data')
-      } finally {
-        setLoading(false)
-      }
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // Visual feedback will be handled by CSS animation
+    } catch (err) {
+      console.error("Failed to copy text: ", err)
     }
-
-    fetchFeaturedData()
-  }, [])
-
-  if (loading) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="loading-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚡</div>
-            <h3 className="text-2xl text-white mb-4">Loading featured apps...</h3>
-          </div>
-        </div>
-      </>
-    )
   }
 
-  if (error || !data) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="error-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-2xl text-white mb-4">Failed to load featured</h3>
-            <p className="text-gray-300 text-lg">
-              Try refreshing the page or check back later.
-            </p>
-          </div>
-        </div>
-      </>
-    )
+  const handlePromptClick = (e, prompt) => {
+    copyToClipboard(prompt)
+    // Add clicked class for animation
+    e.target.classList.add("clicked")
+    setTimeout(() => {
+      e.target.classList.remove("clicked")
+    }, 600)
   }
-
-  const { apps, stats } = data
-
-
 
   return (
-    <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Trending - WTAF.me</title>
+        <meta
+          name="description"
+          content="Discover the hottest apps trending on WTAF. See what's being remixed and who's creating the chaos."
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -126,10 +133,10 @@ export default function GalleryPage() {
         <div className="float-element chains">⛓️</div>
 
         <header>
-          <div className="logo glitch" data-text="GALLERY">
-            GALLERY
+          <div className="logo glitch" data-text="TRENDING">
+            TRENDING
           </div>
-          <div className="tagline">VIBECODED CHAOS UNLEASHED</div>
+          <div className="tagline">HOTTEST CHAOS RIGHT NOW</div>
           <nav className="nav-back">
             <a href="/" className="back-link">
               ← Back to WTAF
@@ -140,37 +147,42 @@ export default function GalleryPage() {
         <main>
           <section className="gallery-hero">
             <div className="hero-content">
-              <h1 className="glitch" data-text="Apps Born from Pure Chaos">
-                Apps Born from Pure Chaos
+              <h1 className="glitch" data-text="What's Burning Up the Feed">
+                What's Burning Up the Feed
               </h1>
               <p>
-                Each creation spawned from a single SMS. No meetings. No wireframes. Just raw prompts transformed into
-                digital reality through algorithmic rebellion.
+                The most remixed, most copied, most chaotic prompts dominating the WTAF ecosystem. These creators are
+                setting the digital underground on fire.
               </p>
             </div>
           </section>
 
           <section className="gallery-grid">
-            {apps.map((app: WtafApp) => (
+            {apps.map((app) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <a href={`/${app.user_slug}/${app.app_slug}`}>
-                    <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
-                    <div className="image-overlay">
-                      <button className="try-app-btn">TRY THIS APP</button>
-                    </div>
-                  </a>
+                  <img src={app.image || "/placeholder.svg"} alt={app.alt} className="gallery-image" />
+                  <div className="image-overlay">
+                    <button className="try-app-btn">TRY THIS APP</button>
+                  </div>
                 </div>
                 <div className="card-content">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                                          <a href={`/${app.user_slug}/creations`} className="creator-handle">
-                        @{app.user_slug}
+                  <div className="creator-stats">
+                    <div className="creator-info">
+                      <span className="creator-label">by</span>
+                      <a href={`/user/${app.creator}`} className="creator-handle">
+                        @{app.creator}
                       </a>
-                    <span className="remix-count">🔄 {app.remix_count} remixes</span>
+                    </div>
+                    <div className="remix-count">
+                      <span className="remix-number">{app.remixes}</span>
+                      <span className="remix-label">remixes</span>
+                    </div>
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <PromptClick prompt={app.original_prompt} />
+                  <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.prompt)}>
+                    "{app.prompt}"
+                  </div>
                   <button className="remix-btn">REMIX</button>
                 </div>
               </div>
@@ -186,9 +198,9 @@ export default function GalleryPage() {
           }
 
           body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a4d4d 25%, #004d4d 50%, #003366 75%, #000033 100%);
+            background: linear-gradient(135deg, #2d0a0a 0%, #4d1a1a 25%, #660000 50%, #4d0033 75%, #330000 100%);
             background-size: 400% 400%;
-            animation: gradientShift 14s ease infinite;
+            animation: gradientShift 16s ease infinite;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
@@ -204,16 +216,16 @@ export default function GalleryPage() {
           .float-element {
             position: absolute;
             opacity: 0.4;
-            animation: float 7s ease-in-out infinite;
+            animation: float 8s ease-in-out infinite;
             pointer-events: none;
-            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+            filter: drop-shadow(0 0 10px rgba(255, 100, 100, 0.3));
           }
 
           .skull {
             top: 8%;
             left: 5%;
             font-size: 3.5rem;
-            color: rgba(0, 255, 255, 0.3);
+            color: rgba(255, 100, 100, 0.3);
             animation-delay: 0s;
           }
 
@@ -221,30 +233,30 @@ export default function GalleryPage() {
             top: 30%;
             right: 8%;
             font-size: 4rem;
-            color: rgba(0, 255, 150, 0.4);
-            animation-delay: 2.5s;
+            color: rgba(255, 150, 0, 0.4);
+            animation-delay: 3s;
           }
 
           .fire {
             bottom: 25%;
             left: 12%;
             font-size: 3.8rem;
-            color: rgba(0, 200, 255, 0.4);
-            animation-delay: 5s;
+            color: rgba(255, 50, 50, 0.4);
+            animation-delay: 6s;
           }
 
           .chains {
             bottom: 10%;
             right: 15%;
             font-size: 3.2rem;
-            color: rgba(100, 200, 255, 0.3);
-            animation-delay: 1.5s;
+            color: rgba(255, 200, 100, 0.3);
+            animation-delay: 2s;
           }
 
           @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-25px) rotate(7deg); }
-            66% { transform: translateY(15px) rotate(-5deg); }
+            33% { transform: translateY(-30px) rotate(10deg); }
+            66% { transform: translateY(20px) rotate(-7deg); }
           }
 
           .glitch {
@@ -264,13 +276,13 @@ export default function GalleryPage() {
 
           .glitch::before {
             animation: glitch1 2s infinite;
-            color: #00ffff;
+            color: #ff6600;
             z-index: -1;
           }
 
           .glitch::after {
             animation: glitch2 2s infinite;
-            color: #0080ff;
+            color: #ff0066;
             z-index: -2;
           }
 
@@ -299,21 +311,21 @@ export default function GalleryPage() {
             font-weight: 900;
             color: #ffffff;
             text-shadow:
-              0 0 10px #00ffff,
-              0 0 20px #00ffff,
-              0 0 30px #00ffff;
+              0 0 10px #ff6600,
+              0 0 20px #ff6600,
+              0 0 30px #ff6600;
             margin-bottom: 15px;
             letter-spacing: -2px;
           }
 
           .tagline {
             font-size: 1.1rem;
-            color: #00ffff;
+            color: #ff6600;
             font-weight: 500;
             letter-spacing: 3px;
             text-transform: uppercase;
             margin-bottom: 30px;
-            text-shadow: 0 0 5px #00ffff;
+            text-shadow: 0 0 5px #ff6600;
           }
 
           .nav-back {
@@ -321,18 +333,18 @@ export default function GalleryPage() {
           }
 
           .back-link {
-            color: #0080ff;
+            color: #ff3366;
             text-decoration: none;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 600;
             font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
             transition: all 0.3s ease;
           }
 
           .back-link:hover {
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 128, 255, 0.8);
+            text-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
           }
 
           main {
@@ -352,12 +364,12 @@ export default function GalleryPage() {
           .hero-content {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(15px);
-            border: 2px solid rgba(0, 255, 255, 0.3);
+            border: 2px solid rgba(255, 102, 0, 0.3);
             border-radius: 30px;
             padding: 50px 40px;
             box-shadow:
               0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(0, 255, 255, 0.1);
+              inset 0 0 20px rgba(255, 102, 0, 0.1);
             max-width: 800px;
             margin: 0 auto;
           }
@@ -369,7 +381,7 @@ export default function GalleryPage() {
             margin-bottom: 25px;
             font-weight: 700;
             line-height: 1.1;
-            text-shadow: 0 0 15px #0080ff;
+            text-shadow: 0 0 15px #ff3366;
           }
 
           .gallery-hero p {
@@ -405,7 +417,7 @@ export default function GalleryPage() {
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #00ffff, #0080ff, #00ff80, #00ffff);
+            background: linear-gradient(90deg, #ff6600, #ff3366, #ff9900, #ff6600);
             background-size: 200% 100%;
             animation: borderGlow 3s linear infinite;
           }
@@ -420,8 +432,8 @@ export default function GalleryPage() {
             background: rgba(0, 0, 0, 0.7);
             box-shadow:
               0 20px 50px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.2);
-            border-color: rgba(0, 255, 255, 0.3);
+              0 0 30px rgba(255, 102, 0, 0.2);
+            border-color: rgba(255, 102, 0, 0.3);
           }
 
           .image-container {
@@ -438,7 +450,7 @@ export default function GalleryPage() {
             object-fit: cover;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+            filter: drop-shadow(0 0 20px rgba(255, 102, 0, 0.5));
             transition: all 0.3s ease;
             background: rgba(0, 0, 0, 0.2);
           }
@@ -464,14 +476,14 @@ export default function GalleryPage() {
 
           .image-container:hover .gallery-image {
             transform: scale(1.05);
-            filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.8));
-            border-color: rgba(0, 255, 255, 0.7);
+            filter: drop-shadow(0 0 30px rgba(255, 102, 0, 0.8));
+            border-color: rgba(255, 102, 0, 0.7);
           }
 
           .try-app-btn {
             padding: 15px 30px;
-            background: linear-gradient(45deg, #00ffff, #0080ff);
-            color: #000000;
+            background: linear-gradient(45deg, #ff6600, #ff3366);
+            color: #ffffff;
             border: none;
             border-radius: 50px;
             font-family: 'Space Grotesk', sans-serif;
@@ -482,28 +494,33 @@ export default function GalleryPage() {
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow:
-              0 8px 25px rgba(0, 255, 255, 0.3),
-              0 0 20px rgba(0, 255, 255, 0.2);
+              0 8px 25px rgba(255, 102, 0, 0.3),
+              0 0 20px rgba(255, 102, 0, 0.2);
           }
 
           .try-app-btn:hover {
             transform: scale(1.05);
             box-shadow:
-              0 12px 35px rgba(0, 255, 255, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.3);
+              0 12px 35px rgba(255, 102, 0, 0.4),
+              0 0 30px rgba(255, 102, 0, 0.3);
           }
 
           .card-content {
             text-align: center;
           }
 
+          .creator-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 5px;
+          }
+
           .creator-info {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            gap: 8px;
           }
 
           .creator-label {
@@ -517,30 +534,40 @@ export default function GalleryPage() {
           .creator-handle {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.9rem;
-            color: #00ffff;
+            color: #ff6600;
             font-weight: 700;
             text-decoration: none;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
             transition: all 0.3s ease;
             cursor: pointer;
           }
 
           .creator-handle:hover {
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            text-shadow: 0 0 15px rgba(255, 102, 0, 0.8);
             transform: translateY(-1px);
           }
 
           .remix-count {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+          }
+
+          .remix-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            color: #ff9900;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(255, 153, 0, 0.5);
+          }
+
+          .remix-label {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.8rem;
-            color: #0080ff;
-            font-weight: 600;
-            background: rgba(0, 128, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 128, 255, 0.3);
-            text-shadow: 0 0 5px rgba(0, 128, 255, 0.5);
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            text-transform: lowercase;
           }
 
           .prompt-label {
@@ -556,16 +583,16 @@ export default function GalleryPage() {
           }
 
           .prompt-showcase {
-            color: #0080ff;
+            color: #ff3366;
             font-family: 'Space Grotesk', monospace;
             font-size: 1rem;
             font-weight: 500;
-            background: rgba(0, 128, 255, 0.1);
-            border: 2px solid rgba(0, 128, 255, 0.3);
+            background: rgba(255, 51, 102, 0.1);
+            border: 2px solid rgba(255, 51, 102, 0.3);
             border-radius: 15px;
             padding: 15px 20px;
             margin-bottom: 20px;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
             backdrop-filter: blur(5px);
             font-style: italic;
             line-height: 1.4;
@@ -575,10 +602,10 @@ export default function GalleryPage() {
           }
 
           .prompt-showcase:hover {
-            background: rgba(0, 128, 255, 0.15);
-            border-color: rgba(0, 128, 255, 0.5);
+            background: rgba(255, 51, 102, 0.15);
+            border-color: rgba(255, 51, 102, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 128, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(255, 51, 102, 0.2);
           }
 
           .prompt-showcase.clicked {
@@ -588,24 +615,24 @@ export default function GalleryPage() {
           @keyframes copyPulse {
             0% {
               transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
+              background: rgba(255, 51, 102, 0.1);
             }
             50% {
               transform: scale(1.02);
-              background: rgba(0, 128, 255, 0.3);
-              box-shadow: 0 0 30px rgba(0, 128, 255, 0.6);
+              background: rgba(255, 51, 102, 0.3);
+              box-shadow: 0 0 30px rgba(255, 51, 102, 0.6);
             }
             100% {
               transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
+              background: rgba(255, 51, 102, 0.1);
             }
           }
 
           .remix-btn {
             padding: 12px 25px;
             background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #0080ff;
-            color: #0080ff;
+            border: 2px solid #ff3366;
+            color: #ff3366;
             border-radius: 50px;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
@@ -615,16 +642,16 @@ export default function GalleryPage() {
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow:
-              0 8px 25px rgba(0, 128, 255, 0.2),
-              0 0 20px rgba(0, 128, 255, 0.1);
+              0 8px 25px rgba(255, 51, 102, 0.2),
+              0 0 20px rgba(255, 51, 102, 0.1);
           }
 
           .remix-btn:hover {
-            background: rgba(0, 128, 255, 0.1);
+            background: rgba(255, 51, 102, 0.1);
             transform: translateY(-2px);
             box-shadow:
-              0 12px 35px rgba(0, 128, 255, 0.3),
-              0 0 30px rgba(0, 128, 255, 0.2);
+              0 12px 35px rgba(255, 51, 102, 0.3),
+              0 0 30px rgba(255, 51, 102, 0.2);
           }
 
           .sparks {
@@ -642,11 +669,11 @@ export default function GalleryPage() {
             position: absolute;
             width: 2px;
             height: 2px;
-            background: #00ff96;
+            background: #ff9900;
             border-radius: 50%;
             opacity: 0;
-            animation: spark 3.5s infinite ease-out;
-            box-shadow: 0 0 6px #00ff96;
+            animation: spark 4s infinite ease-out;
+            box-shadow: 0 0 6px #ff9900;
           }
 
           .spark:nth-child(1) {
@@ -658,19 +685,19 @@ export default function GalleryPage() {
           .spark:nth-child(2) {
             top: 70%;
             left: 80%;
-            animation-delay: 1.2s;
+            animation-delay: 1.5s;
           }
 
           .spark:nth-child(3) {
             top: 50%;
             left: 10%;
-            animation-delay: 2.4s;
+            animation-delay: 3s;
           }
 
           .spark:nth-child(4) {
             top: 30%;
             left: 90%;
-            animation-delay: 1.8s;
+            animation-delay: 2.2s;
           }
 
           @keyframes spark {
@@ -700,6 +727,11 @@ export default function GalleryPage() {
             .gallery-hero h1 { font-size: 2.5rem; line-height: 1.2; }
             .gallery-hero p { font-size: 1rem; }
             .hero-content { padding: 40px 25px; }
+            .creator-stats {
+              flex-direction: column;
+              gap: 10px;
+              align-items: center;
+            }
           }
 
           @media (max-width: 480px) {
@@ -711,6 +743,7 @@ export default function GalleryPage() {
             .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
           }
         `}</style>
-    </>
+      </body>
+    </html>
   )
 }

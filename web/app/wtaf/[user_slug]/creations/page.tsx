@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
-import { WtafPageLayout, WtafAppGrid, WtafApp } from '@/components/wtaf'
+import CreationsUI from "@/components/wtaf/creations-ui"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -10,6 +10,22 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
+
+interface WtafApp {
+  id: string
+  app_slug: string
+  user_slug: string
+  original_prompt: string
+  created_at: string
+  remix_count: number
+  recent_remixes?: number
+  is_remix: boolean
+  parent_app_id: string | null
+  is_featured: boolean
+  last_remixed_at: string | null
+  Fave?: boolean
+  Forget?: boolean
+}
 
 interface UserStats {
   user_slug: string
@@ -120,42 +136,11 @@ export default async function CreationsPage({ params }: { params: { user_slug: s
 
   const { apps, userStats } = data
 
-  const userStatsForLayout = [
-    {
-      label: 'Apps Created',
-      value: userStats.published_apps,
-      color: 'cyan' as const
-    },
-    {
-      label: 'Total Remixes',
-      value: userStats.total_remixes_received,
-      color: 'pink' as const
-    },
-    {
-      label: 'Followers',
-      value: userStats.follower_count,
-      color: 'yellow' as const
-    }
-  ]
-
   return (
-    <WtafPageLayout
-      title={`${params.user_slug.toUpperCase()}'S CREATIONS`}
-      subtitle="Vibecoded chaos, shipped via SMS"
-      stats={userStatsForLayout}
-      backLink={{
-        href: `/${params.user_slug}`,
-        text: `Back to ${params.user_slug}'s profile`
-      }}
-    >
-      <WtafAppGrid 
-        apps={apps}
-        emptyState={{
-          icon: '🤷‍♂️',
-          title: 'No apps yet!',
-          description: `${params.user_slug} hasn't created any apps yet. Check back later!`
-        }}
-      />
-    </WtafPageLayout>
+    <CreationsUI 
+      apps={apps} 
+      userStats={userStats} 
+      userSlug={params.user_slug} 
+    />
   )
 } 
