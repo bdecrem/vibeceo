@@ -10,7 +10,7 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const user_slug = searchParams.get('user')
+    const user_slug = searchParams.get('user_slug')
     
     if (!user_slug) {
       return NextResponse.json({ error: 'Missing user slug' }, { status: 400 })

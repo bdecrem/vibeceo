@@ -1,7 +1,23 @@
-import { WtafPageLayout, WtafAppGrid, WtafApp } from '@/components/wtaf'
+import React from "react"
+import TrendingUI from "@/components/wtaf/trending-ui"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
+
+interface WtafApp {
+  id: string
+  app_slug: string
+  user_slug: string
+  original_prompt: string
+  created_at: string
+  remix_count: number
+  recent_remixes?: number
+  is_remix: boolean
+  parent_app_id: string | null
+  is_featured: boolean
+  last_remixed_at: string | null
+  Fave?: boolean
+  Forget?: boolean
+}
 
 interface TrendingStats {
   totalTrendingApps: number
@@ -39,56 +55,12 @@ export default async function TrendingPage() {
   
   if (!data) {
     return (
-      <WtafPageLayout
-        title="TRENDING"
-        subtitle="Apps going viral via SMS"
-      >
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h3 className="text-2xl text-white mb-4">Failed to load trending</h3>
-          <p className="text-gray-300 text-lg">
-            Try refreshing the page or check back later.
-          </p>
-        </div>
-      </WtafPageLayout>
+      <div style={{ padding: '50px', textAlign: 'center', color: '#ff6600' }}>
+        <h1>Failed to load trending data</h1>
+        <p>Please try again later</p>
+      </div>
     )
   }
 
-  const { apps, stats } = data
-  
-  const trendingStats = [
-    {
-      label: 'Trending Apps',
-      value: stats.totalTrendingApps,
-      color: 'orange' as const
-    },
-    {
-      label: 'Total Remixes', 
-      value: stats.totalRemixesThisWeek,
-      color: 'pink' as const
-    },
-    {
-      label: 'With Remixes',
-      value: stats.appsWithRecentActivity,
-      color: 'cyan' as const
-    }
-  ]
-
-  return (
-    <WtafPageLayout
-      title="TRENDING"
-      subtitle="Apps going viral via SMS (last 7 days)"
-      stats={trendingStats}
-    >
-      <WtafAppGrid 
-        apps={apps}
-        showUserInMeta={true}
-        emptyState={{
-          icon: '📈',
-          title: 'No trending apps yet!',
-          description: 'Create and remix some apps to see them trending here.'
-        }}
-      />
-    </WtafPageLayout>
-  )
-} 
+  return <TrendingUI apps={data.apps} stats={data.stats} />
+}

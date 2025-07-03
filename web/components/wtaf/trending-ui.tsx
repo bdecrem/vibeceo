@@ -1,10 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { PromptClick } from "@/components/ui/prompt-click"
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 interface WtafApp {
   id: string
@@ -20,91 +17,21 @@ interface WtafApp {
   last_remixed_at: string | null
   Fave?: boolean
   Forget?: boolean
-  type?: string
 }
 
-interface FeaturedStats {
+interface TrendingStats {
   totalTrendingApps: number
   totalRemixesThisWeek: number
   appsWithRecentActivity: number
   period: string
 }
 
-interface FeaturedData {
+interface TrendingUIProps {
   apps: WtafApp[]
-  stats: FeaturedStats
+  stats: TrendingStats
 }
 
-export default function GalleryPage() {
-  const [data, setData] = useState<FeaturedData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchFeaturedData = async () => {
-      try {
-        const response = await fetch('/api/featured-wtaf', {
-          cache: 'no-store'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch featured data: ${response.status}`)
-        }
-        
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        console.error('Error fetching featured data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load featured data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchFeaturedData()
-  }, [])
-
-  if (loading) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="loading-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚡</div>
-            <h3 className="text-2xl text-white mb-4">Loading featured apps...</h3>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  if (error || !data) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="error-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-2xl text-white mb-4">Failed to load featured</h3>
-            <p className="text-gray-300 text-lg">
-              Try refreshing the page or check back later.
-            </p>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  const { apps, stats } = data
-
-
-
+export default function TrendingUI({ apps, stats }: TrendingUIProps) {
   return (
     <>
       <link
@@ -126,10 +53,10 @@ export default function GalleryPage() {
         <div className="float-element chains">⛓️</div>
 
         <header>
-          <div className="logo glitch" data-text="GALLERY">
-            GALLERY
+          <div className="logo glitch" data-text="TRENDING">
+            TRENDING
           </div>
-          <div className="tagline">VIBECODED CHAOS UNLEASHED</div>
+          <div className="tagline">HOTTEST CHAOS RIGHT NOW</div>
           <nav className="nav-back">
             <a href="/" className="back-link">
               ← Back to WTAF
@@ -140,12 +67,12 @@ export default function GalleryPage() {
         <main>
           <section className="gallery-hero">
             <div className="hero-content">
-              <h1 className="glitch" data-text="Apps Born from Pure Chaos">
-                Apps Born from Pure Chaos
+              <h1 className="glitch" data-text="What's Burning Up the Feed">
+                What's Burning Up the Feed
               </h1>
               <p>
-                Each creation spawned from a single SMS. No meetings. No wireframes. Just raw prompts transformed into
-                digital reality through algorithmic rebellion.
+                The most remixed, most copied, most chaotic prompts dominating the WTAF ecosystem. These creators are
+                setting the digital underground on fire.
               </p>
             </div>
           </section>
@@ -154,20 +81,23 @@ export default function GalleryPage() {
             {apps.map((app: WtafApp) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <a href={`/${app.user_slug}/${app.app_slug}`}>
-                    <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
-                    <div className="image-overlay">
-                      <button className="try-app-btn">TRY THIS APP</button>
-                    </div>
-                  </a>
+                  <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
+                  <div className="image-overlay">
+                    <button className="try-app-btn">TRY THIS APP</button>
+                  </div>
                 </div>
                 <div className="card-content">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                                          <a href={`/${app.user_slug}/creations`} className="creator-handle">
+                  <div className="creator-stats">
+                    <div className="creator-info">
+                      <span className="creator-label">by</span>
+                      <a href={`/${app.user_slug}/creations`} className="creator-handle">
                         @{app.user_slug}
                       </a>
-                    <span className="remix-count">🔄 {app.remix_count} remixes</span>
+                    </div>
+                    <div className="remix-count">
+                      <span className="remix-number">{app.remix_count}</span>
+                      <span className="remix-label">remixes</span>
+                    </div>
                   </div>
                   <div className="prompt-label">The prompt:</div>
                   <PromptClick prompt={app.original_prompt} />
@@ -186,9 +116,9 @@ export default function GalleryPage() {
           }
 
           body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a4d4d 25%, #004d4d 50%, #003366 75%, #000033 100%);
+            background: linear-gradient(135deg, #2d0a0a 0%, #4d1a1a 25%, #660000 50%, #4d0033 75%, #330000 100%);
             background-size: 400% 400%;
-            animation: gradientShift 14s ease infinite;
+            animation: gradientShift 16s ease infinite;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
@@ -204,16 +134,16 @@ export default function GalleryPage() {
           .float-element {
             position: absolute;
             opacity: 0.4;
-            animation: float 7s ease-in-out infinite;
+            animation: float 8s ease-in-out infinite;
             pointer-events: none;
-            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+            filter: drop-shadow(0 0 10px rgba(255, 100, 100, 0.3));
           }
 
           .skull {
             top: 8%;
             left: 5%;
             font-size: 3.5rem;
-            color: rgba(0, 255, 255, 0.3);
+            color: rgba(255, 100, 100, 0.3);
             animation-delay: 0s;
           }
 
@@ -221,30 +151,30 @@ export default function GalleryPage() {
             top: 30%;
             right: 8%;
             font-size: 4rem;
-            color: rgba(0, 255, 150, 0.4);
-            animation-delay: 2.5s;
+            color: rgba(255, 150, 0, 0.4);
+            animation-delay: 3s;
           }
 
           .fire {
             bottom: 25%;
             left: 12%;
             font-size: 3.8rem;
-            color: rgba(0, 200, 255, 0.4);
-            animation-delay: 5s;
+            color: rgba(255, 50, 50, 0.4);
+            animation-delay: 6s;
           }
 
           .chains {
             bottom: 10%;
             right: 15%;
             font-size: 3.2rem;
-            color: rgba(100, 200, 255, 0.3);
-            animation-delay: 1.5s;
+            color: rgba(255, 200, 100, 0.3);
+            animation-delay: 2s;
           }
 
           @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-25px) rotate(7deg); }
-            66% { transform: translateY(15px) rotate(-5deg); }
+            33% { transform: translateY(-30px) rotate(10deg); }
+            66% { transform: translateY(20px) rotate(-7deg); }
           }
 
           .glitch {
@@ -264,13 +194,13 @@ export default function GalleryPage() {
 
           .glitch::before {
             animation: glitch1 2s infinite;
-            color: #00ffff;
+            color: #ff6600;
             z-index: -1;
           }
 
           .glitch::after {
             animation: glitch2 2s infinite;
-            color: #0080ff;
+            color: #ff0066;
             z-index: -2;
           }
 
@@ -299,21 +229,21 @@ export default function GalleryPage() {
             font-weight: 900;
             color: #ffffff;
             text-shadow:
-              0 0 10px #00ffff,
-              0 0 20px #00ffff,
-              0 0 30px #00ffff;
+              0 0 10px #ff6600,
+              0 0 20px #ff6600,
+              0 0 30px #ff6600;
             margin-bottom: 15px;
             letter-spacing: -2px;
           }
 
           .tagline {
             font-size: 1.1rem;
-            color: #00ffff;
+            color: #ff6600;
             font-weight: 500;
             letter-spacing: 3px;
             text-transform: uppercase;
             margin-bottom: 30px;
-            text-shadow: 0 0 5px #00ffff;
+            text-shadow: 0 0 5px #ff6600;
           }
 
           .nav-back {
@@ -321,18 +251,18 @@ export default function GalleryPage() {
           }
 
           .back-link {
-            color: #0080ff;
+            color: #ff3366;
             text-decoration: none;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 600;
             font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
             transition: all 0.3s ease;
           }
 
           .back-link:hover {
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 128, 255, 0.8);
+            text-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
           }
 
           main {
@@ -352,12 +282,12 @@ export default function GalleryPage() {
           .hero-content {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(15px);
-            border: 2px solid rgba(0, 255, 255, 0.3);
+            border: 2px solid rgba(255, 102, 0, 0.3);
             border-radius: 30px;
             padding: 50px 40px;
             box-shadow:
               0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(0, 255, 255, 0.1);
+              inset 0 0 20px rgba(255, 102, 0, 0.1);
             max-width: 800px;
             margin: 0 auto;
           }
@@ -369,7 +299,7 @@ export default function GalleryPage() {
             margin-bottom: 25px;
             font-weight: 700;
             line-height: 1.1;
-            text-shadow: 0 0 15px #0080ff;
+            text-shadow: 0 0 15px #ff3366;
           }
 
           .gallery-hero p {
@@ -405,7 +335,7 @@ export default function GalleryPage() {
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #00ffff, #0080ff, #00ff80, #00ffff);
+            background: linear-gradient(90deg, #ff6600, #ff3366, #ff9900, #ff6600);
             background-size: 200% 100%;
             animation: borderGlow 3s linear infinite;
           }
@@ -420,8 +350,8 @@ export default function GalleryPage() {
             background: rgba(0, 0, 0, 0.7);
             box-shadow:
               0 20px 50px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.2);
-            border-color: rgba(0, 255, 255, 0.3);
+              0 0 30px rgba(255, 102, 0, 0.2);
+            border-color: rgba(255, 102, 0, 0.3);
           }
 
           .image-container {
@@ -438,7 +368,7 @@ export default function GalleryPage() {
             object-fit: cover;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+            filter: drop-shadow(0 0 20px rgba(255, 102, 0, 0.5));
             transition: all 0.3s ease;
             background: rgba(0, 0, 0, 0.2);
           }
@@ -464,14 +394,14 @@ export default function GalleryPage() {
 
           .image-container:hover .gallery-image {
             transform: scale(1.05);
-            filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.8));
-            border-color: rgba(0, 255, 255, 0.7);
+            filter: drop-shadow(0 0 30px rgba(255, 102, 0, 0.8));
+            border-color: rgba(255, 102, 0, 0.7);
           }
 
           .try-app-btn {
             padding: 15px 30px;
-            background: linear-gradient(45deg, #00ffff, #0080ff);
-            color: #000000;
+            background: linear-gradient(45deg, #ff6600, #ff3366);
+            color: #ffffff;
             border: none;
             border-radius: 50px;
             font-family: 'Space Grotesk', sans-serif;
@@ -482,28 +412,35 @@ export default function GalleryPage() {
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow:
-              0 8px 25px rgba(0, 255, 255, 0.3),
-              0 0 20px rgba(0, 255, 255, 0.2);
+              0 8px 25px rgba(255, 102, 0, 0.3),
+              0 0 20px rgba(255, 102, 0, 0.2);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
           }
 
           .try-app-btn:hover {
             transform: scale(1.05);
             box-shadow:
-              0 12px 35px rgba(0, 255, 255, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.3);
+              0 12px 35px rgba(255, 102, 0, 0.4),
+              0 0 30px rgba(255, 102, 0, 0.3);
           }
 
           .card-content {
             text-align: center;
           }
 
+          .creator-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+
           .creator-info {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            gap: 6px;
           }
 
           .creator-label {
@@ -517,30 +454,38 @@ export default function GalleryPage() {
           .creator-handle {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.9rem;
-            color: #00ffff;
-            font-weight: 700;
+            color: #ff9900;
+            font-weight: 600;
             text-decoration: none;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            text-shadow: 0 0 8px rgba(255, 153, 0, 0.5);
             transition: all 0.3s ease;
-            cursor: pointer;
           }
 
           .creator-handle:hover {
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            transform: translateY(-1px);
+            text-shadow: 0 0 15px rgba(255, 153, 0, 0.8);
           }
 
           .remix-count {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+          }
+
+          .remix-number {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: #0080ff;
-            font-weight: 600;
-            background: rgba(0, 128, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 128, 255, 0.3);
-            text-shadow: 0 0 5px rgba(0, 128, 255, 0.5);
+            font-size: 1.3rem;
+            color: #ff3366;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+          }
+
+          .remix-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            text-transform: lowercase;
           }
 
           .prompt-label {
@@ -555,57 +500,11 @@ export default function GalleryPage() {
             opacity: 0.8;
           }
 
-          .prompt-showcase {
-            color: #0080ff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 1rem;
-            font-weight: 500;
-            background: rgba(0, 128, 255, 0.1);
-            border: 2px solid rgba(0, 128, 255, 0.3);
-            border-radius: 15px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            line-height: 1.4;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            user-select: none;
-          }
-
-          .prompt-showcase:hover {
-            background: rgba(0, 128, 255, 0.15);
-            border-color: rgba(0, 128, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 128, 255, 0.2);
-          }
-
-          .prompt-showcase.clicked {
-            animation: copyPulse 0.6s ease-out;
-          }
-
-          @keyframes copyPulse {
-            0% {
-              transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
-            }
-            50% {
-              transform: scale(1.02);
-              background: rgba(0, 128, 255, 0.3);
-              box-shadow: 0 0 30px rgba(0, 128, 255, 0.6);
-            }
-            100% {
-              transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
-            }
-          }
-
           .remix-btn {
             padding: 12px 25px;
             background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #0080ff;
-            color: #0080ff;
+            border: 2px solid #ff3366;
+            color: #ff3366;
             border-radius: 50px;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
@@ -614,17 +513,18 @@ export default function GalleryPage() {
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-top: 15px;
             box-shadow:
-              0 8px 25px rgba(0, 128, 255, 0.2),
-              0 0 20px rgba(0, 128, 255, 0.1);
+              0 8px 25px rgba(255, 51, 102, 0.2),
+              0 0 20px rgba(255, 51, 102, 0.1);
           }
 
           .remix-btn:hover {
-            background: rgba(0, 128, 255, 0.1);
+            background: rgba(255, 51, 102, 0.1);
             transform: translateY(-2px);
             box-shadow:
-              0 12px 35px rgba(0, 128, 255, 0.3),
-              0 0 30px rgba(0, 128, 255, 0.2);
+              0 12px 35px rgba(255, 51, 102, 0.3),
+              0 0 30px rgba(255, 51, 102, 0.2);
           }
 
           .sparks {
@@ -642,11 +542,11 @@ export default function GalleryPage() {
             position: absolute;
             width: 2px;
             height: 2px;
-            background: #00ff96;
+            background: #ff6600;
             border-radius: 50%;
             opacity: 0;
-            animation: spark 3.5s infinite ease-out;
-            box-shadow: 0 0 6px #00ff96;
+            animation: spark 4s infinite ease-out;
+            box-shadow: 0 0 6px #ff6600;
           }
 
           .spark:nth-child(1) {
@@ -658,19 +558,19 @@ export default function GalleryPage() {
           .spark:nth-child(2) {
             top: 70%;
             left: 80%;
-            animation-delay: 1.2s;
+            animation-delay: 1.5s;
           }
 
           .spark:nth-child(3) {
             top: 50%;
             left: 10%;
-            animation-delay: 2.4s;
+            animation-delay: 3s;
           }
 
           .spark:nth-child(4) {
             top: 30%;
             left: 90%;
-            animation-delay: 1.8s;
+            animation-delay: 2.5s;
           }
 
           @keyframes spark {
@@ -693,19 +593,23 @@ export default function GalleryPage() {
               grid-template-columns: 1fr;
             }
             .logo { font-size: 3rem; }
+            .gallery-hero h1 { font-size: 2.5rem; }
+            .creator-stats { 
+              gap: 15px; 
+              flex-direction: column;
+              align-items: center;
+            }
             .gallery-grid { 
               gap: 30px;
             }
             .gallery-card { padding: 25px 20px; }
-            .gallery-hero h1 { font-size: 2.5rem; line-height: 1.2; }
-            .gallery-hero p { font-size: 1rem; }
             .hero-content { padding: 40px 25px; }
           }
 
           @media (max-width: 480px) {
             .logo { font-size: 2.5rem; }
+            .gallery-hero h1 { font-size: 2rem; }
             .gallery-card { padding: 20px 15px; }
-            .gallery-hero h1 { font-size: 2rem; line-height: 1.1; }
             .hero-content { padding: 30px 20px; }
             .try-app-btn { padding: 12px 25px; font-size: 0.9rem; }
             .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
@@ -713,4 +617,4 @@ export default function GalleryPage() {
         `}</style>
     </>
   )
-}
+} 

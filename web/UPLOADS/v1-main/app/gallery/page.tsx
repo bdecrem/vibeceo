@@ -1,116 +1,103 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { PromptClick } from "@/components/ui/prompt-click"
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
-interface WtafApp {
-  id: string
-  app_slug: string
-  user_slug: string
-  original_prompt: string
-  created_at: string
-  remix_count: number
-  recent_remixes?: number
-  is_remix: boolean
-  parent_app_id: string | null
-  is_featured: boolean
-  last_remixed_at: string | null
-  Fave?: boolean
-  Forget?: boolean
-  type?: string
-}
-
-interface FeaturedStats {
-  totalTrendingApps: number
-  totalRemixesThisWeek: number
-  appsWithRecentActivity: number
-  period: string
-}
-
-interface FeaturedData {
-  apps: WtafApp[]
-  stats: FeaturedStats
-}
-
 export default function GalleryPage() {
-  const [data, setData] = useState<FeaturedData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const apps = [
+    {
+      id: 1,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Alex Blog",
+      prompt: "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
+    },
+    {
+      id: 2,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Berghain Party App",
+      prompt: "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
+    },
+    {
+      id: 3,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Pong Game",
+      prompt: "wtaf make a pong-style browser game",
+    },
+    {
+      id: 4,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Alex Blog Variant",
+      prompt: "wtaf -Alex- create a minimalist blog with dark mode for announcing product launches",
+    },
+    {
+      id: 5,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Event Signup App",
+      prompt: "wtaf build a sleek event registration system with admin dashboard for underground parties",
+    },
+    {
+      id: 6,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Retro Game",
+      prompt: "wtaf create a nostalgic arcade-style game with neon aesthetics and high scores",
+    },
+    {
+      id: 7,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Personal Blog",
+      prompt: "wtaf -Alex- design a personal blog with cyberpunk vibes and glitch effects",
+    },
+    {
+      id: 8,
+      image: "/wtaf-landing/images/berghain.png",
+      alt: "Club Management",
+      prompt: "wtaf make a comprehensive club management app with guest lists and door control",
+    },
+    {
+      id: 9,
+      image: "/wtaf-landing/images/pong.png",
+      alt: "Browser Game",
+      prompt: "wtaf build an addictive browser game with multiplayer capabilities and leaderboards",
+    },
+    {
+      id: 10,
+      image: "/wtaf-landing/images/alex-blog.png",
+      alt: "Content Platform",
+      prompt: "wtaf -Alex- create a content platform for tech announcements with social features",
+    },
+  ]
 
-  useEffect(() => {
-    const fetchFeaturedData = async () => {
-      try {
-        const response = await fetch('/api/featured-wtaf', {
-          cache: 'no-store'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch featured data: ${response.status}`)
-        }
-        
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        console.error('Error fetching featured data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load featured data')
-      } finally {
-        setLoading(false)
-      }
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // Visual feedback will be handled by CSS animation
+    } catch (err) {
+      console.error("Failed to copy text: ", err)
     }
-
-    fetchFeaturedData()
-  }, [])
-
-  if (loading) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="loading-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚡</div>
-            <h3 className="text-2xl text-white mb-4">Loading featured apps...</h3>
-          </div>
-        </div>
-      </>
-    )
   }
 
-  if (error || !data) {
-    return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="error-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-2xl text-white mb-4">Failed to load featured</h3>
-            <p className="text-gray-300 text-lg">
-              Try refreshing the page or check back later.
-            </p>
-          </div>
-        </div>
-      </>
-    )
+  const handlePromptClick = (e, prompt) => {
+    copyToClipboard(prompt)
+    // Add clicked class for animation
+    e.target.classList.add("clicked")
+    setTimeout(() => {
+      e.target.classList.remove("clicked")
+    }, 600)
   }
-
-  const { apps, stats } = data
-
-
 
   return (
-    <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Gallery - WTAF.me</title>
+        <meta
+          name="description"
+          content="Explore apps built with one-shot prompting over SMS. Pure algorithmic chaos delivered instantly."
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -151,26 +138,19 @@ export default function GalleryPage() {
           </section>
 
           <section className="gallery-grid">
-            {apps.map((app: WtafApp) => (
+            {apps.map((app) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <a href={`/${app.user_slug}/${app.app_slug}`}>
-                    <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
-                    <div className="image-overlay">
-                      <button className="try-app-btn">TRY THIS APP</button>
-                    </div>
-                  </a>
+                  <img src={app.image || "/placeholder.svg"} alt={app.alt} className="gallery-image" />
+                  <div className="image-overlay">
+                    <button className="try-app-btn">TRY THIS APP</button>
+                  </div>
                 </div>
                 <div className="card-content">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                                          <a href={`/${app.user_slug}/creations`} className="creator-handle">
-                        @{app.user_slug}
-                      </a>
-                    <span className="remix-count">🔄 {app.remix_count} remixes</span>
-                  </div>
                   <div className="prompt-label">The prompt:</div>
-                  <PromptClick prompt={app.original_prompt} />
+                  <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.prompt)}>
+                    "{app.prompt}"
+                  </div>
                   <button className="remix-btn">REMIX</button>
                 </div>
               </div>
@@ -497,52 +477,6 @@ export default function GalleryPage() {
             text-align: center;
           }
 
-          .creator-info {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-          }
-
-          .creator-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-            text-transform: lowercase;
-          }
-
-          .creator-handle {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: #00ffff;
-            font-weight: 700;
-            text-decoration: none;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            transition: all 0.3s ease;
-            cursor: pointer;
-          }
-
-          .creator-handle:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            transform: translateY(-1px);
-          }
-
-          .remix-count {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: #0080ff;
-            font-weight: 600;
-            background: rgba(0, 128, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 128, 255, 0.3);
-            text-shadow: 0 0 5px rgba(0, 128, 255, 0.5);
-          }
-
           .prompt-label {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.9rem;
@@ -711,6 +645,7 @@ export default function GalleryPage() {
             .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
           }
         `}</style>
-    </>
+      </body>
+    </html>
   )
 }
