@@ -174,6 +174,7 @@ export default function CreationsPage() {
           hasPreviousPage={data.pagination.hasPreviousPage}
           totalCount={data.pagination.totalCount}
           limit={data.pagination.limit}
+          theme="green"
         />
       )}
     </>
