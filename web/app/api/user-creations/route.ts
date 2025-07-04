@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 })
     }
     
-    // Fetch user's published apps with social stats and pagination
-    const { data: apps, error } = await supabase
+    // First, get ALL favorite apps (these always show first, regardless of pagination)
+    const { data: favoriteApps, error: favError } = await supabase
       .from('wtaf_content')
       .select(`
         id,
@@ -43,14 +43,59 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_slug', user_slug)
       .eq('status', 'published')
+      .eq('Fave', true)
       .or('Forget.is.null,Forget.eq.false')
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
 
-    if (error) {
-      console.error('Error fetching user apps:', error)
+    if (favError) {
+      console.error('Error fetching favorite apps:', favError)
       return NextResponse.json({ error: 'Failed to fetch apps' }, { status: 500 })
     }
+
+    // Then get non-favorite apps with pagination
+    // Adjust pagination to account for favorites already shown
+    const favCount = favoriteApps?.length || 0
+    const adjustedOffset = Math.max(0, offset - favCount)
+    const adjustedLimit = limit - Math.min(favCount, limit)
+    
+    let recentApps: any[] = []
+    let recentError = null
+    
+    if (adjustedLimit > 0) {
+      const result = await supabase
+        .from('wtaf_content')
+        .select(`
+          id,
+          app_slug,
+          original_prompt,
+          created_at,
+          remix_count,
+          is_remix,
+          parent_app_id,
+          is_featured,
+          last_remixed_at,
+          type,
+          Fave,
+          Forget
+        `)
+        .eq('user_slug', user_slug)
+        .eq('status', 'published')
+        .or('Fave.is.null,Fave.eq.false')
+        .or('Forget.is.null,Forget.eq.false')
+        .order('created_at', { ascending: false })
+        .range(adjustedOffset, adjustedOffset + adjustedLimit - 1)
+      
+      recentApps = result.data || []
+      recentError = result.error
+    }
+
+    if (recentError) {
+      console.error('Error fetching recent apps:', recentError)
+      return NextResponse.json({ error: 'Failed to fetch apps' }, { status: 500 })
+    }
+
+    // Combine favorites first, then recent apps
+    const apps = [...(favoriteApps || []), ...recentApps]
 
     // Get total count for pagination metadata
     const { count: totalCount, error: countError } = await supabase
