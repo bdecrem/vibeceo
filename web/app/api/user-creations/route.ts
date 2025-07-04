@@ -37,10 +37,13 @@ export async function GET(request: NextRequest) {
         parent_app_id,
         is_featured,
         last_remixed_at,
-        type
+        type,
+        Fave,
+        Forget
       `)
       .eq('user_slug', user_slug)
       .eq('status', 'published')
+      .or('Forget.is.null,Forget.eq.false')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('user_slug', user_slug)
       .eq('status', 'published')
+      .or('Forget.is.null,Forget.eq.false')
 
     if (countError) {
       console.error('Error getting total count:', countError)
