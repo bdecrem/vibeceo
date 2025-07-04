@@ -1,12 +1,63 @@
 "use client"
 
+import React, { useState, useEffect } from "react"
+
 export default function HomePage() {
+  const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
+
+  const showCopiedNotification = (text: string) => {
+    setCopiedNotification({ show: true, text })
+    setTimeout(() => {
+      setCopiedNotification({ show: false, text: "" })
+    }, 2000)
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch (err) {
+      console.error("Failed to copy text: ", err)
+      return false
+    }
+  }
+
+  const [currentSuggestion, setCurrentSuggestion] = useState(0)
+
+  const suggestions = [
+    "wtaf make me a simple todo app",
+    "wtaf make me a personal homepage like I'm a retired pop star", 
+    "wtaf build a color palette picker",
+  ]
+
+  const handleSuggestionClick = async (suggestion: string) => {
+    const success = await copyToClipboard(suggestion)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  // Auto-cycle through suggestions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSuggestion((prev) => (prev + 1) % suggestions.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
   return (
     <>
       <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet"
       />
+        {/* Copied Notification */}
+        {copiedNotification.show && (
+          <div className="copied-notification">
+            <span className="copied-text">{copiedNotification.text}</span>
+            <span className="copied-checkmark">✓</span>
+          </div>
+        )}
+
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -35,20 +86,35 @@ export default function HomePage() {
                 One-Shot Prompting Over SMS
               </h1>
               <p>
-                Where prompts go primal. Hand-inked chaos for your startup soul, piped in from West Hollywood's most
-                electric corner. It's rebellion. It's art. It's algorithmically unhinged.
+                Shoot us a text. We'll fire back a landing page, RSVP, group chat, or chaotic little game. It's rebellion. It's art. It's algorithmically unhinged.
               </p>
-              <p
-                style={{
-                  marginTop: "20px",
-                  fontSize: "1.2rem",
-                  fontWeight: 600,
-                  color: "#00ffff",
-                  textShadow: "0 0 8px rgba(0, 255, 255, 0.5)",
-                }}
-              >
-                Text START to +1-866-330-0015 to get initiated.
-              </p>
+              <div className="starter-section">
+                <div className="starter-text">
+                  Try it: Text <strong>+1-866-330-0015</strong> with:
+                </div>
+                <div className="prompt-suggestions">
+                  <div className="suggestion-container">
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 0 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[0])}
+                    >
+                      "{suggestions[0]}"
+                    </div>
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 1 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[1])}
+                    >
+                      "{suggestions[1]}"
+                    </div>
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 2 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[2])}
+                    >
+                      "{suggestions[2]}"
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="cta-section">
                 <button className="cta-button">Learn More</button>
                 <a href="/featured" className="cta-button secondary">
@@ -147,6 +213,58 @@ export default function HomePage() {
             color: #ffffff;
           }
 
+          .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #00ff66, #9900ff);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+              0 8px 25px rgba(0, 255, 102, 0.3),
+              0 0 20px rgba(0, 255, 102, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .copied-checkmark {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+
+          @keyframes slideInFade {
+            0% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+            20% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            80% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+          }
+
           @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -198,6 +316,85 @@ export default function HomePage() {
             33% { transform: translateY(-20px) rotate(5deg); }
             66% { transform: translateY(10px) rotate(-3deg); }
           }
+
+          .starter-section {
+            margin-top: 30px;
+            margin-bottom: 80px;
+          }
+
+          .starter-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            margin: 0 0 30px 0;
+            padding: 0;
+            line-height: 1.2;
+            text-align: center;
+          }
+
+          .starter-text strong {
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+          }
+
+          .prompt-suggestions {
+            position: relative !important;
+            height: 45px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            margin-top: 0 !important;
+          }
+
+          .suggestion-container {
+            position: relative !important;
+            width: 100% !important;
+            height: 45px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+
+          .suggestion-prompt {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            padding: 12px 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 25px;
+            color: #00ffff;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+            backdrop-filter: blur(5px);
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            user-select: none;
+          }
+
+          .suggestion-prompt.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+
+          .suggestion-prompt:hover {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: rgba(0, 255, 255, 0.5);
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+          }
+
+
 
           .glitch {
             position: relative;
@@ -563,6 +760,20 @@ export default function HomePage() {
             .hero p { font-size: 1.1rem; }
             .hero-content { padding: 40px 20px; }
             .hero { padding: 20px; }
+            .copied-notification {
+              top: 20px;
+              right: 20px;
+              padding: 12px 20px;
+              font-size: 0.9rem;
+            }
+            .starter-text {
+              font-size: 1.1rem;
+            }
+            .suggestion-prompt {
+              font-size: 0.9rem;
+              padding: 10px 16px;
+              width: 95%;
+            }
           }
 
           @media (max-width: 480px) {
@@ -572,6 +783,19 @@ export default function HomePage() {
             .hero p { font-size: 1rem; }
             .hero-content { padding: 35px 15px; }
             .cta-button { padding: 18px 35px; font-size: 1rem; }
+            .copied-notification {
+              top: 15px;
+              right: 15px;
+              padding: 10px 18px;
+              font-size: 0.8rem;
+            }
+            .starter-text {
+              font-size: 1rem;
+            }
+            .suggestion-prompt {
+              font-size: 0.8rem;
+              padding: 8px 14px;
+            }
           }
 
           .bottom-section {
