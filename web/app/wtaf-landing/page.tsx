@@ -90,7 +90,7 @@ export default function HomePage() {
               </p>
               <div className="starter-section">
                 <div className="starter-text">
-                  Try it: Text <strong>+1-866-330-0015</strong> with:
+                  Try it — text <strong>+1-866-330-0015</strong> with:
                 </div>
                 <div className="prompt-suggestions">
                   <div className="suggestion-container">
