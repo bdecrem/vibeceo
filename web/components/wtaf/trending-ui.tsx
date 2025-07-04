@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 
 interface WtafApp {
   id: string
@@ -32,11 +32,37 @@ interface TrendingUIProps {
 }
 
 export default function TrendingUI({ apps, stats }: TrendingUIProps) {
+  const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
+
+  const showCopiedNotification = (text: string) => {
+    setCopiedNotification({ show: true, text })
+    setTimeout(() => {
+      setCopiedNotification({ show: false, text: "" })
+    }, 2000)
+  }
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
+      return true
     } catch (err) {
       console.error('Failed to copy text: ', err)
+      return false
+    }
+  }
+
+  const handlePromptClick = async (prompt: string) => {
+    const success = await copyToClipboard(prompt)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  const handleRemixClick = async (appSlug: string) => {
+    const remixCommand = `REMIX ${appSlug}`
+    const success = await copyToClipboard(remixCommand)
+    if (success) {
+      showCopiedNotification("REMIX command copied!")
     }
   }
 
@@ -68,6 +94,14 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet"
       />
+        {/* Copied Notification */}
+        {copiedNotification.show && (
+          <div className="copied-notification">
+            <span className="copied-text">{copiedNotification.text}</span>
+            <span className="copied-checkmark">✓</span>
+          </div>
+        )}
+
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -131,11 +165,11 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                     </div>
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <div className="prompt-showcase" onClick={() => copyToClipboard(app.original_prompt)}>
+                  <div className="prompt-showcase" onClick={() => handlePromptClick(app.original_prompt)}>
                     "{app.original_prompt}"
                   </div>
                   {app.type !== 'ZAD' && (
-                    <button className="remix-btn">REMIX</button>
+                    <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>REMIX</button>
                   )}
                 </div>
               </div>
@@ -158,6 +192,58 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             overflow-x: hidden;
             min-height: 100vh;
             color: #ffffff;
+          }
+
+          .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #ff6600, #ff3366);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+              0 8px 25px rgba(255, 102, 0, 0.3),
+              0 0 20px rgba(255, 102, 0, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .copied-checkmark {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+
+          @keyframes slideInFade {
+            0% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+            20% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            80% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
           }
 
           @keyframes gradientShift {
@@ -394,6 +480,8 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             margin-bottom: 25px;
             overflow: hidden;
             border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
           }
 
           .image-link {
@@ -409,7 +497,6 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             height: auto;
             aspect-ratio: 3 / 2;
             object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
             filter: drop-shadow(0 0 20px rgba(255, 102, 0, 0.5));
             transition: all 0.3s ease;
@@ -438,6 +525,9 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
           .image-container:hover .gallery-image {
             transform: scale(1.05);
             filter: drop-shadow(0 0 30px rgba(255, 102, 0, 0.8));
+          }
+
+          .image-container:hover {
             border-color: rgba(255, 102, 0, 0.7);
           }
 
