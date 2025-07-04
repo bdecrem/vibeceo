@@ -203,7 +203,14 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                   </div>
                   <div className="card-content">
                     <div className="remix-count-solo">
-                      <span className="remix-label">{getRemixInfo(app)}</span>
+                      {app.remix_count > 0 ? (
+                        <a href={`/remix/${app.id}/tree/`} className="remix-count-link">
+                          <span className="remix-number">{app.remix_count}</span>
+                          <span className="remix-label">{app.remix_count === 1 ? 'remix' : 'remixes'}</span>
+                        </a>
+                      ) : (
+                        <span className="remix-label">{getRemixInfo(app)}</span>
+                      )}
                     </div>
                     <div className="prompt-label">The prompt:</div>
                     <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
@@ -238,7 +245,14 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                 </div>
                 <div className="card-content">
                   <div className="remix-count-solo">
-                    <span className="remix-label">{getRemixInfo(app)}</span>
+                    {app.remix_count > 0 ? (
+                      <a href={`/remix/${app.id}/tree/`} className="remix-count-link">
+                        <span className="remix-number">{app.remix_count}</span>
+                        <span className="remix-label">{app.remix_count === 1 ? 'remix' : 'remixes'}</span>
+                      </a>
+                    ) : (
+                      <span className="remix-label">{getRemixInfo(app)}</span>
+                    )}
                   </div>
                   <div className="prompt-label">The prompt:</div>
                   <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
@@ -775,6 +789,43 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
           justify-content: center;
           gap: 6px;
           margin-bottom: 20px;
+        }
+
+        .remix-count-link {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          text-decoration: none;
+          color: inherit;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-radius: 10px;
+          padding: 4px 8px;
+          margin: -4px -8px;
+        }
+
+        .remix-count-link:hover {
+          background: rgba(0, 255, 153, 0.1);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(0, 255, 153, 0.2);
+        }
+
+        .remix-count-link .remix-number {
+          color: #00ff99;
+          text-shadow: 0 0 8px rgba(0, 255, 153, 0.5);
+        }
+
+        .remix-count-link:hover .remix-number {
+          color: #ffffff;
+          text-shadow: 0 0 15px rgba(0, 255, 153, 0.8);
+        }
+
+        .remix-count-link .remix-label {
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .remix-count-link:hover .remix-label {
+          color: rgba(255, 255, 255, 0.9);
         }
 
         .remix-number {
