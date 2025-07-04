@@ -85,10 +85,8 @@ export async function generateMetadata({ params }: PageProps) {
 		const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.wtaf.me'}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`;
 		const pageUrl = `https://www.wtaf.me/wtaf/${user_slug}/${app_slug}`;
 		
-		// Create a proper title from the original prompt or use default
-		const title = data?.original_prompt 
-			? `${data.original_prompt.slice(0, 60)}${data.original_prompt.length > 60 ? '...' : ''} | WTAF`
-			: 'WTAF – Delusional App Generator';
+		// Use consistent branding title instead of user prompt
+		const title = 'WTAF – Delusional App Generator';
 
 		return {
 			title,
