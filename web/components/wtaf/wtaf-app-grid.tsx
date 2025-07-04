@@ -99,7 +99,7 @@ export function WtafAppGrid({
           height: auto;
           display: block;
           object-fit: cover;
-          border-radius: 15px;
+          border-radius: 1rem 1rem 0 0; /* rounded-t-2xl to match container */
         }
 
         .wtaf-service-card:hover .wtaf-service-image {
@@ -196,7 +196,7 @@ export function WtafAppGrid({
                     style={{ margin: 0, width: '100%' }}
                   />
                   {/* iMessage-style metadata footer */}
-                  <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-4 py-3">
+                  <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-4 py-3 rounded-b-2xl">
                     <div className="text-white font-semibold text-sm mb-1" style={{ fontFamily: 'Space Grotesk, monospace' }}>
                       WTAF by AF
                     </div>
