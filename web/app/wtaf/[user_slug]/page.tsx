@@ -34,10 +34,20 @@ export default async function UserPage({ params }: UserPageProps) {
 
   // If user has an index file set, redirect to that page
   if (subscriber?.index_file) {
-    const app_slug = subscriber.index_file.trim().replace('.html', '')
-    const redirectUrl = `/wtaf/${user_slug}/${app_slug}`
-    console.log(`[DEBUG] Redirecting to custom index: ${redirectUrl}`)
-    redirect(redirectUrl)
+    const indexFile = subscriber.index_file.trim()
+    
+    // Special case: if index is set to "creations", redirect to creations page
+    if (indexFile === 'creations') {
+      const creationsUrl = `/wtaf/${user_slug}/creations`
+      console.log(`[DEBUG] Index set to creations, redirecting: ${creationsUrl}`)
+      redirect(creationsUrl)
+    } else {
+      // Regular case: redirect to specific app page
+      const app_slug = indexFile.replace('.html', '')
+      const redirectUrl = `/wtaf/${user_slug}/${app_slug}`
+      console.log(`[DEBUG] Redirecting to custom index: ${redirectUrl}`)
+      redirect(redirectUrl)
+    }
   }
 
   // If no custom index file, redirect to creations page

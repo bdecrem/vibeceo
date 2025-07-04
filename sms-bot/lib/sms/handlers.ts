@@ -1873,7 +1873,7 @@ ${response}`;
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List your pages and set index page\n• FAVE [number] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)';
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
@@ -2486,6 +2486,37 @@ ${response}`;
           return;
         }
         
+        // Check if this is setting index to creations page
+        const creationsMatch = message.match(/^INDEX\s+CREATIONS$/i);
+        if (creationsMatch) {
+          console.log(`Setting index to creations page for user ${from} (${userSlug})`);
+          
+          // Set index_file to 'creations' to indicate creations page
+          const { error: updateError } = await supabase
+            .from('sms_subscribers')
+            .update({ index_file: 'creations' })
+            .eq('phone_number', from);
+            
+          if (updateError) {
+            console.error(`Error updating index file to creations:`, updateError);
+            await sendSmsResponse(
+              from,
+              `❌ Failed to set index page. Please try again later.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          await sendSmsResponse(
+            from,
+            `✅ Index page set to creations!\n\nYour main URL ${WTAF_DOMAIN.replace(/^https?:\/\//, '')}/${userSlug}/ now shows your creations page.`,
+            twilioClient
+          );
+          
+          console.log(`User ${from} (${userSlug}) set index to creations page`);
+          return;
+        }
+
         // Check if this is a numeric response to set index
         const numMatch = message.match(/^INDEX\s+(\d+)$/i);
         if (numMatch) {
@@ -2585,7 +2616,7 @@ ${response}`;
         
         const domainForDisplay = WTAF_DOMAIN.replace(/^https?:\/\//, '');
         const currentIndex = subscriber.index_file ? 
-          `\n🏠 Current index: ${domainForDisplay}/${userSlug}/\n   (shows: ${subscriber.index_file.replace('.html', '')})\n\n` : 
+          `\n🏠 Current index: ${domainForDisplay}/${userSlug}/\n   (shows: ${subscriber.index_file === 'creations' ? 'creations page' : subscriber.index_file.replace('.html', '')})\n\n` : 
           `\n🏠 No index page set\n   (${domainForDisplay}/${userSlug}/ shows default)\n\n`;
         
         pageList += currentIndex;
@@ -2602,7 +2633,7 @@ ${response}`;
           pageList += `\n`;
         }
         
-        pageList += `To set index: INDEX [number]`;
+        pageList += `To set index: INDEX [number] or INDEX CREATIONS`;
         
         await sendSmsResponse(from, pageList, twilioClient);
         console.log(`Listed ${filteredContent.length} pages for user ${from} (${userSlug})`);
