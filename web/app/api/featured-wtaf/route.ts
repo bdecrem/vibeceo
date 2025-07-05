@@ -21,6 +21,7 @@ export async function GET() {
         original_prompt,
         created_at,
         remix_count,
+        total_descendants,
         last_remixed_at,
         recent_remixes,
         is_remix,
@@ -51,6 +52,7 @@ export async function GET() {
           original_prompt,
           created_at,
           remix_count,
+          total_descendants,
           last_remixed_at,
           recent_remixes,
           is_remix,
@@ -59,8 +61,8 @@ export async function GET() {
           Fave,
           Forget
         `)
-        .gt('remix_count', 1)  // Apps with multiple remixes
-        .order('remix_count', { ascending: false })  // Most remixed first
+        .gt('total_descendants', 1)  // Apps with multiple total descendants
+        .order('total_descendants', { ascending: false })  // Most descendants first
         .limit(20 - allApps.length)  // Fill remaining slots
 
       if (!popularError && popularApps) {
@@ -89,8 +91,8 @@ export async function GET() {
     }
 
     const totalFeaturedApps = featuredAppsList.length
-    const totalRemixes = featuredAppsList.reduce((sum: number, app: any) => sum + (app.remix_count || 0), 0)
-    const appsWithRemixes = featuredAppsList.filter((app: any) => (app.remix_count || 0) > 0).length
+    const totalRemixes = featuredAppsList.reduce((sum: number, app: any) => sum + (app.total_descendants || 0), 0)
+    const appsWithRemixes = featuredAppsList.filter((app: any) => (app.total_descendants || 0) > 0).length
 
     return NextResponse.json({
       apps: featuredAppsList,

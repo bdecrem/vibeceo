@@ -14,6 +14,7 @@ interface WtafApp {
   original_prompt: string
   created_at: string
   remix_count: number
+  total_descendants?: number
   recent_remixes?: number
   is_remix: boolean
   parent_app_id: string | null

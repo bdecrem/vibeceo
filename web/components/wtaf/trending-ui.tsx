@@ -9,6 +9,7 @@ interface WtafApp {
   original_prompt: string
   created_at: string
   remix_count: number
+  total_descendants?: number
   recent_remixes?: number
   is_remix: boolean
   parent_app_id: string | null
@@ -82,8 +83,9 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
     if (app.type === 'ZAD') {
       return "Born today" // ZADs always show this
     }
-    if (app.remix_count > 0) {
-      return `${app.remix_count} ${app.remix_count === 1 ? 'remix' : 'remixes'}`
+    const totalRemixes = app.total_descendants || app.remix_count || 0
+    if (totalRemixes > 0) {
+      return `${totalRemixes} ${totalRemixes === 1 ? 'remix' : 'remixes'}`
     }
     return getTimestampLabel(app.created_at)
   }
@@ -161,10 +163,10 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                       </a>
                     </div>
                     <div className="remix-count">
-                      {app.remix_count > 0 ? (
+                      {(app.total_descendants || app.remix_count || 0) > 0 ? (
                         <a href={`/wtaf/${app.user_slug}/${app.app_slug}/remix-tree`} className="remix-count-link">
-                          <span className="remix-number">{app.remix_count}</span>
-                          <span className="remix-label">{app.remix_count === 1 ? 'remix' : 'remixes'}</span>
+                          <span className="remix-number">{app.total_descendants || app.remix_count || 0}</span>
+                          <span className="remix-label">{(app.total_descendants || app.remix_count || 0) === 1 ? 'remix' : 'remixes'}</span>
                         </a>
                       ) : (
                         <span className="remix-label">{getRemixInfo(app)}</span>

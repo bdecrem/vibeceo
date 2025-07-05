@@ -432,6 +432,24 @@ export default function RemixTreePage() {
                 Witness how a single prompt spawns an entire ecosystem of creativity. Each branch represents a new
                 interpretation, a fresh perspective, a chaotic evolution of the original idea.
               </p>
+              <div className="hero-stats">
+                <div className="hero-stat">
+                  <div className="stat-number">{genealogyData.stats.total_descendants}</div>
+                  <div className="stat-label">Total Remixes</div>
+                </div>
+                <div className="hero-stat">
+                  <div className="stat-number">{genealogyData.stats.max_generation}</div>
+                  <div className="stat-label">Generations Deep</div>
+                </div>
+                <div className="hero-stat">
+                  <div className="stat-number">{genealogyData.stats.direct_remixes}</div>
+                  <div className="stat-label">Direct Remixes</div>
+                </div>
+                <div className="hero-stat">
+                  <div className="stat-number">{genealogyData.stats.deepest_path?.length || 0}</div>
+                  <div className="stat-label">Deepest Path</div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -527,27 +545,6 @@ export default function RemixTreePage() {
                 ))}
               </div>
             )}
-          </section>
-
-          <section className="tree-stats">
-            <div className="stats-container">
-              <div className="stat-card">
-                <div className="stat-number">{genealogyData.stats.total_descendants}</div>
-                <div className="stat-label">Total Remixes</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{genealogyData.stats.max_generation}</div>
-                <div className="stat-label">Generations Deep</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{genealogyData.stats.direct_remixes}</div>
-                <div className="stat-label">Direct Remixes</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{genealogyData.stats.deepest_path?.length || 0}</div>
-                <div className="stat-label">Deepest Path</div>
-              </div>
-            </div>
           </section>
         </main>
 
@@ -839,6 +836,36 @@ export default function RemixTreePage() {
             color: rgba(255, 255, 255, 0.9);
             line-height: 1.6;
             font-weight: 300;
+            margin-bottom: 30px;
+          }
+
+          .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+          }
+
+          .hero-stat {
+            text-align: center;
+          }
+
+          .hero-stat .stat-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #9d4edd;
+            text-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
+            margin-bottom: 5px;
+          }
+
+          .hero-stat .stat-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
           }
 
           .remix-tree {
@@ -1371,55 +1398,6 @@ export default function RemixTreePage() {
             margin-bottom: 10px;
             border-radius: 1px;
             box-shadow: 0 0 3px rgba(233, 213, 255, 0.4);
-          }
-
-          .tree-stats {
-            margin-top: 80px;
-            margin-bottom: 60px;
-          }
-
-          .stats-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-          }
-
-          .stat-card {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(157, 78, 221, 0.3);
-            border-radius: 20px;
-            padding: 30px 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-          }
-
-          .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(157, 78, 221, 0.5);
-            box-shadow: 
-              0 15px 40px rgba(0, 0, 0, 0.4),
-              0 0 25px rgba(157, 78, 221, 0.2);
-          }
-
-          .stat-number {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 300;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 10px;
-          }
-
-          .stat-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 1px;
           }
 
           .sparks {

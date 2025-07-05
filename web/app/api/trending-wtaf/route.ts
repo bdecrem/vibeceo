@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         original_prompt,
         created_at,
         remix_count,
+        total_descendants,
         last_remixed_at,
         recent_remixes,
         is_remix,
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
         Fave,
         Forget
       `)
-      .gt('remix_count', 0)  // Only apps with remixes
-      .order('remix_count', { ascending: false })  // Most remixed first
+      .gt('total_descendants', 0)  // Only apps with total descendants
+      .order('total_descendants', { ascending: false })  // Most descendants first
       .order('recent_remixes', { ascending: false })  // Recent activity as tiebreaker
       .range(offset, offset + limit - 1)
 
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
           original_prompt,
           created_at,
           remix_count,
+          total_descendants,
           last_remixed_at,
           recent_remixes,
           is_remix,
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
           Fave,
           Forget
         `)
-        .eq('remix_count', 0)  // Only apps with no remixes
+        .eq('total_descendants', 0)  // Only apps with no descendants
         .order('created_at', { ascending: false })  // Most recent first
         .range(0, remainingLimit - 1)  // Fill remaining slots
 

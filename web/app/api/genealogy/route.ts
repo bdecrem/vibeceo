@@ -18,31 +18,63 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing app or user slug' }, { status: 400 })
     }
     
-    // Get the parent app
-    const { data: parentApp, error: parentError } = await supabase
+    // Get the requested app
+    const { data: requestedApp, error: requestedError } = await supabase
       .from('wtaf_content')
-      .select('id, app_slug, user_slug, original_prompt, created_at, remix_count')
+      .select('id, app_slug, user_slug, original_prompt, created_at, remix_count, total_descendants, parent_app_id')
       .eq('app_slug', app_slug)
       .eq('user_slug', user_slug)
       .eq('status', 'published')
       .single()
 
-    if (parentError || !parentApp) {
+    if (requestedError || !requestedApp) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 })
     }
 
-    // Get complete genealogy data using the recursive function
+    // NEW: Find the root ancestor (the original app in this family tree)
+    let rootAncestor = requestedApp
+    
+    // Check if this app is a child in any remix lineage (instead of checking parent_app_id)
+    const { data: parentLineage, error: lineageError } = await supabase
+      .from('wtaf_remix_lineage')
+      .select('parent_app_id')
+      .eq('child_app_id', requestedApp.id)
+      .single()
+    
+    // If this app has a parent in the lineage, trace back to find the root
+    if (!lineageError && parentLineage?.parent_app_id) {
+      const { data: ancestorData, error: ancestorError } = await supabase
+        .rpc('find_root_ancestor_from_lineage', { app_id: requestedApp.id })
+      
+      if (ancestorError) {
+        console.error('Error finding root ancestor:', ancestorError)
+        // Fallback: use the requested app as root
+      } else if (ancestorData && ancestorData.length > 0) {
+        // Get the full details of the root ancestor
+        const { data: rootData, error: rootError } = await supabase
+          .from('wtaf_content')
+          .select('id, app_slug, user_slug, original_prompt, created_at, remix_count, total_descendants, parent_app_id')
+          .eq('id', ancestorData[0].id)
+          .single()
+        
+        if (!rootError && rootData) {
+          rootAncestor = rootData
+        }
+      }
+    }
+
+    // Get complete genealogy data using the ROOT ancestor
     const { data: genealogyData, error: genealogyError } = await supabase
-      .rpc('get_app_genealogy', { app_id: parentApp.id })
+      .rpc('get_app_genealogy', { app_id: rootAncestor.id })
 
     if (genealogyError) {
       console.error('Error fetching genealogy data:', genealogyError)
       return NextResponse.json({ error: 'Failed to fetch genealogy data' }, { status: 500 })
     }
 
-    // Get genealogy statistics
+    // Get genealogy statistics from the ROOT
     const { data: genealogyStats, error: statsError } = await supabase
-      .rpc('get_app_genealogy_stats', { app_id: parentApp.id })
+      .rpc('get_app_genealogy_stats', { app_id: rootAncestor.id })
 
     if (statsError) {
       console.error('Error fetching genealogy stats:', statsError)
@@ -62,12 +94,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         parent_app: {
-          id: parentApp.id,
-          app_slug: parentApp.app_slug,
-          user_slug: parentApp.user_slug,
-          original_prompt: parentApp.original_prompt,
-          created_at: parentApp.created_at,
-          remix_count: parentApp.remix_count || 0,
+          id: rootAncestor.id,
+          app_slug: rootAncestor.app_slug,
+          user_slug: rootAncestor.user_slug,
+          original_prompt: rootAncestor.original_prompt,
+          created_at: rootAncestor.created_at,
+          remix_count: rootAncestor.remix_count || 0,
+          total_descendants: rootAncestor.total_descendants || 0,
           generation_level: 0
         },
         descendants: genealogyData || [],
@@ -81,12 +114,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         parent_app: {
-          id: parentApp.id,
-          app_slug: parentApp.app_slug,
-          user_slug: parentApp.user_slug,
-          original_prompt: parentApp.original_prompt,
-          created_at: parentApp.created_at,
-          remix_count: parentApp.remix_count || 0,
+          id: rootAncestor.id,
+          app_slug: rootAncestor.app_slug,
+          user_slug: rootAncestor.user_slug,
+          original_prompt: rootAncestor.original_prompt,
+          created_at: rootAncestor.created_at,
+          remix_count: rootAncestor.remix_count || 0,
+          total_descendants: rootAncestor.total_descendants || 0,
           generation_level: 0
         },
         genealogy_tree: treeStructure,
