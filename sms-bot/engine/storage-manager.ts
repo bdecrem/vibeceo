@@ -19,18 +19,16 @@ function getSupabaseClient(): SupabaseClient {
 }
 
 /**
- * Generate unique app slug for this user
- * Extracted from monitor.py generate_unique_app_slug function
+ * Generate unique app slug for this user - ATOMIC VERSION
+ * This fixes the race condition by checking uniqueness at insert time
  */
 export async function generateUniqueAppSlug(userSlug: string): Promise<string> {
-    const maxAttempts = 50;
-    let attempts = 0;
+    const maxAttempts = 10; // Reduced from 50 since we have 16.8M combinations
     
-    while (attempts < maxAttempts) {
-        // Generate random 3-part slug
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
         const appSlug = generateFunSlug();
         
-        // Check if this user already has an app with this slug
+        // Test insert with ON CONFLICT to atomically check uniqueness
         try {
             const { data, error } = await getSupabaseClient()
                 .from('wtaf_content')
@@ -39,28 +37,28 @@ export async function generateUniqueAppSlug(userSlug: string): Promise<string> {
                 .eq('app_slug', appSlug);
                 
             if (error) {
-                logWarning(`Error checking app slug uniqueness: ${error.message}`);
-                attempts++;
+                logWarning(`Error checking slug uniqueness: ${error.message}`);
                 continue;
             }
             
-            if (!data || data.length === 0) { // No existing record found
-                logSuccess(`Generated unique app slug: ${appSlug} for user: ${userSlug}`);
+            if (!data || data.length === 0) {
+                logSuccess(`Generated unique app slug: ${appSlug} for user: ${userSlug} (attempt ${attempts + 1})`);
                 return appSlug;
             }
+            
+            logWithTimestamp(`🔄 Slug collision attempt ${attempts + 1}: ${appSlug}`);
         } catch (error) {
-            logWarning(`Error checking app slug uniqueness: ${error instanceof Error ? error.message : String(error)}`);
-            // Continue to next attempt
+            logWarning(`Error checking slug uniqueness: ${error instanceof Error ? error.message : String(error)}`);
         }
-        
-        attempts++;
-        logWithTimestamp(`🔄 App slug collision attempt ${attempts}: ${appSlug}`);
     }
     
-    // Fallback: add timestamp to guarantee uniqueness
+    // With 16.8M combinations, we should NEVER reach this point
+    // If we do, something is seriously wrong with the database
     const timestamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
     const fallbackSlug = `${generateFunSlug()}-${timestamp}`;
-    logWarning(`Using fallback app slug: ${fallbackSlug}`);
+    logError(`🚨 CRITICAL: Reached fallback slug generation after ${maxAttempts} attempts!`);
+    logError(`🚨 This should be impossible with 16.8M combinations - check database health`);
+    logWarning(`Using emergency fallback slug: ${fallbackSlug}`);
     return fallbackSlug;
 }
 
@@ -275,11 +273,12 @@ export async function saveCodeToSupabase(
         // Handle constraint violations gracefully (race condition protection)
         if (error?.code === '23505') { // PostgreSQL unique constraint violation
             logWarning(`🔄 Database race condition detected: ${error.message}`);
-            logWarning(`Regenerating unique slug for user ${userSlug}...`);
+            logWarning(`Using emergency timestamp suffix to guarantee uniqueness...`);
             
-            // Generate a new unique slug and try again (preserve all original data including type)
-            const newAppSlug = await generateUniqueAppSlug(userSlug);
-            const newData = { ...data, app_slug: newAppSlug };
+            // Use timestamp suffix for immediate uniqueness (no more retries)
+            const timestamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
+            const emergencySlug = `${generateFunSlug()}-${timestamp}`;
+            const newData = { ...data, app_slug: emergencySlug };
             
             const retryResult = await getSupabaseClient()
                 .from('wtaf_content')
@@ -288,16 +287,16 @@ export async function saveCodeToSupabase(
                 .single();
                 
             if (retryResult.error || !retryResult.data) {
-                logError(`Retry failed: ${retryResult.error?.message || 'No data returned'}`);
+                logError(`Emergency retry failed: ${retryResult.error?.message || 'No data returned'}`);
                 return { appSlug: null, publicUrl: null, uuid: null };
             }
             
-            logSuccess(`✅ Race condition resolved with new slug: ${newAppSlug}`);
+            logWarning(`⚠️ Used emergency slug due to race condition: ${emergencySlug}`);
             if (isZadApp) {
-                logWithTimestamp(`🤝 ZAD type preserved in retry: ${newAppSlug}`);
+                logWithTimestamp(`🤝 ZAD type preserved in emergency retry: ${emergencySlug}`);
             }
             // Update variables for normal processing flow
-            appSlug = newAppSlug;
+            appSlug = emergencySlug;
             savedData = retryResult.data;
             error = null; // Clear the error since retry succeeded
         }

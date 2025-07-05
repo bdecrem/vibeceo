@@ -15,6 +15,37 @@ function getSupabaseClient(): SupabaseClient {
 }
 
 /**
+ * Calculate the correct generation level for a remix
+ * If parent is original (not a remix): generation = 1
+ * If parent is a remix: generation = parent's generation + 1
+ */
+async function calculateGenerationLevel(parentAppId: string): Promise<number> {
+    try {
+        // Check if the parent app is itself a remix
+        const { data: parentRemixData, error } = await getSupabaseClient()
+            .from('wtaf_remix_lineage')
+            .select('generation_level')
+            .eq('child_app_id', parentAppId)
+            .single();
+
+        if (error || !parentRemixData) {
+            // Parent app is NOT a remix (it's an original), so this remix is generation 1
+            logWithTimestamp(`📊 Parent is original app → Generation 1`);
+            return 1;
+        }
+
+        // Parent IS a remix, so add 1 to its generation level
+        const newGeneration = parentRemixData.generation_level + 1;
+        logWithTimestamp(`📊 Parent is generation ${parentRemixData.generation_level} → New generation: ${newGeneration}`);
+        return newGeneration;
+
+    } catch (error) {
+        logError(`Error calculating generation level: ${error instanceof Error ? error.message : String(error)}`);
+        return 1; // Fallback to generation 1
+    }
+}
+
+/**
  * Handle all social database updates when an app is remixed
  * 1. Increment remix count on original app
  * 2. Create remix lineage entry
@@ -64,7 +95,11 @@ export async function handleRemixSocialUpdates(
 
         logSuccess(`✅ Incremented remix count: ${currentRemixCount} → ${currentRemixCount + 1}`);
 
-        // 2. Create remix lineage entry
+        // 2. Calculate correct generation level
+        const generationLevel = await calculateGenerationLevel(originalAppId);
+        logWithTimestamp(`🧬 Calculated generation level: ${generationLevel}`);
+
+        // 3. Create remix lineage entry with correct generation
         const { error: lineageError } = await getSupabaseClient()
             .from('wtaf_remix_lineage')
             .insert({
@@ -73,17 +108,17 @@ export async function handleRemixSocialUpdates(
                 child_user_slug: remixUserSlug,
                 parent_user_slug: originalUserSlug,
                 remix_prompt: remixPrompt,
-                generation_level: 1 // TODO: Calculate actual generation level for remix-of-remix
+                generation_level: generationLevel
             });
 
         if (lineageError) {
             logError(`Failed to create remix lineage: ${lineageError.message}`);
             // Don't return false - this is not critical
         } else {
-            logSuccess(`✅ Created remix lineage entry`);
+            logSuccess(`✅ Created remix lineage entry (Generation ${generationLevel})`);
         }
 
-        // 3. Auto-follow the original creator (if not already following)
+        // 4. Auto-follow the original creator (if not already following)
         if (originalUserSlug !== remixUserSlug) {
             const { error: followError } = await getSupabaseClient()
                 .from('wtaf_social_connections')
@@ -106,7 +141,7 @@ export async function handleRemixSocialUpdates(
             }
         }
 
-        // 4. Update user social stats (simple increment approach)
+        // 5. Update user social stats (simple increment approach)
         const { data: currentUser, error: getUserError } = await getSupabaseClient()
             .from('sms_subscribers')
             .select('total_remix_credits')
@@ -129,7 +164,7 @@ export async function handleRemixSocialUpdates(
             logWarning(`Could not find user ${originalUserSlug} for social stats update`);
         }
 
-        // 5. Mark the new app as a remix
+        // 6. Mark the new app as a remix
         const { error: markRemixError } = await getSupabaseClient()
             .from('wtaf_content')
             .update({ 
