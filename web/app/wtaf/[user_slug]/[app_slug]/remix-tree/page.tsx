@@ -509,22 +509,6 @@ export default function RemixTreePage() {
                     ))}
                   </div>
                 </div>
-
-                {/* Swipe Hints */}
-                <div className="swipe-hints">
-                  {currentColumn > 0 && (
-                    <div className="swipe-hint left">
-                      <span className="hint-arrow">←</span>
-                      <span className="hint-text">Swipe to go back</span>
-                    </div>
-                  )}
-                  {currentColumn < maxColumns - 1 && (
-                    <div className="swipe-hint right">
-                      <span className="hint-text">Swipe to explore</span>
-                      <span className="hint-arrow">→</span>
-                    </div>
-                  )}
-                </div>
               </div>
             ) : (
               // Desktop tree view - use same branch structure as mobile
@@ -1494,6 +1478,65 @@ export default function RemixTreePage() {
               padding: 12px 20px;
               font-size: 0.9rem;
             }
+            
+            /* MOBILE FIXES */
+            /* Ensure hero section scrolls normally and doesn't get pinned */
+            .tree-hero {
+              position: relative;
+              margin-bottom: 20px; /* Reduce bottom margin on mobile */
+              padding: 20px; /* Reduce padding on mobile */
+            }
+            
+            .hero-content {
+              position: static; /* Ensure no sticky behavior */
+              transform: none; /* Remove any transforms */
+              max-width: none; /* Full width on mobile */
+              margin: 0; /* Remove auto margins */
+            }
+            
+            /* Make mobile container take full height without footer space */
+            .mobile-tree-container {
+              height: auto; /* Remove fixed height constraint */
+              margin-bottom: 0;
+              padding-bottom: 0;
+            }
+            
+            /* Adjust swipe container to fill remaining space */
+            .swipe-container {
+              height: auto; /* Remove fixed height that causes obstruction */
+              min-height: 60vh; /* Minimum height for content */
+              margin-bottom: 0;
+              padding-bottom: 0;
+            }
+            
+            /* Ensure mobile columns use natural height */
+            .mobile-column {
+              height: auto; /* Remove fixed height */
+              overflow-y: visible; /* Allow natural scrolling */
+            }
+            
+            /* Make column content take natural space */
+            .column-content {
+              min-height: auto; /* Remove min-height constraint */
+              padding: 20px 0 40px 0; /* Add bottom padding for last item */
+            }
+            
+            /* Remove all swipe hints to eliminate bottom spacing */
+            .swipe-hints {
+              display: none !important;
+            }
+            
+            /* Make progress trail sticky to top of viewport */
+            .progress-trail {
+              position: sticky;
+              top: 0;
+              z-index: 100;
+              background: transparent; /* Remove distracting background */
+              backdrop-filter: blur(20px);
+              margin-bottom: 0;
+              padding: 15px 20px;
+              border-bottom: 1px solid rgba(157, 78, 221, 0.2);
+            }
           }
 
           @media (max-width: 480px) {
@@ -1681,53 +1724,6 @@ export default function RemixTreePage() {
             width: 100%;
             display: flex;
             justify-content: center;
-          }
-
-          .swipe-hints {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            pointer-events: none;
-          }
-
-          .swipe-hint {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            padding: 10px 15px;
-            border-radius: 25px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.8rem;
-            font-weight: 500;
-            border: 1px solid rgba(157, 78, 221, 0.3);
-          }
-
-          .swipe-hint.left {
-            flex-direction: row;
-          }
-
-          .swipe-hint.right {
-            flex-direction: row-reverse;
-          }
-
-          .hint-arrow {
-            font-size: 1.2rem;
-            color: #9d4edd;
-          }
-
-          .hint-text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
           }
         `}</style>
       </body>
