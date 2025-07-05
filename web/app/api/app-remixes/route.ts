@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 })
     }
 
-    // Get all remixes of this app from the lineage table
-    const { data: remixes, error: remixError } = await supabase
+    // Get direct remixes (generation 1 only)
+    const { data: directRemixes, error: directError } = await supabase
       .from('wtaf_remix_lineage')
       .select(`
         *,
@@ -43,24 +43,55 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('parent_app_id', parentApp.id)
+      .eq('generation_level', 1)
       .order('created_at', { ascending: false })
 
-    if (remixError) {
-      console.error('Error fetching remixes:', remixError)
-      return NextResponse.json({ error: 'Failed to fetch remixes' }, { status: 500 })
+    if (directError) {
+      console.error('Error fetching direct remixes:', directError)
+      return NextResponse.json({ error: 'Failed to fetch direct remixes' }, { status: 500 })
     }
 
-    // Get genealogy tree (recursively find all descendants)
-    const { data: genealogy, error: genealogyError } = await supabase
-      .rpc('get_app_genealogy', { app_id: parentApp.id })
-      .single()
+    // Get complete genealogy tree using the new recursive function
+    const { data: genealogyTree, error: genealogyError } = await supabase
+      .rpc('get_app_genealogy_json', { app_id: parentApp.id })
+
+    if (genealogyError) {
+      console.error('Error fetching genealogy tree:', genealogyError)
+      // Don't fail the request if genealogy fails, just return null
+    }
+
+    // Get genealogy statistics
+    const { data: genealogyStats, error: statsError } = await supabase
+      .rpc('get_app_genealogy_stats', { app_id: parentApp.id })
+
+    if (statsError) {
+      console.error('Error fetching genealogy stats:', statsError)
+    }
+
+    // Parse the genealogy JSON result if it's a string
+    let parsedGenealogyTree = null
+    if (genealogyTree) {
+      try {
+        parsedGenealogyTree = typeof genealogyTree === 'string' ? JSON.parse(genealogyTree) : genealogyTree
+      } catch (e) {
+        console.error('Error parsing genealogy JSON:', e)
+        parsedGenealogyTree = genealogyTree
+      }
+    }
 
     return NextResponse.json({
       success: true,
       parent_app: parentApp,
-      direct_remixes: remixes || [],
-      remix_count: remixes?.length || 0,
-      genealogy_tree: genealogy || null
+      direct_remixes: directRemixes || [],
+      remix_count: directRemixes?.length || 0,
+      genealogy_tree: parsedGenealogyTree,
+      genealogy_stats: genealogyStats?.[0] || {
+        total_descendants: 0,
+        max_generation: 0,
+        direct_remixes: 0,
+        most_recent_remix: null,
+        deepest_path: []
+      }
     })
     
   } catch (error: any) {

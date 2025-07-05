@@ -102,10 +102,10 @@ export async function GET(request: NextRequest) {
 }
 
 function buildTreeStructure(descendants: any[]): any {
-  // Group descendants by calculated generation level (path depth - 1)
+  // Group descendants by the generation level calculated by SQL (don't override it!)
   const generations = descendants.reduce((acc, item) => {
-    // Calculate generation level from path depth
-    const generation = item.path ? item.path.length - 1 : 1
+    // Use the generation level from the SQL function - it's already correct!
+    const generation = item.generation_level || 1
     if (!acc[generation]) {
       acc[generation] = []
     }
@@ -116,7 +116,7 @@ function buildTreeStructure(descendants: any[]): any {
       original_prompt: item.child_prompt,
       created_at: item.child_created_at,
       remix_prompt: item.remix_prompt,
-      generation_level: generation, // Use calculated generation
+      generation_level: generation, // Use SQL-calculated generation (not path-based)
       parent_app_id: item.parent_app_id,
       parent_app_slug: item.parent_app_slug,
       parent_user_slug: item.parent_user_slug,
