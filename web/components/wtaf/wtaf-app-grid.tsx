@@ -12,6 +12,7 @@ export interface WtafApp {
   original_prompt: string
   created_at: string
   remix_count: number
+  total_descendants?: number
   recent_remixes?: number
   is_remix: boolean
   parent_app_id: string | null
@@ -231,7 +232,7 @@ export function WtafAppGrid({
                       🔥 {app.recent_remixes} recent remix{app.recent_remixes !== 1 ? 'es' : ''}
                     </span>
                   )}
-                  {app.remix_count > 0 && (
+                  {(app.total_descendants || app.remix_count || 0) > 0 && (
                     <span style={{
                       background: 'rgba(255, 20, 147, 0.3)',
                       color: '#ffb3d9',
@@ -241,7 +242,7 @@ export function WtafAppGrid({
                       fontSize: '0.75rem',
                       backdropFilter: 'blur(5px)'
                     }}>
-                      💎 {app.remix_count} total remix{app.remix_count !== 1 ? 'es' : ''}
+                      💎 {app.total_descendants || app.remix_count || 0} total remix{(app.total_descendants || app.remix_count || 0) !== 1 ? 'es' : ''}
                     </span>
                   )}
                   {app.is_remix && (
