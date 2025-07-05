@@ -15,28 +15,28 @@ function getSupabaseClient(): SupabaseClient {
 }
 
 /**
- * Calculate the correct generation level for a remix
- * If parent is original (not a remix): generation = 1
- * If parent is a remix: generation = parent's generation + 1
+ * Calculate the correct generation level using SQL function
+ * Uses the same recursive logic as the genealogy tree display
  */
 async function calculateGenerationLevel(parentAppId: string): Promise<number> {
     try {
-        // Check if the parent app is itself a remix
-        const { data: parentRemixData, error } = await getSupabaseClient()
-            .from('wtaf_remix_lineage')
-            .select('generation_level')
-            .eq('child_app_id', parentAppId)
-            .single();
+        logWithTimestamp(`🧬 Using SQL function to calculate generation for parent: ${parentAppId}`);
+        
+        // Use the new SQL function that calculates generation level correctly
+        const { data, error } = await getSupabaseClient()
+            .rpc('get_app_generation_level', { app_id: parentAppId });
 
-        if (error || !parentRemixData) {
-            // Parent app is NOT a remix (it's an original), so this remix is generation 1
-            logWithTimestamp(`📊 Parent is original app → Generation 1`);
-            return 1;
+        if (error) {
+            logError(`Error calling generation calculator: ${error.message}`);
+            return 1; // Fallback to generation 1
         }
 
-        // Parent IS a remix, so add 1 to its generation level
-        const newGeneration = parentRemixData.generation_level + 1;
-        logWithTimestamp(`📊 Parent is generation ${parentRemixData.generation_level} → New generation: ${newGeneration}`);
+        // The SQL function returns the generation of the parent app
+        // New remix should be parent's generation + 1
+        const parentGeneration = data || 0;
+        const newGeneration = parentGeneration + 1;
+        
+        logWithTimestamp(`📊 SQL calculated parent generation: ${parentGeneration} → New remix will be generation ${newGeneration}`);
         return newGeneration;
 
     } catch (error) {

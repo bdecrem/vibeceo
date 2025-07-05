@@ -162,7 +162,7 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                     </div>
                     <div className="remix-count">
                       {app.remix_count > 0 ? (
-                        <a href={`/remix/${app.id}/tree/`} className="remix-count-link">
+                        <a href={`/wtaf/${app.user_slug}/${app.app_slug}/remix-tree`} className="remix-count-link">
                           <span className="remix-number">{app.remix_count}</span>
                           <span className="remix-label">{app.remix_count === 1 ? 'remix' : 'remixes'}</span>
                         </a>
