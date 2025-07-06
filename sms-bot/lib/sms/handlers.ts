@@ -1703,14 +1703,14 @@ ${response}`;
         const filename = `wtaf-snippet-${timestamp}.txt`;
         const filePath = path.join(process.cwd(), 'data', 'wtaf', filename);
         
-        // Ensure data/wtaf directory exists for monitor.py
+        // Ensure data/wtaf directory exists for TypeScript engine
         const wtafDir = path.join(process.cwd(), 'data', 'wtaf');
         if (!fs.existsSync(wtafDir)) {
           fs.mkdirSync(wtafDir, { recursive: true });
         }
         
-        // Save content for monitor.py processing with user slug info
-        const fileContent = `SENDER:${normalizedPhoneNumber}\nUSER_SLUG:${userSlug}\n${coachPrefix}${codeContent}`;
+        // Save content for TypeScript engine processing with user slug info
+        const fileContent = `SENDER:${from}\nUSER_SLUG:${userSlug}\n${coachPrefix}${codeContent}`;
         fs.writeFileSync(filePath, fileContent, 'utf8');
         
         await sendSmsResponse(
@@ -2048,7 +2048,7 @@ ${response}`;
         
         // Queue the edit request by writing to monitored directory (same pattern as WTAF)
         const { queueEditRequestBySlug } = await import('../degen_commands.js');
-        const success = await queueEditRequestBySlug(userSlug, targetSlug, instructions, normalizedPhoneNumber);
+        const success = await queueEditRequestBySlug(userSlug, targetSlug, instructions, from);
         
         if (success) {
           await sendSmsResponse(
@@ -2406,7 +2406,7 @@ ${response}`;
         }
         
         // Save code content to file with sender's phone number
-        const fileContent = `SENDER:${normalizedPhoneNumber}\n${codeContent}`;
+        const fileContent = `SENDER:${from}\n${codeContent}`;
         fs.writeFileSync(filePath, fileContent, 'utf8');
         
         await sendSmsResponse(
@@ -3345,7 +3345,7 @@ ${response}`;
         
         // Queue the remix request to WTAF engine
         const { queueRemixRequest } = await import('../degen_commands.js');
-        const success = await queueRemixRequest(userSlug, targetSlug, instructions, normalizedPhoneNumber);
+        const success = await queueRemixRequest(userSlug, targetSlug, instructions, from);
         
         if (success) {
           await sendSmsResponse(
