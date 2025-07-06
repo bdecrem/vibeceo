@@ -1,4 +1,5 @@
 requests==2.32.3
 python-dotenv==1.1.0
 supabase==2.15.3
-Pillow==10.0.0 
+Pillow==10.0.0
+openai>=1.0.0 
