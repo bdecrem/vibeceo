@@ -1479,132 +1479,29 @@ export default function RemixTreePage() {
               font-size: 0.9rem;
             }
             
-            /* MOBILE REMIX-TREE SPECIFIC LAYOUT - SUPER HIGH SPECIFICITY */
-            html body {
-              height: 100vh !important;
-              overflow: hidden !important; /* Override overflow-x: hidden */
-              min-height: 100vh !important;
-            }
-            
-            html body main {
-              height: 100vh !important;
-              display: flex !important;
-              flex-direction: column !important;
-              padding: 0 !important; /* Override base padding: 20px */
-              margin: 0 !important; /* Override base margin: 0 auto */
-              max-width: none !important; /* Override base max-width: 1600px */
-              overflow: hidden !important;
-              position: relative !important;
-              z-index: 5 !important;
-            }
-            
-            /* Hide hero section completely on mobile remix-tree */
-            html body main .tree-hero {
+            /* Hide hero stats section on mobile */
+            .tree-hero {
               display: none !important;
             }
             
-            /* Remix-tree takes full viewport height */
-            html body main .remix-tree {
-              height: 100vh !important;
-              margin: 0 !important; /* Override base margin-bottom: 80px */
-              padding: 0 !important;
-              overflow: hidden !important;
-              display: flex !important;
-              flex-direction: column !important;
-            }
-            
-            /* Mobile container fills full height */
-            html body main .remix-tree .mobile-tree-container {
-              height: 100vh !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              display: flex !important;
-              flex-direction: column !important;
-              overflow: hidden !important;
-            }
-            
-            /* Progress trail sticky at very top - OVERRIDE OTHER STYLES */
-            html body main .remix-tree .progress-trail {
+            /* Make branch navigation sticky at top */
+            .progress-trail {
               position: sticky !important;
               top: 0 !important;
               z-index: 1000 !important;
-              background: rgba(0, 0, 0, 0.95) !important;
-              backdrop-filter: blur(20px) !important;
-              margin: 0 !important;
-              margin-bottom: 0 !important; /* Override any other margin-bottom */
+              background: transparent !important;
+              backdrop-filter: none !important;
               padding: 15px 20px !important;
-              border-bottom: 1px solid rgba(157, 78, 221, 0.3) !important;
-              flex-shrink: 0 !important;
-              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-            }
-            
-            /* Swipe container fills remaining space - OVERRIDE OTHER STYLES */
-            html body main .remix-tree .swipe-container {
-              flex: 1 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              overflow: hidden !important;
-              height: calc(100vh - 80px) !important; /* Subtract progress trail height */
-              cursor: grab !important;
-            }
-            
-            html body main .remix-tree .swipe-container:active {
-              cursor: grabbing !important;
-            }
-            
-            /* Columns wrapper fills container height */
-            html body main .remix-tree .columns-wrapper {
-              height: 100% !important;
-              display: flex !important;
-              width: 100% !important;
-              will-change: transform !important;
-            }
-            
-            /* Mobile columns fill full height with scroll - OVERRIDE OTHER STYLES */
-            html body main .remix-tree .mobile-column {
-              height: 100% !important;
-              overflow-y: auto !important;
-              overflow-x: hidden !important;
-              padding: 0 !important;
-              -webkit-overflow-scrolling: touch !important; /* Smooth iOS scrolling */
-              flex: 0 0 100% !important;
-              width: 100% !important;
-            }
-            
-            /* Column content with proper spacing */
-            html body main .remix-tree .column-content {
-              min-height: 100% !important;
-              padding: 30px 15px !important;
-              display: flex !important;
-              flex-direction: column !important;
-              gap: 30px !important;
-              align-items: center !important;
-            }
-            
-            /* Completely remove swipe hints */
-            html body main .remix-tree .swipe-hints {
-              display: none !important;
+              border-bottom: none !important;
+              box-shadow: none !important;
             }
             
             /* Stats moved to be part of column content */
-            html body main .remix-tree .stats-container {
-              order: -1 !important; /* Show stats at top of first column */
-              margin-bottom: 20px !important;
-              width: 100% !important;
-              max-width: 350px !important;
-            }
-            
-            /* DEBUG: Add bright border to verify styles are applied */
-            html body main .remix-tree .mobile-tree-container {
-              border: 2px solid red !important;
-            }
-            
-            html body main .remix-tree .progress-trail {
-              border: 2px solid yellow !important;
-            }
-            
-            html body main .remix-tree .swipe-container {
-              border: 2px solid green !important;
+            .stats-container {
+              order: -1; /* Show stats at top of first column */
+              margin-bottom: 20px;
+              width: 100%;
+              max-width: 350px;
             }
           }
 
