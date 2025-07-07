@@ -1479,63 +1479,98 @@ export default function RemixTreePage() {
               font-size: 0.9rem;
             }
             
-            /* MOBILE FIXES */
-            /* Ensure hero section scrolls normally and doesn't get pinned */
+            /* MOBILE FIXES - Remove bottom blocking element */
+            body {
+              height: 100vh;
+              overflow-x: hidden;
+              overflow-y: auto;
+            }
+            
+            main {
+              height: 100%;
+              padding: 0;
+              margin: 0;
+            }
+            
+            /* Compact hero section */
             .tree-hero {
               position: relative;
-              margin-bottom: 20px; /* Reduce bottom margin on mobile */
-              padding: 20px; /* Reduce padding on mobile */
+              margin-bottom: 10px;
+              padding: 15px;
             }
             
             .hero-content {
-              position: static; /* Ensure no sticky behavior */
-              transform: none; /* Remove any transforms */
-              max-width: none; /* Full width on mobile */
-              margin: 0; /* Remove auto margins */
+              position: static;
+              transform: none;
+              max-width: none;
+              margin: 0;
+              padding: 20px;
             }
             
-            /* Make mobile container take full height without footer space */
+            /* Make remix-tree section fill remaining viewport */
+            .remix-tree {
+              height: calc(100vh - 200px); /* Subtract approximate header+hero height */
+              margin-bottom: 0;
+              padding: 0;
+              overflow: hidden;
+            }
+            
+            /* Mobile container takes full available height */
             .mobile-tree-container {
-              height: auto; /* Remove fixed height constraint */
-              margin-bottom: 0;
-              padding-bottom: 0;
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              display: flex;
+              flex-direction: column;
             }
             
-            /* Adjust swipe container to fill remaining space */
-            .swipe-container {
-              height: auto; /* Remove fixed height that causes obstruction */
-              min-height: 60vh; /* Minimum height for content */
-              margin-bottom: 0;
-              padding-bottom: 0;
-            }
-            
-            /* Ensure mobile columns use natural height */
-            .mobile-column {
-              height: auto; /* Remove fixed height */
-              overflow-y: visible; /* Allow natural scrolling */
-            }
-            
-            /* Make column content take natural space */
-            .column-content {
-              min-height: auto; /* Remove min-height constraint */
-              padding: 20px 0 40px 0; /* Add bottom padding for last item */
-            }
-            
-            /* Remove all swipe hints to eliminate bottom spacing */
-            .swipe-hints {
-              display: none !important;
-            }
-            
-            /* Make progress trail sticky to top of viewport */
+            /* Progress trail at top */
             .progress-trail {
               position: sticky;
               top: 0;
               z-index: 100;
-              background: transparent; /* Remove distracting background */
+              background: rgba(0, 0, 0, 0.8);
               backdrop-filter: blur(20px);
-              margin-bottom: 0;
+              margin: 0;
               padding: 15px 20px;
               border-bottom: 1px solid rgba(157, 78, 221, 0.2);
+              flex-shrink: 0;
+            }
+            
+            /* Swipe container fills remaining space */
+            .swipe-container {
+              height: 100%;
+              flex: 1;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
+            
+            /* Columns wrapper fills container height */
+            .columns-wrapper {
+              height: 100%;
+            }
+            
+            /* Mobile columns fill full height */
+            .mobile-column {
+              height: 100%;
+              overflow-y: auto;
+              padding: 0 10px;
+            }
+            
+            /* Column content with proper spacing */
+            .column-content {
+              min-height: 100%;
+              padding: 20px 0;
+              display: flex;
+              flex-direction: column;
+              gap: 30px;
+              align-items: center;
+            }
+            
+            /* Completely remove swipe hints */
+            .swipe-hints {
+              display: none !important;
             }
           }
 
