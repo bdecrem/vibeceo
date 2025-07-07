@@ -81,23 +81,24 @@ export async function generateMetadata({ params }: PageProps) {
 			.eq("status", "published")
 			.single();
 
-		// Try to use the actual Supabase Storage URL (like our backend fix)
-		const actualImageUrl = `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${user_slug}-${app_slug}.png`;
-		
-		// Fallback to API endpoint if direct URL doesn't exist
+		// Call our API endpoint to get the actual image URL (works for both cached and generated images)
 		const apiEndpointUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.wtaf.me'}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`;
 		
-		// Check if the actual image exists in Supabase Storage
-		let ogImageUrl = actualImageUrl;
+		let ogImageUrl = apiEndpointUrl; // fallback to API endpoint
+		
 		try {
-			const response = await fetch(actualImageUrl, { method: 'HEAD' });
-			if (!response.ok) {
-				// If image doesn't exist, use API endpoint as fallback
-				ogImageUrl = apiEndpointUrl;
+			// Call the API to get the actual image URL  
+			const response = await fetch(apiEndpointUrl);
+			if (response.ok) {
+				const data = await response.json();
+				if (data.success && data.image_url) {
+					// Use the actual Supabase Storage URL returned by the API
+					ogImageUrl = data.image_url;
+				}
 			}
 		} catch (error) {
-			// If fetch fails, use API endpoint as fallback
-			ogImageUrl = apiEndpointUrl;
+			console.log('Failed to get image URL from API, using endpoint as fallback');
+			// ogImageUrl stays as apiEndpointUrl
 		}
 		
 		const pageUrl = `https://www.wtaf.me/wtaf/${user_slug}/${app_slug}`;
