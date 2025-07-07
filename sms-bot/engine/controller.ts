@@ -956,6 +956,123 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
 }
 
 /**
+ * Process MEME request workflow
+ * Generates memes using OpenAI GPT + DALL-E and saves to Supabase
+ */
+export async function processMemeRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+    logWithTimestamp("🎨 STARTING MEME PROCESSING WORKFLOW");
+    logWithTimestamp(`📖 Processing file: ${processingPath}`);
+    
+    const { senderPhone, userSlug, userPrompt } = fileData;
+    
+    try {
+        // Import meme processor dynamically
+        const { processMemeRequest } = await import('./meme-processor.js');
+        
+        // Load meme configuration
+        const memeConfigPath = join(__dirname, '..', 'content', 'meme-config.json');
+        const memeConfigContent = await readFile(memeConfigPath, 'utf8');
+        const memeConfig = JSON.parse(memeConfigContent);
+        
+        const config = {
+            model: memeConfig.meme_generation.content_model,
+            maxTokens: memeConfig.meme_generation.content_max_tokens,
+            temperature: memeConfig.meme_generation.content_temperature
+        };
+        
+        logWithTimestamp(`🎨 Using meme config: ${config.model}, ${config.maxTokens} tokens, temp ${config.temperature}`);
+        
+        // Process the meme request
+        const result = await processMemeRequest(userPrompt, userSlug, config);
+        
+        if (!result.success || !result.html) {
+            logError(`Meme generation failed: ${result.error}`);
+            await sendFailureNotification("meme-generation", senderPhone);
+            return false;
+        }
+        
+        // Save meme HTML to Supabase with type='MEME'
+        const deployResult = await saveCodeToSupabase(
+            result.html, 
+            "meme-generator", 
+            userSlug, 
+            senderPhone, 
+            userPrompt,
+            null, // no admin table ID
+            false // don't skip UUID replacement
+        );
+        
+        if (deployResult.publicUrl && deployResult.uuid) {
+            // Update the wtaf_content entry to set type='MEME' and store meme metadata + fix URL
+            try {
+                const { createClient } = await import('@supabase/supabase-js');
+                const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
+                const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
+                
+                // Update the HTML to inject the correct URL
+                const updatedHTML = result.html!.replace(
+                    'window.MEME_URL = null;',
+                    `window.MEME_URL = "${deployResult.publicUrl}";`
+                );
+                
+                const { error: updateError } = await supabase
+                    .from('wtaf_content')
+                    .update({ 
+                        type: 'MEME',
+                        html_content: updatedHTML, // Update HTML with correct URL
+                        submission_data: {
+                            meme_text: userPrompt,
+                            top_text: result.memeContent?.topText,
+                            bottom_text: result.memeContent?.bottomText,
+                            theme: result.memeContent?.theme,
+                            image_url: result.imageUrl
+                        }
+                    })
+                    .eq('id', deployResult.uuid);
+                
+                if (updateError) {
+                    logWarning(`Failed to update meme metadata: ${updateError.message}`);
+                } else {
+                    logSuccess(`✅ Updated wtaf_content with type='MEME', metadata, and correct URL`);
+                }
+            } catch (error) {
+                logWarning(`Error updating meme metadata: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            // Generate OG image for the meme
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const appSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for meme: ${userSlug}/${appSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                    logSuccess(`✅ Updated meme HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for meme: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+            logWithTimestamp("=" + "=".repeat(79));
+            logWithTimestamp("🎉 MEME PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Meme URL: ${deployResult.publicUrl}`);
+            logWithTimestamp("=" + "=".repeat(79));
+            return true;
+        } else {
+            logError("Failed to save meme to database");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+        
+    } catch (error) {
+        logError(`Meme processing failed: ${error instanceof Error ? error.message : String(error)}`);
+        await sendFailureNotification("meme-generation", senderPhone);
+        return false;
+    }
+}
+
+/**
  * Process EDIT workflow
  * Handles edit-* files created by handlers.ts EDIT command
  */
