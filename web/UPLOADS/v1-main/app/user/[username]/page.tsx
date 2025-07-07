@@ -1,10 +1,12 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import { useState } from "react"
 
 export default function UserPage() {
   const params = useParams()
   const username = params.username as string
+  const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
 
   // Mock user data - in real app this would come from API
   const userData = {
@@ -22,6 +24,7 @@ export default function UserPage() {
           prompt: "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
           remixes: 247,
           isPinned: true,
+          name: "alex-blog"
         },
         {
           id: 4,
@@ -30,6 +33,7 @@ export default function UserPage() {
           prompt: "wtaf -Alex- create a minimalist blog with dark mode for announcing product launches",
           remixes: 134,
           isPinned: true,
+          name: "alex-blog-variant"
         },
       ],
       recent: [
@@ -40,6 +44,7 @@ export default function UserPage() {
           prompt: "wtaf -Alex- design a personal blog with cyberpunk vibes and glitch effects",
           remixes: 76,
           isPinned: false,
+          name: "personal-blog"
         },
         {
           id: 10,
@@ -48,6 +53,7 @@ export default function UserPage() {
           prompt: "wtaf -Alex- create a content platform for tech announcements with social features",
           remixes: 43,
           isPinned: false,
+          name: "content-platform"
         },
       ],
     },
@@ -65,6 +71,7 @@ export default function UserPage() {
           prompt: "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
           remixes: 189,
           isPinned: true,
+          name: "berghain-party"
         },
       ],
       recent: [
@@ -75,6 +82,7 @@ export default function UserPage() {
           prompt: "wtaf build a sleek event registration system with admin dashboard for underground parties",
           remixes: 98,
           isPinned: false,
+          name: "event-signup"
         },
         {
           id: 8,
@@ -83,6 +91,7 @@ export default function UserPage() {
           prompt: "wtaf make a comprehensive club management app with guest lists and door control",
           remixes: 65,
           isPinned: false,
+          name: "club-management"
         },
       ],
     },
@@ -100,6 +109,7 @@ export default function UserPage() {
           prompt: "wtaf make a pong-style browser game",
           remixes: 156,
           isPinned: true,
+          name: "pong-game"
         },
       ],
       recent: [
@@ -110,6 +120,7 @@ export default function UserPage() {
           prompt: "wtaf create a nostalgic arcade-style game with neon aesthetics and high scores",
           remixes: 87,
           isPinned: false,
+          name: "retro-game"
         },
         {
           id: 9,
@@ -118,6 +129,7 @@ export default function UserPage() {
           prompt: "wtaf build an addictive browser game with multiplayer capabilities and leaderboards",
           remixes: 54,
           isPinned: false,
+          name: "browser-game"
         },
       ],
     },
@@ -125,20 +137,36 @@ export default function UserPage() {
 
   const user = userData[username] || userData.alex // fallback to alex if user not found
 
+  const showCopiedNotification = (text) => {
+    setCopiedNotification({ show: true, text })
+    setTimeout(() => {
+      setCopiedNotification({ show: false, text: "" })
+    }, 2000)
+  }
+
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
+      return true
     } catch (err) {
       console.error("Failed to copy text: ", err)
+      return false
     }
   }
 
-  const handlePromptClick = (e, prompt) => {
-    copyToClipboard(prompt)
-    e.target.classList.add("clicked")
-    setTimeout(() => {
-      e.target.classList.remove("clicked")
-    }, 600)
+  const handlePromptClick = async (prompt) => {
+    const success = await copyToClipboard(prompt)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  const handleRemixClick = async (app) => {
+    const appUrl = `${window.location.origin}/app/${app.name}-${app.id}`
+    const success = await copyToClipboard(appUrl)
+    if (success) {
+      showCopiedNotification("App URL copied!")
+    }
   }
 
   return (
@@ -154,6 +182,14 @@ export default function UserPage() {
         />
       </head>
       <body>
+        {/* Copied Notification */}
+        {copiedNotification.show && (
+          <div className="copied-notification">
+            <span className="copied-text">{copiedNotification.text}</span>
+            <span className="copied-checkmark">✓</span>
+          </div>
+        )}
+
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -231,10 +267,10 @@ export default function UserPage() {
                         <span className="remix-label">remixes</span>
                       </div>
                       <div className="prompt-label">The prompt:</div>
-                      <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.prompt)}>
+                      <div className="prompt-showcase" onClick={() => handlePromptClick(app.prompt)}>
                         "{app.prompt}"
                       </div>
-                      <button className="remix-btn">REMIX</button>
+                      <button className="remix-btn" onClick={() => handleRemixClick(app)}>REMIX</button>
                     </div>
                   </div>
                 ))}
@@ -259,10 +295,10 @@ export default function UserPage() {
                       <span className="remix-label">remixes</span>
                     </div>
                     <div className="prompt-label">The prompt:</div>
-                    <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.prompt)}>
+                    <div className="prompt-showcase" onClick={() => handlePromptClick(app.prompt)}>
                       "{app.prompt}"
                     </div>
-                    <button className="remix-btn">REMIX</button>
+                    <button className="remix-btn" onClick={() => handleRemixClick(app)}>REMIX</button>
                   </div>
                 </div>
               ))}
@@ -285,6 +321,58 @@ export default function UserPage() {
             overflow-x: hidden;
             min-height: 100vh;
             color: #ffffff;
+          }
+
+          .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #00ff66, #9900ff);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+              0 8px 25px rgba(0, 255, 102, 0.3),
+              0 0 20px rgba(0, 255, 102, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .copied-checkmark {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+
+          @keyframes slideInFade {
+            0% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+            20% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            80% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
           }
 
           @keyframes gradientShift {
@@ -661,267 +749,4 @@ export default function UserPage() {
             object-fit: cover;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 102, 0.5));
-            transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
-          }
-
-          .image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: all 0.3s ease;
-            border-radius: 15px;
-          }
-
-          .image-container:hover .image-overlay {
-            opacity: 1;
-          }
-
-          .image-container:hover .gallery-image {
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 30px rgba(0, 255, 102, 0.8));
-            border-color: rgba(0, 255, 102, 0.7);
-          }
-
-          .try-app-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #00ff66, #9900ff);
-            color: #ffffff;
-            border: none;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(0, 255, 102, 0.3),
-              0 0 20px rgba(0, 255, 102, 0.2);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-          }
-
-          .try-app-btn:hover {
-            transform: scale(1.05);
-            box-shadow:
-              0 12px 35px rgba(0, 255, 102, 0.4),
-              0 0 30px rgba(0, 255, 102, 0.3);
-          }
-
-          .card-content {
-            text-align: center;
-          }
-
-          .remix-count-solo {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 20px;
-          }
-
-          .remix-number {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.3rem;
-            color: #00ff99;
-            font-weight: 700;
-            text-shadow: 0 0 8px rgba(0, 255, 153, 0.5);
-          }
-
-          .remix-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-            text-transform: lowercase;
-          }
-
-          .prompt-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-            opacity: 0.8;
-          }
-
-          .prompt-showcase {
-            color: #9900ff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 1rem;
-            font-weight: 500;
-            background: rgba(153, 0, 255, 0.1);
-            border: 2px solid rgba(153, 0, 255, 0.3);
-            border-radius: 15px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 8px rgba(153, 0, 255, 0.5);
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            line-height: 1.4;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            user-select: none;
-          }
-
-          .prompt-showcase:hover {
-            background: rgba(153, 0, 255, 0.15);
-            border-color: rgba(153, 0, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(153, 0, 255, 0.2);
-          }
-
-          .prompt-showcase.clicked {
-            animation: copyPulse 0.6s ease-out;
-          }
-
-          @keyframes copyPulse {
-            0% {
-              transform: scale(1);
-              background: rgba(153, 0, 255, 0.1);
-            }
-            50% {
-              transform: scale(1.02);
-              background: rgba(153, 0, 255, 0.3);
-              box-shadow: 0 0 30px rgba(153, 0, 255, 0.6);
-            }
-            100% {
-              transform: scale(1);
-              background: rgba(153, 0, 255, 0.1);
-            }
-          }
-
-          .remix-btn {
-            padding: 12px 25px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #9900ff;
-            color: #9900ff;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(153, 0, 255, 0.2),
-              0 0 20px rgba(153, 0, 255, 0.1);
-          }
-
-          .remix-btn:hover {
-            background: rgba(153, 0, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow:
-              0 12px 35px rgba(153, 0, 255, 0.3),
-              0 0 30px rgba(153, 0, 255, 0.2);
-          }
-
-          .sparks {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            overflow: hidden;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-          }
-
-          .spark {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #00ff99;
-            border-radius: 50%;
-            opacity: 0;
-            animation: spark 4.5s infinite ease-out;
-            box-shadow: 0 0 6px #00ff99;
-          }
-
-          .spark:nth-child(1) {
-            top: 25%;
-            left: 20%;
-            animation-delay: 0s;
-          }
-
-          .spark:nth-child(2) {
-            top: 70%;
-            left: 80%;
-            animation-delay: 1.8s;
-          }
-
-          .spark:nth-child(3) {
-            top: 50%;
-            left: 10%;
-            animation-delay: 3.6s;
-          }
-
-          .spark:nth-child(4) {
-            top: 30%;
-            left: 90%;
-            animation-delay: 2.7s;
-          }
-
-          @keyframes spark {
-            0% {
-              opacity: 0;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(2);
-            }
-            100% {
-              opacity: 0;
-              transform: scale(1);
-            }
-          }
-
-          @media (max-width: 768px) {
-            .gallery-grid {
-              grid-template-columns: 1fr;
-            }
-            .logo { font-size: 2.8rem; }
-            .user-name { font-size: 2.2rem; }
-            .section-title { font-size: 1.8rem; }
-            .user-stats { gap: 25px; }
-            .gallery-grid { 
-              gap: 30px;
-            }
-            .gallery-card { padding: 25px 20px; }
-            .hero-content { padding: 40px 25px; }
-            .avatar-circle { width: 100px; height: 100px; font-size: 2.5rem; }
-          }
-
-          @media (max-width: 480px) {
-            .logo { font-size: 2.5rem; }
-            .user-name { font-size: 2rem; }
-            .section-title { font-size: 1.6rem; }
-            .gallery-card { padding: 20px 15px; }
-            .hero-content { padding: 30px 20px; }
-            .try-app-btn { padding: 12px 25px; font-size: 0.9rem; }
-            .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
-            .avatar-circle { width: 80px; height: 80px; font-size: 2rem; }
-            .user-stats { 
-              flex-direction: column; 
-              gap: 15px; 
-            }
-          }
-        `}</style>
-      </body>
-    </html>
-  )
-}
+            filter: drop-shadow

@@ -74,7 +74,8 @@ export const ACTIONS: readonly string[] = loadDictionaries().actions;
 const SMS_BOT_DIR: string = join(__dirname, '..', '..', '..');
 export const WATCH_DIRS: string[] = [
     join(SMS_BOT_DIR, "data", "code"),
-    join(SMS_BOT_DIR, "data", "wtaf")
+    join(SMS_BOT_DIR, "data", "wtaf"),
+    join(SMS_BOT_DIR, "data", "memes")
 ];
 export const PROCESSED_DIR: string = join(SMS_BOT_DIR, "data", "processed");
 export const WEB_OUTPUT_DIR: string = join(SMS_BOT_DIR, "..", "web", "public", "lab");

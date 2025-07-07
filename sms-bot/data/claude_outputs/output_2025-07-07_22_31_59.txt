@@ -1,0 +1,113 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO_WORLD.exe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(45deg, #FF2E93, #3F88FF);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 8vw;
+            margin: 0;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(255,46,147,0.8),
+                0 0 30px rgba(63,136,255,0.8);
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        #emoji1 { top: 20%; left: 20%; animation: float 6s ease-in-out infinite; }
+        #emoji2 { top: 70%; left: 70%; animation: float 8s ease-in-out infinite; }
+        #emoji3 { top: 30%; right: 20%; animation: float 7s ease-in-out infinite; }
+        #emoji4 { bottom: 20%; left: 40%; animation: float 9s ease-in-out infinite; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HELLO, WORLD!</h1>
+    </div>
+
+    <div class="floating-emoji" id="emoji1" data-value="2">💀</div>
+    <div class="floating-emoji" id="emoji2" data-value="3">⚡</div>
+    <div class="floating-emoji" id="emoji3" data-value="4">🔥</div>
+    <div class="floating-emoji" id="emoji4" data-value="5">💥</div>
+
+    <div class="prompt">Generated from: Simple Hello World page request</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg: Type "hello" to trigger chaos mode
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key.toLowerCase();
+            if(typed.includes('hello')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

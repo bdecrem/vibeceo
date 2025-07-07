@@ -242,6 +242,16 @@ export function determineRequestType(userPrompt: string, filename?: string): { t
             };
         }
         
+        // Check if this is a MEME file by filename pattern
+        if (filename && filename.includes('meme-request-')) {
+            return {
+                type: 'meme',
+                slug: null,
+                coach: 'meme-generator',
+                cleanPrompt: userPrompt.trim()
+            };
+        }
+        
         // Check if raw prompt starts with 'CODE:' or 'CODE ' (case insensitive)
         const isCodeCommand = userPrompt.trim().toUpperCase().startsWith('CODE:') || 
                              userPrompt.trim().toUpperCase().startsWith('CODE ');

@@ -1,6 +1,65 @@
 "use client"
 
+import { useState, useEffect } from "react"
+
 export default function HomePage() {
+  const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
+
+  const showCopiedNotification = (text) => {
+    setCopiedNotification({ show: true, text })
+    setTimeout(() => {
+      setCopiedNotification({ show: false, text: "" })
+    }, 2000)
+  }
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch (err) {
+      console.error("Failed to copy text: ", err)
+      return false
+    }
+  }
+
+  const handlePromptClick = async (prompt) => {
+    const success = await copyToClipboard(prompt)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  const handleRemixClick = async (appId, appName) => {
+    const appUrl = `${window.location.origin}/app/${appName.toLowerCase().replace(/\s+/g, "-")}-${appId}`
+    const success = await copyToClipboard(appUrl)
+    if (success) {
+      showCopiedNotification("App URL copied!")
+    }
+  }
+
+  const [currentSuggestion, setCurrentSuggestion] = useState(0)
+
+  const suggestions = [
+    "wtaf make me a simple todo app",
+    "wtaf create a random quote generator",
+    "wtaf build a color palette picker",
+  ]
+
+  const handleSuggestionClick = async (suggestion) => {
+    const success = await copyToClipboard(suggestion)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  // Auto-cycle through suggestions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSuggestion((prev) => (prev + 1) % suggestions.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <html lang="en">
       <head>
@@ -17,6 +76,14 @@ export default function HomePage() {
         />
       </head>
       <body>
+        {/* Copied Notification */}
+        {copiedNotification.show && (
+          <div className="copied-notification">
+            <span className="copied-text">{copiedNotification.text}</span>
+            <span className="copied-checkmark">✓</span>
+          </div>
+        )}
+
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -48,17 +115,42 @@ export default function HomePage() {
                 Where prompts go primal. Hand-inked chaos for your startup soul, piped in from West Hollywood's most
                 electric corner. It's rebellion. It's art. It's algorithmically unhinged.
               </p>
-              <p
-                style={{
-                  marginTop: "20px",
-                  fontSize: "1.2rem",
-                  fontWeight: 600,
-                  color: "#00ffff",
-                  textShadow: "0 0 8px rgba(0, 255, 255, 0.5)",
-                }}
-              >
-                Text START to +1-866-330-0015 to get initiated.
-              </p>
+              <div className="starter-section">
+                <p className="starter-text">
+                  Try it: Text <strong>+1-866-330-0015</strong> with:
+                </p>
+                <div className="prompt-suggestions">
+                  <div className="suggestion-container">
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 0 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[0])}
+                    >
+                      "{suggestions[0]}"
+                    </div>
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 1 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[1])}
+                    >
+                      "{suggestions[1]}"
+                    </div>
+                    <div
+                      className={`suggestion-prompt ${currentSuggestion === 2 ? "active" : ""}`}
+                      onClick={() => handleSuggestionClick(suggestions[2])}
+                    >
+                      "{suggestions[2]}"
+                    </div>
+                  </div>
+                  <div className="suggestion-dots">
+                    {suggestions.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`dot ${currentSuggestion === index ? "active" : ""}`}
+                        onClick={() => setCurrentSuggestion(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="cta-section">
                 <button className="cta-button">Learn More</button>
                 <a href="/gallery" className="cta-button secondary">
@@ -68,7 +160,14 @@ export default function HomePage() {
             </div>
           </section>
 
+          {/* Featured Section */}
           <section className="services">
+            <h2 className="section-title featured-title glitch" data-text="Featured">
+              <span className="title-icon">⭐</span>
+              Featured
+              <span className="title-icon">⭐</span>
+            </h2>
+
             {/* Alex Blog Example */}
             <div className="service-card image-card">
               <a href="#">
@@ -76,9 +175,19 @@ export default function HomePage() {
               </a>
               <div className="image-content">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-showcase">
+                <div
+                  className="prompt-showcase"
+                  onClick={() =>
+                    handlePromptClick(
+                      "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
+                    )
+                  }
+                >
                   "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
                 </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(1, "alex-blog")}>
+                  REMIX
+                </button>
               </div>
             </div>
 
@@ -89,7 +198,14 @@ export default function HomePage() {
               </a>
               <div className="image-content">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-showcase">
+                <div
+                  className="prompt-showcase"
+                  onClick={() =>
+                    handlePromptClick(
+                      "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
+                    )
+                  }
+                >
                   "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
                 </div>
                 <div className="prompt-label" style={{ textTransform: "none" }}>
@@ -99,6 +215,9 @@ export default function HomePage() {
                   </a>
                   .
                 </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(2, "berghain-party")}>
+                  REMIX
+                </button>
               </div>
             </div>
 
@@ -109,8 +228,138 @@ export default function HomePage() {
               </a>
               <div className="image-content">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-showcase">"wtaf make a pong-style browser game"</div>
+                <div
+                  className="prompt-showcase"
+                  onClick={() => handlePromptClick("wtaf make a pong-style browser game")}
+                >
+                  "wtaf make a pong-style browser game"
+                </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(3, "pong-game")}>
+                  REMIX
+                </button>
               </div>
+            </div>
+
+            <div className="more-link-container">
+              <a href="/gallery" className="more-link">
+                More Featured →
+              </a>
+            </div>
+          </section>
+
+          {/* Trending Section */}
+          <section className="services">
+            <h2 className="section-title trending-title glitch" data-text="Trending">
+              <span className="title-icon">🔥</span>
+              Trending
+              <span className="title-icon">🔥</span>
+            </h2>
+
+            {/* Trending App 1 */}
+            <div className="service-card image-card">
+              <a href="#">
+                <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
+              </a>
+              <div className="image-content">
+                <div className="creator-stats-inline">
+                  <div className="creator-info">
+                    <span className="creator-label">by</span>
+                    <a href="/user/alex" className="creator-handle">
+                      @alex
+                    </a>
+                  </div>
+                  <div className="remix-count">
+                    <span className="remix-number">247</span>
+                    <span className="remix-label">remixes</span>
+                  </div>
+                </div>
+                <div className="prompt-label">The prompt:</div>
+                <div
+                  className="prompt-showcase"
+                  onClick={() =>
+                    handlePromptClick(
+                      "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
+                    )
+                  }
+                >
+                  "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
+                </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(1, "alex-blog")}>
+                  REMIX
+                </button>
+              </div>
+            </div>
+
+            {/* Trending App 2 */}
+            <div className="service-card image-card">
+              <a href="#">
+                <img src="/wtaf-landing/images/berghain.png" alt="Berghain Party" className="service-image" />
+              </a>
+              <div className="image-content">
+                <div className="creator-stats-inline">
+                  <div className="creator-info">
+                    <span className="creator-label">by</span>
+                    <a href="/user/bart" className="creator-handle">
+                      @bart
+                    </a>
+                  </div>
+                  <div className="remix-count">
+                    <span className="remix-number">189</span>
+                    <span className="remix-label">remixes</span>
+                  </div>
+                </div>
+                <div className="prompt-label">The prompt:</div>
+                <div
+                  className="prompt-showcase"
+                  onClick={() =>
+                    handlePromptClick(
+                      "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
+                    )
+                  }
+                >
+                  "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+                </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(2, "berghain-party")}>
+                  REMIX
+                </button>
+              </div>
+            </div>
+
+            {/* Trending App 3 */}
+            <div className="service-card image-card">
+              <a href="#">
+                <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
+              </a>
+              <div className="image-content">
+                <div className="creator-stats-inline">
+                  <div className="creator-info">
+                    <span className="creator-label">by</span>
+                    <a href="/user/zoe" className="creator-handle">
+                      @zoe
+                    </a>
+                  </div>
+                  <div className="remix-count">
+                    <span className="remix-number">156</span>
+                    <span className="remix-label">remixes</span>
+                  </div>
+                </div>
+                <div className="prompt-label">The prompt:</div>
+                <div
+                  className="prompt-showcase"
+                  onClick={() => handlePromptClick("wtaf make a pong-style browser game")}
+                >
+                  "wtaf make a pong-style browser game"
+                </div>
+                <button className="remix-btn" onClick={() => handleRemixClick(3, "pong-game")}>
+                  REMIX
+                </button>
+              </div>
+            </div>
+
+            <div className="more-link-container">
+              <a href="/trending" className="more-link">
+                More Trending →
+              </a>
             </div>
           </section>
 
@@ -155,6 +404,58 @@ export default function HomePage() {
             overflow-x: hidden;
             min-height: 100vh;
             color: #ffffff;
+          }
+
+          .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #00ff66, #9900ff);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+              0 8px 25px rgba(0, 255, 102, 0.3),
+              0 0 20px rgba(0, 255, 102, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .copied-checkmark {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+
+          @keyframes slideInFade {
+            0% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+            20% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            80% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
           }
 
           @keyframes gradientShift {
@@ -489,6 +790,43 @@ export default function HomePage() {
             backdrop-filter: blur(5px);
             font-style: italic;
             line-height: 1.4;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+          }
+
+          .prompt-showcase:hover {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: rgba(0, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+          }
+
+          .remix-btn {
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow:
+              0 8px 25px rgba(0, 255, 255, 0.2),
+              0 0 20px rgba(0, 255, 255, 0.1);
+            margin-top: 15px;
+          }
+
+          .remix-btn:hover {
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow:
+              0 12px 35px rgba(0, 255, 255, 0.3),
+              0 0 30px rgba(0, 255, 255, 0.2);
           }
 
           .prompt-label {
@@ -573,6 +911,12 @@ export default function HomePage() {
             .hero p { font-size: 1.1rem; }
             .hero-content { padding: 40px 20px; }
             .hero { padding: 20px; }
+            .copied-notification {
+              top: 20px;
+              right: 20px;
+              padding: 12px 20px;
+              font-size: 0.9rem;
+            }
           }
 
           @media (max-width: 480px) {
@@ -582,6 +926,12 @@ export default function HomePage() {
             .hero p { font-size: 1rem; }
             .hero-content { padding: 35px 15px; }
             .cta-button { padding: 18px 35px; font-size: 1rem; }
+            .copied-notification {
+              top: 15px;
+              right: 15px;
+              padding: 10px 18px;
+              font-size: 0.8rem;
+            }
           }
 
           .bottom-section {
@@ -642,22 +992,6 @@ export default function HomePage() {
             color: rgba(255, 255, 255, 0.7);
             font-style: italic;
             font-weight: 300;
-          }
-
-          .promo-badge {
-            display: inline-block;
-            background: rgba(255, 255, 0, 0.2);
-            border: 1px solid rgba(255, 255, 0, 0.5);
-            color: #ffff00;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            text-shadow: 0 0 8px rgba(255, 255, 0, 0.5);
           }
 
           .promo-title {
@@ -769,6 +1103,345 @@ export default function HomePage() {
             background: linear-gradient(90deg, #ff0080, #ffff00, #ff0080);
             background-size: 200% 100%;
             animation: borderGlow 3s linear infinite;
+          }
+          
+          .starter-section {
+            margin-top: 30px;
+            margin-bottom: 40px;
+          }
+
+          .starter-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #00ffff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            margin-bottom: 15px;
+            text-align: center;
+          }
+
+          .starter-text strong {
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+          }
+
+          .prompt-suggestions {
+            position: relative;
+            height: 65px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .suggestion-container {
+            position: relative;
+            width: 100%;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .suggestion-prompt {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            padding: 12px 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 25px;
+            color: #00ffff;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+            backdrop-filter: blur(5px);
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            user-select: none;
+          }
+
+          .suggestion-prompt.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+
+          .suggestion-prompt:hover {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: rgba(0, 255, 255, 0.5);
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+          }
+
+          .suggestion-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+          }
+
+          .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+          }
+
+          .dot.active {
+            background: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+            transform: scale(1.2);
+          }
+
+          .dot:hover {
+            background: rgba(0, 255, 255, 0.6);
+            transform: scale(1.1);
+          }
+
+          @media (max-width: 768px) {
+            .starter-text {
+              font-size: 1.1rem;
+            }
+            
+            .suggestion-prompt {
+              font-size: 0.9rem;
+              padding: 10px 16px;
+              width: 95%;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .starter-text {
+              font-size: 1rem;
+            }
+            
+            .suggestion-prompt {
+              font-size: 0.8rem;
+              padding: 8px 14px;
+            }
+          }
+
+          .creator-stats-inline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+          }
+
+          .creator-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+
+          .creator-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+          }
+
+          .creator-handle {
+            color: #ff0080;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-decoration: none;
+            text-shadow: 0 0 8px rgba(255, 0, 128, 0.5);
+            transition: all 0.3s ease;
+          }
+
+          .creator-handle:hover {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 0, 128, 0.8);
+          }
+
+          .remix-count {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+          }
+
+          .remix-number {
+            color: #00ffff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+          }
+
+          .remix-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+          }
+
+          .more-link-container {
+            text-align: center;
+            margin-top: 30px;
+          }
+
+          .more-link {
+            display: inline-block;
+            padding: 15px 35px;
+            background: linear-gradient(45deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 128, 0.1));
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            color: #00ffff;
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+              0 8px 25px rgba(0, 255, 255, 0.2),
+              0 0 20px rgba(0, 255, 255, 0.1);
+          }
+
+          .more-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+          }
+
+          .more-link:hover::before {
+            left: 100%;
+          }
+
+          .more-link:hover {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            border-color: rgba(0, 255, 255, 0.8);
+            background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 128, 0.2));
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+              0 15px 35px rgba(0, 255, 255, 0.3),
+              0 0 30px rgba(0, 255, 255, 0.2);
+          }
+
+          .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+
+          .featured-title {
+            background: linear-gradient(45deg, #ffff00, #ff0080, #00ffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 0, 0.5));
+          }
+
+          .trending-title {
+            background: linear-gradient(45deg, #ff0080, #ff4500, #ffff00);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 15px rgba(255, 0, 128, 0.5));
+          }
+
+          .title-icon {
+            font-size: 2rem;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.6));
+          }
+
+          .featured-title .title-icon {
+            color: #ffff00;
+            animation: starTwinkle 2s ease-in-out infinite;
+          }
+
+          .trending-title .title-icon {
+            color: #ff4500;
+            animation: flameDance 2s ease-in-out infinite;
+          }
+
+          @keyframes starTwinkle {
+            0%, 100% { 
+              transform: scale(1) rotate(0deg);
+              filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.6));
+            }
+            50% { 
+              transform: scale(1.2) rotate(180deg);
+              filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.9));
+            }
+          }
+
+          @keyframes flameDance {
+            0%, 100% { 
+              transform: scale(1) rotate(-5deg);
+              filter: drop-shadow(0 0 10px rgba(255, 69, 0, 0.6));
+            }
+            50% { 
+              transform: scale(1.1) rotate(5deg);
+              filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.9));
+            }
+          }
+
+          @keyframes iconPulse {
+            0%, 100% { 
+              transform: scale(1);
+              opacity: 0.8;
+            }
+            50% { 
+              transform: scale(1.1);
+              opacity: 1;
+            }
+          }
+
+          @media (max-width: 768px) {
+            .section-title {
+              font-size: 2rem;
+              gap: 10px;
+            }
+            
+            .title-icon {
+              font-size: 1.5rem;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .section-title {
+              font-size: 1.7rem;
+              gap: 8px;
+            }
+            
+            .title-icon {
+              font-size: 1.3rem;
+            }
           }
         `}</style>
       </body>

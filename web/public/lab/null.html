@@ -11,280 +11,140 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✨ Secret Chat Space</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
-        }
+    
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" />
+    <meta property="og:description" content="Witness the most psychedelic pachyderm party this side of the multiverse. Dancing purple elephants living their best life." />
+    <meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" />
+    <meta property="og:url" content="https://purpleelephants.wtaf" />
+    <meta property="og:type" content="website" />
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+    <title>Purple Elephants Test Page</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        :root {
+            --punk-purple: #7c3aed;
+            --neon-pink: #ff2e93;
+            --electric-blue: #3f88ff;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: #111;
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
             color: #fff;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        h1, h2 {
             font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
-            position: relative;
-        }
-
-        .onboarding {
             text-align: center;
-            padding: 4rem 2rem;
         }
 
-        .onboarding h1 {
-            font-size: 3rem;
-            margin-bottom: 2rem;
-            background: var(--gradient);
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, var(--punk-purple), var(--neon-pink));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: gradient 15s ease infinite;
+            animation: textGlow 2s ease-in-out infinite;
         }
 
-        .chat-container {
-            display: none;
-            height: 80vh;
-            background: rgba(255,255,255,0.05);
-            border-radius: 1rem;
-            backdrop-filter: blur(10px);
-            padding: 1rem;
+        .elephant-container {
+            position: relative;
+            height: 400px;
+            margin: 2rem 0;
+            background: linear-gradient(135deg, #2a1a4a, #4a1a2a);
+            border-radius: 20px;
+            overflow: hidden;
         }
 
-        .messages {
-            height: calc(100% - 80px);
-            overflow-y: auto;
-            padding: 1rem;
+        .elephant {
+            font-size: 8rem;
+            position: absolute;
+            animation: dance 3s ease-in-out infinite;
         }
 
-        .message {
-            margin: 1rem 0;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            max-width: 80%;
-            animation: messageIn 0.3s ease-out;
+        .elephant:nth-child(1) { left: 20%; top: 30%; animation-delay: 0s; }
+        .elephant:nth-child(2) { right: 20%; top: 40%; animation-delay: 0.5s; }
+        .elephant:nth-child(3) { left: 40%; top: 20%; animation-delay: 1s; }
+
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
         }
 
-        .message.sent {
-            background: var(--gradient);
-            margin-left: auto;
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 20px var(--neon-pink); }
+            50% { text-shadow: 0 0 40px var(--electric-blue); }
         }
 
-        .message.received {
-            background: rgba(255,255,255,0.1);
-            margin-right: auto;
-        }
-
-        .input-area {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-        }
-
-        input, button {
-            padding: 1rem;
+        .punk-button {
+            background: var(--punk-purple);
+            color: white;
             border: none;
-            border-radius: 0.5rem;
-            font-family: 'Inter', sans-serif;
-        }
-
-        input {
-            flex: 1;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-        }
-
-        button {
-            background: var(--gradient);
-            color: #fff;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin-top: 2rem;
         }
 
-        button:hover {
-            transform: scale(1.05);
+        .punk-button:hover {
+            background: var(--neon-pink);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--neon-pink);
         }
 
-        .floating-emoji {
-            position: fixed;
-            pointer-events: none;
-            font-size: 2rem;
-            transition: transform 0.1s ease-out;
+        .meta-info {
+            margin-top: 3rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
         }
 
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes messageIn {
-            from { 
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
+        code {
+            display: block;
+            background: #2a2a2a;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: left;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="onboarding" id="onboarding">
-            <h1>✨ Your Secret Chat Space</h1>
-            <div id="start-options">
-                <button onclick="showStartNew()">Start New Space</button>
-                <button onclick="showJoinSpace()">Join Space</button>
-            </div>
-            <div id="emoji-select" style="display:none;">
-                <h2>Pick your emoji identity:</h2>
-                <div id="emoji-grid"></div>
-            </div>
-            <div id="passcode-display" style="display:none;"></div>
-            <div id="join-form" style="display:none;">
-                <input type="text" id="join-passcode" placeholder="Enter passcode">
-                <button onclick="validatePasscode()">Join Space</button>
-            </div>
+        <h1>Purple Elephants Test</h1>
+        
+        <div class="elephant-container">
+            <div class="elephant">🐘</div>
+            <div class="elephant">🐘</div>
+            <div class="elephant">🐘</div>
         </div>
 
-        <div class="chat-container" id="chat">
-            <div class="messages" id="messages"></div>
-            <div class="input-area">
-                <input type="text" id="message-input" placeholder="Type your message...">
-                <button onclick="sendMessage()">Cast It ✨</button>
-            </div>
+        <button class="punk-button">Share This Madness</button>
+
+        <div class="meta-info">
+            <h2>OpenGraph Meta Tags</h2>
+            <code>
+                &lt;meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" /&gt;<br>
+                &lt;meta property="og:description" content="Witness the most psychedelic pachyderm party..." /&gt;<br>
+                &lt;meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" /&gt;
+            </code>
         </div>
     </div>
 
     <script>
-        const APP_ID = 'secret_chat_' + window.location.pathname.slice(1);
-        const supabase = window.supabase.createClient('https://tqniseocczttrfwtpbdr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350');
-        
-        let currentEmoji = '';
-        let currentPasscode = '';
-
-        const emojis = ['🌸', '🌟', '🦋', '🌈', '🍀', '🌙'];
-        
-        function showStartNew() {
-            document.getElementById('start-options').style.display = 'none';
-            document.getElementById('emoji-select').style.display = 'block';
-            
-            const emojiGrid = document.getElementById('emoji-grid');
-            emojis.forEach(emoji => {
-                const btn = document.createElement('button');
-                btn.textContent = emoji;
-                btn.onclick = () => selectEmoji(emoji, true);
-                emojiGrid.appendChild(btn);
-            });
-        }
-
-        function showJoinSpace() {
-            document.getElementById('start-options').style.display = 'none';
-            document.getElementById('join-form').style.display = 'block';
-        }
-
-        async function selectEmoji(emoji, isNew) {
-            currentEmoji = emoji;
-            if (isNew) {
-                currentPasscode = 'moon' + Math.floor(Math.random() * 100);
-                await saveUser(emoji, currentPasscode);
-                document.getElementById('emoji-select').style.display = 'none';
-                document.getElementById('passcode-display').style.display = 'block';
-                document.getElementById('passcode-display').innerHTML = 
-                    `You are ${emoji}<br>Your passcode is: ${currentPasscode}`;
-                setTimeout(startChat, 2000);
-            }
-        }
-
-        async function validatePasscode() {
-            const passcode = document.getElementById('join-passcode').value;
-            const isValid = await validateUser(currentEmoji, passcode);
-            if (isValid) {
-                currentPasscode = passcode;
-                startChat();
-            }
-        }
-
-        async function startChat() {
-            document.getElementById('onboarding').style.display = 'none';
-            document.getElementById('chat').style.display = 'block';
-            loadMessages();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('message-input');
-            const message = input.value.trim();
-            if (message) {
-                await saveMessage(currentEmoji, message);
-                input.value = '';
-                loadMessages();
-            }
-        }
-
-        async function loadMessages() {
-            const messages = await loadData();
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '';
-            
-            messages.forEach(msg => {
-                if (msg.action_type === 'message' && msg.content_data?.message) {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `message ${msg.participant_id === currentEmoji ? 'sent' : 'received'}`;
-                    messageDiv.innerHTML = `
-                        <div>${msg.participant_id} ${msg.content_data.message}</div>
-                        <small>${new Date(msg.created_at).toLocaleTimeString()}</small>
-                    `;
-                    messagesDiv.appendChild(messageDiv);
-                }
-            });
-            
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // Add floating emojis
-        emojis.forEach((emoji, i) => {
-            const floating = document.createElement('div');
-            floating.className = 'floating-emoji';
-            floating.textContent = emoji;
-            floating.style.left = `${Math.random() * 100}vw`;
-            floating.style.top = `${Math.random() * 100}vh`;
-            floating.style.animation = `float ${3 + i}s ease-in-out infinite`;
-            document.body.appendChild(floating);
-        });
-
-        // Easter egg
-        let clicks = 0;
-        document.querySelector('h1').addEventListener('click', () => {
-            clicks++;
-            if (clicks === 5) {
-                document.body.style.background = 'var(--gradient)';
-                setTimeout(() => document.body.style.background = '#111', 1000);
-            }
+        document.querySelector('.punk-button').addEventListener('click', () => {
+            alert('🐘 Share URL copied! Spread the elephant madness! 🐘');
         });
     </script>
 </body>

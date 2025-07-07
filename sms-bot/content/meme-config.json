@@ -1,0 +1,25 @@
+{
+  "meme_generation": {
+    "description": "Configuration for meme content and image generation",
+    "content_model": "gpt-4o",
+    "content_max_tokens": 300,
+    "content_temperature": 0.8,
+    "image_model": "dall-e-3",
+    "image_size": "1024x1024",
+    "image_quality": "standard"
+  },
+  "meme_style": {
+    "text_format": "ALL_CAPS",
+    "max_text_length": 7,
+    "font_family": "Arial Black",
+    "text_color": "white",
+    "text_shadow": "black outline",
+    "humor_style": "programming/tech focused, relatable, punchy"
+  },
+  "html_template": {
+    "title_format": "{topText} {bottomText} - WTAF Meme",
+    "branding": "Generated with WTAF - The AI-powered meme generator",
+    "call_to_action": "Text START to +1-866-330-0015 to make your own memes!",
+    "interactive_features": ["floating_emojis", "mouse_sparkles", "hover_effects"]
+  }
+} 

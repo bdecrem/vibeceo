@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix slate-shark-brewing have it say Hi Gary
+
+ORIGINAL_REQUEST:REMIX slate-shark-brewing have it say Hi Gary
