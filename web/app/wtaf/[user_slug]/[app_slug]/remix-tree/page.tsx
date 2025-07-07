@@ -1479,104 +1479,115 @@ export default function RemixTreePage() {
               font-size: 0.9rem;
             }
             
-            /* MOBILE REMIX-TREE SPECIFIC LAYOUT */
+            /* MOBILE REMIX-TREE SPECIFIC LAYOUT - HIGH SPECIFICITY */
             body {
-              height: 100vh;
-              overflow: hidden; /* Prevent body scroll */
+              height: 100vh !important;
+              overflow: hidden !important; /* Prevent body scroll */
             }
             
             main {
-              height: 100vh;
-              display: flex;
-              flex-direction: column;
-              padding: 0;
-              margin: 0;
-              overflow: hidden;
+              height: 100vh !important;
+              display: flex !important;
+              flex-direction: column !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              overflow: hidden !important;
             }
             
             /* Hide hero section completely on mobile remix-tree */
             .tree-hero {
-              display: none;
+              display: none !important;
             }
             
             /* Remix-tree takes full viewport height */
             .remix-tree {
-              height: 100vh;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              display: flex;
-              flex-direction: column;
+              height: 100vh !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              display: flex !important;
+              flex-direction: column !important;
             }
             
             /* Mobile container fills full height */
-            .mobile-tree-container {
-              height: 100vh;
-              margin: 0;
-              padding: 0;
-              display: flex;
-              flex-direction: column;
-              overflow: hidden;
+            .remix-tree .mobile-tree-container {
+              height: 100vh !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              overflow: hidden !important;
             }
             
-            /* Progress trail sticky at very top */
-            .progress-trail {
-              position: sticky;
-              top: 0;
-              z-index: 1000;
-              background: rgba(0, 0, 0, 0.95);
-              backdrop-filter: blur(20px);
-              margin: 0;
-              padding: 15px 20px;
-              border-bottom: 1px solid rgba(157, 78, 221, 0.3);
-              flex-shrink: 0;
-              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            /* Progress trail sticky at very top - OVERRIDE OTHER STYLES */
+            .remix-tree .progress-trail {
+              position: sticky !important;
+              top: 0 !important;
+              z-index: 1000 !important;
+              background: rgba(0, 0, 0, 0.95) !important;
+              backdrop-filter: blur(20px) !important;
+              margin: 0 !important;
+              margin-bottom: 0 !important;
+              padding: 15px 20px !important;
+              border-bottom: 1px solid rgba(157, 78, 221, 0.3) !important;
+              flex-shrink: 0 !important;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
             }
             
-            /* Swipe container fills remaining space */
-            .swipe-container {
-              flex: 1;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              height: calc(100vh - 80px); /* Subtract progress trail height */
+            /* Swipe container fills remaining space - OVERRIDE OTHER STYLES */
+            .remix-tree .swipe-container {
+              flex: 1 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              height: calc(100vh - 80px) !important; /* Subtract progress trail height */
+              cursor: grab !important;
+            }
+            
+            .remix-tree .swipe-container:active {
+              cursor: grabbing !important;
             }
             
             /* Columns wrapper fills container height */
-            .columns-wrapper {
-              height: 100%;
+            .remix-tree .columns-wrapper {
+              height: 100% !important;
+              display: flex !important;
+              width: 100% !important;
+              will-change: transform !important;
             }
             
-            /* Mobile columns fill full height with scroll */
-            .mobile-column {
-              height: 100%;
-              overflow-y: auto;
-              overflow-x: hidden;
-              padding: 0;
-              -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+            /* Mobile columns fill full height with scroll - OVERRIDE OTHER STYLES */
+            .remix-tree .mobile-column {
+              height: 100% !important;
+              overflow-y: auto !important;
+              overflow-x: hidden !important;
+              padding: 0 !important;
+              -webkit-overflow-scrolling: touch !important; /* Smooth iOS scrolling */
+              flex: 0 0 100% !important;
+              width: 100% !important;
             }
             
             /* Column content with proper spacing */
-            .column-content {
-              min-height: 100%;
-              padding: 30px 15px;
-              display: flex;
-              flex-direction: column;
-              gap: 30px;
-              align-items: center;
+            .remix-tree .column-content {
+              min-height: 100% !important;
+              padding: 30px 15px !important;
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 30px !important;
+              align-items: center !important;
             }
             
             /* Completely remove swipe hints */
-            .swipe-hints {
+            .remix-tree .swipe-hints {
               display: none !important;
             }
             
             /* Stats moved to be part of column content */
             .remix-tree .stats-container {
-              order: -1; /* Show stats at top of first column */
-              margin-bottom: 20px;
-              width: 100%;
-              max-width: 350px;
+              order: -1 !important; /* Show stats at top of first column */
+              margin-bottom: 20px !important;
+              width: 100% !important;
+              max-width: 350px !important;
             }
           }
 
