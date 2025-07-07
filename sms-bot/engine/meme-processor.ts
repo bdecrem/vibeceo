@@ -18,7 +18,7 @@
 
 import { OpenAI } from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { OPENAI_API_KEY } from './shared/config.js';
+import { OPENAI_API_KEY, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
@@ -305,6 +305,9 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
 function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string): string {
     const { topText, bottomText, theme } = memeContent;
     
+    // Use API endpoint URL pattern (like regular WTAF apps) - will be replaced with actual Supabase Storage URL
+    const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=MEME_PLACEHOLDER`;
+    
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -313,7 +316,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     <title>WTAF – Delusional App Generator</title>
     <meta property="og:title" content="WTAF by AF" />
     <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
-    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image" content="${ogImageUrl}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:url" content="https://wtaf.me/${userSlug}/meme-${topText.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${bottomText.toLowerCase().replace(/[^a-z0-9]/g, '-')}" />

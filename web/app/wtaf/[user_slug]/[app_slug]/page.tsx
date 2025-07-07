@@ -81,8 +81,25 @@ export async function generateMetadata({ params }: PageProps) {
 			.eq("status", "published")
 			.single();
 
-		// Generate the OG image URL using our cached system
-		const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.wtaf.me'}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`;
+		// Try to use the actual Supabase Storage URL (like our backend fix)
+		const actualImageUrl = `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${user_slug}-${app_slug}.png`;
+		
+		// Fallback to API endpoint if direct URL doesn't exist
+		const apiEndpointUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.wtaf.me'}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`;
+		
+		// Check if the actual image exists in Supabase Storage
+		let ogImageUrl = actualImageUrl;
+		try {
+			const response = await fetch(actualImageUrl, { method: 'HEAD' });
+			if (!response.ok) {
+				// If image doesn't exist, use API endpoint as fallback
+				ogImageUrl = apiEndpointUrl;
+			}
+		} catch (error) {
+			// If fetch fails, use API endpoint as fallback
+			ogImageUrl = apiEndpointUrl;
+		}
+		
 		const pageUrl = `https://www.wtaf.me/wtaf/${user_slug}/${app_slug}`;
 		
 		// Use consistent branding title instead of user prompt

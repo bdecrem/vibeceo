@@ -83,9 +83,13 @@ export async function updateOGImageInHTML(userSlug: string, appSlug: string, act
             return false;
         }
         
-        // Replace API endpoint URL with actual image URL
+        // Replace API endpoint URL with actual image URL (handle both regular apps and meme placeholders)
         const apiEndpointUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
-        const updatedHTML = currentData.html_content.replace(apiEndpointUrl, actualImageUrl);
+        const memeePlaceholderUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=MEME_PLACEHOLDER`;
+        
+        let updatedHTML = currentData.html_content.replace(apiEndpointUrl, actualImageUrl);
+        // Also handle meme placeholders (for meme apps)
+        updatedHTML = updatedHTML.replace(memeePlaceholderUrl, actualImageUrl);
         
         // Update the database with corrected HTML
         const { error: updateError } = await getSupabaseClient()
