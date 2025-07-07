@@ -1479,71 +1479,67 @@ export default function RemixTreePage() {
               font-size: 0.9rem;
             }
             
-            /* MOBILE FIXES - Remove bottom blocking element */
+            /* MOBILE REMIX-TREE SPECIFIC LAYOUT */
             body {
               height: 100vh;
-              overflow-x: hidden;
-              overflow-y: auto;
+              overflow: hidden; /* Prevent body scroll */
             }
             
             main {
-              height: 100%;
+              height: 100vh;
+              display: flex;
+              flex-direction: column;
               padding: 0;
               margin: 0;
-            }
-            
-            /* Compact hero section */
-            .tree-hero {
-              position: relative;
-              margin-bottom: 10px;
-              padding: 15px;
-            }
-            
-            .hero-content {
-              position: static;
-              transform: none;
-              max-width: none;
-              margin: 0;
-              padding: 20px;
-            }
-            
-            /* Make remix-tree section fill remaining viewport */
-            .remix-tree {
-              height: calc(100vh - 200px); /* Subtract approximate header+hero height */
-              margin-bottom: 0;
-              padding: 0;
               overflow: hidden;
             }
             
-            /* Mobile container takes full available height */
-            .mobile-tree-container {
-              height: 100%;
+            /* Hide hero section completely on mobile remix-tree */
+            .tree-hero {
+              display: none;
+            }
+            
+            /* Remix-tree takes full viewport height */
+            .remix-tree {
+              height: 100vh;
               margin: 0;
               padding: 0;
+              overflow: hidden;
               display: flex;
               flex-direction: column;
             }
             
-            /* Progress trail at top */
+            /* Mobile container fills full height */
+            .mobile-tree-container {
+              height: 100vh;
+              margin: 0;
+              padding: 0;
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+            }
+            
+            /* Progress trail sticky at very top */
             .progress-trail {
               position: sticky;
               top: 0;
-              z-index: 100;
-              background: rgba(0, 0, 0, 0.8);
+              z-index: 1000;
+              background: rgba(0, 0, 0, 0.95);
               backdrop-filter: blur(20px);
               margin: 0;
               padding: 15px 20px;
-              border-bottom: 1px solid rgba(157, 78, 221, 0.2);
+              border-bottom: 1px solid rgba(157, 78, 221, 0.3);
               flex-shrink: 0;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             }
             
             /* Swipe container fills remaining space */
             .swipe-container {
-              height: 100%;
               flex: 1;
               margin: 0;
               padding: 0;
               overflow: hidden;
+              height: calc(100vh - 80px); /* Subtract progress trail height */
             }
             
             /* Columns wrapper fills container height */
@@ -1551,17 +1547,19 @@ export default function RemixTreePage() {
               height: 100%;
             }
             
-            /* Mobile columns fill full height */
+            /* Mobile columns fill full height with scroll */
             .mobile-column {
               height: 100%;
               overflow-y: auto;
-              padding: 0 10px;
+              overflow-x: hidden;
+              padding: 0;
+              -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
             }
             
             /* Column content with proper spacing */
             .column-content {
               min-height: 100%;
-              padding: 20px 0;
+              padding: 30px 15px;
               display: flex;
               flex-direction: column;
               gap: 30px;
@@ -1571,6 +1569,14 @@ export default function RemixTreePage() {
             /* Completely remove swipe hints */
             .swipe-hints {
               display: none !important;
+            }
+            
+            /* Stats moved to be part of column content */
+            .remix-tree .stats-container {
+              order: -1; /* Show stats at top of first column */
+              margin-bottom: 20px;
+              width: 100%;
+              max-width: 350px;
             }
           }
 
@@ -1744,7 +1750,6 @@ export default function RemixTreePage() {
             width: 100%;
             height: 100%;
             overflow-y: auto;
-            padding: 0 20px;
           }
 
           .column-content {
