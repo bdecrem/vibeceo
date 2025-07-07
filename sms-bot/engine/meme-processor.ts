@@ -17,8 +17,16 @@
  */
 
 import { OpenAI } from 'openai';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { OPENAI_API_KEY } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize OpenAI client with lazy loading
 let openaiClient: OpenAI | null = null;
@@ -60,6 +68,15 @@ async function generateMemeContent(userIdea: string, config: MemeConfig): Promis
     try {
         logWithTimestamp(`🎨 Generating meme content for: ${userIdea.slice(0, 50)}...`);
         
+        let nostalgiaPrompt = '';
+        try {
+            nostalgiaPrompt = await readFile(join(__dirname, '../content/nostalgia-meme-builder.txt'), 'utf-8');
+            logSuccess('📖 Loaded nostalgia-meme-builder.txt successfully');
+        } catch (error) {
+            logError(`Failed to load nostalgia-meme-builder.txt: ${error instanceof Error ? error.message : String(error)}`);
+            // Continue without nostalgia prompt
+        }
+        
         const systemPrompt = `You are a meme content generator. Given a meme idea, generate:
 1. Top text (short, punchy, usually setup)
 2. Bottom text (short, punchy, usually punchline)
@@ -81,12 +98,19 @@ Respond in JSON format:
   "imagePrompt": "A stressed programmer sitting at a cluttered desk with multiple monitors, looking exhausted and frustrated, dark room lit only by screen glow, realistic photo style"
 }`;
 
+        const messages: ChatCompletionMessageParam[] = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Generate meme content for: ${userIdea}` }
+        ];
+        
+        // Add nostalgia prompt if successfully loaded
+        if (nostalgiaPrompt) {
+            messages.unshift({ role: 'system', content: nostalgiaPrompt });
+        }
+        
         const response = await getOpenAIClient().chat.completions.create({
             model: config.model,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Generate meme content for: ${userIdea}` }
-            ],
+            messages,
             temperature: config.temperature,
             max_tokens: config.maxTokens
         });
@@ -186,10 +210,13 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         .meme-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 0, 128, 0.3);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             overflow: hidden;
             transition: transform 0.3s ease;
         }
@@ -198,11 +225,22 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             transform: scale(1.02);
         }
         
+        .meme-image-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
         .meme-image {
             width: 100%;
-            height: 400px;
+            height: auto;
+            min-height: 500px;
+            max-height: 80vh;
             object-fit: cover;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             position: relative;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
         }
         
         .meme-text {
@@ -212,51 +250,130 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             color: white;
             font-weight: 900;
             text-shadow: 3px 3px 0px black, -3px -3px 0px black, 3px -3px 0px black, -3px 3px 0px black;
-            font-size: clamp(24px, 5vw, 36px);
+            font-size: clamp(28px, 6vw, 48px);
             line-height: 1.1;
             padding: 0 20px;
             letter-spacing: 1px;
         }
         
         .top-text {
-            top: 20px;
+            top: 25px;
         }
         
         .bottom-text {
-            bottom: 20px;
+            bottom: 25px;
         }
         
-        .meme-info {
-            padding: 30px;
-            text-align: center;
-            background: white;
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         
-        .meme-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .meme-creator {
-            color: #666;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        
-        .wtaf-branding {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #eee;
-            color: #999;
-            font-size: 14px;
-        }
-        
-        .wtaf-branding a {
-            color: #667eea;
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 35px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000000;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow:
+                0 8px 25px rgba(255, 0, 255, 0.3),
+                0 0 20px rgba(255, 0, 255, 0.2);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
             text-decoration: none;
-            font-weight: bold;
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow:
+                0 15px 35px rgba(255, 0, 255, 0.4),
+                0 0 30px rgba(255, 0, 255, 0.3);
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .copy-url-btn {
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+        }
+        
+        .download-btn {
+            background: linear-gradient(45deg, #ff00ff, #ff0080);
+        }
+        
+        .btn-icon {
+            font-size: 1.3rem;
+        }
+        
+        .btn-text {
+            font-weight: 700;
+        }
+        
+        .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000000;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+                0 8px 25px rgba(255, 0, 255, 0.3),
+                0 0 20px rgba(255, 0, 255, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .copied-checkmark {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #000000;
+        }
+
+        @keyframes slideInFade {
+            0% {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+            20% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            80% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100px);
+                opacity: 0;
+            }
         }
         
         .floating-emoji {
@@ -280,44 +397,264 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         @media (max-width: 768px) {
             .meme-container {
                 margin: 10px;
+                padding: 20px;
+                max-width: 100%;
+            }
+            
+            .meme-image {
+                min-height: 400px;
+                max-height: 70vh;
             }
             
             .meme-text {
-                font-size: clamp(20px, 4vw, 28px);
+                font-size: clamp(22px, 5vw, 32px);
                 padding: 0 15px;
             }
             
-            .meme-info {
-                padding: 20px;
+            .action-buttons {
+                gap: 15px;
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                padding: 15px 25px;
+                font-size: 1rem;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .copied-notification {
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .meme-container {
+                padding: 15px;
+            }
+            
+            .meme-image {
+                min-height: 350px;
+            }
+            
+            .meme-text {
+                font-size: clamp(18px, 4vw, 28px);
+            }
+            
+            .action-btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .btn-icon {
+                font-size: 1.1rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Hidden canvas for image processing -->
+    <canvas id="imageCanvas" style="display: none;"></canvas>
+
+    <!-- Copied Notification -->
+    <div id="copiedNotification" class="copied-notification" style="display: none;">
+        <span id="copiedText" class="copied-text"></span>
+        <span class="copied-checkmark">✓</span>
+    </div>
+
     <div class="floating-emoji emoji-1">😂</div>
     <div class="floating-emoji emoji-2">🔥</div>
     <div class="floating-emoji emoji-3">💻</div>
     <div class="floating-emoji emoji-4">🎨</div>
     
     <div class="meme-container">
-        <div style="position: relative;">
-            <img src="${imageUrl}" alt="${theme}" class="meme-image">
+        <div class="meme-image-wrapper">
+            <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
             <div class="meme-text top-text">${topText}</div>
             <div class="meme-text bottom-text">${bottomText}</div>
         </div>
         
-        <div class="meme-info">
-            <div class="meme-title">${topText} ${bottomText}</div>
-            <div class="meme-creator">Created by ${userSlug}</div>
-            
-            <div class="wtaf-branding">
-                Generated with <a href="https://wtaf.me" target="_blank">WTAF</a> - The AI-powered meme generator
-                <br>Text START to +1-866-330-0015 to make your own memes!
-            </div>
+        <div class="action-buttons">
+            <button class="action-btn copy-url-btn" onclick="handleCopyUrl()">
+                <span class="btn-icon">🔗</span>
+                <span class="btn-text">COPY URL</span>
+            </button>
+            <button class="action-btn download-btn" onclick="handleDownload()" id="downloadBtn">
+                <span class="btn-icon" id="downloadIcon">📱</span>
+                <span class="btn-text" id="downloadText">SAVE TO DEVICE</span>
+            </button>
         </div>
     </div>
     
     <script>
+        let isDownloading = false;
+
+        // Handle image loading errors
+        document.addEventListener('DOMContentLoaded', function() {
+            const memeImage = document.getElementById('memeImage');
+            
+            memeImage.addEventListener('error', function() {
+                console.log('Image failed to load, using fallback background');
+                // Hide the broken image and show background gradient
+                memeImage.style.display = 'none';
+                document.querySelector('.meme-image-wrapper').style.background = 'linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%)';
+                document.querySelector('.meme-image-wrapper').style.minHeight = '500px';
+                document.querySelector('.meme-image-wrapper').style.borderRadius = '15px';
+                document.querySelector('.meme-image-wrapper').style.border = '2px solid rgba(255, 255, 255, 0.3)';
+            });
+            
+            memeImage.addEventListener('load', function() {
+                console.log('Image loaded successfully');
+            });
+        });
+
+        function showCopiedNotification(text) {
+            const notification = document.getElementById('copiedNotification');
+            const textElement = document.getElementById('copiedText');
+            textElement.textContent = text;
+            notification.style.display = 'flex';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                return false;
+            }
+        }
+
+        async function handleCopyUrl() {
+            const memeUrl = window.location.href;
+            const success = await copyToClipboard(memeUrl);
+            if (success) {
+                showCopiedNotification('Meme URL copied!');
+            }
+        }
+
+        async function handleDownload() {
+            if (isDownloading) return;
+            
+            isDownloading = true;
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadIcon = document.getElementById('downloadIcon');
+            const downloadText = document.getElementById('downloadText');
+            
+            downloadBtn.disabled = true;
+            downloadIcon.textContent = '⏳';
+            downloadText.textContent = 'SAVING...';
+
+            try {
+                const canvas = document.getElementById('imageCanvas');
+                const ctx = canvas.getContext('2d');
+                const img = document.querySelector('.meme-image');
+
+                const tempImg = new Image();
+                // Remove crossorigin for better compatibility
+                // tempImg.crossOrigin = 'anonymous';
+
+                tempImg.onload = async () => {
+                    canvas.width = tempImg.width;
+                    canvas.height = tempImg.height;
+                    ctx.drawImage(tempImg, 0, 0);
+
+                    canvas.toBlob(
+                        async (blob) => {
+                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+                            if (isMobile) {
+                                // Try Web Share API first for mobile
+                                if (navigator.share && navigator.canShare) {
+                                    try {
+                                        const file = new File([blob], 'wtaf-meme.png', {
+                                            type: 'image/png',
+                                            lastModified: Date.now(),
+                                        });
+
+                                        if (navigator.canShare({ files: [file] })) {
+                                            await navigator.share({
+                                                title: 'WTAF Meme: ${topText} ${bottomText}',
+                                                text: 'Check out this meme from WTAF!',
+                                                files: [file],
+                                            });
+                                            showCopiedNotification('Shared! Choose Save to Photos to add to camera roll');
+                                            resetDownloadButton();
+                                            return;
+                                        }
+                                    } catch (shareError) {
+                                        console.log('Web Share API failed, trying download');
+                                    }
+                                }
+
+                                // Fallback to download
+                                fallbackDownload(blob);
+                                
+                                if (isIOS) {
+                                    showCopiedNotification('Downloaded! Tap and hold the image in Downloads, then Save to Photos');
+                                } else {
+                                    showCopiedNotification('Downloaded! Check your Downloads folder or Gallery');
+                                }
+                            } else {
+                                // Desktop download
+                                fallbackDownload(blob);
+                                showCopiedNotification('Downloaded to device!');
+                            }
+
+                            resetDownloadButton();
+                        },
+                        'image/png',
+                        1.0
+                    );
+                };
+
+                tempImg.onerror = () => {
+                    console.error('Failed to load image');
+                    const link = document.createElement('a');
+                    link.href = img.src;
+                    link.download = 'wtaf-meme.png';
+                    link.click();
+                    showCopiedNotification('Download started');
+                    resetDownloadButton();
+                };
+
+                tempImg.src = img.src;
+            } catch (error) {
+                console.error('Download failed:', error);
+                showCopiedNotification('Download failed. Try again.');
+                resetDownloadButton();
+            }
+        }
+
+        function fallbackDownload(blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'wtaf-meme.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetDownloadButton() {
+            isDownloading = false;
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadIcon = document.getElementById('downloadIcon');
+            const downloadText = document.getElementById('downloadText');
+            
+            downloadBtn.disabled = false;
+            downloadIcon.textContent = '📱';
+            downloadText.textContent = 'SAVE TO DEVICE';
+        }
+
         // Add some interactive sparkle effects
         document.addEventListener('mousemove', function(e) {
             const sparkle = document.createElement('div');
