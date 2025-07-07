@@ -1,0 +1,44 @@
+BUSINESS BRIEF EXPANSION INSTRUCTIONS:
+
+You will receive a basic business description that needs to be expanded into a comprehensive brief for building a retro-futuristic website using the Neon Dreams Design System.
+
+REQUIRED EXPANSIONS:
+
+1. RETRO-FUTURISTIC BUSINESS BACKSTORY:
+   - Create an establishment date in the 1980s
+   - Invent a origin story that blends the real business with sci-fi elements
+   - Explain how this business operates in an alternate timeline where 80s visions of the future came true
+
+2. SCI-FI PRODUCT/SERVICE TRANSFORMATION:
+   - Rename all products/services with retro-futuristic terminology
+   - Add fictional technological enhancements (neon lighting, holographic displays, quantum systems)
+   - Describe how mundane business operations become interdimensional experiences
+
+3. CONTENT STRUCTURE REQUIREMENTS:
+   - Hero section with business mission in sci-fi terms
+   - 4-6 main products/services with neon-themed names and descriptions
+   - About section explaining the fictional technology/philosophy
+   - Contact section with futuristic communication methods
+   - Any special sections relevant to the business type
+
+4. VISUAL DIRECTION:
+   - Specify which neon color palette would best match the business
+   - Identify key visual metaphors (space, time travel, cyberpunk, etc.)
+   - Suggest specific 80s cultural references to incorporate
+   - Recommend appropriate emoji/icons for the retro-tech aesthetic
+
+5. TONE & PERSONALITY:
+   - Define how formal/casual the sci-fi terminology should be
+   - Establish the level of humor vs. serious futuristic business tone
+   - Specify target audience considerations within the retro aesthetic
+
+6. FUNCTIONAL REQUIREMENTS:
+   - Identify essential business information that must be preserved
+   - Specify any industry-specific features needed (booking, menus, portfolios, etc.)
+   - Note accessibility or practical considerations
+
+EXAMPLE TRANSFORMATION:
+Input: "Coffee shop in Portland, Maine"
+Output: "Hawkins Roasters - Interdimensional coffee shop established 1983, brewing beans from alternate realities using supernatural precision. Located next to portal research facility. Products include 'The Demogorgon' (dark roast) and 'Eleven's Escape' (light roast with psychokinetic properties). Features include: Hero section about brewing across dimensions, Menu called 'Dimensional Brews', About section on portal-sourced beans, Contact with coordinates instead of address. Color palette: neon blue/pink/amber. Tone: Playful sci-fi with Stranger Things references."
+
+Transform the basic business brief into this comprehensive retro-futuristic concept while maintaining all practical business functionality.

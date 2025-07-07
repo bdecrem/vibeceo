@@ -286,7 +286,7 @@ class Worker {
         const requestInfo = determineRequestType(fileData.userPrompt, task.processingPath);
 
         // Import processing functions dynamically to avoid circular dependencies
-        const { processWtafRequest, processEditRequest, processRemixRequest } = await import('./controller.js');
+        const { processWtafRequest, processEditRequest, processRemixRequest, processMemeRequest } = await import('./controller.js');
 
         // Process based on request type
         if (requestInfo.type === 'wtaf' || requestInfo.type === 'code') {
@@ -295,6 +295,8 @@ class Worker {
             await processEditRequest(task.processingPath, fileData, requestInfo);
         } else if (requestInfo.type === 'remix') {
             await processRemixRequest(task.processingPath, fileData, requestInfo);
+        } else if (requestInfo.type === 'meme') {
+            await processMemeRequest(task.processingPath, fileData, requestInfo);
         } else {
             throw new Error(`Unknown request type: ${requestInfo.type}`);
         }

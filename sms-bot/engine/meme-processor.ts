@@ -397,8 +397,8 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
 function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string): string {
     const { topText, bottomText, theme } = memeContent;
     
-    // Use API endpoint URL pattern (like regular WTAF apps) - will be replaced with actual Supabase Storage URL
-    const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=MEME_PLACEHOLDER`;
+    // Use the actual meme image URL for OpenGraph (it's already uploaded to Supabase Storage)
+    const ogImageUrl = imageUrl;
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -955,21 +955,18 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate composite meme image" };
         }
 
-        // Step 4: Upload composite meme image to Supabase Storage
-        const supabaseUrl = await uploadToSupabaseStorage(await downloadImageFromURL(compositeImageUrl), `meme-${userSlug}-${Date.now()}.png`);
-
-        // Step 5: Generate HTML page
-        const html = generateMemeHTML(memeContent, supabaseUrl, userSlug, supabaseUrl);
+        // Step 4: Generate HTML page (compositeImageUrl is already uploaded to Supabase Storage)
+        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug, compositeImageUrl);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${supabaseUrl}`);
+        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl: supabaseUrl,
+            imageUrl: compositeImageUrl,
             memeContent
         };
 

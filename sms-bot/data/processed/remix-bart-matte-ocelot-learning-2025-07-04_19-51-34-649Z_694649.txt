@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix matte-ocelot-learning have it say 3rd Gen as the title
+
+ORIGINAL_REQUEST:REMIX matte-ocelot-learning have it say 3rd Gen as the title

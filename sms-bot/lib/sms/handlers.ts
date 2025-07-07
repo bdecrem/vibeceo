@@ -1732,6 +1732,89 @@ ${response}`;
       }
     }
 
+    // Handle MEME command
+    if (message.match(/^MEME(?:\s|$)/i)) {
+      console.log(`Processing MEME command from ${from}`);
+      
+      try {
+        // Check user role for MEME command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted MEME command without coder/degen privileges`);
+          // Silent ignore - don't reveal command to non-coder/degen users
+          return;
+        }
+        
+        // Get or create user slug
+        const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
+        
+        // Check if user just typed "MEME" alone
+        const memeMatch = message.match(/^MEME\s*$/i);
+        if (memeMatch) {
+          const response = `🎨 MEME generator ready!
+
+Try stuff like:
+→ meme when you code for 8 hours and forget to save
+→ meme debugging all day and fixing it in one line
+
+We'll turn your meme ideas into actual memes with images and text overlay.`;
+          
+          await sendSmsResponse(
+            from,
+            response,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Extract content after MEME
+        const memePrefix = message.match(/^MEME[\s:]+/i)?.[0] || 'MEME ';
+        const memeContent = message.substring(memePrefix.length).trim();
+        
+        if (!memeContent) {
+          await sendSmsResponse(
+            from,
+            `❌ MEME: Please provide a meme idea after MEME command.\nExamples:\nMEME when you code for 8 hours and forget to save\nMEME debugging all day and fixing it in one line`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Create filename with microsecond precision timestamp for chronological processing
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
+        const filename = `meme-request-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'memes', filename);
+        
+        // Ensure data/memes directory exists for TypeScript engine
+        const memesDir = path.join(process.cwd(), 'data', 'memes');
+        if (!fs.existsSync(memesDir)) {
+          fs.mkdirSync(memesDir, { recursive: true });
+        }
+        
+        // Save content for TypeScript engine processing with user slug info
+        const fileContent = `SENDER:${from}\nUSER_SLUG:${userSlug}\n${memeContent}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        await sendSmsResponse(
+          from,
+          `🎨 Generating your meme... You'll get a link in about 30 seconds!`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) saved MEME request for processing: ${memeContent.substring(0, 100)}${memeContent.length > 100 ? '...' : ''}`);
+        return;
+      } catch (error) {
+        console.error(`Error processing MEME command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ MEME: Failed to save request - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Handle CODE command (original functionality)
     if (message.match(/^CODE[\s:-]/i)) {
       const command = 'CODE';
@@ -1846,8 +1929,8 @@ ${response}`;
     }
 
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -1879,7 +1962,7 @@ ${response}`;
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
       const hasDegen = subscriber && subscriber.role === 'degen';
       if (hasDegen) {
-        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n\nExample: EDIT 2 change the background to blue';
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n\nExample: EDIT 2 change the background to blue\nExample: MEME when you code for 8 hours and forget to save';
         
         helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n\nExample: --stackdb my-form build me a live dashboard';
       }

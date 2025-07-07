@@ -1,0 +1,22 @@
+Generate a sharp, punchy meme with maximum relatability. Output format:
+TOP_TEXT: [meme text in ALL CAPS - keep it SHORT and PUNCHY]
+BOTTOM_TEXT: [meme text in ALL CAPS - deliver the PUNCHLINE]  
+DALL_E_PROMPT: [specific visual prompt]
+
+For DALL-E prompt, use this exact structure:
+"POV shot of [person] with [specific emotion/reaction], [scene description], natural lighting, authentic candid moment, casual unposed expression, realistic [setting]"
+
+For [person], randomly select from:
+- person
+- young person
+- adult
+- someone
+- individual
+
+(Let DALL-E naturally randomize appearance without specifying demographics)
+
+Key requirements:
+- Start with "POV shot of"
+- Focus on STRONG EMOTIONS: "look of pure panic," "dead-eyed stare," "trying not to cry," "frozen in horror," "pretending everything's fine"
+- Keep text TIGHT - maximum impact, minimum words
+- Make it HURT (relatably)

@@ -1,0 +1,50 @@
+MEME BRIEF EXPANSION INSTRUCTIONS:
+
+You will receive a basic meme concept that needs to be expanded into a comprehensive brief for creating a retro-futuristic meme using the Neon Dreams aesthetic.
+
+REQUIRED EXPANSIONS:
+
+1. RETRO-FUTURISTIC SCENARIO TRANSFORMATION:
+   - Convert the relatable situation into 80s sci-fi terminology
+   - Add references to interdimensional concepts, time travel, or advanced technology
+   - Frame modern problems as retro-tech malfunctions or system errors
+
+2. STRANGER THINGS / 80S SCI-FI INTEGRATION:
+   - Incorporate subtle references to Stranger Things, cyberpunk, or synthwave culture
+   - Use terminology like "Upside Down," "Mind Flayer," "temporal anomalies," "quantum," "neural networks"
+   - Reference 80s technology: CRT monitors, terminals, synthesizers, neon lighting
+
+3. VISUAL COMPOSITION SPECIFICATION:
+   - Describe the image setup in retro-futuristic terms
+   - Specify neon color palette (3-4 colors max)
+   - Detail the lighting, background, and tech elements needed
+   - Include specific 80s visual references (computer terminals, neon signs, etc.)
+
+4. TEXT OVERLAY DESIGN:
+   - Top text: Setup line in sci-fi terminology
+   - Bottom text: Punchline maintaining the aesthetic
+   - Specify font treatment (neon glow, glitch effects, chromatic aberration)
+   - Include text positioning and visual hierarchy
+
+5. AESTHETIC DETAILS:
+   - VHS scanlines and grain overlay specifications
+   - Neon glow and border effects
+   - Color temperature and contrast requirements
+   - Glitch/distortion effects to include
+
+6. CULTURAL REFERENCES:
+   - Specific 80s touchstones to reference
+   - Synthwave or cyberpunk visual cues
+   - Retro-tech elements (terminals, keyboards, displays)
+
+EXAMPLE TRANSFORMATION:
+Input: "When it's Monday and you forgot your coffee"
+Output: "MEME CONCEPT: Person slumped over retro computer terminal in neon-lit room
+- SCENARIO: 'When the temporal reset cycle initiates and you forgot to activate your caffeine protocol'
+- VISUAL: Dark room with purple/cyan lighting, CRT monitors, person in 80s business attire slumped over keyboard
+- TEXT: Top: 'WHEN THE WEEKLY SYSTEM REBOOT INITIALIZES' Bottom: 'AND YOU FORGOT TO ACTIVATE CAFFEINE.EXE'
+- COLORS: Deep purple background, neon cyan highlights, hot pink accent lighting
+- EFFECTS: VHS scanlines, terminal glow, chromatic aberration on text
+- REFERENCES: Stranger Things lab aesthetic, retro computer terminals, synthwave color palette"
+
+Transform the basic meme concept into this comprehensive retro-futuristic visual brief while maintaining the relatable humor through the 80s sci-fi lens.

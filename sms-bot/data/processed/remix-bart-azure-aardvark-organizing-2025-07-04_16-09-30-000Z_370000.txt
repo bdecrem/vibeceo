@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix azure-aardvark-organizing Bart, extra spicy.
+
+ORIGINAL_REQUEST:REMIX azure-aardvark-organizing Bart, extra spicy.

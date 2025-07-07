@@ -134,6 +134,9 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "stackemail-send":
                 message = "📧 Failed to send stackemail. Try again in a few minutes.";
                 break;
+            case "meme-generation":
+                message = "🎨 Meme creation failed. Try a different meme idea or try again in a few minutes.";
+                break;
             default:
                 message = "🤷 That broke. Database hiccup. Try a different WTAF?";
                 break;

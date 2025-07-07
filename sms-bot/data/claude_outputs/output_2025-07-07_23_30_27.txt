@@ -1,0 +1,126 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Open Graph Test Tags -->
+    <meta property="og:title" content="🔥 WTAF Open Graph Test Page 🔥" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://wtaf.party/og-test" />
+    <meta property="og:image" content="https://wtaf.party/images/og-image.jpg" />
+    <meta property="og:description" content="Testing our social graph swagger in the digital void" />
+
+    <title>OG Test Page</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 1;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glitch 3s infinite;
+        }
+
+        .status {
+            font-size: 1.5rem;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .test-button {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: #FF2E93;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .test-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OG TEST LAB</h1>
+        <div class="status">
+            Open Graph Tags: ACTIVE<br>
+            Social Graph: READY TO RIOT
+        </div>
+        <button class="test-button" onclick="testShare()">Test Share 🚀</button>
+    </div>
+
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">🔥</div>
+    <div class="floating-emoji" style="top: 70%; left: 80%;" data-value="4">⚡</div>
+    <div class="floating-emoji" style="top: 40%; left: 20%;" data-value="2">💀</div>
+    <div class="floating-emoji" style="top: 20%; left: 70%;" data-value="5">🌀</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        function testShare() {
+            alert('🎉 Ready to be shared! Open Graph tags are locked and loaded!');
+        }
+
+        // Easter egg
+        let konami = '';
+        document.addEventListener('keydown', (e) => {
+            konami += e.key;
+            if(konami.includes('wtaf')) {
+                document.body.style.animation = 'glitch 0.3s infinite';
+                setTimeout(() => document.body.style.animation = '', 1000);
+                konami = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

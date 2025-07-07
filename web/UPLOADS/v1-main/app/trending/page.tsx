@@ -3,6 +3,10 @@
 import { useState } from "react"
 
 export default function TrendingPage() {
+  const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
+  const [currentPage, setCurrentPage] = useState(1)
+  const appsPerPage = 6
+
   const apps = [
     {
       id: 1,
@@ -11,6 +15,7 @@ export default function TrendingPage() {
       prompt: "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF",
       creator: "alex",
       remixes: 247,
+      name: "alex-blog",
     },
     {
       id: 2,
@@ -19,6 +24,7 @@ export default function TrendingPage() {
       prompt: "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin",
       creator: "bart",
       remixes: 189,
+      name: "berghain-party",
     },
     {
       id: 3,
@@ -27,6 +33,7 @@ export default function TrendingPage() {
       prompt: "wtaf make a pong-style browser game",
       creator: "zoe",
       remixes: 156,
+      name: "pong-game",
     },
     {
       id: 4,
@@ -35,6 +42,7 @@ export default function TrendingPage() {
       prompt: "wtaf -Alex- create a minimalist blog with dark mode for announcing product launches",
       creator: "alex",
       remixes: 134,
+      name: "alex-blog-variant",
     },
     {
       id: 5,
@@ -43,6 +51,7 @@ export default function TrendingPage() {
       prompt: "wtaf build a sleek event registration system with admin dashboard for underground parties",
       creator: "kai",
       remixes: 98,
+      name: "event-signup",
     },
     {
       id: 6,
@@ -51,6 +60,7 @@ export default function TrendingPage() {
       prompt: "wtaf create a nostalgic arcade-style game with neon aesthetics and high scores",
       creator: "nova",
       remixes: 87,
+      name: "retro-game",
     },
     {
       id: 7,
@@ -59,6 +69,7 @@ export default function TrendingPage() {
       prompt: "wtaf -Alex- design a personal blog with cyberpunk vibes and glitch effects",
       creator: "alex",
       remixes: 76,
+      name: "personal-blog",
     },
     {
       id: 8,
@@ -67,6 +78,7 @@ export default function TrendingPage() {
       prompt: "wtaf make a comprehensive club management app with guest lists and door control",
       creator: "raven",
       remixes: 65,
+      name: "club-management",
     },
     {
       id: 9,
@@ -75,6 +87,7 @@ export default function TrendingPage() {
       prompt: "wtaf build an addictive browser game with multiplayer capabilities and leaderboards",
       creator: "pixel",
       remixes: 54,
+      name: "browser-game",
     },
     {
       id: 10,
@@ -83,11 +96,10 @@ export default function TrendingPage() {
       prompt: "wtaf -Alex- create a content platform for tech announcements with social features",
       creator: "echo",
       remixes: 43,
+      name: "content-platform",
     },
   ]
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const appsPerPage = 6
   const totalPages = Math.ceil(apps.length / appsPerPage)
 
   // Get current apps for the page
@@ -101,22 +113,36 @@ export default function TrendingPage() {
     document.querySelector(".gallery-grid")?.scrollIntoView({ behavior: "smooth" })
   }
 
+  const showCopiedNotification = (text) => {
+    setCopiedNotification({ show: true, text })
+    setTimeout(() => {
+      setCopiedNotification({ show: false, text: "" })
+    }, 2000)
+  }
+
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
-      // Visual feedback will be handled by CSS animation
+      return true
     } catch (err) {
       console.error("Failed to copy text: ", err)
+      return false
     }
   }
 
-  const handlePromptClick = (e, prompt) => {
-    copyToClipboard(prompt)
-    // Add clicked class for animation
-    e.target.classList.add("clicked")
-    setTimeout(() => {
-      e.target.classList.remove("clicked")
-    }, 600)
+  const handlePromptClick = async (prompt) => {
+    const success = await copyToClipboard(prompt)
+    if (success) {
+      showCopiedNotification("Prompt copied!")
+    }
+  }
+
+  const handleRemixClick = async (app) => {
+    const appUrl = `${window.location.origin}/app/${app.name}-${app.id}`
+    const success = await copyToClipboard(appUrl)
+    if (success) {
+      showCopiedNotification("App URL copied!")
+    }
   }
 
   return (
@@ -135,6 +161,14 @@ export default function TrendingPage() {
         />
       </head>
       <body>
+        {/* Copied Notification */}
+        {copiedNotification.show && (
+          <div className="copied-notification">
+            <span className="copied-text">{copiedNotification.text}</span>
+            <span className="copied-checkmark">✓</span>
+          </div>
+        )}
+
         {/* Electric sparks */}
         <div className="sparks">
           <div className="spark"></div>
@@ -191,16 +225,18 @@ export default function TrendingPage() {
                         @{app.creator}
                       </a>
                     </div>
-                    <div className="remix-count">
+                    <a href={`/remix-tree/${app.id}`} className="remix-count remix-count-link">
                       <span className="remix-number">{app.remixes}</span>
                       <span className="remix-label">remixes</span>
-                    </div>
+                    </a>
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.prompt)}>
+                  <div className="prompt-showcase" onClick={() => handlePromptClick(app.prompt)}>
                     "{app.prompt}"
                   </div>
-                  <button className="remix-btn">REMIX</button>
+                  <button className="remix-btn" onClick={() => handleRemixClick(app)}>
+                    REMIX
+                  </button>
                 </div>
               </div>
             ))}
@@ -254,6 +290,58 @@ export default function TrendingPage() {
             overflow-x: hidden;
             min-height: 100vh;
             color: #ffffff;
+          }
+
+          .copied-notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #ff6600, #ff3366);
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 
+              0 8px 25px rgba(255, 102, 0, 0.3),
+              0 0 20px rgba(255, 102, 0, 0.2);
+            animation: slideInFade 2s ease-out;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          }
+
+          .copied-checkmark {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+
+          @keyframes slideInFade {
+            0% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
+            20% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            80% {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100px);
+              opacity: 0;
+            }
           }
 
           @keyframes gradientShift {
@@ -625,6 +713,28 @@ export default function TrendingPage() {
             gap: 4px;
           }
 
+          .remix-count-link {
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+          }
+
+          .remix-count-link:hover {
+            background: rgba(255, 51, 102, 0.1);
+            transform: translateY(-1px);
+          }
+
+          .remix-count-link:hover .remix-number {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 153, 0, 0.8);
+          }
+
+          .remix-count-link:hover .remix-label {
+            color: rgba(255, 255, 255, 0.8);
+          }
+
           .remix-number {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1.1rem;
@@ -677,26 +787,6 @@ export default function TrendingPage() {
             border-color: rgba(255, 51, 102, 0.5);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(255, 51, 102, 0.2);
-          }
-
-          .prompt-showcase.clicked {
-            animation: copyPulse 0.6s ease-out;
-          }
-
-          @keyframes copyPulse {
-            0% {
-              transform: scale(1);
-              background: rgba(255, 51, 102, 0.1);
-            }
-            50% {
-              transform: scale(1.02);
-              background: rgba(255, 51, 102, 0.3);
-              box-shadow: 0 0 30px rgba(255, 51, 102, 0.6);
-            }
-            100% {
-              transform: scale(1);
-              background: rgba(255, 51, 102, 0.1);
-            }
           }
 
           .remix-btn {
@@ -916,6 +1006,13 @@ export default function TrendingPage() {
               padding: 12px 25px;
               font-size: 0.8rem;
             }
+
+            .copied-notification {
+              top: 20px;
+              right: 20px;
+              padding: 12px 20px;
+              font-size: 0.9rem;
+            }
           }
 
           @media (max-width: 480px) {
@@ -954,6 +1051,13 @@ export default function TrendingPage() {
             .pagination-btn {
               padding: 10px 20px;
               font-size: 0.75rem;
+            }
+
+            .copied-notification {
+              top: 15px;
+              right: 15px;
+              padding: 10px 18px;
+              font-size: 0.8rem;
             }
           }
         `}</style>

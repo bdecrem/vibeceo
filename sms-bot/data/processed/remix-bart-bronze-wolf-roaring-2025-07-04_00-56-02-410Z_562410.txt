@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix bronze-wolf-roaring make it red
+
+ORIGINAL_REQUEST:REMIX bronze-wolf-roaring make it red

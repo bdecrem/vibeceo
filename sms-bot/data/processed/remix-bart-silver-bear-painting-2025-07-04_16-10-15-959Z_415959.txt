@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix silver-bear-painting change the ascii critter to a giraffe
+
+ORIGINAL_REQUEST:REMIX silver-bear-painting change the ascii critter to a giraffe
