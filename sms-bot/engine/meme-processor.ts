@@ -18,11 +18,12 @@
 
 import { OpenAI } from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { OPENAI_API_KEY, WEB_APP_URL } from './shared/config.js';
+import { OPENAI_API_KEY, WEB_APP_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,9 +41,89 @@ function getOpenAIClient(): OpenAI {
     return openaiClient;
 }
 
+// Initialize Supabase client with lazy loading  
+let supabaseClient: any = null;
+function getSupabaseClient() {
+    if (!supabaseClient) {
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+            throw new Error("SUPABASE_URL and SUPABASE_SERVICE_KEY not found in environment");
+        }
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    }
+    return supabaseClient;
+}
+
 // HTMLCSStoImage credentials
 const HTMLCSS_USER_ID = process.env.HTMLCSS_USER_ID!;
 const HTMLCSS_API_KEY = process.env.HTMLCSS_API_KEY!;
+
+/**
+ * Download image from HTMLCSStoImage URL
+ */
+async function downloadImageFromURL(imageUrl: string): Promise<ArrayBuffer> {
+    try {
+        logWithTimestamp(`📥 Downloading image from: ${imageUrl}`);
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to download image: ${response.status}`);
+        }
+        const imageBuffer = await response.arrayBuffer();
+        logSuccess(`✅ Downloaded image (${imageBuffer.byteLength} bytes)`);
+        return imageBuffer;
+    } catch (error) {
+        logError(`Failed to download image: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
+    }
+}
+
+/**
+ * Upload image to Supabase Storage og-images bucket
+ */
+async function uploadToSupabaseStorage(imageBuffer: ArrayBuffer, fileName: string): Promise<string> {
+    try {
+        logWithTimestamp(`📤 Uploading to Supabase Storage: ${fileName}`);
+        const supabase = getSupabaseClient();
+        
+        // Ensure bucket exists
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'og-images');
+        
+        if (!bucketExists) {
+            logWithTimestamp('📦 Creating og-images bucket...');
+            const { error: bucketError } = await supabase.storage.createBucket('og-images', {
+                public: true,
+                allowedMimeTypes: ['image/png', 'image/jpeg']
+            });
+            
+            if (bucketError) {
+                throw new Error(`Failed to create bucket: ${bucketError.message}`);
+            }
+        }
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('og-images')
+            .upload(fileName, imageBuffer, {
+                contentType: 'image/png',
+                upsert: true // Replace if exists
+            });
+
+        if (uploadError) {
+            throw new Error(`Supabase upload failed: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+            .from('og-images')
+            .getPublicUrl(fileName);
+
+        logSuccess(`✅ Uploaded to Supabase Storage: ${urlData.publicUrl}`);
+        return urlData.publicUrl;
+    } catch (error) {
+        logError(`Failed to upload to Supabase Storage: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
+    }
+}
 
 export interface MemeConfig {
     model: string;
@@ -291,7 +372,18 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         const data = await response.json();
         logSuccess(`✅ Generated composite meme image: ${data.url}`);
         
-        return data.url;
+        // Download the image and upload to Supabase Storage for reliable OpenGraph access
+        try {
+            const imageBuffer = await downloadImageFromURL(data.url);
+            const fileName = `meme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
+            const supabaseUrl = await uploadToSupabaseStorage(imageBuffer, fileName);
+            
+            logSuccess(`🎯 Meme image uploaded to Supabase Storage for OpenGraph: ${supabaseUrl}`);
+            return supabaseUrl;
+        } catch (uploadError) {
+            logWarning(`⚠️ Failed to upload to Supabase Storage, using HTMLCSStoImage URL: ${uploadError}`);
+            return data.url; // Fallback to original URL
+        }
 
     } catch (error) {
         logError(`Failed to generate composite meme image: ${error instanceof Error ? error.message : String(error)}`);
@@ -863,18 +955,21 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate composite meme image" };
         }
 
-        // Step 4: Generate HTML page
-        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug);
+        // Step 4: Upload composite meme image to Supabase Storage
+        const supabaseUrl = await uploadToSupabaseStorage(await downloadImageFromURL(compositeImageUrl), `meme-${userSlug}-${Date.now()}.png`);
+
+        // Step 5: Generate HTML page
+        const html = generateMemeHTML(memeContent, supabaseUrl, userSlug, supabaseUrl);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
+        logWithTimestamp(`🖼️ Image URL: ${supabaseUrl}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl: compositeImageUrl,
+            imageUrl: supabaseUrl,
             memeContent
         };
 
