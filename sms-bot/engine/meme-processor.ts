@@ -40,6 +40,10 @@ function getOpenAIClient(): OpenAI {
     return openaiClient;
 }
 
+// HTMLCSStoImage credentials
+const HTMLCSS_USER_ID = process.env.HTMLCSS_USER_ID!;
+const HTMLCSS_API_KEY = process.env.HTMLCSS_API_KEY!;
+
 export interface MemeConfig {
     model: string;
     maxTokens: number;
@@ -178,9 +182,127 @@ async function generateMemeImage(imagePrompt: string): Promise<string | null> {
 }
 
 /**
+ * Generate composite meme image with text burned in using HTMLCSStoImage
+ */
+async function generateCompositeMemeImage(backgroundImageUrl: string, memeContent: MemeContent): Promise<string | null> {
+    try {
+        logWithTimestamp(`🔥 Creating composite meme with embedded text...`);
+        
+        if (!HTMLCSS_USER_ID || !HTMLCSS_API_KEY) {
+            logError("HTMLCSStoImage credentials not found");
+            return backgroundImageUrl; // Fallback to original image
+        }
+
+        const { topText, bottomText } = memeContent;
+        
+        // Create HTML template for composite meme
+        const memeHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 1024px;
+            height: 1024px;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Impact', 'Arial Black', Arial, sans-serif;
+        }
+        
+        .meme-background {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .meme-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: 900;
+            text-shadow: 
+                3px 3px 0px black, 
+                -3px -3px 0px black, 
+                3px -3px 0px black, 
+                -3px 3px 0px black,
+                2px 2px 0px black,
+                -2px -2px 0px black,
+                2px -2px 0px black,
+                -2px 2px 0px black;
+            font-size: 72px;
+            line-height: 1.1;
+            padding: 0 40px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+        
+        .top-text {
+            top: 60px;
+        }
+        
+        .bottom-text {
+            bottom: 60px;
+        }
+    </style>
+</head>
+<body>
+    <img src="${backgroundImageUrl}" alt="Meme background" class="meme-background">
+    <div class="meme-text top-text">${topText}</div>
+    <div class="meme-text bottom-text">${bottomText}</div>
+</body>
+</html>`;
+
+        // Create authorization header
+        const auth = Buffer.from(`${HTMLCSS_USER_ID}:${HTMLCSS_API_KEY}`).toString('base64');
+        
+        // Call HTMLCSStoImage API
+        const response = await fetch('https://hcti.io/v1/image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`
+            },
+            body: JSON.stringify({
+                html: memeHTML,
+                viewport_width: 1024,
+                viewport_height: 1024,
+                device_scale_factor: 1
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logError(`HTMLCSStoImage API error: ${response.status} - ${errorText}`);
+            return backgroundImageUrl; // Fallback to original image
+        }
+
+        const data = await response.json();
+        logSuccess(`✅ Generated composite meme image: ${data.url}`);
+        
+        return data.url;
+
+    } catch (error) {
+        logError(`Failed to generate composite meme image: ${error instanceof Error ? error.message : String(error)}`);
+        return backgroundImageUrl; // Fallback to original image
+    }
+}
+
+/**
  * Generate HTML page for the meme
  */
-function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string): string {
+function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string): string {
     const { topText, bottomText, theme } = memeContent;
     
     return `<!DOCTYPE html>
@@ -188,7 +310,16 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${topText} ${bottomText} - WTAF Meme</title>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://wtaf.me/${userSlug}/meme-${topText.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${bottomText.toLowerCase().replace(/[^a-z0-9]/g, '-')}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${topText} ${bottomText}" />
+    <meta name="twitter:description" content="WTAF Meme: ${topText} ${bottomText}" />
     <style>
         * {
             margin: 0;
@@ -243,26 +374,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
         }
         
-        .meme-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-weight: 900;
-            text-shadow: 3px 3px 0px black, -3px -3px 0px black, 3px -3px 0px black, -3px 3px 0px black;
-            font-size: clamp(28px, 6vw, 48px);
-            line-height: 1.1;
-            padding: 0 20px;
-            letter-spacing: 1px;
-        }
-        
-        .top-text {
-            top: 25px;
-        }
-        
-        .bottom-text {
-            bottom: 25px;
-        }
+
         
         .action-buttons {
             display: flex;
@@ -406,10 +518,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 max-height: 70vh;
             }
             
-            .meme-text {
-                font-size: clamp(22px, 5vw, 32px);
-                padding: 0 15px;
-            }
+
             
             .action-buttons {
                 gap: 15px;
@@ -440,9 +549,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 min-height: 350px;
             }
             
-            .meme-text {
-                font-size: clamp(18px, 4vw, 28px);
-            }
+
             
             .action-btn {
                 padding: 12px 20px;
@@ -473,8 +580,6 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     <div class="meme-container">
         <div class="meme-image-wrapper">
             <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
-            <div class="meme-text top-text">${topText}</div>
-            <div class="meme-text bottom-text">${bottomText}</div>
         </div>
         
         <div class="action-buttons">
@@ -490,6 +595,9 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     </div>
     
     <script>
+        // Inject the actual meme URL
+        window.MEME_URL = ${publicUrl ? `"${publicUrl}"` : 'null'};
+        
         let isDownloading = false;
 
         // Handle image loading errors
@@ -523,19 +631,57 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
 
         async function copyToClipboard(text) {
             try {
-                await navigator.clipboard.writeText(text);
-                return true;
+                // Try modern clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } else {
+                    // Fallback for older browsers or non-secure contexts
+                    return fallbackCopyToClipboard(text);
+                }
             } catch (err) {
-                console.error('Failed to copy text: ', err);
+                console.error('Clipboard API failed: ', err);
+                // Try fallback method
+                return fallbackCopyToClipboard(text);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
+            try {
+                // Create a temporary textarea element
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                
+                // Select and copy the text
+                textArea.focus();
+                textArea.select();
+                const successful = document.execCommand('copy');
+                
+                // Clean up
+                document.body.removeChild(textArea);
+                
+                return successful;
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
                 return false;
             }
         }
 
         async function handleCopyUrl() {
-            const memeUrl = window.location.href;
+            // Use the injected URL if available, otherwise fallback to window.location.href
+            const memeUrl = window.MEME_URL || window.location.href;
             const success = await copyToClipboard(memeUrl);
+            
             if (success) {
                 showCopiedNotification('Meme URL copied!');
+            } else {
+                showCopiedNotification('Copy failed. Please copy URL manually.');
+                // Also log the URL to console as backup
+                console.log('Meme URL:', memeUrl);
             }
         }
 
@@ -708,18 +854,24 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate meme image" };
         }
 
-        // Step 3: Generate HTML page
-        const html = generateMemeHTML(memeContent, imageUrl, userSlug);
+        // Step 3: Generate composite meme image
+        const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
+        if (!compositeImageUrl) {
+            return { success: false, error: "Failed to generate composite meme image" };
+        }
+
+        // Step 4: Generate HTML page
+        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${imageUrl}`);
+        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl,
+            imageUrl: compositeImageUrl,
             memeContent
         };
 
