@@ -117,47 +117,42 @@ export async function updateOGImageInHTML(userSlug: string, appSlug: string, act
 }
 
 /**
- * Generate cached OG image for the app - matches Python monitor.py workflow
- * This calls the API and returns the actual Supabase Storage URL (not the API endpoint)
+ * Generate OpenGraph image for a WTAF app
+ * @param userSlug - User's slug
+ * @param appSlug - App's slug  
+ * @param memeImageUrl - Optional: For memes, use this image instead of generating new one
+ * @returns The actual image URL or null if failed
  */
-export async function generateOGImage(userSlug: string, appSlug: string): Promise<string | null> {
+export async function generateOGImage(userSlug: string, appSlug: string, memeImageUrl?: string): Promise<string | null> {
     try {
-        logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
+        // For memes: Use the provided meme image directly (skip API generation)
+        if (memeImageUrl) {
+            logWithTimestamp(`🖼️ Using meme image as OpenGraph image: ${memeImageUrl}`);
+            return memeImageUrl;
+        }
+
+        // For regular apps: Use the API to generate/get cached image
+        const apiUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
+        logWithTimestamp(`🖼️ Generating OG image via API: ${apiUrl}`);
         
-        const ogApiUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
-        logWithTimestamp(`🔗 Calling OG API: ${ogApiUrl}`);
-        
-        const response = await fetch(ogApiUrl, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
-            logWarning(`❌ OG generation API failed with status: ${response.status}`);
-            logWarning(`Response text: ${await response.text()}`);
+            logError(`❌ Failed to generate OG image: ${response.status} ${response.statusText}`);
             return null;
         }
-        
+
         const data = await response.json();
-        logWithTimestamp(`📋 OG API response: ${JSON.stringify(data, null, 2)}`);
         
         if (data.success && data.image_url) {
-            if (data.cached) {
-                logWithTimestamp(`⚡ Using cached OG image (${data.image_url.length > 50 ? data.image_url.substring(0, 50) + '...' : data.image_url})`);
-            } else {
-                logWithTimestamp(`📥 Downloaded and uploaded new OG image to Supabase Storage`);
-            }
-            logSuccess(`✅ Generated OG image: ${data.image_url}`);
+            logSuccess(`✅ OG image generated successfully: ${data.image_url}`);
             return data.image_url;
         } else {
-            logWarning(`❌ OG generation API returned error: ${data.error || 'Unknown error'}`);
+            logError(`❌ OG image generation failed: ${data.error || 'Unknown error'}`);
             return null;
         }
-        
     } catch (error) {
-        logError(`❌ Error generating OG image: ${error instanceof Error ? error.message : String(error)}`);
+        logError(`❌ Error generating OG image: ${error}`);
         return null;
     }
 }

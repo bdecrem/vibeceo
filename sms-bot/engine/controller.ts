@@ -1039,12 +1039,13 @@ export async function processMemeRequest(processingPath: string, fileData: any, 
                 logWarning(`Error updating meme metadata: ${error instanceof Error ? error.message : String(error)}`);
             }
             
-            // Generate OG image for the meme
+            // Generate OG image for the meme (use the meme image itself)
             try {
                 const urlParts = deployResult.publicUrl.split('/');
                 const appSlug = urlParts[urlParts.length - 1];
                 logWithTimestamp(`🖼️ Generating OG image for meme: ${userSlug}/${appSlug}`);
-                const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                // For memes: Use the composite meme image as the OpenGraph image
+                const actualImageUrl = await generateOGImage(userSlug, appSlug, result.imageUrl);
                 if (actualImageUrl) {
                     await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
                     logSuccess(`✅ Updated meme HTML with OG image URL`);
