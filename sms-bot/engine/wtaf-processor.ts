@@ -510,12 +510,12 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 throw new Error(`ZAD response incomplete: Contains placeholder comments instead of actual authentication functions`);
             }
             
-            // Check for minimum expected ZAD functions
+            // Check for minimum expected ZAD functions (updated to match comprehensive builder)
             const hasShowNewUserScreen = result.includes('showNewUserScreen');
-            const hasGenerateLabel = result.includes('generateLabel');
-            const hasGetUserLabel = result.includes('getUserLabel');
+            const hasGenerateNewUser = result.includes('generateNewUser');
+            const hasRegisterNewUser = result.includes('registerNewUser');
             
-            if (!hasShowNewUserScreen || !hasGenerateLabel || !hasGetUserLabel) {
+            if (!hasShowNewUserScreen || !hasGenerateNewUser || !hasRegisterNewUser) {
                 logWarning(`🎨 ZAD response missing critical functions - incomplete response detected`);
                 throw new Error(`ZAD response incomplete: Missing required authentication functions`);
             }
@@ -582,12 +582,12 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                         throw new Error(`ZAD response incomplete: Contains placeholder comments instead of actual authentication functions`);
                     }
                     
-                    // Check for minimum expected ZAD functions
+                    // Check for minimum expected ZAD functions (updated to match comprehensive builder)
                     const hasShowNewUserScreen = fallbackResult.includes('showNewUserScreen');
-                    const hasGenerateLabel = fallbackResult.includes('generateLabel');
-                    const hasGetUserLabel = fallbackResult.includes('getUserLabel');
+                    const hasGenerateNewUser = fallbackResult.includes('generateNewUser');
+                    const hasRegisterNewUser = fallbackResult.includes('registerNewUser');
                     
-                    if (!hasShowNewUserScreen || !hasGenerateLabel || !hasGetUserLabel) {
+                    if (!hasShowNewUserScreen || !hasGenerateNewUser || !hasRegisterNewUser) {
                         logWarning(`🎨 Fallback ${fallback.model} ZAD response missing critical functions - incomplete response detected`);
                         throw new Error(`ZAD response incomplete: Missing required authentication functions`);
                     }

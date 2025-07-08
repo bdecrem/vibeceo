@@ -84,11 +84,11 @@ function showNewUserScreen() {
     console.log('Showing new user screen');
 }
 
-function generateLabel() {
+function generateNewUser() {
     return 'user_' + Math.random().toString(36).substr(2, 9);
 }
 
-function getUserLabel() {
+function registerNewUser() {
     return localStorage.getItem('userLabel');
 }
 `;
@@ -113,18 +113,18 @@ if (hasPlaceholderComments1 && !hasPlaceholderComments2) {
 // Test 4: Verify function validation
 console.log('Test 4: Function validation');
 const hasShowNewUserScreen1 = incompleteResponse.includes('showNewUserScreen');
-const hasGenerateLabel1 = incompleteResponse.includes('generateLabel');
-const hasGetUserLabel1 = incompleteResponse.includes('getUserLabel');
+const hasGenerateNewUser1 = incompleteResponse.includes('generateNewUser');
+const hasRegisterNewUser1 = incompleteResponse.includes('registerNewUser');
 
 const hasShowNewUserScreen2 = completeResponse.includes('showNewUserScreen');
-const hasGenerateLabel2 = completeResponse.includes('generateLabel');
-const hasGetUserLabel2 = completeResponse.includes('getUserLabel');
+const hasGenerateNewUser2 = completeResponse.includes('generateNewUser');
+const hasRegisterNewUser2 = completeResponse.includes('registerNewUser');
 
-console.log(`- Incomplete response function validation: ${hasShowNewUserScreen1 && hasGenerateLabel1 && hasGetUserLabel1} (should be false)`);
-console.log(`- Complete response function validation: ${hasShowNewUserScreen2 && hasGenerateLabel2 && hasGetUserLabel2} (should be true)`);
+console.log(`- Incomplete response function validation: ${hasShowNewUserScreen1 && hasGenerateNewUser1 && hasRegisterNewUser1} (should be false)`);
+console.log(`- Complete response function validation: ${hasShowNewUserScreen2 && hasGenerateNewUser2 && hasRegisterNewUser2} (should be true)`);
 
-if (!(hasShowNewUserScreen1 && hasGenerateLabel1 && hasGetUserLabel1) && 
-    (hasShowNewUserScreen2 && hasGenerateLabel2 && hasGetUserLabel2)) {
+if (!(hasShowNewUserScreen1 && hasGenerateNewUser1 && hasRegisterNewUser1) && 
+    (hasShowNewUserScreen2 && hasGenerateNewUser2 && hasRegisterNewUser2)) {
     console.log('✅ Function validation works correctly\n');
 } else {
     console.log('❌ Function validation failed\n');
