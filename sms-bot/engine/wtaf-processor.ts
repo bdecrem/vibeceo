@@ -468,6 +468,31 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             throw new Error(`Unsupported model: ${config.model}`);
         }
         
+        // Validate ZAD responses for completeness
+        const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+        if (isZadRequest) {
+            const hasPlaceholderComments = result.includes('[Previous authentication functions remain exactly the same]') || 
+                                          result.includes('Include all the required authentication functions here') ||
+                                          result.includes('Include all remaining authentication functions exactly as provided');
+            
+            if (hasPlaceholderComments) {
+                logWarning(`🎨 ZAD response contains placeholder comments - incomplete response detected`);
+                throw new Error(`ZAD response incomplete: Contains placeholder comments instead of actual authentication functions`);
+            }
+            
+            // Check for minimum expected ZAD functions
+            const hasShowNewUserScreen = result.includes('showNewUserScreen');
+            const hasGenerateLabel = result.includes('generateLabel');
+            const hasGetUserLabel = result.includes('getUserLabel');
+            
+            if (!hasShowNewUserScreen || !hasGenerateLabel || !hasGetUserLabel) {
+                logWarning(`🎨 ZAD response missing critical functions - incomplete response detected`);
+                throw new Error(`ZAD response incomplete: Missing required authentication functions`);
+            }
+            
+            logWithTimestamp(`🎨 ZAD response validation passed - all required functions present`);
+        }
+        
         logWithTimestamp(`\n📥 BUILDER RESPONSE (${result.length} chars):`);
         logWithTimestamp("=" + "=".repeat(80));
         logWithTimestamp(result.substring(0, 1000) + (result.length > 1000 ? "\n... [TRUNCATED - showing first 1000 chars] ..." : ""));
@@ -477,12 +502,23 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } catch (error) {
         logWarning(`Primary model ${config.model} failed, trying fallbacks: ${error instanceof Error ? error.message : String(error)}`);
         
-        // Fallback chain: Claude Sonnet → Claude Haiku → GPT-4o
-        const fallbackModels = [
+        // Smart fallback chain: Skip Haiku for ZAD apps (insufficient tokens)
+        const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+        
+        let fallbackModels = [
             { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
             { model: "claude-3-5-haiku-20241022", maxTokens: 4000 },
             { model: "gpt-4o", maxTokens: 16000 }
         ];
+        
+        // For ZAD apps, skip Haiku (4000 tokens insufficient) and go straight to GPT-4o
+        if (isZadRequest) {
+            fallbackModels = [
+                { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
+                { model: "gpt-4o", maxTokens: 16000 }
+            ];
+            logWithTimestamp(`🎨 ZAD detected: Using ZAD-optimized fallback chain (skipping Haiku)`);
+        }
         
         for (const fallback of fallbackModels) {
             if (fallback.model === config.model) continue; // Skip if it's the same model that just failed
@@ -490,11 +526,38 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             try {
                 logWithTimestamp(`🔄 Trying fallback: ${fallback.model}`);
                 
+                let fallbackResult: string;
                 if (fallback.model.startsWith('claude')) {
-                    return await callClaudeAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
+                    fallbackResult = await callClaudeAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
                 } else {
-                    return await callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
+                    fallbackResult = await callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
                 }
+                
+                // Validate ZAD responses for completeness (same validation as primary model)
+                if (isZadRequest) {
+                    const hasPlaceholderComments = fallbackResult.includes('[Previous authentication functions remain exactly the same]') || 
+                                                  fallbackResult.includes('Include all the required authentication functions here') ||
+                                                  fallbackResult.includes('Include all remaining authentication functions exactly as provided');
+                    
+                    if (hasPlaceholderComments) {
+                        logWarning(`🎨 Fallback ${fallback.model} ZAD response contains placeholder comments - incomplete response detected`);
+                        throw new Error(`ZAD response incomplete: Contains placeholder comments instead of actual authentication functions`);
+                    }
+                    
+                    // Check for minimum expected ZAD functions
+                    const hasShowNewUserScreen = fallbackResult.includes('showNewUserScreen');
+                    const hasGenerateLabel = fallbackResult.includes('generateLabel');
+                    const hasGetUserLabel = fallbackResult.includes('getUserLabel');
+                    
+                    if (!hasShowNewUserScreen || !hasGenerateLabel || !hasGetUserLabel) {
+                        logWarning(`🎨 Fallback ${fallback.model} ZAD response missing critical functions - incomplete response detected`);
+                        throw new Error(`ZAD response incomplete: Missing required authentication functions`);
+                    }
+                    
+                    logWithTimestamp(`🎨 Fallback ${fallback.model} ZAD response validation passed - all required functions present`);
+                }
+                
+                return fallbackResult;
             } catch (fallbackError) {
                 logWarning(`Fallback ${fallback.model} also failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
                 continue;
