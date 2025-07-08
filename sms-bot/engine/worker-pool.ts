@@ -246,13 +246,8 @@ class Worker {
         let success = false;
         
         try {
-            // Set timeout for the entire task
-            const taskPromise = this.executeTask(task);
-            const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new Error(`Task timeout after ${WORKER_TIMEOUT_MS}ms`)), WORKER_TIMEOUT_MS);
-            });
-            
-            await Promise.race([taskPromise, timeoutPromise]);
+            // Execute task without global timeout - individual AI calls have their own timeouts
+            await this.executeTask(task);
             success = true;
             
             const duration = Date.now() - startTime;

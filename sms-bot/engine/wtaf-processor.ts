@@ -21,13 +21,29 @@ import { OpenAI } from 'openai';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { OPENAI_API_KEY, ANTHROPIC_API_KEY } from './shared/config.js';
+import { OPENAI_API_KEY, ANTHROPIC_API_KEY, WORKER_TIMEOUT_MS, ZAD_TIMEOUT_MS } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 import { detectRequestType as utilsDetectRequestType } from './shared/utils.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Timeout wrapper for AI calls
+ * Uses different timeouts for ZAD vs regular requests
+ */
+async function withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operation: string
+): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`${operation} timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+    
+    return Promise.race([promise, timeoutPromise]);
+}
 
 // Configuration interfaces for type safety
 export interface ClassifierConfig {
@@ -458,18 +474,32 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     logWithTimestamp(builderUserPrompt);
     logWithTimestamp("-" + "-".repeat(80));
     
+    // Determine timeout based on request type (declare before try-catch for scope)
+    const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+    const timeout = isZadRequest ? ZAD_TIMEOUT_MS : WORKER_TIMEOUT_MS;
+    
     try {
+        
+        logWithTimestamp(`⏱️ Using ${timeout/1000}s timeout for ${isZadRequest ? 'ZAD' : 'regular'} request`);
+        
         let result: string;
         if (config.model.startsWith('claude')) {
-            result = await callClaudeAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
+            result = await withTimeout(
+                callClaudeAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature),
+                timeout,
+                `Claude ${config.model} call`
+            );
         } else if (config.model.startsWith('gpt')) {
-            result = await callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature);
+            result = await withTimeout(
+                callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature),
+                timeout,
+                `GPT ${config.model} call`
+            );
         } else {
             throw new Error(`Unsupported model: ${config.model}`);
         }
         
-        // Validate ZAD responses for completeness
-        const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+        // Validate ZAD responses for completeness (reuse isZadRequest from above)
         if (isZadRequest) {
             const hasPlaceholderComments = result.includes('[Previous authentication functions remain exactly the same]') || 
                                           result.includes('Include all the required authentication functions here') ||
@@ -503,7 +533,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWarning(`Primary model ${config.model} failed, trying fallbacks: ${error instanceof Error ? error.message : String(error)}`);
         
         // Smart fallback chain: Skip Haiku for ZAD apps (insufficient tokens)
-        const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+        // (reuse isZadRequest from above)
         
         let fallbackModels = [
             { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
@@ -528,9 +558,17 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 
                 let fallbackResult: string;
                 if (fallback.model.startsWith('claude')) {
-                    fallbackResult = await callClaudeAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
+                    fallbackResult = await withTimeout(
+                        callClaudeAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature),
+                        timeout,
+                        `Claude ${fallback.model} fallback call`
+                    );
                 } else {
-                    fallbackResult = await callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature);
+                    fallbackResult = await withTimeout(
+                        callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature),
+                        timeout,
+                        `GPT ${fallback.model} fallback call`
+                    );
                 }
                 
                 // Validate ZAD responses for completeness (same validation as primary model)

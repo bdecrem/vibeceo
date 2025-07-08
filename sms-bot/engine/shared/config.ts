@@ -120,4 +120,5 @@ export const COACHES: Coach[] = [
 // Worker pool configuration
 export const MAX_CONCURRENT_WORKERS = 3;
 export const WORKER_TIMEOUT_MS = 120000; // 2 minutes per AI call
+export const ZAD_TIMEOUT_MS = 300000; // 5 minutes for complex ZAD requests
 export const BATCH_CHECK_INTERVAL = 5; // Check for new files every 5 seconds 
