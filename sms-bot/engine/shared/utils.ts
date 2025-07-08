@@ -279,3 +279,114 @@ export function stripOGTags(html: string): string {
     logWithTimestamp('✅ Existing OG tags stripped successfully');
     return html;
 } 
+
+/**
+ * Auto-fix common issues in generated HTML/JavaScript code
+ * Prevents common errors that break ZAD apps completely
+ * Based on zad-tuner.cjs autoFixCommonIssues function
+ */
+export function autoFixCommonIssues(html: string): string {
+    logWithTimestamp('🔧 Running auto-fix for common issues...');
+    let fixed = html;
+    let fixesApplied = 0;
+    
+    // Fix 1: Make showNewUserScreen async
+    if (fixed.includes('showNewUserScreen()') && !fixed.includes('async function showNewUserScreen()')) {
+        fixed = fixed.replace(
+            /function showNewUserScreen\(\)/g,
+            'async function showNewUserScreen()'
+        );
+        if (fixed !== html) {
+            fixesApplied++;
+            logWithTimestamp('🔧 Fixed: Made showNewUserScreen async');
+        }
+    }
+    
+    // Fix 2: Fix APP_ID to correct value (catch common wrong values)
+    const wrongAppIds = ['hello_world_generator', 'hello_world_gen', 'test_app', 'sample_app'];
+    wrongAppIds.forEach(wrongId => {
+        if (fixed.includes(`'${wrongId}'`)) {
+            // This will be handled by existing replaceAppTableId function later
+            logWithTimestamp(`⚠️ Warning: Found hardcoded APP_ID '${wrongId}' - will be corrected by UUID injection`);
+        }
+    });
+    
+    // Fix 3: Warning about userLabel query issues
+    if (fixed.includes('userLabel') && fixed.includes('.eq(') && fixed.includes('.single()')) {
+        logWithTimestamp('⚠️ Warning: userLabel query detected - ensure proper error handling for missing users');
+    }
+    
+    // Fix 4: Remove duplicate variable declarations (NEW FIX from memory)
+    const duplicateCurrentUserMatches = fixed.match(/let currentUser = null;/g);
+    if (duplicateCurrentUserMatches && duplicateCurrentUserMatches.length > 1) {
+        logWithTimestamp(`🔧 Found ${duplicateCurrentUserMatches.length} duplicate 'let currentUser = null;' declarations`);
+        
+        // Split into lines, find first occurrence, remove duplicates
+        const lines = fixed.split('\n');
+        let firstOccurrenceFound = false;
+        
+        const fixedLines = lines.map(line => {
+            if (line.includes('let currentUser = null;')) {
+                if (!firstOccurrenceFound) {
+                    firstOccurrenceFound = true;
+                    return line; // Keep the first occurrence
+                } else {
+                    return ''; // Remove duplicate occurrences
+                }
+            }
+            return line;
+        });
+        
+        fixed = fixedLines.join('\n');
+        // Clean up any extra empty lines
+        fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
+        
+        fixesApplied++;
+        logWithTimestamp('🔧 Fixed: Removed duplicate currentUser declaration');
+    }
+    
+    // Additional duplicate variable pattern fixes
+    const duplicatePatterns = [
+        /let userState = null;/g,
+        /let appState = null;/g,
+        /const supabase = /g
+    ];
+    
+    duplicatePatterns.forEach((pattern, index) => {
+        const matches = fixed.match(pattern);
+        if (matches && matches.length > 1) {
+            const patternName = ['userState', 'appState', 'supabase'][index];
+            logWithTimestamp(`🔧 Found ${matches.length} duplicate '${patternName}' declarations`);
+            
+            // For each pattern, keep only the first occurrence
+            const lines = fixed.split('\n');
+            let firstFound = false;
+            
+            const fixedLines = lines.map(line => {
+                if (pattern.test(line)) {
+                    if (!firstFound) {
+                        firstFound = true;
+                        return line; // Keep first occurrence
+                    } else {
+                        return ''; // Remove duplicates
+                    }
+                }
+                return line;
+            });
+            
+            fixed = fixedLines.join('\n');
+            fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
+            
+            fixesApplied++;
+            logWithTimestamp(`🔧 Fixed: Removed duplicate ${patternName} declaration`);
+        }
+    });
+    
+    if (fixesApplied > 0) {
+        logWithTimestamp(`✅ Auto-fix completed: ${fixesApplied} issue(s) fixed`);
+    } else {
+        logWithTimestamp('✅ Auto-fix completed: No issues found');
+    }
+    
+    return fixed;
+} 
