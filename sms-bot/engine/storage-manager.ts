@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
-import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId } from './shared/utils.js';
+import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, autoFixCommonIssues } from './shared/utils.js';
 
 // Lazy initialization of Supabase client
 let supabase: SupabaseClient | null = null;
@@ -226,6 +226,9 @@ export async function saveCodeToSupabase(
     // Inject Supabase credentials into HTML
     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     
+    // Auto-fix common JavaScript issues before deployment
+    code = autoFixCommonIssues(code);
+    
     // Use fallback OG image URL initially - will be updated after OG generation
     const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;
     const ogTags = `<title>WTAF – Delusional App Generator</title>
@@ -368,6 +371,9 @@ export async function saveCodeToFile(
     // Inject Supabase credentials into HTML
     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     
+    // Auto-fix common JavaScript issues before deployment
+    code = autoFixCommonIssues(code);
+    
     // Inject OpenGraph tags into HTML  
     const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=lab&app=${slug}`;
     const ogTags = `<title>WTAF – Delusional App Generator</title>
@@ -439,6 +445,9 @@ export async function createRequiredDirectories(
 export async function updatePageInSupabase(userSlug: string, appSlug: string, newHtml: string): Promise<boolean> {
     try {
         logWithTimestamp(`🔄 Updating page in Supabase: ${userSlug}/${appSlug}`);
+        
+        // Auto-fix common JavaScript issues before updating
+        newHtml = autoFixCommonIssues(newHtml);
         
         const { error } = await getSupabaseClient()
             .from('wtaf_content')
