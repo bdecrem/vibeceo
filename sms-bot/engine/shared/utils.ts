@@ -345,6 +345,24 @@ export function autoFixCommonIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Removed duplicate currentUser declaration');
     }
     
+    // Fix 5: Fix malformed escaped quotes in JavaScript strings (NEW FIX for iframe srcDoc issues)
+    // Pattern: 'SQUAD\\'S becomes 'SQUAD\'S (malformed) → should be 'SQUAD\\'S or "SQUAD'S"
+    const malformedQuotePattern = /'[^']*\\'[^']*'/g;
+    const malformedQuotes = fixed.match(malformedQuotePattern);
+    if (malformedQuotes && malformedQuotes.length > 0) {
+        logWithTimestamp(`🔧 Found ${malformedQuotes.length} malformed escaped quote(s) in strings`);
+        
+        // Fix malformed escape sequences in strings
+        // Convert 'text\\'s more' to "text's more" (use double quotes to avoid escaping)
+        fixed = fixed.replace(/'([^']*)\\'([^']*)'/g, '"$1\'$2"');
+        
+        // Also fix any remaining backslash-quote issues
+        fixed = fixed.replace(/\\'/g, "'");
+        
+        fixesApplied++;
+        logWithTimestamp('🔧 Fixed: Corrected malformed escaped quotes in JavaScript strings');
+    }
+    
     // Additional duplicate variable pattern fixes
     const duplicatePatterns = [
         /let userState = null;/g,
