@@ -1430,10 +1430,10 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         if (success) {
           await sendSmsResponse(
             from,
-            "Welcome to The Foundry! 🚀\n\nReply YES to confirm your subscription and start receiving our daily creative chaos. Standard rates apply.\n\nText STOP anytime to unsubscribe.",
+            "Welcome to The Foundry! 🚀\n\nYou can now use all commands immediately. Try texting COMMANDS to see what's available.\n\nReply YES if you want our daily creative chaos delivered via SMS. Standard rates apply.\n\nText STOP anytime to unsubscribe.",
             twilioClient
           );
-          console.log(`New subscriber created: ${normalizedPhoneNumber}, awaiting confirmation`);
+          console.log(`New subscriber created: ${normalizedPhoneNumber}, can use commands immediately`);
         } else {
           await sendSmsResponse(
             from,
@@ -1526,6 +1526,43 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         );
       }
       return;
+    }
+
+    // ========================================
+    // AUTO-CREATE SUBSCRIBER RECORD IF NEEDED
+    // ========================================
+    // Check if subscriber exists, if not create one automatically (except for START, STOP, YES which handle their own logic)
+    if (!['START', 'UNSTOP', 'STOP', 'YES'].includes(messageUpper)) {
+      console.log('Checking subscriber status...');
+      const currentSubscriber = await getSubscriber(normalizedPhoneNumber);
+      console.log('Subscriber lookup result:', currentSubscriber);
+
+      if (!currentSubscriber) {
+        console.log('New user - auto-creating subscriber record');
+        const success = await createNewSubscriber(normalizedPhoneNumber);
+        if (success) {
+          console.log(`✅ Auto-created subscriber record for ${normalizedPhoneNumber}`);
+        } else {
+          console.log(`❌ Failed to auto-create subscriber record for ${normalizedPhoneNumber}`);
+          await sendSmsResponse(
+            from,
+            'Sorry, there was an issue processing your request. Please try again later.',
+            twilioClient
+          );
+          return;
+        }
+      } else if (currentSubscriber.unsubscribed) {
+        console.log('User is unsubscribed, asking them to resubscribe');
+        await sendSmsResponse(
+          from,
+          'You are currently unsubscribed from The Foundry updates. Reply START to resubscribe.',
+          twilioClient
+        );
+        return;
+      }
+
+      // Update last message date for all active users (confirmed or not)
+      await updateLastMessageDate(normalizedPhoneNumber);
     }
 
     // Handle CODE command first - before loading any messages
@@ -1813,119 +1850,6 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         );
         return;
       }
-    }
-
-    // Handle CODE command (original functionality)
-    if (message.match(/^CODE[\s:-]/i)) {
-      const command = 'CODE';
-      console.log(`Processing ${command} command from ${normalizedPhoneNumber}`);
-      
-      try {
-        let codeContent;
-        let coachPrefix = '';
-        
-        // Check if this is the coach-specific format (CODE - coach - prompt)
-        const coachMatch = message.match(/^CODE\s*-\s*(\w+)\s*-\s*(.+)$/i);
-        
-        if (coachMatch) {
-          // Coach-specific format
-          const coachName = coachMatch[1].toLowerCase();
-          codeContent = coachMatch[2].trim();
-          
-          // Find the coach in coaches data
-          const coaches = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'coaches.json'), 'utf8')).ceos;
-          const coach = coaches.find((c: any) => c.id.toLowerCase() === coachName);
-          
-          if (!coach) {
-            await sendSmsResponse(
-              from,
-              `❌ CODE: Unknown coach "${coachName}". Available coaches: ${coaches.map((c: any) => c.id).join(', ')}`,
-              twilioClient
-            );
-            return;
-          }
-          
-          coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
-        } else {
-          // Original format - extract content after "CODE " or "CODE:"
-          const codePrefix = message.match(/^CODE[\s:]+/i)?.[0] || 'CODE ';
-          codeContent = message.substring(codePrefix.length).trim();
-        }
-        
-        if (!codeContent) {
-          await sendSmsResponse(
-            from,
-            `❌ CODE: Please provide content after CODE command. Example: CODE function hello() { return 'world'; }\nCODE - kailey - create a meditation timer`,
-            twilioClient
-          );
-          return;
-        }
-        
-        // Create filename with timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `code-snippet-${timestamp}.txt`;
-        const filePath = path.join(process.cwd(), 'data', 'code', filename);
-        
-        // Ensure data/code directory exists
-        const codeDir = path.join(process.cwd(), 'data', 'code');
-        if (!fs.existsSync(codeDir)) {
-          fs.mkdirSync(codeDir, { recursive: true });
-        }
-        
-        // Save code content to file with sender's phone number and optional coach prefix
-        const fileContent = `SENDER:${from}\n${coachPrefix}${codeContent}`;
-        fs.writeFileSync(filePath, fileContent, 'utf8');
-        
-        await sendSmsResponse(
-          from,
-          `✅ CODE: Saved ${codeContent.length} characters to data/code/${filename}${coachPrefix ? ` with ${coachMatch![1]} as coach` : ''}`,
-          twilioClient
-        );
-        
-        console.log(`User ${from} saved code snippet to data/code/${filename}: ${codeContent.substring(0, 100)}${codeContent.length > 100 ? '...' : ''}`);
-        return;
-      } catch (error) {
-        console.error(`Error processing CODE command: ${error}`);
-        await sendSmsResponse(
-          from,
-          `❌ CODE: Failed to save code snippet - ${error instanceof Error ? error.message : 'Unknown error'}`,
-          twilioClient
-        );
-        return;
-      }
-    }
-
-    // ========================================
-    // SUBSCRIBER AUTHENTICATION CHECK
-    // ========================================
-    // Check subscriber status BEFORE processing any commands (except START, STOP, YES)
-    if (!['START', 'UNSTOP', 'STOP', 'YES'].includes(messageUpper)) {
-      console.log('Checking subscriber status...');
-      const currentSubscriber = await getSubscriber(normalizedPhoneNumber);
-      console.log('Subscriber lookup result:', currentSubscriber);
-
-      if (!currentSubscriber || currentSubscriber.unsubscribed) {
-        console.log('User not subscribed or unsubscribed, sending subscription prompt');
-        await sendSmsResponse(
-          from,
-          'You are not currently subscribed to The Foundry updates. Reply START to subscribe.',
-          twilioClient
-        );
-        return;
-      }
-      
-      if (!currentSubscriber.confirmed) {
-        console.log('User not confirmed yet, prompting for confirmation');
-        await sendSmsResponse(
-          from,
-          'Please reply YES to confirm your subscription, or text STOP to unsubscribe.',
-          twilioClient
-        );
-        return;
-      }
-
-      // Update last message date for confirmed subscribers
-      await updateLastMessageDate(normalizedPhoneNumber);
     }
 
     // Check for commands that should end the conversation
