@@ -1929,8 +1929,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     }
 
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE)\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -1956,7 +1956,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default';
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
@@ -3368,6 +3368,286 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     }
     */
     
+    // Handle HIDE-DEFAULT command - toggle default hiding behavior
+    if (message.match(/^HIDE-DEFAULT\s+(ON|OFF)$/i)) {
+      console.log(`Processing HIDE-DEFAULT command from ${from}`);
+      
+      try {
+        const hideDefaultMatch = message.match(/^HIDE-DEFAULT\s+(ON|OFF)$/i);
+        if (!hideDefaultMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ HIDE-DEFAULT: Use ON or OFF.\n\nExample: HIDE-DEFAULT ON`,
+            twilioClient
+          );
+          return;
+        }
+        
+        const newSetting = hideDefaultMatch[1].toUpperCase() === 'ON';
+        const { setHideDefault } = await import('../subscribers.js');
+        const success = await setHideDefault(normalizedPhoneNumber, newSetting);
+        
+        if (success) {
+          const statusText = newSetting ? 'ON - new pages will be hidden by default' : 'OFF - new pages will be visible by default';
+          await sendSmsResponse(
+            from,
+            `🔧 Hide default setting: ${statusText}`,
+            twilioClient
+          );
+          console.log(`Updated hide_default=${newSetting} for ${normalizedPhoneNumber}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Failed to update hide-default setting. Please try again later.`,
+            twilioClient
+          );
+        }
+      } catch (error) {
+        console.error(`Error processing HIDE-DEFAULT command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ HIDE-DEFAULT: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
+    // Handle HIDE command - hide specific page by app-slug
+    if (message.match(/^HIDE\s+[a-z-]+$/i)) {
+      console.log(`Processing HIDE command from ${from}`);
+      
+      try {
+        // Check user role for HIDE command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted HIDE command without coder/degen privileges`);
+          return;
+        }
+        
+        const hideMatch = message.match(/^HIDE\s+([a-z-]+)$/i);
+        if (!hideMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ HIDE: Please specify an app slug.\n\nExample: HIDE emerald-eagle-flying\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const appSlug = hideMatch[1].trim();
+        const userSlug = subscriber.slug;
+        
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Update the Forget column for this specific page (user's own pages only)
+        const { error } = await supabase
+          .from('wtaf_content')
+          .update({ Forget: true })
+          .eq('user_slug', userSlug)
+          .eq('app_slug', appSlug);
+          
+        if (error) {
+          console.error(`Error hiding page ${userSlug}/${appSlug}: ${error.message}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to hide page. App '${appSlug}' not found or not owned by you.`,
+            twilioClient
+          );
+          return;
+        }
+
+        await sendSmsResponse(
+          from,
+          `👻 Page '${appSlug}' is now hidden (won't appear in Trending or Creations)`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) hid page: ${appSlug}`);
+        
+      } catch (error) {
+        console.error(`Error processing HIDE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ HIDE: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
+    // Handle UNHIDE command - unhide specific page by app-slug
+    if (message.match(/^UNHIDE\s+[a-z-]+$/i)) {
+      console.log(`Processing UNHIDE command from ${from}`);
+      
+      try {
+        // Check user role for UNHIDE command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted UNHIDE command without coder/degen privileges`);
+          return;
+        }
+        
+        const unhideMatch = message.match(/^UNHIDE\s+([a-z-]+)$/i);
+        if (!unhideMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ UNHIDE: Please specify an app slug.\n\nExample: UNHIDE emerald-eagle-flying\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const appSlug = unhideMatch[1].trim();
+        const userSlug = subscriber.slug;
+        
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Update the Forget column for this specific page (user's own pages only)
+        const { error } = await supabase
+          .from('wtaf_content')
+          .update({ Forget: false })
+          .eq('user_slug', userSlug)
+          .eq('app_slug', appSlug);
+          
+        if (error) {
+          console.error(`Error unhiding page ${userSlug}/${appSlug}: ${error.message}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to unhide page. App '${appSlug}' not found or not owned by you.`,
+            twilioClient
+          );
+          return;
+        }
+
+        await sendSmsResponse(
+          from,
+          `👁️ Page '${appSlug}' is now visible (will appear in Trending and Creations)`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) unhid page: ${appSlug}`);
+        
+      } catch (error) {
+        console.error(`Error processing UNHIDE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ UNHIDE: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
+    // Handle FAVE with app-slug (in addition to existing FAVE with number)
+    if (message.match(/^FAVE\s+[a-z-]+$/i)) {
+      console.log(`Processing FAVE with app-slug from ${from}`);
+      
+      try {
+        // Check user role for FAVE command (same as existing FAVE)
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen')) {
+          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen privileges`);
+          return;
+        }
+        
+        const faveMatch = message.match(/^FAVE\s+([a-z-]+)$/i);
+        if (!faveMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ FAVE: Please specify an app slug.\n\nExample: FAVE emerald-eagle-flying\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+
+        const appSlug = faveMatch[1].trim();
+        const userSlug = subscriber.slug;
+        
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Get current fave status for this page (user's own pages only)
+        const { data: pageData, error: fetchError } = await supabase
+          .from('wtaf_content')
+          .select('Fave, app_slug')
+          .eq('user_slug', userSlug)
+          .eq('app_slug', appSlug)
+          .single();
+          
+        if (fetchError || !pageData) {
+          await sendSmsResponse(
+            from,
+            `❌ App '${appSlug}' not found or not owned by you.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Toggle the fave status
+        const currentFaveStatus = pageData.Fave || false;
+        const newFaveStatus = !currentFaveStatus;
+
+        // Update the Fave column
+        const { error: updateError } = await supabase
+          .from('wtaf_content')
+          .update({ Fave: newFaveStatus })
+          .eq('user_slug', userSlug)
+          .eq('app_slug', appSlug);
+          
+        if (updateError) {
+          console.error(`Error updating fave status: ${updateError}`);
+          await sendSmsResponse(
+            from,
+            `❌ Failed to update favorite status. Please try again later.`,
+            twilioClient
+          );
+          return;
+        }
+
+        // Send confirmation message
+        const statusEmoji = newFaveStatus ? '⭐' : '📄';
+        const statusText = newFaveStatus ? 'added to favorites' : 'removed from favorites';
+        
+        await sendSmsResponse(
+          from,
+          `${statusEmoji} Page '${appSlug}' ${statusText}!`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) set fave=${newFaveStatus} for page: ${appSlug}`);
+        
+      } catch (error) {
+        console.error(`Error processing FAVE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ FAVE: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
     // Handle REMIX command - for coder/degen/admin users only
     if (message.match(/^REMIX(?:\s|$)/i)) {
       // Check if the command has the required arguments (slug and instruction)

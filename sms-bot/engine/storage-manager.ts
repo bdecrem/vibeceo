@@ -254,6 +254,20 @@ export async function saveCodeToSupabase(
             logWithTimestamp(`🤝 ZAD app detected - setting type to 'ZAD'`);
         }
         
+        // Check if user has hide_default setting enabled
+        let shouldHideByDefault = false;
+        if (senderPhone) {
+            try {
+                const { getHideDefault } = await import('../lib/subscribers.js');
+                shouldHideByDefault = await getHideDefault(senderPhone) || false;
+                if (shouldHideByDefault) {
+                    logWithTimestamp(`👻 User has hide_default=true - setting Forget=true for new page`);
+                }
+            } catch (error) {
+                logWarning(`Error checking hide_default setting: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
         const data = {
             user_id: userId,
             user_slug: userSlug,
@@ -263,7 +277,8 @@ export async function saveCodeToSupabase(
             original_prompt: originalPrompt,
             html_content: code, // Save initial HTML without UUID replacement
             status: 'published',
-            type: isZadApp ? 'ZAD' : null // Set type to 'ZAD' if ZAD app detected
+            type: isZadApp ? 'ZAD' : null, // Set type to 'ZAD' if ZAD app detected
+            Forget: shouldHideByDefault // Hide by default if user has hide_default enabled
         };
         
         let { data: savedData, error } = await getSupabaseClient()

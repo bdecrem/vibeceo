@@ -42,6 +42,7 @@ export type SMSSubscriber = {
 	role?: "user" | "coder" | "admin" | "degen"; // User role with preset values
 	slug?: string; // Auto-generated slug for personal WTAF folder
 	index_file?: string; // Filename of the user's index page (for wtaf.me/slug/)
+	hide_default?: boolean; // Hide pages by default when creating new content
 };
 
 // Initialize Supabase client
