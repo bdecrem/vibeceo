@@ -272,3 +272,46 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
     return false;
   }
 }
+
+/**
+ * Set the hide_default setting for a subscriber
+ * @param phoneNumber The phone number of the subscriber
+ * @param hideDefault Boolean value - true to hide pages by default, false to show them
+ */
+export async function setHideDefault(phoneNumber: string, hideDefault: boolean): Promise<boolean> {
+  try {
+    // Normalize the phone number first
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+    
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update({ hide_default: hideDefault })
+      .eq('phone_number', normalizedNumber);
+      
+    if (error) {
+      console.error('Error updating hide_default:', error);
+      return false;
+    }
+    
+    console.log(`Successfully updated hide_default=${hideDefault} for subscriber: ${normalizedNumber}`);
+    return true;
+  } catch (error) {
+    console.error('Error in setHideDefault:', error);
+    return false;
+  }
+}
+
+/**
+ * Get the hide_default setting for a subscriber
+ * @param phoneNumber The phone number of the subscriber
+ * @returns Boolean value or null if subscriber not found
+ */
+export async function getHideDefault(phoneNumber: string): Promise<boolean | null> {
+  try {
+    const subscriber = await getSubscriber(phoneNumber);
+    return subscriber ? (subscriber.hide_default || false) : null;
+  } catch (error) {
+    console.error('Error in getHideDefault:', error);
+    return null;
+  }
+}
