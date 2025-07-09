@@ -1,0 +1,400 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+            --gradient-secondary: linear-gradient(45deg, #3F88FF, #6E7FFF, #ABF7FF);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .intro {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .command {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .command:hover {
+            transform: translateX(10px);
+        }
+
+        .explanation {
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gradient-primary);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WTAF Command Center</h1>
+        
+        <div class="intro">
+            Welcome to the flip-phone revolution, you beautiful chaos agent. We're building the future through SMS, one unhinged text at a time. Here's your guide to speaking our language. Text these commands to +1-866-330-0015 and watch the magic unfold.
+        </div>
+
+        <div id="faqContainer" class="faq-grid"></div>
+    </div>
+
+    <div class="cta">📱 Text START to +1-866-330-0015</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+        
+        const emojis = ['✨', '🌀', '🚀', '🦄', '💥', '⚡']
+        emojis.forEach((emoji, index) => {
+            const element = document.createElement('div')
+            element.className = 'floating-emoji'
+            element.textContent = emoji
+            element.style.left = `${Math.random() * 100}vw`
+            element.style.top = `${Math.random() * 100}vh`
+            element.style.animation = `float ${5 + index}s ease-in-out infinite`
+            element.setAttribute('data-value', Math.random() * 4 - 2)
+            document.body.appendChild(element)
+        })
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = emoji.getAttribute('data-value')
+                const x = (e.clientX - window.innerWidth/2) * speed / 100
+                const y = (e.clientY - window.innerHeight/2) * speed / 100
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'faq_commands')
+                    .order('created_at', { ascending: true })
+                
+                if (error) throw error
+
+                const faqContainer = document.getElementById('faqContainer')
+                data.forEach(item => {
+                    const commandDiv = document.createElement('div')
+                    commandDiv.className = 'command'
+                    commandDiv.textContent = item.submission_data.command
+
+                    const explanationDiv = document.createElement('div')
+                    explanationDiv.className = 'explanation'
+                    explanationDiv.textContent = item.submission_data.explanation
+
+                    faqContainer.appendChild(commandDiv)
+                    faqContainer.appendChild(explanationDiv)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load FAQs')
+            }
+        }
+
+        loadFAQs()
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF FAQ Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .form-container {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        button {
+            background: var(--gradient-primary);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .export-btn {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>WTAF FAQ Admin Dashboard</h1>
+
+        <div class="form-container">
+            <h2>Add New FAQ Command</h2>
+            <form id="faqForm">
+                <input type="text" id="command" placeholder="Command" required>
+                <textarea id="explanation" placeholder="Explanation" required></textarea>
+                <button type="submit">Add Command</button>
+            </form>
+        </div>
+
+        <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Explanation</th>
+                    <th>Date Added</th>
+                </tr>
+            </thead>
+            <tbody id="faqTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const command = document.getElementById('command').value
+            const explanation = document.getElementById('explanation').value
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'faq_commands',
+                    submission_data: { command, explanation }
+                })
+                if (error) throw error
+                alert('FAQ command added successfully!')
+                loadFAQs()
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to add FAQ command')
+            }
+        })
+
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'faq_commands')
+                    .order('created_at', { ascending: false })
+                
+                if (error) throw error
+
+                const tableBody = document.getElementById('faqTable')
+                tableBody.innerHTML = ''
+                
+                data.forEach(item => {
+                    const row = document.createElement('tr')
+                    row.innerHTML = `
+                        <td>${item.submission_data.command}</td>
+                        <td>${item.submission_data.explanation}</td>
+                        <td>${new Date(item.created_at).toLocaleDateString()}</td>
+                    `
+                    tableBody.appendChild(row)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load FAQs')
+            }
+        }
+
+        async function exportCSV() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'faq_commands')
+                
+                if (error) throw error
+
+                const csvContent = 'Command,Explanation,Date\n' + data.map(row => 
+                    `${row.submission_data.command},${row.submission_data.explanation},${new Date(row.created_at).toLocaleDateString()}`
+                ).join('\n')
+
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'faq_commands.csv'
+                a.click()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        loadFAQs()
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,367 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENIOR RAVE 2024 🎉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,255,255,0.8); }
+            100% { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(0,255,0,0.2);
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        #text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        #prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SENIOR RAVE 2024 🎉</h1>
+        <div class="floating-emoji" data-value="2">🎉</div>
+        <div class="floating-emoji" data-value="3">💃</div>
+        <div class="floating-emoji" data-value="4">🪩</div>
+        <div class="floating-emoji" data-value="5">✨</div>
+        
+        <form id="rsvpForm">
+            <input type="text" id="name" placeholder="Your Groovy Name" required>
+            <input type="email" id="email" placeholder="Your Electric Email" required>
+            <button type="submit">GET DOWN WITH US! 🕺</button>
+        </form>
+        
+        <div class="success-message" id="success">
+            Can't wait to see you tomorrow at 8! Bring your best moves! 🎈
+        </div>
+    </div>
+
+    <div id="text-cta">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div id="prompt">
+        Generated from: make a party invite page for my party at the senior center tomorrow at 8
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value')
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'senior_rave_2024',
+                    submission_data: formData
+                })
+                
+                if (error) throw error
+                
+                document.getElementById('success').style.display = 'block'
+                document.getElementById('rsvpForm').reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('RSVP failed. Please try again!')
+            }
+        })
+
+        // Easter egg
+        let clicks = 0
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++
+            if (clicks === 5) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                alert('🎉 SECRET DANCE MOVE UNLOCKED!')
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senior Rave Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #333;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #2a2a2a;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background: #FF2E93;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .export-btn {
+            background: #7C3AED;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Senior Rave RSVP Dashboard</h1>
+
+        <div class="actions">
+            <button onclick="loadSubmissions()">Refresh Data</button>
+            <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+        </div>
+
+        <table id="submissionsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="submissionsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let submissions = []
+
+        async function loadSubmissions() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search)
+                const token = urlParams.get('token')
+                const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load submissions')
+                }
+                
+                submissions = result.submissions || []
+                
+                const tbody = document.getElementById('submissionsBody')
+                tbody.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${sub.submission_data.name}</td>
+                        <td>${sub.submission_data.email}</td>
+                        <td>${new Date(sub.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('')
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportCSV() {
+            const csvContent = 'Name,Email,Timestamp\n' + submissions.map(row => 
+                `${row.submission_data.name || ''},${row.submission_data.email || ''},${new Date(row.created_at).toLocaleString() || ''}`
+            ).join('\n')
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'senior_rave_rsvps.csv'
+            a.click()
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,445 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+            --gradient-secondary: linear-gradient(45deg, #3F88FF, #6E7FFF, #ABF7FF);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .intro {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+            color: #ddd;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .command {
+            background: var(--gradient-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .explanation {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gradient-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WTAF Command Center</h1>
+        
+        <p class="intro">Welcome to the flip-phone revolution, you beautiful chaos agent. We're building the future through SMS, one unhinged text at a time. Here's your guide to speaking our language. Text these commands to +1-866-330-0015 and watch the magic unfold.</p>
+
+        <div id="faq-container" class="faq-grid"></div>
+    </div>
+
+    <div class="floating-emoji" data-value="1">✨</div>
+    <div class="floating-emoji" data-value="2">🌀</div>
+    <div class="floating-emoji" data-value="3">📱</div>
+    <div class="floating-emoji" data-value="4">💫</div>
+
+    <div class="cta">📱 Text START to +1-866-330-0015</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        // Position floating emojis
+        const emojis = document.querySelectorAll('.floating-emoji');
+        emojis.forEach((emoji, index) => {
+            emoji.style.left = `${Math.random() * 90}vw`;
+            emoji.style.top = `${Math.random() * 90}vh`;
+            emoji.style.animation = `float ${3 + index}s ease-in-out infinite`;
+        });
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            emojis.forEach(emoji => {
+                const speed = emoji.getAttribute('data-value') || 1;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Fetch and display FAQs
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+
+                const faqContainer = document.getElementById('faq-container');
+                data.forEach(item => {
+                    const commandDiv = document.createElement('div');
+                    commandDiv.className = 'command';
+                    commandDiv.textContent = item.submission_data.command;
+
+                    const explanationDiv = document.createElement('div');
+                    explanationDiv.className = 'explanation';
+                    explanationDiv.textContent = item.submission_data.explanation;
+
+                    faqContainer.appendChild(commandDiv);
+                    faqContainer.appendChild(explanationDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load FAQs');
+            }
+        }
+
+        loadFAQs();
+
+        // Easter egg
+        let wtafSequence = '';
+        document.addEventListener('keydown', (e) => {
+            wtafSequence += e.key.toLowerCase();
+            if (wtafSequence.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                wtafSequence = '';
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF FAQ Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .admin-form {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: var(--gradient-primary);
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .delete-btn {
+            background: #ff4444;
+        }
+
+        .export-btn {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WTAF FAQ Admin</h1>
+
+        <form class="admin-form" id="faqForm">
+            <input type="text" id="command" placeholder="Command (e.g., START)" required>
+            <textarea id="explanation" placeholder="Explanation of what this command does" required></textarea>
+            <button type="submit">Add FAQ Entry</button>
+        </form>
+
+        <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Explanation</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="faqTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        // Submit new FAQ
+        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                command: document.getElementById('command').value,
+                explanation: document.getElementById('explanation').value
+            };
+
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .insert({
+                        app_id: 'wtaf_faq',
+                        submission_data: formData
+                    });
+
+                if (error) throw error;
+                
+                alert('FAQ added successfully!');
+                loadFAQs();
+                e.target.reset();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to add FAQ');
+            }
+        });
+
+        // Load FAQs
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                const tableBody = document.getElementById('faqTable');
+                tableBody.innerHTML = '';
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.submission_data.command}</td>
+                        <td>${item.submission_data.explanation}</td>
+                        <td class="actions">
+                            <button onclick="deleteFAQ('${item.id}')" class="delete-btn">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load FAQs');
+            }
+        }
+
+        // Delete FAQ
+        async function deleteFAQ(id) {
+            if (!confirm('Are you sure you want to delete this FAQ?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('wtaf_submissions')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                alert('FAQ deleted successfully!');
+                loadFAQs();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to delete FAQ');
+            }
+        }
+
+        // Export to CSV
+        async function exportCSV() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                const csvContent = 'Command,Explanation\n' + data.map(row => 
+                    `"${row.submission_data.command}","${row.submission_data.explanation}"`
+                ).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'wtaf_faq.csv';
+                a.click();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export CSV');
+            }
+        }
+
+        // Initial load
+        loadFAQs();
+    </script>
+</body>
+</html>
+```

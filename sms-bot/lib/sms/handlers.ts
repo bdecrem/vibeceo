@@ -1853,8 +1853,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     }
 
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE)\s/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLISH', 'PRIVATE'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE|PUBLISH|PRIVATE)\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
@@ -1875,7 +1875,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const subscriber = await getSubscriber(normalizedPhoneNumber);
       const isAdmin = subscriber && subscriber.is_admin;
       
-      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
+      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nChat with our coaches (Alex, Donte, Rohan, Venus, Eljas, Kailey) by texting "Hey [coach name]"';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
@@ -1886,9 +1886,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
       const hasDegen = subscriber && subscriber.role === 'degen';
       if (hasDegen) {
-        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n\nExample: EDIT 2 change the background to blue\nExample: MEME when you code for 8 hours and forget to save';
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n• PUBLISH [page_number] - Make submission data public\n• PRIVATE [page_number] - Make submission data private';
         
-        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n\nExample: --stackdb my-form build me a live dashboard';
+        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters';
       }
       
       if (isAdmin) {
@@ -3655,6 +3655,156 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         await sendSmsResponse(
           from,
           `❌ REMIX: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
+    // Handle PUBLISH command - make app data public (degen users only)
+    if (message.match(/^PUBLISH\s+\d+$/i)) {
+      console.log(`Processing PUBLISH command from ${from}`);
+      
+      try {
+        // Check user role for PUBLISH command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        
+        if (!subscriber) {
+          console.log(`❌ No subscriber found for ${normalizedPhoneNumber}`);
+          return;
+        }
+        
+        if (subscriber.role !== 'degen') {
+          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'degen' required`);
+          // Silent ignore - don't reveal command to non-degen users
+          return;
+        }
+        
+        console.log(`✅ User ${normalizedPhoneNumber} has 'degen' role, proceeding with PUBLISH command`);
+        
+        // Parse the page number
+        const publishMatch = message.match(/^PUBLISH\s+(\d+)$/i);
+        if (!publishMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ PUBLISH: Invalid format. Use: PUBLISH [page_number]\n\nExample: PUBLISH 1\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        const pageNumber = parseInt(publishMatch[1]);
+        const userSlug = subscriber.slug;
+        
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Call the publish function
+        const { queuePublishDataRequest } = await import('../degen_commands.js');
+        const success = await queuePublishDataRequest(userSlug, pageNumber, from);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `📢 Made page ${pageNumber} data PUBLIC! Anyone can now read the submitted data.`,
+            twilioClient
+          );
+          console.log(`✅ PUBLISH command successful for ${normalizedPhoneNumber}, page ${pageNumber}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Failed to publish page ${pageNumber}. Check page number with INDEX command.`,
+            twilioClient
+          );
+          console.log(`❌ Failed to publish data for ${normalizedPhoneNumber}, page ${pageNumber}`);
+        }
+        
+      } catch (error) {
+        console.error(`Error processing PUBLISH command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ PUBLISH: Command failed. Please try again later.`,
+          twilioClient
+        );
+      }
+      return;
+    }
+    
+    // Handle PRIVATE command - make app data private (degen users only)
+    if (message.match(/^PRIVATE\s+\d+$/i)) {
+      console.log(`Processing PRIVATE command from ${from}`);
+      
+      try {
+        // Check user role for PRIVATE command
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        
+        if (!subscriber) {
+          console.log(`❌ No subscriber found for ${normalizedPhoneNumber}`);
+          return;
+        }
+        
+        if (subscriber.role !== 'degen') {
+          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'degen' required`);
+          // Silent ignore - don't reveal command to non-degen users
+          return;
+        }
+        
+        console.log(`✅ User ${normalizedPhoneNumber} has 'degen' role, proceeding with PRIVATE command`);
+        
+        // Parse the page number
+        const privateMatch = message.match(/^PRIVATE\s+(\d+)$/i);
+        if (!privateMatch) {
+          await sendSmsResponse(
+            from,
+            `❌ PRIVATE: Invalid format. Use: PRIVATE [page_number]\n\nExample: PRIVATE 1\n\nUse INDEX to see your pages.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        const pageNumber = parseInt(privateMatch[1]);
+        const userSlug = subscriber.slug;
+        
+        if (!userSlug) {
+          await sendSmsResponse(
+            from,
+            `❌ You need a slug first. Use WTAF command to create your first page.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Call the private function
+        const { queuePrivateDataRequest } = await import('../degen_commands.js');
+        const success = await queuePrivateDataRequest(userSlug, pageNumber, from);
+        
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `🔒 Made page ${pageNumber} data PRIVATE! Only you can access the submitted data via admin URL.`,
+            twilioClient
+          );
+          console.log(`✅ PRIVATE command successful for ${normalizedPhoneNumber}, page ${pageNumber}`);
+        } else {
+          await sendSmsResponse(
+            from,
+            `❌ Failed to make page ${pageNumber} private. Check page number with INDEX command.`,
+            twilioClient
+          );
+          console.log(`❌ Failed to make data private for ${normalizedPhoneNumber}, page ${pageNumber}`);
+        }
+        
+      } catch (error) {
+        console.error(`Error processing PRIVATE command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ PRIVATE: Command failed. Please try again later.`,
           twilioClient
         );
       }

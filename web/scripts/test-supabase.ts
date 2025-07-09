@@ -33,7 +33,7 @@ async function testWebSupabaseConnection() {
     
     // Test basic connection by counting subscribers
     const { data, error } = await supabase
-      .from('sms_subscribers')
+      .from('sms_subscribers_public')
       .select('count');
       
     if (error) {

@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make me a playful weekly habit tracker app called “Pizzaface.” I’m trying to cut back on 3 habits: eating pizza, staying up late, and drinking more than 1 matcha latte per day. The app should show a 7-day week view where I can log whether I succeeded or failed for each habit daily. At the end of the week, if I stay within my goals for at least 2 of the 3 habits, I earn a ridiculous emoji badge. If I break all 3, turn my avatar into a pizza zombie. Keep the design fun and a little chaotic, and use Supabase to store my logs and badge history.

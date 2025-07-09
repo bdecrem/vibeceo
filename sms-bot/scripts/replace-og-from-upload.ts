@@ -136,8 +136,11 @@ async function replaceOGFromUpload(uploadFilename: string) {
       .from('og-images')
       .getPublicUrl(storageFileName);
     
-    const ogImageUrl = urlData.publicUrl;
+    // Add cache-busting timestamp to force social media platforms to re-fetch
+    const timestamp = Date.now();
+    const ogImageUrl = `${urlData.publicUrl}?v=${timestamp}`;
     console.log(`🔗 Public URL: ${ogImageUrl}`);
+    console.log(`🔄 Cache-busting timestamp: ${timestamp}`);
     
     // Update the wtaf_content table
     const { data: updateData, error: updateError } = await supabase

@@ -1,0 +1,384 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪩 Senior Center Rager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        #text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        #prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="floating-emoji" data-value="2" style="top: 10%; left: 10%">🪩</span>
+        <span class="floating-emoji" data-value="3" style="top: 20%; right: 20%">💃</span>
+        <span class="floating-emoji" data-value="4" style="bottom: 30%; left: 15%">🎈</span>
+        <span class="floating-emoji" data-value="5" style="bottom: 20%; right: 10%">✨</span>
+
+        <h1>SENIOR CENTER AFTER DARK</h1>
+        <p style="font-size: 1.5rem">Tomorrow at 8PM • Bringing the club to the community room</p>
+
+        <form id="rsvp-form">
+            <input type="text" id="name" placeholder="Your name (the one on your AARP card)" required>
+            <input type="email" id="email" placeholder="Email (we know you have AOL)" required>
+            <button type="submit">SECURE THE BAG 👜</button>
+        </form>
+
+        <div class="success-message" id="success">
+            You're on the list! Bring your best shuffle shoes! 🕺
+        </div>
+    </div>
+
+    <div id="text-cta">
+        📱 Text START to +1-866-330-0015 for secret dance moves
+    </div>
+
+    <div id="prompt">
+        Generated from: make a party invite page for my party at the senior center tomorrow at 8
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value
+            };
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'senior_center_party',
+                    submission_data: formData
+                });
+
+                if (error) throw error;
+
+                document.getElementById('success').style.display = 'block';
+                document.getElementById('rsvp-form').reset();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('RSVP failed. Please try again.');
+            }
+        });
+
+        // Easter egg
+        let konami = [];
+        document.addEventListener('keydown', (e) => {
+            konami.push(e.key);
+            if (konami.slice(-4).join('') === 'WTAF') {
+                document.body.style.animation = 'gradient 2s ease infinite';
+                alert('🕺 SECRET DANCE MODE ACTIVATED 💃');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background: #ff61c7;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF2E93;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪩 Senior Center Party RSVPs</h1>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-rsvps">0</div>
+                <div>Total RSVPs</div>
+            </div>
+        </div>
+
+        <button onclick="exportCSV()">Export to CSV</button>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="rsvp-list"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        async function loadRSVPs() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'senior_center_party')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('rsvp-list');
+                tbody.innerHTML = '';
+
+                data.forEach(rsvp => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${rsvp.submission_data.name}</td>
+                        <td>${rsvp.submission_data.email}</td>
+                        <td>${new Date(rsvp.created_at).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('total-rsvps').textContent = data.length;
+
+                window.rsvpData = data; // Store for CSV export
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load RSVPs');
+            }
+        }
+
+        function exportCSV() {
+            if (!window.rsvpData) return;
+
+            const csvContent = 'Name,Email,Timestamp\n' + window.rsvpData.map(row => 
+                `${row.submission_data.name},${row.submission_data.email},${new Date(row.created_at).toLocaleString()}`
+            ).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'senior_center_party_rsvps.csv';
+            a.click();
+        }
+
+        // Initial load
+        loadRSVPs();
+
+        // Refresh every 30 seconds
+        setInterval(loadRSVPs, 30000);
+    </script>
+</body>
+</html>
+```

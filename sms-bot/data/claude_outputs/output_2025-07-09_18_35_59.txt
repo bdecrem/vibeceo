@@ -1,0 +1,126 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO WORLD // PUNK</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    #000 0px,
+                    #000 10px,
+                    #111 10px,
+                    #111 20px
+                );
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: glitch 1s infinite;
+            text-shadow: 
+                2px 2px #ff0000,
+                -2px -2px #00ff00;
+            position: relative;
+        }
+
+        h1::before {
+            content: 'HELLO WORLD';
+            position: absolute;
+            left: 2px;
+            text-shadow: -2px 0 #ff00ff;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        h1::after {
+            content: 'HELLO WORLD';
+            position: absolute;
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch {
+            2%, 64% {
+                transform: translate(2px,0) skew(0deg);
+            }
+            4%, 60% {
+                transform: translate(-2px,0) skew(0deg);
+            }
+            62% {
+                transform: translate(0,0) skew(5deg); 
+            }
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                clip: rect(31px, 9999px, 94px, 0);
+            }
+            100% {
+                clip: rect(43px, 9999px, 111px, 0);
+            }
+        }
+
+        @keyframes glitch-anim2 {
+            0% {
+                clip: rect(65px, 9999px, 119px, 0);
+            }
+            100% {
+                clip: rect(52px, 9999px, 83px, 0);
+            }
+        }
+
+        .safety-pin {
+            position: absolute;
+            font-size: 2rem;
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #pin1 { top: 20%; left: 20%; }
+        #pin2 { top: 70%; left: 80%; }
+        #pin3 { top: 30%; left: 70%; }
+        #pin4 { top: 80%; left: 30%; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <div class="safety-pin" id="pin1">🔗</div>
+        <div class="safety-pin" id="pin2">⚡</div>
+        <div class="safety-pin" id="pin3">📌</div>
+        <div class="safety-pin" id="pin4">💀</div>
+    </div>
+</body>
+</html>
+```

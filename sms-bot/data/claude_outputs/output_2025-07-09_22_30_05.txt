@@ -1,0 +1,432 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Contact Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+            100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        }
+
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #FF2E93;
+            box-shadow: 0 0 15px rgba(255,46,147,0.3);
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 40px;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SCREAM INTO THE VOID™</h1>
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name">YOUR EARTHLY TITLE</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">DIGITAL ESSENCE (EMAIL)</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="message">RELEASE YOUR CHAOS</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+            </div>
+            <button type="submit">TRANSMIT TO DIMENSION X</button>
+        </form>
+        <div class="success-message" id="successMessage">
+            Message successfully beamed to the void! 🚀
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">✨</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%;" data-value="2">🌀</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 20%;" data-value="4">💫</div>
+    <div class="floating-emoji" style="bottom: 20%; right: 10%;" data-value="3">🔮</div>
+
+    <div class="text-cta">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt-display">
+        Generated from: wtaf create a simple contact form
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                message: document.getElementById('message').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'contact_form_v1',
+                    submission_data: formData
+                })
+
+                if (error) throw error
+
+                document.getElementById('successMessage').style.display = 'block'
+                document.getElementById('contactForm').reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Submission failed. Please try again.')
+            }
+        })
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Easter egg - type WTAF
+        let typed = ''
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase()
+            if (typed.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                typed = ''
+                alert('🎉 YOU FOUND THE SECRET! CHAOS MODE ACTIVATED!')
+            }
+            setTimeout(() => typed = '', 1000)
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Contact Form Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 30px;
+            color: #FF2E93;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,46,147,0.2);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255,46,147,0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VOID MONITORING STATION</h1>
+        
+        <div class="controls">
+            <button onclick="loadSubmissions()">Refresh Data</button>
+            <button onclick="exportCSV()">Export CSV</button>
+        </div>
+
+        <table id="submissionsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+
+        <div id="emptyState" class="empty-state" style="display: none">
+            No submissions yet. The void is quiet.
+        </div>
+    </div>
+
+    <script>
+        async function loadSubmissions() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search)
+                const token = urlParams.get('token')
+                const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load submissions')
+                }
+                
+                const submissions = result.submissions || []
+                const tableBody = document.getElementById('tableBody')
+                const emptyState = document.getElementById('emptyState')
+
+                if (submissions.length === 0) {
+                    tableBody.innerHTML = ''
+                    emptyState.style.display = 'block'
+                    return
+                }
+
+                emptyState.style.display = 'none'
+                tableBody.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${new Date(sub.created_at).toLocaleString()}</td>
+                        <td>${sub.submission_data.name}</td>
+                        <td>${sub.submission_data.email}</td>
+                        <td>${sub.submission_data.message}</td>
+                    </tr>
+                `).join('')
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportCSV() {
+            try {
+                const table = document.getElementById('submissionsTable')
+                const rows = Array.from(table.querySelectorAll('tr'))
+                
+                const csvContent = rows.map(row => {
+                    const cells = Array.from(row.querySelectorAll('th, td'))
+                    return cells.map(cell => `"${cell.textContent}"`).join(',')
+                }).join('\n')
+
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'void_submissions.csv'
+                a.click()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

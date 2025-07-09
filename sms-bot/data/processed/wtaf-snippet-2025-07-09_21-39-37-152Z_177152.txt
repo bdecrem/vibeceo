@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make a FAQ for WTAF.me. The title should be WTAF Command Center and give it this intro text: "Welcome to the flip-phone revolution, you beautiful chaos agent. We're building the future through SMS, one unhinged text at a time. Here's your guide to speaking our language. Text these commands to +1-866-330-0015 and watch the magic unfold." Each FAQ entry has 2 columns: a command and an explanation of what it does. Make sure to include an admin URL where I, the owner of the FAQ, can enter new FAQ items.

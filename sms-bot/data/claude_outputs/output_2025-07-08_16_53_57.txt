@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍕 PIZZAFACE: HABIT TRACKER OF DOOM</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 50%, #FF4081 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .habit-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+
+        .habit-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFC6, #57E2E5);
+            transition: width 0.3s ease;
+        }
+
+        .status-badge {
+            font-size: 2em;
+            margin: 10px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #avatar {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px;
+            animation: spin 1s ease-in-out;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .zombie {
+            filter: hue-rotate(180deg);
+            animation: zombie 2s infinite;
+        }
+
+        @keyframes zombie {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;">🍕</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;">🌙</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;">🍵</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;">🧟‍♂️</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>🍕 Welcome to PIZZAFACE</h1>
+            <p>TRACK YOUR CHAOS, EMBRACE THE SAUCE! 🌟</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New Pizza Warrior</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">JOIN THE PIZZA RESISTANCE</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back, Pizza Face</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">RETURN TO THE VOID</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>🍕 PIZZAFACE TRACKER</h1>
+            <div id="user-status">Welcome back, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div id="avatar">😊</div>
+                
+                <div class="goals-grid">
+                    <div class="habit-card">
+                        <h2>🍕 Pizza Counter</h2>
+                        <p>Weekly Goal: Max 2 pizzas</p>
+                        <div class="progress-bar">
+                            <div id="pizza-progress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <button onclick="logHabit('pizza')">ATE A PIZZA</button>
+                    </div>
+
+                    <div class="habit-card">
+                        <h2>🌙 Late Nights</h2>
+                        <p>Weekly Goal: Max 2 late nights</p>
+                        <div class="progress-bar">
+                            <div id="late-progress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <button onclick="logHabit('late')">STAYED UP LATE</button>
+                    </div>
+
+                    <div class="habit-card">
+                        <h2>🍵 Matcha Madness</h2>
+                        <p>Daily Goal: Max 1 matcha</p>
+                        <div class="progress-bar">
+                            <div id="matcha-progress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <button onclick="logHabit('matcha')">DRANK MATCHA</button>
+                    </div>
+                </div>
+
+                <div id="status-badges"></div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">ESCAPE THE VOID</button>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://tqniseocczttrfwtpbdr.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        );
+
+        const APP_ID = 'pizzaface_tracker';
+        const USER_LABELS = ['PizzaLord🍕', 'NightOwl🌙', 'MatchaKing🍵', 'SauceQueen👑', 'ZombieHero🧟‍♂️'];
+        let currentUser = null;
+        let currentWeekData = null;
+
+        // Authentication Functions
+        let currentUser = null;
+
+        async function generateNewUser() {
+            const { data: existingUsers } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('participant_data')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join');
+            
+            const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+            
+            if (usedLabels.length >= 5) {
+                alert('PIZZA SQUAD IS FULL! TRY ANOTHER DIMENSION 🍕');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THE PIZZA VOID 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR PIZZA IDENTITY:</strong> ${currentUser.userLabel}<br>
+                <strong>SECRET SAUCE CODE:</strong> ${currentUser.passcode}<br>
+                <em>SCREENSHOT THIS OR FACE THE VOID 📸</em>`;
+            
+            return true;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR PIZZA IDENTITY FIRST! 🍕');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'join',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode,
+                        join_time: Date.now()
+                    },
+                    content_data: {
+                        habits: {
+                            pizza: 0,
+                            late: 0,
+                            matcha: 0
+                        },
+                        lastReset: Date.now(),
+                        timestamp: Date.now()
+                    }
+                });
+                
+                enterMainScreen();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('PIZZA REGISTRATION FAILED! TRY AGAIN 🍕💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR PIZZA IDENTITY! 🍕');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF PIZZA MAGIC REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const { data: joinRecords } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const userRecord = joinRecords?.find(record => 
+                    record.participant_data?.userLabel === selectedLabel && 
+                    record.participant_data?.passcode === enteredPasscode
+                );
+                
+                if (userRecord) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: userRecord.participant_id
+                    };
+                    enterMainScreen();
+                } else {
+                    alert('WRONG PIZZA CODE! TRY AGAIN 🍕❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('PIZZA LOGIN MALFUNCTION! 🍕🌀');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            USER_LABELS.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Polling
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(async () => {
+                await loadLatestData();
+            }, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Habit Tracking Logic
+        async function loadLatestData() {
+            const { data } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId)
+                .eq('action_type', 'join')
+                .single();
+
+            if (data) {
+                currentWeekData = data.content_data;
+                
+                // Check if we need to reset weekly counts
+                const lastReset = new Date(currentWeekData.lastReset);
+                const now = new Date();
+                if (now.getTime() - lastReset.getTime() > 7 * 24 * 60 * 60 * 1000) {
+                    currentWeekData.habits = {
+                        pizza: 0,
+                        late: 0,
+                        matcha: 0
+                    };
+                    currentWeekData.lastReset = now.getTime();
+                    await updateHabitData();
+                }
+
+                updateUI();
+            }
+        }
+
+        async function logHabit(habit) {
+            if (!currentWeekData) return;
+            
+            currentWeekData.habits[habit]++;
+            currentWeekData.timestamp = Date.now();
+            
+            await updateHabitData();
+            updateUI();
+        }
+
+        async function updateHabitData() {
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .update({
+                    content_data: currentWeekData
+                })
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId)
+                .eq('action_type', 'join');
+        }
+
+        function updateUI() {
+            if (!currentWeekData) return;
+
+            const habits = currentWeekData.habits;
+            
+            // Update progress bars
+            document.getElementById('pizza-progress').style.width = `${(habits.pizza / 2) * 100}%`;
+            document.getElementById('late-progress').style.width = `${(habits.late / 2) * 100}%`;
+            document.getElementById('matcha-progress').style.width = `${(habits.matcha / 7) * 100}%`;
+
+            // Calculate success
+            const pizzaSuccess = habits.pizza <= 2;
+            const lateSuccess = habits.late <= 2;
+            const matchaSuccess = habits.matcha <= 7;
+
+            const successCount = [pizzaSuccess, lateSuccess, matchaSuccess].filter(Boolean).length;
+
+            // Update avatar and badges
+            const avatar = document.getElementById('avatar');
+            const badges = document.getElementById('status-badges');
+
+            if (successCount === 0) {
+                avatar.textContent = '🧟‍♂️';
+                avatar.classList.add('zombie');
+                badges.innerHTML = '❌ PIZZA ZOMBIE ALERT! ❌';
+            } else {
+                avatar.textContent = '😊';
+                avatar.classList.remove('zombie');
+                badges.innerHTML = '';
+
+                if (pizzaSuccess) badges.innerHTML += '🏆';
+                if (lateSuccess) badges.innerHTML += '⭐';
+                if (matchaSuccess) badges.innerHTML += '🌟';
+            }
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        console.log('🍕 Welcome to PIZZAFACE! Type pizza() for a special surprise...');
+        window.pizza = function() {
+            document.body.style.animation = 'spin 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🍕 ULTIMATE PIZZA MASTER MODE ACTIVATED! 🍕');
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

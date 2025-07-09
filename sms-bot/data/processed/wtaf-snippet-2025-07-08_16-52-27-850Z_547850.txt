@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make me a fun habit tracker app called “Pizzaface.” I want to reduce 3 things: eating pizza, staying up late, and drinking more than 1 matcha latte per day. Let me set weekly goals for each one. The pizza and late-night goals are weekly maximums (e.g. no more than 2 pizzas or 2 late nights per week). The matcha goal is daily — I should drink no more than 1 per day, and succeed if I follow that 5 out of 7 days. If I hit at least 2 out of 3 goals, reward me with fun emoji badges. If I fail all 3, turn my avatar into a pizza zombie. Make it playful, weird, and use Supabase for storage

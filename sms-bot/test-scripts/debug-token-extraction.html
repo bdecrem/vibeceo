@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token Extraction Debug Test</title>
+</head>
+<body>
+    <h1>Token Extraction Debug</h1>
+    <div id="debug-output"></div>
+    
+    <script>
+        function debugTokenExtraction() {
+            console.log('=== DEBUG TOKEN EXTRACTION ===');
+            
+            // Test 1: Raw URL
+            console.log('window.location.href:', window.location.href);
+            console.log('window.location.search:', window.location.search);
+            console.log('window.location.pathname:', window.location.pathname);
+            
+            // Test 2: URLSearchParams
+            const urlParams = new URLSearchParams(window.location.search);
+            console.log('URLSearchParams object:', urlParams);
+            console.log('urlParams.toString():', urlParams.toString());
+            
+            // Test 3: Token extraction
+            const token = urlParams.get('token');
+            console.log('Extracted token:', token);
+            console.log('Token type:', typeof token);
+            console.log('Token length:', token ? token.length : 'null');
+            
+            // Test 4: App slug extraction
+            const appSlug = window.location.pathname.split('/').pop().replace('admin-', '');
+            console.log('Extracted app slug:', appSlug);
+            
+            // Test 5: Token check
+            if (!token) {
+                console.log('❌ NO TOKEN FOUND!');
+                alert('Missing authentication token (debug mode)');
+            } else {
+                console.log('✅ TOKEN FOUND:', token.slice(0, 8) + '...');
+                alert('Token found: ' + token.slice(0, 8) + '... (length: ' + token.length + ')');
+            }
+            
+            // Display results on page
+            const output = document.getElementById('debug-output');
+            output.innerHTML = `
+                <h3>Debug Results:</h3>
+                <p><strong>URL:</strong> ${window.location.href}</p>
+                <p><strong>Search:</strong> ${window.location.search}</p>
+                <p><strong>Token:</strong> ${token ? token.slice(0, 8) + '...' : 'NULL'}</p>
+                <p><strong>App Slug:</strong> ${appSlug}</p>
+                <p><strong>Status:</strong> ${token ? '✅ Token Found' : '❌ No Token'}</p>
+            `;
+        }
+        
+        // Run debug on page load
+        window.addEventListener('load', debugTokenExtraction);
+    </script>
+</body>
+</html> 

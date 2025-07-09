@@ -1,0 +1,5 @@
+SENDER_PHONE: +15551234567
+USER_SLUG: bart
+USER_PROMPT: wtaf create a simple contact form for testing admin fix
+COACH: test
+TIMESTAMP: 2025-07-09T22:29:12.3NZ

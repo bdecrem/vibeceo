@@ -1,0 +1,123 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO WORLD // WTAF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            position: relative;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            animation: glitch 3s infinite;
+            text-shadow: 
+                0 0 10px #ff2e93,
+                0 0 20px #ff2e93,
+                0 0 40px #ff2e93;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #emoji1 { top: -100px; left: -100px; animation-delay: 0s; }
+        #emoji2 { top: 100px; right: -50px; animation-delay: 1s; }
+        #emoji3 { bottom: -80px; left: 50px; animation-delay: 2s; }
+        #emoji4 { top: 50px; left: -150px; animation-delay: 3s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            21% { transform: skew(-10deg); }
+            23% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .secret {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        /* Easter egg class */
+        .rage-mode {
+            animation: rage 0.1s infinite;
+        }
+
+        @keyframes rage {
+            0% { transform: translate(-2px, -2px); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, 2px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="floating-emoji" id="emoji1">⚡</span>
+        <span class="floating-emoji" id="emoji2">💀</span>
+        <span class="floating-emoji" id="emoji3">🔥</span>
+        <span class="floating-emoji" id="emoji4">💥</span>
+        <h1>Hello World</h1>
+    </div>
+    <div class="secret">type WTAF for chaos</div>
+
+    <script>
+        // Easter egg
+        let buffer = '';
+        document.addEventListener('keydown', (e) => {
+            buffer += e.key.toLowerCase();
+            if(buffer.includes('wtaf')) {
+                document.body.classList.add('rage-mode');
+                buffer = '';
+            }
+        });
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            emojis.forEach(emoji => {
+                const speed = 0.1;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

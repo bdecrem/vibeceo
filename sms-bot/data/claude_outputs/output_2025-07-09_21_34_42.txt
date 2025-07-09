@@ -1,0 +1,429 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF FAQ - The Most Chaotic Knowledge Base You've Ever Seen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        .intro {
+            font-size: 1.2rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .faq-item {
+            background: rgba(255,255,255,0.03);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255,46,147,0.1);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: all 0.2s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .cta-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤔 WTAF FAQ</h1>
+        <div class="intro">
+            Your questions about WTAF, answered in the most chaotic way possible. If you're confused, that's probably the point. If you're not confused, you're doing it wrong.
+        </div>
+        <div class="faq-grid" id="faqGrid"></div>
+    </div>
+
+    <div class="floating-emoji" data-value="2">✨</div>
+    <div class="floating-emoji" data-value="3">🌀</div>
+    <div class="floating-emoji" data-value="4">🚀</div>
+    <div class="floating-emoji" data-value="5">🦄</div>
+    <div class="floating-emoji" data-value="6">💫</div>
+
+    <div class="cta-text">📱 Text START to +1-866-330-0015 to get initiated</div>
+    <div class="prompt">Generated from: make a FAQ for WTAF.me</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        // Position floating emojis
+        const emojis = document.querySelectorAll('.floating-emoji')
+        emojis.forEach(emoji => {
+            emoji.style.left = `${Math.random() * 100}vw`
+            emoji.style.top = `${Math.random() * 100}vh`
+            emoji.style.animation = `float ${5 + Math.random() * 5}s ease-in-out infinite`
+        })
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            emojis.forEach(emoji => {
+                const speed = emoji.getAttribute('data-value') || 2
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translate3d(${x}px, ${y}px, 0)`
+            })
+        })
+
+        // Easter egg
+        let wtafTyped = ''
+        document.addEventListener('keydown', (e) => {
+            wtafTyped += e.key.toLowerCase()
+            if (wtafTyped.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                wtafTyped = ''
+            }
+        })
+
+        // Fetch FAQs
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                    .order('created_at', { ascending: true })
+                
+                if (error) throw error
+
+                const faqGrid = document.getElementById('faqGrid')
+                faqGrid.innerHTML = ''
+
+                data.forEach(faq => {
+                    const faqItem = document.createElement('div')
+                    faqItem.className = 'faq-item'
+                    faqItem.innerHTML = `
+                        <h2>${faq.submission_data.question}</h2>
+                        <p>${faq.submission_data.answer}</p>
+                    `
+                    faqGrid.appendChild(faqItem)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load FAQs')
+            }
+        }
+
+        loadFAQs()
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF FAQ Admin - Control The Chaos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF, #ABF7FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .admin-form {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 3rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0 1rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            color: #fff;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(63,136,255,0.3);
+        }
+
+        .faq-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .faq-table th,
+        .faq-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .faq-table th {
+            background: rgba(255,255,255,0.05);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #00FFC6, #57E2E5);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 WTAF FAQ Admin Dashboard</h1>
+        
+        <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+
+        <form class="admin-form" id="faqForm">
+            <input type="text" id="question" placeholder="Enter FAQ question" required>
+            <textarea id="answer" placeholder="Enter FAQ answer" rows="4" required></textarea>
+            <button type="submit">Add FAQ</button>
+        </form>
+
+        <table class="faq-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Answer</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="faqTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const question = document.getElementById('question').value
+            const answer = document.getElementById('answer').value
+
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .insert({
+                        app_id: 'wtaf_faq',
+                        submission_data: { question, answer }
+                    })
+
+                if (error) throw error
+
+                alert('FAQ added successfully!')
+                document.getElementById('faqForm').reset()
+                loadFAQs()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to add FAQ')
+            }
+        })
+
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                    .order('created_at', { ascending: false })
+
+                if (error) throw error
+
+                const tableBody = document.getElementById('faqTableBody')
+                tableBody.innerHTML = ''
+
+                data.forEach(faq => {
+                    const row = document.createElement('tr')
+                    row.innerHTML = `
+                        <td>${faq.submission_data.question}</td>
+                        <td>${faq.submission_data.answer}</td>
+                        <td>${new Date(faq.created_at).toLocaleString()}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteFAQ('${faq.id}')">Delete</button>
+                        </td>
+                    `
+                    tableBody.appendChild(row)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load FAQs')
+            }
+        }
+
+        async function deleteFAQ(id) {
+            if (!confirm('Are you sure you want to delete this FAQ?')) return
+
+            try {
+                const { error } = await supabase
+                    .from('wtaf_submissions')
+                    .delete()
+                    .eq('id', id)
+
+                if (error) throw error
+
+                alert('FAQ deleted successfully!')
+                loadFAQs()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to delete FAQ')
+            }
+        }
+
+        async function exportCSV() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+
+                if (error) throw error
+
+                const csvContent = 'Question,Answer,Created At\n' + data.map(row => 
+                    `"${row.submission_data.question}","${row.submission_data.answer}","${row.created_at}"`
+                ).join('\n')
+
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'wtaf_faq.csv'
+                a.click()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        loadFAQs()
+    </script>
+</body>
+</html>
+```

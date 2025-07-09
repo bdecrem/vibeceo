@@ -331,7 +331,33 @@ export async function GET(request: NextRequest) {
     
     console.log(`🎨 Checking cached OG image for: ${userSlug}/${appSlug}`)
     
-    // 1. Check if we already have this image in Supabase Storage
+    // 1. First check if this is a meme and if it already has an og_image_url
+    const { data: contentData, error: contentError } = await supabase
+      .from('wtaf_content')
+      .select('type, og_image_url, html_content, original_prompt, created_at')
+      .eq('user_slug', userSlug)
+      .eq('app_slug', appSlug)
+      .eq('status', 'published')
+      .single()
+
+    if (contentError || !contentData) {
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
+    }
+
+    // 2. If app already has an og_image_url in database (with cache-busting), use it
+    if (contentData.og_image_url) {
+      console.log(`⚡ Using database og_image_url: ${contentData.og_image_url}`)
+      return NextResponse.json({
+        success: true,
+        image_url: contentData.og_image_url,
+        cached: true,
+        is_meme: contentData.type === 'MEME',
+        user_slug: userSlug,
+        app_slug: appSlug
+      })
+    }
+    
+    // 3. Check if we already have a screenshot cached in Supabase Storage
     const { data: existingFile } = await supabase.storage
       .from('og-images')
       .list('', { search: fileName })
@@ -354,28 +380,15 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔄 Generating new OG image for: ${userSlug}/${appSlug}`)
     
-    // 2. Fetch the real page content from Supabase
-    const { data: pageData, error: pageError } = await supabase
-      .from('wtaf_content')
-      .select('html_content, original_prompt, created_at')
-      .eq('user_slug', userSlug)
-      .eq('app_slug', appSlug)
-      .eq('status', 'published')
-      .single()
-
-    if (pageError || !pageData) {
-      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
-    }
-
-    // 3. Generate custom OG image with extracted styling
+    // 4. Generate custom OG image with extracted styling
     console.log('🎨 Extracting styling from page content...')
     
     // Extract title from the HTML content
-    let title = extractMainTitle(pageData.html_content)
+    let title = extractMainTitle(contentData.html_content)
     console.log(`📝 Extracted title: "${title}"`)
     
     // Extract styling from the HTML content
-    const styling = extractStyling(pageData.html_content)
+    const styling = extractStyling(contentData.html_content)
     
     // Apply text transformation to title if specified
     if (styling.textTransform === 'uppercase') {
@@ -416,15 +429,15 @@ export async function GET(request: NextRequest) {
     const imageData = await imageResponse.json()
     console.log(`✅ Generated image via HTMLCSStoImage: ${imageData.url}`)
     
-    // 4. Download the image
+    // 5. Download the image
     const imageBuffer = await downloadImageFromURL(imageData.url)
     console.log(`📥 Downloaded image (${imageBuffer.byteLength} bytes)`)
     
-    // 5. Upload to Supabase Storage
+    // 6. Upload to Supabase Storage
     const supabaseUrl = await uploadToSupabaseStorage(imageBuffer, fileName)
     console.log(`📤 Uploaded to Supabase Storage: ${supabaseUrl}`)
     
-    // 6. Update the wtaf_content record with the cached URL
+    // 7. Update the wtaf_content record with the cached URL
     await supabase
       .from('wtaf_content')
       .update({ 

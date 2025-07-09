@@ -1,0 +1,126 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO_WORLD.exe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            animation: gradientShift 8s ease infinite;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-shadow: 
+                0 0 10px #fff,
+                0 0 20px #fff,
+                0 0 30px #FF2E93;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 5rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #emoji1 { top: 20%; left: 20%; }
+        #emoji2 { top: 70%; left: 70%; }
+        #emoji3 { top: 30%; right: 20%; }
+        #emoji4 { bottom: 20%; right: 30%; }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 5px;
+            backdrop-filter: blur(5px);
+            font-size: 0.8rem;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating-emoji" id="emoji1" data-value="2">💾</div>
+        <div class="floating-emoji" id="emoji2" data-value="3">⚡</div>
+        <div class="floating-emoji" id="emoji3" data-value="4">🌀</div>
+        <div class="floating-emoji" id="emoji4" data-value="2">✨</div>
+        <h1>Hello, World!</h1>
+    </div>
+
+    <div class="cta">📱 Text START to +1-866-330-0015</div>
+    <div class="prompt">Generated from: Simple Hello World request</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg: Type 'hello' to trigger rainbow mode
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('hello')) {
+                document.querySelector('.container').style.animation = 'gradientShift 2s ease infinite';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

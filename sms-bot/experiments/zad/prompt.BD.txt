@@ -1,0 +1,369 @@
+# WTAF Zero-Admin System Test Prompt
+
+You are building a collaborative web app using our zero-admin database system. Follow these requirements exactly:
+
+## What to Build
+Build: **[USER REQUEST]**
+
+## Technical Requirements
+
+### 1. Single HTML File
+- All HTML, CSS, and JavaScript in one file
+- No external dependencies except Supabase (already included)
+- Must be a complete, working web page
+
+### 2. Database Integration (REQUIRED)
+Use this exact Supabase setup:
+```javascript
+const supabase = window.supabase.createClient(
+  'https://tqniseocczttrfwtpbdr.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+);
+```
+
+**Table**: `wtaf_zero_admin_collaborative`
+**Required fields for every insert**:
+```javascript
+{
+  app_id: APP_ID,              // Your unique app identifier
+  participant_id: userId,      // User's unique ID
+  action_type: 'join'|'message'|'vote'|'update'|etc,
+  participant_data: {...},     // User info (userLabel, passcode, etc)
+  content_data: {...}          // Action-specific data
+}
+```
+
+### 3. Authentication System (LOCKED - DO NOT MODIFY)
+Use this exact pattern:
+
+**App ID Generation**:
+```javascript
+const APP_ID = 'test1'; // This will be replaced by the script with test1, test2, test3, etc.
+```
+
+**User Labels** (pick 5 themed for your app):
+```javascript
+const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
+```
+
+**Required HTML Structure** (COPY THIS EXACTLY):
+```html
+<div class="app-container">
+    <div id="welcome-screen" class="screen active">
+        <h1>Welcome to [Your App Name]</h1>
+        <p>[Brief app description]</p>
+        <button onclick="showNewUserScreen()">New User</button>
+        <button onclick="showReturningUserScreen()">Returning User</button>
+    </div>
+    
+    <div id="new-user-screen" class="screen">
+        <h1>New User</h1>
+        <div id="new-user-info"></div>
+        <button onclick="registerNewUser()">Register & Enter App</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="returning-user-screen" class="screen">
+        <h1>Returning User</h1>
+        <select id="user-label-select">
+            <option>Select User</option>
+        </select>
+        <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+        <button onclick="loginReturningUser()">Login</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="main-screen" class="screen">
+        <h1>[Your App Title]</h1>
+        <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        
+        <!-- PUT YOUR APP CONTENT HERE -->
+        <div id="app-content">
+            <!-- Your app's main functionality goes here -->
+        </div>
+        <!-- END APP CONTENT -->
+        
+        <button onclick="showScreen('welcome-screen')">Leave App</button>
+    </div>
+</div>
+```
+
+**Authentication Functions** (COPY THESE EXACTLY):
+```javascript
+let currentUser = null;
+
+// Check capacity and generate new user
+async function generateNewUser() {
+  // First check existing users
+  const { data: existingUsers } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('participant_data')
+    .eq('app_id', APP_ID)
+    .eq('action_type', 'join');
+  
+  const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+  
+  if (usedLabels.length >= 5) {
+    alert('App is full (max 5 users)');
+    return false;
+  }
+  
+  const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+  if (!availableLabel) {
+    alert('No available user slots');
+    return false;
+  }
+  
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  currentUser = {
+    userLabel: availableLabel,
+    passcode: code,
+    participantId: availableLabel + '_' + code
+  };
+  
+  // Display credentials to user
+  document.getElementById('new-user-info').innerHTML = 
+    `<strong>Your Label:</strong> ${currentUser.userLabel}<br><strong>Your Passcode:</strong> ${currentUser.passcode}<br><em>Save these to login later!</em>`;
+  
+  return true;
+}
+
+// Register new user in database
+async function registerNewUser() {
+  if (!currentUser) {
+    alert('Please generate user first');
+    return;
+  }
+  
+  try {
+    await supabase.from('wtaf_zero_admin_collaborative').insert({
+      app_id: APP_ID,
+      participant_id: currentUser.participantId,
+      action_type: 'join',
+      participant_data: {
+        userLabel: currentUser.userLabel,
+        passcode: currentUser.passcode,
+        join_time: Date.now()
+      },
+      content_data: { message: 'Joined the app', timestamp: Date.now() }
+    });
+    
+    enterMainScreen();
+  } catch (error) {
+    console.error('Registration error:', error);
+    alert('Failed to register user');
+  }
+}
+
+// IMPORTANT: Make showNewUserScreen async to handle user generation
+async function showNewUserScreen() {
+    showScreen('new-user-screen');
+    const success = await generateNewUser();
+    if (!success) {
+        showScreen('welcome-screen');
+    }
+}
+
+// Login returning user
+async function loginReturningUser() {
+  const selectedLabel = document.getElementById('user-label-select').value;
+  const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+  
+  if (!selectedLabel || selectedLabel === 'Select User') {
+    alert('Please select a user label');
+    return;
+  }
+  
+  if (!enteredPasscode || enteredPasscode.length !== 4) {
+    alert('Please enter a 4-digit passcode');
+    return;
+  }
+  
+  try {
+    // Get all join records for this app
+    const { data: joinRecords } = await supabase
+      .from('wtaf_zero_admin_collaborative')
+      .select('*')
+      .eq('app_id', APP_ID)
+      .eq('action_type', 'join');
+    
+    // Find matching user in JavaScript (more reliable than JSON queries)
+    const userRecord = joinRecords?.find(record => 
+      record.participant_data?.userLabel === selectedLabel && 
+      record.participant_data?.passcode === enteredPasscode
+    );
+    
+    if (userRecord) {
+      currentUser = {
+        userLabel: selectedLabel,
+        passcode: enteredPasscode,
+        participantId: userRecord.participant_id
+      };
+      enterMainScreen();
+    } else {
+      alert('Invalid user label or passcode');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('Login failed');
+  }
+}
+
+// Screen navigation with polling control
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(screen => 
+    screen.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  
+  // Stop polling if leaving main screen
+  if (screenId !== 'main-screen') {
+    stopPolling();
+  }
+}
+
+function showReturningUserScreen() {
+  showScreen('returning-user-screen');
+  // Populate user select dropdown
+  const userSelect = document.getElementById('user-label-select');
+  userSelect.innerHTML = '<option>Select User</option>';
+  USER_LABELS.forEach(label => {
+    const option = document.createElement('option');
+    option.value = label;
+    option.textContent = label;
+    userSelect.appendChild(option);
+  });
+}
+
+function enterMainScreen() {
+  showScreen('main-screen');
+  document.getElementById('current-user-label').textContent = currentUser.userLabel;
+  startPolling(); // Start real-time updates
+  loadLatestData(); // Load initial data
+}
+```
+
+### 4. Real-Time Updates (REQUIRED)
+
+Your app MUST update dynamically when other users make changes. Implement polling to check for updates:
+
+**Add this polling function:**
+```javascript
+let pollingInterval;
+
+function startPolling() {
+  // Poll every 2 seconds for updates
+  pollingInterval = setInterval(async () => {
+    await loadLatestData(); // Your function to reload data
+  }, 2000);
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+}
+
+// Your app MUST implement loadLatestData() to fetch and display updates
+async function loadLatestData() {
+  // Example for a chat app:
+  const { data } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .eq('action_type', 'message') // or whatever your app uses
+    .order('created_at', { ascending: true });
+    
+  // Update your UI with the latest data
+  updateUI(data); // You must implement this function
+}
+```
+
+**IMPORTANT:** 
+- Poll every 2 seconds when on the main screen
+- Stop polling when user leaves the main screen
+- Update the UI without page refresh
+- All users should see updates within 2-3 seconds
+
+### 5. User Capacity
+- **Minimum**: 1 user (app works with just one person)
+- **Maximum**: 5 users (enforce this limit)
+- One user per userLabel (prevent duplicates)
+
+### 6. Visual Style (Required)
+Use this CSS framework:
+```css
+body { 
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+  color: white;
+}
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.screen { display: none; }
+.screen.active { display: block; }
+button {
+  background: linear-gradient(135deg, #00FFC6, #57E2E5);
+  color: #000;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+}
+```
+
+## Data Patterns for Common Actions
+
+**User Action Example**:
+```javascript
+await supabase.from('wtaf_zero_admin_collaborative').insert({
+  app_id: APP_ID,
+  participant_id: currentUser.participantId,
+  action_type: 'vote',  // or 'message', 'update', 'create', etc
+  participant_data: {
+    userLabel: currentUser.userLabel,
+    passcode: currentUser.passcode
+  },
+  content_data: {
+    vote_choice: 'option_a',
+    timestamp: Date.now(),
+    // any other action-specific data
+  }
+});
+```
+
+**Load Data Example**:
+```javascript
+const { data } = await supabase
+  .from('wtaf_zero_admin_collaborative')
+  .select('*')
+  .eq('app_id', APP_ID)
+  .eq('action_type', 'vote')  // or whatever action you want
+  .order('created_at', { ascending: true });
+```
+
+## Success Criteria
+Your app must:
+1. ✅ Have working authentication (4 screens, user generation, login)
+2. ✅ Support 1-5 users with capacity checking
+3. ✅ Save and load data from the database correctly
+4. ✅ Implement the core functionality requested
+5. ✅ Use the required visual styling
+6. ✅ Be contained in a single HTML file
+7. ✅ **Update dynamically when other users make changes (real-time updates via polling)**
+
+## Example Request
+**Input**: "a simple voting app"
+**Output**: Complete HTML file with voting interface, user auth, database storage, results display, and real-time updates showing votes as they happen
+
+---
+
+**Now build**: [USER REQUEST]

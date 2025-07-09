@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THREE THINGS ✨</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #3F88FF 0%, #6E7FFF 50%, #ABF7FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        h1 {
+            position: relative;
+            animation: glitch 3s ease-in-out infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 2px 0 #FF2E93, -2px -2px 0 #00FFC6; }
+            25% { text-shadow: -2px 2px 0 #3F88FF, 2px -2px 0 #FF2E93; }
+            50% { text-shadow: 2px -2px 0 #00FFC6, -2px 2px 0 #7C3AED; }
+            75% { text-shadow: -2px -2px 0 #FF2E93, 2px 2px 0 #3F88FF; }
+        }
+
+        /* Custom styles for Three Things app */
+        .goal-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .goal-checkbox {
+            display: none;
+        }
+
+        .goal-label {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .goal-label:before {
+            content: '';
+            width: 25px;
+            height: 25px;
+            border: 2px solid #00FFC6;
+            border-radius: 5px;
+            margin-right: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .goal-checkbox:checked + .goal-label:before {
+            background: #00FFC6;
+            box-shadow: 0 0 15px rgba(0, 255, 198, 0.5);
+        }
+
+        .goal-checkbox:checked + .goal-label {
+            background: rgba(0,255,198,0.2);
+            transform: scale(1.02);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFC6, #57E2E5);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .celebration {
+            position: absolute;
+            animation: celebrate 0.5s ease-out forwards;
+        }
+
+        @keyframes emojiRain {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .raining-emoji {
+            position: fixed;
+            font-size: 24px;
+            animation: emojiRain linear forwards;
+            z-index: 1000;
+        }
+
+        .setup-goals {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .date-display {
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .streak-count {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0,255,198,0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">🎯</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">💫</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">⚡</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Welcome to Three Things</h1>
+            <p>TRACK YOUR DAILY WINS IN THE CHAOS DIMENSION 🌀</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <div class="setup-goals">
+                <input type="text" id="goal1" placeholder="Enter your first daily goal" maxlength="50">
+                <input type="text" id="goal2" placeholder="Enter your second daily goal" maxlength="50">
+                <input type="text" id="goal3" placeholder="Enter your third daily goal" maxlength="50">
+            </div>
+            <button onclick="registerNewUser()">SET GOALS & ENTER APP</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Three Things</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div class="date-display"></div>
+                <div id="goals-container"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="streak-count"></div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://tqniseocczttrfwtpbdr.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        );
+
+        const APP_ID = 'three_things_v1';
+        const USER_LABELS = ['tracker1🎯', 'tracker2⚡', 'tracker3🌟', 'tracker4🔥', 'tracker5💎'];
+        const CELEBRATION_EMOJIS = ['🎉', '⭐', '🌟', '💪', '🔥', '🌈'];
+        let currentUser = null;
+        let pollingInterval;
+
+        // Authentication functions
+        let currentUser = null;
+
+        async function generateNewUser() {
+            const { data: existingUsers } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('participant_data')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join');
+            
+            const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+            
+            if (usedLabels.length >= 5) {
+                alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+            
+            return true;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+
+            const goals = [
+                document.getElementById('goal1').value.trim(),
+                document.getElementById('goal2').value.trim(),
+                document.getElementById('goal3').value.trim()
+            ];
+
+            if (!goals[0] || !goals[1] || !goals[2]) {
+                alert('ALL THREE GOALS REQUIRED FOR MAXIMUM CHAOS 🎯');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'join',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode,
+                        goals: goals,
+                        join_time: Date.now()
+                    },
+                    content_data: {
+                        streak: 0,
+                        last_completed: null,
+                        completed_today: false
+                    }
+                });
+                
+                enterMainScreen();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR IDENTITY, PHANTOM 👻');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const { data: joinRecords } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const userRecord = joinRecords?.find(record => 
+                    record.participant_data?.userLabel === selectedLabel && 
+                    record.participant_data?.passcode === enteredPasscode
+                );
+                
+                if (userRecord) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: userRecord.participant_id,
+                        goals: userRecord.participant_data.goals
+                    };
+                    enterMainScreen();
+                } else {
+                    alert('NICE TRY, WRONG VIBES ❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            USER_LABELS.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+            updateDateDisplay();
+        }
+
+        // App-specific functions
+        function updateDateDisplay() {
+            const today = new Date();
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            document.querySelector('.date-display').textContent = today.toLocaleDateString('en-US', options);
+        }
+
+        function createGoalCheckboxes() {
+            const container = document.getElementById('goals-container');
+            container.innerHTML = '';
+            
+            currentUser.goals.forEach((goal, index) => {
+                const div = document.createElement('div');
+                div.className = 'goal-container';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `goal-${index}`;
+                checkbox.className = 'goal-checkbox';
+                checkbox.onclick = () => handleGoalCheck(index);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `goal-${index}`;
+                label.className = 'goal-label';
+                label.textContent = goal;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        async function handleGoalCheck(goalIndex) {
+            const checkbox = document.getElementById(`goal-${goalIndex}`);
+            if (checkbox.checked) {
+                celebrateGoal(checkbox);
+                await updateGoalProgress();
+            }
+        }
+
+        function celebrateGoal(element) {
+            const emoji = CELEBRATION_EMOJIS[Math.floor(Math.random() * CELEBRATION_EMOJIS.length)];
+            const celebration = document.createElement('div');
+            celebration.className = 'celebration';
+            celebration.textContent = emoji;
+            celebration.style.left = `${Math.random() * 80 + 10}%`;
+            celebration.style.top = `${Math.random() * 80 + 10}%`;
+            document.body.appendChild(celebration);
+            setTimeout(() => celebration.remove(), 1000);
+        }
+
+        async function updateGoalProgress() {
+            const checkboxes = document.querySelectorAll('.goal-checkbox');
+            const completed = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const progress = (completed / 3) * 100;
+            
+            document.querySelector('.progress-fill').style.width = `${progress}%`;
+            
+            if (completed === 3) {
+                await saveCompletedDay();
+                if (new Date().getDay() === 0) { // Sunday
+                    const { data } = await supabase
+                        .from('wtaf_zero_admin_collaborative')
+                        .select('content_data')
+                        .eq('app_id', APP_ID)
+                        .eq('participant_id', currentUser.participantId)
+                        .single();
+                    
+                    if (data?.content_data?.streak >= 7) {
+                        triggerEmojiRain();
+                    } else {
+                        alert('Nice effort! 🌱');
+                    }
+                }
+            }
+        }
+
+        function triggerEmojiRain() {
+            const emojis = '🎉⭐🌟💪🔥🌈🎯⚡💫✨🌸🎨🎭🎪🎢🎡🎠🎮🎲🎯🎳🎨🎭🎪';
+            for (let i = 0; i < 50; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const element = document.createElement('div');
+                element.className = 'raining-emoji';
+                element.textContent = emoji;
+                element.style.left = `${Math.random() * 100}vw`;
+                element.style.animationDuration = `${Math.random() * 2 + 1}s`;
+                document.body.appendChild(element);
+                setTimeout(() => element.remove(), 3000);
+            }
+        }
+
+        async function saveCompletedDay() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            const { data } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('content_data')
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId)
+                .single();
+            
+            const lastCompleted = data?.content_data?.last_completed;
+            const streak = data?.content_data?.streak || 0;
+            
+            let newStreak = streak;
+            if (lastCompleted) {
+                const lastDate = new Date(lastCompleted);
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastDate.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
+                    newStreak++;
+                } else {
+                    newStreak = 1;
+                }
+            } else {
+                newStreak = 1;
+            }
+            
+            await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .update({
+                    content_data: {
+                        last_completed: today,
+                        streak: newStreak,
+                        completed_today: true
+                    }
+                })
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId);
+            
+            document.querySelector('.streak-count').textContent = `Current Streak: ${newStreak} days 🔥`;
+        }
+
+        async function loadLatestData() {
+            const { data } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId)
+                .single();
+            
+            if (data) {
+                const today = new Date().toISOString().split('T')[0];
+                const lastCompleted = data.content_data?.last_completed;
+                
+                if (lastCompleted === today) {
+                    document.querySelectorAll('.goal-checkbox').forEach(cb => {
+                        cb.checked = true;
+                        cb.disabled = true;
+                    });
+                    document.querySelector('.progress-fill').style.width = '100%';
+                }
+                
+                document.querySelector('.streak-count').textContent = 
+                    `Current Streak: ${data.content_data?.streak || 0} days 🔥`;
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+        window.wtaf = function() {
+            document.body.style.animation = 'rainbow 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

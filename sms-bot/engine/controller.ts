@@ -97,7 +97,7 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
  */
 async function loadWtafDesignSystem(): Promise<string | null> {
     try {
-        const designSystemPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+        const designSystemPath = join(__dirname, '..', 'content', 'app-tech-spec.json');
         const content = await readFile(designSystemPath, 'utf8');
         
         logWithTimestamp("🎨 WTAF Design System loaded dynamically");
@@ -197,20 +197,72 @@ try {
   alert('Submission failed. Please try again.')
 }
 
-3. Admin page fetch with error handling:
-try {
-  const { data, error } = await supabase.from('wtaf_submissions')
-    .select('*')
-    .eq('app_id', 'APP_TABLE_ID')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  // Display data in table
-} catch (error) {
-  console.error('Error:', error)
-  alert('Failed to load submissions')
+3. Admin page data loading (uses secure API endpoint):
+async function loadSubmissions() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get('token')
+    const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+    
+    if (!token) {
+      alert('Missing authentication token')
+      return
+    }
+    
+    const response = await fetch(\`/api/admin-submissions?token=\${token}&app=\${appSlug}\`)
+    const result = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to load submissions')
+    }
+    
+    // Display data in table
+    const submissions = result.submissions || []
+    // ... render submissions in table
+  } catch (error) {
+    console.error('Error:', error)
+    alert('Failed to load submissions')
+  }
 }
 
-4. CSV Export (manual implementation):
+4. Admin page form submission (uses secure API endpoint):
+async function submitAdminData(formData) {
+  try {
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get('token')
+    const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+    
+    if (!token) {
+      alert('Missing authentication token')
+      return
+    }
+    
+    const response = await fetch(\`/api/admin-submissions?token=\${token}&app=\${appSlug}\`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        submission_data: formData
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to save submission')
+    }
+    
+    // Show success message and reload data
+    alert('Submission saved successfully!')
+    loadSubmissions()
+  } catch (error) {
+    console.error('Error:', error)
+    alert('Failed to save submission')
+  }
+}
+
+5. CSV Export (manual implementation):
 const csvContent = 'Name,Email,Message\\n' + data.map(row => 
   \`\${row.submission_data.name || ''},\${row.submission_data.email || ''},\${row.submission_data.message || ''}\`
 ).join('\\n')
@@ -221,7 +273,7 @@ a.href = url
 a.download = 'submissions.csv'
 a.click()
 
-5. Required script tag:
+6. Required script tag:
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 Use 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY' exactly as placeholders.
@@ -252,712 +304,734 @@ async function loadEditSystemPrompt(): Promise<string> {
  * Main workflow extracted from monitor.py execute_gpt4o function
  */
 export async function processWtafRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
-    logWithTimestamp("🚀 STARTING WTAF PROCESSING WORKFLOW");
+    logWithTimestamp("🎨 STARTING WTAF PROCESSING WORKFLOW");
     logWithTimestamp(`📖 Processing file: ${processingPath}`);
     
-    let { senderPhone, userSlug, userPrompt } = fileData;
-    const { coach, cleanPrompt } = requestInfo;
-    
-    // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
-    let forceAdminPath = false;
-    if (userPrompt && userPrompt.includes('--admin')) {
-        logWithTimestamp("🔧 ADMIN OVERRIDE DETECTED: Forcing admin classification");
-        // Clean the prompt by removing the admin flag
-        userPrompt = userPrompt.replace(/--admin\s*/g, '').trim();
-        forceAdminPath = true;
-        logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
-    }
-    
-    // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
-    let isStackDBRequest = false;
-    if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
-        logWithTimestamp("🗄️ STACKDB DETECTED: Processing with live database connection approach");
-        
-        // Import stackdb functions dynamically
-        const { processStackDBRequest } = await import('./stackables-manager.js');
-        
-        const stackResult = await processStackDBRequest(userSlug, userPrompt);
-        
-        if (!stackResult.success) {
-            logError(`❌ Invalid stackdb command format`);
-            await sendFailureNotification("stackdb-format", senderPhone);
-            return false;
-        }
-        
-        const { userRequest, appUuid: originAppUuid, enhancedPrompt } = stackResult;
-        
-        if (!enhancedPrompt || !originAppUuid) {
-            logError(`❌ You don't own app or stackdb processing failed`);
-            await sendFailureNotification("stackdb-ownership", senderPhone);
-            return false;
-        }
-        
-        // Load stackdb system prompt
-        logWithTimestamp("📄 Loading stackdb system prompt");
-        const stackdbPromptPath = join(__dirname, '..', 'content', 'stackdb-gpt-prompt.txt');
-        const stackdbSystemPrompt = await readFile(stackdbPromptPath, 'utf8');
-        logWithTimestamp(`📄 Stackdb system prompt loaded: ${stackdbSystemPrompt.length} characters`);
-        
-        // Send directly to Claude with stackdb prompt (bypass wtaf-processor entirely)
-        logWithTimestamp("🚀 Sending stackdb request directly to Claude (bypassing wtaf-processor)");
-        const config = REQUEST_CONFIGS.creation;
-        const result = await callClaudeDirectly(stackdbSystemPrompt, enhancedPrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
-        });
-        
-        // Continue with normal deployment workflow
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdb_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        logWithTimestamp(`💾 Stackdb output saved to: ${outputFile}`);
-        
-        // Extract code blocks and deploy normally
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found in stackdb response.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // ⚡ CRITICAL FIX: Use ORIGIN app UUID for live data connection (not new app UUID)
-        logWithTimestamp(`🔄 Replacing app_id with origin app UUID: ${originAppUuid}`);
-        const codeWithUuid = replaceAppTableId(code, originAppUuid);
-        
-        // Deploy stackdb result with skipUuidReplacement=true to prevent double replacement
-        const deployResult = await saveCodeToSupabase(codeWithUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackdb request", null, true);
-        if (deployResult.publicUrl) {
-            // Generate OG image
-            try {
-                const urlParts = deployResult.publicUrl.split('/');
-                const appSlug = urlParts[urlParts.length - 1];
-                logWithTimestamp(`🖼️ Generating OG image for stackdb: ${userSlug}/${appSlug}`);
-                const actualImageUrl = await generateOGImage(userSlug, appSlug);
-                if (actualImageUrl) {
-                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                    logSuccess(`✅ Updated stackdb HTML with OG image URL`);
-                }
-            } catch (error) {
-                logWarning(`OG generation failed for stackdb: ${error instanceof Error ? error.message : String(error)}`);
-            }
-            
-            const needsEmail = code.includes('[CONTACT_EMAIL]');
-            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
-            logWithTimestamp("🎉 STACKDB PROCESSING COMPLETE!");
-            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
-            return true;
-        } else {
-            logError("Failed to deploy stackdb content");
-            await sendFailureNotification("database", senderPhone);
-            return false;
-        }
-    }
-
-    // 🗃️ STACKDATA: Check for --stackdata flag (process BEFORE stackables)
-    let isStackDataRequest = false;
-    if (userPrompt && (userPrompt.startsWith('--stackdata ') || userPrompt.startsWith('wtaf --stackdata '))) {
-        logWithTimestamp("🗃️ STACKDATA DETECTED: Processing with submission data approach");
-        
-        // Import stackdata functions dynamically
-        const { parseStackDataCommand, loadStackedDataContent, buildEnhancedDataPrompt } = await import('./stackables-manager.js');
-        
-        // Parse the stackdata command
-        const parsed = parseStackDataCommand(userPrompt);
-        if (!parsed) {
-            logError(`❌ Invalid stackdata command format`);
-            await sendFailureNotification("stackdata-format", senderPhone);
-            return false;
-        }
-        
-        const { appSlug, userRequest } = parsed;
-        logWithTimestamp(`🗃️ Stackdata request: ${appSlug} → "${userRequest}"`);
-        
-        // Load names from submission data (includes ownership verification)
-        const names = await loadStackedDataContent(userSlug, appSlug);
-        if (names === null) {
-            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
-            await sendFailureNotification("stackdata-ownership", senderPhone);
-            return false;
-        }
-        
-        // Build enhanced prompt with names data + WTAF design system
-        const enhancedPrompt = await buildEnhancedDataPrompt(userRequest, names);
-        
-        // Load stacker system prompt (same as stackables for now)
-        const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
-        const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
-        logWithTimestamp(`📄 Stackdata system prompt loaded: ${stackerSystemPrompt.length} characters`);
-        
-        // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
-        logWithTimestamp("🚀 Sending stackdata request directly to Claude (bypassing wtaf-processor)");
-        const config = REQUEST_CONFIGS.creation;
-        const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
-        });
-        
-        // Continue with normal deployment workflow
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdata_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        logWithTimestamp(`💾 Stackdata output saved to: ${outputFile}`);
-        
-        // Extract code blocks and deploy normally
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found in stackdata response.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // Deploy stackdata result
-        const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackdata request");
-        if (deployResult.publicUrl) {
-            // Generate OG image
-            try {
-                const urlParts = deployResult.publicUrl.split('/');
-                const appSlug = urlParts[urlParts.length - 1];
-                logWithTimestamp(`🖼️ Generating OG image for stackdata: ${userSlug}/${appSlug}`);
-                const actualImageUrl = await generateOGImage(userSlug, appSlug);
-                if (actualImageUrl) {
-                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                    logSuccess(`✅ Updated stackdata HTML with OG image URL`);
-                }
-            } catch (error) {
-                logWarning(`OG generation failed for stackdata: ${error instanceof Error ? error.message : String(error)}`);
-            }
-            
-            const needsEmail = code.includes('[CONTACT_EMAIL]');
-            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
-            logWithTimestamp("🎉 STACKDATA PROCESSING COMPLETE!");
-            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
-            return true;
-        } else {
-            logError("Failed to deploy stackdata content");
-            await sendFailureNotification("database", senderPhone);
-            return false;
-        }
-    }
-    
-    // 📧 STACKEMAIL: Check for --stackemail flag to send emails to app submitters
-    if (userPrompt && (userPrompt.startsWith('--stackemail ') || userPrompt.startsWith('wtaf --stackemail '))) {
-        logWithTimestamp("📧 STACKEMAIL DETECTED: Processing email to app submitters");
-        
-        // Import stackemail functions dynamically
-        const { checkDegenRole, parseStackEmailCommand, loadSubmissionEmails } = await import('./stackables-manager.js');
-        const { sendToCustomEmailList } = await import('../lib/email/sendgrid.js');
-        
-        // Check DEGEN role first
-        const hasDegenRole = await checkDegenRole(userSlug);
-        if (!hasDegenRole) {
-            logError(`❌ User ${userSlug} does not have DEGEN role - stackemail requires DEGEN access`);
-            await sendFailureNotification("stackemail-permission", senderPhone);
-            return false;
-        }
-        
-        // Parse the stackemail command
-        const parsed = parseStackEmailCommand(userPrompt);
-        if (!parsed) {
-            logError(`❌ Invalid stackemail command format`);
-            await sendFailureNotification("stackemail-format", senderPhone);
-            return false;
-        }
-        
-        const { appSlug, emailMessage } = parsed;
-        logWithTimestamp(`📧 Stackemail request: ${appSlug} → "${emailMessage}"`);
-        
-        // Load email addresses from submission data (includes ownership verification)
-        const emails = await loadSubmissionEmails(userSlug, appSlug);
-        if (emails === null) {
-            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
-            await sendFailureNotification("stackemail-ownership", senderPhone);
-            return false;
-        }
-        
-        if (emails.length === 0) {
-            logError(`❌ No email submissions found for app '${appSlug}'`);
-            await sendFailureNotification("stackemail-no-emails", senderPhone);
-            return false;
-        }
-        
-        // Send emails to all submitters
-        logWithTimestamp(`📧 Sending stackemail to ${emails.length} recipients...`);
-        const emailResult = await sendToCustomEmailList(emails, emailMessage, appSlug);
-        
-        if (emailResult.success) {
-            logWithTimestamp("🎉 STACKEMAIL PROCESSING COMPLETE!");
-            logWithTimestamp(`📧 Sent to ${emailResult.sentCount} recipients, ${emailResult.failedCount} failed`);
-            
-            // Send SMS confirmation to user
-            const confirmationMessage = `📧 Email sent to ${emailResult.sentCount} people who submitted to ${appSlug}!${emailResult.failedCount > 0 ? ` (${emailResult.failedCount} failed)` : ''}`;
-            await sendConfirmationSms(confirmationMessage, senderPhone);
-            return true;
-        } else {
-            logError("Failed to send stackemail");
-            await sendFailureNotification("stackemail-send", senderPhone);
-            return false;
-        }
-    }
-    
-    // 🎨 REMIX: Check for --remix flag to remix existing apps
-    if (userPrompt && (userPrompt.startsWith('--remix ') || userPrompt.startsWith('wtaf --remix '))) {
-        logWithTimestamp("🎨 REMIX DETECTED: Processing with remix approach");
-        
-        // Import remix functions dynamically
-        const { parseRemixCommand, loadRemixHTMLContent, buildRemixPrompt } = await import('./stackables-manager.js');
-        
-        // Parse the remix command
-        const parsed = parseRemixCommand(userPrompt);
-        if (!parsed) {
-            logError(`❌ Invalid remix command format`);
-            await sendFailureNotification("remix-format", senderPhone);
-            return false;
-        }
-        
-        const { appSlug, userRequest } = parsed;
-        logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
-        
-        // Load HTML content (includes ownership verification)
-        const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
-        if (htmlContent === null) {
-            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
-            await sendFailureNotification("remix-ownership", senderPhone);
-            return false;
-        }
-        
-        // Build remix prompt with HTML template
-        const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
-        
-        // Load remix system prompt
-        const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
-        const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
-        logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
-        
-        // Send directly to Claude with remix prompt (bypass wtaf-processor entirely)
-        logWithTimestamp("🚀 Sending remix request directly to Claude (using remix approach)");
-        const config = REQUEST_CONFIGS.creation;
-        const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
-        });
-        
-        // Continue with normal deployment workflow
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `remix_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
-        
-        // Extract code blocks and deploy normally
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found in remix response.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // Deploy remix result
-        const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
-        if (deployResult.publicUrl) {
-            // Generate OG image
-            try {
-                const urlParts = deployResult.publicUrl.split('/');
-                const newAppSlug = urlParts[urlParts.length - 1];
-                logWithTimestamp(`🖼️ Generating OG image for remix: ${userSlug}/${newAppSlug}`);
-                const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
-                if (actualImageUrl) {
-                    await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
-                    logSuccess(`✅ Updated remix HTML with OG image URL`);
-                }
-            } catch (error) {
-                logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
-            }
-
-            // 🔗 SOCIAL UPDATES: Handle remix social features
-            try {
-                if (deployResult.uuid) {
-                    logWithTimestamp(`🔗 Processing social updates for remix...`);
-                    const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
-                    
-                    // Get original app info
-                    const originalAppInfo = await getAppInfoForRemix(appSlug);
-                    if (originalAppInfo) {
-                        const socialSuccess = await handleRemixSocialUpdates(
-                            appSlug, // original app slug
-                            originalAppInfo.userSlug, // original creator
-                            deployResult.uuid, // new remix app UUID
-                            userSlug, // person doing the remix
-                            userRequest // remix instructions
-                        );
-                        
-                        if (socialSuccess) {
-                            logSuccess(`🎉 Social updates completed: remix count incremented, lineage tracked, auto-follow created`);
-                        } else {
-                            logWarning(`⚠️ Some social updates failed, but remix deployed successfully`);
-                        }
-                    } else {
-                        logWarning(`⚠️ Could not find original app info for social updates`);
-                    }
-                } else {
-                    logWarning(`⚠️ No UUID returned from deployment, skipping social updates`);
-                }
-            } catch (error) {
-                logWarning(`Social updates failed: ${error instanceof Error ? error.message : String(error)}`);
-                // Don't fail the entire remix for social update issues
-            }
-            
-            const needsEmail = code.includes('[CONTACT_EMAIL]');
-            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
-            logWithTimestamp("🎉 REMIX PROCESSING COMPLETE!");
-            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
-            return true;
-        } else {
-            logError("Failed to deploy remix content");
-            await sendFailureNotification("database", senderPhone);
-            return false;
-        }
-    }
-    
-    // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
-    let isStackablesRequest = false;
-    if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {
-        logWithTimestamp("🧱 STACKABLES DETECTED: Processing with HTML template approach");
-        
-        // Import stackables functions dynamically
-        const { parseStackCommand, loadStackedHTMLContent, buildEnhancedPrompt } = await import('./stackables-manager.js');
-        
-        // Parse the stack command
-        const parsed = parseStackCommand(userPrompt);
-        if (!parsed) {
-            logError(`❌ Invalid stack command format`);
-            await sendFailureNotification("stackables-format", senderPhone);
-            return false;
-        }
-        
-        const { appSlug, userRequest } = parsed;
-        logWithTimestamp(`🧱 Stack request: ${appSlug} → "${userRequest}"`);
-        
-        // Load HTML content (includes ownership verification)
-        const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
-        if (htmlContent === null) {
-            logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
-            await sendFailureNotification("stackables-ownership", senderPhone);
-            return false;
-        }
-        
-        // Build enhanced prompt with HTML template
-        const enhancedPrompt = buildEnhancedPrompt(userRequest, htmlContent);
-        
-        // Load stacker system prompt
-        const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
-        const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
-        logWithTimestamp(`📄 Stacker system prompt loaded: ${stackerSystemPrompt.length} characters`);
-        
-        // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
-        logWithTimestamp("🚀 Sending stackables request directly to Claude (bypassing wtaf-processor)");
-        const config = REQUEST_CONFIGS.creation;
-        const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
-            model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
-            temperature: config.builderTemperature
-        });
-        
-        // Continue with normal deployment workflow
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackables_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        logWithTimestamp(`💾 Stackables output saved to: ${outputFile}`);
-        
-        // Extract code blocks and deploy normally
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found in stackables response.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
-        }
-        
-        // Deploy stackables result
-        const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackables request");
-        if (deployResult.publicUrl) {
-            // Generate OG image
-            try {
-                const urlParts = deployResult.publicUrl.split('/');
-                const appSlug = urlParts[urlParts.length - 1];
-                logWithTimestamp(`🖼️ Generating OG image for stackables: ${userSlug}/${appSlug}`);
-                const actualImageUrl = await generateOGImage(userSlug, appSlug);
-                if (actualImageUrl) {
-                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                    logSuccess(`✅ Updated stackables HTML with OG image URL`);
-                }
-            } catch (error) {
-                logWarning(`OG generation failed for stackables: ${error instanceof Error ? error.message : String(error)}`);
-            }
-            
-            const needsEmail = code.includes('[CONTACT_EMAIL]');
-            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
-            logWithTimestamp("🎉 STACKABLES PROCESSING COMPLETE!");
-            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
-            return true;
-        } else {
-            logError("Failed to deploy stackables content");
-            await sendFailureNotification("database", senderPhone);
-            return false;
-        }
-    }
+    const { senderPhone, userSlug, coach: fileCoach, coachPrompt } = fileData;
+    let { userPrompt } = fileData;
     
     try {
-        // Determine request configuration based on content type
-        const isGameRequest = userPrompt.toLowerCase().includes('game') || 
-                             userPrompt.toLowerCase().includes('pong') ||
-                             userPrompt.toLowerCase().includes('puzzle') ||
-                             userPrompt.toLowerCase().includes('arcade');
+        // Regular processing flow - no special meme handling here
+        // Extract coach from file data or request info
+        const coach = fileCoach || requestInfo.coach || 'default';
+        logWithTimestamp(`🎭 Coach: ${coach}`);
         
-        // Determine config type based on basic request analysis
-        // ZAD detection will happen in the classifier step
-        let configType: keyof typeof REQUEST_CONFIGS;
-        if (isGameRequest) {
-            configType = 'game';
-        } else {
-            configType = 'creation';  // Default to creation, classifier will determine if ZAD is needed
+        // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
+        let forceAdminPath = false;
+        if (userPrompt && userPrompt.includes('--admin')) {
+            logWithTimestamp("🔧 ADMIN OVERRIDE DETECTED: Forcing admin classification");
+            // Clean the prompt by removing the admin flag
+            userPrompt = userPrompt.replace(/--admin\s*/g, '').trim();
+            forceAdminPath = true;
         }
         
-        const config = REQUEST_CONFIGS[configType];
-        
-        logWithTimestamp(`🎯 Using ${configType} configuration`);
-        logWithTimestamp(`🤖 Models: Classifier=${(config as any).classifierModel || 'N/A'}, Builder=${config.builderModel}`);
-        
-        // Step 1: Generate complete prompt with config (including admin override)
-        logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
-        
-        // For games, classifier config is not needed since games skip the classifier entirely
-        const classifierConfig = configType === 'game' ? {
-            classifierModel: 'gpt-4o', // Default fallback (not used for games)
-            classifierMaxTokens: 600,
-            classifierTemperature: 0.7,
-            classifierTopP: 1,
-            classifierPresencePenalty: 0.3,
-            classifierFrequencyPenalty: 0,
-            forceAdminOverride: forceAdminPath
-        } : {
-            classifierModel: (config as any).classifierModel || 'gpt-4o',
-            classifierMaxTokens: (config as any).classifierMaxTokens || 600,
-            classifierTemperature: (config as any).classifierTemperature || 0.7,
-            classifierTopP: (config as any).classifierTopP || 1,
-            classifierPresencePenalty: (config as any).classifierPresencePenalty || 0.3,
-            classifierFrequencyPenalty: (config as any).classifierFrequencyPenalty || 0,
-            forceAdminOverride: forceAdminPath
-        };
-        
-        const completePrompt = await generateCompletePrompt(userPrompt, classifierConfig);
-        logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
-        
-        let result: string;
-        
-        // Check if generateCompletePrompt returned final HTML (ZAD template)
-        if (completePrompt.startsWith('```html')) {
-            logWithTimestamp("🤝 ZAD template detected - skipping AI builder stage entirely");
-            result = completePrompt; // Use the template directly, no AI call needed
-        } else {
-            // PARTY TRICK: Email detection happens via HTML content analysis later
+        // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
+        let isStackDBRequest = false;
+        if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
+            logWithTimestamp("🗄️ STACKDB DETECTED: Processing with live database connection approach");
             
-            // Step 2: Send complete prompt to Claude with config
-            logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
-            logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
+            // Import stackdb functions dynamically
+            const { processStackDBRequest } = await import('./stackables-manager.js');
             
-            // Dynamic WTAF Design System injection - load only for standard web pages
-            let designSystemContent = null;
-            const isSpecializedRequest = completePrompt.includes('ADMIN_DUAL_PAGE_REQUEST:') || 
-                                       completePrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') ||
-                                       completePrompt.includes('--stack') ||
-                                       completePrompt.includes('--remix') ||
-                                       completePrompt.includes('--stackdb') ||
-                                       completePrompt.includes('--stackdata');
+            const stackResult = await processStackDBRequest(userSlug, userPrompt);
             
-            if (!isSpecializedRequest && configType === 'creation') {
-                designSystemContent = await loadWtafDesignSystem();
-                if (designSystemContent) {
-                    logWithTimestamp("🎨 Dynamic WTAF Design System loaded for standard web page");
-                } else {
-                    logWarning("⚠️ WTAF Design System failed to load - proceeding without brand guidelines");
-                }
+            if (!stackResult.success) {
+                logError(`❌ Invalid stackdb command format`);
+                await sendFailureNotification("stackdb-format", senderPhone);
+                return false;
             }
             
-            result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
+            const { userRequest, appUuid: originAppUuid, enhancedPrompt } = stackResult;
+            
+            if (!enhancedPrompt || !originAppUuid) {
+                logError(`❌ You don't own app or stackdb processing failed`);
+                await sendFailureNotification("stackdb-ownership", senderPhone);
+                return false;
+            }
+            
+            // Load stackdb system prompt
+            logWithTimestamp("📄 Loading stackdb system prompt");
+            const stackdbPromptPath = join(__dirname, '..', 'content', 'stackdb-gpt-prompt.txt');
+            const stackdbSystemPrompt = await readFile(stackdbPromptPath, 'utf8');
+            logWithTimestamp(`📄 Stackdb system prompt loaded: ${stackdbSystemPrompt.length} characters`);
+            
+            // Send directly to Claude with stackdb prompt (bypass wtaf-processor entirely)
+            logWithTimestamp("🚀 Sending stackdb request directly to Claude (bypassing wtaf-processor)");
+            const config = REQUEST_CONFIGS.creation;
+            const result = await callClaudeDirectly(stackdbSystemPrompt, enhancedPrompt, {
                 model: config.builderModel,
                 maxTokens: config.builderMaxTokens,
-                temperature: config.builderTemperature,
-                designSystem: designSystemContent || undefined
+                temperature: config.builderTemperature
             });
+            
+            // Continue with normal deployment workflow
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdb_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            logWithTimestamp(`💾 Stackdb output saved to: ${outputFile}`);
+            
+            // Extract code blocks and deploy normally
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found in stackdb response.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // ⚡ CRITICAL FIX: Use ORIGIN app UUID for live data connection (not new app UUID)
+            logWithTimestamp(`🔄 Replacing app_id with origin app UUID: ${originAppUuid}`);
+            const codeWithUuid = replaceAppTableId(code, originAppUuid);
+            
+            // Deploy stackdb result with skipUuidReplacement=true to prevent double replacement
+            const deployResult = await saveCodeToSupabase(codeWithUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackdb request", null, true);
+            if (deployResult.publicUrl) {
+                // Generate OG image
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const appSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for stackdb: ${userSlug}/${appSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                    if (actualImageUrl) {
+                        await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                        logSuccess(`✅ Updated stackdb HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed for stackdb: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+                logWithTimestamp("🎉 STACKDB PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+                return true;
+            } else {
+                logError("Failed to deploy stackdb content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
+            }
+        }
+
+        // 🗃️ STACKDATA: Check for --stackdata flag (process BEFORE stackables)
+        let isStackDataRequest = false;
+        if (userPrompt && (userPrompt.startsWith('--stackdata ') || userPrompt.startsWith('wtaf --stackdata '))) {
+            logWithTimestamp("🗃️ STACKDATA DETECTED: Processing with submission data approach");
+            
+            // Import stackdata functions dynamically
+            const { parseStackDataCommand, loadStackedDataContent, buildEnhancedDataPrompt } = await import('./stackables-manager.js');
+            
+            // Parse the stackdata command
+            const parsed = parseStackDataCommand(userPrompt);
+            if (!parsed) {
+                logError(`❌ Invalid stackdata command format`);
+                await sendFailureNotification("stackdata-format", senderPhone);
+                return false;
+            }
+            
+            const { appSlug, userRequest } = parsed;
+            logWithTimestamp(`🗃️ Stackdata request: ${appSlug} → "${userRequest}"`);
+            
+            // Load names from submission data (includes ownership verification)
+            const names = await loadStackedDataContent(userSlug, appSlug);
+            if (names === null) {
+                logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+                await sendFailureNotification("stackdata-ownership", senderPhone);
+                return false;
+            }
+            
+            // Build enhanced prompt with names data + WTAF design system
+            const enhancedPrompt = await buildEnhancedDataPrompt(userRequest, names);
+            
+            // Load stacker system prompt (same as stackables for now)
+            const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
+            const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
+            logWithTimestamp(`📄 Stackdata system prompt loaded: ${stackerSystemPrompt.length} characters`);
+            
+            // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
+            logWithTimestamp("🚀 Sending stackdata request directly to Claude (bypassing wtaf-processor)");
+            const config = REQUEST_CONFIGS.creation;
+            const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
+                model: config.builderModel,
+                maxTokens: config.builderMaxTokens,
+                temperature: config.builderTemperature
+            });
+            
+            // Continue with normal deployment workflow
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `stackdata_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            logWithTimestamp(`💾 Stackdata output saved to: ${outputFile}`);
+            
+            // Extract code blocks and deploy normally
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found in stackdata response.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // Deploy stackdata result
+            const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackdata request");
+            if (deployResult.publicUrl) {
+                // Generate OG image
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const appSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for stackdata: ${userSlug}/${appSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                    if (actualImageUrl) {
+                        await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                        logSuccess(`✅ Updated stackdata HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed for stackdata: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+                logWithTimestamp("🎉 STACKDATA PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+                return true;
+            } else {
+                logError("Failed to deploy stackdata content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
+            }
         }
         
-        // Step 3: Save output to file for debugging
-        const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
-        await writeFile(outputFile, result, 'utf8');
-        if (completePrompt.startsWith('```html')) {
-            logWithTimestamp(`💾 ZAD template output saved to: ${outputFile}`);
-        } else {
-            logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
+        // 📧 STACKEMAIL: Check for --stackemail flag to send emails to app submitters
+        if (userPrompt && (userPrompt.startsWith('--stackemail ') || userPrompt.startsWith('wtaf --stackemail '))) {
+            logWithTimestamp("📧 STACKEMAIL DETECTED: Processing email to app submitters");
+            
+            // Import stackemail functions dynamically
+            const { checkDegenRole, parseStackEmailCommand, loadSubmissionEmails } = await import('./stackables-manager.js');
+            const { sendToCustomEmailList } = await import('../lib/email/sendgrid.js');
+            
+            // Check DEGEN role first
+            const hasDegenRole = await checkDegenRole(userSlug);
+            if (!hasDegenRole) {
+                logError(`❌ User ${userSlug} does not have DEGEN role - stackemail requires DEGEN access`);
+                await sendFailureNotification("stackemail-permission", senderPhone);
+                return false;
+            }
+            
+            // Parse the stackemail command
+            const parsed = parseStackEmailCommand(userPrompt);
+            if (!parsed) {
+                logError(`❌ Invalid stackemail command format`);
+                await sendFailureNotification("stackemail-format", senderPhone);
+                return false;
+            }
+            
+            const { appSlug, emailMessage } = parsed;
+            logWithTimestamp(`📧 Stackemail request: ${appSlug} → "${emailMessage}"`);
+            
+            // Load email addresses from submission data (includes ownership verification)
+            const emails = await loadSubmissionEmails(userSlug, appSlug);
+            if (emails === null) {
+                logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+                await sendFailureNotification("stackemail-ownership", senderPhone);
+                return false;
+            }
+            
+            if (emails.length === 0) {
+                logError(`❌ No email submissions found for app '${appSlug}'`);
+                await sendFailureNotification("stackemail-no-emails", senderPhone);
+                return false;
+            }
+            
+            // Send emails to all submitters
+            logWithTimestamp(`📧 Sending stackemail to ${emails.length} recipients...`);
+            const emailResult = await sendToCustomEmailList(emails, emailMessage, appSlug);
+            
+            if (emailResult.success) {
+                logWithTimestamp("🎉 STACKEMAIL PROCESSING COMPLETE!");
+                logWithTimestamp(`📧 Sent to ${emailResult.sentCount} recipients, ${emailResult.failedCount} failed`);
+                
+                // Send SMS confirmation to user
+                const confirmationMessage = `📧 Email sent to ${emailResult.sentCount} people who submitted to ${appSlug}!${emailResult.failedCount > 0 ? ` (${emailResult.failedCount} failed)` : ''}`;
+                await sendConfirmationSms(confirmationMessage, senderPhone);
+                return true;
+            } else {
+                logError("Failed to send stackemail");
+                await sendFailureNotification("stackemail-send", senderPhone);
+                return false;
+            }
         }
         
-        // Step 4: Extract code blocks
-        const code = extractCodeBlocks(result);
-        if (!code.trim()) {
-            logWarning("No code block found.");
-            await sendFailureNotification("no-code", senderPhone);
-            return false;
+        // 🎨 REMIX: Check for --remix flag to remix existing apps
+        if (userPrompt && (userPrompt.startsWith('--remix ') || userPrompt.startsWith('wtaf --remix '))) {
+            logWithTimestamp("🎨 REMIX DETECTED: Processing with remix approach");
+            
+            // Import remix functions dynamically
+            const { parseRemixCommand, loadRemixHTMLContent, buildRemixPrompt } = await import('./stackables-manager.js');
+            
+            // Parse the remix command
+            const parsed = parseRemixCommand(userPrompt);
+            if (!parsed) {
+                logError(`❌ Invalid remix command format`);
+                await sendFailureNotification("remix-format", senderPhone);
+                return false;
+            }
+            
+            const { appSlug, userRequest } = parsed;
+            logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
+            
+            // Load HTML content (includes ownership verification)
+            const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
+            if (htmlContent === null) {
+                logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+                await sendFailureNotification("remix-ownership", senderPhone);
+                return false;
+            }
+            
+            // Build remix prompt with HTML template
+            const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            
+            // Load remix system prompt
+            const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
+            const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
+            logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
+            
+            // Send directly to Claude with remix prompt (bypass wtaf-processor entirely)
+            logWithTimestamp("🚀 Sending remix request directly to Claude (using remix approach)");
+            const config = REQUEST_CONFIGS.creation;
+            const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
+                model: config.builderModel,
+                maxTokens: config.builderMaxTokens,
+                temperature: config.builderTemperature
+            });
+            
+            // Continue with normal deployment workflow
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `remix_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
+            
+            // Extract code blocks and deploy normally
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found in remix response.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // Deploy remix result
+            const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
+            if (deployResult.publicUrl) {
+                // Generate OG image
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const newAppSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for remix: ${userSlug}/${newAppSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                    if (actualImageUrl) {
+                        await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                        logSuccess(`✅ Updated remix HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed for remix: ${error instanceof Error ? error.message : String(error)}`);
+                }
+
+                // 🔗 SOCIAL UPDATES: Handle remix social features
+                try {
+                    if (deployResult.uuid) {
+                        logWithTimestamp(`🔗 Processing social updates for remix...`);
+                        const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                        
+                        // Get original app info
+                        const originalAppInfo = await getAppInfoForRemix(appSlug);
+                        if (originalAppInfo) {
+                            const socialSuccess = await handleRemixSocialUpdates(
+                                appSlug, // original app slug
+                                originalAppInfo.userSlug, // original creator
+                                deployResult.uuid, // new remix app UUID
+                                userSlug, // person doing the remix
+                                userRequest // remix instructions
+                            );
+                            
+                            if (socialSuccess) {
+                                logSuccess(`🎉 Social updates completed: remix count incremented, lineage tracked, auto-follow created`);
+                            } else {
+                                logWarning(`⚠️ Some social updates failed, but remix deployed successfully`);
+                            }
+                        } else {
+                            logWarning(`⚠️ Could not find original app info for social updates`);
+                        }
+                    } else {
+                        logWarning(`⚠️ No UUID returned from deployment, skipping social updates`);
+                    }
+                } catch (error) {
+                    logWarning(`Social updates failed: ${error instanceof Error ? error.message : String(error)}`);
+                    // Don't fail the entire remix for social update issues
+                }
+                
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+                logWithTimestamp("🎉 REMIX PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+                return true;
+            } else {
+                logError("Failed to deploy remix content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
+            }
         }
         
-        // Step 5: Deploy the content
-        if (userSlug) {
-            // Use Supabase save function for WTAF content
-            logWithTimestamp(`🎯 Using Supabase save for user_slug: ${userSlug}`);
+        // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
+        let isStackablesRequest = false;
+        if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {
+            logWithTimestamp("🧱 STACKABLES DETECTED: Processing with HTML template approach");
             
-            // Check if Claude generated dual pages by looking for the delimiter
-            const delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->';
-            logWithTimestamp(`🔍 Checking for delimiter in code (length: ${code.length} chars)`);
-            logWithTimestamp(`🔍 Code preview: ${code.slice(0, 200)}...`);
+            // Import stackables functions dynamically
+            const { parseStackCommand, loadStackedHTMLContent, buildEnhancedPrompt } = await import('./stackables-manager.js');
             
-            let isDualPage = false;
-            let publicUrl = null;
-            let adminUrl = null;
+            // Parse the stack command
+            const parsed = parseStackCommand(userPrompt);
+            if (!parsed) {
+                logError(`❌ Invalid stack command format`);
+                await sendFailureNotification("stackables-format", senderPhone);
+                return false;
+            }
             
-            if (code.includes(delimiter)) {
-                logWithTimestamp(`📊 Dual-page app detected - deploying both pages`);
+            const { appSlug, userRequest } = parsed;
+            logWithTimestamp(`🧱 Stack request: ${appSlug} → "${userRequest}"`);
+            
+            // Load HTML content (includes ownership verification)
+            const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
+            if (htmlContent === null) {
+                logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
+                await sendFailureNotification("stackables-ownership", senderPhone);
+                return false;
+            }
+            
+            // Build enhanced prompt with HTML template
+            const enhancedPrompt = buildEnhancedPrompt(userRequest, htmlContent);
+            
+            // Load stacker system prompt
+            const stackerPromptPath = join(__dirname, '..', 'content', 'stacker-gpt-prompt.txt');
+            const stackerSystemPrompt = await readFile(stackerPromptPath, 'utf8');
+            logWithTimestamp(`📄 Stacker system prompt loaded: ${stackerSystemPrompt.length} characters`);
+            
+            // Send directly to Claude with stacker prompt (bypass wtaf-processor entirely)
+            logWithTimestamp("🚀 Sending stackables request directly to Claude (bypassing wtaf-processor)");
+            const config = REQUEST_CONFIGS.creation;
+            const result = await callClaudeDirectly(stackerSystemPrompt, enhancedPrompt, {
+                model: config.builderModel,
+                maxTokens: config.builderMaxTokens,
+                temperature: config.builderTemperature
+            });
+            
+            // Continue with normal deployment workflow
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `stackables_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            logWithTimestamp(`💾 Stackables output saved to: ${outputFile}`);
+            
+            // Extract code blocks and deploy normally
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found in stackables response.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // Deploy stackables result
+            const deployResult = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userRequest || "stackables request");
+            if (deployResult.publicUrl) {
+                // Generate OG image
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const appSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for stackables: ${userSlug}/${appSlug}`);
+                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
+                    if (actualImageUrl) {
+                        await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                        logSuccess(`✅ Updated stackables HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG generation failed for stackables: ${error instanceof Error ? error.message : String(error)}`);
+                }
                 
-                // Split HTML on the delimiter
-                const [publicHtml, adminHtml] = code.split(delimiter, 2);
-                logWithTimestamp(`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`);
+                const needsEmail = code.includes('[CONTACT_EMAIL]');
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+                logWithTimestamp("🎉 STACKABLES PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+                return true;
+            } else {
+                logError("Failed to deploy stackables content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
+            }
+        }
+        
+        try {
+            // Determine request configuration based on content type
+            const isGameRequest = userPrompt.toLowerCase().includes('game') || 
+                                 userPrompt.toLowerCase().includes('pong') ||
+                                 userPrompt.toLowerCase().includes('puzzle') ||
+                                 userPrompt.toLowerCase().includes('arcade');
+            
+            // Determine config type based on basic request analysis
+            // ZAD detection will happen in the classifier step
+            let configType: keyof typeof REQUEST_CONFIGS;
+            if (isGameRequest) {
+                configType = 'game';
+            } else {
+                configType = 'creation';  // Default to creation, classifier will determine if ZAD is needed
+            }
+            
+            const config = REQUEST_CONFIGS[configType];
+            
+            logWithTimestamp(`🎯 Using ${configType} configuration`);
+            logWithTimestamp(`🤖 Models: Classifier=${(config as any).classifierModel || 'N/A'}, Builder=${config.builderModel}`);
+            
+            // Step 1: Generate complete prompt with config (including admin override)
+            logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
+            
+            // For games, classifier config is not needed since games skip the classifier entirely
+            const classifierConfig = configType === 'game' ? {
+                classifierModel: 'gpt-4o', // Default fallback (not used for games)
+                classifierMaxTokens: 600,
+                classifierTemperature: 0.7,
+                classifierTopP: 1,
+                classifierPresencePenalty: 0.3,
+                classifierFrequencyPenalty: 0,
+                forceAdminOverride: forceAdminPath
+            } : {
+                classifierModel: (config as any).classifierModel || 'gpt-4o',
+                classifierMaxTokens: (config as any).classifierMaxTokens || 600,
+                classifierTemperature: (config as any).classifierTemperature || 0.7,
+                classifierTopP: (config as any).classifierTopP || 1,
+                classifierPresencePenalty: (config as any).classifierPresencePenalty || 0.3,
+                classifierFrequencyPenalty: (config as any).classifierFrequencyPenalty || 0,
+                forceAdminOverride: forceAdminPath
+            };
+            
+            const completePrompt = await generateCompletePrompt(userPrompt, classifierConfig);
+            logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
+            
+            let result: string;
+            
+            // Check if generateCompletePrompt returned final HTML (ZAD template)
+            if (completePrompt.startsWith('```html')) {
+                logWithTimestamp("🤝 ZAD template detected - skipping AI builder stage entirely");
+                result = completePrompt; // Use the template directly, no AI call needed
+            } else {
+                // PARTY TRICK: Email detection happens via HTML content analysis later
                 
-                // Deploy public page (normal app)
-                const publicResult = await saveCodeToSupabase(
-                    publicHtml.trim(), 
-                    coach || "unknown", 
-                    userSlug, 
-                    senderPhone, 
-                    userPrompt
-                );
+                // Step 2: Send complete prompt to Claude with config
+                logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
+                logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
                 
-                if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
-                    publicUrl = publicResult.publicUrl;
+                // Dynamic WTAF Design System injection - load only for standard web pages
+                let designSystemContent = null;
+                const isSpecializedRequest = completePrompt.includes('ADMIN_DUAL_PAGE_REQUEST:') || 
+                                           completePrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') ||
+                                           completePrompt.includes('--stack') ||
+                                           completePrompt.includes('--remix') ||
+                                           completePrompt.includes('--stackdb') ||
+                                           completePrompt.includes('--stackdata');
+                
+                if (!isSpecializedRequest && configType === 'creation') {
+                    designSystemContent = await loadWtafDesignSystem();
+                    if (designSystemContent) {
+                        logWithTimestamp("🎨 Dynamic WTAF Design System loaded for standard web page");
+                    } else {
+                        logWarning("⚠️ WTAF Design System failed to load - proceeding without brand guidelines");
+                    }
+                }
+                
+                result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
+                    model: config.builderModel,
+                    maxTokens: config.builderMaxTokens,
+                    temperature: config.builderTemperature,
+                    designSystem: designSystemContent || undefined
+                });
+            }
+            
+            // Step 3: Save output to file for debugging
+            const outputFile = join(CLAUDE_OUTPUT_DIR, `output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+            await writeFile(outputFile, result, 'utf8');
+            if (completePrompt.startsWith('```html')) {
+                logWithTimestamp(`💾 ZAD template output saved to: ${outputFile}`);
+            } else {
+                logWithTimestamp(`💾 Claude output saved to: ${outputFile}`);
+            }
+            
+            // Step 4: Extract code blocks
+            const code = extractCodeBlocks(result);
+            if (!code.trim()) {
+                logWarning("No code block found.");
+                await sendFailureNotification("no-code", senderPhone);
+                return false;
+            }
+            
+            // Step 5: Deploy the content
+            if (userSlug) {
+                // Use Supabase save function for WTAF content
+                logWithTimestamp(`🎯 Using Supabase save for user_slug: ${userSlug}`);
+                
+                // Check if Claude generated dual pages by looking for the delimiter
+                const delimiter = '<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->';
+                logWithTimestamp(`🔍 Checking for delimiter in code (length: ${code.length} chars)`);
+                logWithTimestamp(`🔍 Code preview: ${code.slice(0, 200)}...`);
+                
+                let isDualPage = false;
+                let publicUrl = null;
+                let adminUrl = null;
+                
+                if (code.includes(delimiter)) {
+                    logWithTimestamp(`📊 Dual-page app detected - deploying both pages`);
                     
-                    // Configure admin page to use main app's UUID for data operations
-                    const adminHtmlWithMainUuid = injectSubmissionUuid(adminHtml.trim(), publicResult.uuid);
-                    logWithTimestamp(`🔗 Admin page configured to use main app UUID: ${publicResult.uuid}`);
+                    // Split HTML on the delimiter
+                    const [publicHtml, adminHtml] = code.split(delimiter, 2);
+                    logWithTimestamp(`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`);
                     
-                    // Deploy admin page with admin prefix
-                    const adminResult = await saveCodeToSupabase(
-                        adminHtmlWithMainUuid, 
+                    // Deploy public page (normal app)
+                    const publicResult = await saveCodeToSupabase(
+                        publicHtml.trim(), 
                         coach || "unknown", 
                         userSlug, 
                         senderPhone, 
-                        `Admin dashboard for ${userPrompt}`, 
-                        publicResult.appSlug
+                        userPrompt
                     );
                     
-                    if (adminResult.publicUrl) {
-                        adminUrl = adminResult.publicUrl;
-                        isDualPage = true;
-                        logWithTimestamp(`✅ Dual-page setup complete:`);
-                        logWithTimestamp(`   📱 Main app: ${publicUrl} (UUID: ${publicResult.uuid})`);
-                        logWithTimestamp(`   📊 Admin page: ${adminUrl} (UUID: ${adminResult.uuid})`);
-                        logWithTimestamp(`   💾 Data storage: Uses main app UUID ${publicResult.uuid}`);
-                    }
-                }
-            } else {
-                // Single page deployment
-                logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userPrompt);
-                publicUrl = result.publicUrl;
-                if (result.uuid) {
-                    logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
-                }
-            }
-            
-            // Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)
-            if (publicUrl) {
-                try {
-                    // Extract app slug from URL for OG generation
-                    const urlParts = publicUrl.split('/');
-                    const appSlug = urlParts[urlParts.length - 1];
-                    
-                    logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
-                    const actualImageUrl = await generateOGImage(userSlug, appSlug);
-                    
-                    if (actualImageUrl) {
-                        logSuccess(`✅ Generated OG image: ${actualImageUrl}`);
-                        // Update the saved HTML with the actual image URL
-                        const updateSuccess = await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                        if (updateSuccess) {
-                            logSuccess(`✅ Updated HTML with correct OG image URL`);
-                        } else {
-                            logWarning(`⚠️ Failed to update HTML with OG image URL`);
+                    if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
+                        publicUrl = publicResult.publicUrl;
+                        
+                        // Configure admin page to use main app's UUID for data operations
+                        const adminHtmlWithMainUuid = injectSubmissionUuid(adminHtml.trim(), publicResult.uuid);
+                        logWithTimestamp(`🔗 Admin page configured to use main app UUID: ${publicResult.uuid}`);
+                        
+                        // Deploy admin page with admin prefix
+                        const adminResult = await saveCodeToSupabase(
+                            adminHtmlWithMainUuid, 
+                            coach || "unknown", 
+                            userSlug, 
+                            senderPhone, 
+                            `Admin dashboard for ${userPrompt}`, 
+                            publicResult.appSlug
+                        );
+                        
+                        if (adminResult.publicUrl && adminResult.adminToken) {
+                            // Construct admin URL with MAIN APP's token parameter for authentication
+                            adminUrl = `${adminResult.publicUrl}?token=${publicResult.adminToken}`;
+                            isDualPage = true;
+                            logWithTimestamp(`✅ Dual-page setup complete:`);
+                            logWithTimestamp(`   📱 Main app: ${publicUrl} (UUID: ${publicResult.uuid})`);
+                            logWithTimestamp(`   📊 Admin page: ${adminUrl} (UUID: ${adminResult.uuid})`);
+                            logWithTimestamp(`   🔐 Admin token: ${adminResult.adminToken.slice(0, 8)}...`);
+                            logWithTimestamp(`   💾 Data storage: Uses main app UUID ${publicResult.uuid}`);
                         }
-                    } else {
-                        logWarning(`⚠️ OG generation failed, keeping fallback URL`);
                     }
-                } catch (error) {
-                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                } else {
+                    // Single page deployment
+                    logWithTimestamp(`📱 Single-page app - deploying one page`);
+                    const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userPrompt);
+                    publicUrl = result.publicUrl;
+                    if (result.uuid) {
+                        logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
+                    }
                 }
                 
-                // PARTY TRICK: Check if page needs email completion (simplified detection)
-                const needsEmail = code.includes('[CONTACT_EMAIL]');
-                await sendSuccessNotification(publicUrl, adminUrl, senderPhone, needsEmail);
-                logWithTimestamp("=" + "=".repeat(79));
-                logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
-                logWithTimestamp(`🌐 Final URL: ${publicUrl}`);
-                if (adminUrl) {
-                    logWithTimestamp(`📊 Admin URL: ${adminUrl}`);
-                }
-                logWithTimestamp("=" + "=".repeat(79));
-                return true;
-            } else {
-                logError("Failed to save content");
-                await sendFailureNotification("database", senderPhone);
-                return false;
-            }
-        } else {
-            // Use legacy file save for non-WTAF content
-            logWithTimestamp(`📁 Using legacy file save for non-WTAF content`);
-            const result = await saveCodeToFile(code, coach || "unknown", requestInfo.slug, WEB_OUTPUT_DIR);
-            
-            if (result.publicUrl) {
-                // Generate OG image for legacy files too (before SMS)
-                try {
-                    logWithTimestamp(`🖼️ Generating OG image for legacy file: lab/${requestInfo.slug}`);
-                    const actualImageUrl = await generateOGImage("lab", requestInfo.slug);
+                // Generate OG image and update HTML BEFORE sending SMS (like Python monitor.py)
+                if (publicUrl) {
+                    try {
+                        // Extract app slug from URL for OG generation
+                        const urlParts = publicUrl.split('/');
+                        const appSlug = urlParts[urlParts.length - 1];
+                        
+                        let actualImageUrl;
+                        
+                        // 🎯 SIMPLE CONDITIONAL: Use pre-generated meme image or generate screenshot
+                        if (requestInfo.type === 'meme' && requestInfo.memeImageUrl) {
+                            // Use pre-generated meme image
+                            actualImageUrl = requestInfo.memeImageUrl;
+                            logWithTimestamp(`🎨 Using pre-generated meme image: ${actualImageUrl}`);
+                        } else {
+                            // Generate screenshot for regular apps
+                            logWithTimestamp(`🖼️ Generating OG image for: ${userSlug}/${appSlug}`);
+                            actualImageUrl = await generateOGImage(userSlug, appSlug);
+                        }
+                        
+                        if (actualImageUrl) {
+                            logSuccess(`✅ Generated OG image: ${actualImageUrl}`);
+                            // Update the saved HTML with the actual image URL
+                            const updateSuccess = await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
+                            if (updateSuccess) {
+                                logSuccess(`✅ Updated HTML with correct OG image URL`);
+                            } else {
+                                logWarning(`⚠️ Failed to update HTML with OG image URL`);
+                            }
+                        } else {
+                            logWarning(`⚠️ OG generation failed, keeping fallback URL`);
+                        }
+                    } catch (error) {
+                        logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                    }
                     
-                    if (actualImageUrl) {
-                        logSuccess(`✅ Generated OG image for legacy file: ${actualImageUrl}`);
-                        // Note: Legacy files don't get HTML updates since they're file-based, not database-based
-                        logWithTimestamp(`📝 Legacy files use API endpoint in meta tags (file-based storage)`);
-                    } else {
-                        logWarning(`⚠️ OG generation failed for legacy file`);
+                    // PARTY TRICK: Check if page needs email completion (simplified detection)
+                    const needsEmail = code.includes('[CONTACT_EMAIL]');
+                    await sendSuccessNotification(publicUrl, adminUrl, senderPhone, needsEmail);
+                    logWithTimestamp("=" + "=".repeat(79));
+                    logWithTimestamp("🎉 WTAF PROCESSING COMPLETE!");
+                    logWithTimestamp(`🌐 Final URL: ${publicUrl}`);
+                    if (adminUrl) {
+                        logWithTimestamp(`📊 Admin URL: ${adminUrl}`);
                     }
-                } catch (error) {
-                    logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                    logWithTimestamp("=" + "=".repeat(79));
+                    return true;
+                } else {
+                    logError("Failed to save content");
+                    await sendFailureNotification("database", senderPhone);
+                    return false;
                 }
-                
-                await sendSuccessNotification(result.publicUrl, null, senderPhone, false);
-                logWithTimestamp("=" + "=".repeat(79));
-                logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
-                logWithTimestamp(`🌐 Final URL: ${result.publicUrl}`);
-                logWithTimestamp("=" + "=".repeat(79));
-                return true;
             } else {
-                logError("Failed to save content");
-                await sendFailureNotification("database", senderPhone);
-                return false;
+                // Use legacy file save for non-WTAF content
+                logWithTimestamp(`📁 Using legacy file save for non-WTAF content`);
+                const result = await saveCodeToFile(code, coach || "unknown", requestInfo.slug, WEB_OUTPUT_DIR);
+                
+                if (result.publicUrl) {
+                    // Generate OG image for legacy files too (before SMS)
+                    try {
+                        logWithTimestamp(`🖼️ Generating OG image for legacy file: lab/${requestInfo.slug}`);
+                        const actualImageUrl = await generateOGImage("lab", requestInfo.slug);
+                        
+                        if (actualImageUrl) {
+                            logSuccess(`✅ Generated OG image for legacy file: ${actualImageUrl}`);
+                            // Note: Legacy files don't get HTML updates since they're file-based, not database-based
+                            logWithTimestamp(`📝 Legacy files use API endpoint in meta tags (file-based storage)`);
+                        } else {
+                            logWarning(`⚠️ OG generation failed for legacy file`);
+                        }
+                    } catch (error) {
+                        logWarning(`OG generation failed: ${error instanceof Error ? error.message : String(error)}`);
+                    }
+                    
+                    await sendSuccessNotification(result.publicUrl, null, senderPhone, false);
+                    logWithTimestamp("=" + "=".repeat(79));
+                    logWithTimestamp("🎉 LEGACY PROCESSING COMPLETE!");
+                    logWithTimestamp(`🌐 Final URL: ${result.publicUrl}`);
+                    logWithTimestamp("=" + "=".repeat(79));
+                    return true;
+                } else {
+                    logError("Failed to save content");
+                    await sendFailureNotification("database", senderPhone);
+                    return false;
+                }
             }
+            
+        } catch (error) {
+            logError(`WTAF processing error: ${error instanceof Error ? error.message : String(error)}`);
+            await sendFailureNotification("generic", senderPhone);
+            return false;
         }
-        
     } catch (error) {
-        logError(`WTAF processing error: ${error instanceof Error ? error.message : String(error)}`);
-        await sendFailureNotification("generic", senderPhone);
+        logError(`Meme processing failed: ${error instanceof Error ? error.message : String(error)}`);
+        await sendFailureNotification("meme-generation", senderPhone);
         return false;
     }
 }
 
 /**
  * Process MEME request workflow
- * Generates memes using OpenAI GPT + DALL-E and saves to Supabase
+ * Generates memes using OpenAI GPT + DALL-E then routes to regular deployment flow
  */
 export async function processMemeRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
     logWithTimestamp("🎨 STARTING MEME PROCESSING WORKFLOW");
@@ -982,87 +1056,86 @@ export async function processMemeRequest(processingPath: string, fileData: any, 
         
         logWithTimestamp(`🎨 Using meme config: ${config.model}, ${config.maxTokens} tokens, temp ${config.temperature}`);
         
-        // Process the meme request
+        // Process the meme request - this generates the HTML and composite image
         const result = await processMemeRequest(userPrompt, userSlug, config);
         
-        if (!result.success || !result.html) {
+        if (!result.success || !result.html || !result.imageUrl) {
             logError(`Meme generation failed: ${result.error}`);
             await sendFailureNotification("meme-generation", senderPhone);
             return false;
         }
         
-        // Save meme HTML to Supabase with type='MEME'
-        const deployResult = await saveCodeToSupabase(
-            result.html, 
-            "meme-generator", 
-            userSlug, 
-            senderPhone, 
-            userPrompt,
-            null, // no admin table ID
-            false // don't skip UUID replacement
-        );
+        logSuccess(`✅ Meme generated successfully with composite image: ${result.imageUrl}`);
         
-        if (deployResult.publicUrl && deployResult.uuid) {
-            // Update the wtaf_content entry to set type='MEME' and store meme metadata + fix URL
-            try {
-                const { createClient } = await import('@supabase/supabase-js');
-                const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
-                const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
-                
-                // Update the HTML to inject the correct URL
-                const updatedHTML = result.html!.replace(
-                    'window.MEME_URL = null;',
-                    `window.MEME_URL = "${deployResult.publicUrl}";`
-                );
-                
-                const { error: updateError } = await supabase
-                    .from('wtaf_content')
-                    .update({ 
-                        type: 'MEME',
-                        html_content: updatedHTML, // Update HTML with correct URL
-                        submission_data: {
-                            meme_text: userPrompt,
-                            top_text: result.memeContent?.topText,
-                            bottom_text: result.memeContent?.bottomText,
-                            theme: result.memeContent?.theme,
-                            image_url: result.imageUrl
-                        }
-                    })
-                    .eq('id', deployResult.uuid);
-                
-                if (updateError) {
-                    logWarning(`Failed to update meme metadata: ${updateError.message}`);
-                } else {
-                    logSuccess(`✅ Updated wtaf_content with type='MEME', metadata, and correct URL`);
-                }
-            } catch (error) {
-                logWarning(`Error updating meme metadata: ${error instanceof Error ? error.message : String(error)}`);
-            }
+        // Route to regular deployment flow - modify request to include pre-generated HTML
+        const enhancedRequestInfo = {
+            ...requestInfo,
+            type: 'meme',
+            memeImageUrl: result.imageUrl
+        };
+        
+        // Store the pre-generated HTML in a way the regular flow can access it
+        const memeCode = result.html;
+        
+        // Deploy using regular saveCodeToSupabase flow
+        if (userSlug) {
+            logWithTimestamp(`🎯 Using Supabase save for meme: ${userSlug}`);
+            const deployResult = await saveCodeToSupabase(memeCode, "meme-generator", userSlug, senderPhone, userPrompt);
             
-            // Generate OG image for the meme (use the meme image itself)
-            try {
-                const urlParts = deployResult.publicUrl.split('/');
-                const appSlug = urlParts[urlParts.length - 1];
-                logWithTimestamp(`🖼️ Generating OG image for meme: ${userSlug}/${appSlug}`);
-                // For memes: Use the composite meme image as the OpenGraph image
-                const actualImageUrl = await generateOGImage(userSlug, appSlug, result.imageUrl);
-                if (actualImageUrl) {
-                    await updateOGImageInHTML(userSlug, appSlug, actualImageUrl);
-                    logSuccess(`✅ Updated meme HTML with OG image URL`);
+            if (deployResult.publicUrl && deployResult.uuid) {
+                // Update the wtaf_content entry to set type='MEME'
+                try {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
+                    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
+                    
+                    const { error: updateError } = await supabase
+                        .from('wtaf_content')
+                        .update({ 
+                            type: 'MEME'
+                        })
+                        .eq('id', deployResult.uuid);
+                    
+                    if (updateError) {
+                        logWarning(`Failed to update meme type: ${updateError.message}`);
+                    } else {
+                        logSuccess(`✅ Updated wtaf_content with type='MEME'`);
+                    }
+                } catch (error) {
+                    logWarning(`Error updating meme type: ${error instanceof Error ? error.message : String(error)}`);
                 }
-            } catch (error) {
-                logWarning(`OG generation failed for meme: ${error instanceof Error ? error.message : String(error)}`);
+                
+                // Use the regular OG image flow with our conditional
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const appSlug = urlParts[urlParts.length - 1];
+                    
+                    // This will use our conditional to use the pre-generated meme image
+                    logWithTimestamp(`🎨 Using pre-generated meme image: ${result.imageUrl}`);
+                    const updateSuccess = await updateOGImageInHTML(userSlug, appSlug, result.imageUrl);
+                    if (updateSuccess) {
+                        logSuccess(`✅ Updated HTML with correct OG image URL`);
+                    } else {
+                        logWarning(`⚠️ Failed to update HTML with OG image URL`);
+                    }
+                } catch (error) {
+                    logWarning(`OG update failed: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                logWithTimestamp("=" + "=".repeat(79));
+                logWithTimestamp("🎉 MEME PROCESSING COMPLETE!");
+                logWithTimestamp(`🌐 Meme URL: ${deployResult.publicUrl}`);
+                logWithTimestamp("=" + "=".repeat(79));
+                return true;
+            } else {
+                logError("Failed to save meme content");
+                await sendFailureNotification("database", senderPhone);
+                return false;
             }
-            
-            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
-            logWithTimestamp("=" + "=".repeat(79));
-            logWithTimestamp("🎉 MEME PROCESSING COMPLETE!");
-            logWithTimestamp(`🌐 Meme URL: ${deployResult.publicUrl}`);
-            logWithTimestamp("=" + "=".repeat(79));
-            return true;
         } else {
-            logError("Failed to save meme to database");
-            await sendFailureNotification("database", senderPhone);
+            logError("No user slug provided for meme");
+            await sendFailureNotification("generic", senderPhone);
             return false;
         }
         

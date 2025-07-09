@@ -397,8 +397,9 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
 function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string): string {
     const { topText, bottomText, theme } = memeContent;
     
-    // Use the actual meme image URL for OpenGraph (it's already uploaded to Supabase Storage)
-    const ogImageUrl = imageUrl;
+    // Use placeholder OG image URL (will be updated later with actual meme image)
+    // This follows the same pattern as all other WTAF apps
+    const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=MEME_PLACEHOLDER`;
     
     return `<!DOCTYPE html>
 <html lang="en">

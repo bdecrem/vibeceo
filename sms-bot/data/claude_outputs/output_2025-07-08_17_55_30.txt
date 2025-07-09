@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Things ✨</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #3F88FF 0%, #6E7FFF 50%, #ABF7FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .goal-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .goal-container:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .checkbox {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #00FFC6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .checkbox:hover {
+            background: rgba(0, 255, 198, 0.2);
+        }
+
+        .checkbox.checked {
+            background: #00FFC6;
+            color: black;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFC6, #57E2E5);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes emojiRain {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .falling-emoji {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: emojiRain 3s linear forwards;
+        }
+
+        #goals-setup {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .date-display {
+            font-size: 24px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #00FFC6, #57E2E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .streak-count {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">🌟</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">🎯</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">💫</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Welcome to Three Things</h1>
+            <p>Track your daily goals with maximum vibes ✨</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Three Things</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div id="goals-setup" style="display: none;">
+                    <h2>Set Your Three Daily Goals</h2>
+                    <input type="text" id="goal1" placeholder="Goal 1 (e.g., Drink water)" maxlength="30">
+                    <input type="text" id="goal2" placeholder="Goal 2 (e.g., Exercise)" maxlength="30">
+                    <input type="text" id="goal3" placeholder="Goal 3 (e.g., Read)" maxlength="30">
+                    <button onclick="saveGoals()">Save Goals</button>
+                </div>
+
+                <div id="goals-tracker" style="display: none;">
+                    <div class="date-display"></div>
+                    <div id="goals-list"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="streak-count"></div>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://tqniseocczttrfwtpbdr.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        );
+
+        const APP_ID = 'three_things_v1';
+        const USER_LABELS = ['tracker1🎯', 'tracker2⚡', 'tracker3🌟', 'tracker4🔥', 'tracker5💎'];
+        const CELEBRATION_EMOJIS = ['🎉', '⭐', '🌟', '💪', '🔥', '🌈'];
+        let currentUser = null;
+        let userGoals = null;
+        let todayProgress = null;
+
+        // Authentication functions
+        let currentUser = null;
+
+        async function generateNewUser() {
+            const { data: existingUsers } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('participant_data')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join');
+            
+            const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+            
+            if (usedLabels.length >= 5) {
+                alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+            
+            return true;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'join',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode,
+                        join_time: Date.now()
+                    },
+                    content_data: { 
+                        message: 'Joined Three Things',
+                        timestamp: Date.now(),
+                        goals: null,
+                        progress: {}
+                    }
+                });
+                
+                enterMainScreen();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR IDENTITY, PHANTOM 👻');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const { data: joinRecords } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const userRecord = joinRecords?.find(record => 
+                    record.participant_data?.userLabel === selectedLabel && 
+                    record.participant_data?.passcode === enteredPasscode
+                );
+                
+                if (userRecord) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: userRecord.participant_id
+                    };
+                    enterMainScreen();
+                } else {
+                    alert('NICE TRY, WRONG VIBES ❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            USER_LABELS.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+        }
+
+        // App-specific functions
+        async function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            
+            // Load user's goals
+            const { data: userData } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('participant_id', currentUser.participantId)
+                .eq('action_type', 'join')
+                .single();
+
+            if (userData?.content_data?.goals) {
+                userGoals = userData.content_data.goals;
+                document.getElementById('goals-setup').style.display = 'none';
+                document.getElementById('goals-tracker').style.display = 'block';
+                updateGoalsDisplay();
+            } else {
+                document.getElementById('goals-setup').style.display = 'block';
+                document.getElementById('goals-tracker').style.display = 'none';
+            }
+
+            startPolling();
+            loadLatestData();
+        }
+
+        async function saveGoals() {
+            const goals = [
+                document.getElementById('goal1').value.trim(),
+                document.getElementById('goal2').value.trim(),
+                document.getElementById('goal3').value.trim()
+            ];
+
+            if (goals.some(g => !g)) {
+                alert('ALL THREE GOALS REQUIRED FOR MAXIMUM POWER 💫');
+                return;
+            }
+
+            try {
+                const { data: userRecord } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('participant_id', currentUser.participantId)
+                    .eq('action_type', 'join')
+                    .single();
+
+                await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .update({
+                        content_data: {
+                            ...userRecord.content_data,
+                            goals: goals
+                        }
+                    })
+                    .eq('id', userRecord.id);
+
+                userGoals = goals;
+                document.getElementById('goals-setup').style.display = 'none';
+                document.getElementById('goals-tracker').style.display = 'block';
+                updateGoalsDisplay();
+            } catch (error) {
+                console.error('Error saving goals:', error);
+                alert('GOALS FAILED TO LAUNCH 🚀 TRY AGAIN!');
+            }
+        }
+
+        function updateGoalsDisplay() {
+            const today = new Date().toLocaleDateString();
+            document.querySelector('.date-display').textContent = today;
+
+            const goalsList = document.getElementById('goals-list');
+            goalsList.innerHTML = '';
+
+            userGoals.forEach((goal, index) => {
+                const container = document.createElement('div');
+                container.className = 'goal-container';
+
+                const label = document.createElement('span');
+                label.textContent = goal;
+
+                const checkbox = document.createElement('div');
+                checkbox.className = 'checkbox';
+                checkbox.setAttribute('data-index', index);
+                checkbox.onclick = () => toggleGoal(index);
+
+                if (todayProgress?.[index]) {
+                    checkbox.classList.add('checked');
+                    checkbox.textContent = '✓';
+                }
+
+                container.appendChild(label);
+                container.appendChild(checkbox);
+                goalsList.appendChild(container);
+            });
+
+            updateProgress();
+        }
+
+        async function toggleGoal(index) {
+            const checkbox = document.querySelector(`.checkbox[data-index="${index}"]`);
+            const isChecked = checkbox.classList.contains('checked');
+            
+            if (!isChecked) {
+                checkbox.classList.add('checked');
+                checkbox.textContent = '✓';
+                
+                // Celebration animation
+                const emoji = CELEBRATION_EMOJIS[Math.floor(Math.random() * CELEBRATION_EMOJIS.length)];
+                const celebration = document.createElement('div');
+                celebration.textContent = emoji;
+                celebration.style.position = 'absolute';
+                celebration.style.left = `${checkbox.offsetLeft}px`;
+                celebration.style.top = `${checkbox.offsetTop}px`;
+                celebration.style.animation = 'celebrate 0.5s ease-out';
+                document.body.appendChild(celebration);
+                setTimeout(() => celebration.remove(), 500);
+            } else {
+                checkbox.classList.remove('checked');
+                checkbox.textContent = '';
+            }
+
+            // Update progress in database
+            try {
+                const { data: userRecord } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('participant_id', currentUser.participantId)
+                    .eq('action_type', 'join')
+                    .single();
+
+                const today = new Date().toLocaleDateString();
+                const progress = userRecord.content_data.progress || {};
+                progress[today] = progress[today] || [false, false, false];
+                progress[today][index] = !isChecked;
+
+                await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .update({
+                        content_data: {
+                            ...userRecord.content_data,
+                            progress: progress
+                        }
+                    })
+                    .eq('id', userRecord.id);
+
+                todayProgress = progress[today];
+                updateProgress();
+
+                // Check if it's Sunday and all goals are complete
+                const now = new Date();
+                if (now.getDay() === 0) {
+                    const weekProgress = getWeekProgress(progress);
+                    if (weekProgress === 1) {
+                        triggerEmojiRain();
+                    } else {
+                        showWeeklyMessage(weekProgress);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating progress:', error);
+                alert('PROGRESS UPDATE FAILED 💔 TRY AGAIN!');
+            }
+        }
+
+        function updateProgress() {
+            const progress = todayProgress ? todayProgress.filter(Boolean).length / 3 : 0;
+            document.querySelector('.progress-fill').style.width = `${progress * 100}%`;
+            
+            const streak = calculateStreak();
+            document.querySelector('.streak-count').textContent = 
+                `Current Streak: ${streak} ${streak > 0 ? '🔥' : ''}`;
+        }
+
+        function calculateStreak() {
+            // Implementation for streak calculation
+            return 0; // Placeholder
+        }
+
+        function getWeekProgress(progress) {
+            // Implementation for weekly progress calculation
+            return 0; // Placeholder
+        }
+
+        function triggerEmojiRain() {
+            const emojis = '🎉🎈🎊✨⭐🌟💫⚡️🔥🌈🦄🎯🎨🎭🎪🎢🎡🎠🎪🌸🌺🌼🌻🌹🌷💐🌱🌲🌳🌴🌵🌾🌿☘️🍀🍁🍂🍃';
+            for (let i = 0; i < 50; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const left = Math.random() * window.innerWidth;
+                const delay = Math.random() * 3;
+                
+                const element = document.createElement('div');
+                element.className = 'falling-emoji';
+                element.textContent = emoji;
+                element.style.left = `${left}px`;
+                element.style.animationDelay = `${delay}s`;
+                
+                document.body.appendChild(element);
+                setTimeout(() => element.remove(), 3000);
+            }
+        }
+
+        function showWeeklyMessage(progress) {
+            alert(`Nice effort! ${progress * 100}% complete this week 🌱`);
+        }
+
+        // Polling setup
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(async () => {
+                await loadLatestData();
+            }, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        async function loadLatestData() {
+            if (!currentUser) return;
+
+            try {
+                const { data: userData } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('participant_id', currentUser.participantId)
+                    .eq('action_type', 'join')
+                    .single();
+
+                if (userData) {
+                    userGoals = userData.content_data.goals;
+                    const today = new Date().toLocaleDateString();
+                    todayProgress = userData.content_data.progress?.[today] || [false, false, false];
+                    updateGoalsDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+        window.wtaf = function() {
+            document.body.style.animation = 'rainbow 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

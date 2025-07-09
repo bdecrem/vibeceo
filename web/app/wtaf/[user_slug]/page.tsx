@@ -24,7 +24,7 @@ export default async function UserPage({ params }: UserPageProps) {
 
   // Check if user has an index file set (with cache busting)
   const { data: subscriber, error } = await supabase
-    .from('sms_subscribers')
+    .from('sms_subscribers_public')
     .select('index_file')
     .eq('slug', user_slug)
     .limit(1)

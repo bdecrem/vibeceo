@@ -200,7 +200,7 @@ export async function saveCodeToSupabase(
     originalPrompt: string, 
     adminTableId: string | null = null,
     skipUuidReplacement: boolean = false
-): Promise<{ appSlug: string | null; publicUrl: string | null; uuid: string | null }> {
+): Promise<{ appSlug: string | null; publicUrl: string | null; uuid: string | null; adminToken: string | null }> {
     logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
@@ -217,7 +217,7 @@ export async function saveCodeToSupabase(
     // Get user_id from sms_subscribers table
     const userId = await getUserId(userSlug);
     if (!userId) {
-        return { appSlug: null, publicUrl: null, uuid: null };
+        return { appSlug: null, publicUrl: null, uuid: null, adminToken: null };
     }
     
     // Inject OpenGraph tags into HTML
@@ -259,14 +259,19 @@ export async function saveCodeToSupabase(
         if (senderPhone) {
             try {
                 const { getHideDefault } = await import('../lib/subscribers.js');
-                shouldHideByDefault = await getHideDefault(senderPhone) || false;
+                const hideDefaultResult = await getHideDefault(senderPhone);
+                shouldHideByDefault = hideDefaultResult === true;
                 if (shouldHideByDefault) {
                     logWithTimestamp(`👻 User has hide_default=true - setting Forget=true for new page`);
                 }
             } catch (error) {
-                logWarning(`Error checking hide_default setting: ${error instanceof Error ? error.message : String(error)}`);
+                logError(`Error checking hide_default setting: ${error instanceof Error ? error.message : String(error)}`);
             }
         }
+
+        // Generate admin token for secure access
+        const { randomBytes } = await import('crypto');
+        const adminToken = randomBytes(16).toString('hex');
 
         const data = {
             user_id: userId,
@@ -278,8 +283,12 @@ export async function saveCodeToSupabase(
             html_content: code, // Save initial HTML without UUID replacement
             status: 'published',
             type: isZadApp ? 'ZAD' : null, // Set type to 'ZAD' if ZAD app detected
-            Forget: shouldHideByDefault // Hide by default if user has hide_default enabled
+            Forget: shouldHideByDefault, // Hide by default if user has hide_default enabled
+            admin_token: adminToken // Secure token for admin access
+            // data_is_public defaults to NULL (treated as private)
         };
+
+        logWithTimestamp(`🔐 Generated admin token: ${adminToken.slice(0, 8)}...`);
         
         let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
@@ -305,7 +314,7 @@ export async function saveCodeToSupabase(
                 
             if (retryResult.error || !retryResult.data) {
                 logError(`Emergency retry failed: ${retryResult.error?.message || 'No data returned'}`);
-                return { appSlug: null, publicUrl: null, uuid: null };
+                return { appSlug: null, publicUrl: null, uuid: null, adminToken: null };
             }
             
             logWarning(`⚠️ Used emergency slug due to race condition: ${emergencySlug}`);
@@ -320,7 +329,7 @@ export async function saveCodeToSupabase(
             
         if (error || !savedData) {
             logError(`Error saving to Supabase: ${error?.message || 'No data returned'}`);
-            return { appSlug: null, publicUrl: null, uuid: null };
+            return { appSlug: null, publicUrl: null, uuid: null, adminToken: null };
         }
         
         const contentUuid = savedData.id;
@@ -351,7 +360,7 @@ export async function saveCodeToSupabase(
             
         if (updateError) {
             logError(`Error updating HTML with UUID: ${updateError.message}`);
-            return { appSlug: null, publicUrl: null, uuid: null };
+            return { appSlug: null, publicUrl: null, uuid: null, adminToken: null };
         }
         
         logSuccess(`✅ Saved to Supabase with secure UUID: /wtaf/${userSlug}/${appSlug}`);
@@ -360,11 +369,11 @@ export async function saveCodeToSupabase(
         } else {
             logWithTimestamp(`🔒 APP_ID in HTML set to secure UUID: ${contentUuid}`);
         }
-        return { appSlug, publicUrl, uuid: contentUuid };
+        return { appSlug, publicUrl, uuid: contentUuid, adminToken };
         
     } catch (error) {
         logError(`Error saving to Supabase: ${error instanceof Error ? error.message : String(error)}`);
-        return { appSlug: null, publicUrl: null, uuid: null };
+        return { appSlug: null, publicUrl: null, uuid: null, adminToken: null };
     }
 }
 

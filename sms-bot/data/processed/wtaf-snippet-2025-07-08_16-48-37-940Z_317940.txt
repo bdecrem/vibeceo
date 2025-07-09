@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+A daily standup board where team members post brief updates with three buttons (Working On, Completed, Blocked). Display posts as colored cards showing user label and timestamp, with newest posts at top. Include emoji reaction buttons (👍✨🔥) for each post. Add a 'New Day' button that inserts a separator line. Show a counter of who has posted today."

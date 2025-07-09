@@ -1,0 +1,404 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪩 Senior Center RAGER 🪩</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        #text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        #prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="floating-emoji" data-value="3" style="top: 10%; left: 10%">🪩</span>
+        <span class="floating-emoji" data-value="4" style="top: 20%; right: 20%">💃</span>
+        <span class="floating-emoji" data-value="2" style="bottom: 30%; left: 30%">🎈</span>
+        <span class="floating-emoji" data-value="5" style="bottom: 20%; right: 10%">✨</span>
+
+        <h1>SENIOR CENTER GOES SICKO MODE 🔥</h1>
+        <p>Tomorrow at 8PM - Dentures Optional, Vibes Mandatory</p>
+
+        <form id="rsvp-form">
+            <input type="text" name="name" placeholder="Your name (real or stage)" required>
+            <input type="email" name="email" placeholder="Email (we promise not to spam... much)" required>
+            <button type="submit">SECURE THE BAG 💼</button>
+        </form>
+
+        <div class="success-message" id="success">
+            You're on the list! Bring your best shuffle shoes! 🕺
+        </div>
+    </div>
+
+    <div id="text-cta">
+        📱 Text START to +1-866-330-0015 for secret party details
+    </div>
+
+    <div id="prompt">
+        Generated from: make a party invite page for my party at the senior center tomorrow at 8
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`
+            })
+        })
+
+        // Form submission
+        document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const formData = {
+                name: e.target.name.value,
+                email: e.target.email.value,
+                timestamp: new Date().toISOString()
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'senior_center_party',
+                    submission_data: formData
+                })
+                
+                if (error) throw error
+
+                document.getElementById('success').style.display = 'block'
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('RSVP failed! Try again or bring donuts as an apology.')
+            }
+        })
+
+        // Easter egg
+        let clicks = 0
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++
+            if (clicks === 5) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                alert('🎉 SECRET UNLOCKED: There will be bingo... but make it RAVE')
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #FF2E93;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #FF2E93;
+            color: white;
+        }
+
+        tr:hover {
+            background: #2a2a2a;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background: #ff61c7;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #222;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            color: #FF2E93;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🪩 Senior Center Party Admin</h1>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-rsvps">0</div>
+                <div>Total RSVPs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="today-rsvps">0</div>
+                <div>Today's RSVPs</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="exportCSV()">Export to CSV</button>
+            <button onclick="loadSubmissions()">Refresh Data</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="submissions-table">
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let submissions = []
+
+        async function loadSubmissions() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search)
+                const token = urlParams.get('token')
+                const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load submissions')
+                }
+                
+                submissions = result.submissions || []
+                
+                // Update table
+                const table = document.getElementById('submissions-table')
+                table.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${sub.submission_data.name}</td>
+                        <td>${sub.submission_data.email}</td>
+                        <td>${new Date(sub.submission_data.timestamp).toLocaleString()}</td>
+                    </tr>
+                `).join('')
+
+                // Update stats
+                document.getElementById('total-rsvps').textContent = submissions.length
+                const today = new Date().toDateString()
+                const todayRSVPs = submissions.filter(sub => 
+                    new Date(sub.submission_data.timestamp).toDateString() === today
+                ).length
+                document.getElementById('today-rsvps').textContent = todayRSVPs
+
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportCSV() {
+            const csvContent = 'Name,Email,Timestamp\n' + submissions.map(row => 
+                `${row.submission_data.name},${row.submission_data.email},${row.submission_data.timestamp}`
+            ).join('\n')
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'party_rsvps.csv'
+            a.click()
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

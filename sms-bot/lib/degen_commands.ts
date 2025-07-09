@@ -275,6 +275,276 @@ export async function queueRemixRequest(
   }
 }
 
+export async function queuePublishDataRequest(
+  userSlug: string,
+  indexNumber: number,
+  senderPhone: string
+): Promise<boolean> {
+  try {
+    logWithTimestamp(`📢 Queueing publish data request: user=${userSlug}, index=${indexNumber}`);
+    
+    // Get the target page from user's WTAF content
+    const { data: userContent, error } = await supabase
+      .from('wtaf_content')
+      .select('app_slug, data_is_public')
+      .eq('user_slug', userSlug)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      logWithTimestamp(`❌ Error fetching user content: ${error}`);
+      return false;
+    }
+    
+    if (!userContent || userContent.length === 0) {
+      logWithTimestamp(`❌ No pages found for user ${userSlug}`);
+      return false;
+    }
+    
+    // Validate index number
+    if (indexNumber < 1 || indexNumber > userContent.length) {
+      logWithTimestamp(`❌ Invalid index ${indexNumber} for user ${userSlug} (has ${userContent.length} pages)`);
+      return false;
+    }
+    
+    // Get the target page (convert to 0-based index)
+    const targetPage = userContent[indexNumber - 1];
+    const appSlug = targetPage.app_slug;
+    
+    // Check if already public
+    if (targetPage.data_is_public === true) {
+      logWithTimestamp(`ℹ️ Data for page ${indexNumber} (${appSlug}) is already public`);
+      return true; // Not an error, just already done
+    }
+    
+    // Move data from private to public table
+    const moveSuccess = await moveSubmissionsToPublic(appSlug);
+    
+    if (moveSuccess) {
+      // Update the wtaf_content record to mark data as public
+      const { error: updateError } = await supabase
+        .from('wtaf_content')
+        .update({ data_is_public: true })
+        .eq('user_slug', userSlug)
+        .eq('app_slug', appSlug);
+        
+      if (updateError) {
+        logWithTimestamp(`❌ Error updating data_is_public flag: ${updateError}`);
+        return false;
+      }
+      
+      logWithTimestamp(`✅ Published data for page ${indexNumber} (${appSlug})`);
+      return true;
+    }
+    
+    return false;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error queueing publish data request: ${error}`);
+    return false;
+  }
+}
+
+export async function queuePrivateDataRequest(
+  userSlug: string,
+  indexNumber: number,
+  senderPhone: string
+): Promise<boolean> {
+  try {
+    logWithTimestamp(`🔒 Queueing private data request: user=${userSlug}, index=${indexNumber}`);
+    
+    // Get the target page from user's WTAF content
+    const { data: userContent, error } = await supabase
+      .from('wtaf_content')
+      .select('app_slug, data_is_public')
+      .eq('user_slug', userSlug)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      logWithTimestamp(`❌ Error fetching user content: ${error}`);
+      return false;
+    }
+    
+    if (!userContent || userContent.length === 0) {
+      logWithTimestamp(`❌ No pages found for user ${userSlug}`);
+      return false;
+    }
+    
+    // Validate index number
+    if (indexNumber < 1 || indexNumber > userContent.length) {
+      logWithTimestamp(`❌ Invalid index ${indexNumber} for user ${userSlug} (has ${userContent.length} pages)`);
+      return false;
+    }
+    
+    // Get the target page (convert to 0-based index)
+    const targetPage = userContent[indexNumber - 1];
+    const appSlug = targetPage.app_slug;
+    
+    // Check if already private (NULL or false = private)
+    if (targetPage.data_is_public !== true) {
+      logWithTimestamp(`ℹ️ Data for page ${indexNumber} (${appSlug}) is already private`);
+      return true; // Not an error, just already done
+    }
+    
+    // Move data from public to private table
+    const moveSuccess = await moveSubmissionsToPrivate(appSlug);
+    
+    if (moveSuccess) {
+      // Update the wtaf_content record to mark data as private
+      const { error: updateError } = await supabase
+        .from('wtaf_content')
+        .update({ data_is_public: false })
+        .eq('user_slug', userSlug)
+        .eq('app_slug', appSlug);
+        
+      if (updateError) {
+        logWithTimestamp(`❌ Error updating data_is_public flag: ${updateError}`);
+        return false;
+      }
+      
+      logWithTimestamp(`✅ Made data private for page ${indexNumber} (${appSlug})`);
+      return true;
+    }
+    
+    return false;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error queueing private data request: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Move submissions from private table to public table
+ */
+async function moveSubmissionsToPublic(appSlug: string): Promise<boolean> {
+  try {
+    // Get app UUID from slug
+    const { data: appData, error: appError } = await supabase
+      .from('wtaf_content')
+      .select('id')
+      .eq('app_slug', appSlug)
+      .single();
+      
+    if (appError || !appData) {
+      logWithTimestamp(`❌ App not found: ${appSlug}`);
+      return false;
+    }
+    
+    const appId = appData.id;
+    
+    // Get all submissions for this app from private table
+    const { data: privateSubmissions, error: fetchError } = await supabase
+      .from('wtaf_submissions')
+      .select('*')
+      .eq('app_id', appId);
+      
+    if (fetchError) {
+      logWithTimestamp(`❌ Error fetching private submissions: ${fetchError}`);
+      return false;
+    }
+    
+    if (!privateSubmissions || privateSubmissions.length === 0) {
+      logWithTimestamp(`ℹ️ No submissions to move for app ${appSlug}`);
+      return true; // Success - nothing to move
+    }
+    
+    // Insert into public table
+    const { error: insertError } = await supabase
+      .from('wtaf_submissions_public')
+      .insert(privateSubmissions);
+      
+    if (insertError) {
+      logWithTimestamp(`❌ Error inserting into public table: ${insertError}`);
+      return false;
+    }
+    
+    // Delete from private table
+    const { error: deleteError } = await supabase
+      .from('wtaf_submissions')
+      .delete()
+      .eq('app_id', appId);
+      
+    if (deleteError) {
+      logWithTimestamp(`❌ Error deleting from private table: ${deleteError}`);
+      // TODO: Should we rollback the public insert here?
+      return false;
+    }
+    
+    logWithTimestamp(`✅ Moved ${privateSubmissions.length} submissions to public for app ${appSlug}`);
+    return true;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error moving submissions to public: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Move submissions from public table to private table
+ */
+async function moveSubmissionsToPrivate(appSlug: string): Promise<boolean> {
+  try {
+    // Get app UUID from slug
+    const { data: appData, error: appError } = await supabase
+      .from('wtaf_content')
+      .select('id')
+      .eq('app_slug', appSlug)
+      .single();
+      
+    if (appError || !appData) {
+      logWithTimestamp(`❌ App not found: ${appSlug}`);
+      return false;
+    }
+    
+    const appId = appData.id;
+    
+    // Get all submissions for this app from public table
+    const { data: publicSubmissions, error: fetchError } = await supabase
+      .from('wtaf_submissions_public')
+      .select('*')
+      .eq('app_id', appId);
+      
+    if (fetchError) {
+      logWithTimestamp(`❌ Error fetching public submissions: ${fetchError}`);
+      return false;
+    }
+    
+    if (!publicSubmissions || publicSubmissions.length === 0) {
+      logWithTimestamp(`ℹ️ No submissions to move for app ${appSlug}`);
+      return true; // Success - nothing to move
+    }
+    
+    // Insert into private table
+    const { error: insertError } = await supabase
+      .from('wtaf_submissions')
+      .insert(publicSubmissions);
+      
+    if (insertError) {
+      logWithTimestamp(`❌ Error inserting into private table: ${insertError}`);
+      return false;
+    }
+    
+    // Delete from public table
+    const { error: deleteError } = await supabase
+      .from('wtaf_submissions_public')
+      .delete()
+      .eq('app_id', appId);
+      
+    if (deleteError) {
+      logWithTimestamp(`❌ Error deleting from public table: ${deleteError}`);
+      // TODO: Should we rollback the private insert here?
+      return false;
+    }
+    
+    logWithTimestamp(`✅ Moved ${publicSubmissions.length} submissions to private for app ${appSlug}`);
+    return true;
+    
+  } catch (error) {
+    logWithTimestamp(`💥 Error moving submissions to private: ${error}`);
+    return false;
+  }
+}
+
 // Note: Direct processing functions removed - we now use file-based queueing
 // to integrate with monitor.py's existing workflow. Edit processing happens
 // in monitor.py using the prompts/edits.json template. 

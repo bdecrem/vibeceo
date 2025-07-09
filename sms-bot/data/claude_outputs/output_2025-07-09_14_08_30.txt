@@ -1,0 +1,105 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>hello world | WTAF Console Logger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #3F88FF, #6E7FFF, #ABF7FF);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+        .console-container {
+            background: rgba(0,0,0,0.7);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            transform: rotateX(10deg);
+            transition: all 0.3s ease;
+        }
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+        .emoji-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .emoji {
+            font-size: 3rem;
+            animation: float 3s ease-in-out infinite alternate;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        .emoji:hover {
+            transform: scale(1.2) rotate(15deg);
+            opacity: 1;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-20px); }
+        }
+        .console-trigger {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+        .console-trigger:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255,46,147,0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="console-container">
+        <h1>hello world</h1>
+        <p>Click the button to log a message to the console</p>
+        <button class="console-trigger" onclick="logMessage()">🚀 LOG MESSAGE</button>
+        
+        <div class="emoji-grid">
+            <span class="emoji" data-value="2">💾</span>
+            <span class="emoji" data-value="3">💡</span>
+            <span class="emoji" data-value="4">🚀</span>
+        </div>
+    </div>
+
+    <script>
+        function logMessage() {
+            console.log('hello world');
+            alert('Message logged to console! Open DevTools to see it.');
+        }
+
+        // Parallax emoji movement
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```

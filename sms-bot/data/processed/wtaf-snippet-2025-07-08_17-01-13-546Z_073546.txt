@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make me a habit tracker app called "Daily Goals." I want to track 3 habits: limiting screen time to 2 hours, getting 8 hours of sleep, and drinking 8 glasses of water daily. The app should show a 7-day week view where I can check off whether I completed each habit. When I complete all 3 habits in a day, I earn a gold star emoji. If I maintain a 5-day streak for any habit, I unlock achievement badges (like 💧 for hydration master, 😴 for sleep champion, or 📱 for screen time pro). Include a simple progress chart showing my weekly completion rate. Keep the design clean and motivating with a subtle celebration animation when I check off all daily goals. Use Supabase to store my habit logs and achievement history.

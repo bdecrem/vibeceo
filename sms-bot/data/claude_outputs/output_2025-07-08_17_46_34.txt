@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Idea Board</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .data-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .data-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(123,58,237,0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .message {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin: 10px 0;
+            animation: slideIn 0.3s ease;
+            max-width: 80%;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Welcome to Idea Board</h1>
+            <p>Share and react to feature ideas!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Feature Idea Board</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div class="form-group">
+                    <input type="text" id="idea-input" placeholder="Your brilliant idea..." maxlength="100">
+                    <select id="category-select">
+                        <option value="default">Select Category</option>
+                        <option value="UI">UI</option>
+                        <option value="Backend">Backend</option>
+                        <option value="Feature">Feature</option>
+                        <option value="Bug">Bug</option>
+                        <option value="Improvement">Improvement</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button onclick="submitIdea()">Submit Idea</button>
+                </div>
+                <div id="filter-options">
+                    <button onclick="filterIdeas('all')">All</button>
+                    <button onclick="filterIdeas('🔥')">Top 🔥</button>
+                </div>
+                <div id="ideas-board" class="data-grid"></div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">🌀</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">🚀</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">💥</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://tqniseocczttrfwtpbdr.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        );
+
+        const APP_ID = 'test1';
+        const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
+
+        let currentUser = null;
+        let pollingInterval;
+
+        async function generateNewUser() {
+            const { data: existingUsers } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('participant_data')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'join');
+            
+            const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
+            
+            if (usedLabels.length >= 5) {
+                alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+            
+            return true;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'join',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode,
+                        join_time: Date.now()
+                    },
+                    content_data: { message: 'Joined the app', timestamp: Date.now() }
+                });
+                
+                enterMainScreen();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR IDENTITY, PHANTOM 👻');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const { data: joinRecords } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('action_type', 'join');
+                
+                const userRecord = joinRecords?.find(record => 
+                    record.participant_data?.userLabel === selectedLabel && 
+                    record.participant_data?.passcode === enteredPasscode
+                );
+                
+                if (userRecord) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: userRecord.participant_id
+                    };
+                    enterMainScreen();
+                } else {
+                    alert('NICE TRY, WRONG VIBES ❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            USER_LABELS.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        async function submitIdea() {
+            const ideaText = document.getElementById('idea-input').value.trim();
+            const category = document.getElementById('category-select').value;
+            
+            if (!ideaText || category === 'default') {
+                alert('ENTER AN IDEA AND CATEGORY BEFORE SUBMITTING 🚀');
+                return;
+            }
+            
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').insert({
+                    app_id: APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: 'idea',
+                    participant_data: {
+                        userLabel: currentUser.userLabel,
+                        passcode: currentUser.passcode
+                    },
+                    content_data: {
+                        idea: ideaText,
+                        category: category,
+                        timestamp: Date.now(),
+                        reactions: { '🔥': 0 },
+                        comments: []
+                    }
+                });
+                
+                document.getElementById('idea-input').value = '';
+                document.getElementById('category-select').value = 'default';
+                loadLatestData();
+            } catch (error) {
+                console.error('Idea submission error:', error);
+                alert('SUBMISSION FAILED, CHAOS RESISTS 💥');
+            }
+        }
+
+        async function loadLatestData() {
+            const { data } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'idea')
+                .order('created_at', { ascending: true });
+            
+            updateUI(data);
+        }
+
+        function updateUI(data) {
+            const ideasBoard = document.getElementById('ideas-board');
+            ideasBoard.innerHTML = '';
+
+            data.forEach(record => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+
+                const ideaText = document.createElement('p');
+                ideaText.textContent = `💡 ${record.content_data.idea}`;
+
+                const userInfo = document.createElement('p');
+                userInfo.textContent = `${record.participant_data.userLabel} | ${new Date(record.content_data.timestamp).toLocaleString()}`;
+
+                const category = document.createElement('p');
+                category.textContent = `Category: ${record.content_data.category}`;
+
+                const reactions = document.createElement('p');
+                reactions.innerHTML = `🔥: ${record.content_data.reactions['🔥']}`;
+
+                const reactButton = document.createElement('button');
+                reactButton.textContent = 'React 🔥';
+                reactButton.onclick = () => reactToIdea(record);
+
+                const commentInput = document.createElement('input');
+                commentInput.placeholder = 'Add a comment...';
+                commentInput.className = 'form-input';
+
+                const commentButton = document.createElement('button');
+                commentButton.textContent = 'Comment';
+                commentButton.onclick = () => addComment(record, commentInput.value);
+
+                card.appendChild(ideaText);
+                card.appendChild(userInfo);
+                card.appendChild(category);
+                card.appendChild(reactions);
+                card.appendChild(reactButton);
+                card.appendChild(commentInput);
+                card.appendChild(commentButton);
+
+                if (record.content_data.comments.length > 0) {
+                    const commentsList = document.createElement('div');
+                    record.content_data.comments.forEach(comment => {
+                        const commentElement = document.createElement('p');
+                        commentElement.textContent = `💬 ${comment}`;
+                        commentsList.appendChild(commentElement);
+                    });
+                    card.appendChild(commentsList);
+                }
+
+                ideasBoard.appendChild(card);
+            });
+        }
+
+        async function reactToIdea(record) {
+            const newReactions = record.content_data.reactions;
+            newReactions['🔥'] = (newReactions['🔥'] || 0) + 1;
+
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').update({
+                    content_data: {
+                        ...record.content_data,
+                        reactions: newReactions
+                    }
+                }).eq('id', record.id);
+                loadLatestData();
+            } catch (error) {
+                console.error('Reaction error:', error);
+                alert('REACTION FAILED, EMOJI STRIKE 💥');
+            }
+        }
+
+        async function addComment(record, comment) {
+            if (!comment.trim()) return;
+
+            const newComments = record.content_data.comments;
+            newComments.push(comment);
+
+            try {
+                await supabase.from('wtaf_zero_admin_collaborative').update({
+                    content_data: {
+                        ...record.content_data,
+                        comments: newComments
+                    }
+                }).eq('id', record.id);
+                loadLatestData();
+            } catch (error) {
+                console.error('Comment error:', error);
+                alert('COMMENT FAILED, SILENCE ENSUES 💭');
+            }
+        }
+
+        function filterIdeas(filter) {
+            if (filter === 'all') {
+                loadLatestData();
+            } else if (filter === '🔥') {
+                loadTopReactions();
+            }
+        }
+
+        async function loadTopReactions() {
+            const { data } = await supabase
+                .from('wtaf_zero_admin_collaborative')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('action_type', 'idea')
+                .order('content_data->reactions->>🔥', { ascending: false })
+                .limit(10);
+            
+            updateUI(data);
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(async () => {
+                await loadLatestData();
+            }, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+
+        window.wtaf = function() {
+            document.body.style.animation = 'rainbow 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,388 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Senior Center RAGER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF2E93, #7C3AED, #00FFC6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            text-align: center;
+            margin: 2rem 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .form-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255,46,147,0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 3rem;
+            transition: all 0.2s ease;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(0,255,0,0.2);
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .party-details {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎈 SENIOR CENTER AFTER DARK 🎈</h1>
+        
+        <div class="party-details">
+            <p>Tomorrow at 8PM</p>
+            <p>Where the bingo meets the beat 🎲</p>
+        </div>
+
+        <div class="form-container">
+            <form id="rsvpForm">
+                <input type="text" id="name" placeholder="Your Groovy Name" required>
+                <input type="email" id="email" placeholder="Your Electric Email" required>
+                <button type="submit">SECURE THE VIBE ⚡</button>
+            </form>
+            <div id="successMessage" class="success-message">
+                You're on the list! Get ready to party! 🎉
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 20%; left: 20%" data-value="2">🎉</div>
+    <div class="floating-emoji" style="top: 70%; left: 80%" data-value="3">💃</div>
+    <div class="floating-emoji" style="top: 40%; left: 90%" data-value="4">🪩</div>
+    <div class="floating-emoji" style="top: 80%; left: 10%" data-value="5">✨</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'senior_center_party',
+                    submission_data: formData
+                })
+                
+                if (error) throw error
+                
+                document.getElementById('successMessage').style.display = 'block'
+                document.getElementById('rsvpForm').reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('RSVP failed. Please try again!')
+            }
+        })
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value')
+                const x = (e.clientX * speed) / 250
+                const y = (e.clientY * speed) / 250
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Easter egg
+        let konami = ''
+        document.addEventListener('keydown', (e) => {
+            konami += e.key
+            if (konami.includes('wtaf')) {
+                document.body.style.animation = 'gradient 2s ease infinite'
+                alert('🎉 SECRET PARTY MODE ACTIVATED 🎉')
+                konami = ''
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00FFC6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .export-btn {
+            padding: 0.8rem 1.5rem;
+            background: #7C3AED;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .export-btn:hover {
+            background: #6D28D9;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🎉 Party Guest List Dashboard</h1>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalRSVPs">0</div>
+                <div>Total RSVPs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="lastHourRSVPs">0</div>
+                <div>Last Hour</div>
+            </div>
+        </div>
+
+        <button class="export-btn" onclick="exportCSV()">Export Guest List</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>RSVP Time</th>
+                </tr>
+            </thead>
+            <tbody id="guestList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let submissions = []
+
+        async function loadSubmissions() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search)
+                const token = urlParams.get('token')
+                const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) throw new Error(result.error || 'Failed to load submissions')
+                
+                submissions = result.submissions || []
+                updateDashboard()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load guest list')
+            }
+        }
+
+        function updateDashboard() {
+            const tbody = document.getElementById('guestList')
+            tbody.innerHTML = ''
+            
+            submissions.forEach(sub => {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td>${sub.submission_data.name}</td>
+                    <td>${sub.submission_data.email}</td>
+                    <td>${new Date(sub.created_at).toLocaleString()}</td>
+                `
+                tbody.appendChild(tr)
+            })
+
+            document.getElementById('totalRSVPs').textContent = submissions.length
+            
+            const lastHour = submissions.filter(sub => {
+                return (new Date() - new Date(sub.created_at)) < 3600000
+            }).length
+            document.getElementById('lastHourRSVPs').textContent = lastHour
+        }
+
+        function exportCSV() {
+            const csvContent = 'Name,Email,RSVP Time\n' + submissions.map(row => 
+                `${row.submission_data.name},${row.submission_data.email},${new Date(row.created_at).toLocaleString()}`
+            ).join('\n')
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'party_guest_list.csv'
+            a.click()
+        }
+
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

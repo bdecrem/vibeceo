@@ -28,6 +28,7 @@ import { existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,14 +36,19 @@ const __dirname = dirname(__filename);
 // Paths relative to scripts/ folder
 const SMS_BOT_ROOT = dirname(__dirname); // Go up one level from scripts/ to sms-bot/
 
+// Load environment variables
+const envPath = join(SMS_BOT_ROOT, '.env.local');
+dotenv.config({ path: envPath });
+
 // SMS bot configuration
 const SMS_BOT_URL = 'http://localhost:3030';
 const DEV_WEBHOOK_ENDPOINT = '/dev/webhook'; // Captures responses
 const SMS_WEBHOOK_ENDPOINT = '/sms/webhook'; // Regular SMS endpoint
 
 // Configuration
-let USE_HYBRID_MODE = false; // Set to true to also send to regular SMS endpoint
+let USE_HYBRID_MODE = true; // Enable SMS delivery to +16508989508 by default
 const RESPONSE_TIMEOUT = 15000; // 15 second timeout for responses
+const BOT_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER || '+19999999999'; // Bot's phone number
 
 /**
  * Send HTTP POST request to SMS bot webhook endpoint
@@ -52,7 +58,7 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1650898950
         // Create Twilio-style webhook payload
         const payload = new URLSearchParams({
             'From': fromNumber,
-            'To': '+19999999999', // Your bot's phone number
+            'To': BOT_PHONE_NUMBER, // Your bot's phone number
             'Body': message,
             'MessageSid': `SM${Math.random().toString(36).substr(2, 32)}`,
             'AccountSid': 'AC' + Math.random().toString(36).substr(2, 32),
@@ -106,7 +112,7 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1650898950
                         
                         // Show SMS delivery info
                         if (USE_HYBRID_MODE) {
-                            console.log(`📱 These responses would also be sent to ${fromNumber} via SMS`);
+                            console.log(`📱 These responses are also being sent to ${fromNumber} via SMS`);
                         } else {
                             console.log(`📱 In production, these would be sent to ${fromNumber} via SMS`);
                         }
@@ -144,8 +150,8 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1650898950
             const errorText = await response.text();
             console.log(`💥 Error: ${errorText}`);
             
-            // Try fallback to regular SMS endpoint
-            console.log(`🔄 Trying fallback to regular SMS endpoint...`);
+            // Try fallback to SMS endpoint for real delivery
+            console.log(`🔄 Trying fallback to SMS endpoint for real delivery...`);
             return await sendToSmsEndpoint(message, fromNumber);
         }
     } catch (error) {
@@ -168,7 +174,7 @@ async function sendToSmsEndpoint(message: string, fromNumber: string): Promise<b
     try {
         const payload = new URLSearchParams({
             'From': fromNumber,
-            'To': '+19999999999',
+            'To': BOT_PHONE_NUMBER,
             'Body': message,
             'MessageSid': `SM${Math.random().toString(36).substr(2, 32)}`,
             'AccountSid': 'AC' + Math.random().toString(36).substr(2, 32),
@@ -209,7 +215,7 @@ async function saveToHistory(command: string, success: boolean): Promise<void> {
     const historyFile = join(SMS_BOT_ROOT, "dev-reroute-history.txt");
     const timestamp = new Date().toISOString();
     const status = success ? "SENT" : "FAILED";
-    const mode = USE_HYBRID_MODE ? "HYBRID" : "DEV";
+    const mode = USE_HYBRID_MODE ? "SMS" : "DEV";
     const historyLine = `[${timestamp}] ${status} (${mode}): "${command}"\n`;
 
     try {
@@ -276,13 +282,13 @@ async function processCommand(input: string): Promise<void> {
 
     if (command.toLowerCase() === 'hybrid') {
         USE_HYBRID_MODE = !USE_HYBRID_MODE;
-        console.log(`🔄 Hybrid mode ${USE_HYBRID_MODE ? 'ENABLED' : 'DISABLED'}`);
+        console.log(`🔄 SMS delivery mode ${USE_HYBRID_MODE ? 'ENABLED' : 'DISABLED'}`);
         if (USE_HYBRID_MODE) {
-            console.log('📱 Commands will be sent to dev endpoint AND SMS endpoint');
-            console.log('📱 You\'ll see responses in terminal AND receive SMS messages');
+            console.log('📱 Commands sent to dev endpoint AND SMS endpoint');
+            console.log('📱 You\'ll see responses in terminal AND receive SMS at +16508989508');
         } else {
-            console.log('📱 Commands will only be sent to dev endpoint');
-            console.log('📱 You\'ll only see responses in terminal');
+            console.log('📱 Commands only sent to dev endpoint');
+            console.log('📱 You\'ll only see responses in terminal (no SMS delivery)');
         }
         return;
     }
@@ -334,12 +340,12 @@ WTAF Commands:
 Script Commands:
   help                              - Show this help
   status                            - Check SMS bot connection
-  hybrid                            - Toggle hybrid mode (dev + SMS)
+  hybrid                            - Toggle SMS delivery mode
   history                           - Show command history
   exit / quit                       - Exit the shell
 
-Current Mode: ${USE_HYBRID_MODE ? 'HYBRID (dev + SMS)' : 'DEV ONLY'}
-${USE_HYBRID_MODE ? '📱 Responses shown in terminal AND sent to SMS' : '📱 Responses only shown in terminal'}
+Current Mode: ${USE_HYBRID_MODE ? 'SMS DELIVERY (dev + SMS)' : 'DEV ONLY'}
+${USE_HYBRID_MODE ? '📱 Responses shown in terminal AND sent to +16508989508' : '📱 Responses only shown in terminal'}
 
 Tips:
   • Make sure SMS bot is running: npm run start
@@ -363,7 +369,8 @@ async function startInteractiveShell(): Promise<void> {
     console.log("=" + "=".repeat(79));
     console.log("🔄 DEV REROUTE INTERACTIVE SHELL - ENHANCED");
     console.log("📡 Sends HTTP requests to SMS bot on port 3030");
-    console.log("🎯 Captures responses in terminal + optional SMS delivery");
+    console.log("🎯 Captures responses in terminal + SMS delivery to +16508989508");
+    console.log(`📞 Bot phone number: ${BOT_PHONE_NUMBER}`);
     console.log("=" + "=".repeat(79));
 
     // Test initial connection
@@ -379,11 +386,11 @@ async function startInteractiveShell(): Promise<void> {
 
     console.log(`
 🎯 Ready! Type your WTAF commands and press Enter.
-💡 Type 'help' for commands, 'hybrid' for dual mode, 'exit' to quit.
+💡 Type 'help' for commands, 'hybrid' to toggle SMS delivery, 'exit' to quit.
 📁 History saved to dev-reroute-history.txt
 
-Mode: ${USE_HYBRID_MODE ? 'HYBRID (dev + SMS)' : 'DEV ONLY'}
-${USE_HYBRID_MODE ? '📱 You\'ll see responses here AND receive SMS' : '📱 You\'ll only see responses here'}
+Mode: ${USE_HYBRID_MODE ? 'SMS DELIVERY (dev + SMS)' : 'DEV ONLY'}
+${USE_HYBRID_MODE ? '📱 You\'ll see responses here AND receive SMS at +16508989508' : '📱 You\'ll only see responses here'}
 
 Try these commands:
   wtaf create a hello world page
@@ -396,13 +403,13 @@ Try these commands:
     const rl = createInterface({
         input: process.stdin,
         output: process.stdout,
-        prompt: `🤖 ${USE_HYBRID_MODE ? 'hybrid' : 'dev'}> `
+        prompt: `🤖 ${USE_HYBRID_MODE ? 'sms' : 'dev'}> `
     });
 
     // Handle user input
     rl.on('line', async (input) => {
         await processCommand(input);
-        rl.setPrompt(`🤖 ${USE_HYBRID_MODE ? 'hybrid' : 'dev'}> `);
+        rl.setPrompt(`🤖 ${USE_HYBRID_MODE ? 'sms' : 'dev'}> `);
         rl.prompt(); // Show prompt again
     });
 

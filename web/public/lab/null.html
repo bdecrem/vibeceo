@@ -11,141 +11,428 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- OpenGraph Meta Tags -->
-    <meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" />
-    <meta property="og:description" content="Witness the most psychedelic pachyderm party this side of the multiverse. Dancing purple elephants living their best life." />
-    <meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" />
-    <meta property="og:url" content="https://purpleelephants.wtaf" />
-    <meta property="og:type" content="website" />
-
-    <title>Purple Elephants Test Page</title>
-
+    <title>WTAF Contact Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-
-        :root {
-            --punk-purple: #7c3aed;
-            --neon-pink: #ff2e93;
-            --electric-blue: #3f88ff;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background: #1a1a1a;
-            color: #fff;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: white;
+            position: relative;
             overflow-x: hidden;
         }
 
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            position: relative;
         }
 
         h1 {
-            font-size: 4rem;
-            text-transform: uppercase;
-            background: linear-gradient(45deg, var(--punk-purple), var(--neon-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: textGlow 2s ease-in-out infinite;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glow 2s ease-in-out infinite;
         }
 
-        .elephant-container {
-            position: relative;
-            height: 400px;
-            margin: 2rem 0;
-            background: linear-gradient(135deg, #2a1a4a, #4a1a2a);
-            border-radius: 20px;
-            overflow: hidden;
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+            100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         }
 
-        .elephant {
-            font-size: 8rem;
-            position: absolute;
-            animation: dance 3s ease-in-out infinite;
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .elephant:nth-child(1) { left: 20%; top: 30%; animation-delay: 0s; }
-        .elephant:nth-child(2) { right: 20%; top: 40%; animation-delay: 0.5s; }
-        .elephant:nth-child(3) { left: 40%; top: 20%; animation-delay: 1s; }
-
-        @keyframes dance {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-30px) rotate(10deg); }
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        @keyframes textGlow {
-            0%, 100% { text-shadow: 0 0 20px var(--neon-pink); }
-            50% { text-shadow: 0 0 40px var(--electric-blue); }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
 
-        .punk-button {
-            background: var(--punk-purple);
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #FF2E93;
+            box-shadow: 0 0 15px rgba(255,46,147,0.3);
+        }
+
+        button {
+            background: #FF2E93;
             color: white;
             border: none;
-            padding: 1rem 2rem;
-            font-size: 1.2rem;
-            border-radius: 5px;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.3s;
-            margin-top: 2rem;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
         }
 
-        .punk-button:hover {
-            background: var(--neon-pink);
-            transform: scale(1.1);
-            box-shadow: 0 0 20px var(--neon-pink);
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
         }
 
-        .meta-info {
-            margin-top: 3rem;
-            padding: 1rem;
+        .floating-emoji {
+            position: absolute;
+            font-size: 40px;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
             background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 15px;
             border-radius: 10px;
+            animation: pulse 2s infinite;
         }
 
-        code {
-            display: block;
-            background: #2a2a2a;
-            padding: 1rem;
-            border-radius: 5px;
-            margin: 1rem 0;
-            text-align: left;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8em;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Purple Elephants Test</h1>
+        <h1>SCREAM INTO THE VOID™</h1>
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name">YOUR EARTHLY TITLE</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">DIGITAL ESSENCE (EMAIL)</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="message">RELEASE YOUR CHAOS</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+            </div>
+            <button type="submit">TRANSMIT TO DIMENSION X</button>
+        </form>
+        <div class="success-message" id="successMessage">
+            Message successfully beamed to the void! 🚀
+        </div>
+    </div>
+
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">✨</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%;" data-value="2">🌀</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 20%;" data-value="4">💫</div>
+    <div class="floating-emoji" style="bottom: 20%; right: 10%;" data-value="3">🔮</div>
+
+    <div class="text-cta">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt-display">
+        Generated from: wtaf create a simple contact form
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('https://tqniseocczttrfwtpbdr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350')
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                message: document.getElementById('message').value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'contact_form_v1',
+                    submission_data: formData
+                })
+
+                if (error) throw error
+
+                document.getElementById('successMessage').style.display = 'block'
+                document.getElementById('contactForm').reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Submission failed. Please try again.')
+            }
+        })
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Easter egg - type WTAF
+        let typed = ''
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase()
+            if (typed.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                typed = ''
+                alert('🎉 YOU FOUND THE SECRET! CHAOS MODE ACTIVATED!')
+            }
+            setTimeout(() => typed = '', 1000)
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Contact Form Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 30px;
+            color: #FF2E93;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,46,147,0.2);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255,46,147,0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VOID MONITORING STATION</h1>
         
-        <div class="elephant-container">
-            <div class="elephant">🐘</div>
-            <div class="elephant">🐘</div>
-            <div class="elephant">🐘</div>
+        <div class="controls">
+            <button onclick="loadSubmissions()">Refresh Data</button>
+            <button onclick="exportCSV()">Export CSV</button>
         </div>
 
-        <button class="punk-button">Share This Madness</button>
+        <table id="submissionsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
 
-        <div class="meta-info">
-            <h2>OpenGraph Meta Tags</h2>
-            <code>
-                &lt;meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" /&gt;<br>
-                &lt;meta property="og:description" content="Witness the most psychedelic pachyderm party..." /&gt;<br>
-                &lt;meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" /&gt;
-            </code>
+        <div id="emptyState" class="empty-state" style="display: none">
+            No submissions yet. The void is quiet.
         </div>
     </div>
 
     <script>
-        document.querySelector('.punk-button').addEventListener('click', () => {
-            alert('🐘 Share URL copied! Spread the elephant madness! 🐘');
-        });
+        async function loadSubmissions() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search)
+                const token = urlParams.get('token')
+                const appSlug = window.location.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load submissions')
+                }
+                
+                const submissions = result.submissions || []
+                const tableBody = document.getElementById('tableBody')
+                const emptyState = document.getElementById('emptyState')
+
+                if (submissions.length === 0) {
+                    tableBody.innerHTML = ''
+                    emptyState.style.display = 'block'
+                    return
+                }
+
+                emptyState.style.display = 'none'
+                tableBody.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${new Date(sub.created_at).toLocaleString()}</td>
+                        <td>${sub.submission_data.name}</td>
+                        <td>${sub.submission_data.email}</td>
+                        <td>${sub.submission_data.message}</td>
+                    </tr>
+                `).join('')
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportCSV() {
+            try {
+                const table = document.getElementById('submissionsTable')
+                const rows = Array.from(table.querySelectorAll('tr'))
+                
+                const csvContent = rows.map(row => {
+                    const cells = Array.from(row.querySelectorAll('th, td'))
+                    return cells.map(cell => `"${cell.textContent}"`).join(',')
+                }).join('\n')
+
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'void_submissions.csv'
+                a.click()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadSubmissions)
     </script>
 </body>
 </html>
