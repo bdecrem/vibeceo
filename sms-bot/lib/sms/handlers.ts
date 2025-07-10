@@ -1875,24 +1875,20 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const subscriber = await getSubscriber(normalizedPhoneNumber);
       const isAdmin = subscriber && subscriber.is_admin;
       
-      let helpText = 'Available commands:\n• MORE - Extra line of chaos\n• about @[coach] [bio] - Generate testimonial\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches by saying "Hey [coach name]"\n\nThe AF coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey.\n\nExample: about @alex I\'m John, a web designer in LA\n\nNote: Using any command will end your current coach conversation.';
+      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
       if (hasCoder) {
-        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default';
+        helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page (yah, overlaps w Forget)\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default';
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
       const hasDegen = subscriber && subscriber.role === 'degen';
       if (hasDegen) {
-        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n\nExample: EDIT 2 change the background to blue\nExample: MEME when you code for 8 hours and forget to save';
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
         
-        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n\nExample: --stackdb my-form build me a live dashboard';
-      }
-      
-      if (isAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• SKIP [id] - Queue specific item for distribution\n• MORE [id] - Preview specific item\n• SKIP - Random skip (moderation)\n• ADD {json} - Add new content & broadcast\n• CODE [text] - Save code snippet to file\n• --admin - Force admin page generation';
+        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
       }
       
       await sendSmsResponse(from, helpText, twilioClient);
