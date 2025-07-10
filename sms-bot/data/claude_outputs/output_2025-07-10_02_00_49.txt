@@ -1,0 +1,407 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #7C3AED, #3F88FF);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .intro {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            text-align: center;
+            color: #ccc;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            background: rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .faq-grid:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .command {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: bold;
+            color: #FF61C7;
+            font-size: 1.2rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WTAF Command Center</h1>
+        <p class="intro">Welcome to the flip-phone revolution, you beautiful chaos agent. We're building the future through SMS, one unhinged text at a time. Here's your guide to speaking our language. Text these commands to +1-866-330-0015 and watch the magic unfold.</p>
+        
+        <div id="faq-container"></div>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 20%; right: 20%">📱</div>
+    <div class="floating-emoji" data-value="4" style="bottom: 30%; left: 15%">🚀</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 20%; right: 10%">💫</div>
+
+    <div class="cta">📱 Text START to +1-866-330-0015 to get initiated</div>
+    <div class="prompt">Generated from: make a FAQ for WTAF.me</div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        async function loadFAQs() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'wtaf_faq')
+                
+                if (error) throw error
+
+                const container = document.getElementById('faq-container')
+                container.innerHTML = ''
+
+                data.forEach(faq => {
+                    const faqElement = document.createElement('div')
+                    faqElement.className = 'faq-grid'
+                    faqElement.innerHTML = `
+                        <div class="command">${faq.submission_data.command}</div>
+                        <div class="explanation">${faq.submission_data.explanation}</div>
+                    `
+                    container.appendChild(faqElement)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load FAQs')
+            }
+        }
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = emoji.getAttribute('data-value')
+                const x = (e.clientX * speed) / 250
+                const y = (e.clientY * speed) / 250
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Easter egg: Type WTAF
+        let typed = ''
+        document.addEventListener('keydown', (e) => {
+            typed += e.key.toLowerCase()
+            if (typed.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite'
+                typed = ''
+            }
+        })
+
+        window.addEventListener('load', loadFAQs)
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF FAQ Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #7C3AED, #3F88FF);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        form {
+            background: rgba(255,255,255,0.05);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: white;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+
+        button:hover {
+            background: #FF61C7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+<body>
+    <h1>WTAF FAQ Admin</h1>
+
+    <form id="faqForm">
+        <input type="text" id="command" placeholder="Command" required>
+        <textarea id="explanation" placeholder="Explanation" required></textarea>
+        <button type="submit">Add FAQ</button>
+        <button type="button" onclick="exportCSV()">Export CSV</button>
+    </form>
+
+    <table id="faqTable">
+        <thead>
+            <tr>
+                <th>Command</th>
+                <th>Explanation</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadSubmissions() {
+            try {
+                const parentUrl = window.parent ? window.parent.location : window.location
+                const urlParams = new URLSearchParams(parentUrl.search)
+                const token = urlParams.get('token')
+                const appSlug = parentUrl.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) throw new Error(result.error || 'Failed to load submissions')
+                
+                const tbody = document.querySelector('#faqTable tbody')
+                tbody.innerHTML = ''
+                
+                result.submissions.forEach(submission => {
+                    const tr = document.createElement('tr')
+                    tr.innerHTML = `
+                        <td>${submission.submission_data.command}</td>
+                        <td>${submission.submission_data.explanation}</td>
+                        <td>${new Date(submission.created_at).toLocaleString()}</td>
+                    `
+                    tbody.appendChild(tr)
+                })
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const formData = {
+                command: document.getElementById('command').value,
+                explanation: document.getElementById('explanation').value
+            }
+
+            try {
+                const parentUrl = window.parent ? window.parent.location : window.location
+                const urlParams = new URLSearchParams(parentUrl.search)
+                const token = urlParams.get('token')
+                const appSlug = parentUrl.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch('/api/admin-submissions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        app: appSlug,
+                        submission_data: formData
+                    })
+                })
+                
+                const result = await response.json()
+                
+                if (!response.ok) throw new Error(result.error || 'Failed to submit data')
+                
+                alert('FAQ added successfully!')
+                document.getElementById('faqForm').reset()
+                loadSubmissions()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to add FAQ')
+            }
+        })
+
+        function exportCSV() {
+            try {
+                const rows = Array.from(document.querySelectorAll('#faqTable tbody tr'))
+                const csvContent = 'Command,Explanation,Created At\n' + rows.map(row => {
+                    const cells = Array.from(row.cells)
+                    return cells.map(cell => `"${cell.textContent}"`).join(',')
+                }).join('\n')
+                
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'wtaf_faq.csv'
+                a.click()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to export CSV')
+            }
+        }
+
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

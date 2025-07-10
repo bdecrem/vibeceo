@@ -1,0 +1,631 @@
+I'll create a shared idea board with one-line idea submissions and advisor reactions. The advisor can add emoji reactions or short comments to each idea.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WTAF Idea Exchange 🧠</title>
+    <meta charset="UTF-8">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+    body { 
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #333 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease-in-out infinite;
+        color: white;
+        overflow-x: hidden;
+        margin: 0;
+        min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+    }
+
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .app-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        position: relative;
+        z-index: 10;
+        min-height: 90vh;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    button {
+        background: linear-gradient(135deg, #00FFC6, #57E2E5);
+        color: #000;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 14px;
+        margin: 10px 5px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+    }
+
+    input, select {
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 30px;
+        font-size: 16px;
+        width: 100%;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: #00FFC6;
+        box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+    }
+
+    .floating-emoji {
+        position: fixed;
+        font-size: 2rem;
+        animation: float 6s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 5;
+        opacity: 0.8;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    /* Idea Board Specific Styles */
+    .idea-board {
+        margin-top: 20px;
+    }
+
+    .idea-card {
+        background: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 15px 0;
+        animation: slideIn 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .idea-text {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .idea-meta {
+        font-size: 14px;
+        color: rgba(255,255,255,0.6);
+    }
+
+    .reaction-bar {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .reaction-btn {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 20px;
+        padding: 5px 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .reaction-btn:hover {
+        background: rgba(255,255,255,0.2);
+        transform: scale(1.1);
+    }
+
+    .reaction-count {
+        margin-left: 5px;
+        font-size: 12px;
+    }
+
+    .comment-section {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comment-input {
+        width: calc(100% - 40px);
+        padding: 8px 15px;
+        border-radius: 15px;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">💭</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">💡</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">🧠</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">✨</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>IDEA EXCHANGE 🧠</h1>
+            <p>DROP YOUR GENIUS, GET INSTANT FEEDBACK!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>IDEA EXCHANGE 🧠</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <!-- Idea Submission Form -->
+                <div id="idea-form" style="margin: 20px 0;">
+                    <input type="text" id="idea-input" placeholder="Drop your genius idea here..." maxlength="100">
+                    <button onclick="submitIdea()">BEAM IT UP 🚀</button>
+                </div>
+
+                <!-- Ideas Display -->
+                <div id="idea-board" class="idea-board">
+                    <!-- Ideas will be loaded here -->
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <script>
+    // Authentication System
+    let currentUser = null;
+    const APP_ID = 'test1';
+    const USER_LABELS = ['thinker🧠', 'advisor👨‍🏫', 'genius💡', 'creator✨', 'visionary🔮'];
+
+    // API Configuration
+    let API_BASE = window.location.origin;
+    if (window.parent && window.parent !== window) {
+        try {
+            API_BASE = window.parent.location.origin;
+        } catch (e) {
+            if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
+                API_BASE = window.location.ancestorOrigins[0];
+            } else {
+                API_BASE = 'https://www.wtaf.me';
+                if (window.location.href.includes('localhost') || window.location.href.includes('ngrok')) {
+                    API_BASE = 'http://localhost:3000';
+                }
+            }
+        }
+    }
+
+    // API Helper Function
+    async function callZADAPI(endpoint, method = 'GET', data = null) {
+        try {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            if (data && method !== 'GET') {
+                options.body = JSON.stringify(data);
+            }
+            
+            let url = `${API_BASE}/api/${endpoint}`;
+            if (method === 'GET' && data) {
+                const params = new URLSearchParams(data);
+                url += `?${params}`;
+            }
+            
+            const response = await fetch(url, options);
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error || 'API request failed');
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
+        }
+    }
+
+    // Authentication Functions
+    async function generateNewUser() {
+        try {
+            const result = await callZADAPI('zad-data', 'GET', {
+                app_id: APP_ID,
+                action_type: 'join'
+            });
+            
+            const existingUsers = result.data || [];
+            const usedLabels = existingUsers.map(u => u.participant_data?.userLabel).filter(Boolean);
+            
+            if (usedLabels.length >= 5) {
+                alert('BRAIN TRUST FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
+            if (!availableLabel) {
+                alert('NO MORE ROOM IN THE THINK TANK 🌀');
+                return false;
+            }
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            currentUser = {
+                userLabel: availableLabel,
+                passcode: code,
+                participantId: availableLabel + '_' + code
+            };
+            
+            document.getElementById('new-user-info').innerHTML = 
+                `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+            
+            return true;
+        } catch (error) {
+            console.error('Error generating user:', error);
+            alert('BRAIN GLITCH, TRY AGAIN 🌀');
+            return false;
+        }
+    }
+
+    async function registerNewUser() {
+        if (!currentUser) {
+            alert('GENERATE YOUR IDENTITY FIRST, THOUGHT LEADER 🎭');
+            return;
+        }
+        
+        try {
+            await callZADAPI('zad-submit', 'POST', {
+                app_id: APP_ID,
+                participant_id: currentUser.participantId,
+                action_type: 'join',
+                participant_data: {
+                    userLabel: currentUser.userLabel,
+                    passcode: currentUser.passcode,
+                    join_time: Date.now()
+                },
+                content_data: { message: 'Joined the idea exchange', timestamp: Date.now() }
+            });
+            
+            enterMainScreen();
+        } catch (error) {
+            console.error('Registration error:', error);
+            if (error.message.includes('already exists')) {
+                alert('IDENTITY COLLISION! TRY AGAIN 💥');
+                await generateNewUser();
+            } else {
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+    }
+
+    async function showNewUserScreen() {
+        showScreen('new-user-screen');
+        const success = await generateNewUser();
+        if (!success) {
+            showScreen('welcome-screen');
+        }
+    }
+
+    async function loginReturningUser() {
+        const selectedLabel = document.getElementById('user-label-select').value;
+        const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+        
+        if (!selectedLabel || selectedLabel === 'Select User') {
+            alert('PICK YOUR BRAIN IDENTITY 🧠');
+            return;
+        }
+        
+        if (!enteredPasscode || enteredPasscode.length !== 4) {
+            alert('4 DIGITS OF GENIUS REQUIRED 🔢');
+            return;
+        }
+        
+        try {
+            const result = await callZADAPI('zad-data', 'GET', {
+                app_id: APP_ID,
+                action_type: 'join'
+            });
+            
+            const joinRecords = result.data || [];
+            const userRecord = joinRecords.find(record => 
+                record.participant_data?.userLabel === selectedLabel && 
+                record.participant_data?.passcode === enteredPasscode
+            );
+            
+            if (userRecord) {
+                currentUser = {
+                    userLabel: selectedLabel,
+                    passcode: enteredPasscode,
+                    participantId: userRecord.participant_id
+                };
+                enterMainScreen();
+            } else {
+                alert('NICE TRY, WRONG VIBES ❌');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+        }
+    }
+
+    // Screen Navigation and Polling
+    let pollingInterval;
+
+    function startPolling() {
+        pollingInterval = setInterval(async () => {
+            await loadLatestData();
+        }, 2000);
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(screen => 
+            screen.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        if (screenId !== 'main-screen') {
+            stopPolling();
+        }
+    }
+
+    function showReturningUserScreen() {
+        showScreen('returning-user-screen');
+        const userSelect = document.getElementById('user-label-select');
+        userSelect.innerHTML = '<option>Select User</option>';
+        USER_LABELS.forEach(label => {
+            const option = document.createElement('option');
+            option.value = label;
+            option.textContent = label;
+            userSelect.appendChild(option);
+        });
+    }
+
+    function enterMainScreen() {
+        showScreen('main-screen');
+        document.getElementById('current-user-label').textContent = currentUser.userLabel;
+        startPolling();
+        loadLatestData();
+    }
+
+    // Idea Board Functions
+    async function submitIdea() {
+        const ideaInput = document.getElementById('idea-input');
+        const ideaText = ideaInput.value.trim();
+        
+        if (!ideaText) {
+            alert('EMPTY IDEAS ARE STILL IN THE VOID 🌌');
+            return;
+        }
+        
+        try {
+            await callZADAPI('zad-submit', 'POST', {
+                app_id: APP_ID,
+                participant_id: currentUser.participantId,
+                action_type: 'idea',
+                participant_data: {
+                    userLabel: currentUser.userLabel,
+                    passcode: currentUser.passcode
+                },
+                content_data: {
+                    idea: ideaText,
+                    timestamp: Date.now(),
+                    reactions: {},
+                    comment: ''
+                }
+            });
+            
+            ideaInput.value = '';
+            await loadLatestData();
+        } catch (error) {
+            console.error('Submit idea error:', error);
+            alert('IDEA TRANSMISSION FAILED 📡');
+        }
+    }
+
+    async function addReaction(ideaId, emoji) {
+        try {
+            const result = await callZADAPI('zad-data', 'GET', {
+                app_id: APP_ID,
+                action_type: 'idea'
+            });
+            
+            const idea = result.data.find(d => d.id === ideaId);
+            if (!idea) return;
+            
+            const reactions = idea.content_data.reactions || {};
+            reactions[emoji] = (reactions[emoji] || 0) + 1;
+            
+            await callZADAPI('zad-update', 'PUT', {
+                record_id: ideaId,
+                app_id: APP_ID,
+                participant_id: currentUser.participantId,
+                content_data: {
+                    ...idea.content_data,
+                    reactions
+                }
+            });
+            
+            await loadLatestData();
+        } catch (error) {
+            console.error('Reaction error:', error);
+            alert('REACTION OVERLOAD 🤯');
+        }
+    }
+
+    async function addComment(ideaId) {
+        const commentInput = document.querySelector(`#comment-${ideaId}`);
+        const comment = commentInput.value.trim();
+        
+        if (!comment) return;
+        
+        try {
+            const result = await callZADAPI('zad-data', 'GET', {
+                app_id: APP_ID,
+                action_type: 'idea'
+            });
+            
+            const idea = result.data.find(d => d.id === ideaId);
+            if (!idea) return;
+            
+            await callZADAPI('zad-update', 'PUT', {
+                record_id: ideaId,
+                app_id: APP_ID,
+                participant_id: currentUser.participantId,
+                content_data: {
+                    ...idea.content_data,
+                    comment: comment
+                }
+            });
+            
+            commentInput.value = '';
+            await loadLatestData();
+        } catch (error) {
+            console.error('Comment error:', error);
+            alert('COMMENT CHAOS 💥');
+        }
+    }
+
+    async function loadLatestData() {
+        try {
+            const result = await callZADAPI('zad-data', 'GET', {
+                app_id: APP_ID,
+                action_type: 'idea'
+            });
+            
+            const ideas = result.data || [];
+            const ideaBoard = document.getElementById('idea-board');
+            
+            ideaBoard.innerHTML = ideas
+                .sort((a, b) => b.content_data.timestamp - a.content_data.timestamp)
+                .map(idea => `
+                    <div class="idea-card">
+                        <div class="idea-text">${idea.content_data.idea}</div>
+                        <div class="idea-meta">by ${idea.participant_data.userLabel}</div>
+                        
+                        <div class="reaction-bar">
+                            ${['💡', '🔥', '🤔', '👍'].map(emoji => `
+                                <button class="reaction-btn" onclick="addReaction('${idea.id}', '${emoji}')">
+                                    ${emoji} <span class="reaction-count">${(idea.content_data.reactions || {})[emoji] || 0}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="comment-section">
+                            ${idea.content_data.comment ? 
+                                `<div class="comment">${idea.content_data.comment}</div>` :
+                                `<input type="text" id="comment-${idea.id}" class="comment-input" placeholder="Add a short comment...">
+                                <button onclick="addComment('${idea.id}')">Comment</button>`
+                            }
+                        </div>
+                    </div>
+                `).join('');
+        } catch (error) {
+            console.error('Load data error:', error);
+            // Don't show alerts during polling
+        }
+    }
+
+    // Mouse Parallax
+    document.addEventListener('mousemove', (e) => {
+        document.querySelectorAll('.floating-emoji').forEach((elem) => {
+            const speed = elem.getAttribute('data-value') || 2;
+            const x = (e.clientX * speed) / 100;
+            const y = (e.clientY * speed) / 100;
+            elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+        });
+    });
+
+    // Easter Egg
+    console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+    window.wtaf = function() {
+        document.body.style.animation = 'rainbow 1s infinite';
+        setTimeout(() => {
+            document.body.style.animation = '';
+            alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+        }, 3000);
+    };
+    </script>
+</body>
+</html>
+```
+
+This creates a sleek idea exchange board with:
+
+1. Authentication system with unique user labels
+2. One-line idea submission
+3. Emoji reactions (💡🔥🤔👍)
+4. Short comment capability
+5. Real-time updates
+6. Dark/tech theme appropriate for serious ideation
+7. WTAF design elements adapted for a functional app
+
+Key features:
+- Ideas are displayed in cards with reactions and comments
+- Advisor can add both reactions and one comment per idea
+- Real-time updates every 2 seconds
+- Mobile-friendly design
+- Maintains WTAF aesthetics while being professional enough for advisor use
+
+The app supports up to 5 users (student + advisor + others) and includes all required WTAF elements like floating emojis, parallax effects, and easter eggs, while maintaining a functional focus appropriate for idea exchange.

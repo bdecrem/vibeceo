@@ -1,0 +1,426 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSVP TO THE CHAOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0F0F13;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(to right, #FF2E93, #FF61C7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientFlow 15s ease infinite;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        .form-container {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 2rem auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #FF61C7;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid #FF2E93;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            animation: pulse 1s infinite;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 8px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>TOMORROW'S FEVER DREAM 🎉</h1>
+            <h2>8PM // REALITY OPTIONAL</h2>
+            <div class="floating-emoji" data-value="2">🪩</div>
+            <div class="floating-emoji" data-value="4">🍾</div>
+            <div class="floating-emoji" data-value="3">💃</div>
+            <div class="floating-emoji" data-value="5">🎈</div>
+        </div>
+
+        <div class="form-container">
+            <form id="rsvpForm">
+                <div class="form-group">
+                    <label>YOUR EARTHLY NAME</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>DIGITAL ESSENCE (EMAIL)</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>VIBE CHECK MESSAGE</label>
+                    <textarea name="message" rows="3"></textarea>
+                </div>
+                <button type="submit">BEAM ME IN 🚀</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: RSVP page for my party at 8pm tomorrow
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
+
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2
+                const x = (e.clientX * speed) / 100
+                const y = (e.clientY * speed) / 100
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        })
+
+        // Form submission
+        document.getElementById('rsvpForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const formData = {
+                name: e.target.name.value,
+                email: e.target.email.value,
+                message: e.target.message.value
+            }
+
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'rsvp_party',
+                    submission_data: formData
+                })
+                if (error) throw error
+                alert('🎉 YOU\'RE ON THE LIST! SEE YOU IN THE CHAOS!')
+                e.target.reset()
+            } catch (error) {
+                console.error('Error:', error)
+                alert('RSVP failed. Try again or text us!')
+            }
+        })
+
+        // Easter egg
+        let clicks = 0
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++
+            if (clicks === 5) {
+                document.body.style.animation = 'gradientFlow 5s infinite'
+                alert('🎉 SECRET PARTY MODE ACTIVATED!')
+            }
+        })
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARTY ADMIN DASHBOARD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0F0F13;
+            color: #fff;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(to right, #3F88FF, #6E7FFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(63,136,255,0.1);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .actions {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(63,136,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #6E7FFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>🎉 PARTY GUEST LIST CONTROL CENTER</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalRSVPs">0</div>
+                <div>Total RSVPs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayRSVPs">0</div>
+                <div>Today's RSVPs</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="exportCSV()">Export Guest List</button>
+            <button onclick="loadSubmissions()">Refresh Data</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="submissionsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let submissions = []
+
+        async function loadSubmissions() {
+            try {
+                const parentUrl = window.parent ? window.parent.location : window.location
+                const urlParams = new URLSearchParams(parentUrl.search)
+                const token = urlParams.get('token')
+                const appSlug = parentUrl.pathname.split('/').pop().replace('admin-', '')
+                
+                if (!token) {
+                    alert('Missing authentication token')
+                    return
+                }
+                
+                const response = await fetch(`/api/admin-submissions?token=${token}&app=${appSlug}`)
+                const result = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load submissions')
+                }
+                
+                submissions = result.submissions || []
+                
+                // Update table
+                const table = document.getElementById('submissionsTable')
+                table.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>${sub.submission_data.name}</td>
+                        <td>${sub.submission_data.email}</td>
+                        <td>${sub.submission_data.message}</td>
+                        <td>${new Date(sub.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('')
+
+                // Update stats
+                document.getElementById('totalRSVPs').textContent = submissions.length
+                const today = new Date().toDateString()
+                const todayCount = submissions.filter(sub => 
+                    new Date(sub.created_at).toDateString() === today
+                ).length
+                document.getElementById('todayRSVPs').textContent = todayCount
+
+            } catch (error) {
+                console.error('Error:', error)
+                alert('Failed to load submissions')
+            }
+        }
+
+        function exportCSV() {
+            const csvContent = 'Name,Email,Message,Timestamp\n' + submissions.map(row => 
+                `${row.submission_data.name || ''},${row.submission_data.email || ''},${row.submission_data.message || ''},${new Date(row.created_at).toLocaleString()}`
+            ).join('\n')
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'party_guest_list.csv'
+            a.click()
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadSubmissions)
+    </script>
+</body>
+</html>
+```

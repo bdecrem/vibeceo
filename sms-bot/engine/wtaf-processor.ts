@@ -351,10 +351,10 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         const userRequest = requestMatch[1].trim();
         logWithTimestamp(`🎨 Extracted user request: ${userRequest}`);
         
-        // Use the comprehensive ZAD builder (.txt format to avoid JSON escaping issues)
-        builderFile = 'builder-zad-comprehensive.txt';
-        builderType = 'Comprehensive ZAD Builder (.txt)';
-        logWithTimestamp(`🎨 Using .txt comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
+        // Use the comprehensive ZAD builder with API integration (.txt format to avoid JSON escaping issues)
+        builderFile = 'builder-zad-comprehensive-api.txt';
+        builderType = 'Comprehensive ZAD API Builder (.txt)';
+        logWithTimestamp(`🎨 Using .txt comprehensive ZAD API builder for: ${userRequest.slice(0, 50)}...`);
     } else {
         // Standard app
         builderFile = 'builder-app.json';

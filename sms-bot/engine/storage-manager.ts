@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
-import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, autoFixCommonIssues } from './shared/utils.js';
+import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, fixZadApiCalls, autoFixCommonIssues } from './shared/utils.js';
 
 // Lazy initialization of Supabase client
 let supabase: SupabaseClient | null = null;
@@ -334,8 +334,16 @@ export async function saveCodeToSupabase(
             
             // Fix ZAD APP_ID generation to be deterministic (for collaborative apps)
             if (code.includes('wtaf_zero_admin_collaborative')) {
-                logWithTimestamp(`🤝 ZAD app detected - fixing APP_ID generation with UUID`);
-                code = fixZadAppId(code, contentUuid);
+                // Check if this is an API-based ZAD or direct Supabase ZAD
+                const isApiZad = code.includes('apiGetData') || code.includes('apiSubmitData') || code.includes('/api/zad-');
+                
+                if (isApiZad) {
+                    logWithTimestamp(`🤝 API-based ZAD app detected - fixing API calls with UUID`);
+                    code = fixZadApiCalls(code, contentUuid);
+                } else {
+                    logWithTimestamp(`🤝 Direct Supabase ZAD app detected - fixing APP_ID generation with UUID`);
+                    code = fixZadAppId(code, contentUuid);
+                }
             }
         } else if (skipUuidReplacement) {
             logWithTimestamp(`🔄 Stackdb page - skipping UUID replacement (already configured with origin app UUID)`);

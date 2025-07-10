@@ -281,6 +281,55 @@ export function stripOGTags(html: string): string {
 } 
 
 /**
+ * Fix ZAD API calls to use actual UUID instead of placeholder
+ * ZAD API apps need the real wtaf_content.id UUID so users can connect to each other
+ */
+export function fixZadApiCalls(html: string, appUuid: string): string {
+    // Replace ANY APP_ID assignment with the actual UUID for API-based ZADs
+    // This ensures all users connecting to the same ZAD app use the same UUID
+    
+    // Pattern 1: const APP_ID = 'test1'; (builder template placeholder)
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"]test\d*['"];?/g,
+        `const APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 2: const APP_ID = 'any_string';
+    html = html.replace(
+        /const\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `const APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 3: let APP_ID = 'any_string';
+    html = html.replace(
+        /let\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `let APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 4: var APP_ID = 'any_string';
+    html = html.replace(
+        /var\s+APP_ID\s*=\s*['"][^'"]*['"];?/g,
+        `var APP_ID = '${appUuid}';`
+    );
+    
+    // Pattern 5: API URL parameters with placeholder app_id
+    // Replace app_id query parameters in API calls
+    html = html.replace(
+        /app_id['"]\s*,\s*['"][^'"]*['"]/g,
+        `app_id', '${appUuid}'`
+    );
+    
+    // Pattern 6: JSON body app_id values in API calls
+    html = html.replace(
+        /app_id:\s*['"][^'"]*['"]/g,
+        `app_id: '${appUuid}'`
+    );
+    
+    logWithTimestamp(`🤝 Fixed ZAD API calls to use actual UUID: ${appUuid}`);
+    return html;
+}
+
+/**
  * Auto-fix common issues in generated HTML/JavaScript code
  * Prevents common errors that break ZAD apps completely
  * Based on zad-tuner.cjs autoFixCommonIssues function
