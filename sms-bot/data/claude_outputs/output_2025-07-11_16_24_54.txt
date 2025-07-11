@@ -1,0 +1,397 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪩 TONIGHT'S PARTY 🪩</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f0f0f;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            z-index: -1;
+        }
+
+        .signup-form {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        button {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0,255,0,0.1);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2">🪩</div>
+    <div class="floating-emoji" data-value="3">🍾</div>
+    <div class="floating-emoji" data-value="4">💃</div>
+    <div class="floating-emoji" data-value="5">✨</div>
+    <div class="floating-emoji" data-value="6">🎉</div>
+
+    <div class="container">
+        <h1 style="font-size: 3rem; text-align: center; margin-bottom: 1rem">THE PARTY THAT ACCIDENTALLY BECAME AN APP</h1>
+        <h2 style="text-align: center; margin-bottom: 2rem">7PM TONIGHT - ABSOLUTELY CHAOTIC</h2>
+
+        <div class="signup-form">
+            <form id="partyForm">
+                <input type="text" placeholder="Your name (or party alias)" name="name" required>
+                <input type="email" placeholder="Email for secret location" name="email" required>
+                <input type="tel" placeholder="Phone for last-minute chaos updates" name="phone" required>
+                <button type="submit">BEAM ME TO THE PARTY 🚀</button>
+            </form>
+            <div class="success-message">
+                YOU'RE IN! CHECK YOUR EMAIL FOR THE SECRET LOCATION 🎉
+            </div>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: build me a sign-up page for our party at 7pm tonight
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        document.getElementById('partyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target));
+            
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions').insert({
+                    app_id: 'party_signup_7pm',
+                    submission_data: formData
+                });
+
+                if (error) throw error;
+
+                document.querySelector('.success-message').style.display = 'block';
+                e.target.style.display = 'none';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Submission failed. Please try again.');
+            }
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.background = '#FF2E93';
+                alert('🎉 SECRET VIP ACCESS UNLOCKED!');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f0f0f;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        button {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF61C7;
+        }
+    </style>
+</head>
+<body>
+    <h1>🪩 Party Guest List Admin</h1>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="totalSignups">0</div>
+            <div>Total Signups</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="lastHour">0</div>
+            <div>Last Hour</div>
+        </div>
+    </div>
+
+    <button onclick="exportCSV()">Export Guest List</button>
+    <button onclick="loadSubmissions()">Refresh List</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Signup Time</th>
+            </tr>
+        </thead>
+        <tbody id="submissionsTable"></tbody>
+    </table>
+
+    <script>
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        async function loadSubmissions() {
+            try {
+                const { data, error } = await supabase.from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', 'party_signup_7pm')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('submissionsTable');
+                tbody.innerHTML = '';
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.submission_data.name}</td>
+                        <td>${row.submission_data.email}</td>
+                        <td>${row.submission_data.phone}</td>
+                        <td>${new Date(row.created_at).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Update stats
+                document.getElementById('totalSignups').textContent = data.length;
+                const lastHour = data.filter(row => {
+                    return new Date(row.created_at) > new Date(Date.now() - 3600000);
+                }).length;
+                document.getElementById('lastHour').textContent = lastHour;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load submissions');
+            }
+        }
+
+        function exportCSV() {
+            try {
+                const table = document.getElementById('submissionsTable');
+                const rows = Array.from(table.getElementsByTagName('tr'));
+                
+                const csvContent = 'Name,Email,Phone,Signup Time\n' + 
+                    rows.map(row => {
+                        const cells = Array.from(row.getElementsByTagName('td'));
+                        return cells.map(cell => `"${cell.textContent}"`).join(',');
+                    }).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'party_guest_list.csv';
+                a.click();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export CSV');
+            }
+        }
+
+        // Load submissions on page load
+        loadSubmissions();
+
+        // Refresh every minute
+        setInterval(loadSubmissions, 60000);
+    </script>
+</body>
+</html>
+```

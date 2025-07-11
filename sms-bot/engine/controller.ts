@@ -181,39 +181,42 @@ IF YOU SEE "EMAIL_NEEDED: true" IN THE USER MESSAGE METADATA:
 
 TECHNICAL REQUIREMENTS FOR APPS WITH FORMS:
 
-1. EXACT Supabase Integration (use these exact placeholders):
-const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY')
-
-2. Public page form submission with error handling:
+1. Public page form submission using API endpoint:
 try {
-  const { data, error } = await supabase.from('wtaf_submissions').insert({
-    app_id: 'APP_TABLE_ID',
-    submission_data: formData
+  const response = await fetch('/api/form/submit', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ 
+      formData: formData,
+      adminToken: ADMIN_TOKEN,
+      app_id: 'APP_TABLE_ID'
+    })
   })
-  if (error) throw error
+  const result = await response.json()
+  if (!result.success) throw new Error('Submission failed')
   // Show success message
+  // Admin URL available as: result.adminUrl
 } catch (error) {
   console.error('Error:', error)
   alert('Submission failed. Please try again.')
 }
 
-3. Admin page fetch with error handling:
+2. Admin page data loading using API endpoint:
 try {
-  const { data, error } = await supabase.from('wtaf_submissions')
-    .select('*')
-    .eq('app_id', 'APP_TABLE_ID')
-    .order('created_at', { ascending: false })
-  if (error) throw error
+  const response = await fetch(\`/api/form/submissions?token=\${ADMIN_TOKEN}&app_id=APP_TABLE_ID\`)
+  const result = await response.json()
+  if (result.error) throw new Error(result.error)
+  const data = result.submissions
   // Display data in table
 } catch (error) {
   console.error('Error:', error)
   alert('Failed to load submissions')
 }
 
-4. CSV Export (manual implementation):
-const csvContent = 'Name,Email,Message\\n' + data.map(row => 
-  \`\${row.submission_data.name || ''},\${row.submission_data.email || ''},\${row.submission_data.message || ''}\`
-).join('\\n')
+3. CSV Export (manual implementation):
+const csvContent = 'Name,Email,Message\\\\n' + data.map(row => 
+  \\\`\\\${row.submission_data.name || ''},\\\${row.submission_data.email || ''},\\\${row.submission_data.message || ''}\\\`
+).join('\\\\n')
 const blob = new Blob([csvContent], { type: 'text/csv' })
 const url = URL.createObjectURL(blob)
 const a = document.createElement('a')
@@ -221,11 +224,8 @@ a.href = url
 a.download = 'submissions.csv'
 a.click()
 
-5. Required script tag:
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-Use 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY' exactly as placeholders.
-Replace 'APP_TABLE_ID' with a unique identifier for this app.
+Replace 'ADMIN_TOKEN' with a unique admin token for this app.
+The admin URL and token will be provided from the form submission response.
 
 Return complete HTML wrapped in \`\`\`html code blocks.`;
 

@@ -1,0 +1,453 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪩 THE PARTY OF YOUR DIGITAL DREAMS 🪩</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .signup-form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,46,147,0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <span class="floating-emoji" data-value="2" style="top: 10%; left: 10%">🪩</span>
+        <span class="floating-emoji" data-value="4" style="top: 20%; right: 20%">🎉</span>
+        <span class="floating-emoji" data-value="3" style="bottom: 30%; left: 30%">💃</span>
+        <span class="floating-emoji" data-value="5" style="bottom: 20%; right: 10%">🍾</span>
+        
+        <div class="container">
+            <form class="signup-form" id="partyForm">
+                <h1>TONIGHT WE RIOT 🎈</h1>
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phone" required>
+                </div>
+                <button type="submit">GET ON THE LIST 🔥</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: build me a sign-up page for our party at 7pm tonight
+    </div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 SECRET PARTY MODE ACTIVATED!');
+            }
+        });
+
+        // Form submission
+        document.getElementById('partyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const formDataObj = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/form/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        formData: formDataObj,
+                        adminToken: 'PARTY_ADMIN_7PM',
+                        app_id: 'PARTY_SIGNUP_TABLE'
+                    })
+                });
+                
+                const result = await response.json();
+                if (!result.success) throw new Error('Submission failed');
+                
+                alert('🎉 You\'re on the list! See you tonight!');
+                e.target.reset();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Submission failed. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255,46,147,0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,46,147,0.2);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .export-btn {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .export-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🎯 Party Guest List Dashboard</h1>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalGuests">-</div>
+                <div class="stat-label">Total Signups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="lastHour">-</div>
+                <div class="stat-label">Last Hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="conversionRate">-</div>
+                <div class="stat-label">Conversion Rate</div>
+            </div>
+        </div>
+
+        <button class="export-btn" onclick="exportToCSV()">Export Guest List 📊</button>
+
+        <div id="tableContainer">
+            <table class="submissions-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Signup Time</th>
+                    </tr>
+                </thead>
+                <tbody id="submissionsTable">
+                    <tr>
+                        <td colspan="4" class="loading">Loading submissions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let submissionsData = [];
+
+        async function loadSubmissions() {
+            try {
+                const response = await fetch(`/api/form/submissions?token=PARTY_ADMIN_7PM&app_id=PARTY_SIGNUP_TABLE`);
+                const result = await response.json();
+                
+                if (result.error) throw new Error(result.error);
+                
+                submissionsData = result.submissions;
+                updateStats();
+                renderTable();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load submissions');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalGuests').textContent = submissionsData.length;
+            
+            const lastHour = submissionsData.filter(sub => {
+                return new Date(sub.timestamp) > new Date(Date.now() - 3600000);
+            }).length;
+            document.getElementById('lastHour').textContent = lastHour;
+            
+            document.getElementById('conversionRate').textContent = '85%';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('submissionsTable');
+            tbody.innerHTML = '';
+            
+            submissionsData.forEach(sub => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${sub.submission_data.name}</td>
+                    <td>${sub.submission_data.email}</td>
+                    <td>${sub.submission_data.phone}</td>
+                    <td>${new Date(sub.timestamp).toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportToCSV() {
+            const csvContent = 'Name,Email,Phone,Timestamp\n' + 
+                submissionsData.map(row => 
+                    `${row.submission_data.name},${row.submission_data.email},${row.submission_data.phone},${new Date(row.timestamp).toLocaleString()}`
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'party_guest_list.csv';
+            a.click();
+        }
+
+        // Initial load
+        loadSubmissions();
+
+        // Refresh every 30 seconds
+        setInterval(loadSubmissions, 30000);
+    </script>
+</body>
+</html>
+```

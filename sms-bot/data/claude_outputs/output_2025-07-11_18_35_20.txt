@@ -1,0 +1,401 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONIGHT'S CHAOS 🎉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: linear-gradient(-45deg, #FF2E93, #FF61C7, #3F88FF, #6E7FFF);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .form-container {
+            background: rgba(0,0,0,0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>TONIGHT WE RIOT 🎉</h1>
+        <div class="form-container">
+            <form id="partyForm">
+                <input type="text" name="name" placeholder="YOUR NAME (REAL OR CHAOTIC)" required>
+                <input type="email" name="email" placeholder="EMAIL FOR PARTY COORDINATES" required>
+                <input type="tel" name="phone" placeholder="EMERGENCY PARTY LINE" required>
+                <button type="submit">SECURE YOUR CHAOS PASS</button>
+            </form>
+        </div>
+        <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%">🎉</div>
+        <div class="floating-emoji" data-value="3" style="top: 60%; left: 80%">🪩</div>
+        <div class="floating-emoji" data-value="4" style="top: 30%; left: 70%">💃</div>
+        <div class="floating-emoji" data-value="5" style="top: 70%; left: 30%">🍾</div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: build me a sign-up page for our party at 7pm tonight
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.body.style.background = '#FF2E93';
+                alert('🎉 SECRET AFTER PARTY UNLOCKED!');
+            }
+        });
+
+        document.getElementById('partyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const formObject = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/form/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        formData: formObject,
+                        adminToken: 'PARTY_ADMIN_TOKEN_7PM',
+                        app_id: 'PARTY_SIGNUP_TABLE'
+                    })
+                });
+                
+                const result = await response.json();
+                if (!result.success) throw new Error('Submission failed');
+                
+                alert('YOU\'RE IN! CHECK EMAIL FOR SECRET LOCATION 🎉');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('SIGNUP FAILED. TRY AGAIN OR TEXT US!');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,46,147,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF2E93;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,46,147,0.2);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .export-btn {
+            padding: 1rem 2rem;
+            background: #FF2E93;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🎉 PARTY CONTROL CENTER</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSignups">0</div>
+                <div>Total Signups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="lastHour">0</div>
+                <div>Last Hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="conversion">0%</div>
+                <div>Conversion Rate</div>
+            </div>
+        </div>
+
+        <button class="export-btn" onclick="exportCSV()">EXPORT GUEST LIST</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>NAME</th>
+                    <th>EMAIL</th>
+                    <th>PHONE</th>
+                    <th>SIGNUP TIME</th>
+                </tr>
+            </thead>
+            <tbody id="guestList">
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let partyData = [];
+
+        async function loadPartyData() {
+            try {
+                const response = await fetch(`/api/form/submissions?token=PARTY_ADMIN_TOKEN_7PM&app_id=PARTY_SIGNUP_TABLE`);
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+                
+                partyData = result.submissions;
+                updateDashboard();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load party data');
+            }
+        }
+
+        function updateDashboard() {
+            const tbody = document.getElementById('guestList');
+            tbody.innerHTML = '';
+
+            partyData.forEach(guest => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${guest.submission_data.name}</td>
+                    <td>${guest.submission_data.email}</td>
+                    <td>${guest.submission_data.phone}</td>
+                    <td>${new Date(guest.created_at).toLocaleString()}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update stats
+            document.getElementById('totalSignups').textContent = partyData.length;
+            
+            const lastHourSignups = partyData.filter(guest => {
+                return new Date(guest.created_at) > new Date(Date.now() - 3600000);
+            }).length;
+            document.getElementById('lastHour').textContent = lastHourSignups;
+
+            const conversion = ((partyData.length / 100) * 100).toFixed(1);
+            document.getElementById('conversion').textContent = `${conversion}%`;
+        }
+
+        function exportCSV() {
+            const csvContent = 'Name,Email,Phone,Signup Time\n' + partyData.map(guest => 
+                `${guest.submission_data.name},${guest.submission_data.email},${guest.submission_data.phone},${new Date(guest.created_at).toLocaleString()}`
+            ).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'party_guest_list.csv';
+            a.click();
+        }
+
+        // Load initial data
+        loadPartyData();
+
+        // Refresh data every 30 seconds
+        setInterval(loadPartyData, 30000);
+    </script>
+</body>
+</html>
+```

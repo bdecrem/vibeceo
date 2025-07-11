@@ -1,0 +1,405 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONIGHT'S PARTY 🪩</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: linear-gradient(-45deg, #FF2E93, #FF61C7, #3F88FF, #6E7FFF);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+
+        form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #FF2E93;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1.05); }
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        #text-cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>TONIGHT WE RIOT 🪩</h1>
+        <p>Your future self called. They're still hungover.</p>
+        
+        <div class="floating-emoji" data-value="2">🎉</div>
+        <div class="floating-emoji" data-value="3">🍾</div>
+        <div class="floating-emoji" data-value="4">💃</div>
+        <div class="floating-emoji" data-value="5">🪩</div>
+        <div class="floating-emoji" data-value="3">🎈</div>
+    </div>
+
+    <div class="container">
+        <form id="signup-form">
+            <input type="text" id="name" placeholder="Your name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="tel" id="phone" placeholder="Phone number" required>
+            <button type="submit">LETS GOOOO</button>
+        </form>
+        <div class="success-message">
+            You're in! See you at 7PM 🎉
+        </div>
+    </div>
+
+    <div id="text-cta">
+        📱 Text START to +1-866-330-0015 to get initiated
+    </div>
+
+    <div class="prompt">
+        Generated from: build me a sign-up page for our party at 7pm tonight
+    </div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Form submission
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'party_signup', data: formData })
+                });
+
+                const { error } = await response.json();
+                if (error) throw error;
+
+                document.querySelector('.success-message').style.display = 'block';
+                document.getElementById('signup-form').reset();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Signup failed. Please try again!');
+            }
+        });
+
+        // Easter egg
+        let konamiCode = [];
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.key);
+            if (konamiCode.slice(-10).join('') === 'ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba') {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 SECRET VIP ACCESS UNLOCKED!');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            padding: 2rem;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 2rem;
+            color: #FF2E93;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF61C7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .export-btn {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+
+        .export-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>🎉 Party Guest List Dashboard</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-signups">0</div>
+                <div>Total Signups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="last-hour">0</div>
+                <div>Last Hour</div>
+            </div>
+        </div>
+
+        <button class="export-btn" onclick="exportCSV()">Export Guest List</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Signup Time</th>
+                </tr>
+            </thead>
+            <tbody id="guests-table">
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load guest data
+        async function loadGuests() {
+            try {
+                const response = await fetch('/api/load?type=party_signup');
+                const { data, error } = await response.json();
+                if (error) throw error;
+
+                document.getElementById('total-signups').textContent = data.length;
+                
+                const lastHour = data.filter(guest => {
+                    return (new Date() - new Date(guest.timestamp)) < 3600000;
+                }).length;
+                document.getElementById('last-hour').textContent = lastHour;
+
+                const tableBody = document.getElementById('guests-table');
+                tableBody.innerHTML = data.map(guest => `
+                    <tr>
+                        <td>${guest.submission_data.name}</td>
+                        <td>${guest.submission_data.email}</td>
+                        <td>${guest.submission_data.phone}</td>
+                        <td>${new Date(guest.timestamp).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load guest list');
+            }
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            try {
+                const table = document.getElementById('guests-table');
+                const rows = table.getElementsByTagName('tr');
+                let csvContent = 'Name,Email,Phone,Signup Time\n';
+
+                for (let row of rows) {
+                    const cells = row.getElementsByTagName('td');
+                    const rowData = Array.from(cells).map(cell => cell.textContent);
+                    csvContent += rowData.join(',') + '\n';
+                }
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'party_guest_list.csv';
+                a.click();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export guest list');
+            }
+        }
+
+        // Load initial data
+        loadGuests();
+
+        // Refresh every minute
+        setInterval(loadGuests, 60000);
+    </script>
+</body>
+</html>
+```

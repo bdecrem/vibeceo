@@ -1,0 +1,421 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪩 TONIGHT'S PARTY SIGNUP 🪩</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7, #7C3AED);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #FFB178;
+        }
+
+        .signup-form {
+            background: rgba(0,0,0,0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #FF2E93;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.5);
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .call-to-text {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .success-message {
+            display: none;
+            background: #00FFC6;
+            color: black;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🎉 TONIGHT'S RAGER 🎉</h1>
+        <p class="tagline">The only party where the bouncer is an AI and the DJ is your future self</p>
+        
+        <div class="signup-form">
+            <form id="partyForm">
+                <input type="text" placeholder="Your name (real or chosen)" required name="name">
+                <input type="email" placeholder="Email for the secret location" required name="email">
+                <input type="tel" placeholder="Phone (for last-minute chaos updates)" required name="phone">
+                <button type="submit">SECURE YOUR SPOT 🚀</button>
+            </form>
+            <div class="success-message">You're in! Check your email for the location 🎈</div>
+        </div>
+
+        <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%">🎈</div>
+        <div class="floating-emoji" data-value="3" style="top: 20%; right: 15%">🪩</div>
+        <div class="floating-emoji" data-value="4" style="bottom: 30%; left: 20%">🍾</div>
+        <div class="floating-emoji" data-value="5" style="bottom: 20%; right: 25%">💃</div>
+    </div>
+
+    <div class="call-to-text">
+        📱 Text START to +1-866-330-0015 for VIP access
+    </div>
+
+    <div style="position: fixed; bottom: 10px; left: 10px; font-size: 0.8rem; opacity: 0.7;">
+        Generated from: build me a sign-up page for our party at 7pm tonight
+    </div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Form submission
+        document.getElementById('partyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target));
+            
+            try {
+                const response = await fetch('/api/form/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        formData: formData,
+                        adminToken: 'PARTY_ADMIN_7PM',
+                        app_id: 'PARTY_SIGNUP_TABLE'
+                    })
+                });
+                
+                const result = await response.json();
+                if (!result.success) throw new Error('Submission failed');
+                
+                document.querySelector('.success-message').style.display = 'block';
+                e.target.reset();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Signup failed. Please try again!');
+            }
+        });
+
+        // Easter egg
+        let konami = '';
+        document.addEventListener('keydown', (e) => {
+            konami += e.key;
+            if (konami.includes('wtaf')) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 SECRET PARTY MODE ACTIVATED 🎉');
+                konami = '';
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Party Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00FFC6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .export-btn {
+            background: #FF2E93;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .export-btn:hover {
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <h1>🎭 Tonight's Party Admin Dashboard</h1>
+        <p>Real-time party planning chaos control</p>
+    </div>
+
+    <div class="container">
+        <button class="export-btn" onclick="exportToCSV()">Export Guest List 📊</button>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSignups">0</div>
+                <div>Total Signups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="lastHour">0</div>
+                <div>Last Hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="conversionRate">0%</div>
+                <div>Conversion Rate</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Signup Time</th>
+                </tr>
+            </thead>
+            <tbody id="guestList">
+                <!-- Dynamic content here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load submissions
+        async function loadSubmissions() {
+            try {
+                const response = await fetch(`/api/form/submissions?token=PARTY_ADMIN_7PM&app_id=PARTY_SIGNUP_TABLE`);
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+                
+                const data = result.submissions;
+                updateStats(data);
+                updateTable(data);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load submissions');
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalSignups').textContent = data.length;
+            
+            const lastHour = data.filter(entry => {
+                return (new Date() - new Date(entry.timestamp)) < 3600000;
+            }).length;
+            document.getElementById('lastHour').textContent = lastHour;
+            
+            document.getElementById('conversionRate').textContent = 
+                Math.round((data.length / (data.length + 20)) * 100) + '%';
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('guestList');
+            tbody.innerHTML = data.map(entry => `
+                <tr>
+                    <td>${entry.submission_data.name}</td>
+                    <td>${entry.submission_data.email}</td>
+                    <td>${entry.submission_data.phone}</td>
+                    <td>${new Date(entry.timestamp).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportToCSV() {
+            const data = Array.from(document.getElementById('guestList').rows).map(row => {
+                return Array.from(row.cells).map(cell => cell.textContent);
+            });
+            
+            const csvContent = 'Name,Email,Phone,Signup Time\n' + 
+                data.map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'party_guest_list.csv';
+            a.click();
+        }
+
+        // Initial load
+        loadSubmissions();
+        
+        // Refresh every 30 seconds
+        setInterval(loadSubmissions, 30000);
+    </script>
+</body>
+</html>
+```

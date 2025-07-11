@@ -76,10 +76,71 @@ export function extractCodeBlocks(text: string): string {
 }
 
 /**
- * Inject Supabase credentials into HTML placeholders
- * Extracted from monitor.py inject_supabase_credentials function
+ * Convert Supabase patterns to API endpoints and inject credentials for remaining patterns
+ * Extracted from monitor.py inject_supabase_credentials function - now includes API conversion
  */
 export function injectSupabaseCredentials(html: string, supabaseUrl: string, supabaseAnonKey?: string): string {
+    // STEP 1: Convert Supabase form patterns to API calls
+    logWithTimestamp("🔄 Converting Supabase patterns to API endpoints...");
+    
+    // Convert Supabase client creation to comment (remove for forms)
+    html = html.replace(
+        /const supabase = window\.supabase\.createClient\([^)]+\)/g,
+        '// Supabase client removed - using API endpoints'
+    );
+    
+    // Convert form submissions from Supabase to API calls
+    html = html.replace(
+        /await supabase\.from\(['"]wtaf_submissions['"]\)\.insert\(\s*\{[^}]*app_id:\s*['"][^'"]*['"][^}]*\}\s*\)/g,
+        `await fetch('/api/form/submit', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ formData: formData })
+  }).then(res => res.json())`
+    );
+    
+    // Convert admin data loading from Supabase to API calls
+    html = html.replace(
+        /await supabase\.from\(['"]wtaf_submissions['"]\)\s*\.select\([^)]*\)\s*\.eq\(['"]app_id['"][^)]*\)\s*\.order\([^)]*\)/g,
+        `await fetch(\`/api/form/submissions?token=\${ADMIN_TOKEN}&app_id=APP_TABLE_ID\`).then(res => res.json()).then(result => result.submissions)`
+    );
+    
+    // Remove Supabase script tags for forms
+    html = html.replace(
+        /<script src="https:\/\/unpkg\.com\/@supabase\/supabase-js@2"><\/script>/g,
+        '<!-- Supabase script removed - using API endpoints -->'
+    );
+    
+    // STEP 1.5: Replace ADMIN_TOKEN placeholder with actual generated token
+    const adminToken = Math.random().toString(36).substring(2, 15) + 
+                      Math.random().toString(36).substring(2, 15);
+    
+    // Replace hardcoded admin tokens with the generated one
+    html = html.replace(
+        /const ADMIN_TOKEN = ['"][^'"]*['"];/g,
+        `const ADMIN_TOKEN = '${adminToken}';`
+    );
+    
+    // Simple direct replacements - fix the exact issues from user feedback
+    html = html.replace(/PARTY_ADMIN_7PM/g, adminToken);
+    html = html.replace(/PARTY_SIGNUP_TABLE/g, 'APP_TABLE_ID');
+    html = html.replace(/ADMIN_TOKEN_PLACEHOLDER/g, adminToken);
+    
+    // Additional placeholder patterns that Claude generates
+    html = html.replace(/PARTY_ADMIN_TOKEN/g, adminToken);
+    html = html.replace(/PARTY_SIGNUP/g, 'APP_TABLE_ID'); 
+    html = html.replace(/ADMIN_TOKEN/g, adminToken);
+    html = html.replace(/\bTOKEN_[A-Z0-9_]+/g, adminToken);
+    html = html.replace(/\b[A-Z_]+_ADMIN_[A-Z0-9_]+/g, adminToken);
+    html = html.replace(/\b[A-Z_]+_TABLE\b/g, 'APP_TABLE_ID');
+    html = html.replace(/\b[A-Z_]+_SIGNUP[A-Z_]*\b/g, 'APP_TABLE_ID');
+    
+
+    
+    logWithTimestamp(`🔑 Generated admin token: ${adminToken}`);
+    logWithTimestamp("✅ Converted Supabase patterns to API endpoints");
+    
+    // STEP 2: For any remaining Supabase patterns (non-form related), inject credentials  
     if (!supabaseAnonKey) {
         // Check for other common key variable names
         const publicKey = process.env.SUPABASE_PUBLIC_KEY || '';
@@ -92,12 +153,11 @@ export function injectSupabaseCredentials(html: string, supabaseUrl: string, sup
         }
     }
     
-    // Replace standard placeholders
+    // Replace remaining placeholders (for non-form Supabase usage)
     html = html.replace(/YOUR_SUPABASE_URL/g, supabaseUrl);
     html = html.replace(/YOUR_SUPABASE_ANON_KEY/g, supabaseAnonKey);
     
     // More robust replacement for cases where Claude doesn't use exact placeholders
-    // Look for createClient calls with empty or placeholder API keys
     html = html.replace(
         /createClient\(\s*['"]([^'"]+)['"],\s*['"]["']?\s*\)/g,
         `createClient('${supabaseUrl}', '${supabaseAnonKey}')`
@@ -109,28 +169,24 @@ export function injectSupabaseCredentials(html: string, supabaseUrl: string, sup
         `createClient('${supabaseUrl}', '${supabaseAnonKey}')`
     );
     
-    logWithTimestamp(`🔑 Injected Supabase credentials: URL=${supabaseUrl.slice(0, 20)}..., Key=${supabaseAnonKey.slice(0, 10)}...`);
+    logWithTimestamp(`🔑 Processed Supabase patterns: API conversion complete, credentials injected for remaining usage`);
     
     return html;
 }
 
 /**
  * Replace APP_TABLE_ID placeholder with actual app_slug
- * Uses regex to catch ANY app_id value Claude generates, not just specific placeholders
+ * Clean and precise replacement to avoid duplication issues
  */
 export function replaceAppTableId(html: string, appSlug: string): string {
-    // Replace standard placeholder first
-    html = html.replace(/'APP_TABLE_ID'/g, `'${appSlug}'`);
-    html = html.replace(/"APP_TABLE_ID"/g, `"${appSlug}"`);
+    // Replace the standardized APP_TABLE_ID placeholder with actual UUID
+    html = html.replace(/APP_TABLE_ID/g, appSlug);
     
-    // Use regex to replace ANY hardcoded app_id values in Supabase calls
-    // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
-    html = html.replace(/\.eq\(\s*['"]app_id['"]\s*,\s*['"][^'"]*['"]\s*\)/g, `.eq('app_id', '${appSlug}')`);
+    // Also replace any remaining Claude-generated table names that weren't normalized
+    html = html.replace(/PARTY_SIGNUP_TABLE/g, appSlug);
+    html = html.replace(/\b(?!APP_TABLE_ID\b)[A-Z_]+_TABLE\b/g, appSlug);
     
-    // Pattern: app_id: 'any_value' -> app_id: 'uuid'  
-    html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${appSlug}'`);
-    
-    logWithTimestamp(`🔧 Replaced ANY app_id values with: ${appSlug}`);
+    logWithTimestamp(`🔧 Replaced APP_TABLE_ID and variants with: ${appSlug}`);
     return html;
 }
 
@@ -139,9 +195,10 @@ export function replaceAppTableId(html: string, appSlug: string): string {
  * Admin pages use their own UUID for the page, but main app's UUID for data operations
  */
 export function injectSubmissionUuid(html: string, submissionUuid: string): string {
-    // Replace standard placeholder
-    html = html.replace(/'APP_TABLE_ID'/g, `'${submissionUuid}'`);
-    html = html.replace(/"APP_TABLE_ID"/g, `"${submissionUuid}"`);
+    // Replace ALL Claude-generated placeholders directly with the UUID
+    html = html.replace(/PARTY_SIGNUP_TABLE/g, submissionUuid);
+    html = html.replace(/PARTY_ADMIN_7PM/g, 'ADMIN_TOKEN_PLACEHOLDER');
+    html = html.replace(/APP_TABLE_ID/g, submissionUuid);
     
     // Use regex to replace any hardcoded app_id values in Supabase calls
     // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
@@ -345,7 +402,7 @@ export function autoFixCommonIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Removed duplicate currentUser declaration');
     }
     
-    // Fix 5: Fix malformed escaped quotes in JavaScript strings (NEW FIX for iframe srcDoc issues)
+    // Fix 5: Fix malformed escaped quotes in JavaScript strings
     // Pattern: 'SQUAD\\'S becomes 'SQUAD\'S (malformed) → should be 'SQUAD\\'S or "SQUAD'S"
     const malformedQuotePattern = /'[^']*\\'[^']*'/g;
     const malformedQuotes = fixed.match(malformedQuotePattern);
@@ -400,6 +457,7 @@ export function autoFixCommonIssues(html: string): string {
         }
     });
     
+
     if (fixesApplied > 0) {
         logWithTimestamp(`✅ Auto-fix completed: ${fixesApplied} issue(s) fixed`);
     } else {
