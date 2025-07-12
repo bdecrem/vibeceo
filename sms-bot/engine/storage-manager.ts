@@ -233,10 +233,11 @@ export async function saveCodeToSupabase(
     const isZadTest = originalPrompt.includes('ZAD_TEST_MARKER');
     
     // Check if this code uses ZAD-style helper functions (auto-detect)
-    const usesZadHelpers = /\bawait\s+save\s*\(/.test(code) || /\bawait\s+load\s*\(/.test(code) ||
+    // BUT: Skip auto-detection for ZAD test (use direct API calls instead)
+    const usesZadHelpers = !isZadTest && (/\bawait\s+save\s*\(/.test(code) || /\bawait\s+load\s*\(/.test(code) ||
                           /\bsave\s*\(/.test(code) || /\bload\s*\(/.test(code) ||
                           /\bsaveEntry\s*\(/.test(code) || /\bloadEntries\s*\(/.test(code) ||
-                          /\bsaveData\s*\(/.test(code) || /\bloadData\s*\(/.test(code);
+                          /\bsaveData\s*\(/.test(code) || /\bloadData\s*\(/.test(code));
     
     if (usesApiCalls) {
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");

@@ -386,9 +386,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         const userRequest = requestMatch[1].trim();
         logWithTimestamp(`🧪 Extracted user request: ${userRequest}`);
         
-        builderFile = 'builder-zad-ultra-simple.txt';
-        builderType = 'Ultra-Simple ZAD Builder';
-        logWithTimestamp(`🧪 Using ultra-simple ZAD builder for: ${userRequest.slice(0, 50)}...`);
+        builderFile = 'builder-zad-simple-test.txt';
+        builderType = 'Simple ZAD Test Builder';
+        logWithTimestamp(`🧪 Using simple ZAD test builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
@@ -568,7 +568,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         }
         
         // Validate ZAD responses for completeness (reuse isZadRequest from above)
-        if (isZadRequest) {
+        // BUT: Skip validation for ZAD test (uses simple API calls, not authentication functions)
+        if (isZadRequest && !userPrompt.includes('ZAD_TEST_REQUEST:')) {
             const hasPlaceholderComments = result.includes('[Previous authentication functions remain exactly the same]') || 
                                           result.includes('Include all the required authentication functions here') ||
                                           result.includes('Include all remaining authentication functions exactly as provided');
@@ -589,6 +590,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             }
             
             logWithTimestamp(`🎨 ZAD response validation passed - all required functions present`);
+        } else if (isZadRequest) {
+            logWithTimestamp(`🧪 ZAD test detected - skipping authentication function validation`);
         }
         
         logWithTimestamp(`\n📥 BUILDER RESPONSE (${result.length} chars):`);
@@ -640,7 +643,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 }
                 
                 // Validate ZAD responses for completeness (same validation as primary model)
-                if (isZadRequest) {
+                // BUT: Skip validation for ZAD test (uses simple API calls, not authentication functions)
+                if (isZadRequest && !userPrompt.includes('ZAD_TEST_REQUEST:')) {
                     const hasPlaceholderComments = fallbackResult.includes('[Previous authentication functions remain exactly the same]') || 
                                                   fallbackResult.includes('Include all the required authentication functions here') ||
                                                   fallbackResult.includes('Include all remaining authentication functions exactly as provided');
@@ -661,6 +665,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                     }
                     
                     logWithTimestamp(`🎨 Fallback ${fallback.model} ZAD response validation passed - all required functions present`);
+                } else if (isZadRequest) {
+                    logWithTimestamp(`🧪 ZAD test detected - skipping fallback authentication function validation`);
                 }
                 
                 return fallbackResult;
