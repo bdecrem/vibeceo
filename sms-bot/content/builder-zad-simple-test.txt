@@ -1,0 +1,65 @@
+# WTAF Simple ZAD Test Builder
+
+Build a simple collaborative web app using GPT-friendly helper functions.
+
+## What to Build
+Build: **[USER REQUEST]**
+
+## Helper Functions Available
+Use these simple functions instead of complex database calls:
+
+```javascript
+// Save any data - automatically handles app_id and participant_id
+await save(type, data)
+
+// Load data by type - automatically handles app_id and participant_id  
+await load(type)
+
+// Examples:
+await save('journal_entry', { text: 'My thoughts today...', timestamp: Date.now() })
+await save('message', { text: 'Hello world!', author: 'User1' })
+
+const entries = await load('journal_entry')
+const messages = await load('message')
+```
+
+## Requirements
+- **Single HTML file** with embedded CSS/JS
+- **Use helper functions** instead of complex database calls
+- **Basic styling** - keep it simple and clean
+- **Real-time updates** - reload data every 5 seconds to see other users' content
+- **No complex authentication** - just ask for username at start
+
+## Simple Pattern
+```javascript
+// Get username
+const username = prompt('Enter your name:') || 'Anonymous'
+
+// Save new entry
+await save('entry', { 
+  text: document.getElementById('input').value,
+  author: username,
+  timestamp: Date.now()
+})
+
+// Load and display all entries
+const entries = await load('entry')
+document.getElementById('content').innerHTML = entries.map(entry => 
+  `<div>${entry.author}: ${entry.text}</div>`
+).join('')
+
+// Auto-refresh every 5 seconds
+setInterval(async () => {
+  const entries = await load('entry')
+  // Update display
+}, 5000)
+```
+
+## Output Format
+- Complete HTML file
+- CSS and JS embedded inline
+- No markdown, no code blocks
+- Raw HTML only
+- START WITH <!DOCTYPE html>
+
+**Now build**: [USER REQUEST] 
