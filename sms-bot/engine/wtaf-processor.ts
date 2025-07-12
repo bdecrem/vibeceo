@@ -197,6 +197,17 @@ APP_TYPE: data_collection`;
                 logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
             }
         }
+        
+        // 🧪 ZAD TEST OVERRIDE CHECK: Skip classifier entirely if zad test is set
+        if (cleanedInput.includes('ZAD_TEST_MARKER')) {
+            logWithTimestamp("🧪 ZAD-TEST OVERRIDE: Skipping classifier, going to simple ZAD test builder");
+            expandedPrompt = `ZAD_TEST_REQUEST: ${cleanedInput.replace('ZAD_TEST_MARKER', '').trim()}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: true
+APP_TYPE: zero_admin_data`;
+            logWithTimestamp("🧪 ZAD-test override: Created simple ZAD test prompt without classifier");
+        }
         else {
             // APP PATH: Use classifier to expand and clarify the request
             logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
@@ -365,6 +376,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-admin-technical.json';
         builderType = 'Admin Technical Builder';
         logWithTimestamp(`📊 Using admin dual-page builder for: ${userRequest.slice(0, 50)}...`);
+    } else if (userPrompt.includes('ZAD_TEST_REQUEST:')) {
+        logWithTimestamp(`🧪 ZAD_TEST_REQUEST detected - using simple ZAD test builder`);
+        // Extract the user request from the ZAD test request
+        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("ZAD_TEST_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🧪 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-zad-simple-test.txt';
+        builderType = 'Simple ZAD Test Builder';
+        logWithTimestamp(`🧪 Using simple ZAD test builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
@@ -443,6 +467,15 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
             logWithTimestamp(`🎨 ZAD: Using clean user request for comprehensive builder: ${userRequest.slice(0, 50)}...`);
+        }
+    }
+    // For ZAD test requests, replace with the actual user request
+    else if (userPrompt.includes('ZAD_TEST_REQUEST:')) {
+        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            builderUserPrompt = userRequest; // Use the clean user request for the simple test builder
+            logWithTimestamp(`🧪 ZAD TEST: Using clean user request for simple test builder: ${userRequest.slice(0, 50)}...`);
         }
     }
     
