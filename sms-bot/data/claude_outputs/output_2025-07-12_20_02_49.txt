@@ -1,0 +1,139 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Burger Defender</title>
+<style>
+  body, html { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(#f8b400, #f85f73); }
+  canvas { display: block; }
+  .controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .button { width: 60px; height: 60px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 12px; }
+  .button:active { background: rgba(255, 255, 255, 0.4); }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="controls">
+  <div class="button" id="up">⬆️</div>
+  <div class="button" id="down">⬇️</div>
+</div>
+<script>
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  var burger = { x: 50, y: window.innerHeight / 2, width: 40, height: 20, color: '#f85f73' };
+  var bullets = [];
+  var enemies = [];
+  var score = 0;
+  var gameOver = false;
+  var lastTime = 0;
+  var gameSpeed = 33;
+
+  function spawnEnemy() {
+    var enemy = { x: window.innerWidth, y: Math.random() * window.innerHeight, width: 30, height: 30, color: '#f8b400' };
+    enemies.push(enemy);
+  }
+
+  function update() {
+    bullets.forEach(function(bullet, index) {
+      bullet.x += 5;
+      if (bullet.x > window.innerWidth) bullets.splice(index, 1);
+    });
+
+    enemies.forEach(function(enemy, index) {
+      enemy.x -= 2;
+      if (enemy.x + enemy.width < 0) enemies.splice(index, 1);
+    });
+
+    bullets.forEach(function(bullet, bulletIndex) {
+      enemies.forEach(function(enemy, enemyIndex) {
+        if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x && bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
+          bullets.splice(bulletIndex, 1);
+          enemies.splice(enemyIndex, 1);
+          score++;
+        }
+      });
+    });
+
+    if (enemies.some(function(enemy) { return enemy.x < burger.x + burger.width && enemy.x + enemy.width > burger.x && enemy.y < burger.y + burger.height && enemy.y + enemy.height > burger.y; })) {
+      gameOver = true;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.fillStyle = burger.color;
+    ctx.fillRect(burger.x, burger.y, burger.width, burger.height);
+
+    bullets.forEach(function(bullet) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    });
+
+    enemies.forEach(function(enemy) {
+      ctx.fillStyle = enemy.color;
+      ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    });
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '20px Arial';
+    ctx.fillText('Score: ' + score, 10, 20);
+
+    if (gameOver) {
+      ctx.fillText('Game Over! Tap to Restart', window.innerWidth / 2 - 100, window.innerHeight / 2);
+    }
+  }
+
+  function gameLoop(currentTime) {
+    if (currentTime - lastTime > gameSpeed) {
+      lastTime = currentTime;
+      if (!gameOver) {
+        update();
+        if (Math.random() < 0.02) spawnEnemy();
+      }
+    }
+    draw();
+    if (!gameOver) requestAnimationFrame(gameLoop);
+  }
+
+  function restartGame() {
+    burger.y = window.innerHeight / 2;
+    bullets = [];
+    enemies = [];
+    score = 0;
+    gameOver = false;
+    requestAnimationFrame(gameLoop);
+  }
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowUp') burger.y -= 10;
+    if (e.key === 'ArrowDown') burger.y += 10;
+    if (e.key === ' ') bullets.push({ x: burger.x + burger.width, y: burger.y + burger.height / 2, width: 5, height: 5 });
+  });
+
+  document.getElementById('up').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    burger.y -= 10;
+  });
+
+  document.getElementById('down').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    burger.y += 10;
+  });
+
+  canvas.addEventListener('click', function() {
+    if (gameOver) restartGame();
+  });
+
+  requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```

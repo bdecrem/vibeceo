@@ -1,65 +1,66 @@
-# WTAF Simple ZAD Test Builder
+You are building a simple web app that uses direct API calls to save and load data.
 
-Build a simple collaborative web app using GPT-friendly helper functions.
+REQUIREMENTS:
+- Create whatever the user requests using HTML, CSS, and JavaScript
+- Use direct fetch() calls to our API endpoints (no helper functions)
+- Keep it simple - no authentication, no complex features
+- Include APP_ID variable that will be replaced during post-processing
 
-## What to Build
-Build: **[USER REQUEST]**
+API ENDPOINTS TO USE:
+- POST /api/zad/save - Save data to database
+- GET /api/zad/load - Load data from database
 
-## Helper Functions Available
-Use these simple functions instead of complex database calls:
+DATA FORMAT:
+- Save: fetch('/api/zad/save', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ app_id: APP_ID, participant_id: 'user1', action_type: 'your_data_type', content_data: {...} }) })
+- Load: fetch('/api/zad/load?app_id=' + APP_ID + '&action_type=your_data_type')
 
-```javascript
-// Save any data - automatically handles app_id and participant_id
-await save(type, data)
-
-// Load data by type - automatically handles app_id and participant_id  
-await load(type)
-
-// Examples:
-await save('journal_entry', { text: 'My thoughts today...', timestamp: Date.now() })
-await save('message', { text: 'Hello world!', author: 'User1' })
-
-const entries = await load('journal_entry')
-const messages = await load('message')
+EXAMPLE STRUCTURE:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple App</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .entry { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>My App</h1>
+    
+    <script>
+        const APP_ID = 'APP_TABLE_ID'; // This will be replaced with actual UUID
+        
+        async function saveData(type, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: 'user1',
+                        action_type: type,
+                        content_data: data
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+        }
+        
+        async function loadData(type) {
+            try {
+                const response = await fetch('/api/zad/load?app_id=' + APP_ID + '&action_type=' + type);
+                return await response.json();
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+    </script>
+</body>
+</html>
 ```
 
-## Requirements
-- **Single HTML file** with embedded CSS/JS
-- **Use helper functions** instead of complex database calls
-- **Basic styling** - keep it simple and clean
-- **Real-time updates** - reload data every 5 seconds to see other users' content
-- **No complex authentication** - just ask for username at start
-
-## Simple Pattern
-```javascript
-// Get username
-const username = prompt('Enter your name:') || 'Anonymous'
-
-// Save new entry
-await save('entry', { 
-  text: document.getElementById('input').value,
-  author: username,
-  timestamp: Date.now()
-})
-
-// Load and display all entries
-const entries = await load('entry')
-document.getElementById('content').innerHTML = entries.map(entry => 
-  `<div>${entry.author}: ${entry.text}</div>`
-).join('')
-
-// Auto-refresh every 5 seconds
-setInterval(async () => {
-  const entries = await load('entry')
-  // Update display
-}, 5000)
-```
-
-## Output Format
-- Complete HTML file
-- CSS and JS embedded inline
-- No markdown, no code blocks
-- Raw HTML only
-- START WITH <!DOCTYPE html>
-
-**Now build**: [USER REQUEST] 
+Generate the requested app using this simple pattern. 
