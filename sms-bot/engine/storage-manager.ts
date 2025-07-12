@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
@@ -232,6 +232,12 @@ export async function saveCodeToSupabase(
     // Check if this is ZAD test (skip auto-fix)
     const isZadTest = originalPrompt.includes('ZAD_TEST_MARKER');
     
+    // Check if this code uses ZAD-style helper functions (auto-detect)
+    const usesZadHelpers = /\bawait\s+save\s*\(/.test(code) || /\bawait\s+load\s*\(/.test(code) ||
+                          /\bsave\s*\(/.test(code) || /\bload\s*\(/.test(code) ||
+                          /\bsaveEntry\s*\(/.test(code) || /\bloadEntries\s*\(/.test(code) ||
+                          /\bsaveData\s*\(/.test(code) || /\bloadData\s*\(/.test(code);
+    
     if (usesApiCalls) {
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
         // Skip credential injection for any app using API calls
@@ -240,17 +246,31 @@ export async function saveCodeToSupabase(
         code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     }
     
-    if (isMinimalTest || usesApiCalls || isZadTest) {
+    // Inject ZAD helper functions for ZAD test apps OR auto-detected ZAD-style code
+    if (isZadTest || usesZadHelpers) {
+        if (isZadTest) {
+            logWithTimestamp("🧪 ZAD TEST: Injecting helper functions");
+        } else {
+            logWithTimestamp("🔍 AUTO-DETECTED ZAD-STYLE CODE: Injecting helper functions");
+        }
+        // Note: We'll inject the UUID after we get it from the database
+        code = await injectZadHelperFunctions(code);
+    }
+    
+    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers) {
         if (isMinimalTest) {
             logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
         }
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Skipping auto-fix processing");
         }
+        if (usesZadHelpers && !isZadTest) {
+            logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
+        }
         if (usesApiCalls) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
-        // Skip auto-fix for minimal test OR ZAD test OR any API-based app
+        // Skip auto-fix for minimal test OR ZAD test OR auto-detected ZAD OR any API-based app
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
@@ -352,6 +372,12 @@ export async function saveCodeToSupabase(
         
         const contentUuid = savedData.id;
         logWithTimestamp(`🆔 Generated UUID for app: ${contentUuid}`);
+        
+        // Inject UUID into ZAD helper functions if they were added
+        if (isZadTest || usesZadHelpers) {
+            logWithTimestamp(`🔗 Injecting UUID ${contentUuid} into ZAD helper functions`);
+            code = await injectZadUuidIntoHelpers(code, contentUuid);
+        }
         
         // For admin pages, skip UUID replacement since it was already done with main app's UUID
         // For stackdb requests, also skip since UUID was already set to origin app's UUID
@@ -511,5 +537,92 @@ export async function updatePageInSupabase(userSlug: string, appSlug: string, ne
     } catch (error) {
         logError(`Error updating page ${userSlug}/${appSlug}: ${error instanceof Error ? error.message : String(error)}`);
         return false;
+    }
+}
+
+/**
+ * Inject UUID into existing ZAD helper functions
+ */
+async function injectZadUuidIntoHelpers(html: string, uuid: string): Promise<string> {
+    try {
+        // Replace the getAppId function or add window.APP_ID assignment
+        const uuidInjection = `
+// Set the app UUID for ZAD helper functions
+window.APP_ID = '${uuid}';
+console.log('🆔 ZAD App UUID set to:', '${uuid}');
+`;
+        
+        // Look for existing ZAD helper functions script
+        if (html.includes('ZAD Helper Functions')) {
+            // Inject UUID assignment after the helper functions comment
+            html = html.replace(
+                'console.log(\'🚀 Loading ZAD Helper Functions...\');',
+                `console.log('🚀 Loading ZAD Helper Functions...');${uuidInjection}`
+            );
+        } else {
+            // Fallback: inject before closing head tag
+            if (html.includes('</head>')) {
+                html = html.replace('</head>', `<script>${uuidInjection}</script>\n</head>`);
+            }
+        }
+        
+        // Also update the getAppId function to use window.APP_ID
+        html = html.replace(
+            /function getAppId\(\) \{[^}]+\}/,
+            `function getAppId() {
+    return window.APP_ID || 'unknown-app';
+}`
+        );
+        
+        logWithTimestamp(`🔗 UUID ${uuid} injected into ZAD helper functions`);
+        return html;
+        
+    } catch (error) {
+        logError(`Failed to inject UUID into ZAD helper functions: ${error instanceof Error ? error.message : String(error)}`);
+        return html; // Return original HTML if injection fails
+    }
+}
+
+/**
+ * Inject ZAD helper functions into HTML for ZAD test apps
+ */
+async function injectZadHelperFunctions(html: string): Promise<string> {
+    try {
+        logWithTimestamp("🔄 Injecting ZAD helper functions from compiled source...");
+        
+        // Read the compiled ZAD helper functions from dist/engine/zad-helpers.js
+        const compiledHelpersPath = join(dirname(__filename), 'zad-helpers.js');
+        const compiledHelpers = await readFile(compiledHelpersPath, 'utf8');
+        
+        // Wrap the compiled JavaScript in a script tag
+        const helperScript = `<script>
+// ZAD Helper Functions - Compiled from TypeScript
+console.log('🚀 Loading ZAD Helper Functions from compiled source...');
+
+${compiledHelpers}
+
+console.log('🚀 ZAD Helper Functions loaded successfully');
+console.log('Available functions: save(type, data), load(type), loadAll()');
+console.log('Auth functions: initAuth(), getCurrentUser(), enableLiveUpdates()');
+console.log('Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
+</script>`;
+        
+        // Inject before closing </head> tag, or before first <script> tag if no </head>
+        if (html.includes('</head>')) {
+            html = html.replace('</head>', `${helperScript}\n</head>`);
+        } else if (html.includes('<script>')) {
+            html = html.replace('<script>', `${helperScript}\n<script>`);
+        } else {
+            // Fallback: add at the end of the HTML
+            html = html.replace('</html>', `${helperScript}\n</html>`);
+        }
+        
+        logWithTimestamp("🧪 ZAD helper functions injected successfully from compiled source");
+        return html;
+        
+    } catch (error) {
+        logError(`Failed to inject ZAD helper functions: ${error instanceof Error ? error.message : String(error)}`);
+        // Fallback: return original HTML if injection fails
+        return html;
     }
 }

@@ -377,7 +377,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderType = 'Admin Technical Builder';
         logWithTimestamp(`📊 Using admin dual-page builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_TEST_REQUEST:')) {
-        logWithTimestamp(`🧪 ZAD_TEST_REQUEST detected - using simple ZAD test builder`);
+        logWithTimestamp(`🧪 ZAD_TEST_REQUEST detected - using ultra-simple ZAD builder`);
         // Extract the user request from the ZAD test request
         const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*(.+)/);
         if (!requestMatch) {
@@ -386,9 +386,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         const userRequest = requestMatch[1].trim();
         logWithTimestamp(`🧪 Extracted user request: ${userRequest}`);
         
-        builderFile = 'builder-zad-simple-test.txt';
-        builderType = 'Simple ZAD Test Builder';
-        logWithTimestamp(`🧪 Using simple ZAD test builder for: ${userRequest.slice(0, 50)}...`);
+        builderFile = 'builder-zad-ultra-simple.txt';
+        builderType = 'Ultra-Simple ZAD Builder';
+        logWithTimestamp(`🧪 Using ultra-simple ZAD builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
@@ -541,7 +541,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     logWithTimestamp("-" + "-".repeat(80));
     
     // Determine timeout based on request type (declare before try-catch for scope)
-    const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+    const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') || 
+                         userPrompt.includes('ZAD_TEST_REQUEST:') ||
+                         userPrompt.includes('ZERO_ADMIN_DATA: true');
     const timeout = isZadRequest ? ZAD_TIMEOUT_MS : WORKER_TIMEOUT_MS;
     
     try {
