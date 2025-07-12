@@ -223,11 +223,32 @@ export async function saveCodeToSupabase(
     // Inject OpenGraph tags into HTML
     const publicUrl = `${WTAF_DOMAIN}/${userSlug}/${appSlug}`;
     
-    // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+    // Check if this uses API calls (skip credential injection)
+    const usesApiCalls = code.includes('fetch(\'/api/admin/');
     
-    // Auto-fix common JavaScript issues before deployment
-    code = autoFixCommonIssues(code);
+    // Check if this is minimal test (skip auto-fix)
+    const isMinimalTest = originalPrompt.includes('ADMIN_TEST_MARKER');
+    
+    if (usesApiCalls) {
+        logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
+        // Skip credential injection for any app using API calls
+    } else {
+        // Inject Supabase credentials into HTML (only for direct Supabase apps)
+        code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+    }
+    
+    if (isMinimalTest || usesApiCalls) {
+        if (isMinimalTest) {
+            logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
+        }
+        if (usesApiCalls) {
+            logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
+        }
+        // Skip auto-fix for minimal test OR any API-based app
+    } else {
+        // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
+        code = autoFixCommonIssues(code);
+    }
     
     // Use fallback OG image URL initially - will be updated after OG generation
     const ogImageUrl = `${WEB_APP_URL}/api/generate-og-cached?user=${userSlug}&app=${appSlug}`;

@@ -117,31 +117,83 @@ export function injectSupabaseCredentials(html: string, supabaseUrl: string, sup
 /**
  * Replace APP_TABLE_ID placeholder with actual app_slug
  * Uses regex to catch ANY app_id value Claude generates, not just specific placeholders
+ * UPDATED: Now handles both direct Supabase calls AND API call patterns
  */
 export function replaceAppTableId(html: string, appSlug: string): string {
     // Replace standard placeholder first
     html = html.replace(/'APP_TABLE_ID'/g, `'${appSlug}'`);
     html = html.replace(/"APP_TABLE_ID"/g, `"${appSlug}"`);
     
+    // NEW: Replace APP_TABLE_ID in API URL query parameters (works inside iframe HTML encoding)
+    // Pattern: app_id=APP_TABLE_ID -> app_id=uuid (regardless of surrounding quotes)
+    html = html.replace(/app_id=APP_TABLE_ID/g, `app_id=${appSlug}`);
+    
+    // NEW: Handle ANY hardcoded app_id value in URL query parameters
+    // Pattern: app_id=any_hardcoded_value -> app_id=uuid (catch values like WTAF_CONTACT_FORM)
+    html = html.replace(/app_id=([^'&\s\)]+)/g, `app_id=${appSlug}`);
+    
+    // NEW: Handle HTML entity encoded quotes in URL parameters
+    // Pattern: app_id=&#x27;any_value&#x27; -> app_id=uuid (HTML entity encoded)
+    html = html.replace(/app_id=&#x27;([^&#]+)&#x27;/g, `app_id=${appSlug}`);
+    
+    // NEW: Handle API fetch body patterns
+    // Pattern: app_id: 'APP_TABLE_ID' -> app_id: 'uuid' (in JSON body)
+    html = html.replace(/(['"]app_id['"]:\s*)['"]APP_TABLE_ID['"]/g, `$1'${appSlug}'`);
+    
+    // NEW: Handle hardcoded app_id values in API fetch body 
+    // Pattern: app_id: 'any_hardcoded_value' -> app_id: 'uuid' (in JSON body)
+    html = html.replace(/(['"]app_id['"]:\s*)['"][^'"]*['"]/g, `$1'${appSlug}'`);
+    
+    // NEW: Handle HTML entity encoded fetch calls
+    // Pattern: fetch(&#x27;/api/admin/load?app_id=any_value&#x27;) -> fetch('/api/admin/load?app_id=uuid')
+    html = html.replace(/fetch\(&#x27;\/api\/admin\/load\?app_id=([^&#&]+)[^&#]*&#x27;\)/g, `fetch('/api/admin/load?app_id=${appSlug}')`);
+    // Pattern: fetch(&#x27;/api/admin/save&#x27;) with app_id in body
+    html = html.replace(/fetch\(&#x27;\/api\/admin\/save&#x27;/g, `fetch('/api/admin/save'`);
+    
     // Use regex to replace ANY hardcoded app_id values in Supabase calls
     // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
     html = html.replace(/\.eq\(\s*['"]app_id['"]\s*,\s*['"][^'"]*['"]\s*\)/g, `.eq('app_id', '${appSlug}')`);
     
-    // Pattern: app_id: 'any_value' -> app_id: 'uuid'  
+    // Pattern: app_id: 'any_value' -> app_id: 'uuid' (in Supabase object notation)
     html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${appSlug}'`);
     
-    logWithTimestamp(`🔧 Replaced ANY app_id values with: ${appSlug}`);
+    logWithTimestamp(`🔧 Replaced ANY app_id values (Supabase + API) with: ${appSlug}`);
     return html;
 }
 
 /**
  * Inject submission UUID for admin pages
  * Admin pages use their own UUID for the page, but main app's UUID for data operations
+ * UPDATED: Now handles both direct Supabase calls AND API call patterns (like working minimal test)
  */
 export function injectSubmissionUuid(html: string, submissionUuid: string): string {
     // Replace standard placeholder
     html = html.replace(/'APP_TABLE_ID'/g, `'${submissionUuid}'`);
     html = html.replace(/"APP_TABLE_ID"/g, `"${submissionUuid}"`);
+    
+    // NEW: Replace APP_TABLE_ID in API URL query parameters (same as replaceAppTableId)
+    html = html.replace(/app_id=APP_TABLE_ID/g, `app_id=${submissionUuid}`);
+    
+    // NEW: Handle ANY hardcoded app_id value in URL query parameters
+    html = html.replace(/app_id=([^'&\s\)]+)/g, `app_id=${submissionUuid}`);
+    
+    // NEW: Handle HTML entity encoded quotes in URL parameters
+    // Pattern: app_id=&#x27;any_value&#x27; -> app_id=uuid (HTML entity encoded)
+    html = html.replace(/app_id=&#x27;([^&#]+)&#x27;/g, `app_id=${submissionUuid}`);
+    
+    // NEW: Handle API fetch body patterns (same as working minimal test)
+    // Pattern: app_id: 'APP_TABLE_ID' -> app_id: 'uuid' (in JSON body)
+    html = html.replace(/(['"]app_id['"]:\s*)['"]APP_TABLE_ID['"]/g, `$1'${submissionUuid}'`);
+    
+    // NEW: Handle hardcoded app_id values in API fetch body 
+    // Pattern: app_id: 'any_hardcoded_value' -> app_id: 'uuid' (in JSON body)
+    html = html.replace(/(['"]app_id['"]:\s*)['"][^'"]*['"]/g, `$1'${submissionUuid}'`);
+    
+    // NEW: Handle HTML entity encoded fetch calls (same as replaceAppTableId)
+    // Pattern: fetch(&#x27;/api/admin/load?app_id=any_value&#x27;) -> fetch('/api/admin/load?app_id=uuid')
+    html = html.replace(/fetch\(&#x27;\/api\/admin\/load\?app_id=([^&#&]+)[^&#]*&#x27;\)/g, `fetch('/api/admin/load?app_id=${submissionUuid}')`);
+    // Pattern: fetch(&#x27;/api/admin/save&#x27;) with app_id in body
+    html = html.replace(/fetch\(&#x27;\/api\/admin\/save&#x27;/g, `fetch('/api/admin/save'`);
     
     // Use regex to replace any hardcoded app_id values in Supabase calls
     // Pattern: .eq('app_id', 'any_value') -> .eq('app_id', 'uuid')
@@ -150,7 +202,7 @@ export function injectSubmissionUuid(html: string, submissionUuid: string): stri
     // Pattern: app_id: 'any_value' -> app_id: 'uuid'
     html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${submissionUuid}'`);
     
-    logWithTimestamp(`📊 Admin page configured to use submission UUID: ${submissionUuid}`);
+    logWithTimestamp(`📊 Admin page configured to use submission UUID (Supabase + API): ${submissionUuid}`);
     return html;
 }
 
@@ -316,7 +368,7 @@ export function autoFixCommonIssues(html: string): string {
         logWithTimestamp('⚠️ Warning: userLabel query detected - ensure proper error handling for missing users');
     }
     
-    // Fix 4: Remove duplicate variable declarations (NEW FIX from memory)
+    // Fix 4: Remove duplicate variable declarations
     const duplicateCurrentUserMatches = fixed.match(/let currentUser = null;/g);
     if (duplicateCurrentUserMatches && duplicateCurrentUserMatches.length > 1) {
         logWithTimestamp(`🔧 Found ${duplicateCurrentUserMatches.length} duplicate 'let currentUser = null;' declarations`);
@@ -345,8 +397,7 @@ export function autoFixCommonIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Removed duplicate currentUser declaration');
     }
     
-    // Fix 5: Fix malformed escaped quotes in JavaScript strings (NEW FIX for iframe srcDoc issues)
-    // Pattern: 'SQUAD\\'S becomes 'SQUAD\'S (malformed) → should be 'SQUAD\\'S or "SQUAD'S"
+    // Fix 5: Fix malformed escaped quotes in JavaScript strings
     const malformedQuotePattern = /'[^']*\\'[^']*'/g;
     const malformedQuotes = fixed.match(malformedQuotePattern);
     if (malformedQuotes && malformedQuotes.length > 0) {
