@@ -260,7 +260,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
     
     // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
     let forceAdminPath = false;
-    if (userPrompt && userPrompt.includes('--admin')) {
+    let isMinimalTest = false;
+    if (userPrompt && userPrompt.includes('--admin-test')) {
+        logWithTimestamp("🧪 ADMIN-TEST OVERRIDE DETECTED: Using minimal test builder");
+        // Clean the prompt by removing the admin-test flag
+        userPrompt = userPrompt.replace(/--admin-test\s*/g, '').trim();
+        forceAdminPath = true;
+        isMinimalTest = true;
+        logWithTimestamp(`🧪 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    } else if (userPrompt && userPrompt.includes('--admin')) {
         logWithTimestamp("🔧 ADMIN OVERRIDE DETECTED: Forcing admin classification");
         // Clean the prompt by removing the admin flag
         userPrompt = userPrompt.replace(/--admin\s*/g, '').trim();
@@ -746,7 +754,14 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             forceAdminOverride: forceAdminPath
         };
         
-        const completePrompt = await generateCompletePrompt(userPrompt, classifierConfig);
+        // Add marker for minimal test if needed
+        let promptToProcess = userPrompt;
+        if (isMinimalTest) {
+            promptToProcess = userPrompt + ' ADMIN_TEST_MARKER';
+            logWithTimestamp("🧪 Added ADMIN_TEST_MARKER to prompt for minimal processing");
+        }
+        
+        const completePrompt = await generateCompletePrompt(promptToProcess, classifierConfig);
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
         let result: string;

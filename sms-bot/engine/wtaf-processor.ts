@@ -178,13 +178,24 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
     if (requestType === 'app') {
         // 🔧 ADMIN OVERRIDE CHECK: Skip classifier entirely if admin override is set
         if (config.forceAdminOverride) {
-            logWithTimestamp("🔧 ADMIN OVERRIDE: Skipping classifier entirely, going straight to admin generation");
-            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+            // Check if this is a minimal test request (passed via cleanedInput containing ADMIN_TEST marker)
+            if (cleanedInput.includes('ADMIN_TEST_MARKER')) {
+                logWithTimestamp("🧪 ADMIN-TEST OVERRIDE: Skipping classifier, going to minimal test builder");
+                expandedPrompt = `ADMIN_TEST_REQUEST: ${cleanedInput.replace('ADMIN_TEST_MARKER', '').trim()}
 
 EMAIL_NEEDED: false
 ZERO_ADMIN_DATA: false
 APP_TYPE: data_collection`;
-            logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
+                logWithTimestamp("🧪 Admin-test override: Created minimal test prompt without classifier");
+            } else {
+                logWithTimestamp("🔧 ADMIN OVERRIDE: Skipping classifier entirely, going straight to admin generation");
+                expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: false
+APP_TYPE: data_collection`;
+                logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
+            }
         }
         else {
             // APP PATH: Use classifier to expand and clarify the request
@@ -328,6 +339,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-game.json';
         builderType = 'Game Builder';
         logWithTimestamp(`🎮 Game detected - using game builder`);
+    } else if (userPrompt.includes('ADMIN_TEST_REQUEST:')) {
+        logWithTimestamp(`🧪 ADMIN_TEST_REQUEST detected - using minimal test builder`);
+        // Extract the user request from the admin test request
+        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("ADMIN_TEST_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🧪 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-admin-minimal-test.json';
+        builderType = 'Minimal Test Builder';
+        logWithTimestamp(`🧪 Using minimal test builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
         logWithTimestamp(`📊 ADMIN_DUAL_PAGE_REQUEST detected - using admin dual-page builder`);
         // Extract the user request from the admin request
@@ -394,8 +418,17 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     // STEP 5: Prepare coach-aware user prompt for builder
     let builderUserPrompt = userPrompt;
     
+    // For admin test requests, replace with the actual user request
+    if (userPrompt.includes('ADMIN_TEST_REQUEST:')) {
+        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            builderUserPrompt = userRequest; // Use the clean user request for the minimal test builder
+            logWithTimestamp(`🧪 ADMIN-TEST: Using clean user request for minimal test builder: ${userRequest.slice(0, 50)}...`);
+        }
+    }
     // For admin dual-page requests, replace with the actual user request but preserve metadata
-    if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
+    else if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
         const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*(.+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
