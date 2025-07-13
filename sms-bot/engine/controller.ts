@@ -797,6 +797,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             let designSystemContent = null;
             const isSpecializedRequest = completePrompt.includes('ADMIN_DUAL_PAGE_REQUEST:') || 
                                        completePrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') ||
+                                       completePrompt.includes('ZAD_TEST_REQUEST:') ||
                                        completePrompt.includes('--stack') ||
                                        completePrompt.includes('--remix') ||
                                        completePrompt.includes('--stackdb') ||

@@ -589,23 +589,147 @@ console.log('🆔 ZAD App UUID set to:', '${uuid}');
  */
 async function injectZadHelperFunctions(html: string): Promise<string> {
     try {
-        logWithTimestamp("🔄 Injecting ZAD helper functions from compiled source...");
+        logWithTimestamp("🔄 Injecting ZAD helper functions (inline version)...");
         
-        // Read the compiled ZAD helper functions from dist/engine/zad-helpers.js
-        const compiledHelpersPath = join(dirname(__filename), 'zad-helpers.js');
-        const compiledHelpers = await readFile(compiledHelpersPath, 'utf8');
-        
-        // Wrap the compiled JavaScript in a script tag
+        // Create minimal inline version of essential ZAD helper functions
         const helperScript = `<script>
-// ZAD Helper Functions - Compiled from TypeScript
-console.log('🚀 Loading ZAD Helper Functions from compiled source...');
+// ZAD Helper Functions - Inline version for test apps
+console.log('🚀 Loading ZAD Helper Functions (inline)...');
 
-${compiledHelpers}
+// Auth state
+let currentUser = null;
+let authInitialized = false;
+
+// Get app ID from window.APP_ID (set by system)
+function getAppId() {
+    return window.APP_ID || 'unknown-app';
+}
+
+                // Get participant ID - prompt if not in current session
+                function getParticipantId() {
+                    let participantId = localStorage.getItem('zad_participant_id');
+                    if (!participantId) {
+                        const username = prompt('Enter your name:') || 'Anonymous';
+                        participantId = username.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.random().toString(36).substr(2, 6);
+                        localStorage.setItem('zad_participant_id', participantId);
+                        localStorage.setItem('zad_username', username);
+                    }
+                    return participantId;
+                }
+
+                // Get username from current session
+                function getUsername() {
+                    return localStorage.getItem('zad_username') || 'Anonymous';
+                }
+
+                // Initialize authentication (simplified)
+                function initAuth() {
+                    console.log('🔐 Initializing authentication...');
+                    if (authInitialized) return;
+                    authInitialized = true;
+                    
+                    // Clear any previous session data (force fresh login)
+                    localStorage.removeItem('zad_participant_id');
+                    localStorage.removeItem('zad_username');
+                    
+                    // For test apps, prompt for user and set up session
+                    currentUser = {
+                        username: getUsername(),
+                        participantId: getParticipantId()
+                    };
+                    
+                    console.log('✅ Authentication ready:', currentUser);
+                }
+
+// Save data to ZAD API
+async function save(type, data) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        const zadData = {
+            app_id: app_id,
+            participant_id: participant_id,
+            participant_data: {
+                userLabel: username,
+                username: username
+            },
+            action_type: type,
+            content_data: {
+                ...data,
+                timestamp: data.timestamp || Date.now(),
+                author: data.author || username
+            }
+        };
+        
+        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(zadData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(\`Save failed: \${errorData.error || response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Saved successfully:', result);
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        alert(\`Failed to save: \${error.message}\`);
+        throw error;
+    }
+}
+
+// Load data from ZAD API
+async function load(type) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔄 Loading from ZAD API:', { app_id, type });
+        
+        const url = \`/api/zad/load?app_id=\${encodeURIComponent(app_id)}&action_type=\${encodeURIComponent(type)}\`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(\`Load failed: \${errorData.error || response.statusText}\`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Loaded successfully:', data);
+        
+        // Transform ZAD data back to simple format
+        return data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+        
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        alert(\`Failed to load: \${error.message}\`);
+        return [];
+    }
+}
+
+// Make functions globally available
+window.initAuth = initAuth;
+window.save = save;
+window.load = load;
+window.getAppId = getAppId;
+window.getParticipantId = getParticipantId;
+window.getUsername = getUsername;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-console.log('Available functions: save(type, data), load(type), loadAll()');
-console.log('Auth functions: initAuth(), getCurrentUser(), enableLiveUpdates()');
-console.log('Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
+console.log('Available functions: initAuth(), save(type, data), load(type)');
 </script>`;
         
         // Inject before closing </head> tag, or before first <script> tag if no </head>
@@ -618,7 +742,7 @@ console.log('Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
             html = html.replace('</html>', `${helperScript}\n</html>`);
         }
         
-        logWithTimestamp("🧪 ZAD helper functions injected successfully from compiled source");
+        logWithTimestamp("🧪 ZAD helper functions injected successfully (inline version)");
         return html;
         
     } catch (error) {
