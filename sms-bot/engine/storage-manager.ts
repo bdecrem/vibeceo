@@ -230,7 +230,7 @@ export async function saveCodeToSupabase(
     const isMinimalTest = originalPrompt.includes('ADMIN_TEST_MARKER');
     
     // Check if this is ZAD test (skip auto-fix)
-    const isZadTest = originalPrompt.includes('ZAD_TEST_MARKER');
+    const isZadTest = originalPrompt.includes('ZAD_TEST_REQUEST:');
     
     // Check if this code uses ZAD-style helper functions (auto-detect)
     // BUT: Skip auto-detection for ZAD test (use direct API calls instead)
@@ -251,11 +251,17 @@ export async function saveCodeToSupabase(
     if (isZadTest || usesZadHelpers) {
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Injecting helper functions");
+            console.log("🔍 DEBUG: originalPrompt contains ZAD_TEST_REQUEST:", originalPrompt.includes('ZAD_TEST_REQUEST:'));
         } else {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD-STYLE CODE: Injecting helper functions");
         }
         // Note: We'll inject the UUID after we get it from the database
         code = await injectZadHelperFunctions(code);
+    } else {
+        console.log("🔍 DEBUG: No ZAD helper injection needed");
+        console.log("🔍 DEBUG: isZadTest:", isZadTest);
+        console.log("🔍 DEBUG: usesZadHelpers:", usesZadHelpers);
+        console.log("🔍 DEBUG: originalPrompt preview:", originalPrompt.substring(0, 100));
     }
     
     if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers) {
@@ -589,64 +595,36 @@ console.log('🆔 ZAD App UUID set to:', '${uuid}');
  */
 async function injectZadHelperFunctions(html: string): Promise<string> {
     try {
-        logWithTimestamp("🔄 Injecting ZAD helper functions (inline version)...");
+        logWithTimestamp("🔄 EMERGENCY FIX: Injecting hardcoded working helper functions...");
         
-        // Create minimal inline version of essential ZAD helper functions
+        // Hardcoded working helper functions - bypass all the broken file reading
         const helperScript = `<script>
-// ZAD Helper Functions - Inline version for test apps
-console.log('🚀 Loading ZAD Helper Functions (inline)...');
+// ZAD Helper Functions - EMERGENCY HARDCODED VERSION
+console.log('🚀 Loading ZAD Helper Functions (HARDCODED)...');
 
-// Auth state
-let currentUser = null;
-let authInitialized = false;
-
-// Get app ID from window.APP_ID (set by system)
-function getAppId() {
-    return window.APP_ID || 'unknown-app';
+// Simple working authentication
+function initAuth() {
+    console.log('🔐 Initializing authentication (HARDCODED)...');
+    
+    // Clear any previous session data (force fresh login)
+    localStorage.removeItem('zad_participant_id');
+    localStorage.removeItem('zad_username');
+    
+    // For test apps, prompt for user and set up session
+    const username = prompt('Enter your name:') || 'Anonymous';
+    const participantId = username.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.random().toString(36).substr(2, 6);
+    localStorage.setItem('zad_participant_id', participantId);
+    localStorage.setItem('zad_username', username);
+    
+    console.log('✅ Authentication ready (HARDCODED):', { username, participantId });
 }
 
-                // Get participant ID - prompt if not in current session
-                function getParticipantId() {
-                    let participantId = localStorage.getItem('zad_participant_id');
-                    if (!participantId) {
-                        const username = prompt('Enter your name:') || 'Anonymous';
-                        participantId = username.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.random().toString(36).substr(2, 6);
-                        localStorage.setItem('zad_participant_id', participantId);
-                        localStorage.setItem('zad_username', username);
-                    }
-                    return participantId;
-                }
-
-                // Get username from current session
-                function getUsername() {
-                    return localStorage.getItem('zad_username') || 'Anonymous';
-                }
-
-                // Initialize authentication (simplified)
-                function initAuth() {
-                    console.log('🔐 Initializing authentication...');
-                    if (authInitialized) return;
-                    authInitialized = true;
-                    
-                    // Clear any previous session data (force fresh login)
-                    localStorage.removeItem('zad_participant_id');
-                    localStorage.removeItem('zad_username');
-                    
-                    // For test apps, prompt for user and set up session
-                    currentUser = {
-                        username: getUsername(),
-                        participantId: getParticipantId()
-                    };
-                    
-                    console.log('✅ Authentication ready:', currentUser);
-                }
-
-// Save data to ZAD API
+// Simple working save function
 async function save(type, data) {
     try {
-        const app_id = getAppId();
-        const participant_id = getParticipantId();
-        const username = getUsername();
+        const app_id = window.APP_ID || 'unknown-app';
+        const participant_id = localStorage.getItem('zad_participant_id') || 'unknown';
+        const username = localStorage.getItem('zad_username') || 'Anonymous';
         
         const zadData = {
             app_id: app_id,
@@ -663,7 +641,7 @@ async function save(type, data) {
             }
         };
         
-        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+        console.log('🔄 Saving to ZAD API (HARDCODED):', { type, data: zadData });
         
         const response = await fetch('/api/zad/save', {
             method: 'POST',
@@ -677,22 +655,22 @@ async function save(type, data) {
         }
         
         const result = await response.json();
-        console.log('✅ Saved successfully:', result);
+        console.log('✅ Saved successfully (HARDCODED):', result);
         return result;
         
     } catch (error) {
-        console.error('❌ Save error:', error);
+        console.error('❌ Save error (HARDCODED):', error);
         alert(\`Failed to save: \${error.message}\`);
         throw error;
     }
 }
 
-// Load data from ZAD API
+// Simple working load function
 async function load(type) {
     try {
-        const app_id = getAppId();
+        const app_id = window.APP_ID || 'unknown-app';
         
-        console.log('🔄 Loading from ZAD API:', { app_id, type });
+        console.log('🔄 Loading from ZAD API (HARDCODED):', { app_id, type });
         
         const url = \`/api/zad/load?app_id=\${encodeURIComponent(app_id)}&action_type=\${encodeURIComponent(type)}\`;
         const response = await fetch(url);
@@ -703,7 +681,7 @@ async function load(type) {
         }
         
         const data = await response.json();
-        console.log('✅ Loaded successfully:', data);
+        console.log('✅ Loaded successfully (HARDCODED):', data);
         
         // Transform ZAD data back to simple format
         return data.map(item => ({
@@ -714,7 +692,7 @@ async function load(type) {
         }));
         
     } catch (error) {
-        console.error('❌ Load error:', error);
+        console.error('❌ Load error (HARDCODED):', error);
         alert(\`Failed to load: \${error.message}\`);
         return [];
     }
@@ -724,11 +702,8 @@ async function load(type) {
 window.initAuth = initAuth;
 window.save = save;
 window.load = load;
-window.getAppId = getAppId;
-window.getParticipantId = getParticipantId;
-window.getUsername = getUsername;
 
-console.log('🚀 ZAD Helper Functions loaded successfully');
+console.log('🚀 ZAD Helper Functions loaded successfully (HARDCODED)');
 console.log('Available functions: initAuth(), save(type, data), load(type)');
 </script>`;
         
@@ -742,11 +717,12 @@ console.log('Available functions: initAuth(), save(type, data), load(type)');
             html = html.replace('</html>', `${helperScript}\n</html>`);
         }
         
-        logWithTimestamp("🧪 ZAD helper functions injected successfully (inline version)");
+        logWithTimestamp("🧪 EMERGENCY FIX: Hardcoded helper functions injected successfully");
         return html;
         
     } catch (error) {
-        logError(`Failed to inject ZAD helper functions: ${error instanceof Error ? error.message : String(error)}`);
+        logError(`EMERGENCY FIX failed: ${error instanceof Error ? error.message : String(error)}`);
+        console.log("🔍 DEBUG: Error in hardcoded injection:", error);
         // Fallback: return original HTML if injection fails
         return html;
     }
