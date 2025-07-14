@@ -542,44 +542,68 @@ export async function updatePageInSupabase(userSlug: string, appSlug: string, ne
 }
 
 /**
- * Inject UUID into existing ZAD helper functions
+ * Inject UUID into existing ZAD helper functions - SIMPLIFIED VERSION
  */
 async function injectZadUuidIntoHelpers(html: string, uuid: string): Promise<string> {
     try {
-        // Replace the getAppId function or add window.APP_ID assignment
-        const uuidInjection = `
-// Set the app UUID for ZAD helper functions
-window.APP_ID = '${uuid}';
-console.log('🆔 ZAD App UUID set to:', '${uuid}');
-`;
+        logWithTimestamp(`🔧 SIMPLIFIED UUID INJECTION: Starting injection of UUID ${uuid}`);
         
-        // Look for existing ZAD helper functions script
-        if (html.includes('ZAD Helper Functions')) {
-            // Inject UUID assignment after the helper functions comment
+        // SIMPLIFIED APPROACH: Replace the getAppId function with hardcoded UUID return
+        // This is more reliable than complex pattern matching
+        const newGetAppIdFunction = `function getAppId() {
+    console.log('🆔 ZAD getAppId() called, returning UUID:', '${uuid}');
+    return '${uuid}';
+}`;
+        
+        // Replace ANY getAppId function definition with our hardcoded version
+        if (html.includes('function getAppId()')) {
+            // More robust regex to match the entire function including nested braces
             html = html.replace(
-                'console.log(\'🚀 Loading ZAD Helper Functions...\');',
-                `console.log('🚀 Loading ZAD Helper Functions...');${uuidInjection}`
+                /function getAppId\(\) \{[\s\S]*?\n\}/g,
+                newGetAppIdFunction
             );
+            logWithTimestamp(`🔧 SIMPLIFIED UUID INJECTION: Replaced getAppId function with hardcoded UUID`);
         } else {
-            // Fallback: inject before closing head tag
-            if (html.includes('</head>')) {
-                html = html.replace('</head>', `<script>${uuidInjection}</script>\n</head>`);
+            // If no getAppId function found, add it after the helper functions comment
+            if (html.includes('console.log(\'🚀 Loading ZAD Helper Functions')) {
+                html = html.replace(
+                    'console.log(\'🚀 Loading ZAD Helper Functions',
+                    `${newGetAppIdFunction}
+
+console.log('🚀 Loading ZAD Helper Functions`
+                );
+                logWithTimestamp(`🔧 SIMPLIFIED UUID INJECTION: Added getAppId function with hardcoded UUID`);
+            } else {
+                // Final fallback: inject before closing script tag
+                if (html.includes('</script>')) {
+                    html = html.replace('</script>', `
+${newGetAppIdFunction}
+</script>`);
+                    logWithTimestamp(`🔧 SIMPLIFIED UUID INJECTION: Added getAppId function as fallback`);
+                }
             }
         }
         
-        // Also update the getAppId function to use window.APP_ID
-        html = html.replace(
-            /function getAppId\(\) \{[^}]+\}/,
-            `function getAppId() {
-    return window.APP_ID || 'unknown-app';
-}`
-        );
+        // Also add window.APP_ID assignment for double safety
+        const windowAssignment = `
+// SIMPLIFIED UUID INJECTION: Set window.APP_ID for backup
+window.APP_ID = '${uuid}';
+console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '${uuid}');
+`;
         
-        logWithTimestamp(`🔗 UUID ${uuid} injected into ZAD helper functions`);
+        if (html.includes('console.log(\'🚀 Loading ZAD Helper Functions')) {
+            html = html.replace(
+                'console.log(\'🚀 Loading ZAD Helper Functions',
+                `${windowAssignment}
+console.log('🚀 Loading ZAD Helper Functions`
+            );
+        }
+        
+        logWithTimestamp(`🔧 SIMPLIFIED UUID INJECTION: Successfully injected UUID ${uuid} into ZAD helper functions`);
         return html;
         
     } catch (error) {
-        logError(`Failed to inject UUID into ZAD helper functions: ${error instanceof Error ? error.message : String(error)}`);
+        logError(`🔧 SIMPLIFIED UUID INJECTION: Failed to inject UUID: ${error instanceof Error ? error.message : String(error)}`);
         return html; // Return original HTML if injection fails
     }
 }
@@ -600,9 +624,19 @@ console.log('🚀 Loading ZAD Helper Functions (inline)...');
 let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
 let authInitialized = false;
 
-// Get app ID from window.APP_ID (set by system)
+// Get app ID from window.APP_ID (set by system) - ENHANCED DEBUG VERSION
 function getAppId() {
-    return window.APP_ID || 'unknown-app';
+    console.log('🔍 ZAD getAppId() called');
+    console.log('🔍 window.APP_ID is:', window.APP_ID);
+    console.log('🔍 typeof window.APP_ID:', typeof window.APP_ID);
+    
+    if (window.APP_ID) {
+        console.log('✅ ZAD getAppId() returning UUID:', window.APP_ID);
+        return window.APP_ID;
+    } else {
+        console.error('❌ ZAD getAppId() ERROR: window.APP_ID is not set! Returning unknown-app');
+        return 'unknown-app';
+    }
 }
 
                 // Get participant ID - prompt if not in current session
@@ -892,6 +926,7 @@ async function load(type) {
         console.log('🔄 Loading from ZAD API:', { app_id, type });
         
         const url = \`/api/zad/load?app_id=\${encodeURIComponent(app_id)}&action_type=\${encodeURIComponent(type)}\`;
+        console.log('🔍 ZAD load URL:', url);
         const response = await fetch(url);
         
         if (!response.ok) {
