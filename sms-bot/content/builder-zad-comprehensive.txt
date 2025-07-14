@@ -13,36 +13,36 @@ Build: **[USER REQUEST]**
 - Must be a complete, working web page
 
 ### 2. Database Integration (REQUIRED)
-Use this exact Supabase setup:
+Use these simple API functions for all data operations:
+
+**Save data:**
 ```javascript
-const supabase = window.supabase.createClient(
-  'https://tqniseocczttrfwtpbdr.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
-);
+await save('data_type', {
+  // Your data here
+  title: 'My Item',
+  content: 'Item content',
+  timestamp: Date.now()
+});
 ```
 
-**Table**: `wtaf_zero_admin_collaborative`
-**Required fields for every insert**:
+**Load data:**
 ```javascript
-{
-  app_id: APP_ID,              // Your unique app identifier
-  participant_id: userId,      // User's unique ID
-  action_type: 'join'|'message'|'vote'|'update'|etc,
-  participant_data: {...},     // User info (userLabel, passcode, etc)
-  content_data: {...}          // Action-specific data
-}
+const data = await load('data_type'); // Returns array of items
 ```
+
+**Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
+
 ### DATA PERSISTENCE PATTERN:
-For ideas: Update the SAME record by fetching it, modifying content_data, then updating
-Example: reactions should be stored as content_data.reactions = {emoji: count}
-Never create separate action_type records for reactions/comments
+For ideas: Update the SAME record by fetching it, modifying data, then saving
+Example: reactions should be stored as reactions = {emoji: count}
+Never create separate data types for reactions/comments
 
 ### 3. Authentication System (LOCKED - DO NOT MODIFY)
 Use this exact pattern:
 
 **App ID Generation**:
 ```javascript
-const APP_ID = 'test1'; // This will be replaced with the actual wtaf_content UUID
+const APP_ID = 'test1'; // This will be replaced with the actual app UUID
 ```
 
 **User Labels** (pick 5 themed for your app):
@@ -98,38 +98,38 @@ let currentUser = null;
 
 // Check capacity and generate new user
 async function generateNewUser() {
-  // First check existing users
-  const { data: existingUsers } = await supabase
-    .from('wtaf_zero_admin_collaborative')
-    .select('participant_data')
-    .eq('app_id', APP_ID)
-    .eq('action_type', 'join');
-  
-  const usedLabels = existingUsers?.map(u => u.participant_data?.userLabel).filter(Boolean) || [];
-  
-  if (usedLabels.length >= 5) {
-    alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+  try {
+    // First check available slots
+    const slots = await checkAvailableSlots();
+    
+    if (slots.isFull) {
+      alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+      return false;
+    }
+    
+    // Generate new user via backend
+    const user = await generateUser();
+    if (user && user.success) {
+      currentUser = {
+        userLabel: user.userLabel,
+        passcode: user.passcode,
+        participantId: user.participantId
+      };
+      
+      // Display credentials to user
+      document.getElementById('new-user-info').innerHTML = 
+        `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+      
+      return true;
+    } else {
+      alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+      return false;
+    }
+  } catch (error) {
+    console.error('User generation error:', error);
+    alert('GENERATION EXPLODED, TRY AGAIN 💥');
     return false;
   }
-  
-  const availableLabel = USER_LABELS.find(label => !usedLabels.includes(label));
-  if (!availableLabel) {
-    alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
-    return false;
-  }
-  
-  const code = Math.floor(1000 + Math.random() * 9000).toString();
-  currentUser = {
-    userLabel: availableLabel,
-    passcode: code,
-    participantId: availableLabel + '_' + code
-  };
-  
-  // Display credentials to user
-  document.getElementById('new-user-info').innerHTML = 
-    `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
-  
-  return true;
 }
 
 // Register new user in database
@@ -140,19 +140,12 @@ async function registerNewUser() {
   }
   
   try {
-    await supabase.from('wtaf_zero_admin_collaborative').insert({
-      app_id: APP_ID,
-      participant_id: currentUser.participantId,
-      action_type: 'join',
-      participant_data: {
-        userLabel: currentUser.userLabel,
-        passcode: currentUser.passcode,
-        join_time: Date.now()
-      },
-      content_data: { message: 'Joined the app', timestamp: Date.now() }
-    });
-    
-    enterMainScreen();
+    const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+    if (result && result.success) {
+      enterMainScreen();
+    } else {
+      alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+    }
   } catch (error) {
     console.error('Registration error:', error);
     alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
@@ -184,32 +177,20 @@ async function loginReturningUser() {
   }
   
   try {
-    // Get all join records for this app
-    const { data: joinRecords } = await supabase
-      .from('wtaf_zero_admin_collaborative')
-      .select('*')
-      .eq('app_id', APP_ID)
-      .eq('action_type', 'join');
-    
-    // Find matching user in JavaScript (more reliable than JSON queries)
-    const userRecord = joinRecords?.find(record => 
-      record.participant_data?.userLabel === selectedLabel && 
-      record.participant_data?.passcode === enteredPasscode
-    );
-    
-    if (userRecord) {
+    const result = await authenticateUser(selectedLabel, enteredPasscode);
+    if (result && result.success) {
       currentUser = {
         userLabel: selectedLabel,
         passcode: enteredPasscode,
-        participantId: userRecord.participant_id
+        participantId: result.user.participantId
       };
       enterMainScreen();
     } else {
-      alert('NICE TRY, WRONG VIBES ❌');
+      alert('NICE TRY, WRONG VIBES ❌\n\nMake sure you\'re using the correct passcode from when you registered.');
     }
   } catch (error) {
     console.error('Login error:', error);
-    alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+    alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀\n\nError: ' + error.message);
   }
 }
 
@@ -225,17 +206,31 @@ function showScreen(screenId) {
   }
 }
 
-function showReturningUserScreen() {
+async function showReturningUserScreen() {
   showScreen('returning-user-screen');
-  // Populate user select dropdown
-  const userSelect = document.getElementById('user-label-select');
-  userSelect.innerHTML = '<option>Select User</option>';
-  USER_LABELS.forEach(label => {
-    const option = document.createElement('option');
-    option.value = label;
-    option.textContent = label;
-    userSelect.appendChild(option);
-  });
+  
+  try {
+    // Populate user select dropdown with actual users
+    const slots = await checkAvailableSlots();
+    const userSelect = document.getElementById('user-label-select');
+    userSelect.innerHTML = '<option>Select User</option>';
+    
+    // Only show users that actually exist
+    slots.usedLabels.forEach(label => {
+      const option = document.createElement('option');
+      option.value = label;
+      option.textContent = label;
+      userSelect.appendChild(option);
+    });
+    
+    if (slots.usedLabels.length === 0) {
+      userSelect.innerHTML = '<option>No users registered yet</option>';
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+    const userSelect = document.getElementById('user-label-select');
+    userSelect.innerHTML = '<option>Error loading users</option>';
+  }
 }
 
 function enterMainScreen() {
@@ -244,6 +239,9 @@ function enterMainScreen() {
   startPolling(); // Start real-time updates
   loadLatestData(); // Load initial data
 }
+
+// Initialize authentication system
+initAuth();
 ```
 
 ### 4. Real-Time Updates (REQUIRED)
@@ -270,16 +268,15 @@ function stopPolling() {
 
 // Your app MUST implement loadLatestData() to fetch and display updates
 async function loadLatestData() {
-  // Example for a chat app:
-  const { data } = await supabase
-    .from('wtaf_zero_admin_collaborative')
-    .select('*')
-    .eq('app_id', APP_ID)
-    .eq('action_type', 'message') // or whatever your app uses
-    .order('created_at', { ascending: true });
+  try {
+    // Example for a chat app - replace 'message' with your app's data type
+    const data = await load('message'); // or whatever your app uses
     
-  // Update your UI with the latest data
-  updateUI(data); // You must implement this function
+    // Update your UI with the latest data
+    updateUI(data); // You must implement this function
+  } catch (error) {
+    console.error('Error loading latest data:', error);
+  }
 }
 ```
 
