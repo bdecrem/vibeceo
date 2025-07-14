@@ -130,7 +130,8 @@ export function replaceAppTableId(html: string, appSlug: string): string {
     
     // NEW: Handle ANY hardcoded app_id value in URL query parameters
     // Pattern: app_id=any_hardcoded_value -> app_id=uuid (catch values like WTAF_CONTACT_FORM)
-    html = html.replace(/app_id=([^'&\s\)]+)/g, `app_id=${appSlug}`);
+    // FIXED: Exclude template literal patterns to avoid breaking ${encodeURIComponent(app_id)} patterns
+    html = html.replace(/app_id=([^'&\s\)${}]+)/g, `app_id=${appSlug}`);
     
     // NEW: Handle HTML entity encoded quotes in URL parameters
     // Pattern: app_id=&#x27;any_value&#x27; -> app_id=uuid (HTML entity encoded)

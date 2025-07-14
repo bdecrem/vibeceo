@@ -353,4 +353,183 @@ EXAMPLE STRUCTURE WITH FULL 4-SCREEN AUTH:
 </html>
 ```
 
+## REAL-TIME CHAT FUNCTIONALITY
+
+**FOR CHAT APPS:** If building a chat/messaging app, add these specific functions for real-time updates:
+
+**1. Real-Time Polling Setup:**
+```javascript
+let pollingInterval = null;
+
+function startPolling() {
+    // Poll every 2 seconds for new messages
+    pollingInterval = setInterval(async () => {
+        await loadMessages();
+    }, 2000);
+    console.log('🔄 Started real-time polling for messages');
+}
+
+function stopPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        console.log('⏹️ Stopped real-time polling');
+    }
+}
+```
+
+**2. Chat Message Functions:**
+```javascript
+        async function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const messageText = messageInput.value.trim();
+            
+            if (!messageText || !currentUser) return;
+            
+            try {
+                // FIXED: Add better fallback for author name
+                const authorName = currentUser.userLabel || currentUser.username || 'Anonymous';
+                console.log('📤 Sending message as:', authorName);
+                
+                await save('messages', {
+                    text: messageText,
+                    author: authorName,
+                    timestamp: Date.now()
+                });
+                
+                messageInput.value = '';
+                console.log('📤 Message sent:', messageText);
+                
+                // Immediately reload messages to show the new one
+                await loadMessages();
+            } catch (error) {
+                console.error('❌ Error sending message:', error);
+            }
+        }
+
+async function loadMessages() {
+    try {
+        const messages = await load('messages');
+        displayMessages(messages);
+    } catch (error) {
+        console.error('❌ Error loading messages:', error);
+    }
+}
+
+        function displayMessages(messages) {
+            const messagesContainer = document.getElementById('messages-container');
+            if (!messagesContainer) return;
+            
+            // Sort messages by timestamp
+            const sortedMessages = messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            
+            // FIXED: Use same fallback logic for current user identification
+            const currentUserName = currentUser.userLabel || currentUser.username || 'Anonymous';
+            
+            messagesContainer.innerHTML = sortedMessages.map(msg => {
+                const isMyMessage = msg.author === currentUserName;
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                
+                return `
+                    <div class="message ${isMyMessage ? 'my-message' : 'other-message'}">
+                        <div class="message-author">${msg.author}</div>
+                        <div class="message-text">${msg.text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Auto-scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+```
+
+**3. Chat UI Example:**
+```html
+<div id="app-main">
+    <div id="messages-container" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="message-input" placeholder="Type your message..." 
+               style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"
+               onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px;">
+            Send
+        </button>
+    </div>
+</div>
+```
+
+**4. Chat CSS Styling:**
+```css
+.message {
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    max-width: 70%;
+}
+
+.my-message {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+    text-align: right;
+}
+
+.other-message {
+    background: #f1f1f1;
+    color: #333;
+    margin-right: auto;
+}
+
+.message-author {
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.message-text {
+    margin-bottom: 3px;
+}
+
+.message-time {
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+```
+
+**5. Start Polling After Login:**
+```javascript
+// Modify your enterMainApp function to start polling
+function enterMainApp() {
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('app-container').classList.add('active');
+    document.getElementById('current-user-label').textContent = currentUser.userLabel || currentUser.username;
+    
+    // Load app content
+    loadAppContent();
+    
+    // FOR CHAT APPS: Start real-time polling
+    startPolling();
+    loadMessages(); // Load initial messages
+}
+
+// Stop polling when user logs out
+function logout() {
+    stopPolling(); // Stop polling before logout
+    currentUser = null;
+    document.getElementById('auth-container').style.display = 'flex';
+    document.getElementById('app-container').classList.remove('active');
+    showScreen('welcome-screen');
+}
+```
+
+**IMPORTANT FOR CHAT APPS:**
+- Call `startPolling()` after user logs in to enable real-time updates
+- Call `stopPolling()` when user logs out to prevent memory leaks
+- Messages are automatically saved with author and timestamp
+- Users will see each other's messages within 2 seconds
+- The chat will scroll to the bottom automatically when new messages arrive
+
 Build the requested app using this structure with the full 4-screen authentication experience. Remember to call initAuth() first and put your app's main functionality in the "app-main" div! 
