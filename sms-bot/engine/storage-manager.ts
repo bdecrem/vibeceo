@@ -596,8 +596,8 @@ async function injectZadHelperFunctions(html: string): Promise<string> {
 // ZAD Helper Functions - Inline version for test apps
 console.log('🚀 Loading ZAD Helper Functions (inline)...');
 
-// Auth state
-let currentUser = null;
+// Auth state - Use existing global currentUser or create zadCurrentUser
+let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
 let authInitialized = false;
 
 // Get app ID from window.APP_ID (set by system)
@@ -633,12 +633,12 @@ function getAppId() {
                     localStorage.removeItem('zad_username');
                     
                     // For test apps, prompt for user and set up session
-                    currentUser = {
+                    zadCurrentUser = {
                         username: getUsername(),
                         participantId: getParticipantId()
                     };
                     
-                    console.log('✅ Authentication ready:', currentUser);
+                    console.log('✅ Authentication ready:', zadCurrentUser);
                 }
 
 // Save data to ZAD API
@@ -687,6 +687,203 @@ async function save(type, data) {
     }
 }
 
+// Phase 1 Authentication Backend Helper Functions
+// These call the backend API with specific action types
+
+// Backend Helper 1: Check Available Slots
+async function checkAvailableSlots() {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔍 Calling backend checkAvailableSlots for app:', app_id);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'check_slots',
+                content_data: {}
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Check slots failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend checkAvailableSlots result:', result.slots);
+        
+        return result.slots;
+        
+    } catch (error) {
+        console.error('❌ Check slots error:', error);
+        alert(\`Failed to check available slots: \${error.message}\`);
+        return { totalSlots: 5, usedSlots: 0, availableSlots: 5, availableLabels: [], usedLabels: [], isFull: false };
+    }
+}
+
+// Backend Helper 2: Generate User Credentials
+async function generateUser() {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🎲 Calling backend generateUser for app:', app_id);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'generate_user',
+                content_data: {}
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Generate user failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateUser result:', result);
+        
+        if (!result.success) {
+            alert(result.error || 'Failed to generate user');
+            return null;
+        }
+        
+        return result.user;
+        
+    } catch (error) {
+        console.error('❌ Generate user error:', error);
+        alert(\`Failed to generate user: \${error.message}\`);
+        return null;
+    }
+}
+
+// Backend Helper 3: Register User
+async function registerUser(userLabel, passcode, participantId) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('📝 Calling backend registerUser for app:', app_id, 'user:', userLabel);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'register_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode,
+                    participantId: participantId
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Register user failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend registerUser result:', result);
+        
+        if (!result.success) {
+            alert(result.result?.error || 'Registration failed');
+            return { success: false, error: result.result?.error };
+        }
+        
+        return result.result;
+        
+    } catch (error) {
+        console.error('❌ Register user error:', error);
+        alert(\`Registration failed: \${error.message}\`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper 4: Authenticate User
+async function authenticateUser(userLabel, passcode) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔐 Calling backend authenticateUser for app:', app_id, 'user:', userLabel);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'authenticate_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Authentication failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend authenticateUser result:', result);
+        
+        if (!result.success) {
+            alert(result.result?.error || 'Authentication failed');
+            return { success: false, error: result.result?.error };
+        }
+        
+        return result.result;
+        
+    } catch (error) {
+        console.error('❌ Authentication error:', error);
+        alert(\`Authentication failed: \${error.message}\`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper Function Test: greet(name)
+// This demonstrates how backend helper functions work - all logic happens on server
+async function greet(name) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🤖 Calling backend greet function for:', name);
+        
+        // Simple client call - all logic happens on backend
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'greet',
+                content_data: { name: name }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Greet failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend greet function result:', result);
+        
+        // Return the backend-generated greeting
+        return result.greeting;
+        
+    } catch (error) {
+        console.error('❌ Greet error:', error);
+        alert(\`Greet failed: \${error.message}\`);
+        return 'Error generating greeting';
+    }
+}
+
 // Load data from ZAD API
 async function load(type) {
     try {
@@ -727,9 +924,15 @@ window.load = load;
 window.getAppId = getAppId;
 window.getParticipantId = getParticipantId;
 window.getUsername = getUsername;
+window.greet = greet; // Add greet function to window object
+window.checkAvailableSlots = checkAvailableSlots;
+window.generateUser = generateUser;
+window.registerUser = registerUser;
+window.authenticateUser = authenticateUser;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-console.log('Available functions: initAuth(), save(type, data), load(type)');
+console.log('Available functions: initAuth(), save(type, data), load(type), greet(name)');
+console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 </script>`;
         
         // Inject before closing </head> tag, or before first <script> tag if no </head>
