@@ -30,14 +30,26 @@ await save('data_type', {
 const data = await load('data_type'); // Returns array of items
 ```
 
+**Update existing data:**
+```javascript
+await save('update_task', {
+  taskId: existingTask.id,
+  updates: {
+    completed: true,
+    modified_at: Date.now()
+  }
+});
+```
+
 **IMPORTANT**: Only use the `save()` and `load()` functions for database operations. Do not use any external database libraries or clients.
 
 **Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
 
 ### DATA PERSISTENCE PATTERN:
-For ideas: Update the SAME record by fetching it, modifying data, then saving
-Example: reactions should be stored as reactions = {emoji: count}
-Never create separate data types for reactions/comments
+For collaborative apps where records need to be updated (like marking tasks complete, updating status, etc.), use the update pattern:
+1. Load existing records with `load('data_type')`
+2. For updates, use `save('update_task', { taskId: item.id, updates: {...} })`
+3. Never create separate data types for reactions/comments - store as properties on the main record
 
 ### 3. Authentication System (LOCKED - DO NOT MODIFY)
 Use this exact pattern:
