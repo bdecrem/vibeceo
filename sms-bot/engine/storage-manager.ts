@@ -278,7 +278,11 @@ export async function saveCodeToSupabase(
         code = await injectZadHelperFunctions(code);
     }
     
-    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi || isNaturalZad) {
+    if (isNaturalZad) {
+        // Apply API-safe auto-fix for natural ZAD requests (fixes 1, 2, 4, 6, 7, 9, 10)
+        logWithTimestamp("🎨 Natural ZAD: Applying API-safe auto-fix (skips quote fixing)");
+        code = autoFixApiSafeIssues(code);
+    } else if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi) {
         if (isMinimalTest) {
             logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
         }
@@ -288,17 +292,13 @@ export async function saveCodeToSupabase(
         if (isZadApi) {
             logWithTimestamp("🚀 ZAD API: Skipping auto-fix processing (prevents breaking API calls)");
         }
-        if (usesZadHelpers && !isZadTest && !isZadApi && !isNaturalZad) {
+        if (usesZadHelpers && !isZadTest && !isZadApi) {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
         }
-        if (usesApiCalls && !isNaturalZad) {
+        if (usesApiCalls) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
         // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR auto-detected ZAD OR other API-based apps
-    } else if (isNaturalZad) {
-        // Apply API-safe auto-fix for natural ZAD requests (fixes 1, 2, 4, 6, 7, 9)
-        logWithTimestamp("🎨 Natural ZAD: Applying API-safe auto-fix (skips quote fixing)");
-        code = autoFixApiSafeIssues(code);
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
