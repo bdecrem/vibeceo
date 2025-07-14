@@ -232,6 +232,9 @@ export async function saveCodeToSupabase(
     // Check if this is ZAD test (skip auto-fix)
     const isZadTest = originalPrompt.includes('ZAD_TEST_MARKER');
     
+    // Check if this is ZAD API (comprehensive template with API conversion)
+    const isZadApi = originalPrompt.includes('ZAD_API_MARKER');
+    
     // Check if this code uses ZAD-style helper functions (auto-detect)
     // BUT: Skip auto-detection for ZAD test (use direct API calls instead)
     const usesZadHelpers = !isZadTest && (/\bawait\s+save\s*\(/.test(code) || /\bawait\s+load\s*\(/.test(code) ||
@@ -247,10 +250,18 @@ export async function saveCodeToSupabase(
         code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     }
     
-    // Inject ZAD helper functions for ZAD test apps OR auto-detected ZAD-style code
-    if (isZadTest || usesZadHelpers) {
+    // Convert Supabase calls to API calls for ZAD API apps
+    if (isZadApi) {
+        logWithTimestamp("🚀 ZAD API: Converting Supabase calls to API calls");
+        code = await convertSupabaseToApiCalls(code);
+    }
+    
+    // Inject ZAD helper functions for ZAD test apps OR auto-detected ZAD-style code OR ZAD API apps
+    if (isZadTest || usesZadHelpers || isZadApi) {
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Injecting helper functions");
+        } else if (isZadApi) {
+            logWithTimestamp("🚀 ZAD API: Injecting helper functions");
         } else {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD-STYLE CODE: Injecting helper functions");
         }
@@ -258,20 +269,23 @@ export async function saveCodeToSupabase(
         code = await injectZadHelperFunctions(code);
     }
     
-    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers) {
+    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi) {
         if (isMinimalTest) {
             logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
         }
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Skipping auto-fix processing");
         }
-        if (usesZadHelpers && !isZadTest) {
+        if (isZadApi) {
+            logWithTimestamp("🚀 ZAD API: Skipping auto-fix processing (prevents breaking API calls)");
+        }
+        if (usesZadHelpers && !isZadTest && !isZadApi) {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
         }
         if (usesApiCalls) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
-        // Skip auto-fix for minimal test OR ZAD test OR auto-detected ZAD OR any API-based app
+        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR auto-detected ZAD OR any API-based app
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
@@ -986,6 +1000,94 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
     } catch (error) {
         logError(`Failed to inject ZAD helper functions: ${error instanceof Error ? error.message : String(error)}`);
         // Fallback: return original HTML if injection fails
+        return html;
+    }
+}
+
+/**
+ * Convert Supabase calls to API calls for ZAD API apps
+ * This enables using the comprehensive template with API-based architecture
+ */
+export async function convertSupabaseToApiCalls(html: string): Promise<string> {
+    try {
+        logWithTimestamp("🔄 Converting Supabase calls to API calls for ZAD API app...");
+        
+        // Pattern 1: INSERT operations
+        // supabase.from('wtaf_zero_admin_collaborative').insert({...}) -> await save('type', {...})
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.insert\(\{([^}]+)\}\)/g,
+            (match, content) => {
+                logWithTimestamp("🔄 Converting INSERT operation to save() call");
+                return `await save('data', {${content}})`;
+            }
+        );
+        
+        // Pattern 2: SELECT operations
+        // supabase.from('wtaf_zero_admin_collaborative').select('*').eq('app_id', app_id) -> await load('data')
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.select\([^)]+\)\.eq\(['"`]app_id['"`][^)]+\)/g,
+            (match) => {
+                logWithTimestamp("🔄 Converting SELECT operation to load() call");
+                return `await load('data')`;
+            }
+        );
+        
+        // Pattern 3: UPDATE operations
+        // supabase.from('wtaf_zero_admin_collaborative').update({...}).eq('id', id) -> await save('data', {...})
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.update\(\{([^}]+)\}\)\.eq\([^)]+\)/g,
+            (match, content) => {
+                logWithTimestamp("🔄 Converting UPDATE operation to save() call");
+                return `await save('data', {${content}})`;
+            }
+        );
+        
+        // Pattern 4: Specific message-related operations
+        // Convert message-specific Supabase calls to message-specific API calls
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.insert\(\{([^}]*message[^}]*)\}\)/g,
+            (match, content) => {
+                logWithTimestamp("🔄 Converting message INSERT to save('messages', ...) call");
+                return `await save('messages', {${content}})`;
+            }
+        );
+        
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.select\([^)]+\)\.eq\(['"`]app_id['"`][^)]+\)\.order\(['"`]created_at['"`]/g,
+            (match) => {
+                logWithTimestamp("🔄 Converting message SELECT to load('messages') call");
+                return `await load('messages')`;
+            }
+        );
+        
+        // Pattern 5: Remove Supabase client imports and initialization
+        html = html.replace(
+            /import\s+\{[^}]*createClient[^}]*\}\s+from\s+['"`]@supabase\/supabase-js['"`];?\s*/g,
+            ''
+        );
+        
+        html = html.replace(
+            /const\s+supabase\s*=\s*createClient\([^)]+\);\s*/g,
+            ''
+        );
+        
+        // Pattern 6: Remove any Supabase URL/key references
+        html = html.replace(
+            /const\s+SUPABASE_URL\s*=\s*['"`][^'"`]+['"`];\s*/g,
+            ''
+        );
+        
+        html = html.replace(
+            /const\s+SUPABASE_ANON_KEY\s*=\s*['"`][^'"`]+['"`];\s*/g,
+            ''
+        );
+        
+        logWithTimestamp("🔄 Supabase to API conversion completed successfully");
+        return html;
+        
+    } catch (error) {
+        logError(`Failed to convert Supabase calls to API calls: ${error instanceof Error ? error.message : String(error)}`);
+        // Fallback: return original HTML if conversion fails
         return html;
     }
 }

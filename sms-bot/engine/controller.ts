@@ -286,6 +286,16 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🧪 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // 🚀 ZAD API: Check for --zad-api flag to force comprehensive ZAD with API conversion
+    let isZadApi = false;
+    if (userPrompt && userPrompt.includes('--zad-api')) {
+        logWithTimestamp("🚀 ZAD-API OVERRIDE DETECTED: Using comprehensive ZAD builder with API conversion");
+        // Clean the prompt by removing the zad-api flag
+        userPrompt = userPrompt.replace(/--zad-api\s*/g, '').trim();
+        isZadApi = true;
+        logWithTimestamp(`🚀 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
+    
     // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
     let isStackDBRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
@@ -775,6 +785,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         if (isZadTest) {
             promptToProcess = userPrompt + ' ZAD_TEST_MARKER';
             logWithTimestamp("🧪 Added ZAD_TEST_MARKER to prompt for simple ZAD processing");
+        }
+        
+        // Add marker for ZAD API if needed
+        if (isZadApi) {
+            promptToProcess = userPrompt + ' ZAD_API_MARKER';
+            logWithTimestamp("🚀 Added ZAD_API_MARKER to prompt for comprehensive ZAD with API conversion");
         }
         
         const completePrompt = await generateCompletePrompt(promptToProcess, classifierConfig);
