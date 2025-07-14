@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Authentication Backend Helper Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00FFC6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #333;
+            border-radius: 8px;
+            border-left: 4px solid #00FFC6;
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #00FFC6;
+            border-radius: 5px;
+            background: #444;
+            color: white;
+            width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00FFC6;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #57E2E5;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Phase 1 Authentication Backend Helper Test</h1>
+        <p>Testing the 4 core authentication backend helper functions</p>
+        
+        <div class="test-section">
+            <h3>1. Check Available Slots</h3>
+            <button onclick="testCheckSlots()">Test checkAvailableSlots()</button>
+            <p><em>Shows how many user slots are available out of 5</em></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. Generate User</h3>
+            <button onclick="testGenerateUser()">Test generateUser()</button>
+            <p><em>Generates new user credentials (userLabel + 4-digit passcode)</em></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. Register User</h3>
+            <input type="text" id="regUserLabel" placeholder="User Label (e.g., CHAOS_AGENT)" value="CHAOS_AGENT">
+            <input type="text" id="regPasscode" placeholder="4-digit code" maxlength="4" value="1234">
+            <input type="text" id="regParticipantId" placeholder="Participant ID" value="CHAOS_AGENT_1234">
+            <br>
+            <button onclick="testRegisterUser()">Test registerUser()</button>
+            <p><em>Registers a user with the provided credentials</em></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. Authenticate User</h3>
+            <input type="text" id="authUserLabel" placeholder="User Label" value="CHAOS_AGENT">
+            <input type="text" id="authPasscode" placeholder="4-digit code" maxlength="4" value="1234">
+            <br>
+            <button onclick="testAuthenticateUser()">Test authenticateUser()</button>
+            <p><em>Authenticates a user with userLabel + passcode</em></p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Set up app context for testing
+        window.APP_ID = 'auth-backend-test';
+        
+        function log(message) {
+            const resultDiv = document.getElementById('result');
+            const timestamp = new Date().toLocaleTimeString();
+            resultDiv.textContent += `[${timestamp}] ${message}\n`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Phase 1 Authentication Backend Helper Functions
+        async function checkAvailableSlots() {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'auth-backend-test',
+                        action_type: 'check_slots',
+                        content_data: {}
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Check slots failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                return result.slots;
+                
+            } catch (error) {
+                console.error('❌ Check slots error:', error);
+                throw error;
+            }
+        }
+        
+        async function generateUser() {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'auth-backend-test',
+                        action_type: 'generate_user',
+                        content_data: {}
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Generate user failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (error) {
+                console.error('❌ Generate user error:', error);
+                throw error;
+            }
+        }
+        
+        async function registerUser(userLabel, passcode, participantId) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'auth-backend-test',
+                        action_type: 'register_user',
+                        content_data: {
+                            userLabel: userLabel,
+                            passcode: passcode,
+                            participantId: participantId
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Register user failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (error) {
+                console.error('❌ Register user error:', error);
+                throw error;
+            }
+        }
+        
+        async function authenticateUser(userLabel, passcode) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'auth-backend-test',
+                        action_type: 'authenticate_user',
+                        content_data: {
+                            userLabel: userLabel,
+                            passcode: passcode
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Authentication failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (error) {
+                console.error('❌ Authentication error:', error);
+                throw error;
+            }
+        }
+        
+        // Test Functions
+        async function testCheckSlots() {
+            log('🔍 Testing checkAvailableSlots()...');
+            try {
+                const slots = await checkAvailableSlots();
+                log(`✅ Result: ${JSON.stringify(slots, null, 2)}`);
+                log(`📊 Summary: ${slots.availableSlots} slots available: ${slots.availableLabels.join(', ')}`);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function testGenerateUser() {
+            log('🎲 Testing generateUser()...');
+            try {
+                const result = await generateUser();
+                log(`✅ Result: ${JSON.stringify(result, null, 2)}`);
+                if (result.success && result.user) {
+                    log(`🎯 Generated: ${result.user.userLabel} with code ${result.user.passcode}`);
+                    // Auto-fill the registration form
+                    document.getElementById('regUserLabel').value = result.user.userLabel;
+                    document.getElementById('regPasscode').value = result.user.passcode;
+                    document.getElementById('regParticipantId').value = result.user.participantId;
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function testRegisterUser() {
+            const userLabel = document.getElementById('regUserLabel').value;
+            const passcode = document.getElementById('regPasscode').value;
+            const participantId = document.getElementById('regParticipantId').value;
+            
+            log(`📝 Testing registerUser(${userLabel}, ${passcode}, ${participantId})...`);
+            try {
+                const result = await registerUser(userLabel, passcode, participantId);
+                log(`✅ Result: ${JSON.stringify(result, null, 2)}`);
+                if (result.success) {
+                    log(`🎉 Registration successful: ${result.result.message}`);
+                    // Auto-fill the authentication form
+                    document.getElementById('authUserLabel').value = userLabel;
+                    document.getElementById('authPasscode').value = passcode;
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function testAuthenticateUser() {
+            const userLabel = document.getElementById('authUserLabel').value;
+            const passcode = document.getElementById('authPasscode').value;
+            
+            log(`🔐 Testing authenticateUser(${userLabel}, ${passcode})...`);
+            try {
+                const result = await authenticateUser(userLabel, passcode);
+                log(`✅ Result: ${JSON.stringify(result, null, 2)}`);
+                if (result.success) {
+                    log(`🎉 Authentication successful: ${result.result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = () => {
+            log('🚀 Phase 1 Authentication Backend Helper Test loaded');
+            log('📝 Ready to test authentication functions');
+            log('💡 Tip: Start with "Check Available Slots" to see current state');
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1 @@
+wtaf --zad-api make a simple habit tracker app for me where I first set my goals and then track them

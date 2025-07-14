@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Helper Function Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00FFC6;
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #00FFC6;
+            border-radius: 5px;
+            background: #333;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00FFC6;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #57E2E5;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 5px;
+            border-left: 4px solid #00FFC6;
+        }
+        .log {
+            background: #1a1a1a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Backend Helper Function Test</h1>
+        <p>This demonstrates how backend helper functions work - all logic happens on the server!</p>
+        
+        <div>
+            <input type="text" id="nameInput" placeholder="Enter your name" value="Alice">
+            <button onclick="testGreet()">Test greet() Function</button>
+        </div>
+        
+        <div id="result"></div>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        // Set up app context for testing
+        window.APP_ID = 'backend-helper-test';
+        
+        // Simple client-side greet function that calls backend
+        async function greet(name) {
+            try {
+                log('🤖 Calling backend greet function for: ' + name);
+                
+                // Simple client call - all logic happens on backend
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'backend-helper-test',
+                        participant_id: 'test-user',
+                        participant_data: { userLabel: 'Tester', username: 'Tester' },
+                        action_type: 'greet',
+                        content_data: { name: name }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Greet failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                log('✅ Backend greet function result: ' + JSON.stringify(result, null, 2));
+                
+                // Return the backend-generated greeting
+                return result.greeting;
+                
+            } catch (error) {
+                log('❌ Greet error: ' + error.message);
+                return 'Error generating greeting';
+            }
+        }
+        
+        async function testGreet() {
+            const name = document.getElementById('nameInput').value || 'Anonymous';
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<p>⏳ Calling backend helper function...</p>';
+            
+            try {
+                const greeting = await greet(name);
+                resultDiv.innerHTML = `
+                    <h3>✅ Backend Helper Function Result:</h3>
+                    <p><strong>${greeting}</strong></p>
+                    <p><em>This greeting was generated entirely on the backend!</em></p>
+                    <p>Check the database table 'wtaf_zero_admin_collaborative' to see the saved record.</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function log(message) {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log';
+            logEntry.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logsDiv.appendChild(logEntry);
+            console.log(message);
+        }
+        
+        // Auto-test on page load
+        window.onload = () => {
+            log('🚀 Backend Helper Function Test loaded');
+            log('📝 Ready to test greet() function');
+        };
+    </script>
+</body>
+</html> 

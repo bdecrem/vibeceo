@@ -559,6 +559,34 @@ export function autoFixApiSafeIssues(html: string): string {
     // Fix 9: Clean up extra empty lines (already done above, but ensure it's clean)
     fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
     
+    // Fix 10: Fix _id vs id mismatch for ZAD API apps
+    // ZAD API returns data with 'id' but Claude generates code expecting '_id' (Supabase convention)
+    const idMismatchPatterns = [
+        // Pattern 1: task._id in JavaScript expressions  
+        { from: /(\w+)\._id(?=\s*[=!<>])/g, to: '$1.id', desc: 'object._id comparisons' },
+        // Pattern 2: task._id in template literals
+        { from: /\$\{(\w+)\._id\}/g, to: '${$1.id}', desc: 'template literal _id references' },
+        // Pattern 3: item._id in find/filter operations
+        { from: /(\w+)\s*=>\s*(\w+)\._id\s*===/g, to: '$1 => $2.id ===', desc: 'find/filter _id comparisons' },
+        // Pattern 4: Generic _id property access
+        { from: /\.\_id(?=\s*[;\)\],}])/g, to: '.id', desc: 'generic _id property access' }
+    ];
+    
+    let idFixesApplied = 0;
+    idMismatchPatterns.forEach(({from, to, desc}) => {
+        const originalFixed = fixed;
+        fixed = fixed.replace(from, to);
+        if (fixed !== originalFixed) {
+            idFixesApplied++;
+            logWithTimestamp(`🔧 Fixed: ${desc}`);
+        }
+    });
+    
+    if (idFixesApplied > 0) {
+        logWithTimestamp(`🔧 Applied ${idFixesApplied} _id → id fixes for ZAD API compatibility`);
+        fixesApplied += idFixesApplied;
+    }
+    
     if (fixesApplied > 0) {
         logWithTimestamp(`✅ API-safe auto-fix completed: ${fixesApplied} issue(s) fixed`);
     } else {

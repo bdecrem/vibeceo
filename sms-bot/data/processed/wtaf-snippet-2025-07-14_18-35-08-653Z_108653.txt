@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+--zad-api make a simple chat app for me and my friends

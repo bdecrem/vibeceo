@@ -1,0 +1,154 @@
+Here's a simple journal app that allows users to create, view, and save journal entries:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Journal</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .entry-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .entry {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .entry-date {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .entry-text {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Journal</h1>
+    
+    <div class="entry-form">
+        <h2>New Entry</h2>
+        <textarea id="entryText" placeholder="Write your thoughts..."></textarea>
+        <button onclick="saveEntry()">Save Entry</button>
+    </div>
+
+    <h2>Previous Entries</h2>
+    <div id="entriesList"></div>
+    
+    <script>
+        // Initialize authentication
+        initAuth();
+        
+        // Save a new journal entry
+        async function saveEntry() {
+            const entryText = document.getElementById('entryText').value.trim();
+            if (!entryText) return;
+            
+            const entry = {
+                text: entryText,
+                date: new Date().toISOString(),
+            };
+            
+            try {
+                await save('journal-entries', entry);
+                document.getElementById('entryText').value = '';
+                loadEntries(); // Refresh the entries list
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                alert('Failed to save entry. Please try again.');
+            }
+        }
+        
+        // Load and display all journal entries
+        async function loadEntries() {
+            try {
+                const entries = await load('journal-entries');
+                const entriesList = document.getElementById('entriesList');
+                entriesList.innerHTML = ''; // Clear current entries
+                
+                // Sort entries by date, newest first
+                entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                entries.forEach(entry => {
+                    const entryDiv = document.createElement('div');
+                    entryDiv.className = 'entry';
+                    
+                    const date = new Date(entry.date).toLocaleString();
+                    entryDiv.innerHTML = `
+                        <div class="entry-date">${date}</div>
+                        <div class="entry-text">${entry.text}</div>
+                    `;
+                    
+                    entriesList.appendChild(entryDiv);
+                });
+            } catch (error) {
+                console.error('Error loading entries:', error);
+                alert('Failed to load entries. Please refresh the page.');
+            }
+        }
+        
+        // Load entries when the page loads
+        window.onload = loadEntries;
+    </script>
+</body>
+</html>
+```
+
+This journal app includes the following features:
+
+1. A text area to write new journal entries
+2. A save button to store entries
+3. Display of all previous entries, sorted by date (newest first)
+4. Responsive design with clean styling
+5. Error handling for save and load operations
+6. Automatic refresh of entries list after saving
+7. Date and time stamp for each entry
+8. Pre-wrapped text formatting for better readability
+
+To use the app:
+
+1. Simply write your thoughts in the text area
+2. Click "Save Entry" to store your entry
+3. Your entry will appear in the list below with the most recent entries at the top
+4. All entries are preserved between sessions
+
+The app uses the provided helper functions:
+- `initAuth()` for authentication
+- `save()` to store new journal entries
+- `load()` to retrieve previous entries
+
+The styling is clean and modern, with subtle shadows and spacing to make the interface pleasant to use. Each entry is clearly separated and includes a timestamp.
