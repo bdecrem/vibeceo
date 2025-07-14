@@ -459,4 +459,111 @@ export function autoFixCommonIssues(html: string): string {
     }
     
     return fixed;
-} 
+}
+
+/**
+ * Auto-fix issues that are safe for API-based apps
+ * Applies fixes: 1, 2, 4, 6, 7, 9
+ * Skips fixes: 3 (Supabase-specific), 5 (breaks JSON), 8 (not needed)
+ */
+export function autoFixApiSafeIssues(html: string): string {
+    logWithTimestamp('🔧 Running API-safe auto-fix...');
+    let fixed = html;
+    let fixesApplied = 0;
+    
+    // Fix 1: Make showNewUserScreen async
+    if (fixed.includes('showNewUserScreen()') && !fixed.includes('async function showNewUserScreen()')) {
+        fixed = fixed.replace(
+            /function showNewUserScreen\(\)/g,
+            'async function showNewUserScreen()'
+        );
+        if (fixed !== html) {
+            fixesApplied++;
+            logWithTimestamp('🔧 Fixed: Made showNewUserScreen async');
+        }
+    }
+    
+    // Fix 2: Fix APP_ID to correct value (catch common wrong values)
+    const wrongAppIds = ['hello_world_generator', 'hello_world_gen', 'test_app', 'sample_app'];
+    wrongAppIds.forEach(wrongId => {
+        if (fixed.includes(`'${wrongId}'`)) {
+            // This will be handled by existing replaceAppTableId function later
+            logWithTimestamp(`⚠️ Warning: Found hardcoded APP_ID '${wrongId}' - will be corrected by UUID injection`);
+        }
+    });
+    
+    // Fix 4: Remove duplicate variable declarations
+    const duplicateCurrentUserMatches = fixed.match(/let currentUser = null;/g);
+    if (duplicateCurrentUserMatches && duplicateCurrentUserMatches.length > 1) {
+        logWithTimestamp(`🔧 Found ${duplicateCurrentUserMatches.length} duplicate 'let currentUser = null;' declarations`);
+        
+        // Split into lines, find first occurrence, remove duplicates
+        const lines = fixed.split('\n');
+        let firstOccurrenceFound = false;
+        
+        const fixedLines = lines.map(line => {
+            if (line.includes('let currentUser = null;')) {
+                if (!firstOccurrenceFound) {
+                    firstOccurrenceFound = true;
+                    return line; // Keep the first occurrence
+                } else {
+                    return ''; // Remove duplicate occurrences
+                }
+            }
+            return line;
+        });
+        
+        fixed = fixedLines.join('\n');
+        // Clean up any extra empty lines
+        fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
+        
+        fixesApplied++;
+        logWithTimestamp('🔧 Fixed: Removed duplicate currentUser declaration');
+    }
+    
+    // Fix 6 & 7: Remove duplicate userState and appState declarations
+    const duplicatePatterns = [
+        { pattern: /let userState = null;/g, name: 'userState' },
+        { pattern: /let appState = null;/g, name: 'appState' }
+    ];
+    
+    duplicatePatterns.forEach(({pattern, name}) => {
+        const matches = fixed.match(pattern);
+        if (matches && matches.length > 1) {
+            logWithTimestamp(`🔧 Found ${matches.length} duplicate '${name}' declarations`);
+            
+            // For each pattern, keep only the first occurrence
+            const lines = fixed.split('\n');
+            let firstFound = false;
+            
+            const fixedLines = lines.map(line => {
+                if (pattern.test(line)) {
+                    if (!firstFound) {
+                        firstFound = true;
+                        return line; // Keep first occurrence
+                    } else {
+                        return ''; // Remove duplicates
+                    }
+                }
+                return line;
+            });
+            
+            fixed = fixedLines.join('\n');
+            fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
+            
+            fixesApplied++;
+            logWithTimestamp(`🔧 Fixed: Removed duplicate ${name} declaration`);
+        }
+    });
+    
+    // Fix 9: Clean up extra empty lines (already done above, but ensure it's clean)
+    fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    if (fixesApplied > 0) {
+        logWithTimestamp(`✅ API-safe auto-fix completed: ${fixesApplied} issue(s) fixed`);
+    } else {
+        logWithTimestamp('✅ API-safe auto-fix completed: No issues found');
+    }
+    
+    return fixed;
+}
