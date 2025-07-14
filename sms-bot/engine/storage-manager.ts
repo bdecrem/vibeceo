@@ -665,14 +665,14 @@ function getAppId() {
     }
 }
 
-                // Get participant ID - return stored ID or generate temporary one
+                // Get participant ID - prompt if not in current session
                 function getParticipantId() {
                     let participantId = localStorage.getItem('zad_participant_id');
                     if (!participantId) {
-                        // Generate temporary ID without prompting - app handles its own auth
-                        participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                        const username = prompt('Enter your name:') || 'Anonymous';
+                        participantId = username.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.random().toString(36).substr(2, 6);
                         localStorage.setItem('zad_participant_id', participantId);
-                        localStorage.setItem('zad_username', 'Anonymous');
+                        localStorage.setItem('zad_username', username);
                     }
                     return participantId;
                 }
@@ -688,8 +688,11 @@ function getAppId() {
                     if (authInitialized) return;
                     authInitialized = true;
                     
-                    // Don't clear localStorage - let app handle its own authentication
-                    // Initialize auth state from existing data or defaults
+                    // Clear any previous session data (force fresh login)
+                    localStorage.removeItem('zad_participant_id');
+                    localStorage.removeItem('zad_username');
+                    
+                    // For test apps, prompt for user and set up session
                     zadCurrentUser = {
                         username: getUsername(),
                         participantId: getParticipantId()
