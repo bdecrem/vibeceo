@@ -208,6 +208,17 @@ ZERO_ADMIN_DATA: true
 APP_TYPE: zero_admin_data`;
             logWithTimestamp("🧪 ZAD-test override: Created simple ZAD test prompt without classifier");
         }
+        
+        // 🚀 ZAD API OVERRIDE CHECK: Skip classifier entirely if zad api is set
+        if (cleanedInput.includes('ZAD_API_MARKER')) {
+            logWithTimestamp("🚀 ZAD-API OVERRIDE: Skipping classifier, going to comprehensive ZAD builder with API conversion");
+            expandedPrompt = `ZAD_API_REQUEST: ${cleanedInput.replace('ZAD_API_MARKER', '').trim()}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: true
+APP_TYPE: zero_admin_data`;
+            logWithTimestamp("🚀 ZAD-api override: Created comprehensive ZAD with API conversion prompt without classifier");
+        }
         else {
             // APP PATH: Use classifier to expand and clarify the request
             logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
@@ -389,6 +400,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-zad-simple-test.txt';
         builderType = 'Simple ZAD Test Builder';
         logWithTimestamp(`🧪 Using simple ZAD test builder for: ${userRequest.slice(0, 50)}...`);
+    } else if (userPrompt.includes('ZAD_API_REQUEST:')) {
+        logWithTimestamp(`🚀 ZAD_API_REQUEST detected - using comprehensive ZAD builder with API conversion`);
+        // Extract the user request from the ZAD API request
+        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("ZAD_API_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🚀 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-zad-comprehensive.txt';
+        builderType = 'Comprehensive ZAD Builder with API Conversion';
+        logWithTimestamp(`🚀 Using comprehensive ZAD builder with API conversion for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
@@ -478,6 +502,15 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             logWithTimestamp(`🧪 ZAD TEST: Using clean user request for simple test builder: ${userRequest.slice(0, 50)}...`);
         }
     }
+    // For ZAD API requests, replace with the actual user request
+    else if (userPrompt.includes('ZAD_API_REQUEST:')) {
+        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
+            logWithTimestamp(`🚀 ZAD API: Using clean user request for comprehensive builder with API conversion: ${userRequest.slice(0, 50)}...`);
+        }
+    }
     
     if (coach && coachPersonality) {
         builderUserPrompt += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
@@ -543,6 +576,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     // Determine timeout based on request type (declare before try-catch for scope)
     const isZadRequest = userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') || 
                          userPrompt.includes('ZAD_TEST_REQUEST:') ||
+                         userPrompt.includes('ZAD_API_REQUEST:') ||
                          userPrompt.includes('ZERO_ADMIN_DATA: true');
     const timeout = isZadRequest ? ZAD_TIMEOUT_MS : WORKER_TIMEOUT_MS;
     
@@ -569,6 +603,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         
         // Validate ZAD responses for completeness (reuse isZadRequest from above)
         // BUT: Skip validation for ZAD test (uses simple API calls, not authentication functions)
+        // Note: ZAD_API_REQUEST needs validation since it uses comprehensive template
         if (isZadRequest && !userPrompt.includes('ZAD_TEST_REQUEST:')) {
             const hasPlaceholderComments = result.includes('[Previous authentication functions remain exactly the same]') || 
                                           result.includes('Include all the required authentication functions here') ||
