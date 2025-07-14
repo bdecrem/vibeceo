@@ -880,7 +880,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                     coach || "unknown", 
                     userSlug, 
                     senderPhone, 
-                    userPrompt
+                    completePrompt
                 );
                 
                 if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
@@ -912,7 +912,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             } else {
                 // Single page deployment
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, userPrompt);
+                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, completePrompt);
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);

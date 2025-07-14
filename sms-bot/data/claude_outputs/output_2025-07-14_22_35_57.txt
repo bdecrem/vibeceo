@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TASK MAYHEM 🎯</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a, #3a3a3a);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select, textarea {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .task-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,255,198,0.2);
+        }
+
+        .task-card.completed {
+            background: rgba(0,255,198,0.1);
+            border-color: rgba(0,255,198,0.3);
+        }
+
+        .task-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .task-meta {
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        #new-task-form {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: rgba(255,46,147,0.2);
+            color: #FF2E93;
+        }
+
+        .status-completed {
+            background: rgba(0,255,198,0.2);
+            color: #00FFC6;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">🎯</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">⚡</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">🔥</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">💎</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>TASK MAYHEM 🎯</h1>
+            <p>ENTER THE CHAOS REALM OF COLLABORATIVE PRODUCTIVITY!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>TASK MAYHEM 🎯</h1>
+            <div id="user-status">CHAOS AGENT: <span id="current-user-label"></span></div>
+            
+            <div id="app-content">
+                <div id="new-task-form">
+                    <h2>SPAWN NEW TASK 🚀</h2>
+                    <input type="text" id="task-title" placeholder="WHAT NEEDS TO BE DONE?" required>
+                    <textarea id="task-description" placeholder="DESCRIBE THE CHAOS..." rows="3"></textarea>
+                    <select id="task-assignee">
+                        <option value="">CHOOSE YOUR VICTIM</option>
+                    </select>
+                    <button onclick="createTask()">UNLEASH TASK</button>
+                </div>
+
+                <div id="tasks-container">
+                    <h2>ACTIVE MISSIONS</h2>
+                    <div id="tasks-list"></div>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">ESCAPE PORTAL</button>
+        </div>
+    </div>
+
+    <script>
+        const APP_ID = 'test1';
+        const USER_LABELS = ['TaskMaster🎯', 'ChaosBringer⚡', 'DeadlineSlayer🌟', 'ProductivityNinja🔥', 'TaskWarrior💎'];
+        let currentUser = null;
+        let pollingInterval;
+
+        // Authentication System
+        let currentUser = null;
+
+        async function generateNewUser() {
+            try {
+                const slots = await checkAvailableSlots();
+                
+                if (slots.isFull) {
+                    alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                    return false;
+                }
+                
+                const user = await generateUser();
+                if (user && user.success) {
+                    currentUser = {
+                        userLabel: user.userLabel,
+                        passcode: user.passcode,
+                        participantId: user.participantId
+                    };
+                    
+                    document.getElementById('new-user-info').innerHTML = 
+                        `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+                    
+                    return true;
+                } else {
+                    alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                    return false;
+                }
+            } catch (error) {
+                console.error('User generation error:', error);
+                alert('GENERATION EXPLODED, TRY AGAIN 💥');
+                return false;
+            }
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+            
+            try {
+                const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+                if (result && result.success) {
+                    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                    enterMainScreen();
+                } else {
+                    alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR IDENTITY, PHANTOM 👻');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const result = await authenticateUser(selectedLabel, enteredPasscode);
+                if (result && result.success) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: result.user.participantId
+                    };
+                    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                    enterMainScreen();
+                } else {
+                    alert('NICE TRY, WRONG VIBES ❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            
+            try {
+                const slots = await checkAvailableSlots();
+                const userSelect = document.getElementById('user-label-select');
+                userSelect.innerHTML = '<option>Select User</option>';
+                
+                slots.usedLabels.forEach(label => {
+                    const option = document.createElement('option');
+                    option.value = label;
+                    option.textContent = label;
+                    userSelect.appendChild(option);
+                });
+                
+                if (slots.usedLabels.length === 0) {
+                    userSelect.innerHTML = '<option>No users registered yet</option>';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('user-label-select').innerHTML = '<option>Error loading users</option>';
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            updateAssigneeDropdown();
+            startPolling();
+            loadLatestData();
+        }
+
+        // Task Management Functions
+        async function createTask() {
+            const title = document.getElementById('task-title').value.trim();
+            const description = document.getElementById('task-description').value.trim();
+            const assignee = document.getElementById('task-assignee').value;
+
+            if (!title) {
+                alert('TASK NEEDS A NAME, CHAOS AGENT! 📝');
+                return;
+            }
+
+            if (!assignee) {
+                alert('CHOOSE A WARRIOR TO ASSIGN! 🎯');
+                return;
+            }
+
+            try {
+                await save('task', {
+                    title,
+                    description,
+                    assignee,
+                    creator: currentUser.userLabel,
+                    completed: false,
+                    timestamp: Date.now()
+                });
+
+                document.getElementById('task-title').value = '';
+                document.getElementById('task-description').value = '';
+                document.getElementById('task-assignee').value = '';
+                
+                loadLatestData();
+            } catch (error) {
+                console.error('Error creating task:', error);
+                alert('TASK CREATION FAILED! THE CHAOS GODS ARE ANGRY! 💥');
+            }
+        }
+
+        async function toggleTaskComplete(taskId) {
+            try {
+                const tasks = await load('task');
+                const task = tasks.find(t => t.id === taskId);
+                
+                if (task) {
+                    task.completed = !task.completed;
+                    await save('task', task);
+                    loadLatestData();
+                }
+            } catch (error) {
+                console.error('Error toggling task:', error);
+                alert('TASK UPDATE FAILED! CHAOS REIGNS! 💥');
+            }
+        }
+
+        async function loadLatestData() {
+            try {
+                const tasks = await load('task');
+                const tasksList = document.getElementById('tasks-list');
+                tasksList.innerHTML = '';
+
+                tasks.sort((a, b) => b.timestamp - a.timestamp).forEach(task => {
+                    const taskCard = document.createElement('div');
+                    taskCard.className = `task-card ${task.completed ? 'completed' : ''}`;
+                    taskCard.innerHTML = `
+                        <h3>${task.title}</h3>
+                        <p>${task.description || 'No description provided'}</p>
+                        <div class="task-meta">
+                            <span>Created by: ${task.creator}</span><br>
+                            <span>Assigned to: ${task.assignee}</span>
+                        </div>
+                        <div class="task-controls">
+                            <span class="task-status ${task.completed ? 'status-completed' : 'status-pending'}">
+                                ${task.completed ? '✓ CONQUERED' : '⚡ ACTIVE'}
+                            </span>
+                            <button onclick="toggleTaskComplete('${task.id}')">${task.completed ? 'REACTIVATE' : 'COMPLETE'}</button>
+                        </div>
+                    `;
+                    tasksList.appendChild(taskCard);
+                });
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        async function updateAssigneeDropdown() {
+            try {
+                const slots = await checkAvailableSlots();
+                const assigneeSelect = document.getElementById('task-assignee');
+                assigneeSelect.innerHTML = '<option value="">CHOOSE YOUR VICTIM</option>';
+                
+                slots.usedLabels.forEach(label => {
+                    const option = document.createElement('option');
+                    option.value = label;
+                    option.textContent = label;
+                    assigneeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error updating assignee dropdown:', error);
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+        window.wtaf = function() {
+            document.body.style.animation = 'rainbow 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+            }, 3000);
+        };
+
+        // Initialize authentication
+        initAuth();
+    </script>
+</body>
+</html>
