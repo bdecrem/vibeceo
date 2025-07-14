@@ -275,6 +275,64 @@ export async function POST(req: NextRequest) {
         result: authResult
       }, { status: 200 });
     }
+    
+    // BACKEND HELPER FUNCTION: Update existing record (for collaborative apps)
+    if (action_type === 'update_task') {
+      const { taskId, updates } = content_data || {};
+      console.log('✏️ Backend helper: updateTask for app:', app_id, 'task:', taskId);
+      
+      if (!taskId) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing taskId for update operation' 
+        }, { status: 400 });
+      }
+      
+      if (!participant_id) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing participant_id for update operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Update the existing record
+        const { data, error } = await supabase
+          .from('wtaf_zero_admin_collaborative')
+          .update({
+            content_data: updates,
+            updated_at: new Date().toISOString()
+          })
+          .eq('app_id', app_id)
+          .eq('id', taskId)
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Update error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to update task: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Task updated successfully:', data);
+        return NextResponse.json({ 
+          success: true, 
+          data: data,
+          message: 'Task updated successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Update task error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Update operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
 
     // BACKEND HELPER FUNCTION: Handle "greet" action type
     if (action_type === 'greet') {
