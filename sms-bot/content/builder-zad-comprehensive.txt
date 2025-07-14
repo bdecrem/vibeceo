@@ -144,6 +144,8 @@ async function registerNewUser() {
   try {
     const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
     if (result && result.success) {
+      // Sync authentication state with ZAD helper functions
+      updateZadAuth(currentUser.userLabel, currentUser.participantId);
       enterMainScreen();
     } else {
       alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
@@ -186,6 +188,8 @@ async function loginReturningUser() {
         passcode: enteredPasscode,
         participantId: result.user.participantId
       };
+      // Sync authentication state with ZAD helper functions
+      updateZadAuth(currentUser.userLabel, currentUser.participantId);
       enterMainScreen();
     } else {
       alert('NICE TRY, WRONG VIBES ❌\n\nMake sure you\'re using the correct passcode from when you registered.');

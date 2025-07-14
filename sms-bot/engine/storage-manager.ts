@@ -665,14 +665,14 @@ function getAppId() {
     }
 }
 
-                // Get participant ID - prompt if not in current session
+                // Get participant ID - return stored ID or generate temporary one
                 function getParticipantId() {
                     let participantId = localStorage.getItem('zad_participant_id');
                     if (!participantId) {
-                        const username = prompt('Enter your name:') || 'Anonymous';
-                        participantId = username.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.random().toString(36).substr(2, 6);
+                        // Generate temporary ID - app's authentication system will set the real one
+                        participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
                         localStorage.setItem('zad_participant_id', participantId);
-                        localStorage.setItem('zad_username', username);
+                        localStorage.setItem('zad_username', 'Anonymous');
                     }
                     return participantId;
                 }
@@ -682,20 +682,28 @@ function getAppId() {
                     return localStorage.getItem('zad_username') || 'Anonymous';
                 }
 
+                // Update ZAD helper functions with app's authentication state
+                function updateZadAuth(userLabel, participantId) {
+                    localStorage.setItem('zad_participant_id', participantId);
+                    localStorage.setItem('zad_username', userLabel);
+                    zadCurrentUser = {
+                        username: userLabel,
+                        participantId: participantId
+                    };
+                    console.log('🔄 Updated ZAD auth state:', zadCurrentUser);
+                }
+
                 // Initialize authentication (simplified)
                 function initAuth() {
                     console.log('🔐 Initializing authentication...');
                     if (authInitialized) return;
                     authInitialized = true;
                     
-                    // Clear any previous session data (force fresh login)
-                    localStorage.removeItem('zad_participant_id');
-                    localStorage.removeItem('zad_username');
-                    
-                    // For test apps, prompt for user and set up session
+                    // Don't clear localStorage or prompt during initialization
+                    // Let the app's authentication system handle user setup
                     zadCurrentUser = {
                         username: getUsername(),
-                        participantId: getParticipantId()
+                        participantId: localStorage.getItem('zad_participant_id') || null
                     };
                     
                     console.log('✅ Authentication ready:', zadCurrentUser);
@@ -978,21 +986,22 @@ async function load(type) {
     }
 }
 
-// Make functions globally available
-window.initAuth = initAuth;
-window.save = save;
-window.load = load;
-window.getAppId = getAppId;
-window.getParticipantId = getParticipantId;
-window.getUsername = getUsername;
-window.greet = greet; // Add greet function to window object
-window.checkAvailableSlots = checkAvailableSlots;
-window.generateUser = generateUser;
-window.registerUser = registerUser;
-window.authenticateUser = authenticateUser;
+                // Make functions globally available
+                window.initAuth = initAuth;
+                window.save = save;
+                window.load = load;
+                window.getAppId = getAppId;
+                window.getParticipantId = getParticipantId;
+                window.getUsername = getUsername;
+                window.updateZadAuth = updateZadAuth;
+                window.greet = greet; // Add greet function to window object
+                window.checkAvailableSlots = checkAvailableSlots;
+                window.generateUser = generateUser;
+                window.registerUser = registerUser;
+                window.authenticateUser = authenticateUser;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-console.log('Available functions: initAuth(), save(type, data), load(type), greet(name)');
+                console.log('Available functions: initAuth(), save(type, data), load(type), updateZadAuth(userLabel, participantId), greet(name)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 </script>`;
         
