@@ -1,4 +1,4 @@
-You are building a simple web app using our ZAD (Zero Admin Data) helper functions.
+You are building a simple web app using our ZAD (Zero Admin Data) helper functions with FULL 4-SCREEN AUTHENTICATION.
 
 REQUIREMENTS:
 - Create whatever the user requests using HTML, CSS, and JavaScript
@@ -11,7 +11,7 @@ REQUIREMENTS:
   - generateUser() - generate new user credentials (backend processed)
   - registerUser(userLabel, passcode, participantId) - register user (backend processed)
   - authenticateUser(userLabel, passcode) - authenticate login (backend processed)
-- Keep it simple - no complex features
+- MUST include the full 4-screen authentication experience
 - Call initAuth() when the page loads to handle user authentication
 
 HELPER FUNCTIONS TO USE:
@@ -44,23 +44,285 @@ PHASE 1 AUTHENTICATION BACKEND HELPERS:
   * All validation happens on the backend automatically
   * Perfect for user login flow
 
-EXAMPLE STRUCTURE:
+EXAMPLE STRUCTURE WITH FULL 4-SCREEN AUTH:
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple App</title>
+    <title>Collaborative App</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .entry { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Auth Screen Styles */
+        #auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-screen { 
+            display: none; 
+            background: rgba(0,0,0,0.8);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            border: 2px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(20px);
+            color: white;
+        }
+        
+        .auth-screen.active { display: block; }
+        
+        .auth-btn {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+        
+        .auth-input {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            margin: 10px;
+            border-radius: 30px;
+            width: 250px;
+            text-align: center;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+        
+        #new-user-info {
+            margin: 20px; 
+            padding: 20px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 10px;
+            border: 2px solid rgba(0, 255, 198, 0.3);
+        }
+        
+        /* Main app styles */
+        #app-container {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: white;
+        }
+        
+        #app-container.active {
+            display: block;
+        }
+        
+        .app-content {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
-    <h1>My App</h1>
-    
+    <!-- 4-Screen Authentication System -->
+    <div id="auth-container">
+        <!-- Screen 1: Welcome -->
+        <div class="auth-screen active" id="welcome-screen">
+            <h2>Welcome to Collaborative App</h2>
+            <p>Join the collaborative chaos!</p>
+            <div id="slot-info"></div>
+            <button class="auth-btn" onclick="showNewUserScreen()">New User</button>
+            <button class="auth-btn" onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <!-- Screen 2: New User -->
+        <div class="auth-screen" id="new-user-screen">
+            <h2>New User</h2>
+            <div id="new-user-info"></div>
+            <button class="auth-btn" onclick="registerNewUser()">Register & Enter</button>
+            <button class="auth-btn" onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <!-- Screen 3: Returning User -->
+        <div class="auth-screen" id="returning-user-screen">
+            <h2>Returning User</h2>
+            <select class="auth-input" id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <br>
+            <input type="text" class="auth-input" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <br>
+            <button class="auth-btn" onclick="loginReturningUser()">Login</button>
+            <button class="auth-btn" onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Main App Container (Screen 4: After Login) -->
+    <div id="app-container">
+        <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        <button class="auth-btn" onclick="logout()">Logout</button>
+        
+        <div class="app-content">
+            <h1>Your App Content Here</h1>
+            <!-- PUT YOUR APP FUNCTIONALITY HERE -->
+            <div id="app-main">
+                <!-- Example app content -->
+                <div id="greeting-display"></div>
+                
+                <!-- Add your app's main functionality here -->
+                
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize authentication first
         initAuth();
+        
+        // Global state
+        let currentUser = null;
+        
+        // Initialize and show available slots
+        async function initializeApp() {
+            const slots = await checkAvailableSlots();
+            document.getElementById('slot-info').innerHTML = 
+                `<p>Available slots: ${slots.availableSlots} / ${slots.totalSlots}</p>`;
+        }
+        
+        // Screen Navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.auth-screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+        
+        // New User Flow
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const user = await generateUser();
+            if (user && user.success) {
+                document.getElementById('new-user-info').innerHTML = 
+                    `<strong>YOUR LABEL:</strong> ${user.userLabel}<br>
+                     <strong>SECRET DIGITS:</strong> ${user.passcode}<br>
+                     <em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+                currentUser = user;
+            } else {
+                alert('Failed to generate user - app might be full!');
+                showScreen('welcome-screen');
+            }
+        }
+        
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('Generate user first!');
+                return;
+            }
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result && result.success) {
+                enterMainApp();
+            } else {
+                alert('Registration failed!');
+            }
+        }
+        
+        // Returning User Flow
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            
+            // Populate available users
+            const slots = await checkAvailableSlots();
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            
+            slots.usedLabels.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+        }
+        
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('Pick your identity!');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 digits required!');
+                return;
+            }
+            
+            const result = await authenticateUser(selectedLabel, enteredPasscode);
+            if (result && result.success) {
+                currentUser = result.user;
+                enterMainApp();
+            } else {
+                alert('Invalid credentials!');
+            }
+        }
+        
+        // Main App Entry
+        function enterMainApp() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('app-container').classList.add('active');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel || currentUser.username;
+            
+            // Load app content
+            loadAppContent();
+        }
+        
+        function logout() {
+            currentUser = null;
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('app-container').classList.remove('active');
+            showScreen('welcome-screen');
+        }
+        
+        // App Content Functions
+        async function loadAppContent() {
+            // Example: Show personalized greeting
+            if (currentUser) {
+                const greeting = await greet(currentUser.userLabel || currentUser.username);
+                document.getElementById('greeting-display').textContent = greeting;
+            }
+            
+            // Add your app's data loading here
+            // const appData = await load('your-data-type');
+            // updateUI(appData);
+        }
         
         // Example functions using the helper functions
         async function saveData(type, data) {
@@ -84,71 +346,11 @@ EXAMPLE STRUCTURE:
             }
         }
         
-        // Example using greet function
-        async function showGreeting(name) {
-            try {
-                const greeting = await greet(name);
-                console.log('Greeting:', greeting);
-                return greeting;
-            } catch (error) {
-                console.error('Greet error:', error);
-                return 'Hello!';
-            }
-        }
-        
-        // Example using authentication backend helpers
-        async function showAvailableSlots() {
-            try {
-                const slots = await checkAvailableSlots();
-                console.log('Available slots:', slots);
-                return `${slots.availableSlots} slots available: ${slots.availableLabels.join(', ')}`;
-            } catch (error) {
-                console.error('Check slots error:', error);
-                return 'Error checking slots';
-            }
-        }
-        
-        async function createNewUser() {
-            try {
-                const user = await generateUser();
-                if (user && user.success) {
-                    console.log('Generated user:', user);
-                    return user;
-                }
-                return null;
-            } catch (error) {
-                console.error('Generate user error:', error);
-                return null;
-            }
-        }
-        
-        async function registerNewUser(userLabel, passcode, participantId) {
-            try {
-                const result = await registerUser(userLabel, passcode, participantId);
-                console.log('Registration result:', result);
-                return result;
-            } catch (error) {
-                console.error('Registration error:', error);
-                return { success: false, error: error.message };
-            }
-        }
-        
-        async function loginUser(userLabel, passcode) {
-            try {
-                const auth = await authenticateUser(userLabel, passcode);
-                console.log('Authentication result:', auth);
-                return auth;
-            } catch (error) {
-                console.error('Authentication error:', error);
-                return { success: false, error: error.message };
-            }
-        }
-        
-        // Your app logic here
-        
+        // Initialize the app
+        initializeApp();
     </script>
 </body>
 </html>
 ```
 
-Build the requested app using this structure. Remember to call initAuth() first! 
+Build the requested app using this structure with the full 4-screen authentication experience. Remember to call initAuth() first and put your app's main functionality in the "app-main" div! 
