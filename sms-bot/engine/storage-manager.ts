@@ -248,19 +248,9 @@ export async function saveCodeToSupabase(
     if (usesApiCalls) {
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
         // Skip credential injection for any app using API calls
-    } else {
-        // COMMENTED OUT: Old WTAF natural supabase credentials + auto-fix process + no helpers
-        // This was the original path for natural ZAD requests before API conversion
-        // if (!isNaturalZad) {
-        //     // Inject Supabase credentials into HTML (only for direct Supabase apps)
-        //     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
-        // }
-        
-        // NEW: All non-API apps that aren't natural ZAD get Supabase credentials
-        if (!isNaturalZad) {
-            // Inject Supabase credentials into HTML (only for direct Supabase apps)
-            code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
-        }
+    } else if (!isNaturalZad) {
+        // Inject Supabase credentials into HTML (only for direct Supabase apps, not natural ZAD)
+        code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
     }
     
     // Convert Supabase calls to API calls for ZAD API apps OR natural ZAD requests
