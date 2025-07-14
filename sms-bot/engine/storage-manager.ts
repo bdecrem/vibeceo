@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
-import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, autoFixCommonIssues } from './shared/utils.js';
+import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, autoFixCommonIssues, autoFixApiSafeIssues } from './shared/utils.js';
 
 // Lazy initialization of Supabase client
 let supabase: SupabaseClient | null = null;
@@ -288,16 +288,17 @@ export async function saveCodeToSupabase(
         if (isZadApi) {
             logWithTimestamp("🚀 ZAD API: Skipping auto-fix processing (prevents breaking API calls)");
         }
-        if (isNaturalZad) {
-            logWithTimestamp("🎨 Natural ZAD: Skipping auto-fix processing (prevents breaking API calls)");
-        }
         if (usesZadHelpers && !isZadTest && !isZadApi && !isNaturalZad) {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
         }
-        if (usesApiCalls) {
+        if (usesApiCalls && !isNaturalZad) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
-        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR natural ZAD OR auto-detected ZAD OR any API-based app
+        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR auto-detected ZAD OR other API-based apps
+    } else if (isNaturalZad) {
+        // Apply API-safe auto-fix for natural ZAD requests (fixes 1, 2, 4, 6, 7, 9)
+        logWithTimestamp("🎨 Natural ZAD: Applying API-safe auto-fix (skips quote fixing)");
+        code = autoFixApiSafeIssues(code);
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
