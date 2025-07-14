@@ -298,11 +298,39 @@ export async function POST(req: NextRequest) {
       try {
         const supabase = getSupabaseClient();
         
-        // Update the existing record
+        // First, load existing record to get current content_data
+        const { data: existingRecord, error: loadError } = await supabase
+          .from('wtaf_zero_admin_collaborative')
+          .select('content_data')
+          .eq('app_id', app_id)
+          .eq('id', taskId)
+          .single();
+          
+        if (loadError) {
+          console.error('Load existing record error:', loadError);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to load existing record: ' + loadError.message 
+          }, { status: 500 });
+        }
+        
+        // Merge updates with existing content_data
+        const mergedContentData = {
+          ...existingRecord.content_data,
+          ...updates
+        };
+        
+        console.log('🔄 Merging data:', {
+          existing: existingRecord.content_data,
+          updates: updates,
+          merged: mergedContentData
+        });
+        
+        // Update the existing record with merged data
         const { data, error } = await supabase
           .from('wtaf_zero_admin_collaborative')
           .update({
-            content_data: updates,
+            content_data: mergedContentData,
             updated_at: new Date().toISOString()
           })
           .eq('app_id', app_id)
@@ -318,7 +346,7 @@ export async function POST(req: NextRequest) {
           }, { status: 500 });
         }
         
-        console.log('✅ Task updated successfully:', data);
+        console.log('✅ Task updated successfully with merged data:', data);
         return NextResponse.json({ 
           success: true, 
           data: data,
