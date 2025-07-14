@@ -9,7 +9,7 @@ Build: **[USER REQUEST]**
 
 ### 1. Single HTML File
 - All HTML, CSS, and JavaScript in one file
-- No external dependencies except Supabase (already included)
+- No external dependencies - use only built-in browser APIs
 - Must be a complete, working web page
 
 ### 2. Database Integration (REQUIRED)
@@ -29,6 +29,8 @@ await save('data_type', {
 ```javascript
 const data = await load('data_type'); // Returns array of items
 ```
+
+**IMPORTANT**: Only use the `save()` and `load()` functions for database operations. Do not use any external database libraries or clients.
 
 **Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
 
@@ -546,32 +548,31 @@ window.wtaf = function() {
 - **Custom Vibes**: Adapt colors to match the requested mood - WTAF is about responding to context!
 ## Data Patterns for Common Actions
 
-**User Action Example:**
+**Save User Action Example:**
 ```javascript
-await supabase.from('wtaf_zero_admin_collaborative').insert({
-  app_id: APP_ID,
-  participant_id: currentUser.participantId,
-  action_type: 'vote',  // or 'message', 'update', 'create', etc
-  participant_data: {
-    userLabel: currentUser.userLabel,
-    passcode: currentUser.passcode
-  },
-  content_data: {
-    vote_choice: 'option_a',
-    timestamp: Date.now(),
-    // any other action-specific data
-  }
+await save('vote', {
+  vote_choice: 'option_a',
+  timestamp: Date.now(),
+  // any other action-specific data
 });
 ```
 
 **Load Data Example:**
 ```javascript
-const { data } = await supabase
-  .from('wtaf_zero_admin_collaborative')
-  .select('*')
-  .eq('app_id', APP_ID)
-  .eq('action_type', 'vote')  // or whatever action you want
-  .order('created_at', { ascending: true });
+const votes = await load('vote'); // Returns array of vote objects
+```
+
+**Save Message Example:**
+```javascript
+await save('message', {
+  content: 'Hello world!',
+  timestamp: Date.now()
+});
+```
+
+**Load Messages Example:**
+```javascript
+const messages = await load('message'); // Returns array of message objects
 ```
 
 ## Success Criteria

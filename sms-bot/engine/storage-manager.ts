@@ -1034,55 +1034,74 @@ export async function convertSupabaseToApiCalls(html: string): Promise<string> {
     try {
         logWithTimestamp("🔄 Converting Supabase calls to API calls for ZAD API app...");
         
-        // Pattern 1: INSERT operations
+        // Pattern 1: INSERT operations (handles multiline)
         // supabase.from('wtaf_zero_admin_collaborative').insert({...}) -> await save('type', {...})
         html = html.replace(
-            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.insert\(\{([^}]+)\}\)/g,
-            (match, content) => {
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.insert\(\{[\s\S]*?\}\)/g,
+            (match) => {
                 logWithTimestamp("🔄 Converting INSERT operation to save() call");
-                return `await save('data', {${content}})`;
+                // Extract action_type if present, otherwise use 'data'
+                const actionTypeMatch = match.match(/action_type:\s*['"`]([^'"`]+)['"`]/);
+                const actionType = actionTypeMatch ? actionTypeMatch[1] : 'data';
+                
+                // Extract content_data if present, otherwise use the whole object
+                const contentMatch = match.match(/content_data:\s*\{([\s\S]*?)\}/);
+                if (contentMatch) {
+                    return `await save('${actionType}', {${contentMatch[1].trim()}})`;
+                } else {
+                    // Extract the object content
+                    const objectMatch = match.match(/insert\(\{([\s\S]*?)\}\)/);
+                    if (objectMatch) {
+                        return `await save('${actionType}', {${objectMatch[1].trim()}})`;
+                    }
+                }
+                return `await save('${actionType}', {})`;
             }
         );
         
-        // Pattern 2: SELECT operations
+        // Pattern 2: SELECT operations (handles multiline)
         // supabase.from('wtaf_zero_admin_collaborative').select('*').eq('app_id', app_id) -> await load('data')
         html = html.replace(
-            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.select\([^)]+\)\.eq\(['"`]app_id['"`][^)]+\)/g,
+            /const\s*\{\s*data\s*\}\s*=\s*await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)[\s\S]*?\.select\([^)]+\)[\s\S]*?\.eq\(['"`]app_id['"`][^)]+\)[\s\S]*?;/g,
             (match) => {
                 logWithTimestamp("🔄 Converting SELECT operation to load() call");
-                return `await load('data')`;
+                // Extract action_type if present
+                const actionTypeMatch = match.match(/\.eq\(['"`]action_type['"`],\s*['"`]([^'"`]+)['"`]\)/);
+                const actionType = actionTypeMatch ? actionTypeMatch[1] : 'data';
+                return `const data = await load('${actionType}');`;
             }
         );
         
-        // Pattern 3: UPDATE operations
+        // Pattern 3: Simple SELECT operations without destructuring
+        html = html.replace(
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)[\s\S]*?\.select\([^)]+\)[\s\S]*?\.eq\(['"`]app_id['"`][^)]+\)[\s\S]*?;/g,
+            (match) => {
+                logWithTimestamp("🔄 Converting simple SELECT operation to load() call");
+                const actionTypeMatch = match.match(/\.eq\(['"`]action_type['"`],\s*['"`]([^'"`]+)['"`]\)/);
+                const actionType = actionTypeMatch ? actionTypeMatch[1] : 'data';
+                return `await load('${actionType}');`;
+            }
+        );
+        
+        // Pattern 4: UPDATE operations (handles multiline)
         // supabase.from('wtaf_zero_admin_collaborative').update({...}).eq('id', id) -> await save('data', {...})
         html = html.replace(
-            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.update\(\{([^}]+)\}\)\.eq\([^)]+\)/g,
-            (match, content) => {
+            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.update\(\{[\s\S]*?\}\)[\s\S]*?\.eq\([^)]+\)/g,
+            (match) => {
                 logWithTimestamp("🔄 Converting UPDATE operation to save() call");
+                const objectMatch = match.match(/update\(\{([\s\S]*?)\}\)/);
+                const content = objectMatch ? objectMatch[1].trim() : '';
                 return `await save('data', {${content}})`;
             }
         );
         
-        // Pattern 4: Specific message-related operations
-        // Convert message-specific Supabase calls to message-specific API calls
+        // Pattern 5: Remove Supabase CDN script tag
         html = html.replace(
-            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.insert\(\{([^}]*message[^}]*)\}\)/g,
-            (match, content) => {
-                logWithTimestamp("🔄 Converting message INSERT to save('messages', ...) call");
-                return `await save('messages', {${content}})`;
-            }
+            /<script\s+src\s*=\s*['"`][^'"`]*supabase[^'"`]*['"`][^>]*>\s*<\/script>\s*/g,
+            ''
         );
         
-        html = html.replace(
-            /await\s+supabase\.from\(['"`]wtaf_zero_admin_collaborative['"`]\)\.select\([^)]+\)\.eq\(['"`]app_id['"`][^)]+\)\.order\(['"`]created_at['"`]/g,
-            (match) => {
-                logWithTimestamp("🔄 Converting message SELECT to load('messages') call");
-                return `await load('messages')`;
-            }
-        );
-        
-        // Pattern 5: Remove Supabase client imports and initialization
+        // Pattern 6: Remove Supabase client imports and initialization
         html = html.replace(
             /import\s+\{[^}]*createClient[^}]*\}\s+from\s+['"`]@supabase\/supabase-js['"`];?\s*/g,
             ''
@@ -1093,7 +1112,13 @@ export async function convertSupabaseToApiCalls(html: string): Promise<string> {
             ''
         );
         
-        // Pattern 6: Remove any Supabase URL/key references
+        // Pattern 7: Remove Supabase client initialization with nested object notation
+        html = html.replace(
+            /const\s+supabase\s*=\s*supabase\.createClient\([^)]+\);\s*/g,
+            ''
+        );
+        
+        // Pattern 8: Remove any Supabase URL/key references
         html = html.replace(
             /const\s+SUPABASE_URL\s*=\s*['"`][^'"`]+['"`];\s*/g,
             ''
@@ -1101,6 +1126,12 @@ export async function convertSupabaseToApiCalls(html: string): Promise<string> {
         
         html = html.replace(
             /const\s+SUPABASE_ANON_KEY\s*=\s*['"`][^'"`]+['"`];\s*/g,
+            ''
+        );
+        
+        // Pattern 9: Remove Initialize Supabase client comments
+        html = html.replace(
+            /\/\/\s*Initialize Supabase client\s*\n?/g,
             ''
         );
         
