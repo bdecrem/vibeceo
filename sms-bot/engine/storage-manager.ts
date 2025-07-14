@@ -235,6 +235,9 @@ export async function saveCodeToSupabase(
     // Check if this is ZAD API (comprehensive template with API conversion)
     const isZadApi = originalPrompt.includes('ZAD_API_MARKER');
     
+    // Check if this is natural ZAD request (comprehensive template with API conversion)
+    const isNaturalZad = originalPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
+    
     // Check if this code uses ZAD-style helper functions (auto-detect)
     // BUT: Skip auto-detection for ZAD test (use direct API calls instead)
     const usesZadHelpers = !isZadTest && (/\bawait\s+save\s*\(/.test(code) || /\bawait\s+load\s*\(/.test(code) ||
@@ -246,22 +249,38 @@ export async function saveCodeToSupabase(
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
         // Skip credential injection for any app using API calls
     } else {
-        // Inject Supabase credentials into HTML (only for direct Supabase apps)
-        code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+        // COMMENTED OUT: Old WTAF natural supabase credentials + auto-fix process + no helpers
+        // This was the original path for natural ZAD requests before API conversion
+        // if (!isNaturalZad) {
+        //     // Inject Supabase credentials into HTML (only for direct Supabase apps)
+        //     code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+        // }
+        
+        // NEW: All non-API apps that aren't natural ZAD get Supabase credentials
+        if (!isNaturalZad) {
+            // Inject Supabase credentials into HTML (only for direct Supabase apps)
+            code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+        }
     }
     
-    // Convert Supabase calls to API calls for ZAD API apps
-    if (isZadApi) {
-        logWithTimestamp("🚀 ZAD API: Converting Supabase calls to API calls");
+    // Convert Supabase calls to API calls for ZAD API apps OR natural ZAD requests
+    if (isZadApi || isNaturalZad) {
+        if (isZadApi) {
+            logWithTimestamp("🚀 ZAD API: Converting Supabase calls to API calls");
+        } else {
+            logWithTimestamp("🎨 Natural ZAD: Converting Supabase calls to API calls");
+        }
         code = await convertSupabaseToApiCalls(code);
     }
     
-    // Inject ZAD helper functions for ZAD test apps OR auto-detected ZAD-style code OR ZAD API apps
-    if (isZadTest || usesZadHelpers || isZadApi) {
+    // Inject ZAD helper functions for ZAD test apps OR auto-detected ZAD-style code OR ZAD API apps OR natural ZAD requests
+    if (isZadTest || usesZadHelpers || isZadApi || isNaturalZad) {
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Injecting helper functions");
         } else if (isZadApi) {
             logWithTimestamp("🚀 ZAD API: Injecting helper functions");
+        } else if (isNaturalZad) {
+            logWithTimestamp("🎨 Natural ZAD: Injecting helper functions");
         } else {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD-STYLE CODE: Injecting helper functions");
         }
@@ -269,7 +288,7 @@ export async function saveCodeToSupabase(
         code = await injectZadHelperFunctions(code);
     }
     
-    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi) {
+    if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi || isNaturalZad) {
         if (isMinimalTest) {
             logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
         }
@@ -279,13 +298,16 @@ export async function saveCodeToSupabase(
         if (isZadApi) {
             logWithTimestamp("🚀 ZAD API: Skipping auto-fix processing (prevents breaking API calls)");
         }
-        if (usesZadHelpers && !isZadTest && !isZadApi) {
+        if (isNaturalZad) {
+            logWithTimestamp("🎨 Natural ZAD: Skipping auto-fix processing (prevents breaking API calls)");
+        }
+        if (usesZadHelpers && !isZadTest && !isZadApi && !isNaturalZad) {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
         }
         if (usesApiCalls) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
-        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR auto-detected ZAD OR any API-based app
+        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR natural ZAD OR auto-detected ZAD OR any API-based app
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
@@ -389,7 +411,7 @@ export async function saveCodeToSupabase(
         logWithTimestamp(`🆔 Generated UUID for app: ${contentUuid}`);
         
         // Inject UUID into ZAD helper functions if they were added
-        if (isZadTest || usesZadHelpers) {
+        if (isZadTest || usesZadHelpers || isZadApi || isNaturalZad) {
             logWithTimestamp(`🔗 Injecting UUID ${contentUuid} into ZAD helper functions`);
             code = await injectZadUuidIntoHelpers(code, contentUuid);
         }
