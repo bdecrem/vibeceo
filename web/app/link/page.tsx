@@ -39,20 +39,27 @@ export default function LinkPage() {
       return
      }
 
-     const { error: updateError } = await supabase
-     .from('sms_subscribers')
-     .update({
-       supabase_id: user.id,
-       email: user.email,
-     })
-     .eq('phone_number', phone);
+     // Use backend API instead of direct Supabase call
+     const response = await fetch('/api/link-phone', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         phone_number: phone,
+         supabase_id: user.id,
+         email: user.email,
+       }),
+     });
 
-    if (updateError) {
-      setStatus('error')
-      setError(updateError.message || 'Linking failed.')
-    } else {
-      setStatus('linked')
-    }
+     const result = await response.json();
+
+     if (!response.ok || !result.success) {
+       setStatus('error')
+       setError(result.error || 'Linking failed.')
+     } else {
+       setStatus('linked')
+     }
   }
 
   return (
