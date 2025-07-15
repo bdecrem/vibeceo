@@ -464,7 +464,6 @@ export function autoFixCommonIssues(html: string): string {
 /**
  * Auto-fix issues that are safe for API-based apps
  * Applies fixes: 1, 2, 3, 4, 5, 6, 7, 9, 10
- * Skips fixes: 8 (not needed for API apps)
  */
 export function autoFixApiSafeIssues(html: string): string {
     logWithTimestamp('🔧 Running API-safe auto-fix...');
