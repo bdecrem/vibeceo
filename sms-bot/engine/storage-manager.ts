@@ -987,10 +987,56 @@ async function load(type) {
     }
 }
 
+// Query data from ZAD API with flexible filtering
+async function query(type, options = {}) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔍 Querying ZAD API:', { app_id, type, options });
+        
+        const queryData = {
+            app_id: app_id,
+            action_type: 'query',
+            content_data: {
+                type: type,
+                ...options
+            }
+        };
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(queryData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(\`Query failed: \${errorData.error || response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Query completed successfully:', result);
+        
+        // Transform ZAD data back to simple format
+        return result.data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+        
+    } catch (error) {
+        console.error('❌ Query error:', error);
+        alert(\`Failed to query: \${error.message}\`);
+        return [];
+    }
+}
+
                 // Make functions globally available
                 window.initAuth = initAuth;
                 window.save = save;
                 window.load = load;
+                window.query = query;
                 window.getAppId = getAppId;
                 window.getParticipantId = getParticipantId;
                 window.getUsername = getUsername;
@@ -1002,7 +1048,7 @@ async function load(type) {
                 window.authenticateUser = authenticateUser;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-                console.log('Available functions: initAuth(), save(type, data), load(type), updateZadAuth(userLabel, participantId), greet(name)');
+                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 </script>`;
         
