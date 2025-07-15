@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF PAINT DIMENSION 🎨</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+    body { 
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease-in-out infinite;
+        color: white;
+        overflow-x: hidden;
+        margin: 0;
+        min-height: 100vh;
+    }
+
+    h1, h2, h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+    }
+
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .app-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        position: relative;
+        z-index: 10;
+        min-height: 90vh;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    button {
+        background: linear-gradient(135deg, #00FFC6, #57E2E5);
+        color: #000;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 14px;
+        margin: 10px 5px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+    }
+
+    input, select {
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 30px;
+        font-size: 16px;
+        width: 100%;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: #00FFC6;
+        box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+    }
+
+    .floating-emoji {
+        position: fixed;
+        font-size: 2rem;
+        animation: float 6s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 5;
+        opacity: 0.8;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    h1 {
+        position: relative;
+        animation: glitch 3s ease-in-out infinite;
+    }
+
+    @keyframes glitch {
+        0%, 100% { text-shadow: 2px 2px 0 #FF2E93, -2px -2px 0 #00FFC6; }
+        25% { text-shadow: -2px 2px 0 #3F88FF, 2px -2px 0 #FF2E93; }
+        50% { text-shadow: 2px -2px 0 #00FFC6, -2px 2px 0 #7C3AED; }
+        75% { text-shadow: -2px -2px 0 #FF2E93, 2px 2px 0 #3F88FF; }
+    }
+
+    /* Paint App Specific Styles */
+    #canvas-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    #paint-canvas {
+        background: white;
+        border-radius: 10px;
+        cursor: crosshair;
+        box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+
+    .tools {
+        display: flex;
+        gap: 15px;
+        background: rgba(0,0,0,0.3);
+        padding: 20px;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+    }
+
+    .color-picker {
+        width: 50px;
+        height: 50px;
+        padding: 0;
+        border-radius: 25px;
+        border: 3px solid white;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .thickness-slider {
+        width: 150px;
+        height: 10px;
+        -webkit-appearance: none;
+        background: rgba(255,255,255,0.2);
+        border-radius: 5px;
+        outline: none;
+    }
+
+    .thickness-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #00FFC6;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+
+    .gallery-item {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .gallery-item img {
+        width: 100%;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .tool-btn {
+        padding: 10px 20px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.2);
+        color: white;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .tool-btn.active {
+        background: #00FFC6;
+        color: black;
+    }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">🎨</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">✨</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">🖌️</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">🌈</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>WTAF PAINT DIMENSION 🎨</h1>
+            <p>CREATE DIGITAL CHAOS WITH OTHER BEINGS FROM THE VOID</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>DIGITAL PAINT DIMENSION</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div id="canvas-container">
+                    <div class="tools">
+                        <button class="tool-btn active" onclick="setTool('pencil')">✏️ Pencil</button>
+                        <button class="tool-btn" onclick="setTool('brush')">🖌️ Brush</button>
+                        <input type="color" class="color-picker" onchange="setColor(this.value)" value="#000000">
+                        <input type="range" class="thickness-slider" min="1" max="50" value="5" onchange="setThickness(this.value)">
+                    </div>
+                    <canvas id="paint-canvas" width="800" height="500"></canvas>
+                    <button onclick="saveArtwork()">🚀 LAUNCH TO GALLERY</button>
+                </div>
+                
+                <h2>✨ GALLERY WALL ✨</h2>
+                <div id="gallery" class="gallery"></div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <script>
+    // Authentication System
+    let currentUser = null;
+
+    async function generateNewUser() {
+        try {
+            const slots = await checkAvailableSlots();
+            
+            if (slots.isFull) {
+                alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user && user.success) {
+                currentUser = {
+                    userLabel: user.userLabel,
+                    passcode: user.passcode,
+                    participantId: user.participantId
+                };
+                
+                document.getElementById('new-user-info').innerHTML = 
+                    `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+                
+                return true;
+            } else {
+                alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                return false;
+            }
+        } catch (error) {
+            console.error('User generation error:', error);
+            alert('GENERATION EXPLODED, TRY AGAIN 💥');
+            return false;
+        }
+    }
+
+    async function registerNewUser() {
+        if (!currentUser) {
+            alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+            return;
+        }
+        
+        try {
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result && result.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            } else {
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+        }
+    }
+
+    async function showNewUserScreen() {
+        showScreen('new-user-screen');
+        const success = await generateNewUser();
+        if (!success) {
+            showScreen('welcome-screen');
+        }
+    }
+
+    async function loginReturningUser() {
+        const selectedLabel = document.getElementById('user-label-select').value;
+        const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+        
+        if (!selectedLabel || selectedLabel === 'Select User') {
+            alert('PICK YOUR IDENTITY, PHANTOM 👻');
+            return;
+        }
+        
+        if (!enteredPasscode || enteredPasscode.length !== 4) {
+            alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+            return;
+        }
+        
+        try {
+            const result = await authenticateUser(selectedLabel, enteredPasscode);
+            if (result && result.success) {
+                currentUser = {
+                    userLabel: selectedLabel,
+                    passcode: enteredPasscode,
+                    participantId: result.user.participantId
+                };
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            } else {
+                alert('NICE TRY, WRONG VIBES ❌');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+        }
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(screen => 
+            screen.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        if (screenId !== 'main-screen') {
+            stopPolling();
+        }
+    }
+
+    async function showReturningUserScreen() {
+        showScreen('returning-user-screen');
+        
+        try {
+            const slots = await checkAvailableSlots();
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Select User</option>';
+            
+            slots.usedLabels.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                userSelect.appendChild(option);
+            });
+            
+            if (slots.usedLabels.length === 0) {
+                userSelect.innerHTML = '<option>No users registered yet</option>';
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            const userSelect = document.getElementById('user-label-select');
+            userSelect.innerHTML = '<option>Error loading users</option>';
+        }
+    }
+
+    function enterMainScreen() {
+        showScreen('main-screen');
+        document.getElementById('current-user-label').textContent = currentUser.userLabel;
+        initCanvas();
+        startPolling();
+        loadLatestData();
+    }
+
+    // Paint App Specific Code
+    let canvas, ctx;
+    let isDrawing = false;
+    let currentTool = 'pencil';
+    let currentColor = '#000000';
+    let currentThickness = 5;
+
+    function initCanvas() {
+        canvas = document.getElementById('paint-canvas');
+        ctx = canvas.getContext('2d');
+        
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        draw(e);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        ctx.lineWidth = currentThickness;
+        ctx.lineCap = currentTool === 'brush' ? 'round' : 'square';
+        ctx.strokeStyle = currentColor;
+        
+        if (currentTool === 'brush') {
+            ctx.globalAlpha = 0.5;
+        } else {
+            ctx.globalAlpha = 1;
+        }
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        ctx.beginPath();
+    }
+
+    function setTool(tool) {
+        currentTool = tool;
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function setColor(color) {
+        currentColor = color;
+    }
+
+    function setThickness(thickness) {
+        currentThickness = thickness;
+    }
+
+    async function saveArtwork() {
+        const imageData = canvas.toDataURL('image/png');
+        await save('artwork', {
+            image: imageData,
+            artist: currentUser.userLabel,
+            timestamp: Date.now()
+        });
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        loadLatestData();
+    }
+
+    let pollingInterval;
+
+    function startPolling() {
+        pollingInterval = setInterval(async () => {
+            await loadLatestData();
+        }, 2000);
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }
+
+    async function loadLatestData() {
+        try {
+            const artworks = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            artworks.sort((a, b) => b.timestamp - a.timestamp).forEach(artwork => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <img src="${artwork.image}" alt="Artwork">
+                    <p>By: ${artwork.artist}</p>
+                    <p>${new Date(artwork.timestamp).toLocaleString()}</p>
+                `;
+                gallery.appendChild(div);
+            });
+        } catch (error) {
+            console.error('Error loading artworks:', error);
+        }
+    }
+
+    // Mouse Parallax
+    document.addEventListener('mousemove', (e) => {
+        document.querySelectorAll('.floating-emoji').forEach((elem) => {
+            const speed = elem.getAttribute('data-value') || 2;
+            const x = (e.clientX * speed) / 100;
+            const y = (e.clientY * speed) / 100;
+            elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+        });
+    });
+
+    // Easter Egg
+    console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+    window.wtaf = function() {
+        document.body.style.animation = 'rainbow 1s infinite';
+        setTimeout(() => {
+            document.body.style.animation = '';
+            alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+        }, 3000);
+    };
+
+    // Initialize
+    initAuth();
+    </script>
+</body>
+</html>
