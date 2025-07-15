@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       if (updateError) {
         console.error('Error resubscribing user:', updateError);
         return NextResponse.json(
-          { success: false, message: 'Error processing subscription' },
+          { success: false, message: `Database error: ${updateError.message}`, details: updateError },
           { status: 500 }
         );
       }
@@ -123,13 +123,14 @@ export async function POST(request: Request) {
         consent_given: consentGiven,
         opt_in_date: new Date().toISOString(),
         unsubscribed: false,
-        confirmed: false // Require SMS confirmation
+        confirmed: false, // Require SMS confirmation
+        role: 'coder' // Set valid role for SMS subscriptions
       });
       
     if (insertError) {
       console.error('Error subscribing user:', insertError);
       return NextResponse.json(
-        { success: false, message: 'Error processing subscription' },
+        { success: false, message: `Database error: ${insertError.message}`, details: insertError },
         { status: 500 }
       );
     }
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in SMS subscription API:', error);
     return NextResponse.json(
-      { success: false, message: 'Server error' },
+      { success: false, message: `Server error: ${error instanceof Error ? error.message : String(error)}`, details: error },
       { status: 500 }
     );
   }
