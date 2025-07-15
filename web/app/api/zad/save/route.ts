@@ -380,6 +380,242 @@ export async function POST(req: NextRequest) {
       console.log('📝 Generated greeting:', greetingResult.greeting);
     }
 
+    // BACKEND HELPER FUNCTION: Delete record
+    if (action_type === 'delete') {
+      const { recordId } = content_data || {};
+      console.log('🗑️ Backend helper: deleteRecord for app:', app_id, 'record:', recordId);
+      
+      if (!recordId) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing recordId for delete operation' 
+        }, { status: 400 });
+      }
+      
+      if (!participant_id) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing participant_id for delete operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Delete the record
+        const { data, error } = await supabase
+          .from('wtaf_zero_admin_collaborative')
+          .delete()
+          .eq('app_id', app_id)
+          .eq('id', recordId)
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Delete error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to delete record: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Record deleted successfully:', data);
+        return NextResponse.json({ 
+          success: true, 
+          data: data,
+          message: 'Record deleted successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Delete record error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Delete operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
+
+    // BACKEND HELPER FUNCTION: Search/filter records
+    if (action_type === 'search') {
+      const { type, filters, orderBy, limit } = content_data || {};
+      console.log('🔍 Backend helper: searchRecords for app:', app_id, 'type:', type, 'filters:', filters);
+      
+      if (!type) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing type for search operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Build base query
+        let query = supabase
+          .from('wtaf_zero_admin_collaborative')
+          .select('*')
+          .eq('app_id', app_id)
+          .eq('action_type', type)
+          .order('created_at', { ascending: false });
+        
+        // Apply filters safely (only allow filtering on content_data fields)
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            if (key.startsWith('content_data.') || key === 'participant_id') {
+              query = query.eq(key, value);
+            }
+          });
+        }
+        
+        // Apply ordering
+        if (orderBy) {
+          query = query.order(orderBy, { ascending: false });
+        }
+        
+        // Apply limit
+        if (limit && typeof limit === 'number' && limit > 0) {
+          query = query.limit(limit);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Search error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to search records: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Search completed successfully:', data?.length, 'records found');
+        return NextResponse.json({ 
+          success: true, 
+          data: data || [],
+          count: data?.length || 0,
+          message: 'Search completed successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Search records error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Search operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
+
+    // BACKEND HELPER FUNCTION: Count records
+    if (action_type === 'count') {
+      const { type, filters } = content_data || {};
+      console.log('📊 Backend helper: countRecords for app:', app_id, 'type:', type, 'filters:', filters);
+      
+      if (!type) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing type for count operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Build base query
+        let query = supabase
+          .from('wtaf_zero_admin_collaborative')
+          .select('*', { count: 'exact' })
+          .eq('app_id', app_id)
+          .eq('action_type', type);
+        
+        // Apply filters safely
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            if (key.startsWith('content_data.') || key === 'participant_id') {
+              query = query.eq(key, value);
+            }
+          });
+        }
+        
+        const { data, error, count } = await query;
+        
+        if (error) {
+          console.error('Count error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to count records: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Count completed successfully:', count, 'records found');
+        return NextResponse.json({ 
+          success: true, 
+          count: count || 0,
+          message: 'Count completed successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Count records error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Count operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
+
+    // BACKEND HELPER FUNCTION: Clear/reset records
+    if (action_type === 'clear') {
+      const { type } = content_data || {};
+      console.log('🧹 Backend helper: clearRecords for app:', app_id, 'type:', type);
+      
+      if (!type) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing type for clear operation' 
+        }, { status: 400 });
+      }
+      
+      if (!participant_id) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing participant_id for clear operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Clear all records of the specified type for this app
+        const { data, error } = await supabase
+          .from('wtaf_zero_admin_collaborative')
+          .delete()
+          .eq('app_id', app_id)
+          .eq('action_type', type)
+          .select();
+        
+        if (error) {
+          console.error('Clear error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to clear records: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Records cleared successfully:', data?.length, 'records deleted');
+        return NextResponse.json({ 
+          success: true, 
+          data: data || [],
+          deletedCount: data?.length || 0,
+          message: 'Records cleared successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Clear records error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Clear operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
+
     // STANDARD ZAD DATA SAVE (for non-helper functions)
     if (!participant_id) {
       return NextResponse.json(

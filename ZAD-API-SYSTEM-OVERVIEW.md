@@ -40,6 +40,26 @@ await save('update_task', {
     taskId: task.id, 
     updates: { completed: true } 
 });
+
+// Delete specific records (NEW!)
+await save('delete', { recordId: task.id });
+
+// Search/filter records (NEW!)
+await save('search', { 
+    type: 'task', 
+    filters: { 'content_data.completed': false },
+    orderBy: 'created_at',
+    limit: 10
+});
+
+// Count records (NEW!)
+await save('count', { 
+    type: 'task', 
+    filters: { 'content_data.completed': true }
+});
+
+// Clear all records of a type (NEW!)
+await save('clear', { type: 'task' });
 ```
 
 ### **2. Authentication System**
@@ -78,6 +98,10 @@ The `/api/zad/save` endpoint includes specialized helpers:
 
 ### **Data Helpers**
 - `update_task` - Update existing records (prevents duplicates)
+- `delete` - Delete specific records by ID
+- `search` - Search/filter records with criteria, ordering, and limits
+- `count` - Count records with optional filters
+- `clear` - Clear all records of a specific type
 - `greet` - Example backend processing helper
 
 ## How It Works
