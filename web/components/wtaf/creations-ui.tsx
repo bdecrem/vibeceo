@@ -192,16 +192,14 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                     <span className="pin-icon-small">📌</span>
                   </div>
                   <div className="image-container">
-                    <Link href={`/${app.user_slug}/${app.app_slug}`} className="image-link">
-                      <img 
-                        src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
-                        alt={app.app_slug} 
-                        className="gallery-image" 
-                      />
-                      <div className="image-overlay">
-                        <button className="try-app-btn">TRY THIS APP</button>
-                      </div>
-                    </Link>
+                    <img 
+                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      alt={app.app_slug} 
+                      className="gallery-image" 
+                    />
+                    <div className="image-overlay">
+                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</Link>
+                    </div>
                   </div>
                   <div className="card-content">
                     <div className="remix-count-solo">
@@ -234,16 +232,14 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
             {recentApps.map((app) => (
               <div key={app.id} className="gallery-card">
                 <div className="image-container">
-                  <Link href={`/${app.user_slug}/${app.app_slug}`} className="image-link">
-                    <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
-                      alt={app.app_slug} 
-                      className="gallery-image" 
-                    />
-                    <div className="image-overlay">
-                      <button className="try-app-btn">TRY THIS APP</button>
-                    </div>
-                  </Link>
+                  <img 
+                    src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                    alt={app.app_slug} 
+                    className="gallery-image" 
+                  />
+                  <div className="image-overlay">
+                    <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</Link>
+                  </div>
                 </div>
                 <div className="card-content">
                   <div className="remix-count-solo">

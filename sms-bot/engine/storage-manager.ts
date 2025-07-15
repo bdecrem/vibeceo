@@ -1050,6 +1050,54 @@ async function query(type, options = {}) {
 console.log('🚀 ZAD Helper Functions loaded successfully');
                 console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
+
+// DEMO MODE DETECTION - Auto-bypass auth for demo URLs
+const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+if (isDemoMode) {
+    console.log('🎭 DEMO MODE DETECTED - Bypassing authentication');
+    
+    // Set demo user
+    const demoUser = { 
+        userLabel: 'Demo User', 
+        participantId: 'demo-' + Math.random().toString(36).substr(2, 6) 
+    };
+    
+    // Update auth state
+    updateZadAuth(demoUser.userLabel, demoUser.participantId);
+    
+    // Set global currentUser for apps that check it
+    if (typeof window !== 'undefined') {
+        window.currentUser = demoUser;
+        if (typeof currentUser === 'undefined') {
+            window.currentUser = demoUser;
+        }
+    }
+    
+    // Add demo banner and auto-show main screen when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add demo banner to user status if it exists
+        const userStatus = document.getElementById('user-status');
+        if (userStatus) {
+            userStatus.innerHTML = '🎭 DEMO MODE - Try it out! Welcome, <span id="current-user-label">Demo User</span>!';
+        }
+        
+        // Auto-show main screen and hide welcome screen
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+        
+        if (welcomeScreen && mainScreen) {
+            console.log('🎭 DEMO MODE: Switching to main screen');
+            welcomeScreen.classList.remove('active');
+            mainScreen.classList.add('active');
+            
+            // Update current user label
+            const userLabel = document.getElementById('current-user-label');
+            if (userLabel) {
+                userLabel.textContent = 'Demo User';
+            }
+        }
+    });
+}
 </script>`;
         
         // Inject before closing </head> tag, or before first <script> tag if no </head>
