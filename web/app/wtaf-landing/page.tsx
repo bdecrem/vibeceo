@@ -116,7 +116,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="cta-section">
-                <a href="https://www.wtaf.me/bart/blend-swordfish-planting" className="cta-button">Learn More</a>
+                <a href="https://wtaf.me/bart/satin-horse-storytelling" className="cta-button">Learn More</a>
                 <a href="/featured" className="cta-button secondary">
                   Gallery
                 </a>
