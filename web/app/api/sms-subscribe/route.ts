@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import twilio from 'twilio';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -10,6 +11,17 @@ function getSupabaseClient() {
   }
   
   return createClient(supabaseUrl, supabaseKey);
+}
+
+function getTwilioClient() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  
+  if (!accountSid || !authToken) {
+    throw new Error('Missing Twilio environment variables');
+  }
+  
+  return twilio(accountSid, authToken);
 }
 
 /**
@@ -109,8 +121,28 @@ export async function POST(request: Request) {
         );
       }
       
+      // Send confirmation SMS for resubscription
+      try {
+        const twilioClient = getTwilioClient();
+        const confirmationMessage = 
+          "Welcome back to The Foundry! 🚀\n\n" +
+          "Reply YES to confirm your resubscription to daily startup chaos via SMS.\n\n" +
+          "Standard msg & data rates may apply. Reply STOP to unsubscribe.";
+
+        const message = await twilioClient.messages.create({
+          body: confirmationMessage,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: phoneNumber
+        });
+
+        console.log(`Resubscription confirmation SMS sent to ${phoneNumber}, SID: ${message.sid}`);
+      } catch (smsError) {
+        console.error('Error sending resubscription confirmation SMS:', smsError);
+        // Don't fail the whole request if SMS fails, just log the error
+      }
+
       return NextResponse.json(
-        { success: true, message: 'You have been successfully resubscribed' },
+        { success: true, message: 'You have been successfully resubscribed! Please check your phone for a confirmation message.' },
         { status: 200 }
       );
     }
@@ -134,9 +166,30 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    
+
+    // Send confirmation SMS
+    try {
+      const twilioClient = getTwilioClient();
+      const confirmationMessage = 
+        "Welcome to The Foundry! 🚀\n\n" +
+        "Reply YES to confirm your subscription to daily startup chaos via SMS.\n\n" +
+        "Standard msg & data rates may apply. Reply STOP to unsubscribe.";
+
+      const message = await twilioClient.messages.create({
+        body: confirmationMessage,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phoneNumber
+      });
+
+      console.log(`Confirmation SMS sent to ${phoneNumber}, SID: ${message.sid}`);
+    } catch (smsError) {
+      console.error('Error sending confirmation SMS:', smsError);
+      // Don't fail the whole request if SMS fails, just log the error
+      // The user is still subscribed in the database
+    }
+
     return NextResponse.json(
-      { success: true, message: 'You have been successfully subscribed' },
+      { success: true, message: 'You have been successfully subscribed! Please check your phone for a confirmation message.' },
       { status: 200 }
     );
     
