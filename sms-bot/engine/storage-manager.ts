@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
-import { SUPABASE_URL, SUPABASE_SERVICE_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
+import { SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_ANON_KEY, COLORS, ANIMALS, ACTIONS, WTAF_DOMAIN, WEB_APP_URL } from './shared/config.js';
 import { logWithTimestamp, logSuccess, logError, logWarning } from './shared/logger.js';
 import { generateFunSlug, injectSupabaseCredentials, replaceAppTableId, fixZadAppId, autoFixCommonIssues, autoFixApiSafeIssues } from './shared/utils.js';
 
@@ -250,7 +250,7 @@ export async function saveCodeToSupabase(
         // Skip credential injection for any app using API calls
     } else if (!isNaturalZad) {
         // Inject Supabase credentials into HTML (only for direct Supabase apps, not natural ZAD)
-        code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+        code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
     }
     
     // Convert Supabase calls to API calls for ZAD API apps OR natural ZAD requests
@@ -465,7 +465,7 @@ export async function saveCodeToFile(
     const publicUrl = `${WEB_APP_URL}/lab/${filename}`;
     
     // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY);
+    code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
     
     // Auto-fix common JavaScript issues before deployment
     code = autoFixCommonIssues(code);
