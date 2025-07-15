@@ -616,6 +616,78 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // BACKEND HELPER FUNCTION: Flexible query with security
+    if (action_type === 'query') {
+      const { type, where, orderBy, limit, aggregate } = content_data || {};
+      console.log('🔍 Backend helper: flexible query for app:', app_id, 'type:', type, 'where:', where, 'orderBy:', orderBy, 'limit:', limit);
+      
+      if (!type) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Missing type for query operation' 
+        }, { status: 400 });
+      }
+      
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Build safe query
+        let query = supabase
+          .from('wtaf_zero_admin_collaborative')
+          .select('*')
+          .eq('app_id', app_id)
+          .eq('action_type', type);
+        
+        // Apply filters safely (whitelist approach)
+        if (where) {
+          Object.entries(where).forEach(([key, value]) => {
+            // Only allow querying content_data fields and participant_id
+            if (key.startsWith('content_data.') || key === 'participant_id') {
+              query = query.eq(key, value);
+            }
+          });
+        }
+        
+        if (orderBy) {
+          // Sanitize orderBy to prevent SQL injection
+          const validColumns = ['created_at', 'content_data', 'participant_id'];
+          if (validColumns.some(col => orderBy.startsWith(col))) {
+            query = query.order(orderBy);
+          }
+        }
+        
+        // Apply limit (max 100 to prevent abuse)
+        if (limit && typeof limit === 'number' && limit > 0 && limit <= 100) {
+          query = query.limit(limit);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Query error:', error);
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Failed to execute query: ' + error.message 
+          }, { status: 500 });
+        }
+        
+        console.log('✅ Query completed successfully:', data?.length, 'records found');
+        return NextResponse.json({ 
+          success: true, 
+          data: data || [],
+          count: data?.length || 0,
+          message: 'Query completed successfully' 
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('Query error:', error);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Query operation failed: ' + (error instanceof Error ? error.message : String(error))
+        }, { status: 500 });
+      }
+    }
+
     // STANDARD ZAD DATA SAVE (for non-helper functions)
     if (!participant_id) {
       return NextResponse.json(

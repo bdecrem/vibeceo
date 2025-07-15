@@ -30,6 +30,28 @@ await save('data_type', {
 const data = await load('data_type'); // Returns array of items
 ```
 
+**Query data with filters (NEW - for better performance):**
+```javascript
+// Get top 10 high-priority tasks
+const urgentTasks = await query('task', {
+  where: { 'content_data.priority': 'high' },
+  orderBy: 'content_data.created_at',
+  limit: 10
+});
+
+// Get latest 5 completed items
+const recent = await query('task', {
+  where: { 'content_data.completed': true },
+  orderBy: 'created_at',
+  limit: 5
+});
+
+// Get user's own data
+const myData = await query('entry', {
+  where: { 'participant_id': getCurrentUser().participantId }
+});
+```
+
 **Update existing data:**
 ```javascript
 await save('update_task', {
@@ -41,7 +63,7 @@ await save('update_task', {
 });
 ```
 
-**IMPORTANT**: Only use the `save()` and `load()` functions for database operations. Do not use any external database libraries or clients.
+**IMPORTANT**: Only use the `save()`, `load()`, and `query()` functions for database operations. Do not use any external database libraries or clients.
 
 **Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
 
