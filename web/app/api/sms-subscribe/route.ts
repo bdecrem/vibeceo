@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import twilio from 'twilio';
+import { spawn } from 'child_process';
+import { join } from 'path';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -13,15 +14,33 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-function getTwilioClient() {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  
-  if (!accountSid || !authToken) {
-    throw new Error('Missing Twilio environment variables');
-  }
-  
-  return twilio(accountSid, authToken);
+/**
+ * Send SMS via SMS bot
+ */
+async function sendSmsViaSmsBot(message: string, phoneNumber: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const smsScript = join(process.cwd(), '..', 'sms-bot', 'dist', 'scripts', 'send-direct-sms.js');
+    
+    const child = spawn('node', [smsScript, message, phoneNumber], {
+      cwd: join(process.cwd(), '..', 'sms-bot'),
+      stdio: 'pipe'
+    });
+    
+    child.on('close', (code) => {
+      if (code === 0) {
+        console.log(`✅ SMS sent to ${phoneNumber}`);
+        resolve();
+      } else {
+        console.error(`❌ SMS failed with code ${code}`);
+        reject(new Error(`SMS failed with code ${code}`));
+      }
+    });
+    
+    child.on('error', (error) => {
+      console.error(`❌ SMS spawn error:`, error);
+      reject(error);
+    });
+  });
 }
 
 /**
@@ -123,22 +142,16 @@ export async function POST(request: Request) {
       
       // Send confirmation SMS for resubscription
       try {
-        const twilioClient = getTwilioClient();
-        const confirmationMessage = 
-          "Welcome back to The Foundry! 🚀\n\n" +
-          "Reply YES to confirm your resubscription to daily startup chaos via SMS.\n\n" +
-          "Standard msg & data rates may apply. Reply STOP to unsubscribe.";
-
-        const message = await twilioClient.messages.create({
-          body: confirmationMessage,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: phoneNumber
-        });
-
-        console.log(`Resubscription confirmation SMS sent to ${phoneNumber}, SID: ${message.sid}`);
+        await sendSmsViaSmsBot(
+          `Welcome back to The Foundry! 🚀 Reply YES to confirm your subscription and start receiving vibecoded chaos via SMS again. (Reply STOP to opt out)`,
+          phoneNumber
+        );
+        
+        console.log(`✅ Resubscription SMS sent to ${phoneNumber}`);
+        
       } catch (smsError) {
-        console.error('Error sending resubscription confirmation SMS:', smsError);
-        // Don't fail the whole request if SMS fails, just log the error
+        console.error('❌ Resubscription SMS sending failed:', smsError);
+        // Don't fail the whole subscription if SMS fails
       }
 
       return NextResponse.json(
@@ -169,23 +182,17 @@ export async function POST(request: Request) {
 
     // Send confirmation SMS
     try {
-      const twilioClient = getTwilioClient();
-      const confirmationMessage = 
-        "Welcome to The Foundry! 🚀\n\n" +
-        "Reply YES to confirm your subscription to daily startup chaos via SMS.\n\n" +
-        "Standard msg & data rates may apply. Reply STOP to unsubscribe.";
-
-      const message = await twilioClient.messages.create({
-        body: confirmationMessage,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phoneNumber
-      });
-
-      console.log(`Confirmation SMS sent to ${phoneNumber}, SID: ${message.sid}`);
+      await sendSmsViaSmsBot(
+        `Welcome to The Foundry! 🚀 Reply YES to confirm your subscription and start receiving vibecoded chaos via SMS. (Reply STOP to opt out)`,
+        phoneNumber
+      );
+      
+      console.log(`✅ SMS sent to ${phoneNumber}`);
+      
     } catch (smsError) {
-      console.error('Error sending confirmation SMS:', smsError);
-      // Don't fail the whole request if SMS fails, just log the error
-      // The user is still subscribed in the database
+      console.error('❌ SMS sending failed:', smsError);
+      console.error('❌ SMS error details:', JSON.stringify(smsError, null, 2));
+      // Don't fail the whole subscription if SMS fails
     }
 
     return NextResponse.json(
