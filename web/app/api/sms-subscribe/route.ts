@@ -1,5 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+}
 
 /**
  * Normalize a US phone number to E.164 format
@@ -63,6 +74,7 @@ export async function POST(request: Request) {
     console.log(`Processing subscription for normalized number: ${phoneNumber}`);
     
     // Check if phone number already exists
+    const supabase = getSupabaseClient();
     const { data: existing } = await supabase
       .from('sms_subscribers')
       .select('*')
