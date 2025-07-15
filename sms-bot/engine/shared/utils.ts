@@ -463,8 +463,8 @@ export function autoFixCommonIssues(html: string): string {
 
 /**
  * Auto-fix issues that are safe for API-based apps
- * Applies fixes: 1, 2, 4, 6, 7, 9
- * Skips fixes: 3 (Supabase-specific), 5 (breaks JSON), 8 (not needed)
+ * Applies fixes: 1, 2, 3, 4, 5, 6, 7, 9, 10
+ * Skips fixes: 8 (not needed for API apps)
  */
 export function autoFixApiSafeIssues(html: string): string {
     logWithTimestamp('🔧 Running API-safe auto-fix...');
@@ -492,6 +492,31 @@ export function autoFixApiSafeIssues(html: string): string {
         }
     });
     
+    // Fix 3: Improve API error handling (modified for API apps)
+    const genericErrorPatterns = [
+        // Convert generic console.log errors to user-friendly alerts
+        { from: /console\.log\(error\)/g, to: 'alert("Operation failed: " + error.message)', desc: 'generic console.log error handling' },
+        // Convert generic error handling to API-friendly patterns
+        { from: /catch\s*\(\s*error\s*\)\s*\{\s*console\.error\(['"`]([^'"`]+)['"`],\s*error\);?\s*\}/g, to: 'catch (error) {\n        console.error(\'$1\', error);\n        alert(\'$1: \' + error.message);\n    }', desc: 'API error handling with user feedback' },
+        // Improve generic error messages
+        { from: /throw new Error\(['"`]([^'"`]+)['"`]\)/g, to: 'throw new Error(\'$1: \' + (error?.message || \'Unknown error\'))', desc: 'enhanced error messages' }
+    ];
+    
+    let errorFixesApplied = 0;
+    genericErrorPatterns.forEach(({from, to, desc}) => {
+        const originalFixed = fixed;
+        fixed = fixed.replace(from, to);
+        if (fixed !== originalFixed) {
+            errorFixesApplied++;
+            logWithTimestamp(`🔧 Fixed: ${desc}`);
+        }
+    });
+    
+    if (errorFixesApplied > 0) {
+        logWithTimestamp(`🔧 Applied ${errorFixesApplied} API error handling improvements`);
+        fixesApplied += errorFixesApplied;
+    }
+
     // Fix 4: Remove duplicate variable declarations
     const duplicateCurrentUserMatches = fixed.match(/let currentUser = null;/g);
     if (duplicateCurrentUserMatches && duplicateCurrentUserMatches.length > 1) {
@@ -556,6 +581,41 @@ export function autoFixApiSafeIssues(html: string): string {
         }
     });
     
+    // Fix 5: Smart quote fixing that avoids JSON contexts (API-safe version)
+    const malformedQuotePattern = /'[^']*\\'[^']*'/g;
+    const malformedQuotes = fixed.match(malformedQuotePattern);
+    if (malformedQuotes && malformedQuotes.length > 0) {
+        logWithTimestamp(`🔧 Found ${malformedQuotes.length} malformed escaped quote(s) in strings`);
+        
+        // Smart quote fixing that avoids JSON contexts
+        const lines = fixed.split('\n');
+        const fixedLines = lines.map(line => {
+            // Skip lines that look like JSON in fetch calls, JSON.stringify, or similar
+            if (line.includes('fetch(') || line.includes('JSON.stringify') || line.includes('body:') || line.includes('"Content-Type"')) {
+                return line; // Leave JSON-related lines untouched
+            }
+            
+            // Fix malformed escape sequences in regular JavaScript strings
+            // Convert 'text\\'s more' to "text's more" (use double quotes to avoid escaping)
+            return line.replace(/'([^']*)\\'([^']*)'/g, '"$1\'$2"');
+        });
+        
+        fixed = fixedLines.join('\n');
+        
+        // Also fix any remaining backslash-quote issues outside of JSON contexts
+        const nonJsonLines = fixed.split('\n').map(line => {
+            if (line.includes('fetch(') || line.includes('JSON.stringify') || line.includes('body:') || line.includes('"Content-Type"')) {
+                return line;
+            }
+            return line.replace(/\\'/g, "'");
+        });
+        
+        fixed = nonJsonLines.join('\n');
+        
+        fixesApplied++;
+        logWithTimestamp('🔧 Fixed: Corrected malformed escaped quotes (API-safe, avoids JSON contexts)');
+    }
+
     // Fix 9: Clean up extra empty lines (already done above, but ensure it's clean)
     fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
     
