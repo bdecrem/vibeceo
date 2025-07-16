@@ -16,10 +16,15 @@ interface PageProps {
 		user_slug: string;
 		app_slug: string;
 	}>;
+	searchParams: Promise<{
+		demo?: string;
+		[key: string]: string | string[] | undefined;
+	}>;
 }
 
-export default async function WTAFAppPage({ params }: PageProps) {
+export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 	const { user_slug, app_slug } = await params;
+	const { demo } = await searchParams;
 
 	try {
 		// Fetch the WTAF content from Supabase
@@ -36,6 +41,87 @@ export default async function WTAFAppPage({ params }: PageProps) {
 			return notFound();
 		}
 
+		let htmlContent = data.html_content;
+
+		// If demo=true, modify the HTML to force demo mode
+		if (demo === 'true') {
+			console.log('🎭 Demo mode detected, injecting demo override');
+			
+			// Inject a simple demo mode override script at the end of the head
+			const demoOverride = `
+<script>
+console.log('🎭 DEMO OVERRIDE SCRIPT RUNNING');
+// Force demo mode immediately - wait for variables to be declared
+setTimeout(function() {
+	console.log('🎭 FORCING DEMO MODE NOW');
+	
+	// Create demo user with proper structure
+	const demoUser = { 
+		userLabel: 'Demo User', 
+		participantId: 'demo-' + Math.random().toString(36).substr(2, 6) 
+	};
+	
+	// CRITICAL: Set the LOCAL currentUser variable that the chat functions actually use
+	if (typeof currentUser !== 'undefined') {
+		window.currentUser = demoUser; // Set global too
+		currentUser = demoUser; // Set the local variable that chat functions use
+		console.log('🎭 Set both global and local currentUser:', currentUser);
+	} else {
+		// Fallback: try to set it later when the variable is declared
+		console.log('🎭 currentUser not yet declared, will set on window and retry');
+		window.currentUser = demoUser;
+		setTimeout(() => {
+			if (typeof currentUser !== 'undefined') {
+				currentUser = demoUser;
+				console.log('🎭 Set local currentUser on retry:', currentUser);
+			}
+		}, 500);
+	}
+	
+	// Update ZAD auth system properly
+	if (typeof updateZadAuth === 'function') {
+		updateZadAuth(demoUser.userLabel, demoUser.participantId);
+	}
+	
+	// Hide auth screens
+	const authScreens = document.querySelectorAll('#welcome-screen, #new-user-screen, #returning-user-screen');
+	authScreens.forEach(screen => {
+		screen.style.display = 'none';
+		screen.classList.remove('active');
+	});
+	
+	// Show main screen
+	const mainScreen = document.querySelector('#main-screen');
+	if (mainScreen) {
+		mainScreen.style.display = 'block';
+		mainScreen.classList.add('active');
+	}
+	
+	// Update status and user label
+	const userStatus = document.querySelector('#user-status');
+	if (userStatus) userStatus.innerHTML = '🎭 DEMO MODE - Try it out!';
+	
+	const userLabel = document.querySelector('#current-user-label');
+	if (userLabel) userLabel.textContent = demoUser.userLabel;
+	
+	// Start polling and load data like a normal user
+	if (typeof startPolling === 'function') {
+		startPolling();
+	}
+	if (typeof loadLatestData === 'function') {
+		loadLatestData();
+	}
+	
+	console.log('🎭 DEMO MODE APPLIED SUCCESSFULLY');
+}, 200); // Increased delay to ensure variables are declared
+</script>`;
+			
+			// Insert before closing head tag
+			htmlContent = htmlContent.replace('</head>', demoOverride + '</head>');
+			
+			console.log('🎭 Demo override injection complete');
+		}
+
 		// Return the HTML content in an isolated iframe
 		return (
 			<div style={{
@@ -46,7 +132,7 @@ export default async function WTAFAppPage({ params }: PageProps) {
 				overflow: "hidden"
 			}}>
 				<iframe
-					srcDoc={data.html_content}
+					srcDoc={htmlContent}
 					sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
 					style={{
 						width: "100%",
