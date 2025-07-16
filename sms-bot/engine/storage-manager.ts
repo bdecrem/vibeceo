@@ -1068,9 +1068,90 @@ console.log('🚀 ZAD Helper Functions loaded successfully');
                 console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 
-// DEMO MODE: Skip auth screens if ?demo=true
+// DEMO MODE: Complete demo mode implementation with localStorage isolation
 if (window.location.search.includes('demo=true')) {
-    console.log('🎭 DEMO MODE - Skipping authentication screens');
+    console.log('🎭 DEMO MODE - Activating complete demo mode');
+    
+    // Create fake demo user credentials
+    let demoUser = {
+        userLabel: 'Demo User',
+        participantId: 'demo-user-' + Math.random().toString(36).substr(2, 8),
+        username: 'Demo User'
+    };
+    
+    // Override ZAD helper functions to use localStorage instead of backend
+    const originalSave = window.save;
+    window.save = async function(type, data) {
+        try {
+            const demoKey = \`demo_\${type}_\${demoUser.participantId}\`;
+            const existing = JSON.parse(localStorage.getItem(demoKey) || '[]');
+            
+            const newItem = {
+                id: Date.now(),
+                created_at: new Date().toISOString(),
+                author: data.author || demoUser.userLabel,
+                ...data
+            };
+            
+            existing.push(newItem);
+            localStorage.setItem(demoKey, JSON.stringify(existing));
+            
+            console.log('🎭 Demo save:', { type, data: newItem });
+            return { success: true, data: newItem };
+            
+        } catch (error) {
+            console.error('❌ Demo save error:', error);
+            return { success: false, error: error.message };
+        }
+    };
+    
+    const originalLoad = window.load;
+    window.load = async function(type) {
+        try {
+            const demoKey = \`demo_\${type}_\${demoUser.participantId}\`;
+            const data = JSON.parse(localStorage.getItem(demoKey) || '[]');
+            
+            // Transform demo data to match real ZAD API structure
+            const transformedData = data.map(item => {
+                // Extract metadata fields
+                const { id, created_at, author, ...contentData } = item;
+                
+                // Return in same format as real ZAD API: content_data contains the actual data
+                return {
+                    id: id,
+                    created_at: created_at,
+                    content_data: contentData,
+                    author: author || demoUser.userLabel
+                };
+            });
+            
+            console.log('🎭 Demo load:', { type, count: transformedData.length });
+            return transformedData;
+            
+        } catch (error) {
+            console.error('❌ Demo load error:', error);
+            return [];
+        }
+    };
+    
+    // Override authentication functions to work with demo user
+    window.getCurrentUser = function() {
+        return demoUser;
+    };
+    
+    window.getUsername = function() {
+        return demoUser.userLabel;
+    };
+    
+    window.getParticipantId = function() {
+        return demoUser.participantId;
+    };
+    
+    // Set global currentUser for apps that expect it
+    if (typeof window.currentUser === 'undefined') {
+        window.currentUser = demoUser;
+    }
+    
     document.addEventListener('DOMContentLoaded', () => {
         // Hide welcome/auth screens and show main screen
         const welcomeScreen = document.getElementById('welcome-screen');
@@ -1085,8 +1166,21 @@ if (window.location.search.includes('demo=true')) {
         // Add demo banner if user status exists
         const userStatus = document.getElementById('user-status');
         if (userStatus) {
-            userStatus.innerHTML = '🎭 DEMO MODE - Try it out!';
+            userStatus.innerHTML = '🎭 DEMO MODE - Try it out! Data saved locally.';
         }
+        
+        // Update user display elements
+        const userLabelElements = document.querySelectorAll('#current-user-label, .current-user-label');
+        userLabelElements.forEach(elem => {
+            elem.textContent = demoUser.userLabel;
+        });
+        
+        // Auto-initialize demo user authentication state
+        if (typeof window.updateZadAuth === 'function') {
+            window.updateZadAuth(demoUser.userLabel, demoUser.participantId);
+        }
+        
+        console.log('🎭 Demo mode fully activated:', demoUser);
     });
 }
 
