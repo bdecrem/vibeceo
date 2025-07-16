@@ -11,7 +11,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WTAF RETRO PAINT 98</title>
+    <title>WTAF RETRO PAINT 98 - DEMO MODE</title>
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
 
@@ -128,11 +128,21 @@
         border: 2px solid #00FF00;
     }
 
+    /* Hide toolbar when gallery is visible */
+    .gallery-active .toolbar {
+        display: none !important;
+    }
+
+    #gallery {
+        padding-top: 120px; /* Add space for demo banner + controls */
+    }
+
     .gallery-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 20px;
         padding: 20px;
+        margin-bottom: 20px; /* Normal bottom margin */
     }
 
     .gallery-item {
@@ -152,6 +162,18 @@
         width: 100%;
         height: auto;
         border: 1px solid #00FF00;
+    }
+
+    .gallery-controls {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.9);
+        border-bottom: 2px solid #00FF00;
+        padding: 10px;
+        text-align: center;
+        z-index: 1001;
     }
 
     .floating-emoji {
@@ -177,6 +199,7 @@
         padding: 10px;
         border: 2px solid #00FF00;
         z-index: 100;
+        max-width: calc(100% - 40px);
     }
 
     @media (max-width: 768px) {
@@ -195,6 +218,18 @@
         button {
             padding: 8px 15px;
             font-size: 12px;
+        }
+
+        #user-status {
+            font-size: 12px;
+            padding: 8px;
+            top: 5px;
+            right: 5px;
+        }
+
+        /* Ensure gallery title is visible */
+        #gallery h2 {
+            margin-top: 10px;
         }
     }
     </style>
@@ -293,7 +328,7 @@ async function save(type, data) {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error('Save failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Save failed: ${errorData.error || response.statusText}`);
         }
         
         const result = await response.json();
@@ -328,7 +363,7 @@ async function checkAvailableSlots() {
         });
         
         if (!response.ok) {
-            throw new Error('Check slots failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Check slots failed: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -361,7 +396,7 @@ async function generateUser() {
         });
         
         if (!response.ok) {
-            throw new Error('Generate user failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Generate user failed: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -403,7 +438,7 @@ async function registerUser(userLabel, passcode, participantId) {
         });
         
         if (!response.ok) {
-            throw new Error('Register user failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Register user failed: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -444,7 +479,7 @@ async function authenticateUser(userLabel, passcode) {
         });
         
         if (!response.ok) {
-            throw new Error('Authentication failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Authentication failed: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -488,7 +523,7 @@ async function greet(name) {
         });
         
         if (!response.ok) {
-            throw new Error('Greet failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Greet failed: ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -517,7 +552,7 @@ async function load(type) {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error('Load failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Load failed: ${errorData.error || response.statusText}`);
         }
         
         const data = await response.json();
@@ -562,7 +597,7 @@ async function query(type, options = {}) {
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error('Query failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+            throw new Error(`Query failed: ${errorData.error || response.statusText}`);
         }
         
         const result = await response.json();
@@ -610,7 +645,7 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
     <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">🕹️</div>
 
     <div class="app-container">
-        <div id="welcome-screen" class="screen active">
+        <div id="welcome-screen" class="screen">
             <h1>WTAF RETRO PAINT 98</h1>
             <p>DIGITAL CHAOS CREATION STATION</p>
             <button onclick="showNewUserScreen()">New User</button>
@@ -634,8 +669,8 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
             <button onclick="showScreen('welcome-screen')">Back</button>
         </div>
         
-        <div id="main-screen" class="screen">
-            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        <div id="main-screen" class="screen active">
+            <div id="user-status">🎨 DEMO MODE - Anyone can paint! Welcome, <span id="current-user-label">Demo User</span>!</div>
             
             <div id="app-content">
                 <div class="toolbar">
@@ -656,16 +691,19 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
                 <div id="gallery" style="display: none;">
                     <h2>ART GALLERY</h2>
                     <div class="gallery-grid" id="gallery-grid"></div>
-                    <button onclick="hideGallery()">Back to Paint</button>
+                    <div class="gallery-controls">
+                        <button onclick="hideGallery()">Back to Paint</button>
+                        <button onclick="showScreen('welcome-screen')">Leave App</button>
+                    </div>
                 </div>
             </div>
             
-            <button onclick="showScreen('welcome-screen')">Leave App</button>
+            <button id="leave-app-btn" onclick="showScreen('welcome-screen')">Leave App</button>
         </div>
     </div>
 
     <script>
-    let currentUser = null;
+    let currentUser = { userLabel: 'Demo User', participantId: 'artist-' + Math.random().toString(36).substr(2, 6) };
     let canvas, ctx;
     let isDrawing = false;
     let lastX = 0;
@@ -723,9 +761,9 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
                 enterMainScreen();
             }
         } catch (error) {
-        console.error('Registration error:', error);
-        alert('Registration error:: ' + error.message);
-    }
+            console.error('Registration error:', error);
+            alert('Registration failed: ' + error.message);
+        }
     }
 
     async function showNewUserScreen() {
@@ -764,9 +802,9 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
                 alert('NICE TRY, WRONG VIBES ❌');
             }
         } catch (error) {
-        console.error('Login error:', error);
-        alert('Login error:: ' + error.message);
-    }
+            console.error('Login error:', error);
+            alert('Login failed: ' + error.message);
+        }
     }
 
     async function showReturningUserScreen() {
@@ -782,9 +820,9 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
                 userSelect.appendChild(option);
             });
         } catch (error) {
-        console.error('Error loading users:', error);
-        alert('Error loading users:: ' + error.message);
-    }
+            console.error('Error loading users:', error);
+            alert('Error loading users: ' + error.message);
+        }
     }
 
     function showScreen(screenId) {
@@ -819,8 +857,14 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
         e.preventDefault();
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
+        
+        // Calculate scale factor to account for CSS scaling
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        // Adjust coordinates for canvas scaling
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
         
         if (e.type === 'touchstart') {
             startDrawing({ offsetX: x, offsetY: y });
@@ -920,12 +964,16 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
     function showGallery() {
         document.getElementById('canvas-container').style.display = 'none';
         document.getElementById('gallery').style.display = 'block';
+        document.getElementById('leave-app-btn').style.display = 'none';
+        document.body.classList.add('gallery-active');
         loadGallery();
     }
 
     function hideGallery() {
         document.getElementById('canvas-container').style.display = 'flex';
         document.getElementById('gallery').style.display = 'none';
+        document.getElementById('leave-app-btn').style.display = 'block';
+        document.body.classList.remove('gallery-active');
     }
 
     async function loadGallery() {
@@ -974,9 +1022,9 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
             //     await loadGallery();
             // }
         } catch (error) {
-        console.error('Error loading latest data:', error);
-        alert('Error loading latest data:: ' + error.message);
-    }
+            console.error('Error loading latest data:', error);
+            alert('Error loading latest data: ' + error.message);
+        }
     }
 
     // Mouse parallax
@@ -999,7 +1047,16 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
         }, 3000);
     };
 
-    initAuth();
+    // Demo mode - skip auth and go straight to painting
+    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+    document.addEventListener('DOMContentLoaded', () => {
+        canvas = document.getElementById('paint-canvas');
+        ctx = canvas.getContext('2d');
+        ctx.lineCap = 'round';
+        setupCanvas();
+        startPolling();
+        loadLatestData();
+    });
     </script>
 </body>
-</html> 
+</html>

@@ -12,6 +12,30 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+// Demo Mode Detection
+function isDemoMode(participant_id?: string, content_data?: any, app_id?: string): boolean {
+  // Check if participant_id starts with 'demo'
+  if (participant_id && participant_id.startsWith('demo')) {
+    return true;
+  }
+  
+  // Check for explicit demo flag in content_data
+  if (content_data?.demo === true || content_data?.demoMode === true) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Get correct table name based on demo mode
+function getTableName(participant_id?: string, content_data?: any, app_id?: string): string {
+  if (isDemoMode(participant_id, content_data, app_id)) {
+    console.log('🎭 Demo mode detected - using demo table');
+    return 'wtaf_zero_admin_collaborative_DEMO';
+  }
+  return 'wtaf_zero_admin_collaborative';
+}
+
 // Backend helper function logic for greet action
 function generateGreeting(name: string): { greeting: string; timestamp: string; metadata: any } {
   const now = new Date();
@@ -40,11 +64,11 @@ function generateGreeting(name: string): { greeting: string; timestamp: string; 
 const ZAD_USER_LABELS = ['CHAOS_AGENT', 'VIBE_MASTER', 'GLITCH_RIDER', 'PRIMAL_FORCE', 'NEON_PHANTOM'];
 
 // Helper: Get existing users for an app
-async function getExistingUsers(app_id: string) {
+async function getExistingUsers(app_id: string, participant_id?: string, content_data?: any) {
   const supabase = getSupabaseClient();
   
   const { data, error } = await supabase
-    .from('wtaf_zero_admin_collaborative')
+    .from(getTableName(participant_id, content_data, app_id))
     .select('*')
     .eq('app_id', app_id)
     .eq('action_type', 'join');
@@ -63,8 +87,8 @@ async function getExistingUsers(app_id: string) {
 }
 
 // Backend Helper 1: Check Available Slots
-async function checkAvailableSlots(app_id: string) {
-  const existingUsers = await getExistingUsers(app_id);
+async function checkAvailableSlots(app_id: string, participant_id?: string, content_data?: any) {
+  const existingUsers = await getExistingUsers(app_id, participant_id, content_data);
   const usedLabels = existingUsers.map(u => u.userLabel).filter(Boolean);
   const availableLabels = ZAD_USER_LABELS.filter(label => !usedLabels.includes(label));
   
@@ -79,8 +103,8 @@ async function checkAvailableSlots(app_id: string) {
 }
 
 // Backend Helper 2: Generate User Credentials
-async function generateUser(app_id: string) {
-  const slots = await checkAvailableSlots(app_id);
+async function generateUser(app_id: string, participant_id?: string, content_data?: any) {
+  const slots = await checkAvailableSlots(app_id, participant_id, content_data);
   
   if (slots.isFull) {
     return {
@@ -239,7 +263,7 @@ export async function POST(req: NextRequest) {
     // PHASE 1 AUTHENTICATION BACKEND HELPER FUNCTIONS
     if (action_type === 'check_slots') {
       console.log('🔍 Backend helper: checkAvailableSlots for app:', app_id);
-      const slots = await checkAvailableSlots(app_id);
+      const slots = await checkAvailableSlots(app_id, participant_id, content_data);
       return NextResponse.json({ 
         success: true, 
         slots: slots 
@@ -248,7 +272,7 @@ export async function POST(req: NextRequest) {
     
     if (action_type === 'generate_user') {
       console.log('🎲 Backend helper: generateUser for app:', app_id);
-      const userResult = await generateUser(app_id);
+      const userResult = await generateUser(app_id, participant_id, content_data);
       return NextResponse.json({ 
         success: userResult.success, 
         user: userResult.success ? userResult : null,
@@ -300,7 +324,7 @@ export async function POST(req: NextRequest) {
         
         // First, load existing record to get current content_data
         const { data: existingRecord, error: loadError } = await supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .select('content_data')
           .eq('app_id', app_id)
           .eq('id', taskId)
@@ -328,7 +352,7 @@ export async function POST(req: NextRequest) {
         
         // Update the existing record with merged data
         const { data, error } = await supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .update({
             content_data: mergedContentData,
             updated_at: new Date().toISOString()
@@ -404,7 +428,7 @@ export async function POST(req: NextRequest) {
         
         // Delete the record
         const { data, error } = await supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .delete()
           .eq('app_id', app_id)
           .eq('id', recordId)
@@ -452,7 +476,7 @@ export async function POST(req: NextRequest) {
         
         // Build base query
         let query = supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .select('*')
           .eq('app_id', app_id)
           .eq('action_type', type)
@@ -521,7 +545,7 @@ export async function POST(req: NextRequest) {
         
         // Build base query
         let query = supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .select('*', { count: 'exact' })
           .eq('app_id', app_id)
           .eq('action_type', type);
@@ -585,7 +609,7 @@ export async function POST(req: NextRequest) {
         
         // Clear all records of the specified type for this app
         const { data, error } = await supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .delete()
           .eq('app_id', app_id)
           .eq('action_type', type)
@@ -633,7 +657,7 @@ export async function POST(req: NextRequest) {
         
         // Build safe query
         let query = supabase
-          .from('wtaf_zero_admin_collaborative')
+          .from(getTableName(participant_id, content_data, app_id))
           .select('*')
           .eq('app_id', app_id)
           .eq('action_type', type);
@@ -699,7 +723,7 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseClient();
     
     const { data, error } = await supabase
-      .from('wtaf_zero_admin_collaborative')
+      .from(getTableName(participant_id, content_data, app_id))
       .insert({
         app_id,
         participant_id,
