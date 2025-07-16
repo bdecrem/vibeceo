@@ -687,16 +687,45 @@ function getAppId() {
                 function getParticipantId() {
                     let participantId = localStorage.getItem('zad_participant_id');
                     if (!participantId) {
-                        // Generate temporary ID - app's authentication system will set the real one
-                        participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                        // Check if demo mode is enabled (multiple detection methods for iframe compatibility)
+                        const isDemoMode = 
+                            window.location.search.includes('demo=true') ||
+                            window.parent?.location?.search?.includes('demo=true') ||
+                            window.top?.location?.search?.includes('demo=true') ||
+                            document.referrer.includes('demo=true');
+                        
+                        // Clear demo mode if not detected in current session
+                        if (!isDemoMode) {
+                            localStorage.removeItem('demo_mode');
+                            // Also clear participant_id if it was a demo ID, so user gets fresh normal ID
+                            const existingId = localStorage.getItem('zad_participant_id');
+                            if (existingId && existingId.startsWith('demo_')) {
+                                localStorage.removeItem('zad_participant_id');
+                                localStorage.removeItem('zad_username');
+                            }
+                        }
+                        
+                        if (isDemoMode) {
+                            // Generate demo ID that will trigger backend demo table routing
+                            participantId = 'demo_user_' + Math.random().toString(36).substr(2, 8);
+                            localStorage.setItem('demo_mode', 'true');
+                            localStorage.setItem('zad_username', 'Demo User');
+                            console.log('🎭 Demo mode detected - generated demo participant ID:', participantId);
+                        } else {
+                            // Generate temporary ID - app's authentication system will set the real one
+                            participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                            localStorage.setItem('zad_username', 'Anonymous');
+                        }
+                        
                         localStorage.setItem('zad_participant_id', participantId);
-                        localStorage.setItem('zad_username', 'Anonymous');
                     }
                     return participantId;
                 }
 
                 // Get username from current session
                 function getUsername() {
+                    // Ensure participant ID is initialized first (which sets up localStorage)
+                    getParticipantId();
                     return localStorage.getItem('zad_username') || 'Anonymous';
                 }
 
@@ -974,10 +1003,11 @@ async function greet(name) {
 async function load(type) {
     try {
         const app_id = getAppId();
+        const participant_id = getParticipantId();
         
-        console.log('🔄 Loading from ZAD API:', { app_id, type });
+        console.log('🔄 Loading from ZAD API:', { app_id, type, participant_id });
         
-        const url = \`/api/zad/load?app_id=\${encodeURIComponent(app_id)}&action_type=\${encodeURIComponent(type)}\`;
+        const url = \`/api/zad/load?app_id=\${encodeURIComponent(app_id)}&action_type=\${encodeURIComponent(type)}&participant_id=\${encodeURIComponent(participant_id)}\`;
         console.log('🔍 ZAD load URL:', url);
         const response = await fetch(url);
         

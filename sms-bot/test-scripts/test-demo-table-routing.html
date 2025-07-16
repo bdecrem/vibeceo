@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo Table Routing Test</title>
+</head>
+<body>
+    <h1>Demo Table Routing Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testDemoTableRouting() {
+            const results = [];
+            
+            try {
+                // Test 1: Save with demo participant_id
+                console.log('=== TEST 1: Save with Demo Participant ID ===');
+                const demoSaveResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'test-demo-routing',
+                        participant_id: 'demo_test_user_123',
+                        action_type: 'test_message',
+                        content_data: {
+                            message: 'This is demo data',
+                            type: 'demo'
+                        }
+                    })
+                });
+                
+                const demoSaveResult = await demoSaveResponse.json();
+                results.push(`Demo Save: ${demoSaveResponse.ok ? '✅' : '❌'} ${JSON.stringify(demoSaveResult)}`);
+                
+                // Test 2: Save with normal participant_id
+                console.log('=== TEST 2: Save with Normal Participant ID ===');
+                const normalSaveResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'test-demo-routing',
+                        participant_id: 'normal_user_456',
+                        action_type: 'test_message',
+                        content_data: {
+                            message: 'This is real data',
+                            type: 'real'
+                        }
+                    })
+                });
+                
+                const normalSaveResult = await normalSaveResponse.json();
+                results.push(`Normal Save: ${normalSaveResponse.ok ? '✅' : '❌'} ${JSON.stringify(normalSaveResult)}`);
+                
+                // Test 3: Load with demo participant_id (should only see demo data)
+                console.log('=== TEST 3: Load with Demo Participant ID ===');
+                const demoLoadResponse = await fetch('/api/zad/load?app_id=test-demo-routing&action_type=test_message&participant_id=demo_test_user_123');
+                const demoLoadResult = await demoLoadResponse.json();
+                
+                const demoDataOnly = demoLoadResult.every(item => item.participant_id.startsWith('demo'));
+                results.push(`Demo Load Isolation: ${demoDataOnly ? '✅' : '❌'} Found ${demoLoadResult.length} records, all demo: ${demoDataOnly}`);
+                
+                // Test 4: Load with normal participant_id (should only see real data)
+                console.log('=== TEST 4: Load with Normal Participant ID ===');
+                const normalLoadResponse = await fetch('/api/zad/load?app_id=test-demo-routing&action_type=test_message&participant_id=normal_user_456');
+                const normalLoadResult = await normalLoadResponse.json();
+                
+                const realDataOnly = normalLoadResult.every(item => !item.participant_id.startsWith('demo'));
+                results.push(`Normal Load Isolation: ${realDataOnly ? '✅' : '❌'} Found ${normalLoadResult.length} records, no demo: ${realDataOnly}`);
+                
+                // Test 5: Load without participant_id (backward compatibility)
+                console.log('=== TEST 5: Load without Participant ID ===');
+                const noParticipantLoadResponse = await fetch('/api/zad/load?app_id=test-demo-routing&action_type=test_message');
+                const noParticipantLoadResult = await noParticipantLoadResponse.json();
+                results.push(`No Participant Load: ${noParticipantLoadResponse.ok ? '✅' : '❌'} Found ${noParticipantLoadResult.length} records`);
+                
+            } catch (error) {
+                results.push(`❌ Error: ${error.message}`);
+            }
+            
+            // Display results
+            document.getElementById('results').innerHTML = `
+                <h2>Test Results</h2>
+                ${results.map(result => `<p>${result}</p>`).join('')}
+                <h3>Expected Behavior:</h3>
+                <ul>
+                    <li>✅ Demo saves go to wtaf_zero_admin_collaborative_DEMO table</li>
+                    <li>✅ Normal saves go to wtaf_zero_admin_collaborative table</li>
+                    <li>✅ Demo loads only return demo data (perfect isolation)</li>
+                    <li>✅ Normal loads only return real data (no demo contamination)</li>
+                    <li>✅ Demo table gets truncated every 3 minutes automatically</li>
+                </ul>
+            `;
+        }
+        
+        // Run tests when page loads
+        window.onload = testDemoTableRouting;
+    </script>
+</body>
+</html> 

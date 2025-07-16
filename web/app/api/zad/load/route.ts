@@ -12,11 +12,27 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+// Demo Mode Detection
+function isDemoMode(participant_id?: string): boolean {
+  // Check if participant_id starts with 'demo'
+  return participant_id ? participant_id.startsWith('demo') : false;
+}
+
+// Get correct table name based on demo mode
+function getTableName(participant_id?: string): string {
+  if (isDemoMode(participant_id)) {
+    console.log('🎭 Demo mode detected - using demo table');
+    return 'wtaf_zero_admin_collaborative_DEMO';
+  }
+  return 'wtaf_zero_admin_collaborative';
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const app_id = searchParams.get('app_id');
     const action_type = searchParams.get('action_type');
+    const participant_id = searchParams.get('participant_id'); // For demo mode detection
 
     // Validate required fields
     if (!app_id) {
@@ -29,7 +45,7 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseClient();
     
     let query = supabase
-      .from('wtaf_zero_admin_collaborative')
+      .from(getTableName(participant_id || undefined))
       .select('*')
       .eq('app_id', app_id)
       .order('created_at', { ascending: false });
