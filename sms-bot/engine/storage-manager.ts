@@ -220,6 +220,19 @@ export async function saveCodeToSupabase(
         return { appSlug: null, publicUrl: null, uuid: null };
     }
     
+    // ZAD DETECTION: Check if this is a ZAD app
+    const isZadApp = code.includes('/api/zad/save') || 
+                     code.includes('/api/zad/load') || 
+                     code.includes('wtaf_zero_admin_collaborative') ||
+                     code.includes('await save(') ||
+                     code.includes('await load(') ||
+                     code.includes('save(') ||
+                     code.includes('load(');
+    
+    if (isZadApp) {
+        logWithTimestamp(`🤝 ZAD app detected EARLY - will set type to 'ZAD'`);
+    }
+
     // Inject OpenGraph tags into HTML
     const publicUrl = `${WTAF_DOMAIN}/${userSlug}/${appSlug}`;
     
@@ -322,11 +335,9 @@ export async function saveCodeToSupabase(
     
     // Save to Supabase FIRST to get the UUID
     try {
-        // Detect if this is a ZAD app
-        const isZadApp = code.includes('wtaf_zero_admin_collaborative');
-        
+        // ZAD detection already done early (before code transformations)
         if (isZadApp) {
-            logWithTimestamp(`🤝 ZAD app detected - setting type to 'ZAD'`);
+            logWithTimestamp(`🤝 Using early ZAD detection - setting type to 'ZAD'`);
         }
         
         // Check if user has hide_default setting enabled
@@ -355,6 +366,12 @@ export async function saveCodeToSupabase(
             type: isZadApp ? 'ZAD' : null, // Set type to 'ZAD' if ZAD app detected
             Forget: shouldHideByDefault // Hide by default if user has hide_default enabled
         };
+        
+        // Explicitly set type to ZAD for ZAD apps
+        if (isZadApp) {
+            data.type = 'ZAD';
+            logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ZAD app`);
+        }
         
         let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
@@ -1051,53 +1068,28 @@ console.log('🚀 ZAD Helper Functions loaded successfully');
                 console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 
-// DEMO MODE DETECTION - Auto-bypass auth for demo URLs
-const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
-if (isDemoMode) {
-    console.log('🎭 DEMO MODE DETECTED - Bypassing authentication');
-    
-    // Set demo user
-    const demoUser = { 
-        userLabel: 'Demo User', 
-        participantId: 'demo-' + Math.random().toString(36).substr(2, 6) 
-    };
-    
-    // Update auth state
-    updateZadAuth(demoUser.userLabel, demoUser.participantId);
-    
-    // Set global currentUser for apps that check it
-    if (typeof window !== 'undefined') {
-        window.currentUser = demoUser;
-        if (typeof currentUser === 'undefined') {
-            window.currentUser = demoUser;
-        }
-    }
-    
-    // Add demo banner and auto-show main screen when DOM is ready
+// DEMO MODE: Skip auth screens if ?demo=true
+if (window.location.search.includes('demo=true')) {
+    console.log('🎭 DEMO MODE - Skipping authentication screens');
     document.addEventListener('DOMContentLoaded', () => {
-        // Add demo banner to user status if it exists
-        const userStatus = document.getElementById('user-status');
-        if (userStatus) {
-            userStatus.innerHTML = '🎭 DEMO MODE - Try it out! Welcome, <span id="current-user-label">Demo User</span>!';
-        }
-        
-        // Auto-show main screen and hide welcome screen
+        // Hide welcome/auth screens and show main screen
         const welcomeScreen = document.getElementById('welcome-screen');
         const mainScreen = document.getElementById('main-screen');
         
         if (welcomeScreen && mainScreen) {
-            console.log('🎭 DEMO MODE: Switching to main screen');
-            welcomeScreen.classList.remove('active');
-            mainScreen.classList.add('active');
-            
-            // Update current user label
-            const userLabel = document.getElementById('current-user-label');
-            if (userLabel) {
-                userLabel.textContent = 'Demo User';
-            }
+            welcomeScreen.style.display = 'none';
+            mainScreen.style.display = 'block';
+            console.log('🎭 Auth screens bypassed for demo mode');
+        }
+        
+        // Add demo banner if user status exists
+        const userStatus = document.getElementById('user-status');
+        if (userStatus) {
+            userStatus.innerHTML = '🎭 DEMO MODE - Try it out!';
         }
     });
 }
+
 </script>`;
         
         // Inject before closing </head> tag, or before first <script> tag if no </head>
