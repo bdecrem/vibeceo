@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEATURE FRENZY 🚀</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            background: linear-gradient(135deg, #00FFC6, #57E2E5);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+        }
+
+        input, select, textarea {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00FFC6;
+            box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .idea-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .idea-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(123,58,237,0.3);
+        }
+
+        .idea-category {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            background: rgba(0,255,198,0.2);
+        }
+
+        .idea-meta {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+
+        .idea-content {
+            font-size: 1.1em;
+            margin: 15px 0;
+            line-height: 1.4;
+        }
+
+        .reaction-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .fire-button {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fire-button:hover {
+            background: rgba(255,165,0,0.2);
+            transform: scale(1.05);
+        }
+
+        .comments-section {
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .comment {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin: 5px 0;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .filter-button {
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+
+        .new-idea-form {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        #user-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,255,198,0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 5%; left: 2%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 5%; right: 2%;" data-value="3">🚀</div>
+    <div class="floating-emoji" style="bottom: 5%; left: 2%;" data-value="1">💡</div>
+    <div class="floating-emoji" style="bottom: 5%; right: 2%;" data-value="4">🔥</div>
+
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>FEATURE FRENZY 🚀</h1>
+            <p>DROP YOUR GALAXY BRAIN IDEAS INTO THE VOID!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter App</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select">
+                <option>Select User</option>
+            </select>
+            <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>FEATURE FRENZY 🚀</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div class="new-idea-form">
+                    <input type="text" id="idea-input" placeholder="DROP YOUR GALAXY BRAIN IDEA HERE 🌟" maxlength="200">
+                    <select id="category-select">
+                        <option value="UI/UX">UI/UX 🎨</option>
+                        <option value="BACKEND">BACKEND 🔧</option>
+                        <option value="MOBILE">MOBILE 📱</option>
+                        <option value="AI/ML">AI/ML 🤖</option>
+                        <option value="SECURITY">SECURITY 🔒</option>
+                        <option value="WILD">WILD IDEAS 🌈</option>
+                    </select>
+                    <button onclick="submitIdea()">LAUNCH IDEA 🚀</button>
+                </div>
+
+                <div class="filters">
+                    <button onclick="filterIdeas('all')" class="filter-button">ALL IDEAS 🌟</button>
+                    <button onclick="filterIdeas('hot')" class="filter-button">HOTTEST 🔥</button>
+                    <button onclick="filterByCategory('UI/UX')" class="filter-button">UI/UX 🎨</button>
+                    <button onclick="filterByCategory('BACKEND')" class="filter-button">BACKEND 🔧</button>
+                    <button onclick="filterByCategory('MOBILE')" class="filter-button">MOBILE 📱</button>
+                    <button onclick="filterByCategory('AI/ML')" class="filter-button">AI/ML 🤖</button>
+                    <button onclick="filterByCategory('SECURITY')" class="filter-button">SECURITY 🔒</button>
+                    <button onclick="filterByCategory('WILD')" class="filter-button">WILD IDEAS 🌈</button>
+                </div>
+
+                <div id="ideas-container" class="idea-grid">
+                    <!-- Ideas will be populated here -->
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave App</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+        let currentFilter = 'all';
+        let currentCategory = null;
+
+        // Authentication Functions
+        async function generateNewUser() {
+            try {
+                const slots = await checkAvailableSlots();
+                
+                if (slots.isFull) {
+                    alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+                    return false;
+                }
+                
+                const user = await generateUser();
+                if (user && user.success) {
+                    currentUser = {
+                        userLabel: user.userLabel,
+                        passcode: user.passcode,
+                        participantId: user.participantId
+                    };
+                    
+                    document.getElementById('new-user-info').innerHTML = 
+                        `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+                    
+                    return true;
+                } else {
+                    alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+                    return false;
+                }
+            } catch (error) {
+                console.error('User generation error:', error);
+                alert('GENERATION EXPLODED, TRY AGAIN 💥');
+                return false;
+            }
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) {
+                alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+                return;
+            }
+            
+            try {
+                const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+                if (result && result.success) {
+                    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                    enterMainScreen();
+                } else {
+                    alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            const success = await generateNewUser();
+            if (!success) {
+                showScreen('welcome-screen');
+            }
+        }
+
+        async function loginReturningUser() {
+            const selectedLabel = document.getElementById('user-label-select').value;
+            const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+            
+            if (!selectedLabel || selectedLabel === 'Select User') {
+                alert('PICK YOUR IDENTITY, PHANTOM 👻');
+                return;
+            }
+            
+            if (!enteredPasscode || enteredPasscode.length !== 4) {
+                alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+                return;
+            }
+            
+            try {
+                const result = await authenticateUser(selectedLabel, enteredPasscode);
+                if (result && result.success) {
+                    currentUser = {
+                        userLabel: selectedLabel,
+                        passcode: enteredPasscode,
+                        participantId: result.user.participantId
+                    };
+                    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                    enterMainScreen();
+                } else {
+                    alert('NICE TRY, WRONG VIBES ❌');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            
+            try {
+                const slots = await checkAvailableSlots();
+                const userSelect = document.getElementById('user-label-select');
+                userSelect.innerHTML = '<option>Select User</option>';
+                
+                slots.usedLabels.forEach(label => {
+                    const option = document.createElement('option');
+                    option.value = label;
+                    option.textContent = label;
+                    userSelect.appendChild(option);
+                });
+                
+                if (slots.usedLabels.length === 0) {
+                    userSelect.innerHTML = '<option>No users registered yet</option>';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                const userSelect = document.getElementById('user-label-select');
+                userSelect.innerHTML = '<option>Error loading users</option>';
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => 
+                screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId !== 'main-screen') {
+                stopPolling();
+            }
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // App-specific functions
+        async function submitIdea() {
+            const ideaInput = document.getElementById('idea-input');
+            const categorySelect = document.getElementById('category-select');
+            
+            if (!ideaInput.value.trim()) {
+                alert('YOUR IDEA IS TOO QUIET! SPEAK UP! 📢');
+                return;
+            }
+
+            try {
+                await save('idea', {
+                    content: ideaInput.value.trim(),
+                    category: categorySelect.value,
+                    timestamp: Date.now(),
+                    user: currentUser.userLabel,
+                    reactions: 0,
+                    comments: []
+                });
+
+                ideaInput.value = '';
+                loadLatestData();
+            } catch (error) {
+                console.error('Error saving idea:', error);
+                alert('IDEA LAUNCH FAILED! RETRY! 🚫');
+            }
+        }
+
+        async function addReaction(ideaId) {
+            try {
+                const ideas = await load('idea');
+                const idea = ideas.find(i => i.id === ideaId);
+                
+                if (idea) {
+                    await save('update_task', {
+                        taskId: ideaId,
+                        updates: {
+                            reactions: (idea.reactions || 0) + 1
+                        }
+                    });
+                    loadLatestData();
+                }
+            } catch (error) {
+                console.error('Error adding reaction:', error);
+                alert('REACTION FAILED TO LAUNCH! 💥');
+            }
+        }
+
+        async function addComment(ideaId) {
+            const commentText = prompt('DROP YOUR THOUGHTS 💭');
+            if (!commentText) return;
+
+            try {
+                const ideas = await load('idea');
+                const idea = ideas.find(i => i.id === ideaId);
+                
+                if (idea) {
+                    const comments = idea.comments || [];
+                    comments.push({
+                        user: currentUser.userLabel,
+                        text: commentText,
+                        timestamp: Date.now()
+                    });
+
+                    await save('update_task', {
+                        taskId: ideaId,
+                        updates: {
+                            comments: comments
+                        }
+                    });
+                    loadLatestData();
+                }
+            } catch (error) {
+                console.error('Error adding comment:', error);
+                alert('COMMENT FAILED TO SEND! 📡');
+            }
+        }
+
+        function filterIdeas(type) {
+            currentFilter = type;
+            currentCategory = null;
+            loadLatestData();
+        }
+
+        function filterByCategory(category) {
+            currentFilter = 'category';
+            currentCategory = category;
+            loadLatestData();
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        async function loadLatestData() {
+            try {
+                let ideas = await load('idea');
+                
+                if (currentFilter === 'hot') {
+                    ideas.sort((a, b) => (b.reactions || 0) - (a.reactions || 0));
+                } else if (currentFilter === 'category' && currentCategory) {
+                    ideas = ideas.filter(idea => idea.category === currentCategory);
+                }
+
+                const container = document.getElementById('ideas-container');
+                container.innerHTML = ideas.map(idea => `
+                    <div class="idea-card">
+                        <div class="idea-category">${idea.category}</div>
+                        <div class="idea-meta">
+                            ${idea.user} • ${formatTimestamp(idea.timestamp)}
+                        </div>
+                        <div class="idea-content">${idea.content}</div>
+                        <div class="reaction-bar">
+                            <button class="fire-button" onclick="addReaction('${idea.id}')">
+                                🔥 ${idea.reactions || 0}
+                            </button>
+                            <button class="fire-button" onclick="addComment('${idea.id}')">
+                                💭 Comment
+                            </button>
+                        </div>
+                        <div class="comments-section">
+                            ${(idea.comments || []).map(comment => `
+                                <div class="comment">
+                                    <strong>${comment.user}:</strong> ${comment.text}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading ideas:', error);
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+        window.wtaf = function() {
+            document.body.style.animation = 'rainbow 1s infinite';
+            setTimeout(() => {
+                document.body.style.animation = '';
+                alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+            }, 3000);
+        };
+
+        // Initialize
+        initAuth();
+    </script>
+</body>
+</html>
