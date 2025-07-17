@@ -355,6 +355,23 @@ if (latestJohn) {
 }
 ```
 
+### ⚠️ CRITICAL: Avoid Type Mismatch Bugs
+JavaScript type coercion causes subtle bugs! Always use consistent data types:
+
+```javascript
+// ❌ WRONG: Type mismatch in onclick handlers
+<button onclick="processItem('${item.id}')">Process</button>  // String ID
+const matches = data.filter(d => d.itemId === item.id);      // Number comparison
+// Result: "123" !== 123, so matches always empty!
+
+// ✅ CORRECT: Convert types consistently  
+<button onclick="processItem(${item.id})">Process</button>    // Number ID
+// OR convert when filtering:
+const matches = data.filter(d => d.itemId === String(item.id));
+// OR convert when saving:
+await save('data', { itemId: parseInt(idParam) });
+```
+
 ### Filter Pattern
 ```javascript
 // Get all items
