@@ -615,6 +615,59 @@ export function autoFixApiSafeIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Corrected malformed escaped quotes (API-safe, avoids JSON contexts)');
     }
 
+    // Fix 7: Targeted onclick quote escaping (ZAD reaction button fix)
+    // This only affects onclick attributes, not JSON/API calls
+    const onclickQuotePattern = /onclick="([^"]*)'([^']*)'([^"]*)"/g;
+    const onclickMatches = fixed.match(onclickQuotePattern);
+    if (onclickMatches && onclickMatches.length > 0) {
+        logWithTimestamp(`🔧 Found ${onclickMatches.length} onclick handler(s) with nested quote conflicts`);
+        
+        // Convert single quotes to &quot; in onclick handlers only
+        // onclick="toggleCompleted('123')" → onclick="toggleCompleted(&quot;123&quot;)"
+        fixed = fixed.replace(/onclick="([^"]*)'([^']*)'([^"]*)"/g, 'onclick="$1&quot;$2&quot;$3"');
+        
+        fixesApplied++;
+        logWithTimestamp('🔧 Fixed: Converted single quotes to &quot; in onclick handlers');
+    }
+
+    // Fix 8: String recordId to number conversion for database operations
+    // This fixes the "RECORD NOT FOUND" errors when recordId is string but database expects number
+    const stringIdPatterns = [
+        // Pattern 1: r.record_id === recordId (when recordId is string)
+        { 
+            from: /(\w+)\.record_id\s*===\s*recordId(?=\s*[;\)\]])/g, 
+            to: '$1.record_id === parseInt(recordId)', 
+            desc: 'record_id comparisons with string recordId' 
+        },
+        // Pattern 2: item.record_id === recordId  
+        { 
+            from: /(\w+)\.record_id\s*===\s*(\w+Id)(?=\s*[;\)\]])/g, 
+            to: '$1.record_id === parseInt($2)', 
+            desc: 'record_id comparisons with string IDs' 
+        },
+        // Pattern 3: Generic id comparison patterns that might be strings
+        { 
+            from: /(\w+)\.id\s*===\s*(\w+Id)(?=\s*[;\)\]])/g, 
+            to: '$1.id === parseInt($2)', 
+            desc: 'generic id comparisons with string IDs' 
+        }
+    ];
+    
+    let stringIdFixesApplied = 0;
+    stringIdPatterns.forEach(({from, to, desc}) => {
+        const originalFixed = fixed;
+        fixed = fixed.replace(from, to);
+        if (fixed !== originalFixed) {
+            stringIdFixesApplied++;
+            logWithTimestamp(`🔧 Fixed: ${desc}`);
+        }
+    });
+    
+    if (stringIdFixesApplied > 0) {
+        logWithTimestamp(`🔧 Applied ${stringIdFixesApplied} string ID to number conversions`);
+        fixesApplied += stringIdFixesApplied;
+    }
+
     // Fix 9: Clean up extra empty lines (already done above, but ensure it's clean)
     fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n');
     

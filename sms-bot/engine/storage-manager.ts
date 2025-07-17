@@ -295,15 +295,16 @@ export async function saveCodeToSupabase(
         // Apply API-safe auto-fix for natural ZAD requests (fixes 1, 2, 4, 6, 7, 9, 10)
         logWithTimestamp("🎨 Natural ZAD: Applying API-safe auto-fix (skips quote fixing)");
         code = autoFixApiSafeIssues(code);
-    } else if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers || isZadApi) {
+    } else if (isZadApi) {
+        // Apply API-safe auto-fix for ZAD API apps (includes onclick quote fixes)
+        logWithTimestamp("🚀 ZAD API: Applying API-safe auto-fix (includes onclick quote fixes, avoids JSON corruption)");
+        code = autoFixApiSafeIssues(code);
+    } else if (isMinimalTest || usesApiCalls || isZadTest || usesZadHelpers) {
         if (isMinimalTest) {
             logWithTimestamp("🧪 MINIMAL TEST: Skipping auto-fix processing");
         }
         if (isZadTest) {
             logWithTimestamp("🧪 ZAD TEST: Skipping auto-fix processing");
-        }
-        if (isZadApi) {
-            logWithTimestamp("🚀 ZAD API: Skipping auto-fix processing (prevents breaking API calls)");
         }
         if (usesZadHelpers && !isZadTest && !isZadApi) {
             logWithTimestamp("🔍 AUTO-DETECTED ZAD CODE: Skipping auto-fix processing");
@@ -311,7 +312,7 @@ export async function saveCodeToSupabase(
         if (usesApiCalls) {
             logWithTimestamp("🔗 API-BASED APP: Skipping auto-fix processing (prevents breaking fetch calls)");
         }
-        // Skip auto-fix for minimal test OR ZAD test OR ZAD API OR auto-detected ZAD OR other API-based apps
+        // Skip auto-fix for minimal test OR ZAD test OR auto-detected ZAD OR other API-based apps
     } else {
         // Auto-fix common JavaScript issues before deployment (only for direct Supabase apps)
         code = autoFixCommonIssues(code);
