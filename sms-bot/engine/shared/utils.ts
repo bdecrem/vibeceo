@@ -630,6 +630,79 @@ export function autoFixApiSafeIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Converted single quotes to &quot; in onclick handlers');
     }
 
+    // Fix 7b: Handle mixed HTML entities and quotes in onclick handlers
+    const mixedQuotePatterns = [
+        // Pattern 1: onclick="func('param&quot;)" - single quote + HTML entity
+        { 
+            from: /onclick="([^"]*)'([^']*?)&quot;([^"]*)"/g, 
+            to: 'onclick="$1&quot;$2&quot;$3"', 
+            desc: 'mixed single quote and &quot; in onclick' 
+        },
+        // Pattern 2: onclick="func(&quot;param')" - HTML entity + single quote  
+        { 
+            from: /onclick="([^"]*)&quot;([^']*?)'([^"]*)"/g, 
+            to: 'onclick="$1&quot;$2&quot;$3"', 
+            desc: 'mixed &quot; and single quote in onclick' 
+        },
+        // Pattern 3: Similar patterns in other event handlers
+        { 
+            from: /onchange="([^"]*)'([^']*?)&quot;([^"]*)"/g, 
+            to: 'onchange="$1&quot;$2&quot;$3"', 
+            desc: 'mixed quotes in onchange handlers' 
+        },
+        { 
+            from: /onchange="([^"]*)&quot;([^']*?)'([^"]*)"/g, 
+            to: 'onchange="$1&quot;$2&quot;$3"', 
+            desc: 'mixed quotes in onchange handlers' 
+        }
+    ];
+    
+    let mixedQuoteFixesApplied = 0;
+    mixedQuotePatterns.forEach(({from, to, desc}) => {
+        const originalFixed = fixed;
+        fixed = fixed.replace(from, to);
+        if (fixed !== originalFixed) {
+            mixedQuoteFixesApplied++;
+            logWithTimestamp(`🔧 Fixed: ${desc}`);
+        }
+    });
+    
+    if (mixedQuoteFixesApplied > 0) {
+        logWithTimestamp(`🔧 Applied ${mixedQuoteFixesApplied} mixed quote fixes in event handlers`);
+        fixesApplied += mixedQuoteFixesApplied;
+    }
+
+    // Fix 7c: Handle malformed quotes in getElementById and similar function calls
+    const getElementQuotePatterns = [
+        // Pattern 1: getElementById(&quot;id') - mixed quotes
+        { 
+            from: /getElementById\(&quot;([^']*?)'\)/g, 
+            to: 'getElementById("$1")', 
+            desc: 'getElementById with mixed quotes' 
+        },
+        // Pattern 2: getElementById('id&quot;) - mixed quotes  
+        { 
+            from: /getElementById\('([^"]*?)&quot;\)/g, 
+            to: 'getElementById("$1")', 
+            desc: 'getElementById with mixed quotes' 
+        }
+    ];
+    
+    let getElementFixesApplied = 0;
+    getElementQuotePatterns.forEach(({from, to, desc}) => {
+        const originalFixed = fixed;
+        fixed = fixed.replace(from, to);
+        if (fixed !== originalFixed) {
+            getElementFixesApplied++;
+            logWithTimestamp(`🔧 Fixed: ${desc}`);
+        }
+    });
+    
+    if (getElementFixesApplied > 0) {
+        logWithTimestamp(`🔧 Applied ${getElementFixesApplied} getElementById quote fixes`);
+        fixesApplied += getElementFixesApplied;
+    }
+
     // Fix 8: String recordId to number conversion for database operations
     // This fixes the "RECORD NOT FOUND" errors when recordId is string but database expects number
     const stringIdPatterns = [
