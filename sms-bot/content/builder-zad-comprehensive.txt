@@ -63,9 +63,128 @@ await save('update_task', {
 });
 ```
 
-**IMPORTANT**: Only use the `save()`, `load()`, and `query()` functions for database operations. Do not use any external database libraries or clients.
+**IMPORTANT**: Only use the ZAD helper functions for database operations. Do not use any external database libraries or clients.
 
 **Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
+
+### COMPLETE ZAD HELPER FUNCTIONS REFERENCE:
+
+**Core Data Functions (Available in ALL ZAD apps):**
+```javascript
+// Save any type of data
+await save('data_type', { title: 'My Item', content: 'Content' });
+
+// Load all data of a specific type  
+const items = await load('data_type');
+
+// Advanced queries with filtering/sorting
+const filtered = await query('data_type', {
+  where: { 'content_data.priority': 'high' },
+  orderBy: 'created_at',
+  limit: 10
+});
+
+// Load all data across all types (advanced)
+const everything = await loadAll();
+```
+
+**Authentication & User Functions:**
+```javascript
+// Initialize authentication system
+initAuth();
+
+// Get current app's UUID
+const appId = getAppId();
+
+// Get current user's participant ID
+const participantId = getParticipantId();
+
+// Get current user's username
+const username = getUsername();
+
+// Get complete user object
+const user = getCurrentUser(); // Returns { username, id, userLabel, participantId, passcode }
+
+// Update authentication state
+updateZadAuth(userLabel, participantId);
+```
+
+**Backend Helper Functions:**
+```javascript
+// Check if new users can join (returns slots info)
+const slots = await checkAvailableSlots();
+
+// Generate new user credentials
+const newUser = await generateUser();
+
+// Register a new user
+const result = await registerUser(userLabel, passcode, participantId);
+
+// Authenticate existing user
+const authResult = await authenticateUser(userLabel, passcode);
+
+// Backend greeting function (example backend helper)
+const greeting = await greet(name);
+```
+
+**Real-time Features (Advanced):**
+```javascript
+// Enable live updates for data type
+enableLiveUpdates('message', () => {
+  // Callback when data changes
+  loadLatestData();
+});
+
+// Start real-time polling
+startRealtime(updateFunction, 2000); // Poll every 2 seconds
+
+// Stop real-time updates
+stopRealtime();
+```
+
+**Authentication Helpers:**
+```javascript
+// Check if user is authenticated
+if (isAuthenticated()) {
+  // User is logged in
+}
+
+// Force authentication
+requireAuth();
+
+// Auth event handler
+onUserLogin((user) => {
+  console.log('User logged in:', user);
+});
+```
+
+**Legacy Authentication Functions (Backwards Compatibility):**
+```javascript
+// These functions are available for legacy support
+await generateNewUser();
+await registerNewUser();
+showNewUserScreen();
+loginReturningUser();
+showScreen(screenId);
+showReturningUserScreen();
+enterMainScreen();
+leaveApp();
+```
+
+**Convenience Aliases (Use any of these):**
+```javascript
+// All of these work the same as save()/load():
+await saveEntry('entry', data);   // Same as save('entry', data)
+await loadEntries('entry');       // Same as load('entry')
+await saveData('data', data);     // Same as save('data', data)
+await loadData('data');           // Same as load('data')
+await saveItem('item', data);     // Same as save('item', data)
+await loadItems('item');          // Same as load('item')
+await saveNote('note', data);     // Same as save('note', data)
+await loadNotes('note');          // Same as load('note')
+await saveMessage('message', data); // Same as save('message', data)
+await loadMessages('message');    // Same as load('message')
+```
 
 ### DATA PERSISTENCE PATTERN:
 For collaborative apps where records need to be updated (like marking tasks complete, updating status, etc.), use the update pattern:
