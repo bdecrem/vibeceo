@@ -63,6 +63,38 @@ await save('update_task', {
 });
 ```
 
+**Delete specific records:**
+```javascript
+await save('delete', {
+  recordId: item.id
+});
+```
+
+**Search/filter records:**
+```javascript
+await save('search', {
+  type: 'message',
+  filters: { 'content_data.priority': 'high' },
+  orderBy: 'created_at',
+  limit: 10
+});
+```
+
+**Count records:**
+```javascript
+await save('count', {
+  type: 'task',
+  filters: { 'content_data.completed': true }
+});
+```
+
+**Clear all records of a type:**
+```javascript
+await save('clear', {
+  type: 'task'
+});
+```
+
 **IMPORTANT**: Only use the ZAD helper functions for database operations. Do not use any external database libraries or clients.
 
 **Data Types**: Use descriptive names like 'message', 'vote', 'habit', 'goal', etc.
