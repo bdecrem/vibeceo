@@ -586,12 +586,17 @@ export function autoFixApiSafeIssues(html: string): string {
     if (malformedQuotes && malformedQuotes.length > 0) {
         logWithTimestamp(`🔧 Found ${malformedQuotes.length} malformed escaped quote(s) in strings`);
         
-        // Smart quote fixing that avoids JSON contexts
+        // Smart quote fixing that avoids JSON contexts AND onclick/event handlers
         const lines = fixed.split('\n');
         const fixedLines = lines.map(line => {
             // Skip lines that look like JSON in fetch calls, JSON.stringify, or similar
             if (line.includes('fetch(') || line.includes('JSON.stringify') || line.includes('body:') || line.includes('"Content-Type"')) {
                 return line; // Leave JSON-related lines untouched
+            }
+            
+            // Skip lines with onclick, onchange, or other event handlers - Fix 7 will handle these
+            if (line.includes('onclick=') || line.includes('onchange=') || line.includes('onsubmit=') || line.includes('onfocus=') || line.includes('onblur=')) {
+                return line; // Leave event handlers for Fix 7 to handle properly
             }
             
             // Fix malformed escape sequences in regular JavaScript strings
@@ -601,9 +606,13 @@ export function autoFixApiSafeIssues(html: string): string {
         
         fixed = fixedLines.join('\n');
         
-        // Also fix any remaining backslash-quote issues outside of JSON contexts
+        // Also fix any remaining backslash-quote issues outside of JSON contexts AND event handlers
         const nonJsonLines = fixed.split('\n').map(line => {
             if (line.includes('fetch(') || line.includes('JSON.stringify') || line.includes('body:') || line.includes('"Content-Type"')) {
+                return line;
+            }
+            // Skip event handlers here too
+            if (line.includes('onclick=') || line.includes('onchange=') || line.includes('onsubmit=') || line.includes('onfocus=') || line.includes('onblur=')) {
                 return line;
             }
             return line.replace(/\\'/g, "'");
@@ -612,11 +621,16 @@ export function autoFixApiSafeIssues(html: string): string {
         fixed = nonJsonLines.join('\n');
         
         fixesApplied++;
-        logWithTimestamp('🔧 Fixed: Corrected malformed escaped quotes (API-safe, avoids JSON contexts)');
+        logWithTimestamp('🔧 Fixed: Corrected malformed escaped quotes (API-safe, avoids JSON contexts and event handlers)');
     }
 
-    // Fix 7: Targeted onclick quote escaping (ZAD reaction button fix)
-    // This only affects onclick attributes, not JSON/API calls
+    // Fix 7: DISABLED - No longer needed since Fix 5 avoids onclick handlers
+    // Previously: Targeted onclick quote escaping (ZAD reaction button fix)
+    // Since Fix 5 now skips event handlers entirely, onclick handlers remain clean
+    // and don't need any fixing. This fix was actually causing problems by converting
+    // clean onclick="func('param')" to onclick="func(&quot;param&quot;)" which breaks JavaScript.
+    
+    /* DISABLED FIX 7 - Keeping code for reference but not executing
     const onclickQuotePattern = /onclick="([^"]*)'([^']*)'([^"]*)"/g;
     const onclickMatches = fixed.match(onclickQuotePattern);
     if (onclickMatches && onclickMatches.length > 0) {
@@ -630,7 +644,7 @@ export function autoFixApiSafeIssues(html: string): string {
         logWithTimestamp('🔧 Fixed: Converted single quotes to &quot; in onclick handlers');
     }
 
-    // Fix 7b: Handle mixed HTML entities and quotes in onclick handlers
+    // Fix 7b: DISABLED - Also no longer needed
     const mixedQuotePatterns = [
         // Pattern 1: onclick="func('param&quot;)" - single quote + HTML entity
         { 
@@ -672,7 +686,7 @@ export function autoFixApiSafeIssues(html: string): string {
         fixesApplied += mixedQuoteFixesApplied;
     }
 
-    // Fix 7c: Handle malformed quotes in getElementById and similar function calls
+    // Fix 7c: DISABLED - Also no longer needed
     const getElementQuotePatterns = [
         // Pattern 1: getElementById(&quot;id') - mixed quotes
         { 
@@ -702,6 +716,9 @@ export function autoFixApiSafeIssues(html: string): string {
         logWithTimestamp(`🔧 Applied ${getElementFixesApplied} getElementById quote fixes`);
         fixesApplied += getElementFixesApplied;
     }
+    END DISABLED FIX 7 */
+    
+    logWithTimestamp('🔧 Fix 7 skipped - onclick handlers remain clean since Fix 5 avoids them');
 
     // Fix 8: String recordId to number conversion for database operations
     // This fixes the "RECORD NOT FOUND" errors when recordId is string but database expects number
