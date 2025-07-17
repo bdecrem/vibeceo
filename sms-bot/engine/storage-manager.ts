@@ -756,6 +756,19 @@ function getAppId() {
                     console.log('✅ Authentication ready:', zadCurrentUser);
                 }
 
+                // Get current user (compatible with zad-helpers.ts)
+                function getCurrentUser() {
+                    if (!zadCurrentUser) return null;
+                    
+                    return {
+                        username: zadCurrentUser.username || getUsername(),
+                        id: zadCurrentUser.participantId || getParticipantId(),
+                        userLabel: zadCurrentUser.username || getUsername(),
+                        participantId: zadCurrentUser.participantId || getParticipantId(),
+                        passcode: zadCurrentUser.passcode || null
+                    };
+                }
+
 // Save data to ZAD API
 async function save(type, data) {
     try {
@@ -1087,6 +1100,7 @@ async function query(type, options = {}) {
                 window.getAppId = getAppId;
                 window.getParticipantId = getParticipantId;
                 window.getUsername = getUsername;
+                window.getCurrentUser = getCurrentUser;
                 window.updateZadAuth = updateZadAuth;
                 window.greet = greet; // Add greet function to window object
                 window.checkAvailableSlots = checkAvailableSlots;
