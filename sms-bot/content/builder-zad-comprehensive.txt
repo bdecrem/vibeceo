@@ -9,12 +9,39 @@ await save('type', { name: 'John', contacted: true });
 
 // Get data back (IT'S FLATTENED - no content_data wrapper!)
 const items = await load('type');
-// Returns: [{ id: 123, name: 'John', contacted: true, created_at: '...', participant_id: '...' }]
+// Returns: [{ 
+//   id: 123, 
+//   name: 'John', 
+//   contacted: true, 
+//   author: 'User123',      // ← WHO created this record  
+//   created_at: '...',      // ← WHEN it was created
+//   participant_id: '...'   // ← Internal ID
+// }]
 
 // Who's logged in
 const user = getCurrentUser();
 
 // That's it! Data auto-refreshes every 2 seconds
+```
+
+## ⚠️ CRITICAL: Field Names in Load Results
+
+**ALWAYS use `author` for username, NEVER `userLabel` or `username`:**
+
+```javascript
+// ❌ WRONG - These fields DON'T EXIST in load() results:
+${comment.userLabel}: ${comment.text}    // Shows "undefined: comment text"
+Posted by ${idea.username}               // Shows "Posted by undefined"
+
+// ✅ CORRECT - Use 'author' field:
+${comment.author}: ${comment.text}       // Shows "User123: comment text"  
+Posted by ${idea.author}                 // Shows "Posted by User123"
+
+// Complete correct field usage:
+${item.id}           // Record ID (number)
+${item.author}       // Username who created it  
+${item.created_at}   // When it was created
+${item.yourData}     // Your custom fields
 ```
 
 ## What to Build
@@ -399,10 +426,11 @@ const uniquePeople = all.reduce((acc, person) => {
 ## Important Notes
 
 1. **Data is FLATTENED** - Access fields directly: `item.name` not `item.content_data.name`
-2. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
-3. **Max 5 users** - The system enforces this automatically
-4. **One HTML file** - Everything goes in one file
-5. **Mobile-first** - Must work on phones (375px width minimum)
+2. **Use `author` field** - Username is in `item.author`, NOT `item.userLabel` or `item.username`
+3. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
+4. **Max 5 users** - The system enforces this automatically
+5. **One HTML file** - Everything goes in one file
+6. **Mobile-first** - Must work on phones (375px width minimum)
 
 ## Complete Function Reference (All 34 Functions)
 
