@@ -1888,7 +1888,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       if (hasDegen) {
         helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
         
-        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
+        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
       }
       
       await sendSmsResponse(from, helpText, twilioClient);
