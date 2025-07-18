@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Billboard Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            --gradient-2: linear-gradient(145deg, #3F88FF, #6E7FFF, #ABF7FF);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 40px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .billboard-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .billboard-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .message {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        .meta {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .actions {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            font-family: 'Space Grotesk', sans-serif;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: var(--gradient-2);
+            color: #fff;
+        }
+
+        .delete-btn {
+            background: #ff3366;
+            color: #fff;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .edit-form textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .save-btn {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 100;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #error-message {
+            color: #ff3366;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="2">✨</div>
+    <div class="floating-emoji" style="top: 80%; left: 80%;" data-value="3">💫</div>
+    <div class="floating-emoji" style="top: 30%; left: 90%;" data-value="4">🌟</div>
+    <div class="floating-emoji" style="top: 70%; left: 5%;" data-value="2">⚡</div>
+
+    <h1>BILLBOARD CHAOS MANAGER</h1>
+    <div id="loading" class="loading">Loading the digital graffiti wall...</div>
+    <div id="error-message"></div>
+    <div id="billboard-container"></div>
+
+    <script>
+        const emojis = document.querySelectorAll('.floating-emoji');
+        document.addEventListener('mousemove', (e) => {
+            emojis.forEach(emoji => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        async function loadSubmissions() {
+            const container = document.getElementById('billboard-container');
+            const loading = document.getElementById('loading');
+
+            try {
+                const response = await fetch('/api/admin/load?origin_app_slug=ORIGIN_APP_SLUG');
+                if (!response.ok) throw new Error('Failed to load submissions');
+                const submissions = await response.json();
+                
+                loading.style.display = 'none';
+                container.innerHTML = '';
+
+                if (submissions.length === 0) {
+                    container.innerHTML = '<div class="loading">No messages yet. Be the first to write something wild! 🎨</div>';
+                    return;
+                }
+
+                submissions.forEach(sub => {
+                    const data = sub.submission_data;
+                    const message = data.message || 'Empty message';
+                    const date = new Date(sub.created_at).toLocaleString();
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'billboard-item';
+                    itemDiv.innerHTML = `
+                        <div class="message">${message}</div>
+                        <div class="meta">Posted: ${date}</div>
+                        <div class="actions">
+                            <button class="edit-btn" onclick="toggleEdit('${sub.id}')">EDIT</button>
+                            <button class="delete-btn" onclick="deleteRecord('${sub.id}')">DELETE</button>
+                        </div>
+                        <div class="edit-form" id="edit-${sub.id}">
+                            <textarea>${message}</textarea>
+                            <button class="save-btn" onclick="updateRecord('${sub.id}', this.previousElementSibling.value)">SAVE</button>
+                        </div>
+                    `;
+                    container.appendChild(itemDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to load messages';
+                loading.style.display = 'none';
+            }
+        }
+
+        function toggleEdit(id) {
+            const form = document.getElementById(`edit-${id}`);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function updateRecord(recordId, newMessage) {
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'update',
+                        record_id: recordId,
+                        submission_data: { message: newMessage }
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to update record');
+                await response.json();
+                loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to update message';
+            }
+        }
+
+        async function deleteRecord(recordId) {
+            if (!confirm('Are you sure you want to delete this message?')) return;
+            
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'delete',
+                        record_id: recordId
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to delete record');
+                await response.json();
+                loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to delete message';
+            }
+        }
+
+        // Initial load
+        loadSubmissions();
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.animation = 'rainbow 1s infinite';
+                alert('🎉 YOU FOUND THE SECRET! CHAOS MODE ACTIVATED!');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 ## Overview
 
+What we have been referring to as "Admin WTAF apps" really just means apps that use forms.
+
 Admin WTAF apps use a **2-endpoint + action_type pattern** for all data operations. This design follows the same architectural principles as ZAD apps, keeping the API simple for Builder GPT while supporting full CRUD functionality.
 
 ## Architecture Philosophy
