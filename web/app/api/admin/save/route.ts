@@ -42,8 +42,7 @@ export async function POST(req: NextRequest) {
         const { data, error } = await supabase
           .from('wtaf_submissions')
           .update({
-            submission_data: submission_data,
-            updated_at: new Date().toISOString()
+            submission_data: submission_data
           })
           .eq('id', record_id)
           .select()

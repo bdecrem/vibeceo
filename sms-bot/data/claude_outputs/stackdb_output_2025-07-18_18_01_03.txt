@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ WTAF Billboard Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-bg: linear-gradient(-45deg, #FF2E93, #FF61C7, #3F88FF, #6E7FFF);
+            --neon-glow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: white;
+            min-height: 100vh;
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            padding: 2rem;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: var(--neon-glow);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .billboard-item {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .billboard-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .message {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            word-break: break-word;
+        }
+
+        .meta {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .edit-form textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 30px rgba(255,46,147,0.6); }
+            100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        }
+
+        #error-message {
+            color: #ff6b6b;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ WTAF Billboard Manager</h1>
+        <div id="error-message"></div>
+        <div id="billboard-list">
+            <div class="loading">Loading the chaos... 🌀</div>
+        </div>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 20%; right: 15%">🌀</div>
+    <div class="floating-emoji" data-value="4" style="bottom: 15%; left: 20%">💫</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 25%; right: 10%">⚡</div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        async function loadSubmissions() {
+            try {
+                const response = await fetch('/api/admin/load?origin_app_slug=ORIGIN_APP_SLUG');
+                if (!response.ok) throw new Error('Failed to load submissions');
+                const submissions = await response.json();
+                
+                const billboardList = document.getElementById('billboard-list');
+                if (submissions.length === 0) {
+                    billboardList.innerHTML = '<p class="message">No messages yet! Be the first to write something wild! ✨</p>';
+                    return;
+                }
+
+                billboardList.innerHTML = submissions.map(sub => {
+                    const data = sub.submission_data;
+                    const message = data.message || data.content || 'Empty message';
+                    const timestamp = new Date(sub.created_at).toLocaleString();
+                    
+                    return `
+                        <div class="billboard-item" id="item-${sub.id}">
+                            <div class="actions">
+                                <button onclick="toggleEdit('${sub.id}')">✏️ Edit</button>
+                                <button onclick="deleteRecord('${sub.id}')">🗑️ Delete</button>
+                            </div>
+                            <div class="message">${message}</div>
+                            <div class="meta">Posted: ${timestamp}</div>
+                            <div class="edit-form" id="edit-${sub.id}">
+                                <textarea id="edit-text-${sub.id}">${message}</textarea>
+                                <button onclick="saveEdit('${sub.id}')">Save Changes</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to load messages 😢';
+            }
+        }
+
+        function toggleEdit(id) {
+            const form = document.getElementById(`edit-${id}`);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function saveEdit(id) {
+            const newMessage = document.getElementById(`edit-text-${id}`).value;
+            try {
+                await updateRecord(id, { message: newMessage });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function updateRecord(recordId, newData) {
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'update',
+                        record_id: recordId,
+                        submission_data: newData
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to update record');
+                await loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to update message 😢';
+            }
+        }
+
+        async function deleteRecord(recordId) {
+            if (!confirm('Are you sure you want to delete this message? No take-backs! 🙈')) return;
+            
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'delete',
+                        record_id: recordId
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to delete record');
+                await loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to delete message 😢';
+            }
+        }
+
+        // Initial load
+        loadSubmissions();
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.animation = 'gradient 5s ease infinite';
+                alert('🎉 You've unlocked the secret rainbow mode! Keep clicking for more chaos!');
+            }
+        });
+    </script>
+</body>
+</html>
