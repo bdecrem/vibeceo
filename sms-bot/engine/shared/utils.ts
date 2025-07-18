@@ -1015,10 +1015,10 @@ export function replaceOriginAppSlug(html: string, appSlug: string): string {
         return `"${appSlug}"`;
     });
     
-    // Handle any unquoted instances (though they shouldn't exist)
+    // Handle unquoted instances (like URL parameters) - don't add quotes
     html = html.replace(/ORIGIN_APP_SLUG/g, () => {
         replacementCount++;
-        return `'${appSlug}'`;
+        return appSlug;  // No quotes for unquoted instances
     });
     
     logWithTimestamp(`🔄 Replaced ORIGIN_APP_SLUG with: ${appSlug} (${replacementCount} replacements made)`);
