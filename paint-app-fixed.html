@@ -670,7 +670,6 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
         </div>
         
         <div id="main-screen" class="screen active">
-            <div id="user-status">🎨 DEMO MODE - Anyone can paint! Welcome, <span id="current-user-label">Demo User</span>!</div>
             
             <div id="app-content">
                 <div class="toolbar">
@@ -952,10 +951,16 @@ console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(),
     }
 
     async function saveArt() {
+        const artistName = prompt('Enter your artist name:');
+        if (!artistName || artistName.trim() === '') {
+            alert('Please enter a name to save your artwork!');
+            return;
+        }
+        
         const imageData = canvas.toDataURL('image/png');
         await save('artwork', {
             image: imageData,
-            artist: currentUser.userLabel,
+            artist: artistName.trim(),
             timestamp: Date.now()
         });
         alert('ART SAVED TO THE DIGITAL VOID! 🎨');
