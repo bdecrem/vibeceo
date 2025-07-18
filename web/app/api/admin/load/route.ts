@@ -16,22 +16,31 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const app_id = searchParams.get('app_id');
+    const origin_app_slug = searchParams.get('origin_app_slug');
 
-    // Validate required fields
-    if (!app_id) {
+    // Validate that at least one parameter is provided
+    if (!app_id && !origin_app_slug) {
       return NextResponse.json(
-        { error: 'Missing required parameter: app_id' },
+        { error: 'Missing required parameter: either app_id or origin_app_slug is required' },
         { status: 400 }
       );
     }
 
     const supabase = getSupabaseClient();
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('wtaf_submissions')
       .select('*')
-      .eq('app_id', app_id)
       .order('created_at', { ascending: false });
+
+    // Query by app_id (existing admin apps) OR origin_app_slug (stackdb apps)
+    if (app_id) {
+      query = query.eq('app_id', app_id);
+    } else {
+      query = query.eq('origin_app_slug', origin_app_slug);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Supabase error:', error);
