@@ -302,7 +302,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp("🗄️ STACKDB DETECTED: Processing with live database connection approach");
         
         // Import stackdb functions dynamically
-        const { processStackDBRequest } = await import('./stackables-manager.js');
+        const { checkDegenRole, processStackDBRequest } = await import('./stackables-manager.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stackdb requires DEGEN access`);
+            await sendFailureNotification("stackdb-permission", senderPhone);
+            return false;
+        }
         
         const stackResult = await processStackDBRequest(userSlug, userPrompt);
         
@@ -387,7 +395,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp("🗃️ STACKDATA DETECTED: Processing with submission data approach");
         
         // Import stackdata functions dynamically
-        const { parseStackDataCommand, loadStackedDataContent, buildEnhancedDataPrompt } = await import('./stackables-manager.js');
+        const { checkDegenRole, parseStackDataCommand, loadStackedDataContent, buildEnhancedDataPrompt } = await import('./stackables-manager.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stackdata requires DEGEN access`);
+            await sendFailureNotification("stackdata-permission", senderPhone);
+            return false;
+        }
         
         // Parse the stackdata command
         const parsed = parseStackDataCommand(userPrompt);
@@ -650,7 +666,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp("🤝 STACKZAD DETECTED: Processing ZAD app with shared data access");
         
         // Import stackzad functions dynamically
-        const { processStackZadRequest } = await import('./stackables-manager.js');
+        const { checkDegenRole, processStackZadRequest } = await import('./stackables-manager.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stackzad requires DEGEN access`);
+            await sendFailureNotification("stackzad-permission", senderPhone);
+            return false;
+        }
         
         const stackZadResult = await processStackZadRequest(userSlug, userPrompt);
         
@@ -765,7 +789,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp("🧱 STACKABLES DETECTED: Processing with HTML template approach");
         
         // Import stackables functions dynamically
-        const { parseStackCommand, loadStackedHTMLContent, buildEnhancedPrompt } = await import('./stackables-manager.js');
+        const { checkDegenRole, parseStackCommand, loadStackedHTMLContent, buildEnhancedPrompt } = await import('./stackables-manager.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stack requires DEGEN access`);
+            await sendFailureNotification("stack-permission", senderPhone);
+            return false;
+        }
         
         // Parse the stack command
         const parsed = parseStackCommand(userPrompt);

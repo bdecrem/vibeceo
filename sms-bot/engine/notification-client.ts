@@ -134,6 +134,18 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "stackemail-send":
                 message = "📧 Failed to send stackemail. Try again in a few minutes.";
                 break;
+            case "stack-permission":
+                message = "🔒 Stack commands require DEGEN role access. Contact support if you need this feature.";
+                break;
+            case "stackdb-permission":
+                message = "🔒 Stackdb requires DEGEN role access. Contact support if you need this feature.";
+                break;
+            case "stackdata-permission":
+                message = "🔒 Stackdata requires DEGEN role access. Contact support if you need this feature.";
+                break;
+            case "stackzad-permission":
+                message = "🔒 Stackzad requires DEGEN role access. Contact support if you need this feature.";
+                break;
             case "stackzad-format":
                 message = "🤝 Invalid stackzad format. Use: --stackzad source-zad-app your request here";
                 break;
