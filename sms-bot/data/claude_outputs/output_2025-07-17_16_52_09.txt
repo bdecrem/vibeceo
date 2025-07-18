@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF Contact Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff0066, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glitch 2s infinite;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff0066, #ff00ff);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+            transform: skew(-5deg);
+            box-shadow: 4px 4px 0 #ff00ff;
+        }
+
+        button:hover {
+            filter: brightness(120%);
+        }
+
+        button:active {
+            transform: skew(-5deg) scale(0.98);
+        }
+
+        input, textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .item {
+            background: #2a2a2a;
+            padding: 16px;
+            margin: 10px 0;
+            border-radius: 8px;
+            min-height: 60px;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .item-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .item-buttons button {
+            width: auto;
+            padding: 8px 16px;
+            margin: 0;
+        }
+
+        .contacted {
+            border-left: 4px solid #00ff66;
+        }
+
+        .not-contacted {
+            border-left: 4px solid #ff0066;
+        }
+
+        .notes {
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-buttons button {
+            flex: 1;
+        }
+
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>WTAF Contact Tracker</h1>
+            <p>Track who you've shown WTAF.me to!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>WTAF Contact Tracker</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+
+            <div id="app-content">
+                <div class="add-contact">
+                    <input type="text" id="new-contact-name" placeholder="Enter contact name">
+                    <button onclick="addContact()">ADD TO TRACKING LIST</button>
+                </div>
+
+                <div class="filter-buttons">
+                    <button onclick="setFilter('all')">EVERYONE</button>
+                    <button onclick="setFilter('contacted')">CONTACTED</button>
+                    <button onclick="setFilter('not-contacted')">STILL TO CONTACT</button>
+                </div>
+
+                <div id="contacts-list"></div>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentFilter = 'all';
+
+        async function addContact() {
+            const name = document.getElementById('new-contact-name').value.trim();
+            if (!name) return;
+
+            await save('contact', {
+                name,
+                contacted: false,
+                notes: '',
+                participant_id: getParticipantId()
+            });
+
+            document.getElementById('new-contact-name').value = '';
+            loadLatestData();
+        }
+
+        async function toggleContacted(id) {
+            const contacts = await load('contact');
+            const contact = contacts.find(c => c.id === id);
+            if (contact) {
+                contact.contacted = !contact.contacted;
+                await save('contact', contact);
+                loadLatestData();
+            }
+        }
+
+        async function addNote(id) {
+            const note = prompt('Enter notes from the conversation:');
+            if (!note) return;
+
+            const contacts = await load('contact');
+            const contact = contacts.find(c => c.id === id);
+            if (contact) {
+                contact.notes = note;
+                contact.contacted = true;
+                await save('contact', contact);
+                loadLatestData();
+            }
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const contacts = await load('contact');
+            const myContacts = contacts.filter(c => c.participant_id === getParticipantId());
+
+            let filtered = myContacts;
+            if (currentFilter === 'contacted') {
+                filtered = myContacts.filter(c => c.contacted);
+            } else if (currentFilter === 'not-contacted') {
+                filtered = myContacts.filter(c => !c.contacted);
+            }
+
+            const html = filtered.map(contact => `
+                <div class="item ${contact.contacted ? 'contacted' : 'not-contacted'}">
+                    <div class="item-header">
+                        <h3>${contact.name}</h3>
+                        <div class="item-buttons">
+                            <button onclick="toggleContacted(${contact.id})">
+                                ${contact.contacted ? '✓ CONTACTED' : 'NOT YET'}
+                            </button>
+                            <button onclick="addNote(${contact.id})">ADD NOTE</button>
+                        </div>
+                    </div>
+                    ${contact.notes ? `<div class="notes">${contact.notes}</div>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('contacts-list').innerHTML = html;
+        }
+
+        // Auth boilerplate
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

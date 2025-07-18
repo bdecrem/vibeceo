@@ -1,0 +1,161 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Billboard Archive</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Courier+New&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #FF2E93, #3F88FF, #FF7C5C);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            font-family: "Courier New", monospace;
+            color: white;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        .billboard-entry {
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .billboard-entry:hover {
+            transform: scale(1.02);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .date {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            line-height: 1.4;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            user-select: none;
+            pointer-events: none;
+            font-size: 4rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(0.5deg); }
+            75% { transform: rotate(-0.5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF2E93;
+            padding: 1rem;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BILLBOARD ARCHIVE 📝</h1>
+        
+        <div class="billboard-entry">
+            <div class="date">12/25/2023 - 3:15 AM</div>
+            <div class="message">"SCREAMING INTO THE VOID BUT MAKE IT AESTHETIC"</div>
+        </div>
+
+        <div class="billboard-entry">
+            <div class="date">12/24/2023 - 11:59 PM</div>
+            <div class="message">"YOUR STARTUP NEEDS MORE LASERS"</div>
+        </div>
+
+        <div class="billboard-entry">
+            <div class="date">12/24/2023 - 8:45 PM</div>
+            <div class="message">"WHAT IF VAPORWAVE BUT PROFITABLE?"</div>
+        </div>
+
+        <div class="billboard-entry">
+            <div class="date">12/24/2023 - 4:20 PM</div>
+            <div class="message">"CHAOS IS A VALID BUSINESS MODEL"</div>
+        </div>
+    </div>
+
+    <span class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">✨</span>
+    <span class="floating-emoji" style="top: 20%; right: 15%;" data-value="2">📝</span>
+    <span class="floating-emoji" style="bottom: 15%; left: 20%;" data-value="4">💫</span>
+    <span class="floating-emoji" style="bottom: 30%; right: 10%;" data-value="3">🌀</span>
+
+    <div class="cta">📱 Text START to +1-866-330-0015 to get initiated</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter egg: Type 'WTAF' anywhere
+        let buffer = '';
+        document.addEventListener('keydown', (e) => {
+            buffer += e.key;
+            if (buffer.toLowerCase().includes('wtaf')) {
+                document.body.style.animation = 'gradient 2s ease infinite';
+                buffer = '';
+            }
+            setTimeout(() => buffer = '', 1000);
+        });
+    </script>
+</body>
+</html>
+```

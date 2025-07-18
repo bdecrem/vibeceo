@@ -1,0 +1,809 @@
+# WTAF Zero-Admin System Builder Prompt
+
+You are building a collaborative web app using our zero-admin database system with WTAF's signature chaotic-chic design ADAPTED FOR FUNCTIONAL APPS. Follow these requirements exactly:
+
+## Quick Reference
+**Essential Functions:**
+- `await save('data_type', {...})` - Save data
+- `await load('data_type')` - Load all items (returns FLATTENED array)
+- `await query('data_type', options)` - Query with filters
+- Authentication flow (4 screens, 5 user max)
+- Real-time polling (2 second updates)
+
+**CRITICAL: Data is returned FLATTENED, not nested in content_data**
+
+---
+
+## What to Build
+Build: **[USER REQUEST]**
+
+## Technical Requirements
+
+### 1. Single HTML File
+- All HTML, CSS, and JavaScript in one file
+- No external dependencies - use only built-in browser APIs
+- Must be a complete, working web page
+- START WITH `<!DOCTYPE html>` - NO OTHER TEXT BEFORE IT
+
+### 2. Database Integration (REQUIRED)
+
+#### CRITICAL: Understanding Data Structure
+```javascript
+// When you SAVE data:
+await save('contact', { 
+  name: 'John', 
+  contacted: true,
+  notes: 'Met at conference'
+});
+
+// When you LOAD it back, you get FLATTENED data:
+const contacts = await load('contact');
+// Returns: [
+//   { 
+//     id: 123, 
+//     name: 'John', 
+//     contacted: true, 
+//     notes: 'Met at conference',
+//     created_at: '2024-01-15T10:30:00Z',
+//     participant_id: 'user1🎯'
+//   }
+// ]
+
+// CORRECT way to access data:
+contacts.forEach(contact => {
+  console.log(contact.name); // ✓ CORRECT
+  console.log(contact.contacted); // ✓ CORRECT
+});
+
+// WRONG way (data is NOT nested):
+contacts.forEach(contact => {
+  console.log(contact.content_data.name); // ✗ WRONG - no content_data wrapper!
+});
+```
+
+#### Essential Data Operations
+
+**Save new data:**
+```javascript
+await save('data_type', {
+  title: 'My Item',
+  content: 'Item content',
+  timestamp: Date.now()
+  // All fields are saved directly, not wrapped
+});
+```
+
+**Load all data:**
+```javascript
+const items = await load('data_type'); 
+// Returns array of FLATTENED objects with your fields plus:
+// - id: unique identifier
+// - created_at: timestamp
+// - participant_id: user who created it
+```
+
+**Query with filters:**
+```javascript
+// Get high-priority tasks
+const urgentTasks = await query('task', {
+  where: { priority: 'high' }, // Note: direct field access
+  orderBy: 'created_at',
+  limit: 10
+});
+
+// Get user's own data
+const myData = await query('entry', {
+  where: { participant_id: getCurrentUser().participantId }
+});
+```
+
+**Update existing data (CRITICAL PATTERN):**
+```javascript
+// NEVER create separate records for updates
+// ALWAYS modify the existing record:
+await save('update_task', {
+  taskId: existingTask.id,
+  updates: {
+    completed: true,
+    modified_at: Date.now()
+  }
+});
+```
+
+### 3. Authentication System (COPY EXACTLY - DO NOT MODIFY)
+
+**App Configuration:**
+```javascript
+const APP_ID = 'test1'; // Will be replaced with actual UUID
+// Pick 5 themed user labels for your app:
+const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
+```
+
+**Required HTML Structure:**
+```html
+<div class="app-container">
+    <div id="welcome-screen" class="screen active">
+        <h1>Welcome to [Your App Name]</h1>
+        <p>[Brief app description]</p>
+        <button onclick="showNewUserScreen()">New User</button>
+        <button onclick="showReturningUserScreen()">Returning User</button>
+    </div>
+    
+    <div id="new-user-screen" class="screen">
+        <h1>New User</h1>
+        <div id="new-user-info"></div>
+        <button onclick="registerNewUser()">Register & Enter App</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="returning-user-screen" class="screen">
+        <h1>Returning User</h1>
+        <select id="user-label-select">
+            <option>Select User</option>
+        </select>
+        <input type="text" id="returning-passcode" placeholder="Enter 4-digit passcode" maxlength="4">
+        <button onclick="loginReturningUser()">Login</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="main-screen" class="screen">
+        <h1>[Your App Title]</h1>
+        <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        
+        <!-- PUT YOUR APP CONTENT HERE -->
+        <div id="app-content">
+            <!-- Your app's main functionality goes here -->
+        </div>
+        <!-- END APP CONTENT -->
+        
+        <button onclick="showScreen('welcome-screen')">Leave App</button>
+    </div>
+</div>
+```
+
+**Required Authentication Functions (INCLUDE ALL - DO NOT SKIP):**
+```javascript
+let currentUser = null;
+
+// Check capacity and generate new user
+async function generateNewUser() {
+  try {
+    // First check available slots
+    const slots = await checkAvailableSlots();
+    
+    if (slots.isFull) {
+      alert('SQUAD\'S FULL, TRY ANOTHER DIMENSION 🚫');
+      return false;
+    }
+    
+    // Generate new user via backend
+    const user = await generateUser();
+    if (user && user.success) {
+      currentUser = {
+        userLabel: user.userLabel,
+        passcode: user.passcode,
+        participantId: user.participantId
+      };
+      
+      // Display credentials to user
+      document.getElementById('new-user-info').innerHTML = 
+        `<strong>YOUR LABEL:</strong> ${currentUser.userLabel}<br><strong>SECRET DIGITS:</strong> ${currentUser.passcode}<br><em>SCREENSHOT THIS OR CRY LATER 📸</em>`;
+      
+      return true;
+    } else {
+      alert('NO MORE ROOM IN THIS CHAOS REALM 🌀');
+      return false;
+    }
+  } catch (error) {
+    console.error('User generation error:', error);
+    alert('GENERATION EXPLODED, TRY AGAIN 💥');
+    return false;
+  }
+}
+
+// Register new user in database
+async function registerNewUser() {
+  if (!currentUser) {
+    alert('GENERATE YOUR IDENTITY FIRST, CHAOS AGENT 🎭');
+    return;
+  }
+  
+  try {
+    const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+    if (result && result.success) {
+      // Sync authentication state with ZAD helper functions
+      updateZadAuth(currentUser.userLabel, currentUser.participantId);
+      enterMainScreen();
+    } else {
+      alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    alert('REGISTRATION EXPLODED, TRY AGAIN 💥');
+  }
+}
+
+// IMPORTANT: Make showNewUserScreen async to handle user generation
+async function showNewUserScreen() {
+    showScreen('new-user-screen');
+    const success = await generateNewUser();
+    if (!success) {
+        showScreen('welcome-screen');
+    }
+}
+
+// Login returning user
+async function loginReturningUser() {
+  const selectedLabel = document.getElementById('user-label-select').value;
+  const enteredPasscode = document.getElementById('returning-passcode').value.trim();
+  
+  if (!selectedLabel || selectedLabel === 'Select User') {
+    alert('PICK YOUR IDENTITY, PHANTOM 👻');
+    return;
+  }
+  
+  if (!enteredPasscode || enteredPasscode.length !== 4) {
+    alert('4 DIGITS OF CHAOS REQUIRED 🔢');
+    return;
+  }
+  
+  try {
+    const result = await authenticateUser(selectedLabel, enteredPasscode);
+    if (result && result.success) {
+      currentUser = {
+        userLabel: selectedLabel,
+        passcode: enteredPasscode,
+        participantId: result.user.participantId
+      };
+      // Sync authentication state with ZAD helper functions
+      updateZadAuth(currentUser.userLabel, currentUser.participantId);
+      enterMainScreen();
+    } else {
+      alert('NICE TRY, WRONG VIBES ❌\n\nMake sure you\'re using the correct passcode from when you registered.');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('LOGIN MALFUNCTION, REALITY GLITCHING 🌀\n\nError: ' + error.message);
+  }
+}
+
+// Screen navigation with polling control
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(screen => 
+    screen.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  
+  // Stop polling if leaving main screen
+  if (screenId !== 'main-screen') {
+    stopPolling();
+  }
+}
+
+async function showReturningUserScreen() {
+  showScreen('returning-user-screen');
+  
+  try {
+    // Populate user select dropdown with actual users
+    const slots = await checkAvailableSlots();
+    const userSelect = document.getElementById('user-label-select');
+    userSelect.innerHTML = '<option>Select User</option>';
+    
+    // Only show users that actually exist
+    slots.usedLabels.forEach(label => {
+      const option = document.createElement('option');
+      option.value = label;
+      option.textContent = label;
+      userSelect.appendChild(option);
+    });
+    
+    if (slots.usedLabels.length === 0) {
+      userSelect.innerHTML = '<option>No users registered yet</option>';
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+    const userSelect = document.getElementById('user-label-select');
+    userSelect.innerHTML = '<option>Error loading users</option>';
+  }
+}
+
+function enterMainScreen() {
+  showScreen('main-screen');
+  document.getElementById('current-user-label').textContent = currentUser.userLabel;
+  startPolling(); // Start real-time updates
+  loadLatestData(); // Load initial data
+}
+
+// Initialize authentication system
+initAuth();
+```
+
+### 4. Real-Time Updates (REQUIRED)
+
+**Polling Implementation:**
+```javascript
+let pollingInterval;
+
+function startPolling() {
+  // Poll every 2 seconds for updates
+  pollingInterval = setInterval(async () => {
+    await loadLatestData();
+  }, 2000);
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+}
+
+// YOU MUST IMPLEMENT THIS FUNCTION
+async function loadLatestData() {
+  try {
+    // Replace 'message' with your app's data type
+    const data = await load('message');
+    
+    // Remember: data is FLATTENED
+    // Access fields directly: data[0].content, NOT data[0].content_data.content
+    
+    updateUI(data); // You implement this
+  } catch (error) {
+    console.error('Error loading latest data:', error);
+  }
+}
+
+// YOU MUST IMPLEMENT THIS FUNCTION
+function updateUI(data) {
+  // Update your UI with the latest data
+  // Remember data structure is flattened!
+}
+```
+
+### 5. WTAF Visual Style (REQUIRED)
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+body { 
+  font-family: 'Inter', sans-serif;
+  /* DEFAULT: Use WTAF house gradients */
+  background: linear-gradient(135deg, #FF2E93 0%, #7C3AED 50%, #3F88FF 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease-in-out infinite;
+  color: white;
+  overflow-x: hidden;
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  z-index: 10;
+  min-height: 90vh;
+}
+
+.screen { display: none; }
+.screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+button {
+  background: linear-gradient(135deg, #00FFC6, #57E2E5);
+  color: #000;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+  margin: 10px 5px;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(0, 255, 198, 0.5);
+}
+
+input, select {
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-size: 16px;
+  width: 100%;
+  margin: 10px 0;
+  transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #00FFC6;
+  box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+}
+
+/* Floating Emojis - REQUIRED (at edges) */
+.floating-emoji {
+  position: fixed;
+  font-size: 2rem;
+  animation: float 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.8;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(10deg); }
+}
+
+/* Glitch effect for headers */
+h1 {
+  position: relative;
+  animation: glitch 3s ease-in-out infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 2px 0 #FF2E93, -2px -2px 0 #00FFC6; }
+  25% { text-shadow: -2px 2px 0 #3F88FF, 2px -2px 0 #FF2E93; }
+  50% { text-shadow: 2px -2px 0 #00FFC6, -2px 2px 0 #7C3AED; }
+  75% { text-shadow: -2px -2px 0 #FF2E93, 2px 2px 0 #3F88FF; }
+}
+```
+
+### Required WTAF Elements
+
+**Floating Emojis (Place at edges/corners):**
+```html
+// Add floating emojis dynamically
+const emojis = ["💀", "📟", "🔪", "🧃", "🚧", "🔥", "🧨", "🛠️"];
+for (let i = 0; i < emojis.length; i++) {
+  const emoji = document.createElement('div');
+  emoji.className = 'floating-emoji';
+  emoji.innerText = emojis[i];
+  emoji.style.position = 'fixed';
+  
+  // Random position at edges
+  if (Math.random() > 0.5) {
+    emoji.style.top = Math.random() > 0.5 ? '5%' : '85%';
+    emoji.style.left = `${Math.random() * 90 + 5}%`;
+  } else {
+    emoji.style.left = Math.random() > 0.5 ? '2%' : '92%';
+    emoji.style.top = `${Math.random() * 90 + 5}%`;
+  }
+  
+  emoji.setAttribute('data-value', (i % 4) + 1);
+  document.body.appendChild(emoji);
+}
+```
+
+**Mouse Parallax Effect:**
+```javascript
+document.addEventListener('mousemove', (e) => {
+  document.querySelectorAll('.floating-emoji').forEach((elem) => {
+    const speed = elem.getAttribute('data-value') || 2;
+    const x = (e.clientX * speed) / 100;
+    const y = (e.clientY * speed) / 100;
+    elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+  });
+});
+```
+
+**Easter Egg (Required):**
+```javascript
+console.log('🔥 Welcome to the WTAF dimension! Type wtaf() in console for secrets...');
+window.wtaf = function() {
+  document.body.style.animation = 'rainbow 1s infinite';
+  setTimeout(() => {
+    document.body.style.animation = '';
+    alert('🎉 WTAF MASTER MODE UNLOCKED! You found the secret!');
+  }, 3000);
+};
+```
+
+## Common Pitfalls (AVOID THESE!)
+
+### ❌ DON'T DO THIS:
+```javascript
+// Creating separate records for updates
+await save('task_completion', { taskId: 123 });
+await save('task_reaction', { taskId: 123, emoji: '👍' });
+
+// Using nested data structure
+data.forEach(item => {
+  console.log(item.content_data.name); // WRONG!
+});
+
+// Using localStorage or sessionStorage
+localStorage.setItem('userData', ...); // NO!
+
+// Creating your own user system
+const users = []; // NO! Use the auth system
+
+// Forgetting to implement loadLatestData()
+// Missing real-time updates
+```
+
+### ✅ DO THIS INSTEAD:
+```javascript
+// Update existing records
+await save('update_task', {
+  taskId: 123,
+  updates: { completed: true, reactions: ['👍'] }
+});
+
+// Access flattened data
+data.forEach(item => {
+  console.log(item.name); // CORRECT!
+});
+
+// Use only ZAD database functions
+await save('user_data', { ... });
+
+// Implement required polling
+async function loadLatestData() {
+  const data = await load('my_data_type');
+  updateUI(data);
+}
+```
+
+## App-Specific Examples
+
+### Todo App Pattern:
+```javascript
+// Save todo
+await save('todo', {
+  title: 'Build awesome app',
+  completed: false,
+  priority: 'high'
+});
+
+// Update todo
+await save('update_task', {
+  taskId: todoId,
+  updates: { completed: true }
+});
+
+// Load todos
+const todos = await load('todo');
+todos.forEach(todo => {
+  // Access directly: todo.title, todo.completed
+});
+```
+
+### Chat App Pattern:
+```javascript
+// Save message
+await save('message', {
+  content: 'Hello world!',
+  timestamp: Date.now(),
+  reactions: []
+});
+
+// Add reaction to existing message
+await save('update_task', {
+  taskId: messageId,
+  updates: { 
+    reactions: [...message.reactions, '👍']
+  }
+});
+```
+
+### Voting App Pattern:
+```javascript
+// Save vote
+await save('vote', {
+  option: 'A',
+  timestamp: Date.now()
+});
+
+// Prevent duplicate votes
+const myVotes = await query('vote', {
+  where: { participant_id: getCurrentUser().participantId }
+});
+if (myVotes.length > 0) {
+  alert('Already voted!');
+}
+```
+
+## Testing Checklist
+Before returning your code, verify:
+- [ ] Authentication works (all 4 screens)
+- [ ] User generation and login functional
+- [ ] Data saves and loads correctly (with FLATTENED structure)
+- [ ] Real-time updates work (2-second polling)
+- [ ] Capacity limits enforced (max 5 users)
+- [ ] Updates modify existing records (not create new ones)
+- [ ] Visual effects present but don't interfere
+- [ ] Easter egg works
+- [ ] No localStorage/sessionStorage usage
+- [ ] No nested content_data references
+
+## Complete ZAD Function Reference (ALL 34 FUNCTIONS)
+
+### Core Data Functions (MUST USE):
+```javascript
+await save('type', data)           // Save data to database
+await load('type')                 // Load all data (returns FLATTENED array)
+await query('type', options)       // Advanced queries with filtering/sorting
+await loadAll()                    // Load all data across all types
+```
+
+### Essential Authentication Functions:
+```javascript
+initAuth()                         // Initialize authentication system (call first)
+getCurrentUser()                   // Get complete user object
+getAppId()                         // Get current app's UUID
+getParticipantId()                 // Get current user's participant ID
+getUsername()                      // Get current user's display name
+updateZadAuth(userLabel, participantId) // Update authentication state
+```
+
+### Backend Helper Functions:
+```javascript
+await checkAvailableSlots()        // Check if new users can join
+await generateUser()               // Generate new user credentials
+await registerUser(userLabel, passcode, participantId) // Register new user
+await authenticateUser(userLabel, passcode) // Authenticate existing user
+await greet(name)                  // Backend greeting function with timestamp
+```
+
+### Real-time Features (Advanced):
+```javascript
+enableLiveUpdates('type', callback) // Enable live data updates for specific type
+startRealtime(callback, interval)   // Start custom polling (beyond basic 2s)
+stopRealtime()                      // Stop live updates
+```
+
+### Advanced Authentication:
+```javascript
+isAuthenticated()                  // Check if user is currently logged in
+requireAuth()                      // Force authentication before proceeding
+onUserLogin(callback)              // Event handler for login events
+```
+
+### Data Operation Variants:
+```javascript
+// Update existing records (PREFERRED for modifications)
+await save('update_task', { taskId: id, updates: {...} })
+
+// Delete specific records
+await save('delete', { recordId: id })
+
+// Search with filters
+await save('search', { type: 'message', filters: {...} })
+
+// Count records
+await save('count', { type: 'task', filters: {...} })
+
+// Clear all records of a type
+await save('clear', { type: 'task' })
+```
+
+### Legacy Authentication Functions (Backwards Compatibility):
+```javascript
+// These are already implemented in the required auth flow above
+// Available if needed for custom implementations:
+generateNewUser()                  // Legacy user generation
+registerNewUser()                  // Legacy registration
+showNewUserScreen()                // Legacy screen function
+loginReturningUser()               // Legacy login function
+showScreen(screenId)               // Generic screen navigation
+showReturningUserScreen()          // Legacy returning user screen
+enterMainScreen()                  // Legacy main screen entry
+leaveApp()                         // Legacy app exit
+```
+
+### Convenience Aliases (Use any of these interchangeably):
+```javascript
+// All of these work identically to save()/load():
+await saveEntry('type', data)      // Same as save('type', data)
+await loadEntries('type')          // Same as load('type')
+await saveData('type', data)       // Same as save('type', data)
+await loadData('type')             // Same as load('type')
+await saveItem('type', data)       // Same as save('type', data)
+await loadItems('type')            // Same as load('type')
+await saveNote('type', data)       // Same as save('type', data)
+await loadNotes('type')            // Same as load('type')
+await saveMessage('type', data)    // Same as save('type', data)
+await loadMessages('type')         // Same as load('type')
+```
+
+### Practical Examples:
+
+**User Information:**
+```javascript
+const currentUser = getCurrentUser();
+// Returns: { username: "user1🎯", id: "participant_123", 
+//           userLabel: "user1🎯", participantId: "participant_123", passcode: "1234" }
+
+const appId = getAppId();          // Returns: "app-uuid-here"
+const userId = getParticipantId(); // Returns: "participant_123"
+const username = getUsername();    // Returns: "user1🎯"
+```
+
+**Real-time Updates:**
+```javascript
+// Enable automatic UI updates when data changes
+enableLiveUpdates('messages', () => {
+    loadLatestData(); // Your function to refresh UI
+});
+
+// Custom polling beyond the standard 2-second cycle
+startRealtime(updateSpecificWidget, 5000); // Poll every 5 seconds
+```
+
+**Backend Processing:**
+```javascript
+// Get personalized greeting with timestamp
+const greeting = await greet('Alice');
+// Returns: "Hello Alice! The time is 3:45 PM on 1/13/2025"
+
+// Check capacity before allowing registration
+const slots = await checkAvailableSlots();
+// Returns: { totalSlots: 5, usedSlots: 2, availableSlots: 3, 
+//           availableLabels: ['user3🌟', 'user4🔥'], usedLabels: ['user1🎯', 'user2⚡'], isFull: false }
+```
+
+**Advanced Authentication:**
+```javascript
+// Check login status before sensitive operations
+if (isAuthenticated()) {
+    // User is logged in, proceed
+} else {
+    requireAuth(); // Force login
+}
+
+// React to login events
+onUserLogin((user) => {
+    console.log('User logged in:', user.username);
+    loadUserSpecificData();
+});
+```
+
+## Success Criteria
+Your app must:
+- ✅ Work with 1-5 users (capacity checking)
+- ✅ Have 4-screen authentication flow
+- ✅ Save/load data correctly (understanding flattened structure)
+- ✅ Update in real-time (2-second polling)
+- ✅ Use WTAF visual style
+- ✅ Include required effects (emojis, parallax, easter egg)
+- ✅ Be one complete HTML file
+- ✅ Feel alive while remaining functional
+
+## Output Format
+- One complete HTML file only
+- NO markdown, NO code blocks, NO backticks
+- NO explanation text
+- Start with `<!DOCTYPE html>`
+- Raw HTML only
+
+---
+
+**Now build**: [USER REQUEST]

@@ -64,10 +64,11 @@ export function extractCodeBlocks(text: string): string {
         return matches[0].replace(/```\s*/, '').replace(/```$/, '');
     }
     
-    // Last resort: check if the text starts with <!DOCTYPE html> or <html>
-    if (/^\s*<!DOCTYPE html>|^\s*<html>/i.test(text)) {
-        logWithTimestamp("✅ Found raw HTML without code blocks");
-        return text;
+    // Last resort: check if the text contains <!DOCTYPE html> or <html> anywhere
+    const htmlMatch = text.match(/(<!DOCTYPE html>[\s\S]*|<html[\s\S]*)/i);
+    if (htmlMatch) {
+        logWithTimestamp("✅ Found raw HTML without code blocks (after explanatory text)");
+        return htmlMatch[0];
     }
         
     logWithTimestamp("⚠️ No code block or HTML found in response");
@@ -158,7 +159,15 @@ export function replaceAppTableId(html: string, appSlug: string): string {
     // Pattern: app_id: 'any_value' -> app_id: 'uuid' (in Supabase object notation)
     html = html.replace(/app_id\s*:\s*['"][^'"]*['"]/g, `app_id: '${appSlug}'`);
     
-    logWithTimestamp(`🔧 Replaced ANY app_id values (Supabase + API) with: ${appSlug}`);
+    // STACKZAD FIX: Handle window.APP_ID assignments and related console.log statements
+    // Pattern: window.APP_ID = 'any_value' -> window.APP_ID = 'source_uuid'
+    html = html.replace(/window\.APP_ID\s*=\s*['"][^'"]*['"]/g, `window.APP_ID = '${appSlug}'`);
+    
+    // Pattern: console.log with UUID in messages (for consistency in debug output)
+    html = html.replace(/console\.log\(\s*['"]🆔[^'"]*['"],\s*['"][^'"]*['"]\s*\)/g, `console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '${appSlug}')`);
+    html = html.replace(/console\.log\(\s*['"]🔍 ZAD getAppId\(\) called, returning UUID:['"],\s*['"][^'"]*['"]\s*\)/g, `console.log('🔍 ZAD getAppId() called, returning UUID:', '${appSlug}')`);
+    
+    logWithTimestamp(`🔧 Replaced ANY app_id values (Supabase + API + window.APP_ID) with: ${appSlug}`);
     return html;
 }
 
@@ -796,4 +805,194 @@ export function autoFixApiSafeIssues(html: string): string {
     }
     
     return fixed;
+}
+
+/**
+ * Validate and fix stackzad-specific code issues
+ * Selective validation focused on stackzad admin apps
+ */
+export function validateStackzadCode(html: string): string {
+    logWithTimestamp('🤝 Starting stackzad validation...');
+    let fixed = html;
+    let fixesApplied = 0;
+
+    // Fix 1: Authentication function check - ensure onclick handlers have corresponding functions
+    const authFunctionChecks = [
+        {
+            onclick: 'showNewUserScreen()',
+            functionPattern: /function\s+showNewUserScreen\s*\(\s*\)/,
+            description: 'showNewUserScreen() function missing'
+        },
+        {
+            onclick: 'registerNewUser()',
+            functionPattern: /function\s+registerNewUser\s*\(\s*\)/,
+            description: 'registerNewUser() function missing'
+        },
+        {
+            onclick: 'loginReturningUser()',
+            functionPattern: /function\s+loginReturningUser\s*\(\s*\)/,
+            description: 'loginReturningUser() function missing'
+        },
+        {
+            onclick: 'showScreen(',
+            functionPattern: /function\s+showScreen\s*\(\s*\w+\s*\)/,
+            description: 'showScreen() function missing'
+        }
+    ];
+
+    authFunctionChecks.forEach(check => {
+        if (fixed.includes(check.onclick) && !check.functionPattern.test(fixed)) {
+            logWithTimestamp(`🔧 STACKZAD: Missing function for ${check.onclick}`);
+            // Note: We detect but don't auto-generate functions - they're in system prompt
+            logWithTimestamp(`⚠️ STACKZAD: ${check.description} - ensure system prompt includes implementation`);
+        }
+    });
+
+    // Fix 2: Authentication flow validation - check for common bugs
+    const authBugFixes = [
+        {
+            pattern: /if\s*\(\s*user\s*&&\s*user\.success\s*\)/g,
+            replacement: 'if (user && user.userLabel)',
+            description: 'Fixed generateUser() success check bug'
+        },
+        {
+            pattern: /result\s*&&\s*result\.user\s*&&\s*result\.user\.success/g,
+            replacement: 'result && result.success',
+            description: 'Fixed authentication result check'
+        }
+    ];
+
+    authBugFixes.forEach(fix => {
+        if (fix.pattern.test(fixed)) {
+            fixed = fixed.replace(fix.pattern, fix.replacement);
+            fixesApplied++;
+            logWithTimestamp(`🔧 STACKZAD: ${fix.description}`);
+        }
+    });
+
+    // Fix 3: ZAD helper function validation - ensure proper usage
+    const zadHelperChecks = [
+        {
+            pattern: /load\s*\(\s*['"][^'"]*['"]\s*,/g,
+            description: 'load() should only take one parameter (type)'
+        },
+        {
+            pattern: /save\s*\(\s*['"][^'"]*['"]\s*\)/g,
+            description: 'save() requires two parameters (type, data)'
+        }
+    ];
+
+    zadHelperChecks.forEach(check => {
+        if (check.pattern.test(fixed)) {
+            logWithTimestamp(`⚠️ STACKZAD: Potential ZAD helper issue - ${check.description}`);
+        }
+    });
+
+    // Fix 4: Screen structure validation - ensure proper screen management
+    const screenChecks = [
+        { id: 'welcome-screen', required: true },
+        { id: 'new-user-screen', required: true },
+        { id: 'returning-user-screen', required: true },
+        { id: 'main-screen', required: true }
+    ];
+
+    screenChecks.forEach(screen => {
+        if (screen.required && !fixed.includes(`id="${screen.id}"`)) {
+            logWithTimestamp(`⚠️ STACKZAD: Missing required screen: ${screen.id}`);
+        }
+    });
+
+    // Fix 5: SHARED_DATA_UUID validation - ensure it's being used correctly
+    if (fixed.includes('window.SHARED_DATA_UUID')) {
+        if (!fixed.includes('getAppId()')) {
+            logWithTimestamp(`⚠️ STACKZAD: SHARED_DATA_UUID set but getAppId() function missing`);
+        }
+        
+        // Ensure SHARED_DATA_UUID is properly referenced in getAppId
+        if (!fixed.includes('window.SHARED_DATA_UUID') || !fixed.includes('return window.SHARED_DATA_UUID')) {
+            logWithTimestamp(`⚠️ STACKZAD: getAppId() should check window.SHARED_DATA_UUID for data sharing`);
+        }
+    }
+
+    // Fix 6: Comprehensive HTML and JavaScript syntax fixes
+    const basicFixes = [
+        {
+            pattern: /onclick="([^"]*)'([^"]*)">/g,
+            replacement: 'onclick="$1&apos;$2">',
+            description: 'Fixed quotes in onclick handlers'
+        },
+        {
+            pattern: /(<[^>]+>)\s*;/g,
+            replacement: '$1',
+            description: 'Removed semicolons after HTML tags'
+        },
+        {
+            pattern: /(<meta[^>]*>)\s*;/g,
+            replacement: '$1',
+            description: 'Fixed meta tag semicolons'
+        },
+        {
+            pattern: /\$\{([^}]+);\s*}/g,
+            replacement: '${$1}',
+            description: 'Fixed template literal semicolons'
+        },
+        {
+            pattern: /window\.tempUser\s*=\s*\{\s*;/g,
+            replacement: 'window.tempUser = {',
+            description: 'Fixed object literal syntax'
+        },
+        {
+            pattern: /currentUser\s*=\s*\{\s*;/g,
+            replacement: 'currentUser = {',
+            description: 'Fixed currentUser object syntax'
+        },
+        {
+            pattern: /=\s*\{\s*;/g,
+            replacement: '= {',
+            description: 'Fixed general object literal syntax'
+        },
+        {
+            pattern: /\s*;\s*}/g,
+            replacement: ' }',
+            description: 'Fixed object closing brace syntax'
+        },
+        {
+            pattern: /(\w+)\s*=\s*([^;,\n}]+)(?=\s*[\n}])/g,
+            replacement: '$1 = $2;',
+            description: 'Added missing semicolons'
+        }
+    ];
+
+    basicFixes.forEach(fix => {
+        const beforeLength = fixed.length;
+        fixed = fixed.replace(fix.pattern, fix.replacement);
+        if (fixed.length !== beforeLength) {
+            fixesApplied++;
+            logWithTimestamp(`🔧 STACKZAD: ${fix.description}`);
+        }
+    });
+
+    if (fixesApplied > 0) {
+        logWithTimestamp(`✅ Stackzad validation completed: ${fixesApplied} issue(s) fixed`);
+    } else {
+        logWithTimestamp('✅ Stackzad validation completed: No issues found');
+    }
+
+    return fixed;
+}
+
+/**
+ * Replace ORIGIN_APP_SLUG placeholder with actual app slug for stackdb queries
+ * This is used for wtaf_submissions queries that use origin_app_slug column
+ */
+export function replaceOriginAppSlug(html: string, appSlug: string): string {
+    // Replace ORIGIN_APP_SLUG placeholder with actual app slug
+    html = html.replace(/'ORIGIN_APP_SLUG'/g, `'${appSlug}'`);
+    html = html.replace(/"ORIGIN_APP_SLUG"/g, `"${appSlug}"`);
+    
+    // Handle any unquoted instances (though they shouldn't exist)
+    html = html.replace(/ORIGIN_APP_SLUG/g, `'${appSlug}'`);
+    
+    logWithTimestamp(`🔄 Replaced ORIGIN_APP_SLUG with: ${appSlug}`);
+    return html;
 }

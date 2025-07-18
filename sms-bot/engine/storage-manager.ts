@@ -419,14 +419,25 @@ export async function saveCodeToSupabase(
         const contentUuid = savedData.id;
         logWithTimestamp(`🆔 Generated UUID for app: ${contentUuid}`);
         
+        // Check if this is a stackzad app (has SHARED_DATA_UUID)
+        const isStackzad = code.includes('window.SHARED_DATA_UUID');
+        
         // Inject UUID into ZAD helper functions if they were added
-        if (isZadTest || usesZadHelpers || isZadApi || isNaturalZad) {
-            logWithTimestamp(`🔗 Injecting UUID ${contentUuid} into ZAD helper functions`);
-            code = await injectZadUuidIntoHelpers(code, contentUuid);
+        if ((isZadTest || usesZadHelpers || isZadApi || isNaturalZad)) {
+            if (isStackzad) {
+                logWithTimestamp(`🤝 STACKZAD app detected - injecting special shared data helpers`);
+                // First inject normal UUID
+                code = await injectZadUuidIntoHelpers(code, contentUuid);
+                // Then modify for stackzad to use SHARED_DATA_UUID
+                code = await injectStackzadHelpers(code);
+            } else {
+                logWithTimestamp(`🔗 Injecting UUID ${contentUuid} into ZAD helper functions`);
+                code = await injectZadUuidIntoHelpers(code, contentUuid);
+            }
         }
         
         // For admin pages, skip UUID replacement since it was already done with main app's UUID
-        // For stackdb requests, also skip since UUID was already set to origin app's UUID
+        // For stackdb/stackzad requests, also skip since UUID was already set to origin app's UUID
         if (!adminTableId && !skipUuidReplacement) {
             // Only replace APP_TABLE_ID for normal app creation
             code = replaceAppTableId(code, contentUuid);
@@ -437,7 +448,7 @@ export async function saveCodeToSupabase(
                 code = fixZadAppId(code, contentUuid);
             }
         } else if (skipUuidReplacement) {
-            logWithTimestamp(`🔄 Stackdb page - skipping UUID replacement (already configured with origin app UUID)`);
+            logWithTimestamp(`🔄 Stackdb/Stackzad page - skipping UUID replacement (already configured with origin app UUID)`);
         } else {
             logWithTimestamp(`📊 Admin page - skipping UUID replacement (already configured with main app UUID)`);
         }
@@ -455,7 +466,7 @@ export async function saveCodeToSupabase(
         
         logSuccess(`✅ Saved to Supabase with secure UUID: /wtaf/${userSlug}/${appSlug}`);
         if (skipUuidReplacement) {
-            logWithTimestamp(`🔒 APP_ID in HTML preserved with origin app UUID (stackdb)`);
+            logWithTimestamp(`🔒 APP_ID in HTML preserved with origin app UUID (stackdb/stackzad)`);
         } else {
             logWithTimestamp(`🔒 APP_ID in HTML set to secure UUID: ${contentUuid}`);
         }
@@ -650,6 +661,49 @@ console.log('🚀 Loading ZAD Helper Functions`
     } catch (error) {
         logError(`🔧 SIMPLIFIED UUID INJECTION: Failed to inject UUID: ${error instanceof Error ? error.message : String(error)}`);
         return html; // Return original HTML if injection fails
+    }
+}
+
+/**
+ * Inject modified ZAD helper functions for stackzad apps that use SHARED_DATA_UUID
+ */
+async function injectStackzadHelpers(html: string): Promise<string> {
+    try {
+        logWithTimestamp(`🤝 STACKZAD: Modifying ZAD helper functions to use SHARED_DATA_UUID`);
+        
+        // Special getAppId for stackzad that checks for SHARED_DATA_UUID
+        const stackzadGetAppId = `function getAppId() {
+    // STACKZAD: Check if we should use shared data UUID
+    if (window.SHARED_DATA_UUID) {
+        console.log('🤝 STACKZAD getAppId() using SHARED_DATA_UUID:', window.SHARED_DATA_UUID);
+        return window.SHARED_DATA_UUID;
+    }
+    // Fallback to normal APP_ID
+    console.log('🆔 ZAD getAppId() called, returning UUID:', window.APP_ID);
+    return window.APP_ID || 'unknown-app';
+}`;
+        
+        // Replace existing getAppId function with stackzad version
+        if (html.includes('function getAppId()')) {
+            html = html.replace(
+                /function getAppId\(\) \{[\s\S]*?\n\}/g,
+                stackzadGetAppId
+            );
+            logWithTimestamp(`🤝 STACKZAD: Replaced getAppId with shared data version`);
+        } else {
+            // If no getAppId found, inject it
+            const injectionPoint = html.includes('</script>') ? '</script>' : '</body>';
+            html = html.replace(injectionPoint, `
+${stackzadGetAppId}
+${injectionPoint}`);
+            logWithTimestamp(`🤝 STACKZAD: Added stackzad getAppId function`);
+        }
+        
+        return html;
+        
+    } catch (error) {
+        logError(`🤝 STACKZAD: Failed to inject stackzad helpers: ${error instanceof Error ? error.message : String(error)}`);
+        return html;
     }
 }
 

@@ -7,13 +7,33 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-const envPath = path.join(__dirname, '../../.env.local');
-dotenv.config({ path: envPath });
+// Load environment variables - try multiple locations
+const envPaths = [
+  path.join(__dirname, '../.env.local'),     // sms-bot/.env.local
+  path.join(__dirname, '../../.env.local'),  // root/.env.local
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  try {
+    if (await fs.access(envPath).then(() => true).catch(() => false)) {
+      dotenv.config({ path: envPath });
+      console.log(`📍 Loading from: ${envPath}`);
+      envLoaded = true;
+      break;
+    }
+  } catch (error) {
+    // Continue to next path
+  }
+}
+
+if (!envLoaded) {
+  console.log(`📍 Trying default .env.local loading...`);
+  dotenv.config();
+}
 
 // Verify environment variables
 console.log('🔧 Environment Check:');
-console.log(`  📍 Loading from: ${envPath}`);
 console.log(`  🔗 SUPABASE_URL: ${process.env.SUPABASE_URL ? 'loaded' : 'MISSING'}`);
 console.log(`  🔑 SUPABASE_SERVICE_KEY: ${process.env.SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
 
