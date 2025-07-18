@@ -38,11 +38,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // CRITICAL: Avoid variable naming conflicts
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-// Standard WTAF Supabase pattern - use any app_id value, it will be configured automatically
+// CRITICAL: Query by origin_app_slug (NOT app_id which is random UUID)
+// The app slug will be automatically configured by the system
 const { data: submissions } = await supabaseClient
   .from('wtaf_submissions')
   .select('submission_data, created_at')
-  .eq('app_id', 'origin_app_id')
+  .eq('origin_app_slug', 'ORIGIN_APP_SLUG')
   .order('created_at', { ascending: false });
 
 // Parse and display data
@@ -54,10 +55,9 @@ const displayData = submissions.map(sub => {
     // Extract other fields based on user request
   };
 });
-```
 
 CRITICAL IMPLEMENTATION RULES:
-1. Use standard app_id patterns - the system will configure the correct UUID automatically
+1. Use origin_app_slug patterns - the system will configure the correct app slug automatically
 2. Include loading spinner/message while data loads
 3. Handle empty states: "No submissions yet" with encouraging message
 4. Make data display responsive and mobile-friendly
@@ -79,4 +79,4 @@ USER EXPERIENCE:
 
 Remember: This app will be LIVE and DYNAMIC. When new people submit to the original app, this app will automatically show that new data. Build accordingly.
 
-Return the full HTML with embedded JavaScript inside a ```html code block, and nothing else. 
+Return the full HTML with embedded JavaScript inside a ```html code block, and nothing else.

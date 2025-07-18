@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+Make a side-scrolling app where each user adds a weird building to a shared street. Each one has a name, short description, and maybe an emoji sign. So this is a drawing that gets more elaborate as each person adds to it. The first building is a regular simple drawing of a house

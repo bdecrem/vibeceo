@@ -1,0 +1,217 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF BILLBOARD</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            background: linear-gradient(to right, #FF2E93, #FF61C7, #FFA5E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .message-board {
+            border: 2px solid #FF2E93;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-top: 2rem;
+            background: rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message {
+            font-family: 'Courier Prime', monospace;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 5px;
+            background: rgba(255,46,147,0.1);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .message:hover {
+            transform: scale(1.02);
+            background: rgba(255,46,147,0.2);
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 2rem;
+            padding: 2rem;
+            animation: pulse 1s infinite;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            font-style: italic;
+            color: #FF61C7;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 100;
+            filter: blur(0.5px);
+            transition: all 0.1s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: brightness(100%) blur(0); }
+            50% { filter: brightness(150%) blur(1px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ THE BILLBOARD ✨</h1>
+        <div id="message-board" class="message-board">
+            <div class="loading">Loading messages... 💫</div>
+        </div>
+    </div>
+    <button class="refresh-btn" onclick="loadMessages()">🔄 Refresh</button>
+
+    <script>
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350'
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        const emojis = ['✨', '💫', '🌟', '⚡', '🔮', '💭']
+        const colors = ['#FF2E93', '#FF61C7', '#FFA5E5', '#3F88FF', '#6E7FFF']
+
+        function createFloatingEmojis() {
+            emojis.forEach((emoji, i) => {
+                const el = document.createElement('div')
+                el.className = 'floating-emoji'
+                el.textContent = emoji
+                el.style.left = `${Math.random() * 100}vw`
+                el.style.top = `${Math.random() * 100}vh`
+                el.style.animation = `float ${3 + i}s ease-in-out infinite`
+                el.setAttribute('data-value', Math.random() * 4 + 1)
+                document.body.appendChild(el)
+            })
+        }
+
+        function handleParallax(e) {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = emoji.getAttribute('data-value')
+                const x = (window.innerWidth - e.pageX * speed) / 100
+                const y = (window.innerHeight - e.pageY * speed) / 100
+                emoji.style.transform = `translate(${x}px, ${y}px)`
+            })
+        }
+
+        async function loadMessages() {
+            const messageBoard = document.getElementById('message-board')
+            messageBoard.innerHTML = '<div class="loading">Loading messages... 💫</div>'
+
+            try {
+                const { data: submissions, error } = await supabaseClient
+                    .from('wtaf_submissions')
+                    .select('submission_data, created_at')
+                    .eq('app_id', 'billboard')
+                    .order('created_at', { ascending: false })
+
+                if (error) throw error
+
+                if (!submissions || submissions.length === 0) {
+                    messageBoard.innerHTML = '<div class="empty-state">No messages yet... Be the first! 📝</div>'
+                    return
+                }
+
+                messageBoard.innerHTML = submissions
+                    .map(sub => {
+                        const message = sub.submission_data.message || 'Anonymous message'
+                        const date = new Date(sub.created_at).toLocaleString()
+                        return `
+                            <div class="message">
+                                ${message}
+                                <div class="timestamp">📅 ${date}</div>
+                            </div>
+                        `
+                    })
+                    .join('')
+
+            } catch (error) {
+                messageBoard.innerHTML = `<div class="empty-state">Error loading messages: ${error.message}</div>`
+            }
+        }
+
+        document.addEventListener('mousemove', handleParallax)
+        createFloatingEmojis()
+        loadMessages()
+
+        // Easter egg
+        let konami = ''
+        document.addEventListener('keydown', (e) => {
+            konami += e.key
+            if (konami.includes('wtaf')) {
+                document.body.style.animation = 'glow 0.5s infinite'
+                setTimeout(() => document.body.style.animation = '', 1000)
+                konami = ''
+            }
+        })
+    </script>
+</body>
+</html>
+```

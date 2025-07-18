@@ -667,6 +667,7 @@ export async function buildEnhancedDBPrompt(userRequest: string, appUuid: string
 export async function processStackDBRequest(userSlug: string, stackCommand: string): Promise<{ 
     success: boolean; 
     userRequest?: string; 
+    appSlug?: string;
     appUuid?: string;
     enhancedPrompt?: string; 
     error?: string 
@@ -700,6 +701,7 @@ export async function processStackDBRequest(userSlug: string, stackCommand: stri
         return {
             success: true,
             userRequest,
+            appSlug,  // ✅ Now include the app slug for origin_app_slug replacement
             appUuid,
             enhancedPrompt
         };

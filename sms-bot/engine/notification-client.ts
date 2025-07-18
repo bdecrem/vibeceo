@@ -134,6 +134,12 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "stackemail-send":
                 message = "📧 Failed to send stackemail. Try again in a few minutes.";
                 break;
+            case "stackzad-format":
+                message = "🤝 Invalid stackzad format. Use: --stackzad source-zad-app your request here";
+                break;
+            case "stackzad-ownership":
+                message = "🔒 You can only create stackzad apps from ZAD apps you own.";
+                break;
             case "meme-generation":
                 message = "🎨 Meme creation failed. Try a different meme idea or try again in a few minutes.";
                 break;

@@ -18,7 +18,7 @@ import {
     logError, 
     logWarning 
 } from './shared/logger.js';
-import { extractCodeBlocks, injectSubmissionUuid, replaceAppTableId } from './shared/utils.js';
+import { extractCodeBlocks, injectSubmissionUuid, replaceAppTableId, replaceOriginAppSlug } from './shared/utils.js';
 import { generateCompletePrompt, callClaude, type ClassifierConfig, type BuilderConfig } from './wtaf-processor.js';
 import { 
     saveCodeToSupabase, 
@@ -312,9 +312,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             return false;
         }
         
-        const { userRequest, appUuid: originAppUuid, enhancedPrompt } = stackResult;
+        const { userRequest, appSlug: originAppSlug, appUuid: originAppUuid, enhancedPrompt } = stackResult;
         
-        if (!enhancedPrompt || !originAppUuid) {
+        if (!enhancedPrompt || !originAppUuid || !originAppSlug) {
             logError(`❌ You don't own app or stackdb processing failed`);
             await sendFailureNotification("stackdb-ownership", senderPhone);
             return false;
@@ -348,12 +348,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             return false;
         }
         
-        // ⚡ CRITICAL FIX: Use ORIGIN app UUID for live data connection (not new app UUID)
-        logWithTimestamp(`🔄 Replacing app_id with origin app UUID: ${originAppUuid}`);
-        const codeWithUuid = replaceAppTableId(code, originAppUuid);
+        // ⚡ CRITICAL FIX: Use ORIGIN app slug for live data connection (wtaf_submissions uses origin_app_slug column)
+        logWithTimestamp(`🔄 Replacing ORIGIN_APP_SLUG with origin app slug: ${originAppSlug}`);
+        const codeWithSlug = replaceOriginAppSlug(code, originAppSlug);
         
         // Deploy stackdb result with skipUuidReplacement=true to prevent double replacement
-        const deployResult = await saveCodeToSupabase(codeWithUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackdb request", null, true);
+        const deployResult = await saveCodeToSupabase(codeWithSlug, coach || "unknown", userSlug, senderPhone, userRequest || "stackdb request", null, true);
         if (deployResult.publicUrl) {
             // Generate OG image
             try {
@@ -645,6 +645,120 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
     }
     
+    // 🤝 STACKZAD: Check for --stackzad flag to create ZAD apps with shared data
+    if (userPrompt && (userPrompt.startsWith('--stackzad ') || userPrompt.startsWith('wtaf --stackzad '))) {
+        logWithTimestamp("🤝 STACKZAD DETECTED: Processing ZAD app with shared data access");
+        
+        // Import stackzad functions dynamically
+        const { processStackZadRequest } = await import('./stackables-manager.js');
+        
+        const stackZadResult = await processStackZadRequest(userSlug, userPrompt);
+        
+        if (!stackZadResult.success) {
+            logError(`❌ Invalid stackzad command format or ownership issue`);
+            await sendFailureNotification("stackzad-format", senderPhone);
+            return false;
+        }
+        
+        const { userRequest, sourceAppUuid, enhancedPrompt, dataStructureAnalysis, sampleDataSection } = stackZadResult;
+        
+        if (!enhancedPrompt || !sourceAppUuid) {
+            logError(`❌ You don't own the source ZAD app or stackzad processing failed`);
+            await sendFailureNotification("stackzad-ownership", senderPhone);
+            return false;
+        }
+        
+        // Send directly to Claude with stackzad-specific system prompt (bypass wtaf-processor entirely)
+        logWithTimestamp("🚀 Sending stackzad request directly to Claude with stackzad system prompt (bypassing wtaf-processor)");
+        
+        // Load stackzad-specific system prompt and replace placeholders
+        const stackzadTemplatePath = join(__dirname, '..', 'content', 'stackzad-system-prompt.txt');
+        let stackzadSystemPrompt = await readFile(stackzadTemplatePath, 'utf8');
+        
+        // Replace placeholders with actual data directly
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{USER_REQUEST}', userRequest || 'admin interface');
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{DATA_STRUCTURE_ANALYSIS}', 
+            dataStructureAnalysis || 'No data structure analysis available');
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{SAMPLE_DATA}', 
+            sampleDataSection || 'No sample data available');
+            
+        logWithTimestamp(`📄 Stackzad system prompt loaded and configured: ${stackzadSystemPrompt.length} characters`);
+        
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackzadSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackzad_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Stackzad output saved to: ${outputFile}`);
+        
+        // Extract code blocks and deploy normally
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackzad response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // ⚡ CRITICAL: Inject SHARED_DATA_UUID for data access while keeping app's own UUID
+        logWithTimestamp(`🔄 Injecting SHARED_DATA_UUID for shared data access: ${sourceAppUuid}`);
+        
+        // Inject the shared data UUID as a separate variable (not replacing APP_ID)
+        const sharedDataInjection = `\n// STACKZAD: Shared data configuration\nwindow.SHARED_DATA_UUID = '${sourceAppUuid}';\nconsole.log('🤝 STACKZAD: Using shared data from app:', window.SHARED_DATA_UUID);\n`;
+        
+        // Find where to inject (after window.APP_ID or at start of first script tag)
+        let codeWithSharedUuid = code;
+        if (code.includes('window.APP_ID')) {
+            // Inject right after window.APP_ID line
+            codeWithSharedUuid = code.replace(
+                /(window\.APP_ID\s*=\s*['"][^'"]+['"];?)/,
+                `$1${sharedDataInjection}`
+            );
+        } else if (code.includes('<script>')) {
+            // Inject at the beginning of the first script tag
+            codeWithSharedUuid = code.replace(
+                '<script>',
+                `<script>${sharedDataInjection}`
+            );
+        } else {
+            logWarning('Could not find suitable injection point for SHARED_DATA_UUID');
+        }
+        
+        // Deploy stackzad result WITHOUT skipUuidReplacement so it gets its own APP_ID
+        // Let saveCodeToSupabase handle validation using the normal ZAD pipeline
+        const deployResult = await saveCodeToSupabase(codeWithSharedUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackzad request", null, false);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const newAppSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackzad: ${userSlug}/${newAppSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackzad HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackzad: ${error instanceof Error ? error.message : String(error)}`);
+            }
+
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKZAD PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            logWithTimestamp(`🤝 Shared data access to ZAD app UUID: ${sourceAppUuid}`);
+            return true;
+        } else {
+            logError("Failed to deploy stackzad content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+    
     // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
     let isStackablesRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {
@@ -817,7 +931,8 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                                        completePrompt.includes('--stack') ||
                                        completePrompt.includes('--remix') ||
                                        completePrompt.includes('--stackdb') ||
-                                       completePrompt.includes('--stackdata');
+                                       completePrompt.includes('--stackdata') ||
+                                       completePrompt.includes('--stackzad');
             
             if (!isSpecializedRequest && configType === 'creation') {
                 designSystemContent = await loadWtafDesignSystem();

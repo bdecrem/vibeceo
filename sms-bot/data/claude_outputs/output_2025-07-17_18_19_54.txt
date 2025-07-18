@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Feature Ideas Board</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+        }
+
+        button:hover { background: #ff3388; }
+        button:active { transform: scale(0.98); }
+
+        input, select {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Idea Cards */
+        .idea-card {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            position: relative;
+            border-left: 5px solid;
+        }
+
+        .idea-text {
+            font-size: 18px;
+            margin-bottom: 15px;
+            word-wrap: break-word;
+        }
+
+        .idea-meta {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .reactions {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .reaction-btn {
+            background: #333;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 20px;
+            min-width: 60px;
+            font-size: 16px;
+            margin: 0;
+            width: auto;
+            height: 44px;
+        }
+
+        .reaction-count {
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .comments {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+
+        .comment {
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        #new-idea-form {
+            margin: 20px 0;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+            .reaction-btn { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Feature Ideas Board</h1>
+            <p>Share and discuss feature ideas with the team!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Feature Ideas Board</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="new-idea-form">
+                <input type="text" id="idea-input" placeholder="Share your feature idea..." maxlength="200">
+                <button onclick="submitIdea()">Post Idea</button>
+            </div>
+            
+            <div id="ideas-container"></div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        const COLORS = ['#ff0066', '#00ffcc', '#ffcc00', '#00ccff', '#ff6600'];
+        
+        // Auth code
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        // App-specific code
+        async function submitIdea() {
+            const input = document.getElementById('idea-input');
+            const text = input.value.trim();
+            
+            if (text) {
+                await save('idea', {
+                    text,
+                    reactions: { '💡': 0, '🔥': 0, '👍': 0, '🤔': 0 }
+                });
+                input.value = '';
+                await loadLatestData();
+            }
+        }
+
+        async function addReaction(ideaId, emoji) {
+            const ideas = await load('idea');
+            const idea = ideas.find(i => i.id === ideaId);
+            if (!idea) return;
+            
+            const latestReactions = {...idea.reactions};
+            latestReactions[emoji] = (latestReactions[emoji] || 0) + 1;
+            
+            await save('idea', {
+                text: idea.text,
+                reactions: latestReactions
+            });
+            
+            await loadLatestData();
+        }
+
+        async function addComment(ideaId) {
+            const commentText = prompt('Add a comment:');
+            if (!commentText?.trim()) return;
+            
+            await save('comment', {
+                ideaId,
+                text: commentText
+            });
+            
+            await loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const ideas = await load('idea');
+            const comments = await load('comment');
+            
+            const container = document.getElementById('ideas-container');
+            container.innerHTML = '';
+            
+            // Group by text to get latest version of each idea
+            const uniqueIdeas = ideas.reduce((acc, idea) => {
+                if (!acc[idea.text] || new Date(acc[idea.text].created_at) < new Date(idea.created_at)) {
+                    acc[idea.text] = idea;
+                }
+                return acc;
+            }, {});
+            
+            Object.values(uniqueIdeas)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach((idea, index) => {
+                    const ideaComments = comments
+                        .filter(c => c.ideaId === idea.id)
+                        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                    
+                    const colorIndex = index % COLORS.length;
+                    const card = document.createElement('div');
+                    card.className = 'idea-card';
+                    card.style.borderLeftColor = COLORS[colorIndex];
+                    
+                    const date = new Date(idea.created_at).toLocaleString();
+                    
+                    card.innerHTML = `
+                        <div class="idea-text">${idea.text}</div>
+                        <div class="idea-meta">Posted by ${idea.author} on ${date}</div>
+                        <div class="reactions">
+                            ${['💡', '🔥', '👍', '🤔'].map(emoji => `
+                                <button class="reaction-btn" onclick="addReaction(${idea.id}, '${emoji}')">
+                                    ${emoji} <span class="reaction-count">${idea.reactions[emoji] || 0}</span>
+                                </button>
+                            `).join('')}
+                            <button class="reaction-btn" onclick="addComment(${idea.id})">💬 Comment</button>
+                        </div>
+                        ${ideaComments.length > 0 ? `
+                            <div class="comments">
+                                ${ideaComments.map(comment => `
+                                    <div class="comment">
+                                        <strong>${comment.author}:</strong> ${comment.text}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    container.appendChild(card);
+                });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF People Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff0066, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glitch 2s infinite;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff0066, #ff00ff);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+            transform: skew(-5deg);
+            box-shadow: 4px 4px 0 #ff00ff;
+        }
+
+        button:hover {
+            filter: brightness(120%);
+        }
+
+        button:active {
+            transform: skew(-5deg) scale(0.98);
+        }
+
+        input, textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .person {
+            background: #2a2a2a;
+            padding: 16px;
+            margin: 10px 0;
+            border-radius: 8px;
+            min-height: 60px;
+        }
+
+        .person-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .person-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff0066;
+        }
+
+        .notes {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 6px;
+        }
+
+        .note {
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            
+            .filter-buttons button {
+                width: auto;
+            }
+        }
+
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        .contacted {
+            background: #006622;
+        }
+
+        .not-contacted {
+            background: #660022;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>WTAF People Tracker</h1>
+            <p>Track who you want to show WTAF.me to!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>WTAF People Tracker</h1>
+            <div id="user-status">Spreading WTAF as: <span id="current-user-label"></span></div>
+
+            <div id="add-person-form">
+                <input type="text" id="new-person-name" placeholder="Enter person's name">
+                <textarea id="initial-note" placeholder="Add a note (optional)"></textarea>
+                <button onclick="addPerson()">ADD TO THE LIST 🤘</button>
+            </div>
+
+            <div class="filter-buttons">
+                <button onclick="showAll()">ALL PEOPLE</button>
+                <button onclick="showContacted()">CONTACTED</button>
+                <button onclick="showNotContacted()">TO CONTACT</button>
+            </div>
+
+            <div id="people-list"></div>
+            
+            <button onclick="showScreen('welcome-screen')">ESCAPE</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Auth code (copied from template)
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        // App-specific code
+        async function addPerson() {
+            const name = document.getElementById('new-person-name').value.trim();
+            const note = document.getElementById('initial-note').value.trim();
+            
+            if (!name) return;
+
+            await save('person', {
+                name,
+                contacted: false,
+                created_at: new Date().toISOString()
+            });
+
+            if (note) {
+                await save('note', {
+                    person_name: name,
+                    text: note,
+                    created_at: new Date().toISOString()
+                });
+            }
+
+            document.getElementById('new-person-name').value = '';
+            document.getElementById('initial-note').value = '';
+            
+            loadLatestData();
+        }
+
+        async function toggleContacted(name) {
+            const people = await load('person');
+            const person = people.find(p => p.name === name);
+            if (person) {
+                person.contacted = !person.contacted;
+                await save('person', person);
+                loadLatestData();
+            }
+        }
+
+        async function addNote(name) {
+            const note = prompt('Add note:');
+            if (note) {
+                await save('note', {
+                    person_name: name,
+                    text: note,
+                    created_at: new Date().toISOString()
+                });
+                loadLatestData();
+            }
+        }
+
+        let currentFilter = 'all';
+
+        function showAll() {
+            currentFilter = 'all';
+            loadLatestData();
+        }
+
+        function showContacted() {
+            currentFilter = 'contacted';
+            loadLatestData();
+        }
+
+        function showNotContacted() {
+            currentFilter = 'not-contacted';
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const people = await load('person');
+            const notes = await load('note');
+
+            let filteredPeople = people;
+            if (currentFilter === 'contacted') {
+                filteredPeople = people.filter(p => p.contacted);
+            } else if (currentFilter === 'not-contacted') {
+                filteredPeople = people.filter(p => !p.contacted);
+            }
+
+            const peopleList = document.getElementById('people-list');
+            peopleList.innerHTML = '';
+
+            filteredPeople.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach(person => {
+                    const personNotes = notes.filter(n => n.person_name === person.name)
+                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                    const div = document.createElement('div');
+                    div.className = `person ${person.contacted ? 'contacted' : 'not-contacted'}`;
+                    div.innerHTML = `
+                        <div class="person-header">
+                            <span class="person-name">${person.name}</span>
+                            <span class="status-badge ${person.contacted ? 'contacted' : 'not-contacted'}">
+                                ${person.contacted ? '🤘 CONTACTED' : '👊 TO CONTACT'}
+                            </span>
+                        </div>
+                        <button onclick="toggleContacted('${person.name}')">
+                            ${person.contacted ? '❌ MARK AS NOT CONTACTED' : '✅ MARK AS CONTACTED'}
+                        </button>
+                        <button onclick="addNote('${person.name}')">ADD NOTE 📝</button>
+                        ${personNotes.length > 0 ? `
+                            <div class="notes">
+                                ${personNotes.map(note => `
+                                    <div class="note">${note.text}</div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    `;
+                    peopleList.appendChild(div);
+                });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

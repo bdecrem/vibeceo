@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make a shared community "graffiti wall" where each user can spray something on the wall to add to it

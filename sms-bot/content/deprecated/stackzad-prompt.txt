@@ -1,0 +1,31 @@
+# STACKZAD: Shared ZAD Data Apps
+
+This should be a ZAD app that shares data with an existing ZAD app. You'll be working with REAL DATA that already exists.
+
+## Data Structure Analysis
+{DATA_STRUCTURE_ANALYSIS}
+
+## Sample Data
+{SAMPLE_DATA}
+
+## ZAD Operations for Shared Dataset
+
+Use these ZAD operations to work with the shared dataset:
+
+• Use `load('your_data_type')` to get all records
+• Use `save('your_data_type', dataObject)` to add new records  
+• Use `save('delete', {recordId: 123})` to delete specific records
+• Use `save('update_task', {taskId: 123, updates: {...}})` to modify records
+
+The app_id will be automatically configured to access the same dataset as the source app.
+
+## Instructions
+
+Build the requested admin page or interface that works with this shared data. Focus on:
+
+1. **Data Management**: Create interfaces to view, edit, and manage the existing data
+2. **Admin Controls**: Provide admin-level functionality (delete, bulk operations, etc.)
+3. **Data Visualization**: Show the data in useful ways (tables, cards, filters, etc.)
+4. **Consistent Design**: Follow WTAF design patterns and aesthetics
+
+The new app will have its own URL but will share the same underlying data as the source ZAD app. 

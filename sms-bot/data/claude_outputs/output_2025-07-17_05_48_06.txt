@@ -1,0 +1,309 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAOTIC BILLBOARD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        .message-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8vw;
+            text-align: center;
+            width: 100%;
+            text-shadow: 0 0 20px #ff00ff;
+            animation: glitch 2s infinite;
+        }
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+        }
+        .input-zone {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ff00ff;
+            background: transparent;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            border-radius: 5px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00ff00;
+        }
+        @keyframes glitch {
+            0% { transform: translate(-50%, -50%) skew(0deg); }
+            20% { transform: translate(-50%, -50%) skew(10deg); }
+            40% { transform: translate(-50%, -50%) skew(-10deg); }
+            60% { transform: translate(-50%, -50%) skew(5deg); }
+            80% { transform: translate(-50%, -50%) skew(-5deg); }
+            100% { transform: translate(-50%, -50%) skew(0deg); }
+        }
+        .secret-msg {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+        .cta {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2">🌀</div>
+    <div class="floating-emoji" data-value="3">💥</div>
+    <div class="floating-emoji" data-value="4">⚡</div>
+    <div class="floating-emoji" data-value="5">🔥</div>
+    <div class="floating-emoji" data-value="6">✨</div>
+    
+    <div class="message-container">LOADING CHAOS...</div>
+    
+    <div class="input-zone">
+        <input type="text" placeholder="TYPE YOUR CHAOS MESSAGE" maxlength="50">
+    </div>
+
+    <div class="secret-msg">Generated from: make a crazy punk billboard</div>
+    <div class="cta">📱 Text START to +1-866-330-0015</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Message handling
+        const messageContainer = document.querySelector('.message-container');
+        const input = document.querySelector('input');
+        let messages = [];
+        let currentIndex = 0;
+
+        // Load messages
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/admin/load?app_id=PUNK_BILLBOARD');
+                if (!response.ok) throw new Error('Failed to load messages');
+                const data = await response.json();
+                messages = data.map(item => item.submission_data.message);
+                if (messages.length > 0) cycleMessages();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Submit new message
+        input.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && input.value.trim()) {
+                try {
+                    const response = await fetch('/api/admin/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            app_id: 'PUNK_BILLBOARD',
+                            submission_data: { message: input.value.trim() }
+                        })
+                    });
+                    if (!response.ok) throw new Error('Submission failed');
+                    input.value = '';
+                    loadMessages();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('MESSAGE FAILED TO SEND INTO THE VOID');
+                }
+            }
+        });
+
+        function cycleMessages() {
+            setInterval(() => {
+                if (messages.length > 0) {
+                    messageContainer.style.opacity = 0;
+                    setTimeout(() => {
+                        messageContainer.textContent = messages[currentIndex];
+                        messageContainer.style.opacity = 1;
+                        currentIndex = (currentIndex + 1) % messages.length;
+                    }, 500);
+                }
+            }, 3000);
+        }
+
+        // Easter egg
+        let konami = '';
+        document.addEventListener('keydown', (e) => {
+            konami += e.key;
+            if (konami.includes('wtaf')) {
+                document.body.style.animation = 'glitch 0.1s infinite';
+                setTimeout(() => document.body.style.animation = '', 1000);
+                konami = '';
+            }
+        });
+
+        loadMessages();
+    </script>
+</body>
+</html>
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAOS ADMIN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background: #111;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        tr:hover {
+            background: #111;
+        }
+        button {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1>CHAOS CONTROL CENTER</h1>
+    <button onclick="exportCSV()">EXPORT CHAOS DATA</button>
+    <table>
+        <thead>
+            <tr>
+                <th>MESSAGE</th>
+                <th>TIMESTAMP</th>
+            </tr>
+        </thead>
+        <tbody id="messageTable"></tbody>
+    </table>
+
+    <script>
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/admin/load?app_id=PUNK_BILLBOARD');
+                if (!response.ok) throw new Error('Failed to load messages');
+                const data = await response.json();
+                
+                const tableBody = document.getElementById('messageTable');
+                tableBody.innerHTML = '';
+                
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.submission_data.message}</td>
+                        <td>${new Date(item.timestamp).toLocaleString()}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                window.submissionData = data;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load messages');
+            }
+        }
+
+        function exportCSV() {
+            if (!window.submissionData) return;
+            
+            const csvContent = 'Message,Timestamp\n' + 
+                window.submissionData.map(row => 
+                    `${row.submission_data.message || ''},${new Date(row.timestamp).toLocaleString() || ''}`
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chaos_messages.csv';
+            a.click();
+        }
+
+        loadMessages();
+        setInterval(loadMessages, 5000);
+    </script>
+</body>
+</html>
+```

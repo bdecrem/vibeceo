@@ -1,0 +1,131 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO CHAOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #FF2E93, #7C3AED);
+            animation: gradientBG 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-size: 8vw;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            text-shadow: 
+                3px 3px 0 #00FFC6,
+                6px 6px 0 #FF2E93;
+            animation: glitch 0.5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .floating {
+            position: absolute;
+            font-size: 5rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        #emoji1 { top: 20%; left: 20%; animation-delay: 0s; }
+        #emoji2 { top: 30%; right: 20%; animation-delay: 0.5s; }
+        #emoji3 { bottom: 20%; left: 30%; animation-delay: 1s; }
+        #emoji4 { bottom: 30%; right: 30%; animation-delay: 1.5s; }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            padding: 10px 20px;
+            background: #00FFC6;
+            color: black;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #00FFC6;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 12vw;
+            }
+            
+            .floating {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <span class="floating" id="emoji1">💀</span>
+        <span class="floating" id="emoji2">⚡</span>
+        <span class="floating" id="emoji3">🔥</span>
+        <span class="floating" id="emoji4">💥</span>
+        <a href="#" class="admin-link">Admin Access</a>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating');
+            emojis.forEach(emoji => {
+                const speed = 0.05;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
