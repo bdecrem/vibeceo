@@ -85,6 +85,24 @@ async function deleteRecord(recordId) {
 }
 ```
 
+5. Building UI with buttons (CRITICAL - Quote IDs properly):
+```javascript
+submissions.forEach(sub => {
+  const data = sub.submission_data;
+  const message = data.message || 'Empty message';
+  
+  // CRITICAL: Quote the sub.id in onclick handlers to avoid syntax errors
+  const itemHtml = `
+    <div class="item">
+      <div class="content">${message}</div>
+      <button onclick="editRecord('${sub.id}')">Edit</button>
+      <button onclick="deleteRecord('${sub.id}')">Delete</button>
+    </div>
+  `;
+  container.innerHTML += itemHtml;
+});
+```
+
 CRITICAL IMPLEMENTATION RULES:
 1. Use origin_app_slug patterns - the system will configure the correct app slug automatically
 2. Include loading spinner/message while data loads
@@ -94,6 +112,7 @@ CRITICAL IMPLEMENTATION RULES:
 6. Include refresh functionality after updates/deletes
 7. Always use action_type approach for update/delete operations
 8. Each record has an 'id' field for update/delete operations
+9. CRITICAL: Always quote record IDs in onclick handlers - use '${sub.id}' not ${sub.id}
 
 SECURITY & PERFORMANCE:
 - Rely on API endpoint for data access control

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Billboard Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient: linear-gradient(-45deg, #FF2E93, #FF61C7, #FFA5E5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #111;
+            color: white;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 2rem;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            z-index: 1000;
+        }
+
+        .billboard-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .billboard-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .message {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            background: var(--gradient);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,46,147,0.3);
+        }
+
+        .edit-mode {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        #loading {
+            font-size: 1.2rem;
+            color: #FF61C7;
+            margin: 2rem 0;
+        }
+
+        #error-message {
+            color: #FF2E93;
+            margin: 1rem 0;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #FF61C7;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2">✨</div>
+    <div class="floating-emoji" data-value="3">💫</div>
+    <div class="floating-emoji" data-value="4">🌟</div>
+    <div class="floating-emoji" data-value="5">⚡</div>
+
+    <h1>BILLBOARD CHAOS CONTROL CENTER</h1>
+    <div id="loading">Loading your chaotic messages...</div>
+    <div id="error-message"></div>
+    <div id="billboard-container"></div>
+
+    <script>
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji, index) => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Position floating emojis randomly
+        document.querySelectorAll('.floating-emoji').forEach(emoji => {
+            emoji.style.left = `${Math.random() * 80 + 10}%`;
+            emoji.style.top = `${Math.random() * 80 + 10}%`;
+        });
+
+        async function loadSubmissions() {
+            const container = document.getElementById('billboard-container');
+            const loading = document.getElementById('loading');
+
+            try {
+                const response = await fetch('/api/admin/load?origin_app_slug=ORIGIN_APP_SLUG');
+                if (!response.ok) throw new Error('Failed to load submissions');
+                const submissions = await response.json();
+                
+                loading.style.display = 'none';
+                container.innerHTML = '';
+
+                if (submissions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            No messages yet! Be the first to write something wild! ✨
+                        </div>
+                    `;
+                    return;
+                }
+
+                submissions.forEach(sub => {
+                    const message = sub.submission_data.message || 'Empty message';
+                    container.innerHTML += `
+                        <div class="billboard-item" id="item-${sub.id}">
+                            <div class="message">${message}</div>
+                            <div class="controls">
+                                <button onclick="editRecord('${sub.id}', '${message.replace(/'/g, "\\'")}')">✏️ Edit</button>
+                                <button onclick="deleteRecord('${sub.id}')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to load messages';
+            }
+        }
+
+        function editRecord(recordId, currentMessage) {
+            const item = document.getElementById(`item-${recordId}`);
+            if (!item.querySelector('.edit-mode')) {
+                const editHtml = `
+                    <div class="edit-mode">
+                        <textarea id="edit-${recordId}">${currentMessage}</textarea>
+                        <button onclick="saveEdit('${recordId}')">💾 Save</button>
+                        <button onclick="cancelEdit('${recordId}')">❌ Cancel</button>
+                    </div>
+                `;
+                item.innerHTML += editHtml;
+            }
+        }
+
+        async function saveEdit(recordId) {
+            const newMessage = document.getElementById(`edit-${recordId}`).value;
+            try {
+                await updateRecord(recordId, { message: newMessage });
+            } catch (error) {
+                console.error('Error saving:', error);
+            }
+        }
+
+        function cancelEdit(recordId) {
+            const item = document.getElementById(`item-${recordId}`);
+            const editMode = item.querySelector('.edit-mode');
+            if (editMode) editMode.remove();
+        }
+
+        async function updateRecord(recordId, newData) {
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'update',
+                        record_id: recordId,
+                        submission_data: newData
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to update record');
+                await loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to update message';
+            }
+        }
+
+        async function deleteRecord(recordId) {
+            if (!confirm('Are you sure you want to delete this message?')) return;
+            
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'delete',
+                        record_id: recordId
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to delete record');
+                await loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to delete message';
+            }
+        }
+
+        // Initial load
+        loadSubmissions();
+    </script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Billboard Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-1: linear-gradient(45deg, #FF2E93, #FF61C7, #FFA5E5);
+            --gradient-2: linear-gradient(145deg, #3F88FF, #6E7FFF, #ABF7FF);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .billboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        .message-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .message-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .message-text {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .message-meta {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: var(--gradient-2);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(63,136,255,0.4);
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #FF3D3D, #FF6B6B);
+        }
+
+        .edit-mode textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-family: 'Inter', sans-serif;
+            min-height: 100px;
+        }
+
+        #error-message {
+            color: #FF3D3D;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="billboard-container">
+        <h1>🎨 BILLBOARD CHAOS MANAGER</h1>
+        <div id="loading" class="loading">Loading your masterpieces... 🎨</div>
+        <div id="error-message"></div>
+        <div id="messages-container"></div>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 10%; left: 10%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 20%; right: 15%">🎨</div>
+    <div class="floating-emoji" data-value="4" style="bottom: 15%; left: 20%">🚀</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 25%; right: 10%">💫</div>
+
+    <script>
+        let editingId = null;
+
+        async function loadSubmissions() {
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('messages-container');
+            
+            try {
+                const response = await fetch('/api/admin/load?origin_app_slug=ORIGIN_APP_SLUG');
+                if (!response.ok) throw new Error('Failed to load submissions');
+                const submissions = await response.json();
+                
+                loading.style.display = 'none';
+                container.innerHTML = '';
+
+                if (submissions.length === 0) {
+                    container.innerHTML = '<div class="message-card">No messages yet! Be the first to leave your mark! ✨</div>';
+                    return;
+                }
+
+                submissions.forEach(sub => {
+                    const message = sub.submission_data.message || 'Empty message';
+                    const card = document.createElement('div');
+                    card.className = 'message-card';
+                    
+                    if (editingId === sub.id) {
+                        card.innerHTML = `
+                            <div class="edit-mode">
+                                <textarea id="edit-${sub.id}">${message}</textarea>
+                                <div class="button-group">
+                                    <button onclick="saveEdit(${sub.id})">Save</button>
+                                    <button onclick="cancelEdit(${sub.id})">Cancel</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        card.innerHTML = `
+                            <div class="message-text">${message}</div>
+                            <div class="message-meta">Posted: ${new Date(sub.created_at).toLocaleString()}</div>
+                            <div class="button-group">
+                                <button onclick="startEdit(${sub.id}, '${message.replace(/'/g, "\\'")}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteRecord(${sub.id})">Delete</button>
+                            </div>
+                        `;
+                    }
+                    
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to load messages 😢';
+                loading.style.display = 'none';
+            }
+        }
+
+        function startEdit(id, message) {
+            editingId = id;
+            loadSubmissions();
+        }
+
+        function cancelEdit(id) {
+            editingId = null;
+            loadSubmissions();
+        }
+
+        async function saveEdit(id) {
+            const newMessage = document.getElementById(`edit-${id}`).value;
+            
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'update',
+                        record_id: id,
+                        submission_data: { message: newMessage }
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to update message');
+                editingId = null;
+                loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to update message 😢';
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('Are you sure you want to delete this masterpiece? No take-backs! 🎨')) return;
+            
+            try {
+                const response = await fetch('/api/admin/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action_type: 'delete',
+                        record_id: id
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete message');
+                loadSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'Failed to delete message 😢';
+            }
+        }
+
+        // Floating emoji parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 250;
+                const y = (e.clientY * speed) / 250;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Initial load
+        loadSubmissions();
+    </script>
+</body>
+</html>

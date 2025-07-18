@@ -1,0 +1,336 @@
+I'll create a content moderation interface for viewing and deleting artwork from the shared dataset.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Art Moderation Panel</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            color: #ff0066;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .artwork-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .artwork-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .artwork-image {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #000;
+            margin-bottom: 10px;
+        }
+
+        .artwork-info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .artwork-info span {
+            color: #ff0066;
+        }
+
+        .delete-btn {
+            background: #ff3333;
+            padding: 8px 16px;
+            width: 100%;
+        }
+
+        .stats {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff0066;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .artwork-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                text-align: left;
+            }
+            
+            .stat-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Art Moderation Panel</h1>
+            <p>Login to manage artwork content</p>
+            <button onclick="showNewUserScreen()">New Moderator</button>
+            <button onclick="showReturningUserScreen()">Returning Moderator</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New Moderator</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning Moderator</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Art Moderation Panel</h1>
+            <div id="user-status">Logged in as: <span id="current-user-label"></span></div>
+            
+            <div id="stats" class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-artworks">0</div>
+                    <div class="stat-label">Total Artworks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="total-artists">0</div>
+                    <div class="stat-label">Unique Artists</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="latest-upload">-</div>
+                    <div class="stat-label">Latest Upload</div>
+                </div>
+            </div>
+            
+            <div id="artwork-grid" class="artwork-grid">
+                <div class="loading">Loading artwork...</div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')" style="margin-top: 20px;">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function deleteArtwork(id) {
+            if (!confirm('Are you sure you want to delete this artwork?')) return;
+            
+            await save('delete', { recordId: id });
+            loadLatestData();
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function updateStats(artworks) {
+            const uniqueArtists = new Set(artworks.map(a => a.artist)).size;
+            const latestArtwork = artworks[0];
+            
+            document.getElementById('total-artworks').textContent = artworks.length;
+            document.getElementById('total-artists').textContent = uniqueArtists;
+            document.getElementById('latest-upload').textContent = 
+                latestArtwork ? formatDate(latestArtwork.created_at).split(' ')[0] : '-';
+        }
+
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            
+            // Sort by newest first
+            artworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            updateStats(artworks);
+            
+            const grid = document.getElementById('artwork-grid');
+            grid.innerHTML = artworks.map(art => `
+                <div class="artwork-card">
+                    <img src="${art.image}" class="artwork-image" alt="Artwork by ${art.artist}">
+                    <div class="artwork-info">
+                        <p>Artist: <span>${art.artist}</span></p>
+                        <p>Created by: <span>${art.author}</span></p>
+                        <p>Date: <span>${formatDate(art.created_at)}</span></p>
+                    </div>
+                    <button onclick="deleteArtwork(${art.id})" class="delete-btn">Delete Artwork</button>
+                </div>
+            `).join('');
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>
