@@ -27,7 +27,7 @@ function getSupabaseClient(): SupabaseClient {
  */
 export function parseStackCommand(input: string): { appSlug: string; userRequest: string } | null {
     // Try "wtaf --stack app-slug user request here" format first
-    let match = input.match(/^wtaf\s+--stack\s+([a-z-]+)\s+(.+)$/i);
+    let match = input.match(/^wtaf\s+--stack\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -36,7 +36,7 @@ export function parseStackCommand(input: string): { appSlug: string; userRequest
     }
     
     // Try "--stack app-slug user request here" format (direct SMS format)
-    match = input.match(/^--stack\s+([a-z-]+)\s+(.+)$/i);
+    match = input.match(/^--stack\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
     return {
         appSlug: match[1],
@@ -122,7 +122,7 @@ export function buildEnhancedPrompt(userRequest: string, htmlContent: string | n
  */
 export function parseStackDataCommand(input: string): { appSlug: string; userRequest: string } | null {
     // Try "wtaf --stackdata app-slug user request here" format first
-    let match = input.match(/^wtaf\s+--stackdata\s+([a-z-]+)\s+(.+)$/i);
+    let match = input.match(/^wtaf\s+--stackdata\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -131,7 +131,7 @@ export function parseStackDataCommand(input: string): { appSlug: string; userReq
     }
     
     // Try "--stackdata app-slug user request here" format (direct SMS format)
-    match = input.match(/^--stackdata\s+([a-z-]+)\s+(.+)$/i);
+    match = input.match(/^--stackdata\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -252,7 +252,7 @@ export async function buildEnhancedDataPrompt(userRequest: string, names: string
     
     // Load and add WTAF design system
     try {
-        const appTechSpecPath = join(__dirname, '..', '..', 'content', 'app-tech-spec.json');
+        const appTechSpecPath = join(__dirname, '..', 'content', 'app-tech-spec.json');
         const appTechSpecContent = await readFile(appTechSpecPath, 'utf8');
         const appTechSpec = JSON.parse(appTechSpecContent);
         
@@ -327,7 +327,7 @@ export async function processStackDataRequest(userSlug: string, stackCommand: st
  */
 export function parseStackEmailCommand(input: string): { appSlug: string; emailMessage: string } | null {
     // Try "wtaf --stackemail app-slug email message here" format first
-    let match = input.match(/^wtaf\s+--stackemail\s+([a-z-]+)\s+(.+)$/i);
+    let match = input.match(/^wtaf\s+--stackemail\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -336,7 +336,7 @@ export function parseStackEmailCommand(input: string): { appSlug: string; emailM
     }
     
     // Try "--stackemail app-slug email message here" format (direct SMS format)
-    match = input.match(/^--stackemail\s+([a-z-]+)\s+(.+)$/i);
+    match = input.match(/^--stackemail\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -560,7 +560,7 @@ export async function processStackEmailRequest(userSlug: string, stackCommand: s
  */
 export function parseStackDBCommand(input: string): { appSlug: string; userRequest: string } | null {
     // Try "wtaf --stackdb app-slug user request here" format first
-    let match = input.match(/^wtaf\s+--stackdb\s+([a-z-]+)\s+(.+)$/i);
+    let match = input.match(/^wtaf\s+--stackdb\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -569,7 +569,7 @@ export function parseStackDBCommand(input: string): { appSlug: string; userReque
     }
     
     // Try "--stackdb app-slug user request here" format (direct SMS format)
-    match = input.match(/^--stackdb\s+([a-z-]+)\s+(.+)$/i);
+    match = input.match(/^--stackdb\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -773,7 +773,7 @@ export async function processStackablesRequest(userSlug: string, stackCommand: s
  */
 export function parseRemixCommand(input: string): { appSlug: string; userRequest: string } | null {
     // Try "wtaf --remix app-slug user request here" format first
-    let match = input.match(/^wtaf\s+--remix\s+([a-z-]+)\s+(.+)$/i);
+    let match = input.match(/^wtaf\s+--remix\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -782,7 +782,7 @@ export function parseRemixCommand(input: string): { appSlug: string; userRequest
     }
     
     // Try "--remix app-slug user request here" format (direct SMS format)
-    match = input.match(/^--remix\s+([a-z-]+)\s+(.+)$/i);
+    match = input.match(/^--remix\s+([a-z0-9-]+)\s+(.+)$/i);
     if (match) {
         return {
             appSlug: match[1],
@@ -898,4 +898,529 @@ export function buildRemixPrompt(userRequest: string, htmlContent: string | null
     logWithTimestamp(`Final remix prompt length: ${prompt.length} characters`);
     
     return prompt;
-} 
+}
+
+/**
+ * Parse stackzad command from user input
+ * Extracts source ZAD app slug and cleaned user request
+ * Supports both "wtaf --stackzad" and "--stackzad" formats
+ */
+export function parseStackZadCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --stackzad app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stackzad\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--stackzad app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stackzad\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Get ZAD app UUID for stackzad (includes ownership verification)
+ * Returns the app UUID needed for shared ZAD data access
+ */
+export async function getZadAppUUIDForStackZad(userSlug: string, appSlug: string): Promise<string | null> {
+    try {
+        logWithTimestamp(`🤝 Getting ZAD app UUID for stackzad`);
+        logWithTimestamp(`Looking for ZAD app: "${appSlug}"`);
+        
+        // Get user_id from sms_subscribers table
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return null;
+        }
+        
+        const userId = userData.id;
+        logWithTimestamp(`User ID: "${userId}"`);
+        
+        // Verify the user owns this ZAD app and get its UUID
+        const { data: appData, error: appError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id, type')
+            .eq('app_slug', appSlug)
+            .eq('user_id', userId)
+            .single();
+        
+        if (appError || !appData) {
+            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+            return null;
+        }
+        
+        // Verify it's a ZAD app
+        if (appData.type !== 'ZAD') {
+            logWarning(`App '${appSlug}' is not a ZAD app (type: ${appData.type})`);
+            return null;
+        }
+        
+        const appUuid = appData.id;
+        logWithTimestamp(`🆔 ZAD app UUID for stackzad: ${appUuid}`);
+        
+        logSuccess(`✅ ZAD app UUID retrieved for stackzad`);
+        return appUuid;
+        
+    } catch (error) {
+        logError(`Error getting ZAD app UUID for stackzad: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Extract APP_ID from HTML content by parsing the hardcoded window.APP_ID assignment
+ * This is much simpler and more accurate than database hunting
+ */
+function extractAppIdFromHtml(htmlContent: string): string | null {
+    try {
+        logWithTimestamp(`🔍 Extracting APP_ID from HTML content`);
+        
+        // Look for window.APP_ID = 'uuid' pattern
+        const appIdMatch = htmlContent.match(/window\.APP_ID\s*=\s*['"]([^'"]+)['"]/);
+        
+        if (appIdMatch && appIdMatch[1]) {
+            const extractedUuid = appIdMatch[1];
+            logWithTimestamp(`✅ Found APP_ID in HTML: ${extractedUuid}`);
+            return extractedUuid;
+        }
+        
+        // Fallback: look for it in getAppId() function return statement
+        const getAppIdMatch = htmlContent.match(/function getAppId\(\)[^}]*return\s*['"]([^'"]+)['"]/);
+        
+        if (getAppIdMatch && getAppIdMatch[1]) {
+            const extractedUuid = getAppIdMatch[1];
+            logWithTimestamp(`✅ Found APP_ID in getAppId() function: ${extractedUuid}`);
+            return extractedUuid;
+        }
+        
+        logWarning(`❌ Could not find APP_ID in HTML content`);
+        return null;
+        
+    } catch (error) {
+        logError(`Error extracting APP_ID from HTML: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/* 
+// ❌ COMMENTED OUT: Complex fork detection logic - replaced with simple HTML parsing
+// This was over-engineered when the answer is right there in the HTML
+
+/**
+ * Smart fork detection: Find the UUID with the most data records
+ * Checks the provided UUID and potential related UUIDs to find where the actual data lives
+ */
+/*
+async function findDataRichUuid(initialUuid: string): Promise<{uuid: string, recordCount: number}> {
+    try {
+        logWithTimestamp(`🔍 Smart fork detection: Finding UUID with most data`);
+        logWithTimestamp(`Initial UUID from URL: ${initialUuid}`);
+        
+        // First, check the provided UUID
+        const { data: initialData, error: initialError } = await getSupabaseClient()
+            .from('wtaf_zero_admin_collaborative')
+            .select('id', { count: 'exact' })
+            .eq('app_id', initialUuid);
+            
+        const initialCount = initialData?.length || 0;
+        logWithTimestamp(`📊 Initial UUID ${initialUuid}: ${initialCount} records`);
+        
+        // If we have substantial data (>= 5 records), use this UUID
+        if (initialCount >= 5) {
+            logWithTimestamp(`✅ Initial UUID has substantial data (${initialCount} records), using it`);
+            return { uuid: initialUuid, recordCount: initialCount };
+        }
+        
+        // If little/no data, search for related UUIDs in wtaf_content table
+        logWithTimestamp(`🔍 Initial UUID has limited data (${initialCount} records), searching for data-rich alternatives...`);
+        
+        // First get the user_slug for the initial UUID
+        const { data: initialApp, error: initialAppError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('user_slug, app_slug')
+            .eq('id', initialUuid)
+            .single();
+            
+        if (initialAppError || !initialApp) {
+            logWithTimestamp(`⚠️ Could not find initial app metadata, falling back to initial UUID`);
+            return { uuid: initialUuid, recordCount: initialCount };
+        }
+        
+        // Get apps with similar app_slug (forks of the same original app)
+        const baseSlug = initialApp.app_slug.split('-').slice(0, -1).join('-'); // Remove last part (like random ID)
+        const { data: contentRecords, error: contentError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('id, user_slug, app_slug')
+            .eq('user_slug', initialApp.user_slug)
+            .like('app_slug', `${baseSlug}%`)
+            .limit(20);
+            
+        if (contentError || !contentRecords) {
+            logWithTimestamp(`⚠️ Could not find related apps, falling back to initial UUID`);
+            return { uuid: initialUuid, recordCount: initialCount };
+        }
+        
+        // Check data count for each potential UUID
+        const uuidCandidates: {uuid: string, recordCount: number}[] = [];
+        
+        for (const record of contentRecords) {
+            if (record.id === initialUuid) continue; // Skip the one we already checked
+            
+            const { data, error } = await getSupabaseClient()
+                .from('wtaf_zero_admin_collaborative')
+                .select('id', { count: 'exact' })
+                .eq('app_id', record.id);
+                
+            const count = data?.length || 0;
+            if (count > 0) {
+                uuidCandidates.push({ uuid: record.id, recordCount: count });
+                logWithTimestamp(`📊 Alternative UUID ${record.id} (${record.app_slug}): ${count} records`);
+            }
+        }
+        
+        // Add the initial UUID to candidates
+        uuidCandidates.push({ uuid: initialUuid, recordCount: initialCount });
+        
+        // Find the UUID with the most records
+        const bestCandidate = uuidCandidates.reduce((best, current) => 
+            current.recordCount > best.recordCount ? current : best
+        );
+        
+        if (bestCandidate.uuid !== initialUuid) {
+            logWithTimestamp(`🎯 Found data-rich alternative: ${bestCandidate.uuid} with ${bestCandidate.recordCount} records (vs ${initialCount})`);
+        } else {
+            logWithTimestamp(`✅ Initial UUID is still the best option with ${bestCandidate.recordCount} records`);
+        }
+        
+        return bestCandidate;
+        
+    } catch (error) {
+        logError(`Error in smart fork detection: ${error instanceof Error ? error.message : String(error)}`);
+        logWithTimestamp(`🔄 Falling back to initial UUID: ${initialUuid}`);
+        return { uuid: initialUuid, recordCount: 0 };
+    }
+}
+*/
+
+/**
+ * Load sample data from ZAD app for structure analysis
+ * Returns recent records from wtaf_zero_admin_collaborative for the given app_id
+ * Now uses direct UUID (extracted from HTML) instead of complex fork detection
+ */
+export async function loadZadDataSample(appUuid: string): Promise<any[] | null> {
+    try {
+        logWithTimestamp(`📊 Loading ZAD data sample for structure analysis`);
+        logWithTimestamp(`Using extracted App UUID: ${appUuid}`);
+        
+        // ✅ SIMPLIFIED: Use the UUID directly (no more fork detection needed)
+        // This UUID should be the one extracted from the source app's HTML
+        
+        // Load recent data from wtaf_zero_admin_collaborative using the provided UUID
+        const { data, error } = await getSupabaseClient()
+            .from('wtaf_zero_admin_collaborative')
+            .select('*')
+            .eq('app_id', appUuid)
+            .order('created_at', { ascending: false })
+            .limit(10); // Get up to 10 recent records for analysis
+        
+        if (error) {
+            logError(`Error loading ZAD data sample: ${error.message}`);
+            return null;
+        }
+        
+        if (!data || data.length === 0) {
+            logWithTimestamp(`⚠️ No data found in ZAD app ${appUuid} - will provide generic structure`);
+            return [];
+        }
+        
+        // Clean sensitive data and prepare for analysis
+        const cleanedData = data.map(record => {
+            // Remove system fields and keep content_data structure
+            const { app_id, participant_id, participant_data, created_at, updated_at, ...cleanRecord } = record;
+            return {
+                id: record.id,
+                action_type: record.action_type, // CRITICAL: Keep action_type for data type analysis
+                ...record.content_data,
+                author: record.content_data?.author || record.participant_data?.username || 'Unknown',
+                created_at: record.created_at
+            };
+        });
+        
+        // Extract unique action types (data types) used in this app
+        const actionTypes = [...new Set(data.map(record => record.action_type).filter(Boolean))];
+        logSuccess(`✅ Loaded ${cleanedData.length} ZAD records for structure analysis`);
+        logWithTimestamp(`📋 Sample data fields detected: ${Object.keys(cleanedData[0] || {}).join(', ')}`);
+        logWithTimestamp(`🏷️ Data types found in source app: ${actionTypes.join(', ')}`);
+        
+        return cleanedData;
+        
+    } catch (error) {
+        logError(`Error loading ZAD data sample: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Analyze ZAD data structure and generate field descriptions
+ * Returns human-readable description of the data structure
+ */
+export function analyzeZadDataStructure(sampleData: any[]): string {
+    if (!sampleData || sampleData.length === 0) {
+        return "No existing data found - you'll be working with a fresh dataset.";
+    }
+    
+    logWithTimestamp(`🔍 Analyzing data structure from ${sampleData.length} records`);
+    
+    // CRITICAL: Extract action_types (data types) used in the source app
+    const actionTypes = [...new Set(sampleData.map(record => record.action_type).filter(Boolean))];
+    logWithTimestamp(`🏷️ Analyzing action types: ${actionTypes.join(', ')}`);
+    
+    // Get all unique field names across all records
+    const allFields = new Set<string>();
+    sampleData.forEach(record => {
+        Object.keys(record).forEach(field => allFields.add(field));
+    });
+    
+    // Analyze field types and common values
+    const fieldAnalysis: { [key: string]: { type: string; sample: any; description: string } } = {};
+    
+    Array.from(allFields).forEach(field => {
+        const values = sampleData.map(record => record[field]).filter(v => v !== undefined && v !== null);
+        
+        if (values.length === 0) {
+            fieldAnalysis[field] = { type: 'unknown', sample: null, description: 'Empty field' };
+            return;
+        }
+        
+        const firstValue = values[0];
+        let type: string = typeof firstValue;
+        let description = '';
+        
+        // Special field handling
+        if (field === 'id') {
+            description = 'Unique record identifier';
+        } else if (field === 'author') {
+            description = 'Username who created this record';
+        } else if (field === 'created_at') {
+            description = 'When the record was created';
+        } else if (field.includes('image') || field.includes('Image')) {
+            description = 'Image data (likely base64 encoded)';
+        } else if (field.includes('color') || field.includes('Color')) {
+            description = 'Color information';
+        } else if (field.includes('title') || field.includes('Title') || field.includes('name') || field.includes('Name')) {
+            description = 'Title or name field';
+        } else if (Array.isArray(firstValue)) {
+            type = 'array';
+            description = `Array containing ${firstValue.length > 0 ? typeof firstValue[0] : 'unknown'} values`;
+        } else if (typeof firstValue === 'string' && firstValue.startsWith('data:')) {
+            description = 'Encoded data (likely image or file)';
+        } else {
+            description = `User-defined ${type} field`;
+        }
+        
+        fieldAnalysis[field] = {
+            type,
+            sample: type === 'string' && firstValue.length > 50 ? `${firstValue.slice(0, 50)}...` : firstValue,
+            description
+        };
+    });
+    
+    // Generate human-readable structure description
+    let analysis = `DATA STRUCTURE ANALYSIS (${sampleData.length} sample records):\n\n`;
+    
+    // CRITICAL: Report the exact data types (action_types) used in save() calls
+    if (actionTypes.length > 0) {
+        analysis += `**IMPORTANT: DATA TYPES USED IN SOURCE APP**\n`;
+        analysis += `The source app uses these exact data types in save() and load() calls:\n`;
+        actionTypes.forEach(actionType => {
+            const recordsOfType = sampleData.filter(r => r.action_type === actionType).length;
+            analysis += `• '${actionType}' (${recordsOfType} records)\n`;
+        });
+        analysis += `\n**YOU MUST USE THESE EXACT DATA TYPES** in your save() and load() calls.\n`;
+        analysis += `Example: await save('${actionTypes[0]}', data) and await load('${actionTypes[0]}')\n\n`;
+    }
+    
+    analysis += `FIELD STRUCTURE:\n`;
+    Object.entries(fieldAnalysis).forEach(([field, info]) => {
+        if (field !== 'action_type') { // Don't show action_type as a content field
+            analysis += `• ${field}: ${info.description}\n`;
+            analysis += `  Type: ${info.type}, Sample: ${JSON.stringify(info.sample)}\n\n`;
+        }
+    });
+    
+    logWithTimestamp(`📋 Generated data structure analysis: ${Object.keys(fieldAnalysis).length} fields, ${actionTypes.length} data types`);
+    
+    return analysis;
+}
+
+/**
+ * Build enhanced prompt for stackzad with shared ZAD app UUID and data structure analysis
+ * Takes user request and extracted APP_ID from HTML, creates prompt for Claude to build ZAD app with shared data
+ * Returns the prompt and extracted data for system prompt replacement
+ */
+export async function buildEnhancedZadPromptWithData(userRequest: string, extractedAppId: string): Promise<{
+    enhancedPrompt: string;
+    dataStructureAnalysis: string;
+    sampleDataSection: string;
+    dataRichUuid: string;
+}> {
+    logWithTimestamp(`🔧 Building enhanced prompt for stackzad`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`Using extracted APP_ID from source HTML: ${extractedAppId}`);
+    
+    let prompt = userRequest;
+    let sampleDataSection = '';
+    
+    // ✅ SIMPLIFIED: Use the extracted APP_ID directly (no more fork detection needed)
+    // This APP_ID was extracted from the source app's HTML and is the correct one for data access
+    const dataRichUuid = extractedAppId;
+    
+    // Load and analyze actual data structure using the extracted APP_ID
+    const sampleData = await loadZadDataSample(extractedAppId);
+    const dataStructureAnalysis = analyzeZadDataStructure(sampleData || []);
+    
+    // Step 2: Load stackzad prompt template
+    try {
+        const stackzadTemplatePath = join(__dirname, '..', 'content', 'stackzad-prompt.txt');
+        const stackzadTemplate = await readFile(stackzadTemplatePath, 'utf8');
+        
+        // Replace placeholders with actual data
+        let templateWithData = stackzadTemplate
+            .replace('{DATA_STRUCTURE_ANALYSIS}', dataStructureAnalysis);
+        
+        // Step 3: Add sample data for reference (max 3 records, cleaned)
+        if (sampleData && sampleData.length > 0) {
+            const sampleForPrompt = sampleData.slice(0, 3).map(record => {
+                // Remove very long fields to keep prompt manageable
+                const cleanedRecord: any = {};
+                Object.entries(record).forEach(([key, value]) => {
+                    if (typeof value === 'string' && value.length > 100) {
+                        cleanedRecord[key] = `${value.slice(0, 100)}... [truncated]`;
+                    } else {
+                        cleanedRecord[key] = value;
+                    }
+                });
+                return cleanedRecord;
+            });
+            
+            sampleDataSection = `SAMPLE DATA (actual records from the source app):\n\`\`\`json\n${JSON.stringify(sampleForPrompt, null, 2)}\n\`\`\``;
+        } else {
+            sampleDataSection = 'No sample data available - working with empty dataset.';
+        }
+        
+        templateWithData = templateWithData.replace('{SAMPLE_DATA}', sampleDataSection);
+        
+        prompt += `\n\n${templateWithData}\n\n`;
+        logWithTimestamp(`📖 Added stackzad template from content file`);
+        
+    } catch (error) {
+        logWarning(`Failed to load stackzad template: ${error instanceof Error ? error.message : String(error)}`);
+        // Fallback to basic instructions if template loading fails
+        prompt += `\n\nThis should be a ZAD app that shares data with an existing ZAD app.\n\n${dataStructureAnalysis}\n\n`;
+    }
+    
+    // Note: ZAD template is now handled by dedicated stackzad system prompt
+    logWithTimestamp(`📖 Stackzad enhanced prompt complete - system prompt will handle ZAD guidelines`);
+    
+    logWithTimestamp(`Final stackzad prompt length: ${prompt.length} characters`);
+    
+    return {
+        enhancedPrompt: prompt,
+        dataStructureAnalysis: dataStructureAnalysis,
+        sampleDataSection: sampleDataSection,
+        dataRichUuid: dataRichUuid
+    };
+}
+
+/**
+ * Process stackzad request end-to-end (creates ZAD apps that share data with existing ZAD apps)
+ * Main function that orchestrates the entire stackzad workflow
+ */
+export async function processStackZadRequest(userSlug: string, stackCommand: string): Promise<{ 
+    success: boolean; 
+    userRequest?: string; 
+    sourceAppUuid?: string;
+    enhancedPrompt?: string;
+    dataStructureAnalysis?: string;
+    sampleDataSection?: string;
+    error?: string 
+}> {
+    try {
+        // Step 1: Parse the stackzad command
+        const parsed = parseStackZadCommand(stackCommand);
+        if (!parsed) {
+            return { 
+                success: false, 
+                error: 'Invalid stackzad command format. Use: --stackzad source-zad-app-slug your request here (or: wtaf --stackzad source-zad-app-slug your request here)' 
+            };
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🤝 Processing stackzad request: ${appSlug} → "${userRequest}"`);
+        
+        // Step 2: Get source ZAD app UUID (includes ownership and ZAD type verification)
+        const sourceAppUuid = await getZadAppUUIDForStackZad(userSlug, appSlug);
+        if (sourceAppUuid === null) {
+            return { 
+                success: false, 
+                error: `You don't own ZAD app '${appSlug}' or it doesn't exist or isn't a ZAD app` 
+            };
+        }
+        
+        // Step 3: Load HTML content from the source ZAD app
+        const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
+        if (!htmlContent) {
+            return { 
+                success: false, 
+                error: `Could not load HTML content from source ZAD app '${appSlug}'` 
+            };
+        }
+        
+        // Step 4: Extract the actual APP_ID from the HTML (this is the real data UUID)
+        const extractedAppId = extractAppIdFromHtml(htmlContent);
+        if (!extractedAppId) {
+            return { 
+                success: false, 
+                error: `Could not extract APP_ID from source ZAD app HTML - malformed app` 
+            };
+        }
+        
+        logWithTimestamp(`✅ Extracted actual data APP_ID from HTML: ${extractedAppId}`);
+        
+        // Step 5: Build enhanced prompt with extracted APP_ID for accurate data access
+        const { enhancedPrompt, dataStructureAnalysis, sampleDataSection, dataRichUuid } = await buildEnhancedZadPromptWithData(userRequest, extractedAppId);
+        
+        logSuccess(`✅ Stackzad request processed successfully`);
+        logWithTimestamp(`🎯 Using extracted APP_ID for SHARED_DATA_UUID: ${dataRichUuid}`);
+        return {
+            success: true,
+            userRequest,
+            sourceAppUuid: dataRichUuid, // Use the extracted APP_ID for injection
+            enhancedPrompt,
+            dataStructureAnalysis,
+            sampleDataSection
+        };
+        
+    } catch (error) {
+        logError(`Error processing stackzad request: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
