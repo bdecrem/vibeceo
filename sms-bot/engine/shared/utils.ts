@@ -986,13 +986,46 @@ export function validateStackzadCode(html: string): string {
  * This is used for wtaf_submissions queries that use origin_app_slug column
  */
 export function replaceOriginAppSlug(html: string, appSlug: string): string {
+    logWithTimestamp(`🔍 DEBUG: Starting replaceOriginAppSlug with app slug: ${appSlug}`);
+    logWithTimestamp(`🔍 DEBUG: Input HTML length: ${html.length} characters`);
+    
+    // Check if placeholder exists before replacement
+    const hasQuotedPlaceholder = html.includes('ORIGIN_APP_SLUG');
+    logWithTimestamp(`🔍 DEBUG: Found 'ORIGIN_APP_SLUG' in HTML: ${hasQuotedPlaceholder}`);
+    
+    if (!hasQuotedPlaceholder) {
+        logWithTimestamp(`⚠️  WARNING: No ORIGIN_APP_SLUG placeholder found - Claude may have hardcoded app name instead!`);
+        // Log a snippet around potential hardcoded values
+        const snippet = html.match(/origin_app_slug['"][,\s]*['"][^'"]*['"]/g);
+        if (snippet) {
+            logWithTimestamp(`🔍 DEBUG: Found these origin_app_slug patterns: ${snippet.join(', ')}`);
+        }
+    }
+    
+    let replacementCount = 0;
+    
     // Replace ORIGIN_APP_SLUG placeholder with actual app slug
-    html = html.replace(/'ORIGIN_APP_SLUG'/g, `'${appSlug}'`);
-    html = html.replace(/"ORIGIN_APP_SLUG"/g, `"${appSlug}"`);
+    const originalHtml = html;
+    html = html.replace(/'ORIGIN_APP_SLUG'/g, () => {
+        replacementCount++;
+        return `'${appSlug}'`;
+    });
+    html = html.replace(/"ORIGIN_APP_SLUG"/g, () => {
+        replacementCount++;
+        return `"${appSlug}"`;
+    });
     
     // Handle any unquoted instances (though they shouldn't exist)
-    html = html.replace(/ORIGIN_APP_SLUG/g, `'${appSlug}'`);
+    html = html.replace(/ORIGIN_APP_SLUG/g, () => {
+        replacementCount++;
+        return `'${appSlug}'`;
+    });
     
-    logWithTimestamp(`🔄 Replaced ORIGIN_APP_SLUG with: ${appSlug}`);
+    logWithTimestamp(`🔄 Replaced ORIGIN_APP_SLUG with: ${appSlug} (${replacementCount} replacements made)`);
+    
+    if (replacementCount === 0) {
+        logWithTimestamp(`❌ CRITICAL: No replacements made! Claude likely hardcoded the app name instead of using placeholder.`);
+    }
+    
     return html;
 }
