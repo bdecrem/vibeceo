@@ -1873,24 +1873,35 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       
       // Check if user is admin to show admin commands
       const subscriber = await getSubscriber(normalizedPhoneNumber);
+      console.log(`🔍 COMMANDS: Subscriber lookup for ${normalizedPhoneNumber}:`, JSON.stringify(subscriber, null, 2));
+      
       const isAdmin = subscriber && subscriber.is_admin;
+      console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
       let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen');
+      console.log(`🔍 COMMANDS: hasCoder = ${hasCoder} (role: ${subscriber?.role})`);
+      
       if (hasCoder) {
         helpText += '\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page (yah, overlaps w Forget)\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default';
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
       const hasDegen = subscriber && subscriber.role === 'degen';
+      console.log(`🔍 COMMANDS: hasDegen = ${hasDegen} (role: ${subscriber?.role})`);
+      
       if (hasDegen) {
         helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
         
         helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
+        console.log(`🔍 COMMANDS: Added stack commands to response`);
+      } else {
+        console.log(`🔍 COMMANDS: Skipping stack commands (user role: ${subscriber?.role})`);
       }
       
+      console.log(`🔍 COMMANDS: Final helpText length: ${helpText.length} characters`);
       await sendSmsResponse(from, helpText, twilioClient);
       return;
     }

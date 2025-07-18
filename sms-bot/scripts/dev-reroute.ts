@@ -144,9 +144,9 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1650898950
             const errorText = await response.text();
             console.log(`💥 Error: ${errorText}`);
             
-            // Try fallback to regular SMS endpoint
-            console.log(`🔄 Trying fallback to regular SMS endpoint...`);
-            return await sendToSmsEndpoint(message, fromNumber);
+            // Don't automatically fallback - let user decide
+            console.log(`❌ Dev webhook failed. Use 'hybrid' mode if you want to also send to SMS endpoint`);
+            return false;
         }
     } catch (error) {
         if (error.name === 'AbortError') {
