@@ -3772,9 +3772,9 @@ async function sendSmsResponse(
       };
     }
     
-    // For WhatsApp, use sandbox number (for development) or configured WhatsApp number
+    // For WhatsApp, use verified business number or configured WhatsApp number
     const fromNumber = platform === 'whatsapp' 
-      ? 'whatsapp:+14155238886'  // Twilio WhatsApp sandbox number
+      ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+16502672014')  // Your verified WhatsApp Business number
       : process.env.TWILIO_PHONE_NUMBER;
     
     const response = await twilioClient.messages.create({

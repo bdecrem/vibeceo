@@ -1,0 +1,105 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELLO_WORLD.exe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+        
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            animation: glitch 1s infinite;
+            text-shadow: 
+                2px 2px #ff00ff,
+                -2px -2px #00ffff;
+        }
+
+        .punk-border {
+            border: 2px solid #ff00ff;
+            padding: 2rem;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .punk-border::before {
+            content: ">";
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ff00ff;
+            font-size: 2rem;
+        }
+
+        @keyframes glitch {
+            2%, 64% {
+                transform: translate(2px,0) skew(0deg);
+            }
+            4%, 60% {
+                transform: translate(-2px,0) skew(0deg);
+            }
+            62% {
+                transform: translate(0,0) skew(5deg); 
+            }
+        }
+
+        .easter-egg {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        /* Secret message appears when clicking title 5 times */
+        .secret {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #ff00ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="punk-border">
+            <h1 id="title">Hello, World!</h1>
+        </div>
+        <div class="easter-egg">sys.init()</div>
+        <div class="secret" id="secret">SYSTEM BREACH DETECTED</div>
+    </div>
+
+    <script>
+        let clicks = 0;
+        document.getElementById('title').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.getElementById('secret').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+```
