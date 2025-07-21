@@ -230,7 +230,7 @@ export default function HomePage() {
               <div className="service-card image-card">
                 <div className="image-container">
                   <a href="https://www.wtaf.me/bart/clay-dragonfly-protecting">
-                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png?v=20250721-2322" alt="404 Girls AI Band" className="service-image" />
+                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png?v=20250721-2348" alt="404 Girls AI Band" className="service-image" />
                   </a>
                   <div className="image-overlay">
                     <a href="/bart/clay-dragonfly-protecting?demo=true" className="try-app-btn">TRY THIS APP</a>
