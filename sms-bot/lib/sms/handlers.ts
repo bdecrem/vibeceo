@@ -3774,7 +3774,7 @@ async function sendSmsResponse(
     
     // For WhatsApp, use verified business number or configured WhatsApp number
     const fromNumber = platform === 'whatsapp' 
-      ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+16502672014')  // Your verified WhatsApp Business number
+      ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+18663300015')  // Your verified WhatsApp Business number
       : process.env.TWILIO_PHONE_NUMBER;
     
     const response = await twilioClient.messages.create({
