@@ -84,3 +84,9 @@ next-env.d.ts
 .specstory
 /sms-bot/node_modules
 /sms-bot/dist
+# Xcode build artifacts
+tiny/build/
+tiny/*.xcworkspace/
+tiny/.DS_Store
+tiny/Tiny.xcodeproj/xcuserdata/
+tiny/Tiny.xcodeproj/project.xcworkspace/
