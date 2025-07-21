@@ -1101,13 +1101,9 @@ export default function HomePage() {
             display: block;
             object-fit: cover;
             border-radius: 15px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.5));
+            border: 2px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
-            box-shadow: 
-              inset 0 0 30px rgba(0, 0, 0, 0.3),
-              0 8px 25px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
           }
 
           .service-card:hover .service-image {
