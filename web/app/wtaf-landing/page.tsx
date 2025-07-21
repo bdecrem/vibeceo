@@ -202,7 +202,7 @@ export default function HomePage() {
               <div className="service-card image-card">
                 <div className="image-container">
                   <a href="https://www.wtaf.me/bart/sand-leaf-breaking">
-                    <img src="/wtaf-landing/images/sand-leaf-breaking.png" alt="Buzzkill Barbershop" className="service-image" />
+                    <img src="/wtaf-landing/images/sand-leaf-breaking.png?v=20250721-1600" alt="Buzzkill Barbershop" className="service-image" />
                   </a>
                   <div className="image-overlay">
                     <a href="/bart/sand-leaf-breaking?demo=true" className="try-app-btn">TRY THIS APP</a>
@@ -230,7 +230,7 @@ export default function HomePage() {
               <div className="service-card image-card">
                 <div className="image-container">
                   <a href="https://www.wtaf.me/bart/clay-dragonfly-protecting">
-                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png" alt="404 Girls AI Band" className="service-image" />
+                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png?v=20250721-2322" alt="404 Girls AI Band" className="service-image" />
                   </a>
                   <div className="image-overlay">
                     <a href="/bart/clay-dragonfly-protecting?demo=true" className="try-app-btn">TRY THIS APP</a>
@@ -265,7 +265,7 @@ export default function HomePage() {
               <div className="service-card image-card">
                 <div className="image-container">
                   <a href="https://www.wtaf.me/bart/twilight-mantis-chatting">
-                    <img src="/wtaf-landing/images/twilight-mantis-chatting.png" alt="Kpop Chatroom" className="service-image" />
+                    <img src="/wtaf-landing/images/twilight-mantis-chatting.png?v=20250721-2344" alt="Kpop Chatroom" className="service-image" />
                   </a>
                   <div className="image-overlay">
                     <a href="/bart/twilight-mantis-chatting?demo=true" className="try-app-btn">TRY THIS APP</a>
