@@ -1122,10 +1122,10 @@ export default function HomePage() {
           }
 
           .service-card .service-image {
-            width: calc(100% - 20px);
+            width: 100%;
             height: auto;
             aspect-ratio: 3 / 2;
-            margin: 0 10px 20px 10px;
+            margin: 0 0 20px 0;
             display: block;
             object-fit: cover;
             border-radius: 15px;
