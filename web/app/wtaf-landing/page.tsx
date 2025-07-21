@@ -1250,6 +1250,11 @@ export default function HomePage() {
               padding: 14px 22px;
               width: 98%;
             }
+            .prompt-showcase {
+              font-size: 1rem;
+              padding: 16px 20px;
+              line-height: 1.3;
+            }
           }
 
           @media (max-width: 480px) {
@@ -1268,6 +1273,11 @@ export default function HomePage() {
             .suggestion-prompt {
               font-size: 1rem;
               padding: 12px 18px;
+            }
+            .prompt-showcase {
+              font-size: 0.9rem;
+              padding: 14px 18px;
+              line-height: 1.3;
             }
           }
 
