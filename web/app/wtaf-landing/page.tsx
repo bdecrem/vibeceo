@@ -116,7 +116,7 @@ export default function HomePage() {
                 One-Shot Prompting Over SMS
               </h1>
               <p>
-                Text us. We'll shoot back a page, app or simple game your friends can remix. It's art x algorithm.
+                Text us. We'll shoot back a page, app or simple game your friends can remix. It's art meets algorithm.
               </p>
               <div className="starter-section">
                 <div className="starter-text">
@@ -1172,12 +1172,13 @@ export default function HomePage() {
 
           @media (max-width: 768px) {
             .logo { font-size: 3.5rem; }
+            header { padding: 20px 20px 20px 20px; }
             .services { grid-template-columns: 1fr; }
             .service-card { padding: 35px 25px; }
             .hero h1 { font-size: 2.8rem; line-height: 1.2; }
-            .hero p { font-size: 1.1rem; }
+            .hero p { font-size: 1.1rem; margin: 0 auto 25px; }
             .hero-content { padding: 40px 20px; }
-            .hero { padding: 20px; }
+            .hero { padding: 10px 20px; }
 
             .starter-text {
               font-size: 1.1rem;
@@ -1191,10 +1192,12 @@ export default function HomePage() {
 
           @media (max-width: 480px) {
             .logo { font-size: 3rem; }
+            header { padding: 15px 20px 15px 20px; }
             .service-card { padding: 30px 20px; }
             .hero h1 { font-size: 2.4rem; line-height: 1.1; }
-            .hero p { font-size: 1rem; }
+            .hero p { font-size: 1rem; margin: 0 auto 20px; }
             .hero-content { padding: 35px 15px; }
+            .hero { padding: 5px 20px; }
             .cta-button { padding: 18px 35px; font-size: 1rem; }
 
             .starter-text {
