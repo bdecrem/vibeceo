@@ -67,16 +67,17 @@ export default function HomePage() {
         </div>
 
         {/* Floating punk elements */}
-        <div className="float-element skull">💀</div>
+        <div className="float-element robot">🤖</div>
         <div className="float-element lightning">⚡</div>
         <div className="float-element fire">🔥</div>
         <div className="float-element chains">⛓️</div>
+        <div className="float-element skull">💀</div>
 
         <header>
           <div className="logo glitch" data-text="WTAF">
             WTAF
           </div>
-          <div className="tagline">SHIP FROM YOUR FLIP PHONE</div>
+          <div className="tagline">WEB TOYS, ARTIFACTS & FUN</div>
         </header>
 
         <main>
@@ -279,12 +280,20 @@ export default function HomePage() {
             filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.3));
           }
 
-          .skull {
+          .robot {
             top: 8%;
             left: 5%;
             font-size: 3.5rem;
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(100, 200, 255, 0.4);
             animation-delay: 0s;
+          }
+
+          .skull {
+            top: 60%;
+            left: 3%;
+            font-size: 3.2rem;
+            color: rgba(255, 255, 255, 0.3);
+            animation-delay: 3s;
           }
 
           .lightning {
