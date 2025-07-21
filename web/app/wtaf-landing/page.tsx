@@ -259,6 +259,34 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* CHAT APPS */}
+            <div className="category-section">
+              <h3 className="category-title">CHAT APPS</h3>
+              <div className="service-card image-card">
+                <div className="image-container">
+                  <a href="https://www.wtaf.me/bart/twilight-mantis-chatting">
+                    <img src="/wtaf-landing/images/twilight-mantis-chatting.png" alt="Kpop Chatroom" className="service-image" />
+                  </a>
+                  <div className="image-overlay">
+                    <a href="/bart/twilight-mantis-chatting?demo=true" className="try-app-btn">TRY THIS APP</a>
+                  </div>
+                </div>
+                <div className="image-content">
+                  <div className="app-title">Kpop Chatroom</div>
+                  <div className="prompt-label">The prompt:</div>
+                  <TruncatedPrompt
+                    prompt='Wtaf Make a chatroom for me and my friends to talk about Kpop - the colorscheme should be hot pink gradients'
+                    maxLength={120}
+                    className="prompt-showcase"
+                    onClick={() => handlePromptClick('Wtaf Make a chatroom for me and my friends to talk about Kpop - the colorscheme should be hot pink gradients')}
+                  />
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX twilight-mantis-chatting")}>
+                    REMIX
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Arcade Games */}
             <div className="category-section">
               <h3 className="category-title">Arcade Games</h3>
