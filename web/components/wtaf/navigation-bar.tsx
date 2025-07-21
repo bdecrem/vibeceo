@@ -95,7 +95,7 @@ export default function WTAFNavigationBar({
 
       {/* Center Branding */}
       <div className="nav-branding">
-        MAJOR VIBE ALERTS
+        TEXT +1-866-330-0015 WITH REMIX CODE
       </div>
 
       {/* Action Buttons */}
@@ -224,8 +224,8 @@ export default function WTAFNavigationBar({
           }
 
           .nav-branding {
-            font-size: 14px;
-            max-width: 180px;
+            font-size: 12px;
+            max-width: 280px;
             overflow: hidden;
             text-overflow: ellipsis;
           }
@@ -248,8 +248,8 @@ export default function WTAFNavigationBar({
 
         @media (max-width: 480px) {
           .nav-branding {
-            font-size: 12px;
-            max-width: 140px;
+            font-size: 10px;
+            max-width: 200px;
           }
 
           .nav-action-btn span {
