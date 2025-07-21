@@ -350,7 +350,7 @@ export default function HomePage() {
 
           .prompt-suggestions {
             position: relative !important;
-            height: 45px !important;
+            height: 70px !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
@@ -360,7 +360,7 @@ export default function HomePage() {
           .suggestion-container {
             position: relative !important;
             width: 100% !important;
-            height: 45px !important;
+            height: 70px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -371,15 +371,15 @@ export default function HomePage() {
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            max-width: 500px;
-            padding: 12px 20px;
+            width: 95%;
+            max-width: 700px;
+            padding: 18px 30px;
             background: rgba(0, 255, 255, 0.1);
             border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 25px;
+            border-radius: 30px;
             color: #00ffff;
             font-family: 'Space Grotesk', monospace;
-            font-size: 1rem;
+            font-size: 1.3rem;
             font-weight: 500;
             text-align: center;
             cursor: pointer;
@@ -779,9 +779,9 @@ export default function HomePage() {
               font-size: 1.1rem;
             }
             .suggestion-prompt {
-              font-size: 0.9rem;
-              padding: 10px 16px;
-              width: 95%;
+              font-size: 1.1rem;
+              padding: 14px 22px;
+              width: 98%;
             }
           }
 
@@ -802,8 +802,8 @@ export default function HomePage() {
               font-size: 1rem;
             }
             .suggestion-prompt {
-              font-size: 0.8rem;
-              padding: 8px 14px;
+              font-size: 1rem;
+              padding: 12px 18px;
             }
           }
 
