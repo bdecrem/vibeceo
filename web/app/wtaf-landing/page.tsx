@@ -37,14 +37,14 @@ export default function HomePage() {
   const handleSuggestionClick = async (suggestion: string) => {
     const success = await copyToClipboard(suggestion)
     if (success) {
-      showCopiedNotification("Prompt copied!")
+      showCopiedNotification(suggestion)
     }
   }
 
   const handlePromptClick = async (prompt: string) => {
     const success = await copyToClipboard(prompt)
     if (success) {
-      showCopiedNotification("Prompt copied!")
+      showCopiedNotification(prompt)
     }
   }
 
@@ -66,9 +66,12 @@ export default function HomePage() {
           <div className="modal-overlay" onClick={closeCopiedModal}>
             <div className="copied-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <div className="success-icon">✨</div>
-                <h3 className="modal-title">Copied!</h3>
                 <button className="close-button" onClick={closeCopiedModal}>×</button>
+                <div className="header-center">
+                  <div className="success-icon">✨</div>
+                  <h3 className="modal-title">Copied!</h3>
+                </div>
+                <div className="header-spacer"></div>
               </div>
               <div className="modal-body">
                 <p className="instruction-text">
@@ -208,7 +211,7 @@ export default function HomePage() {
                   >
                     "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
                   </div>
-                  <button className="remix-btn" onClick={() => console.log('remix alex-blog')}>
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX alex-blog")}>
                     REMIX
                   </button>
                 </div>
@@ -238,7 +241,7 @@ export default function HomePage() {
                     </a>
                     .
                   </div>
-                  <button className="remix-btn" onClick={() => console.log('remix berghain-party')}>
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX berghain-party")}>
                     REMIX
                   </button>
                 </div>
@@ -261,7 +264,7 @@ export default function HomePage() {
                   >
                     "wtaf make a pong-style browser game"
                   </div>
-                  <button className="remix-btn" onClick={() => console.log('remix pong-game')}>
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX pong-game")}>
                     REMIX
                   </button>
                 </div>
@@ -308,7 +311,7 @@ export default function HomePage() {
                 >
                   "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
                 </div>
-                <button className="remix-btn" onClick={() => console.log('remix alex-blog')}>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX alex-blog")}>
                   REMIX
                 </button>
               </div>
@@ -339,7 +342,7 @@ export default function HomePage() {
                 >
                   "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
                 </div>
-                <button className="remix-btn" onClick={() => console.log('remix berghain-party')}>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX berghain-party")}>
                   REMIX
                 </button>
               </div>
@@ -370,7 +373,7 @@ export default function HomePage() {
                 >
                   "wtaf make a pong-style browser game"
                 </div>
-                <button className="remix-btn" onClick={() => console.log('remix pong-game')}>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX pong-game")}>
                   REMIX
                 </button>
               </div>
@@ -422,198 +425,127 @@ export default function HomePage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: modalFadeIn 0.3s ease-out;
           }
 
           /* Copied Modal */
           .copied-modal {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 50%, #8b0000 100%);
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 25px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
             max-width: 500px;
             width: 90%;
-            max-height: 90vh;
-            overflow: hidden;
-            box-shadow: 
-              0 20px 60px rgba(0, 0, 0, 0.5),
-              0 0 40px rgba(0, 255, 255, 0.2),
-              inset 0 0 20px rgba(255, 0, 128, 0.1);
-            animation: modalSlideIn 0.4s ease-out;
             position: relative;
           }
 
           /* Modal Header */
           .modal-header {
-            padding: 25px 30px 20px;
+            padding: 20px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-            position: relative;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+          }
+
+          .header-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+          }
+
+          .header-spacer {
+            width: 30px; /* Same width as close button to balance */
           }
 
           .success-icon {
-            font-size: 2rem;
-            filter: drop-shadow(0 0 15px rgba(255, 255, 0, 0.8));
-            animation: sparkle 1.5s ease-in-out infinite;
+            font-size: 1.2rem;
           }
 
           .modal-title {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.8rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
-            flex: 1;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
           }
 
           .close-button {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 2rem;
+            color: #999;
+            font-size: 1.5rem;
             cursor: pointer;
-            padding: 0;
+            padding: 5px;
+            line-height: 1;
             width: 30px;
             height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            line-height: 1;
           }
 
           .close-button:hover {
-            background: rgba(255, 0, 128, 0.2);
             color: #ffffff;
-            transform: scale(1.1);
           }
 
           /* Modal Body */
           .modal-body {
-            padding: 25px 30px;
+            padding: 20px;
           }
 
           .instruction-text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 0 0 20px 0;
+            font-size: 1rem;
+            color: #ccc;
+            margin: 0 0 15px 0;
             text-align: center;
-            line-height: 1.5;
           }
 
           .phone-number {
             color: #00ffff;
             font-weight: 700;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-            background: rgba(0, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(0, 255, 255, 0.3);
           }
 
           .copied-text-display {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 0, 128, 0.3);
-            border-radius: 15px;
-            padding: 20px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
             font-family: 'Space Grotesk', monospace;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             color: #00ffff;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
             word-break: break-word;
-            line-height: 1.4;
-            backdrop-filter: blur(5px);
-            position: relative;
-            overflow: hidden;
-          }
-
-          .copied-text-display::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #ff0080, #00ffff, #ffff00, #ff0080);
-            background-size: 200% 100%;
-            animation: borderGlow 2s linear infinite;
+            line-height: 1.3;
           }
 
           /* Modal Footer */
           .modal-footer {
-            padding: 20px 30px 25px;
+            padding: 20px;
             display: flex;
             justify-content: center;
-            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            border-top: 1px solid #333;
           }
 
           .got-it-button {
-            background: linear-gradient(45deg, #ff0080, #8b0000);
+            background: #333;
             color: #ffffff;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 
-              0 8px 25px rgba(255, 0, 128, 0.3),
-              0 0 20px rgba(255, 0, 128, 0.2);
           }
 
           .got-it-button:hover {
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 
-              0 12px 35px rgba(255, 0, 128, 0.4),
-              0 0 30px rgba(255, 0, 128, 0.3);
+            background: #444;
           }
 
-          /* Animations */
-          @keyframes modalFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
 
-          @keyframes modalSlideIn {
-            from { 
-              opacity: 0;
-              transform: scale(0.8) translateY(-50px);
-            }
-            to { 
-              opacity: 1;
-              transform: scale(1) translateY(0);
-            }
-          }
-
-          @keyframes sparkle {
-            0%, 100% { 
-              transform: rotate(0deg) scale(1);
-              filter: drop-shadow(0 0 15px rgba(255, 255, 0, 0.8));
-            }
-            50% { 
-              transform: rotate(10deg) scale(1.1);
-              filter: drop-shadow(0 0 25px rgba(255, 255, 0, 1));
-            }
-          }
-
-          @keyframes borderGlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-          }
 
           /* Mobile Responsive */
           @media (max-width: 768px) {
@@ -1066,10 +998,13 @@ export default function HomePage() {
             display: block;
             object-fit: cover;
             border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.2);
             filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.5));
             transition: all 0.3s ease;
             background: rgba(0, 0, 0, 0.2);
+            box-shadow: 
+              inset 0 0 30px rgba(0, 0, 0, 0.3),
+              0 8px 25px rgba(0, 0, 0, 0.4);
           }
 
           .service-card:hover .service-image {
