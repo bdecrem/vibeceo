@@ -173,7 +173,7 @@ export default function HomePage() {
                   <div className="step-number">2</div>
                   <div className="step-content">
                     <h3>Remix</h3>
-                    <p>Copy a REMIX code, text it with your edits to 866-330-0015. (WhatsApp works too.)</p>
+                    <p>Copy a REMIX code, text it with your edits to +1-866-330-0015. (WhatsApp works too.)</p>
                   </div>
                 </div>
                 <div className="step">
@@ -273,7 +273,7 @@ export default function HomePage() {
 
             <div className="more-link-container">
               <a href="/featured" className="more-link">
-                More Examples →
+                CHECK OUT THE GALLERY →
               </a>
             </div>
           </section>
