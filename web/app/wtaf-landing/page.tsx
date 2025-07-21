@@ -125,6 +125,36 @@ export default function HomePage() {
             </div>
           </section>
 
+          {/* How It Works Section */}
+          <section className="how-it-works">
+            <div className="how-it-works-content">
+              <h2 className="how-it-works-title">How It Works</h2>
+              <div className="steps">
+                <div className="step">
+                  <div className="step-number">1</div>
+                  <div className="step-content">
+                    <h3>Try it</h3>
+                    <p>Browse websites and apps others made with WTAF.</p>
+                  </div>
+                </div>
+                <div className="step">
+                  <div className="step-number">2</div>
+                  <div className="step-content">
+                    <h3>Remix</h3>
+                    <p>Copy a REMIX code, text it with your edits to 866-330-0015. (WhatsApp works too.)</p>
+                  </div>
+                </div>
+                <div className="step">
+                  <div className="step-number">3</div>
+                  <div className="step-content">
+                    <h3>Make your own</h3>
+                    <p>Text us a sentence. We'll turn it into a tiny web app.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <section className="services">
             {/* Alex Blog Example */}
             <div className="service-card image-card">
@@ -992,6 +1022,159 @@ export default function HomePage() {
             background: linear-gradient(90deg, #ff0080, #ffff00, #ff0080);
             background-size: 200% 100%;
             animation: borderGlow 3s linear infinite;
+          }
+
+          /* How It Works Section */
+          .how-it-works {
+            background: linear-gradient(135deg, #8b0000 0%, #a11d1d 50%, #8b0000 100%);
+            margin: 80px auto;
+            max-width: 1200px;
+            border-radius: 30px;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+          }
+
+          .how-it-works-content {
+            position: relative;
+            z-index: 10;
+          }
+
+          .how-it-works-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 50px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+          }
+
+          .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+          }
+
+          .step {
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+          }
+
+          .step:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          }
+
+          .step-number {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff0080 0%, #00ffff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ffffff;
+            margin: 0 auto 25px;
+            box-shadow: 0 8px 25px rgba(255, 0, 128, 0.3);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+          }
+
+          .step-content h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+          }
+
+          .step-content p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            font-weight: 300;
+            max-width: 280px;
+            margin: 0 auto;
+          }
+
+          /* Mobile responsiveness */
+          @media (max-width: 768px) {
+            .how-it-works {
+              margin: 60px 20px;
+              padding: 40px 25px;
+              border-radius: 25px;
+            }
+
+            .how-it-works-title {
+              font-size: 2.2rem;
+              margin-bottom: 40px;
+            }
+
+            .steps {
+              grid-template-columns: 1fr;
+              gap: 30px;
+              max-width: 400px;
+            }
+
+            .step {
+              padding: 25px 15px;
+            }
+
+            .step-number {
+              width: 70px;
+              height: 70px;
+              font-size: 1.8rem;
+              margin-bottom: 20px;
+            }
+
+            .step-content h3 {
+              font-size: 1.5rem;
+              margin-bottom: 12px;
+            }
+
+            .step-content p {
+              font-size: 1rem;
+              max-width: 100%;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .how-it-works {
+              margin: 40px 15px;
+              padding: 30px 20px;
+            }
+
+            .how-it-works-title {
+              font-size: 1.8rem;
+              margin-bottom: 30px;
+            }
+
+            .step-number {
+              width: 60px;
+              height: 60px;
+              font-size: 1.5rem;
+            }
+
+            .step-content h3 {
+              font-size: 1.3rem;
+            }
+
+            .step-content p {
+              font-size: 0.95rem;
+            }
           }
         `}</style>
     </>
