@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import WTAFAppViewer from "@/components/wtaf/app-viewer";
 
 // Initialize Supabase client
@@ -123,20 +124,54 @@ setTimeout(function() {
 			console.log('🎭 Demo override injection complete');
 		}
 
-		// Return the HTML content with navigation bar
-		return (
-			<>
-				<link
-					href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&display=swap"
-					rel="stylesheet"
-				/>
-				<WTAFAppViewer 
-					userSlug={user_slug}
-					appSlug={app_slug}
-					htmlContent={htmlContent}
-				/>
-			</>
-		);
+		// Check if user came from wtaf.me (internal navigation) vs direct link
+		const headersList = await headers();
+		const referer = headersList.get('referer');
+		const showNavigation = referer?.includes('wtaf.me') || false;
+
+		// Conditionally render with or without navigation
+		if (showNavigation) {
+			// Internal navigation - show nav bar
+			return (
+				<>
+					<link
+						href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&display=swap"
+						rel="stylesheet"
+					/>
+					<WTAFAppViewer 
+						userSlug={user_slug}
+						appSlug={app_slug}
+						htmlContent={htmlContent}
+					/>
+				</>
+			);
+		} else {
+			// Direct link - clean iframe only
+			return (
+				<div style={{
+					width: "100%",
+					height: "100vh",
+					margin: 0,
+					padding: 0,
+					overflow: "hidden"
+				}}>
+					<iframe
+						srcDoc={htmlContent}
+						sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+						style={{
+							width: "100%",
+							height: "100%",
+							border: "none",
+							backgroundColor: "white",
+							display: "block"
+						}}
+						loading="eager"
+						title={`WTAF App: ${app_slug} by ${user_slug}`}
+						allowFullScreen
+					/>
+				</div>
+			);
+		}
 	} catch (error) {
 		console.error("Error fetching WTAF content:", error);
 		return notFound();
