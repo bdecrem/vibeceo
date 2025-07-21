@@ -43,7 +43,7 @@ async function sendMessage(customMessage?: string): Promise<void> {
     // Determine the correct "from" number based on target platform
     const isWhatsApp = targetPhone.startsWith('whatsapp:');
         const fromNumber = isWhatsApp
-        ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+16502672014')  // Your verified WhatsApp Business number
+        ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+18663300015')  // Your verified WhatsApp Business number
         : process.env.TWILIO_PHONE_NUMBER;  // Regular SMS number
     
     console.log(`Platform: ${isWhatsApp ? 'WhatsApp' : 'SMS'}`);
