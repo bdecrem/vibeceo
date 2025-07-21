@@ -1383,7 +1383,7 @@ export default function HomePage() {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ff0080 0%, #00ffff 100%);
+            background: linear-gradient(135deg, #333333 0%, #4a1565 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1392,7 +1392,7 @@ export default function HomePage() {
             font-weight: 900;
             color: #ffffff;
             margin: 0 auto 25px;
-            box-shadow: 0 8px 25px rgba(255, 0, 128, 0.3);
+            box-shadow: 0 8px 25px rgba(74, 21, 101, 0.4);
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
           }
 
