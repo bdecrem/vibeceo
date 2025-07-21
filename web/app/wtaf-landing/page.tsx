@@ -116,7 +116,7 @@ export default function HomePage() {
                 One-Shot Prompting Over SMS
               </h1>
               <p>
-                Shoot us a text. We'll fire back a landing page, RSVP, group chat, or chaotic little game. It's rebellion. It's art. It's algorithmically unhinged.
+                Text us. We'll shoot back a page, app or simple game your friends can remix. It's art x algorithm.
               </p>
               <div className="starter-section">
                 <div className="starter-text">
