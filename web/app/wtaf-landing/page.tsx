@@ -1255,6 +1255,14 @@ export default function HomePage() {
               padding: 16px 20px;
               line-height: 1.3;
             }
+            .app-title {
+              margin-top: 20px;
+              margin-bottom: 15px;
+            }
+            .remix-btn {
+              display: block;
+              margin: 15px auto 0 auto;
+            }
           }
 
           @media (max-width: 480px) {
@@ -1278,6 +1286,16 @@ export default function HomePage() {
               font-size: 0.9rem;
               padding: 14px 18px;
               line-height: 1.3;
+            }
+            .app-title {
+              margin-top: 18px;
+              margin-bottom: 12px;
+            }
+            .remix-btn {
+              display: block;
+              margin: 12px auto 0 auto;
+              padding: 12px 25px;
+              font-size: 0.9rem;
             }
           }
 
