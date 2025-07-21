@@ -1,0 +1,83 @@
+{
+  "name": "vibeceo8-workspace",
+  "version": "1.0.0",
+  "description": "VibeCEO8 multi-service workspace (web, sms-bot, discord-bot)",
+  "private": true,
+  "workspaces": [
+    "web",
+    "sms-bot", 
+    "discord-bot"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "setup": "./setup-dev.sh",
+    "setup:env": "./setup-dev.sh",
+    
+    "install:all": "npm install",
+    "build:all": "npm run build --workspaces",
+    "clean:all": "npm run clean --workspaces --if-present",
+    
+    "dev": "concurrently -n \"web,sms,discord\" -c \"blue,green,yellow\" \"npm run dev:web\" \"npm run dev:sms\" \"npm run dev:discord\"",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:sms": "npm run dev --workspace=sms-bot", 
+    "dev:discord": "npm run dev --workspace=discord-bot",
+    
+    "start": "concurrently -n \"web,sms,discord\" -c \"blue,green,yellow\" \"npm run start:web\" \"npm run start:sms\" \"npm run start:discord\"",
+    "start:web": "npm run start --workspace=web",
+    "start:sms": "npm run start --workspace=sms-bot",
+    "start:discord": "npm run start --workspace=discord-bot",
+    
+    "build": "npm run build --workspaces",
+    "build:web": "npm run build --workspace=web",
+    "build:sms": "npm run build --workspace=sms-bot",
+    "build:discord": "npm run build --workspace=discord-bot",
+    
+    "test": "npm run test --workspaces --if-present",
+    "test:web": "npm run test --workspace=web",
+    "test:sms": "npm run test:sms --workspace=sms-bot",
+    
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    
+    "check:health": "npm run health:web && npm run health:sms && npm run health:discord",
+    "health:web": "curl -f http://localhost:3000/api/health || echo 'Web service not responding'",
+    "health:sms": "curl -f http://localhost:3030/health || echo 'SMS service not responding'", 
+    "health:discord": "echo 'Discord bot health check not implemented'",
+    
+    "logs:web": "npm run logs --workspace=web --if-present",
+    "logs:sms": "tail -f sms-bot/logs/*.log",
+    "logs:discord": "tail -f discord-bot/logs/*.log",
+    
+    "clean": "npm run clean:all && npm run clean:deps",
+    "clean:deps": "rm -rf node_modules web/node_modules sms-bot/node_modules discord-bot/node_modules",
+    "clean:build": "rm -rf web/.next sms-bot/dist discord-bot/dist",
+    
+    "restart": "npm run clean:build && npm run build:all && npm run dev"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.3.3",
+    "dotenv": "^16.5.0"
+  },
+  "keywords": [
+    "vibeceo",
+    "workspace",
+    "nextjs", 
+    "sms-bot",
+    "discord-bot",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdecrem/vibeceo.git"
+  }
+} 

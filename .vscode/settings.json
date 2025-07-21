@@ -1,0 +1,72 @@
+{
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  
+  "eslint.workingDirectories": [
+    "web",
+    "sms-bot", 
+    "discord-bot"
+  ],
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/logs": true,
+    "tiny/build": true
+  },
+  
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.next": true,
+    "tiny/build": true
+  },
+  
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.next/**": true,
+    "**/logs/**": true,
+    "tiny/build/**": true
+  },
+  
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  
+  "npm.packageManager": "npm",
+  "npm.runSilent": false,
+  
+  "terminal.integrated.env.osx": {
+    "NODE_ENV": "development"
+  },
+  
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.js, ${capture}.d.ts, ${capture}.js.map",
+    "*.tsx": "${capture}.js, ${capture}.d.ts, ${capture}.js.map",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml",
+    ".env": ".env.*, .env.example"
+  },
+  
+  "workbench.colorCustomizations": {
+    "terminal.ansiBlue": "#3b82f6",
+    "terminal.ansiGreen": "#10b981", 
+    "terminal.ansiYellow": "#f59e0b"
+  }
+} 
