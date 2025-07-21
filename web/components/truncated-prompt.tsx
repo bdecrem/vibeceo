@@ -23,7 +23,7 @@ export default function TruncatedPrompt({
   
   const shouldTruncate = prompt.length > maxLength
   const displayText = shouldTruncate && !isExpanded 
-    ? prompt.substring(0, maxLength).trim() + '...'
+    ? prompt.substring(0, maxLength).trim()
     : prompt
   
   const handleClick = () => {
@@ -47,23 +47,82 @@ export default function TruncatedPrompt({
   
   return (
     <div className={className} style={style} onClick={handleClick}>
-      "{displayText}"
-      {shouldTruncate && (
-        <button
-          onClick={handleToggleExpand}
-          className="ml-2 text-xs opacity-70 hover:opacity-100 transition-opacity underline hover:no-underline"
-          style={{
-            fontSize: '0.75rem',
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            color: 'inherit'
-          }}
-        >
-          {isExpanded ? 'LESS' : 'MORE'}
-        </button>
+      <div>
+        "{displayText}
+        {shouldTruncate && !isExpanded && (
+          <span style={{ opacity: 0.6 }}>...</span>
+        )}"
+      </div>
+      
+      {shouldTruncate && !isExpanded && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end',
+          marginTop: '2px'
+        }}>
+          <button
+            onClick={handleToggleExpand}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '0',
+              fontSize: '0.85em',
+              fontWeight: '500',
+              color: '#00ffff',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textDecorationStyle: 'dotted',
+              textUnderlineOffset: '2px',
+              opacity: 0.8,
+              transition: 'opacity 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.8';
+            }}
+          >
+            more
+          </button>
+        </div>
+      )}
+      
+      {shouldTruncate && isExpanded && (
+        <>
+          "{displayText}"
+                     <div style={{ 
+             display: 'flex', 
+             justifyContent: 'flex-end',
+             marginTop: '2px'
+           }}>
+            <button
+              onClick={handleToggleExpand}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '0',
+                fontSize: '0.8em',
+                fontWeight: '500',
+                color: '#00ffff',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                textDecorationStyle: 'dotted',
+                textUnderlineOffset: '2px',
+                opacity: 0.8,
+                transition: 'opacity 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+              }}
+            >
+              show less
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
