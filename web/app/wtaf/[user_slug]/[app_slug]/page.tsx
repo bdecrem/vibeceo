@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
+import WTAFAppViewer from "@/components/wtaf/app-viewer";
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -122,30 +123,19 @@ setTimeout(function() {
 			console.log('🎭 Demo override injection complete');
 		}
 
-		// Return the HTML content in an isolated iframe
+		// Return the HTML content with navigation bar
 		return (
-			<div style={{
-				width: "100%",
-				height: "100vh",
-				margin: 0,
-				padding: 0,
-				overflow: "hidden"
-			}}>
-				<iframe
-					srcDoc={htmlContent}
-					sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-					style={{
-						width: "100%",
-						height: "100%",
-						border: "none",
-						backgroundColor: "white",
-						display: "block"
-					}}
-					loading="eager"
-					title={`WTAF App: ${app_slug} by ${user_slug}`}
-					allowFullScreen
+			<>
+				<link
+					href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&display=swap"
+					rel="stylesheet"
 				/>
-			</div>
+				<WTAFAppViewer 
+					userSlug={user_slug}
+					appSlug={app_slug}
+					htmlContent={htmlContent}
+				/>
+			</>
 		);
 	} catch (error) {
 		console.error("Error fetching WTAF content:", error);
