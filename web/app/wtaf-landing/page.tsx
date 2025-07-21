@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import TruncatedPrompt from "@/components/truncated-prompt"
 
 export default function HomePage() {
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
@@ -199,49 +200,59 @@ export default function HomePage() {
             <div className="category-section">
               <h3 className="category-title">Simple Web Sites</h3>
               <div className="service-card image-card">
-                <a href="#">
-                  <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
-                </a>
-                <div className="image-content">
-                  <div className="app-title">Major Vibe Alert</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <div
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick("wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF")}
-                  >
-                    "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
+                <div className="image-container">
+                  <a href="https://www.wtaf.me/bart/sand-leaf-breaking">
+                    <img src="/wtaf-landing/images/sand-leaf-breaking.png" alt="Buzzkill Barbershop" className="service-image" />
+                  </a>
+                  <div className="image-overlay">
+                    <a href="/bart/sand-leaf-breaking?demo=true" className="try-app-btn">TRY THIS APP</a>
                   </div>
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX alex-blog")}>
+                </div>
+                <div className="image-content">
+                  <div className="app-title">BUZZKILL</div>
+                  <div className="prompt-label">The prompt:</div>
+                  <TruncatedPrompt
+                    prompt='Wtaf make a bold, gritty landing page for a barbershop called "Buzzkill" — vintage punk aesthetic, scissors that animate on hover, neon sign logo, moody background music (pretend), and fake reviews from rockstars and criminals'
+                    maxLength={120}
+                    className="prompt-showcase"
+                    onClick={() => handlePromptClick('Wtaf make a bold, gritty landing page for a barbershop called "Buzzkill" — vintage punk aesthetic, scissors that animate on hover, neon sign logo, moody background music (pretend), and fake reviews from rockstars and criminals')}
+                  />
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX sand-leaf-breaking")}>
                     REMIX
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* RSVP Pages */}
+            {/* WEBSITES WITH FORMS */}
             <div className="category-section">
-              <h3 className="category-title">RSVP Pages</h3>
+              <h3 className="category-title">WEBSITES WITH FORMS</h3>
               <div className="service-card image-card">
-                <a href="#">
-                  <img src="/wtaf-landing/images/berghain.png" alt="Berghain Vibes" className="service-image" />
-                </a>
-                <div className="image-content">
-                  <div className="app-title">Berghain Bash</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <div
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick("wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin")}
-                  >
-                    "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+                <div className="image-container">
+                  <a href="https://www.wtaf.me/bart/clay-dragonfly-protecting">
+                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png" alt="404 Girls AI Band" className="service-image" />
+                  </a>
+                  <div className="image-overlay">
+                    <a href="/bart/clay-dragonfly-protecting?demo=true" className="try-app-btn">TRY THIS APP</a>
                   </div>
+                </div>
+                <div className="image-content">
+                  <div className="app-title">404 Girls</div>
+                  <div className="prompt-label">The prompt:</div>
+                  <TruncatedPrompt
+                    prompt='Wtaf --admin build a landing page for a rebellious AI band called "404 Girls" — glitched-out vibes, retro pixel fonts, embedded fake tour dates, and a big JOIN THE UPRISING button. The admin page lets us add tour dates'
+                    maxLength={120}
+                    className="prompt-showcase"
+                    onClick={() => handlePromptClick('Wtaf --admin build a landing page for a rebellious AI band called "404 Girls" — glitched-out vibes, retro pixel fonts, embedded fake tour dates, and a big JOIN THE UPRISING button. The admin page lets us add tour dates')}
+                  />
                   <div className="prompt-label" style={{ textTransform: "none" }}>
                     This app comes with an{" "}
-                    <a href="#" style={{ color: "#00ffff", textDecoration: "underline" }}>
+                    <a href="https://www.wtaf.me/bart/admin-clay-dragonfly-protecting" style={{ color: "#00ffff", textDecoration: "underline" }}>
                       admin page
                     </a>
                     .
                   </div>
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX berghain-party")}>
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX clay-dragonfly-protecting")}>
                     REMIX
                   </button>
                 </div>
@@ -252,9 +263,14 @@ export default function HomePage() {
             <div className="category-section">
               <h3 className="category-title">Arcade Games</h3>
               <div className="service-card image-card">
-                <a href="#">
-                  <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
-                </a>
+                <div className="image-container">
+                  <a href="https://wtaf.me/bart/bronze-dolphin-flying">
+                    <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
+                  </a>
+                  <div className="image-overlay">
+                    <a href="/bart/bronze-dolphin-flying?demo=true" className="try-app-btn">TRY THIS APP</a>
+                  </div>
+                </div>
                 <div className="image-content">
                   <div className="app-title">Paddle Clash</div>
                   <div className="prompt-label">The prompt:</div>
@@ -288,9 +304,14 @@ export default function HomePage() {
 
             {/* Trending App 1 */}
             <div className="service-card image-card">
-              <a href="#">
-                <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
-              </a>
+              <div className="image-container">
+                <a href="https://wtaf.me/alex/violet-penguin-dancing">
+                  <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
+                </a>
+                <div className="image-overlay">
+                  <a href="/alex/violet-penguin-dancing?demo=true" className="try-app-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="image-content">
                 <div className="creator-stats-inline">
                   <div className="creator-info">
@@ -319,9 +340,14 @@ export default function HomePage() {
 
             {/* Trending App 2 */}
             <div className="service-card image-card">
-              <a href="#">
-                <img src="/wtaf-landing/images/berghain.png" alt="Berghain Party" className="service-image" />
-              </a>
+              <div className="image-container">
+                <a href="https://wtaf.me/bart/golden-jaguar-racing">
+                  <img src="/wtaf-landing/images/berghain.png" alt="Berghain Party" className="service-image" />
+                </a>
+                <div className="image-overlay">
+                  <a href="/bart/golden-jaguar-racing?demo=true" className="try-app-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="image-content">
                 <div className="creator-stats-inline">
                   <div className="creator-info">
@@ -350,9 +376,14 @@ export default function HomePage() {
 
             {/* Trending App 3 */}
             <div className="service-card image-card">
-              <a href="#">
-                <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
-              </a>
+              <div className="image-container">
+                <a href="https://wtaf.me/bart/bronze-dolphin-flying">
+                  <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
+                </a>
+                <div className="image-overlay">
+                  <a href="/bart/bronze-dolphin-flying?demo=true" className="try-app-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="image-content">
                 <div className="creator-stats-inline">
                   <div className="creator-info">
@@ -964,6 +995,70 @@ export default function HomePage() {
               0 20px 50px rgba(0, 0, 0, 0.4),
               0 0 30px rgba(255, 0, 128, 0.2);
             border-color: rgba(255, 0, 128, 0.3);
+          }
+
+          .image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+          }
+
+          .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            border-radius: 15px;
+          }
+
+          .image-container:hover .image-overlay {
+            opacity: 1;
+          }
+
+          .image-container:hover .service-image {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.8));
+          }
+
+          .image-container:hover {
+            border-color: rgba(255, 0, 128, 0.7);
+          }
+
+          .try-app-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff0080, #8b0000);
+            color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow:
+              0 8px 25px rgba(255, 0, 128, 0.3),
+              0 0 20px rgba(255, 0, 128, 0.2);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            text-decoration: none;
+          }
+
+          .try-app-btn:hover {
+            transform: scale(1.05);
+            box-shadow:
+              0 12px 35px rgba(255, 0, 128, 0.4),
+              0 0 30px rgba(255, 0, 128, 0.3);
           }
 
           /* Desktop layout for feature cards with images */

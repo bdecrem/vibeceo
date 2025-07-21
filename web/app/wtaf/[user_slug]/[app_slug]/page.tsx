@@ -125,9 +125,19 @@ setTimeout(function() {
 		}
 
 		// Check if user came from wtaf.me (internal navigation) vs direct link
+		// Also show navigation for demo mode (TRY THIS APP buttons)
 		const headersList = await headers();
 		const referer = headersList.get('referer');
-		const showNavigation = referer?.includes('wtaf.me') || false;
+		const isDemoMode = demo === 'true';
+		const isFromWtaf = referer?.includes('wtaf.me') || false;
+		const showNavigation = isDemoMode || isFromWtaf;
+
+		console.log('🔍 Navigation decision:', { 
+			referer, 
+			isDemoMode, 
+			isFromWtaf, 
+			showNavigation 
+		});
 
 		// Conditionally render with or without navigation
 		if (showNavigation) {
