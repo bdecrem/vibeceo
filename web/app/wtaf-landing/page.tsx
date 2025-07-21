@@ -409,9 +409,17 @@ export default function HomePage() {
           }
 
           body {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 25%, #8b0000 50%, #4b0082 75%, #000000 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 12s ease infinite;
+            background: linear-gradient(135deg, 
+              #1a1a1a 0%, 
+              #252525 15%, 
+              #2d1b69 30%, 
+              #4a1b4a 45%, 
+              #8b0000 60%, 
+              #6b1050 75%, 
+              #4b0082 85%, 
+              #000000 100%);
+            background-size: 800% 800%;
+            animation: gradientShift 15s ease infinite;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
