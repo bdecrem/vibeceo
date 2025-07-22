@@ -334,7 +334,7 @@ export default function HomePage() {
             <div className="service-card image-card">
               <div className="image-container">
                 <a href="https://wtaf.me/bart/demo-paint-od96qt40">
-                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-demo-paint-od96qt40.png" alt="Demo Paint App" className="service-image" />
+                  <img src="/wtaf-landing/images/demo-paint-od96qt40.png" alt="Demo Paint App" className="service-image" />
                 </a>
                 <div className="image-overlay">
                   <a href="https://wtaf.me/bart/demo-paint-od96qt40?demo=true" className="try-app-btn">TRY THIS APP</a>
