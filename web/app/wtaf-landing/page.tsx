@@ -412,7 +412,7 @@ export default function HomePage() {
           <section className="bottom-section">
             <div className="about-wtaf">
               <div className="about-content">
-                <h2 className="about-title">How WTAF Works</h2>
+                <h2 className="about-title">About Webtoys</h2>
                 <p className="about-text">
                   Text your wildest app ideas to <strong>+1-866-330-0015</strong> and watch them materialize into
                   working code. No planning. No meetings. No bullshit. Just pure creative chaos delivered through SMS.
@@ -1549,14 +1549,18 @@ export default function HomePage() {
 
           /* How It Works Section */
           .how-it-works {
-            background: linear-gradient(135deg, #cc4400 0%, #8b0000 25%, #a11d1d 50%, #8b0000 75%, #b8420f 100%);
+            background: linear-gradient(135deg, #001122 0%, #003366 25%, #004477 50%, #0066aa 75%, #0088cc 100%);
             margin: 80px auto 100px auto;
             max-width: 1200px;
             border-radius: 30px;
             padding: 60px 40px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            border: 3px solid #00ffff;
+            box-shadow: 
+              0 20px 50px rgba(0, 0, 0, 0.6),
+              0 0 30px rgba(0, 255, 255, 0.4),
+              inset 0 0 20px rgba(0, 255, 255, 0.1);
           }
 
           .how-it-works-content {
@@ -1571,7 +1575,10 @@ export default function HomePage() {
             color: #ffffff;
             text-align: center;
             margin-bottom: 50px;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            text-shadow: 
+              0 0 20px rgba(0, 255, 255, 0.8),
+              0 0 40px rgba(0, 255, 255, 0.4),
+              0 4px 8px rgba(0, 0, 0, 0.3);
           }
 
           .steps {
