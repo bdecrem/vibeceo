@@ -380,6 +380,30 @@ if (latestJohn) {
     created_at: new Date().toISOString()
   });
 }
+
+// ✅ BETTER: Use server-side update helper (prevents duplicates entirely)
+await save('update_task', {
+    taskId: person.id,
+    updates: { contacted: true }
+});
+
+// ✅ BEST: For reactions, counters, and other updates
+async function addReaction(ideaId, emoji) {
+    const ideas = await load('idea');
+    const idea = ideas.find(i => i.id === parseInt(ideaId));
+    if (idea) {
+        const reactions = idea.reactions || {};
+        reactions[emoji] = (reactions[emoji] || 0) + 1;
+        
+        // Use update helper instead of save() to prevent duplicates
+        await save('update_task', {
+            taskId: parseInt(ideaId),
+            updates: { reactions }
+        });
+        
+        await loadLatestData(); // Refresh UI
+    }
+}
 ```
 
 ### ⚠️ CRITICAL: Avoid Type Mismatch Bugs
