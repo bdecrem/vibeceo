@@ -126,22 +126,10 @@ export default function HomePage() {
                 <div className="prompt-suggestions">
                   <div className="suggestion-container">
                     <div
-                      className={`suggestion-prompt large ${currentSuggestion === 0 ? "active" : ""}`}
-                      onClick={() => handleSuggestionClick(suggestions[0])}
+                      className="suggestion-prompt large active"
+                      onClick={() => handleSuggestionClick(suggestions[currentSuggestion])}
                     >
-                      "{suggestions[0]}"
-                    </div>
-                    <div
-                      className={`suggestion-prompt large ${currentSuggestion === 1 ? "active" : ""}`}
-                      onClick={() => handleSuggestionClick(suggestions[1])}
-                    >
-                      "{suggestions[1]}"
-                    </div>
-                    <div
-                      className={`suggestion-prompt large ${currentSuggestion === 2 ? "active" : ""}`}
-                      onClick={() => handleSuggestionClick(suggestions[2])}
-                    >
-                      "{suggestions[2]}"
+                      "{suggestions[currentSuggestion]}"
                     </div>
                   </div>
                 </div>
@@ -195,6 +183,34 @@ export default function HomePage() {
               WHAT YOU CAN MAKE
               <span className="title-icon">⭐</span>
             </h2>
+
+            {/* WEB TOYS */}
+            <div className="category-section">
+              <h3 className="category-title">WEB TOYS</h3>
+              <div className="service-card image-card">
+                <div className="image-container">
+                  <a href="https://wtaf.me/bart/demo-paint-od96qt40">
+                    <img src="/wtaf-landing/images/demo-paint-od96qt40.png" alt="RETRO PAINT 98" className="service-image" />
+                  </a>
+                  <div className="image-overlay">
+                    <a href="https://wtaf.me/bart/demo-paint-od96qt40?demo=true" className="try-app-btn">TRY THIS APP</a>
+                  </div>
+                </div>
+                <div className="image-content">
+                  <div className="app-title">RETRO PAINT 98</div>
+                  <div className="prompt-label">The prompt:</div>
+                  <TruncatedPrompt
+                    prompt="wtaf make a retro paint app like old windows"
+                    maxLength={120}
+                    className="prompt-showcase"
+                    onClick={() => handlePromptClick("wtaf make a retro paint app like old windows")}
+                  />
+                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX demo-paint-od96qt40")}>
+                    REMIX
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Simple Web Sites */}
             <div className="category-section">
@@ -330,43 +346,7 @@ export default function HomePage() {
               <span className="title-icon">🔥</span>
             </h2>
 
-            {/* Trending App - Demo Paint */}
-            <div className="service-card image-card">
-              <div className="image-container">
-                <a href="https://wtaf.me/bart/demo-paint-od96qt40">
-                  <img src="/wtaf-landing/images/demo-paint-od96qt40.png" alt="Demo Paint App" className="service-image" />
-                </a>
-                <div className="image-overlay">
-                  <a href="https://wtaf.me/bart/demo-paint-od96qt40?demo=true" className="try-app-btn">TRY THIS APP</a>
-                </div>
-              </div>
-              <div className="image-content">
-                <div className="creator-stats-inline">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                    <a href="/wtaf/bart/creations" className="creator-handle">
-                      @bart
-                    </a>
-                  </div>
-                  <div className="remix-count">
-                    <span className="remix-number">287</span>
-                    <span className="remix-label">remixes</span>
-                  </div>
-                </div>
-                <div className="prompt-label">The prompt:</div>
-                <div
-                  className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf make a digital paint app with brushes and colors")}
-                >
-                  "wtaf make a digital paint app with brushes and colors"
-                </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX demo-paint-od96qt40")}>
-                  REMIX
-                </button>
-              </div>
-            </div>
-
-            {/* Trending App 2 - Tangerine Bat Tracking */}
+            {/* Trending App - Tangerine Bat Tracking */}
             <div className="service-card image-card">
               <div className="image-container">
                 <a href="https://wtaf.me/bart/tangerine-bat-tracking">
@@ -742,10 +722,6 @@ export default function HomePage() {
           }
 
           .suggestion-prompt {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-50%);
             width: 95%;
             max-width: 700px;
             padding: 18px 30px;
@@ -759,21 +735,17 @@ export default function HomePage() {
             text-align: center;
             cursor: pointer;
             transition: all 0.5s ease;
-            opacity: 0;
             backdrop-filter: blur(5px);
             text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
             user-select: none;
-          }
-
-          .suggestion-prompt.active {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-50%);
+            margin: 0 auto;
+            display: block;
           }
 
           .suggestion-prompt:hover {
             background: rgba(0, 255, 255, 0.15);
             border-color: rgba(0, 255, 255, 0.5);
-            transform: translateX(-50%) translateY(-52px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
           }
 
