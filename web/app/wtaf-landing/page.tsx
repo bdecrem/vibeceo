@@ -107,8 +107,8 @@ export default function HomePage() {
         <div className="float-element skull">💀</div>
 
         <header>
-          <div className="logo glitch" data-text="WTAF">
-            WTAF
+          <div className="logo glitch" data-text="WEBTOYS">
+            WEBTOYS
           </div>
           <div className="tagline">WEB TOYS, ARTIFACTS & FUN</div>
         </header>
