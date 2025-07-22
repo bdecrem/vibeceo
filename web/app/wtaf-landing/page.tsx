@@ -370,7 +370,7 @@ export default function HomePage() {
             <div className="service-card image-card">
               <div className="image-container">
                 <a href="https://wtaf.me/bart/tangerine-bat-tracking">
-                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-tangerine-bat-tracking.png" alt="Tangerine Bat Tracking" className="service-image" />
+                  <img src="/wtaf-landing/images/tangerine-bat-tracking.png" alt="Tangerine Bat Tracking" className="service-image" />
                 </a>
                 <div className="image-overlay">
                   <a href="https://wtaf.me/bart/tangerine-bat-tracking?demo=true" className="try-app-btn">TRY THIS APP</a>
