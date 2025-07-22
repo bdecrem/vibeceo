@@ -21,6 +21,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 })
     }
 
+    // TEMPORARY OVERRIDE: Manual curation only - comment out to restore algorithmic trending
+    // Step 1: Get manually marked trending apps with remixes, ordered by total remix count
+    const { data: remixedApps, error: remixError } = await supabase
+      .from('wtaf_content')
+      .select(`
+        id,
+        app_slug,
+        user_slug,
+        original_prompt,
+        created_at,
+        remix_count,
+        total_descendants,
+        last_remixed_at,
+        is_remix,
+        parent_app_id,
+        is_featured,
+        is_trending,
+        Fave,
+        Forget
+      `)
+      .eq('status', 'published')           // Only published apps
+      .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps
+      .gt('total_descendants', 0)          // Only apps with total descendants
+      .order('total_descendants', { ascending: false })  // Most descendants first
+      .order('created_at', { ascending: false })          // Recency as tiebreaker
+      .range(offset, offset + limit - 1)
+
+    /* ORIGINAL ALGORITHMIC LOGIC - Uncomment to restore automatic trending
     // Step 1: Get apps with remixes, ordered by total remix count
     const { data: remixedApps, error: remixError } = await supabase
       .from('trending_apps_7d')
@@ -44,6 +72,7 @@ export async function GET(request: NextRequest) {
       .order('total_descendants', { ascending: false })  // Most descendants first
       .order('recent_remixes', { ascending: false })  // Recent activity as tiebreaker
       .range(offset, offset + limit - 1)
+    */
 
     if (remixError) {
       console.error('Error fetching remixed apps:', remixError)
@@ -52,9 +81,34 @@ export async function GET(request: NextRequest) {
 
     let allApps = remixedApps || []
 
-    // Step 2: If we have less than requested limit, backfill with recent apps
+    // Step 2: If we have less than requested limit, backfill with recent trending apps
     if (allApps.length < limit) {
       const remainingLimit = limit - allApps.length
+      const { data: recentApps, error: recentError } = await supabase
+        .from('wtaf_content')
+        .select(`
+          id,
+          app_slug,
+          user_slug,
+          original_prompt,
+          created_at,
+          remix_count,
+          total_descendants,
+          last_remixed_at,
+          is_remix,
+          parent_app_id,
+          is_featured,
+          is_trending,
+          Fave,
+          Forget
+        `)
+        .eq('status', 'published')           // Only published apps
+        .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps
+        .eq('total_descendants', 0)          // Only apps with no descendants
+        .order('created_at', { ascending: false })  // Most recent first
+        .range(0, remainingLimit - 1)       // Fill remaining slots
+
+      /* ORIGINAL STEP 2 LOGIC - Uncomment to restore automatic backfill
       const { data: recentApps, error: recentError } = await supabase
         .from('trending_apps_7d')
         .select(`
@@ -76,6 +130,7 @@ export async function GET(request: NextRequest) {
         .eq('total_descendants', 0)  // Only apps with no descendants
         .order('created_at', { ascending: false })  // Most recent first
         .range(0, remainingLimit - 1)  // Fill remaining slots
+      */
 
       if (!recentError && recentApps) {
         allApps = [...allApps, ...recentApps]
@@ -84,9 +139,18 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination metadata
     const { count: totalCount, error: countError } = await supabase
+      .from('wtaf_content')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'published')
+      .eq('is_trending', true)
+      .not('Forget', 'is', true)
+
+    /* ORIGINAL COUNT LOGIC - Uncomment to restore automatic counting
+    const { count: totalCount, error: countError } = await supabase
       .from('trending_apps_7d')
       .select('*', { count: 'exact', head: true })
       .not('Forget', 'is', true)
+    */
 
     if (countError) {
       console.error('Error getting total count:', countError)
@@ -98,8 +162,13 @@ export async function GET(request: NextRequest) {
       .map((app: any) => ({ ...app, type: 'web' })) // Default type for trending apps
 
     const totalTrendingApps = trendingApps.length
+    const totalRemixesThisWeek = trendingApps.reduce((sum: number, app: any) => sum + (app.total_descendants || 0), 0)
+    const appsWithRecentActivity = trendingApps.filter((app: any) => (app.total_descendants || 0) > 0).length
+
+    /* ORIGINAL STATS LOGIC - Uncomment to restore recent_remixes calculations
     const totalRemixesThisWeek = trendingApps.reduce((sum: number, app: any) => sum + (app.recent_remixes || 0), 0)
     const appsWithRecentActivity = trendingApps.filter((app: any) => (app.recent_remixes || 0) > 0).length
+    */
 
     return NextResponse.json({
       apps: trendingApps,

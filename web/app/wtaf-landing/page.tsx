@@ -330,14 +330,14 @@ export default function HomePage() {
               <span className="title-icon">🔥</span>
             </h2>
 
-            {/* Trending App - Silver Bear Painting */}
+            {/* Trending App - Demo Paint */}
             <div className="service-card image-card">
               <div className="image-container">
-                <a href="https://wtaf.me/bart/silver-bear-painting">
-                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-silver-bear-painting.png" alt="Silver Bear Painting" className="service-image" />
+                <a href="https://wtaf.me/bart/demo-paint-od96qt40">
+                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-demo-paint-od96qt40.png" alt="Demo Paint App" className="service-image" />
                 </a>
                 <div className="image-overlay">
-                  <a href="https://wtaf.me/bart/silver-bear-painting?demo=true" className="try-app-btn">TRY THIS APP</a>
+                  <a href="https://wtaf.me/bart/demo-paint-od96qt40?demo=true" className="try-app-btn">TRY THIS APP</a>
                 </div>
               </div>
               <div className="image-content">
@@ -349,18 +349,54 @@ export default function HomePage() {
                     </a>
                   </div>
                   <div className="remix-count">
-                    <span className="remix-number">342</span>
+                    <span className="remix-number">287</span>
                     <span className="remix-label">remixes</span>
                   </div>
                 </div>
                 <div className="prompt-label">The prompt:</div>
                 <div
                   className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf make an interactive art gallery where I can paint silver bears and save them to a collection")}
+                  onClick={() => handlePromptClick("wtaf make a digital paint app with brushes and colors")}
                 >
-                  "wtaf make an interactive art gallery where I can paint silver bears and save them to a collection"
+                  "wtaf make a digital paint app with brushes and colors"
                 </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX silver-bear-painting")}>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX demo-paint-od96qt40")}>
+                  REMIX
+                </button>
+              </div>
+            </div>
+
+            {/* Trending App 2 - Tangerine Bat Tracking */}
+            <div className="service-card image-card">
+              <div className="image-container">
+                <a href="https://wtaf.me/bart/tangerine-bat-tracking">
+                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-tangerine-bat-tracking.png" alt="Tangerine Bat Tracking" className="service-image" />
+                </a>
+                <div className="image-overlay">
+                  <a href="https://wtaf.me/bart/tangerine-bat-tracking?demo=true" className="try-app-btn">TRY THIS APP</a>
+                </div>
+              </div>
+              <div className="image-content">
+                <div className="creator-stats-inline">
+                  <div className="creator-info">
+                    <span className="creator-label">by</span>
+                    <a href="/wtaf/bart/creations" className="creator-handle">
+                      @bart
+                    </a>
+                  </div>
+                  <div className="remix-count">
+                    <span className="remix-number">156</span>
+                    <span className="remix-label">remixes</span>
+                  </div>
+                </div>
+                <div className="prompt-label">The prompt:</div>
+                <div
+                  className="prompt-showcase"
+                  onClick={() => handlePromptClick("wtaf make a bat tracking app where you can log sightings and track migration patterns")}
+                >
+                  "wtaf make a bat tracking app where you can log sightings and track migration patterns"
+                </div>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX tangerine-bat-tracking")}>
                   REMIX
                 </button>
               </div>

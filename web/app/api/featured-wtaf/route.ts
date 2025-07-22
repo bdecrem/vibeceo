@@ -41,7 +41,8 @@ export async function GET() {
 
     let allApps = featuredApps || []
 
-    // If we have less than 20 featured apps, backfill with highly remixed apps
+    // DISABLED: Auto-backfill with highly remixed apps - Featured now shows only manually curated apps
+    /*
     if (allApps.length < 20) {
       const { data: popularApps, error: popularError } = await supabase
         .from('trending_apps_7d')
@@ -74,6 +75,7 @@ export async function GET() {
         allApps = [...allApps, ...uniquePopularApps]
       }
     }
+    */
 
     // Filter out forgotten apps in JavaScript
     const featuredAppsList = (allApps || []).filter((app: any) => !app.Forget)
