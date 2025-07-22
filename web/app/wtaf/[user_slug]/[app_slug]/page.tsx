@@ -124,18 +124,34 @@ setTimeout(function() {
 			console.log('🎭 Demo override injection complete');
 		}
 
-		// Check if user came from wtaf.me (internal navigation) vs direct link
+		// Check if user came from wtaf.me internal navigation pages vs direct link
 		// Also show navigation for demo mode (TRY THIS APP buttons)
 		const headersList = await headers();
 		const referer = headersList.get('referer');
 		const isDemoMode = demo === 'true';
-		const isFromWtaf = referer?.includes('wtaf.me') || false;
-		const showNavigation = isDemoMode || isFromWtaf;
+		
+		// Define internal navigation pages that should show the navbar
+		const internalNavPages = [
+			'/trending',
+			'/featured', 
+			'/wtaf-landing',
+			'/wtaf/',  // WTAF homepage
+			'/creations',
+			'/wtaf/trending',
+			'/wtaf/featured'
+		];
+		
+		// Check if referer is from a wtaf.me internal navigation page
+		const isFromInternalNav = referer ? 
+			internalNavPages.some(page => referer.includes(page)) :
+			false;
+			
+		const showNavigation = isDemoMode || isFromInternalNav;
 
 		console.log('🔍 Navigation decision:', { 
 			referer, 
 			isDemoMode, 
-			isFromWtaf, 
+			isFromInternalNav, 
 			showNavigation 
 		});
 
