@@ -330,50 +330,14 @@ export default function HomePage() {
               <span className="title-icon">🔥</span>
             </h2>
 
-            {/* Trending App 1 */}
+            {/* Trending App - Silver Bear Painting */}
             <div className="service-card image-card">
               <div className="image-container">
-                <a href="https://wtaf.me/alex/violet-penguin-dancing">
-                  <img src="/wtaf-landing/images/alex-blog.png" alt="Alex Blog" className="service-image" />
+                <a href="https://wtaf.me/bart/silver-bear-painting">
+                  <img src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-silver-bear-painting.png" alt="Silver Bear Painting" className="service-image" />
                 </a>
                 <div className="image-overlay">
-                  <a href="/alex/violet-penguin-dancing?demo=true" className="try-app-btn">TRY THIS APP</a>
-                </div>
-              </div>
-              <div className="image-content">
-                <div className="creator-stats-inline">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                    <a href="/wtaf/alex/creations" className="creator-handle">
-                      @alex
-                    </a>
-                  </div>
-                  <div className="remix-count">
-                    <span className="remix-number">247</span>
-                    <span className="remix-label">remixes</span>
-                  </div>
-                </div>
-                <div className="prompt-label">The prompt:</div>
-                <div
-                  className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF")}
-                >
-                  "wtaf -Alex- write a blog announcing the launch of one-shot vibe coding with WTAF"
-                </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX alex-blog")}>
-                  REMIX
-                </button>
-              </div>
-            </div>
-
-            {/* Trending App 2 */}
-            <div className="service-card image-card">
-              <div className="image-container">
-                <a href="https://wtaf.me/bart/golden-jaguar-racing">
-                  <img src="/wtaf-landing/images/berghain.png" alt="Berghain Party" className="service-image" />
-                </a>
-                <div className="image-overlay">
-                  <a href="/bart/golden-jaguar-racing?demo=true" className="try-app-btn">TRY THIS APP</a>
+                  <a href="https://wtaf.me/bart/silver-bear-painting?demo=true" className="try-app-btn">TRY THIS APP</a>
                 </div>
               </div>
               <div className="image-content">
@@ -385,54 +349,18 @@ export default function HomePage() {
                     </a>
                   </div>
                   <div className="remix-count">
-                    <span className="remix-number">189</span>
+                    <span className="remix-number">342</span>
                     <span className="remix-label">remixes</span>
                   </div>
                 </div>
                 <div className="prompt-label">The prompt:</div>
                 <div
                   className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin")}
+                  onClick={() => handlePromptClick("wtaf make an interactive art gallery where I can paint silver bears and save them to a collection")}
                 >
-                  "wtaf make an app where people can sign up for my party next Friday at 11pm at Berghain in Berlin"
+                  "wtaf make an interactive art gallery where I can paint silver bears and save them to a collection"
                 </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX berghain-party")}>
-                  REMIX
-                </button>
-              </div>
-            </div>
-
-            {/* Trending App 3 */}
-            <div className="service-card image-card">
-              <div className="image-container">
-                <a href="https://wtaf.me/bart/bronze-dolphin-flying">
-                  <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
-                </a>
-                <div className="image-overlay">
-                  <a href="/bart/bronze-dolphin-flying?demo=true" className="try-app-btn">TRY THIS APP</a>
-                </div>
-              </div>
-              <div className="image-content">
-                <div className="creator-stats-inline">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                    <a href="/wtaf/zoe/creations" className="creator-handle">
-                      @zoe
-                    </a>
-                  </div>
-                  <div className="remix-count">
-                    <span className="remix-number">156</span>
-                    <span className="remix-label">remixes</span>
-                  </div>
-                </div>
-                <div className="prompt-label">The prompt:</div>
-                <div
-                  className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf make a pong-style browser game")}
-                >
-                  "wtaf make a pong-style browser game"
-                </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX pong-game")}>
+                <button className="remix-btn" onClick={() => handlePromptClick("REMIX silver-bear-painting")}>
                   REMIX
                 </button>
               </div>
