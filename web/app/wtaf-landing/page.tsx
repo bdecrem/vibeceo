@@ -31,7 +31,7 @@ export default function HomePage() {
 
   const suggestions = [
     "wtaf make me a simple todo app",
-    "wtaf make me a personal homepage like I'm a retired pop star", 
+    "wtaf make a chat app for me and my friends", 
     "wtaf build a color palette picker",
   ]
 
@@ -1183,16 +1183,27 @@ export default function HomePage() {
             .service-card { padding: 35px 25px; }
             .hero h1 { font-size: 2.8rem; line-height: 1.2; }
             .hero p { font-size: 1.1rem; margin: 0 auto 25px; }
-            .hero-content { padding: 40px 20px; }
+            .hero-content { padding: 30px 20px; } /* Reduce padding on mobile */
             .hero { padding: 10px 20px; }
 
             .starter-text {
               font-size: 1.1rem;
+              padding-top: 20px !important; /* Reduce padding on mobile */
             }
             .suggestion-prompt {
-              font-size: 1.1rem;
-              padding: 14px 22px;
+              font-size: 1.2rem !important; /* Larger than surrounding text on mobile */
+              padding: 12px 18px !important;
               width: 98%;
+            }
+            .prompt-suggestions {
+              height: 80px !important; /* Reduce height on mobile */
+              margin: 15px 0 20px 0 !important;
+            }
+            .suggestion-container {
+              height: 80px !important;
+            }
+            .starter-section {
+              margin-bottom: 40px !important; /* Reduce bottom margin on mobile */
             }
             .prompt-showcase {
               font-size: 1rem;
@@ -1236,16 +1247,27 @@ export default function HomePage() {
             .service-card { padding: 30px 20px; }
             .hero h1 { font-size: 2.4rem; line-height: 1.1; }
             .hero p { font-size: 1rem; margin: 0 auto 20px; }
-            .hero-content { padding: 35px 15px; }
+            .hero-content { padding: 25px 15px; } /* Even less padding on small mobile */
             .hero { padding: 5px 20px; }
             .cta-button { padding: 18px 35px; font-size: 1rem; }
 
             .starter-text {
               font-size: 1rem;
+              padding-top: 15px !important; /* Even less padding on small mobile */
             }
             .suggestion-prompt {
-              font-size: 1rem;
-              padding: 12px 18px;
+              font-size: 1.1rem !important; /* Larger than surrounding text on small mobile */
+              padding: 10px 15px !important;
+            }
+            .prompt-suggestions {
+              height: 70px !important; /* Even smaller height on small mobile */
+              margin: 10px 0 15px 0 !important;
+            }
+            .suggestion-container {
+              height: 70px !important;
+            }
+            .starter-section {
+              margin-bottom: 30px !important; /* Even less bottom margin on small mobile */
             }
             .prompt-showcase {
               font-size: 0.9rem;
