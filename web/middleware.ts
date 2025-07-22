@@ -40,8 +40,8 @@ export function middleware(request: NextRequest) {
     console.log(`[Middleware] ${host}${pathname} - Processing request`)
   }
 
-  // Handle wtaf.me and webtoys.io domains (both production and development)
-  const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me' || host === 'webtoys.io' || host === 'www.webtoys.io'
+  // Handle wtaf.me, webtoys.io, and webtoys.ai domains (both production and development)
+  const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me' || host === 'webtoys.io' || host === 'www.webtoys.io' || host === 'webtoys.ai' || host === 'www.webtoys.ai'
   const isDevEnvironment = host?.includes('localhost') || host?.includes('ngrok')
   const isDevWtafRoute = isDevEnvironment && pathname.startsWith('/wtaf/')
   const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing' && pathname !== '/featured' && pathname !== '/trending'
