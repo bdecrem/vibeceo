@@ -116,12 +116,9 @@ export default function HomePage() {
         <main>
           <section className="hero">
             <div className="hero-content">
-              <h1 className="glitch" data-text="One-Shot Prompting Over SMS">
+              <h1 className="hero-title">
                 One-Shot Prompting Over SMS
               </h1>
-              <p>
-                Text us. We'll shoot back a page, app or simple game your friends can remix. It's art meets algorithm.
-              </p>
               <div className="starter-section">
                 <div className="starter-text">
                   Try it — text <strong>+1-866-330-0015</strong> with:
@@ -129,25 +126,28 @@ export default function HomePage() {
                 <div className="prompt-suggestions">
                   <div className="suggestion-container">
                     <div
-                      className={`suggestion-prompt ${currentSuggestion === 0 ? "active" : ""}`}
+                      className={`suggestion-prompt large ${currentSuggestion === 0 ? "active" : ""}`}
                       onClick={() => handleSuggestionClick(suggestions[0])}
                     >
                       "{suggestions[0]}"
                     </div>
                     <div
-                      className={`suggestion-prompt ${currentSuggestion === 1 ? "active" : ""}`}
+                      className={`suggestion-prompt large ${currentSuggestion === 1 ? "active" : ""}`}
                       onClick={() => handleSuggestionClick(suggestions[1])}
                     >
                       "{suggestions[1]}"
                     </div>
                     <div
-                      className={`suggestion-prompt ${currentSuggestion === 2 ? "active" : ""}`}
+                      className={`suggestion-prompt large ${currentSuggestion === 2 ? "active" : ""}`}
                       onClick={() => handleSuggestionClick(suggestions[2])}
                     >
                       "{suggestions[2]}"
                     </div>
                   </div>
                 </div>
+                <p>
+                  Text us. We'll shoot back a page, app or simple game your friends can remix. It's art meets algorithm.
+                </p>
               </div>
               {/* <div className="cta-section">
                 <a href="https://wtaf.me/bart/satin-horse-storytelling" className="cta-button">Learn More</a>
@@ -174,7 +174,7 @@ export default function HomePage() {
                   <div className="step-number">2</div>
                   <div className="step-content">
                     <h3>Remix</h3>
-                    <p>Copy a REMIX code, text it with your edits to +1-866-330-0015. (WhatsApp works too.)</p>
+                    <p>Copy a REMIX code, text it with your changes to +1-866-330-0015 (WhatsApp works too).</p>
                   </div>
                 </div>
                 <div className="step">
@@ -455,6 +455,9 @@ export default function HomePage() {
                   Each prompt becomes a fully functional app in minutes, not months.
                 </p>
                 <p className="about-subtext">Start with "wtaf" + your idea. The algorithm handles the rest.</p>
+                <div style={{ textAlign: 'center', marginTop: '25px' }}>
+                  <a href="https://wtaf.me/bart/satin-horse-storytelling" className="faq-link">FAQ</a>
+                </div>
               </div>
             </div>
           </section>
@@ -740,14 +743,14 @@ export default function HomePage() {
           }
 
           .starter-text {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-            margin: 0 0 30px 0;
-            padding: 0;
-            line-height: 1.2;
+            font-size: 1.4rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0 auto 20px;
+            padding: 40px 0 0 0;
+            line-height: 1.7;
             text-align: center;
+            max-width: 650px;
           }
 
           .starter-text strong {
@@ -758,17 +761,17 @@ export default function HomePage() {
 
           .prompt-suggestions {
             position: relative !important;
-            height: 70px !important;
+            height: 120px !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            margin-top: 0 !important;
+            margin: 20px 0 30px 0 !important;
           }
 
           .suggestion-container {
             position: relative !important;
             width: 100% !important;
-            height: 70px !important;
+            height: 120px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -776,9 +779,9 @@ export default function HomePage() {
 
           .suggestion-prompt {
             position: absolute;
-            top: 0;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateY(-50%);
             width: 95%;
             max-width: 700px;
             padding: 18px 30px;
@@ -793,7 +796,6 @@ export default function HomePage() {
             cursor: pointer;
             transition: all 0.5s ease;
             opacity: 0;
-            transform: translateX(-50%) translateY(20px);
             backdrop-filter: blur(5px);
             text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
             user-select: none;
@@ -801,14 +803,28 @@ export default function HomePage() {
 
           .suggestion-prompt.active {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(-50%);
           }
 
           .suggestion-prompt:hover {
             background: rgba(0, 255, 255, 0.15);
             border-color: rgba(0, 255, 255, 0.5);
-            transform: translateX(-50%) translateY(-2px);
+            transform: translateX(-50%) translateY(-52px);
             box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+          }
+
+          .suggestion-prompt.large {
+            font-size: 1.8rem;
+          }
+
+          .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 40px;
+            letter-spacing: -2px;
           }
 
 
@@ -922,7 +938,7 @@ export default function HomePage() {
             color: rgba(255, 255, 255, 0.9);
             line-height: 1.7;
             max-width: 650px;
-            margin: 0 auto 50px;
+            margin: 0 auto 20px;
             font-weight: 300;
           }
 
@@ -1263,6 +1279,27 @@ export default function HomePage() {
               display: block;
               margin: 15px auto 0 auto;
             }
+
+            /* Fix mobile image container sizing */
+            .service-card .service-image {
+              width: 100% !important;
+              height: 100% !important;
+              aspect-ratio: 3 / 2 !important;
+              object-fit: cover !important;
+              border-radius: 15px;
+              margin-bottom: 20px;
+              display: block;
+            }
+
+            .image-container {
+              width: 100% !important;
+              height: auto !important;
+              aspect-ratio: 3 / 2 !important;
+              overflow: hidden;
+              border-radius: 15px;
+              margin-bottom: 20px;
+              position: relative;
+            }
           }
 
           @media (max-width: 480px) {
@@ -1296,6 +1333,27 @@ export default function HomePage() {
               margin: 12px auto 0 auto;
               padding: 12px 25px;
               font-size: 0.9rem;
+            }
+
+            /* Ensure proper image sizing on small mobile */
+            .service-card .service-image {
+              width: 100% !important;
+              height: 100% !important;
+              aspect-ratio: 3 / 2 !important;
+              object-fit: cover !important;
+              border-radius: 15px;
+              margin-bottom: 15px;
+              display: block;
+            }
+
+            .image-container {
+              width: 100% !important;
+              height: auto !important;
+              aspect-ratio: 3 / 2 !important;
+              overflow: hidden;
+              border-radius: 15px;
+              margin-bottom: 15px;
+              position: relative;
             }
           }
 
@@ -1358,6 +1416,34 @@ export default function HomePage() {
             color: rgba(255, 255, 255, 0.7);
             font-style: italic;
             font-weight: 300;
+          }
+
+          .faq-link {
+            display: inline-block;
+            color: #00ffff;
+            text-decoration: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding: 10px 20px;
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 25px;
+            background: rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+
+          .faq-link:hover {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            border-color: rgba(0, 255, 255, 0.8);
+            background: rgba(0, 255, 255, 0.15);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
           }
 
           .promo-badge {
