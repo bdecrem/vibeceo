@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import TruncatedPrompt from "@/components/truncated-prompt"
 
 interface WtafApp {
   id: string
@@ -172,9 +173,12 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                     </div>
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <div className="prompt-showcase" onClick={() => handlePromptClick(app.original_prompt)}>
-                    "{app.original_prompt}"
-                  </div>
+                  <TruncatedPrompt
+                    prompt={app.original_prompt}
+                    maxLength={120}
+                    className="prompt-showcase"
+                    copyOnClick={true}
+                  />
                   {app.type !== 'ZAD' && (
                     <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>REMIX</button>
                   )}

@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { PromptClick } from "@/components/ui/prompt-click"
+import TruncatedPrompt from "@/components/truncated-prompt"
 
 interface WtafApp {
   id: string
@@ -213,9 +214,12 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                       )}
                     </div>
                     <div className="prompt-label">The prompt:</div>
-                    <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
-                      "{app.original_prompt}"
-                    </div>
+                    <TruncatedPrompt
+                      prompt={app.original_prompt}
+                      maxLength={120}
+                      className="prompt-showcase"
+                      copyOnClick={true}
+                    />
                     {app.type !== 'ZAD' && (
                       <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>REMIX</button>
                     )}
@@ -253,9 +257,12 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                     )}
                   </div>
                   <div className="prompt-label">The prompt:</div>
-                  <div className="prompt-showcase" onClick={(e) => handlePromptClick(e, app.original_prompt)}>
-                    "{app.original_prompt}"
-                  </div>
+                  <TruncatedPrompt
+                    prompt={app.original_prompt}
+                    maxLength={120}
+                    className="prompt-showcase"
+                    copyOnClick={true}
+                  />
                   {app.type !== 'ZAD' && (
                     <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>REMIX</button>
                   )}
