@@ -101,7 +101,7 @@ export function setupEmailWebhooks(app: Application): void {
   const upload = multer({ storage: multer.memoryStorage() });
 
   // Webhook endpoint for inbound emails (SendGrid Parse Webhook)
-  app.post('/parse-inbound', upload.any(), async (req: Request, res: Response) => {
+  app.post('/parse-inbound', upload.any() as any, async (req: any, res: any) => {
     try {
       // Debug: Log request details
       console.log('🔍 DEBUG: Content-Type:', req.get('Content-Type'));
