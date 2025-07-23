@@ -20,24 +20,27 @@
 13. `authenticateUser(userLabel, passcode)` - Authenticate existing user
 14. `greet(name)` - Backend greeting function
 
+## AI/Image Generation Functions (Available Everywhere)
+15. `generateImage(prompt, style?)` - Generate image from text description
+
 ## Real-time Features (Advanced)
-15. `enableLiveUpdates(type, callback)` - Enable live data updates
-16. `startRealtime(callback, interval)` - Start polling for changes
-17. `stopRealtime()` - Stop live updates
+16. `enableLiveUpdates(type, callback)` - Enable live data updates
+17. `startRealtime(callback, interval)` - Start polling for changes
+18. `stopRealtime()` - Stop live updates
 
 ## Advanced Auth Functions (Advanced)
-18. `onUserLogin(callback)` - Auth event handler
-19. `isAuthenticated()` - Check if user is logged in
-20. `requireAuth()` - Force authentication
+19. `onUserLogin(callback)` - Auth event handler
+20. `isAuthenticated()` - Check if user is logged in
+21. `requireAuth()` - Force authentication
 
 ## Data Function Variants (Advanced)
-21. `loadAll()` - Load all data across types
+22. `loadAll()` - Load all data across types
 
 ## Legacy Auth Functions (Backwards Compatibility)
-22. `generateNewUser()` - Legacy auth function
-23. `registerNewUser()` - Legacy auth function  
-24. `showNewUserScreen()` - Legacy auth function
-25. `loginReturningUser()` - Legacy auth function
+23. `generateNewUser()` - Legacy auth function
+24. `registerNewUser()` - Legacy auth function  
+25. `showNewUserScreen()` - Legacy auth function
+26. `loginReturningUser()` - Legacy auth function
 26. `showScreen(screenId)` - Legacy screen function
 27. `showReturningUserScreen()` - Legacy auth function
 28. `enterMainScreen()` - Legacy auth function

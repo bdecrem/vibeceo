@@ -1023,6 +1023,51 @@ async function greet(name: string): Promise<string> {
     }
 }
 
+/**
+ * Generate Image Helper Function
+ * Generates an image from a text description using AI
+ */
+async function generateImage(prompt: string, style?: string): Promise<string> {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🎨 Calling backend generateImage function for:', prompt);
+        
+        // Simple client call - all logic happens on backend
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'generate_image',
+                content_data: { 
+                    prompt: prompt,
+                    style: style || 'realistic'
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Image generation failed: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateImage function result:', result);
+        
+        // Return the generated image URL
+        return result.imageUrl;
+        
+    } catch (error) {
+        console.error('❌ GenerateImage error:', error);
+        alert(`Image generation failed: ${(error as Error).message}`);
+        return '';
+    }
+}
+
 // Make functions globally available with proper typing
 (window as any).save = save;
 (window as any).load = load;
@@ -1039,6 +1084,7 @@ async function greet(name: string): Promise<string> {
 (window as any).registerUser = registerUser;
 (window as any).authenticateUser = authenticateUser;
 (window as any).greet = greet;
+(window as any).generateImage = generateImage;
 (window as any).enableLiveUpdates = enableLiveUpdates;
 (window as any).onUserLogin = onUserLogin;
 (window as any).isAuthenticated = isAuthenticated;
@@ -1068,10 +1114,11 @@ async function greet(name: string): Promise<string> {
 (window as any).enterMainScreen = enterMainScreen;
 (window as any).leaveApp = leaveApp;
 
-console.log('🚀 ZAD Helper Functions loaded successfully - ALL 34 FUNCTIONS AVAILABLE');
+console.log('🚀 ZAD Helper Functions loaded successfully - ALL 35 FUNCTIONS AVAILABLE');
 console.log('📊 Data functions: save(), load(), loadAll(), query()');
 console.log('🔐 Auth functions: initAuth(), getCurrentUser(), updateZadAuth()');
 console.log('🌐 Backend helpers: checkAvailableSlots(), generateUser(), registerUser(), authenticateUser(), greet()');
+console.log('🎨 AI functions: generateImage()');
 console.log('⚡ Real-time: enableLiveUpdates(), startRealtime(), stopRealtime()');
 console.log('🔧 Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
 console.log('📱 Legacy auth: generateNewUser(), registerNewUser(), showNewUserScreen(), etc.');

@@ -198,27 +198,13 @@ function enterMainScreen() {
 // User labels for your app (customize these)
 const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
 
-// Required helper functions
-async function checkAvailableSlots() {
-  return await save('check_slots', {});
-}
-
-async function generateUser() {
-  return await save('generate_user', {});
-}
-
-async function registerUser(userLabel, passcode, participantId) {
-  return await save('register_user', { userLabel, passcode, participantId });
-}
-
-async function authenticateUser(userLabel, passcode) {
-  return await save('authenticate_user', { userLabel, passcode });
-}
-
-function updateZadAuth(userLabel, participantId) {
-  window.currentUserLabel = userLabel;
-  window.currentParticipantId = participantId;
-}
+// Authentication helper functions are automatically injected by the ZAD system
+// The following functions are available globally:
+// - checkAvailableSlots()
+// - generateUser()
+// - registerUser(userLabel, passcode, participantId)
+// - authenticateUser(userLabel, passcode)
+// - updateZadAuth(userLabel, participantId)
 
 initAuth();
 ```
@@ -483,6 +469,7 @@ await generateUser()               // Generate new user credentials
 await registerUser(userLabel, passcode, participantId) // Register new user
 await authenticateUser(userLabel, passcode) // Authenticate existing user
 await greet(name)                  // Backend greeting function
+await generateImage(prompt, style) // Generate AI images from text descriptions
 ```
 
 ### Real-time Features
@@ -558,6 +545,21 @@ enableLiveUpdates('messages', () => {
 
 // Custom polling interval
 startRealtime(updateWidget, 5000);      // Every 5 seconds
+```
+
+**Generate AI images:**
+```javascript
+// Generate an image for your app
+const imageUrl = await generateImage('cute golden retriever puppy');
+document.getElementById('pet-photo').src = imageUrl;
+
+// Generate with specific style
+const logoUrl = await generateImage('minimalist coffee shop logo', 'artistic');
+document.getElementById('logo').src = logoUrl;
+
+// Generate hero image
+const heroUrl = await generateImage('cyberpunk cityscape at sunset');
+document.body.style.backgroundImage = `url(${heroUrl})`;
 ```
 
 ## For WTAF Punk/Chaos Styling

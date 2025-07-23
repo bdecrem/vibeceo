@@ -404,6 +404,77 @@ export async function POST(req: NextRequest) {
       console.log('📝 Generated greeting:', greetingResult.greeting);
     }
 
+    // BACKEND HELPER FUNCTION: Handle "generate_image" action type  
+    if (action_type === 'generate_image') {
+      const { prompt, style } = content_data || {};
+      console.log('🎨 Backend helper: generateImage for app:', app_id, 'prompt:', prompt);
+      
+      if (!prompt) {
+        return NextResponse.json({ 
+          error: 'Image prompt is required',
+          success: false 
+        }, { status: 400 });
+      }
+
+      try {
+        // Initialize OpenAI client (following meme-processor pattern)
+        const { OpenAI } = await import('openai');
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+        
+        if (!OPENAI_API_KEY) {
+          console.warn('⚠️ OPENAI_API_KEY not found, using placeholder image');
+          const imageUrl = `https://picsum.photos/512/512?random=${Math.floor(Math.random() * 1000)}`;
+          return NextResponse.json({ 
+            success: true,
+            imageUrl: imageUrl,
+            prompt: prompt,
+            style: style || 'realistic'
+          }, { status: 200 });
+        }
+
+        const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+        
+        // Generate image using DALL-E 3 (same as meme-processor)
+        console.log('🎨 Generating image with DALL-E 3:', prompt);
+        const response = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: prompt,
+          size: "1024x1024",
+          quality: "standard",
+          n: 1
+        });
+
+        const imageUrl = response.data[0].url;
+        if (!imageUrl) {
+          throw new Error("No image URL in DALL-E response");
+        }
+        
+        console.log('✅ Generated image URL:', imageUrl);
+        
+        return NextResponse.json({ 
+          success: true,
+          imageUrl: imageUrl,
+          prompt: prompt,
+          style: style || 'realistic'
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('❌ Image generation error:', error);
+        
+        // Fallback to placeholder on error
+        console.warn('⚠️ Falling back to placeholder image');
+        const imageUrl = `https://picsum.photos/512/512?random=${Math.floor(Math.random() * 1000)}`;
+        
+        return NextResponse.json({ 
+          success: true,
+          imageUrl: imageUrl,
+          prompt: prompt,
+          style: style || 'realistic',
+          fallback: true
+        }, { status: 200 });
+      }
+    }
+
     // BACKEND HELPER FUNCTION: Delete record
     if (action_type === 'delete') {
       const { recordId } = content_data || {};
