@@ -1651,8 +1651,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       try {
         // Check user role for WTAF command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-        console.log(`User ${normalizedPhoneNumber} attempted WTAF command without coder/degen/operator privileges`);
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+        console.log(`User ${normalizedPhoneNumber} attempted WTAF command without coder/degen/operator/admin privileges`);
         // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
@@ -1776,8 +1776,8 @@ ${response}`;
       try {
         // Check user role for MEME command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-          console.log(`User ${normalizedPhoneNumber} attempted MEME command without coder/degen/operator privileges`);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted MEME command without coder/degen/operator/admin privileges`);
           // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
@@ -1881,7 +1881,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
       
       // Check if user has coder role to show WTAF command
-      const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator');
+      const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');
       console.log(`🔍 COMMANDS: hasCoder = ${hasCoder} (role: ${subscriber?.role})`);
       
       if (hasCoder) {
@@ -1889,7 +1889,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       }
       
       // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
-      const hasDegen = subscriber && (subscriber.role === 'degen' || subscriber.role === 'operator');
+      const hasDegen = subscriber && (subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');
       console.log(`🔍 COMMANDS: hasDegen = ${hasDegen} (role: ${subscriber?.role})`);
       
       if (hasDegen) {
@@ -1902,7 +1902,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       }
       
       // Check if user has operator role to show PUBLIC command (operator gets all degen privileges plus public)
-      const hasOperator = subscriber && subscriber.role === 'operator';
+      const hasOperator = subscriber && (subscriber.role === 'operator' || subscriber.role === 'admin');
       console.log(`🔍 COMMANDS: hasOperator = ${hasOperator} (role: ${subscriber?.role})`);
       
       if (hasOperator) {
@@ -1917,7 +1917,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasAdmin = ${hasAdmin} (role: ${subscriber?.role})`);
       
       if (hasAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible\n• (Plus all OPERATOR, DEGEN & CODER commands above)';
         console.log(`🔍 COMMANDS: Added admin commands to response`);
       } else {
         console.log(`🔍 COMMANDS: Skipping admin commands (user role: ${subscriber?.role})`);
@@ -1998,8 +1998,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           return;
         }
         
-        if (subscriber.role !== 'degen' && subscriber.role !== 'operator') {
-          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'degen/operator' required`);
+        if (subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin') {
+          console.log(`❌ User ${normalizedPhoneNumber} has role '${subscriber.role}', 'degen/operator/admin' required`);
           // Silent ignore - don't reveal command to non-degen users
           return;
         }
@@ -2477,8 +2477,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         // Check user role for INDEX command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-        console.log(`User ${normalizedPhoneNumber} attempted INDEX command without coder/degen/operator privileges`);
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+        console.log(`User ${normalizedPhoneNumber} attempted INDEX command without coder/degen/operator/admin privileges`);
         // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
@@ -2693,8 +2693,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       try {
         // Check user role for FAVE command (same as INDEX)
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen/operator privileges`);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen/operator/admin privileges`);
           // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
@@ -2988,8 +2988,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         // Check user role for SLUG command
         const subscriber = await getSubscriber(from);
-              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-        console.log(`User ${from} attempted SLUG command without coder/degen/operator privileges`);
+              if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+        console.log(`User ${from} attempted SLUG command without coder/degen/operator/admin privileges`);
         // Silent ignore - don't reveal command to non-coder/degen users
           return;
         }
@@ -3373,8 +3373,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       try {
         // Check user role for HIDE command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-          console.log(`User ${normalizedPhoneNumber} attempted HIDE command without coder/degen/operator privileges`);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted HIDE command without coder/degen/operator/admin privileges`);
           return;
         }
         
@@ -3443,8 +3443,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       try {
         // Check user role for UNHIDE command
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-          console.log(`User ${normalizedPhoneNumber} attempted UNHIDE command without coder/degen/operator privileges`);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted UNHIDE command without coder/degen/operator/admin privileges`);
           return;
         }
         
@@ -3513,8 +3513,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       try {
         // Check user role for FAVE command (same as existing FAVE)
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator')) {
-          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen/operator privileges`);
+        if (!subscriber || (subscriber.role !== 'coder' && subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted FAVE command without coder/degen/operator/admin privileges`);
           return;
         }
         
@@ -3606,10 +3606,10 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`Processing PUBLIC ZAD creation command from ${from}`);
       
       try {
-        // Check user role for PUBLIC command (operator only)
+        // Check user role for PUBLIC command (operator and admin only)
         const subscriber = await getSubscriber(normalizedPhoneNumber);
-        if (!subscriber || subscriber.role !== 'operator') {
-          console.log(`User ${normalizedPhoneNumber} attempted PUBLIC command without operator privileges`);
+        if (!subscriber || (subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted PUBLIC command without operator/admin privileges`);
           // Silent ignore - don't reveal command to non-operator users
           return;
         }
@@ -3634,44 +3634,30 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         // Get or create user slug for the operator
         const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
         
-        // Save the PUBLIC ZAD request to the processing queue
-        const { data: savedSnippet, error: saveError } = await supabase
-          .from('wtaf_content')
-          .insert([{
-            phone_number: normalizedPhoneNumber,
-            user_slug: userSlug,
-            content_data: zadRequest,
-            original_prompt: zadRequest,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            is_public: true, // Mark as public from the start
-            public_metadata: {
-              is_public_zad: true,
-              created_by_operator: subscriber.phone_number,
-              operator_request: appDescription
-            }
-          }])
-          .select()
-          .single();
-          
-        if (saveError) {
-          console.error('Error saving PUBLIC ZAD request:', saveError);
-          await sendSmsResponse(
-            from,
-            `❌ PUBLIC: Failed to save request - ${saveError.message}`,
-            twilioClient
-          );
-          return;
+        // Create filename with microsecond precision timestamp for chronological processing (same as WTAF)
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_') + '_' + String(now.getTime()).slice(-6);
+        const filename = `wtaf-snippet-${timestamp}.txt`;
+        const filePath = path.join(process.cwd(), 'data', 'wtaf', filename);
+        
+        // Ensure data/wtaf directory exists for TypeScript engine (same as WTAF)
+        const wtafDir = path.join(process.cwd(), 'data', 'wtaf');
+        if (!fs.existsSync(wtafDir)) {
+          fs.mkdirSync(wtafDir, { recursive: true });
         }
         
-        // Send confirmation
+        // Save content for TypeScript engine processing with user slug info (same format as WTAF)
+        const fileContent = `SENDER:${from}\nUSER_SLUG:${userSlug}\n${zadRequest}`;
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        
+        // Send confirmation (same style as WTAF)
         await sendSmsResponse(
           from,
-          `✅ PUBLIC ZAD app request saved!\n\n🌐 Creating: ${appDescription}\n\n📱 This will be a public collaborative app with unlimited anonymous users. Processing now...`,
+          `🌐 PUBLIC ZAD signal received. Creating unlimited anonymous collaborative app now.`,
           twilioClient
         );
         
-        console.log(`OPERATOR ${normalizedPhoneNumber} (${userSlug}) saved PUBLIC ZAD request: ${appDescription}`);
+        console.log(`OPERATOR ${normalizedPhoneNumber} (${userSlug}) saved PUBLIC ZAD request for processing: ${appDescription}`);
         
       } catch (error) {
         console.error(`Error processing PUBLIC command: ${error}`);

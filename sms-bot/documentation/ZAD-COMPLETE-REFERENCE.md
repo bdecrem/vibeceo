@@ -52,32 +52,35 @@ These fixes solve the major onclick/checkbox issues that occurred after the API 
 14. `authenticateUser(userLabel, passcode)` - Authenticate existing user
 15. `greet(name)` - Backend greeting function
 
+### AI/Image Generation Functions (Available Everywhere)
+16. `generateImage(prompt, style?)` - Generate AI images from text descriptions
+
 ### Real-time Features (Advanced)
-16. `enableLiveUpdates(type, callback)` - Enable live data updates
-17. `startRealtime(callback, interval)` - Start polling for changes
-18. `stopRealtime()` - Stop live updates
+17. `enableLiveUpdates(type, callback)` - Enable live data updates
+18. `startRealtime(callback, interval)` - Start polling for changes
+19. `stopRealtime()` - Stop live updates
 
 ### Advanced Auth Functions (Advanced)
-19. `onUserLogin(callback)` - Auth event handler
-20. `isAuthenticated()` - Check if user is logged in
-21. `requireAuth()` - Force authentication
+20. `onUserLogin(callback)` - Auth event handler
+21. `isAuthenticated()` - Check if user is logged in
+22. `requireAuth()` - Force authentication
 
 ### Legacy Auth Functions (Backwards Compatibility)
-22. `generateNewUser()` - Legacy auth function
-23. `registerNewUser()` - Legacy auth function  
-24. `showNewUserScreen()` - Legacy auth function
-25. `loginReturningUser()` - Legacy auth function
-26. `showScreen(screenId)` - Legacy screen function
-27. `showReturningUserScreen()` - Legacy auth function
-28. `enterMainScreen()` - Legacy auth function
-29. `leaveApp()` - Legacy auth function
+23. `generateNewUser()` - Legacy auth function
+24. `registerNewUser()` - Legacy auth function  
+25. `showNewUserScreen()` - Legacy auth function
+26. `loginReturningUser()` - Legacy auth function
+27. `showScreen(screenId)` - Legacy screen function
+28. `showReturningUserScreen()` - Legacy auth function
+29. `enterMainScreen()` - Legacy auth function
+30. `leaveApp()` - Legacy auth function
 
 ### Convenience Aliases (Backwards Compatibility)
-30. `saveEntry()` / `loadEntries()` - Alias for save/load
-31. `saveData()` / `loadData()` - Alias for save/load
-32. `saveItem()` / `loadItems()` - Alias for save/load  
-33. `saveNote()` / `loadNotes()` - Alias for save/load
-34. `saveMessage()` / `loadMessages()` - Alias for save/load
+31. `saveEntry()` / `loadEntries()` - Alias for save/load
+32. `saveData()` / `loadData()` - Alias for save/load
+33. `saveItem()` / `loadItems()` - Alias for save/load  
+34. `saveNote()` / `loadNotes()` - Alias for save/load
+35. `saveMessage()` / `loadMessages()` - Alias for save/load
 
 ## 🌐 SERVER-SIDE ACTION TYPES (12 Total)
 
@@ -153,10 +156,52 @@ These are triggered by calling `save()` with specific action types:
 - **Claude Template**: `sms-bot/content/builder-zad-comprehensive.txt`
 - **Backend API**: `web/app/api/zad/save/route.ts` and `web/app/api/zad/load/route.ts`
 
+## 🎨 AI IMAGE GENERATION EXAMPLES
+
+The `generateImage()` function allows ZAD apps to generate AI images using OpenAI DALL-E 3:
+
+### Basic Usage
+```javascript
+// Generate a simple image
+const imageUrl = await generateImage('cute golden retriever puppy');
+document.getElementById('pet-photo').src = imageUrl;
+
+// Generate with specific style
+const logoUrl = await generateImage('minimalist coffee shop logo', 'artistic');
+document.getElementById('logo').src = logoUrl;
+
+// Generate hero background
+const heroUrl = await generateImage('cyberpunk cityscape at sunset', 'realistic');
+document.body.style.backgroundImage = `url(${heroUrl})`;
+```
+
+### In ZAD Apps
+```javascript
+// Generate and save to collaborative database
+async function addBuilding() {
+    const description = document.getElementById('building-input').value;
+    const imageUrl = await generateImage(`Modern urban ${description} building`);
+    
+    await save('building', {
+        description: description,
+        imageUrl: imageUrl,
+        timestamp: Date.now()
+    });
+    
+    await loadLatestData(); // Refresh UI
+}
+```
+
+### Supported Styles
+- `'realistic'` (default) - Photorealistic images
+- `'artistic'` - More stylized, artistic interpretation  
+- `'cartoon'` - Cartoon/illustration style
+- `'abstract'` - Abstract art style
+
 ## ✅ VERIFICATION CHECKLIST
 
 ### For Developers
-- [ ] All 34 client functions work in test apps
+- [ ] All 35 client functions work in test apps
 - [ ] All 12 action types process correctly in backend  
 - [ ] Claude template documents all functions with examples
 - [ ] Demo mode overrides work for new functions
@@ -180,5 +225,5 @@ When adding new functions:
 6. Test in demo mode
 
 ---
-*Last Updated: After ZAD Helper Functions Consolidation*
-*Total Functions: 34 Client + 12 Action Types = 46 Total ZAD Capabilities* 
+*Last Updated: After adding generateImage AI function*
+*Total Functions: 35 Client + 12 Action Types = 47 Total ZAD Capabilities* 
