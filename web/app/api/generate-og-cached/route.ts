@@ -75,16 +75,31 @@ function extractStyling(htmlContent: string) {
           styling.backgroundColor = bgColorMatch[1].trim()
         }
         
-        // Look for background with gradient
-        const backgroundMatch = bodyCSS.match(/background(?:-image|):\s*([^;]+)/i)
-        if (backgroundMatch) {
-          const bg = backgroundMatch[1].trim()
-          if (bg.includes('linear-gradient') || bg.includes('radial-gradient')) {
-            // Clean up multi-line gradients
-            styling.gradient = bg.replace(/\s+/g, ' ').trim()
-          } else if (!bgColorMatch) {
-            // Only use as background color if we didn't already find background-color
-            styling.backgroundColor = bg
+        // Look for ALL background declarations (to handle multiple background properties)
+        const backgroundMatches = bodyCSS.match(/background(?:-image|):\s*([^;]+)/gi)
+        if (backgroundMatches) {
+          // Process all background declarations and prioritize gradients
+          let foundGradient = false
+          for (const match of backgroundMatches) {
+            const bg = match.replace(/background(?:-image|)?:\s*/i, '').trim()
+            if (bg.includes('linear-gradient') || bg.includes('radial-gradient')) {
+              // Clean up multi-line gradients
+              styling.gradient = bg.replace(/\s+/g, ' ').trim()
+              foundGradient = true
+              console.log('🎨 Found gradient in background declaration:', styling.gradient)
+            } else if (!foundGradient && !bgColorMatch) {
+              // Only use as background color if we didn't find a gradient or background-color
+              styling.backgroundColor = bg
+            }
+          }
+        }
+        
+        // Alternative approach: look for lines containing "background:" and "linear-gradient" 
+        if (!styling.gradient) {
+          const gradientLineMatch = bodyCSS.match(/background:\s*([^;]*linear-gradient[^;]*)/i)
+          if (gradientLineMatch) {
+            styling.gradient = gradientLineMatch[1].trim().replace(/\s+/g, ' ')
+            console.log('🎨 Found gradient via line match:', styling.gradient)
           }
         }
         
@@ -93,6 +108,7 @@ function extractStyling(htmlContent: string) {
           const bgFallbackMatch = bodyCSS.match(/background\s+(linear-gradient[^;]*)/i)
           if (bgFallbackMatch) {
             styling.gradient = bgFallbackMatch[1].trim().replace(/\s+/g, ' ')
+            console.log('🎨 Found gradient via fallback match:', styling.gradient)
           }
         }
         
@@ -199,23 +215,24 @@ function generateCustomHTML(title: string, userSlug: string, appSlug: string, st
         }
         
         .headline {
-            font-size: ${styling.titleSize};
+            font-size: 96px;
             font-weight: 700;
             color: ${styling.titleColor};
-            text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.4);
             text-align: center;
             text-transform: ${styling.textTransform};
             letter-spacing: ${styling.letterSpacing};
             z-index: 10;
             max-width: 90%;
             word-wrap: break-word;
+            line-height: 1.1;
         }
         
         .floating-emoji {
             position: absolute;
-            font-size: 60px;
+            font-size: 120px;
             animation: float 3s ease-in-out infinite;
-            opacity: 0.6;
+            opacity: 0.8;
         }
         
         .emoji-1 {
