@@ -1067,6 +1067,47 @@ async function greet(name) {
     }
 }
 
+// Backend Helper Function: generateImage(prompt, style)
+// Generate AI images from text descriptions
+async function generateImage(prompt, style) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🎨 Calling backend generateImage function for:', prompt);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'generate_image',
+                content_data: { 
+                    prompt: prompt,
+                    style: style || 'realistic'
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Image generation failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateImage function result:', result);
+        
+        return result.imageUrl;
+        
+    } catch (error) {
+        console.error('❌ GenerateImage error:', error);
+        alert(\`Image generation failed: \${error.message}\`);
+        return '';
+    }
+}
+
 // Load data from ZAD API
 async function load(type) {
     try {
@@ -1158,13 +1199,14 @@ async function query(type, options = {}) {
                 window.getCurrentUser = getCurrentUser;
                 window.updateZadAuth = updateZadAuth;
                 window.greet = greet; // Add greet function to window object
+                window.generateImage = generateImage; // Add generateImage function to window object
                 window.checkAvailableSlots = checkAvailableSlots;
                 window.generateUser = generateUser;
                 window.registerUser = registerUser;
                 window.authenticateUser = authenticateUser;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name)');
+                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name), generateImage(prompt, style)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 
 // DEMO MODE: Complete demo mode implementation with localStorage isolation
