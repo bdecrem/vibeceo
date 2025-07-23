@@ -258,6 +258,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
     let { senderPhone, userSlug, userPrompt } = fileData;
     const { coach, cleanPrompt } = requestInfo;
     
+    // Store the original user input before any processing for database storage
+    const originalUserInput = userPrompt;
+    
     // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
     let forceAdminPath = false;
     let isMinimalTest = false;
@@ -1027,7 +1030,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                     coach || "unknown", 
                     userSlug, 
                     senderPhone, 
-                    completePrompt
+                    originalUserInput
                 );
                 
                 if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
@@ -1043,7 +1046,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                         coach || "unknown", 
                         userSlug, 
                         senderPhone, 
-                        `Admin dashboard for ${userPrompt}`, 
+                        `Admin dashboard for ${originalUserInput}`, 
                         publicResult.appSlug
                     );
                     
@@ -1059,7 +1062,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             } else {
                 // Single page deployment
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, completePrompt);
+                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, originalUserInput);
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
