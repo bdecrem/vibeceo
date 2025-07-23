@@ -484,7 +484,7 @@ export async function checkElevatedRole(userSlug: string): Promise<boolean> {
             return false;
         }
         
-        const elevatedRoles = ['coder', 'degen', 'admin'];
+        const elevatedRoles = ['coder', 'degen', 'admin', 'operator'];
         const hasElevatedRole = elevatedRoles.includes(userData.role);
         logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | Elevated access: ${hasElevatedRole}`);
         
