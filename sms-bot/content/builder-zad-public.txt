@@ -1,6 +1,8 @@
-# WTAF Public ZAD Builder - Zero Authentication Prompt V1
+# WTAF Public ZAD Builder - Zero Authentication Prompt V2
 
-You are building a PUBLIC collaborative web app using our zero-admin database system with WTAF's signature style. This is a PUBLIC ZAD app with unlimited anonymous users - NO authentication required!
+🚨 CRITICAL: You MUST build a PUBLIC collaborative web app using our zero-admin database system. This is NOT a demo or prototype - it MUST use real ZAD database functions for persistent data storage. This is a PUBLIC ZAD app with unlimited anonymous users - NO authentication required!
+
+⚠️ MANDATORY: You MUST use save() and load() functions for ALL data operations. Do NOT create demo apps or use local storage only. ALL data must persist in the ZAD database and be shared across all users in real-time.
 
 ## Quick Start (This is all most apps need!)
 ```javascript
@@ -82,6 +84,14 @@ initPublicMode()          // Initialize public mode (call this once)
 
 **That's all you need for 90% of public apps!**
 
+🚨 CRITICAL REQUIREMENT: Your app MUST use these ZAD functions:
+- MUST call `initPublicMode()` on page load
+- MUST use `await save('dataType', yourData)` to store data
+- MUST use `await load('dataType')` to retrieve data
+- MUST implement auto-refresh with `loadLatestData()` every 2 seconds
+- Data MUST persist across page reloads and be visible to all users
+- DO NOT use localStorage, sessionStorage, or any local-only storage
+
 ### 4. NO Authentication Required - Public Mode Only
 
 **Simple Public App Structure:**
@@ -90,7 +100,6 @@ initPublicMode()          // Initialize public mode (call this once)
     <div id="main-screen" class="screen active">
         <h1>[Your Public App Name]</h1>
         <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
-        <p class="public-notice">📢 This is a public app - anyone can participate!</p>
         
         <!-- YOUR APP GOES HERE -->
         <div id="app-content">
@@ -127,8 +136,18 @@ const ANON_LABELS = [
 // - generateAnonymousUser() - Auto-generates anonymous credentials
 // - updateZadAuth(userLabel, participantId) - Sets up auth state
 
-// Initialize public mode on page load
+// 🚨 MANDATORY: Initialize public mode on page load
 initPublicMode();
+
+// 🚨 MANDATORY: Implement data loading function
+async function loadLatestData() {
+    // YOU MUST IMPLEMENT THIS - Load your app's data using load() function
+    // Example: const items = await load('your_data_type');
+    // Then update your UI with the loaded data
+}
+
+// 🚨 MANDATORY: Start auto-refresh immediately
+startPolling();
 ```
 
 ### 5. Auto-Refresh (Just Add This)
@@ -191,16 +210,6 @@ h1 {
   margin: 0 0 20px 0;
 }
 
-.public-notice {
-  background: #2a4a2a;
-  border: 1px solid #4a6a4a;
-  color: #8fbc8f;
-  padding: 12px;
-  border-radius: 6px;
-  margin: 10px 0;
-  text-align: center;
-  font-weight: bold;
-}
 
 button {
   background: #ff0066;
@@ -550,6 +559,18 @@ Before returning code, verify:
 - NO markdown, NO code blocks
 - Start with `<!DOCTYPE html>`
 - Raw HTML only
+
+## 🚨 FINAL CHECKLIST - VERIFY BEFORE RETURNING CODE:
+- [ ] initPublicMode() is called on page load
+- [ ] save() function is used to store user data
+- [ ] load() function is used to retrieve data from database
+- [ ] loadLatestData() function is implemented and loads real data
+- [ ] startPolling() is called to enable auto-refresh
+- [ ] Data persists across page reloads (not just local DOM manipulation)
+- [ ] Multiple users can see each other's contributions in real-time
+- [ ] NO use of localStorage, sessionStorage, or local-only storage
+
+❌ IF ANY OF THESE ARE MISSING, THE APP WILL NOT WORK. Do not submit code that fails this checklist.
 
 ---
 
