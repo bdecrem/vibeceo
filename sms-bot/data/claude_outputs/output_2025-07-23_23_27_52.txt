@@ -1,0 +1,273 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII CRITTER WALL 💀</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff2e93;
+            --neon-blue: #3f88ff; 
+            --neon-green: #00ffc6;
+            --neon-purple: #7c3aed;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            background: linear-gradient(to right, var(--neon-pink), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255,46,147,0.5);
+            animation: glitch 5s infinite;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .critter-card {
+            background: #222;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .critter-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .critter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue));
+            animation: rainbow 3s linear infinite;
+        }
+
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            text-align: center;
+            color: #fff;
+            margin: 1rem 0;
+            font-size: 14px;
+        }
+
+        .contributor {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .picker {
+            background: #222;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            background: var(--neon-purple);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(124,58,237,0.5);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            transition: all 0.1s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(10deg); }
+            40% { transform: skew(-10deg); }
+            60% { transform: skew(5deg); }
+            80% { transform: skew(-5deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .easter-egg {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--neon-pink);
+            padding: 2rem;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .container { padding: 1rem; }
+            .gallery { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ASCII CRITTER WALL</h1>
+        
+        <div class="gallery" id="gallery">
+            <!-- Sample critter -->
+            <div class="critter-card">
+                <div class="ascii-art">
+  ∧＿∧
+（｡･ω･｡)つ━☆・*。
+⊂　　 ノ 　　　・゜+.
+　しーＪ　　　°。+ *´¨)
+　　　　　　　　　.· ´¸.·*´¨) ¸.·*¨)
+　　　　　　　　　　(¸.·´ (¸.·'* ☆
+                </div>
+                <div class="contributor">by CyberWitch99</div>
+            </div>
+        </div>
+
+        <div class="picker">
+            <div class="ascii-art" id="currentCritter">
+    /\___/\
+   (  o o  )
+   (  =^=  ) 
+    (---)--
+            </div>
+            <button class="btn" id="nextBtn">Next Critter</button>
+            <button class="btn" id="selectBtn">I Want This One!</button>
+        </div>
+    </div>
+
+    <div class="easter-egg" id="easterEgg">
+        🎉 YOU FOUND THE SECRET CRITTER PARTY! 🎉
+    </div>
+
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="3">✨</div>
+    <div class="floating-emoji" style="top: 20%; left: 80%;" data-value="2">🌟</div>
+    <div class="floating-emoji" style="top: 70%; left: 15%;" data-value="4">💫</div>
+    <div class="floating-emoji" style="top: 80%; left: 85%;" data-value="5">⭐</div>
+
+    <script>
+        const critters = [
+            `    /\___/\
+   (  o o  )
+   (  =^=  ) 
+    (---)--`,
+            `  ∧＿∧
+（｡･ω･｡)つ━☆・*。
+⊂　　 ノ 　　　・゜+.
+　しーＪ　　　°。+ *´¨)`,
+            `   /\\_/\\
+  ( o.o )
+   > ^ <`
+        ];
+
+        let currentIndex = 0;
+        const currentCritter = document.getElementById('currentCritter');
+        const gallery = document.getElementById('gallery');
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % critters.length;
+            currentCritter.textContent = critters[currentIndex];
+        });
+
+        document.getElementById('selectBtn').addEventListener('click', () => {
+            const name = prompt('What's your name, critter friend?');
+            if (name) {
+                addCritterToGallery(critters[currentIndex], name);
+            }
+        });
+
+        function addCritterToGallery(critter, name) {
+            const card = document.createElement('div');
+            card.className = 'critter-card';
+            card.innerHTML = `
+                <div class="ascii-art">${critter}</div>
+                <div class="contributor">by ${name}</div>
+            `;
+            gallery.prepend(card);
+        }
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach(emoji => {
+                const speed = emoji.getAttribute('data-value');
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                emoji.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg - type WTAF
+        let secretCode = '';
+        document.addEventListener('keydown', (e) => {
+            secretCode += e.key.toLowerCase();
+            if (secretCode.includes('wtaf')) {
+                document.getElementById('easterEgg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('easterEgg').style.display = 'none';
+                }, 3000);
+                secretCode = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

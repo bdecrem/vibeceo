@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-potential-ground-demolishing.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://theaf-web.ngrok.io/bart/potential-ground-demolishing" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Virtual Street Builder</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            background: #1a1a1a;
+        }
+
+        /* Header section - centered container */
+        .header-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #ff0066, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff0066, #ff00ff);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+            transform: skew(-5deg);
+            box-shadow: 4px 4px 0 #ff00ff;
+        }
+
+        button:hover {
+            transform: skew(-5deg) translateY(-2px);
+        }
+
+        button:active {
+            transform: skew(-5deg) scale(0.98);
+        }
+
+        input, select, textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Full-bleed street container */
+        .street-container {
+            width: 100vw;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 20px 0;
+            margin: 0;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            background: #111;
+        }
+
+        .street-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Building cards with minimal gaps */
+        .building {
+            display: inline-block;
+            margin-right: 2px;
+            vertical-align: top;
+            width: 300px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .building img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .building-info {
+            padding: 15px;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .building-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .building-desc {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .building-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Centered form container */
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+        }
+
+        #add-building-form {
+            background: #2a2a2a;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        #add-building-form h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        /* User status in header */
+        #user-status {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* Auth screens - keep centered */
+        .auth-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            margin-top: 50px;
+        }
+
+        @media (min-width: 600px) {
+            .header-section, .form-container {
+                padding: 30px;
+            }
+            
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .building {
+                width: 280px;
+            }
+        }
+    </style>
+<script>
+// ZAD Helper Functions - Inline version for test apps
+
+// SIMPLIFIED UUID INJECTION: Set window.APP_ID for backup
+window.APP_ID = 'fb56abb6-bd0c-45b0-9c00-74e5af7b3440';
+console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', 'fb56abb6-bd0c-45b0-9c00-74e5af7b3440');
+
+console.log('🚀 Loading ZAD Helper Functions (inline)...');
+
+// Auth state - Use existing global currentUser or create zadCurrentUser
+let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
+let authInitialized = false;
+
+// Get app ID from window.APP_ID (set by system) - ENHANCED DEBUG VERSION
+function getAppId() {
+    console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', 'fb56abb6-bd0c-45b0-9c00-74e5af7b3440');
+    return 'fb56abb6-bd0c-45b0-9c00-74e5af7b3440';
+}
+
+                // Get participant ID - return stored ID or generate temporary one
+                function getParticipantId() {
+                    let participantId = localStorage.getItem('zad_participant_id');
+                    if (!participantId) {
+                        // Check if demo mode is enabled (multiple detection methods for iframe compatibility)
+                        const isDemoMode = 
+                            window.location.search.includes('demo=true') ||
+                            window.parent?.location?.search?.includes('demo=true') ||
+                            window.top?.location?.search?.includes('demo=true') ||
+                            document.referrer.includes('demo=true');
+                        
+                        // Clear demo mode if not detected in current session
+                        if (!isDemoMode) {
+                            localStorage.removeItem('demo_mode');
+                            // Also clear participant_id if it was a demo ID, so user gets fresh normal ID
+                            const existingId = localStorage.getItem('zad_participant_id');
+                            if (existingId && existingId.startsWith('demo_')) {
+                                localStorage.removeItem('zad_participant_id');
+                                localStorage.removeItem('zad_username');
+                            }
+                        }
+                        
+                        if (isDemoMode) {
+                            // Generate demo ID that will trigger backend demo table routing
+                            participantId = 'demo_user_' + Math.random().toString(36).substr(2, 8);
+                            localStorage.setItem('demo_mode', 'true');
+                            localStorage.setItem('zad_username', 'Demo User');
+                            console.log('🎭 Demo mode detected - generated demo participant ID:', participantId);
+                        } else {
+                            // Generate temporary ID - app's authentication system will set the real one
+                            participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                            localStorage.setItem('zad_username', 'Anonymous');
+                        }
+                        
+                        localStorage.setItem('zad_participant_id', participantId);
+                    }
+                    return participantId;
+                }
+
+                // Get username from current session
+                function getUsername() {
+                    // Ensure participant ID is initialized first (which sets up localStorage)
+                    getParticipantId();
+                    return localStorage.getItem('zad_username') || 'Anonymous';
+                }
+
+                // Update ZAD helper functions with app's authentication state
+                function updateZadAuth(userLabel, participantId) {
+                    localStorage.setItem('zad_participant_id', participantId);
+                    localStorage.setItem('zad_username', userLabel);
+                    zadCurrentUser = {
+                        username: userLabel,
+                        participantId: participantId
+                    };
+                    console.log('🔄 Updated ZAD auth state:', zadCurrentUser);
+                }
+
+                // Initialize authentication (simplified)
+                function initAuth() {
+                    console.log('🔐 Initializing authentication...');
+                    if (authInitialized) return;
+                    authInitialized = true;
+                    
+                    // Don't clear localStorage or prompt during initialization
+                    // Let the app's authentication system handle user setup
+                    zadCurrentUser = {
+                        username: getUsername(),
+                        participantId: localStorage.getItem('zad_participant_id') || null
+                    };
+                    
+                    console.log('✅ Authentication ready:', zadCurrentUser);
+                }
+
+                // Get current user (compatible with zad-helpers.ts)
+                function getCurrentUser() {
+                    if (!zadCurrentUser) return null;
+                    
+                    return {
+                        username: zadCurrentUser.username || getUsername(),
+                        id: zadCurrentUser.participantId || getParticipantId(),
+                        userLabel: zadCurrentUser.username || getUsername(),
+                        participantId: zadCurrentUser.participantId || getParticipantId(),
+                        passcode: zadCurrentUser.passcode || null
+                    };
+                }
+
+// Save data to ZAD API
+async function save(type, data) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        const zadData = {
+            app_id: app_id,
+            participant_id: participant_id,
+            participant_data: {
+                userLabel: username,
+                username: username
+            },
+            action_type: type,
+            content_data: {
+                ...data,
+                timestamp: data.timestamp || Date.now(),
+                author: data.author || username
+            }
+        };
+        
+        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(zadData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error('Save failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Saved successfully:', result);
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        alert(`Failed to save: ${error.message}`);
+        throw error;
+    }
+}
+
+// Phase 1 Authentication Backend Helper Functions
+// These call the backend API with specific action types
+
+// Backend Helper 1: Check Available Slots
+async function checkAvailableSlots() {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔍 Calling backend checkAvailableSlots for app:', app_id);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'check_slots',
+                content_data: {}
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Check slots failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend checkAvailableSlots result:', result.slots);
+        
+        return result.slots;
+        
+    } catch (error) {
+        console.error('❌ Check slots error:', error);
+        alert(`Failed to check available slots: ${error.message}`);
+        return { totalSlots: 5, usedSlots: 0, availableSlots: 5, availableLabels: [], usedLabels: [], isFull: false };
+    }
+}
+
+// Backend Helper 2: Generate User Credentials
+async function generateUser() {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🎲 Calling backend generateUser for app:', app_id);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'generate_user',
+                content_data: {}
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Generate user failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateUser result:', result);
+        
+        if (!result.success) {
+            alert(result.error || 'Failed to generate user');
+            return null;
+        }
+        
+        return result.user;
+        
+    } catch (error) {
+        console.error('❌ Generate user error:', error);
+        alert(`Failed to generate user: ${error.message}`);
+        return null;
+    }
+}
+
+// Backend Helper 3: Register User
+async function registerUser(userLabel, passcode, participantId) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('📝 Calling backend registerUser for app:', app_id, 'user:', userLabel);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'register_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode,
+                    participantId: participantId
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Register user failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend registerUser result:', result);
+        
+        if (!result.success) {
+            alert(result.result?.error || 'Registration failed');
+            return { success: false, error: result.result?.error };
+        }
+        
+        return result.result;
+        
+    } catch (error) {
+        console.error('❌ Register user error:', error);
+        alert(`Registration failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper 4: Authenticate User
+async function authenticateUser(userLabel, passcode) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔐 Calling backend authenticateUser for app:', app_id, 'user:', userLabel);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'authenticate_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Authentication failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend authenticateUser result:', result);
+        
+        if (!result.success) {
+            alert(result.result?.error || 'Authentication failed');
+            return { success: false, error: result.result?.error };
+        }
+        
+        return result.result;
+        
+    } catch (error) {
+        console.error('❌ Authentication error:', error);
+        alert(`Authentication failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper Function Test: greet(name)
+// This demonstrates how backend helper functions work - all logic happens on server
+async function greet(name) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🤖 Calling backend greet function for:', name);
+        
+        // Simple client call - all logic happens on backend
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'greet',
+                content_data: { name: name }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Greet failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend greet function result:', result);
+        
+        // Return the backend-generated greeting
+        return result.greeting;
+        
+    } catch (error) {
+        console.error('❌ Greet error:', error);
+        alert(`Greet failed: ${error.message}`);
+        return 'Error generating greeting';
+    }
+}
+
+// Backend Helper Function: generateImage(prompt, style)
+// Generate AI images from text descriptions
+async function generateImage(prompt, style) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🎨 Calling backend generateImage function for:', prompt);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'generate_image',
+                content_data: { 
+                    prompt: prompt,
+                    style: style || 'realistic'
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Image generation failed: ${response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateImage function result:', result);
+        
+        return result.imageUrl;
+        
+    } catch (error) {
+        console.error('❌ GenerateImage error:', error);
+        alert(`Image generation failed: ${error.message}`);
+        return '';
+    }
+}
+
+// Load data from ZAD API
+async function load(type) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        
+        console.log('🔄 Loading from ZAD API:', { app_id, type, participant_id });
+        
+        const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(type)}&participant_id=${encodeURIComponent(participant_id)}`;
+        console.log('🔍 ZAD load URL:', url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error('Load failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const data = await response.json();
+        console.log('✅ Loaded successfully:', data);
+        
+        // Transform ZAD data back to simple format
+        return data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+        
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        alert(`Failed to load: ${error.message}`);
+        return [];
+    }
+}
+
+// Query data from ZAD API with flexible filtering
+async function query(type, options = {}) {
+    try {
+        const app_id = getAppId();
+        
+        console.log('🔍 Querying ZAD API:', { app_id, type, options });
+        
+        const queryData = {
+            app_id: app_id,
+            action_type: 'query',
+            content_data: {
+                type: type,
+                ...options
+            }
+        };
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(queryData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error('Query failed: ${errorData.error || response.statusText}: ' + (error?.message || 'Unknown error'));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Query completed successfully:', result);
+        
+        // Transform ZAD data back to simple format
+        return result.data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+        
+    } catch (error) {
+        console.error('❌ Query error:', error);
+        alert(`Failed to query: ${error.message}`);
+        return [];
+    }
+}
+
+                // Make functions globally available
+                window.initAuth = initAuth;
+                window.save = save;
+                window.load = load;
+                window.query = query;
+                window.getAppId = getAppId;
+                window.getParticipantId = getParticipantId;
+                window.getUsername = getUsername;
+                window.getCurrentUser = getCurrentUser;
+                window.updateZadAuth = updateZadAuth;
+                window.greet = greet; // Add greet function to window object
+                window.generateImage = generateImage; // Add generateImage function to window object
+                window.checkAvailableSlots = checkAvailableSlots;
+                window.generateUser = generateUser;
+                window.registerUser = registerUser;
+                window.authenticateUser = authenticateUser;
+
+console.log('🚀 ZAD Helper Functions loaded successfully');
+                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name), generateImage(prompt, style)');
+console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
+
+// DEMO MODE: Complete demo mode implementation with localStorage isolation
+if (window.location.search.includes('demo=true')) {
+    console.log('🎭 DEMO MODE - Activating complete demo mode');
+    
+    // Create fake demo user credentials
+    let demoUser = {
+        userLabel: 'Demo User',
+        participantId: 'demo-user-' + Math.random().toString(36).substr(2, 8),
+        username: 'Demo User'
+    };
+    
+    // Override ZAD helper functions to use localStorage instead of backend
+    const originalSave = window.save;
+    window.save = async function(type, data) {
+        try {
+            const demoKey = `demo_${type}_${demoUser.participantId}`;
+            const existing = JSON.parse(localStorage.getItem(demoKey) || '[]');
+            
+            const newItem = {
+                id: Date.now(),
+                created_at: new Date().toISOString(),
+                author: data.author || demoUser.userLabel,
+                ...data
+            };
+            
+            existing.push(newItem);
+            localStorage.setItem(demoKey, JSON.stringify(existing));
+            
+            console.log('🎭 Demo save:', { type, data: newItem });
+            return { success: true, data: newItem };
+            
+        } catch (error) {
+            console.error('❌ Demo save error:', error);
+            return { success: false, error: error.message };
+        }
+    };
+    
+    const originalLoad = window.load;
+    window.load = async function(type) {
+        try {
+            const demoKey = `demo_${type}_${demoUser.participantId}`;
+            const data = JSON.parse(localStorage.getItem(demoKey) || '[]');
+            
+            // Transform demo data to match real ZAD API structure
+            const transformedData = data.map(item => {
+                // Extract metadata fields
+                const { id, created_at, author, ...contentData } = item;
+                
+                // Return in same format as real ZAD API: content_data contains the actual data
+                return {
+                    id: id,
+                    created_at: created_at,
+                    content_data: contentData,
+                    author: author || demoUser.userLabel
+                };
+            });
+            
+            console.log('🎭 Demo load:', { type, count: transformedData.length });
+            return transformedData;
+            
+        } catch (error) {
+            console.error('❌ Demo load error:', error);
+            return [];
+        }
+    };
+    
+    // Override authentication functions to work with demo user
+    window.getCurrentUser = function() {
+        return demoUser;
+    };
+    
+    window.getUsername = function() {
+        return demoUser.userLabel;
+    };
+    
+    window.getParticipantId = function() {
+        return demoUser.participantId;
+    };
+    
+    // Set global currentUser for apps that expect it
+    if (typeof window.currentUser === 'undefined') {
+        window.currentUser = demoUser;
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Hide welcome/auth screens and show main screen
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+        
+        if (welcomeScreen && mainScreen) {
+            welcomeScreen.style.display = 'none';
+            mainScreen.style.display = 'block';
+            console.log('🎭 Auth screens bypassed for demo mode');
+        }
+        
+        // Add demo banner if user status exists
+        const userStatus = document.getElementById('user-status');
+        if (userStatus) {
+            userStatus.innerHTML = '🎭 DEMO MODE - Try it out! Data saved locally.';
+        }
+        
+        // Update user display elements
+        const userLabelElements = document.querySelectorAll('#current-user-label, .current-user-label');
+        userLabelElements.forEach(elem => {
+            elem.textContent = demoUser.userLabel;
+        });
+        
+        // Auto-initialize demo user authentication state
+        if (typeof window.updateZadAuth === 'function') {
+            window.updateZadAuth(demoUser.userLabel, demoUser.participantId);
+        }
+        
+        console.log('🎭 Demo mode fully activated:', demoUser);
+    });
+}
+
+</script>
+</head>
+<body>
+    <!-- Auth screens with centered containers -->
+    <div id="welcome-screen" class="screen active">
+        <div class="auth-container">
+            <h1>Virtual Street Builder</h1>
+            <p>Create a collaborative street of imaginative buildings!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+    </div>
+    
+    <div id="new-user-screen" class="screen">
+        <div class="auth-container">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+    </div>
+    
+    <div id="returning-user-screen" class="screen">
+        <div class="auth-container">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+    </div>
+    
+    <!-- Main app with full-bleed gallery -->
+    <div id="main-screen" class="screen">
+        <div class="app-container">
+            <!-- Header section - centered -->
+            <div class="header-section">
+                <h1>Virtual Street</h1>
+                <div id="user-status">Architect: <span id="current-user-label"></span></div>
+            </div>
+            
+            <!-- Full-bleed street gallery -->
+            <div class="street-container" id="street-view"></div>
+            
+            <!-- Centered input form -->
+            <div class="form-container">
+                <div id="add-building-form">
+                    <h2>Add Your Building</h2>
+                    <input type="text" id="building-name" placeholder="Building Name" maxlength="50">
+                    <textarea id="building-description" placeholder="Describe your building or place in detail. Be specific about architectural style, colors, and unique features. Example: A towering art deco skyscraper with copper-green spires and geometric golden patterns..."></textarea>
+                    <button onclick="addBuilding()">Generate & Add Building</button>
+                </div>
+                
+                <button onclick="showScreen('welcome-screen')">Leave Street</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Auth boilerplate
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Street is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // App-specific functions
+        async function addBuilding() {
+            const name = document.getElementById('building-name').value.trim();
+            const description = document.getElementById('building-description').value.trim();
+            
+            if (!name || !description) {
+                alert('Please provide both name and description');
+                return;
+            }
+
+            const prompt = `Front view of a stylized ${description}. Straight-on perspective, consistent lighting, architectural illustration style, minimalist background, Monument Valley meets editorial illustration aesthetic. Building should fill the frame.`;
+            
+            try {
+                const imageUrl = await generateImage(prompt, 'architectural');
+                await save('building', {
+                    name,
+                    description,
+                    imageUrl,
+                    created_at: new Date().toISOString()
+                });
+                
+                document.getElementById('building-name').value = '';
+                document.getElementById('building-description').value = '';
+                
+                await loadLatestData();
+            } catch (error) {
+                alert('Error generating building. Please try again.');
+            }
+        }
+
+        async function loadLatestData() {
+            const buildings = await load('building');
+            
+            // Sort by creation date
+            buildings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            const streetView = document.getElementById('street-view');
+            streetView.innerHTML = buildings.map(building => `
+                <div class="building">
+                    <img src="${building.imageUrl}" alt="${building.name}">
+                    <div class="building-info">
+                        <div class="building-title">${building.name}</div>
+                        <div class="building-desc">${building.description}</div>
+                        <div class="building-meta">Created by ${building.author}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

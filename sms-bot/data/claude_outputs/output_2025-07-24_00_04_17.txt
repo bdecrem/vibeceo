@@ -1,0 +1,304 @@
+Here's a complete ASCII critter wall using ZAD database for real-time public sharing:
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ASCII Critter Wall</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+    font-family: monospace;
+    background: #0a0a0a;
+    color: #fff;
+    margin: 0;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+.critter-wall {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.critter-tile {
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.critter-tile:hover {
+    transform: scale(1.05);
+}
+
+.critter-ascii {
+    white-space: pre;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.critter-name {
+    font-size: 8px;
+    margin-top: 5px;
+    opacity: 0.8;
+}
+
+.critter-author {
+    font-size: 8px;
+    opacity: 0.6;
+}
+
+.controls {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+button {
+    background: #ff0066;
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 16px;
+    min-height: 44px;
+    width: 100%;
+}
+
+input {
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 16px;
+    border-radius: 6px;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 16px;
+    min-height: 44px;
+}
+
+#preview {
+    background: #333;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+@media (min-width: 600px) {
+    button { width: auto; }
+    .controls { display: flex; gap: 10px; align-items: center; }
+    input { margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+    
+    <div id="critter-wall" class="critter-wall">
+        <!-- Critters load here -->
+    </div>
+
+    <div class="controls">
+        <button onclick="prevCritter()">← Prev</button>
+        <div id="preview">
+            <pre id="current-critter"></pre>
+        </div>
+        <button onclick="nextCritter()">Next →</button>
+        <input type="text" id="critter-name" placeholder="Name your critter" maxlength="20">
+        <button onclick="saveCritter()">Add to Wall</button>
+    </div>
+</div>
+
+<script>
+// ASCII critter library
+const critters = [
+`  /\\___/\\
+ (  o o  )
+ (  =^=  )
+  (______)`,
+
+`   /\\___/\\
+  (  \'o\'  )
+  (  =^=  )
+   (_____)`,
+
+`  /\\,,,/\\
+ (  \'.\'.  )
+ (  =^=  )
+  (_____)`,
+
+`   ^---^
+  (* - *)
+  (  =  )
+   (---)`,
+
+`  /\\___/\\
+ ( o   o )
+ (  wwv  )
+  (_____)`,
+
+`  /\\---/\\
+ (  \'.\'  )
+ (  >.<  )
+  (_____)`,
+
+`   /\\-/\\
+  (o.o )
+  (>.<)
+   ---`,
+
+`  ^-.-^
+ (o o )
+ (---)
+  UUU`,
+
+`  /\\___/\\
+ ( -   - )
+ (  =w=  )
+  (_____)`,
+
+`   /\\-/\\
+  (o.o )
+  (>^<)
+   ---`,
+
+`  /\\___/\\
+ (  \'.\'  )
+ (  =^=  )
+  (_____)`,
+
+`   ^--^
+  (o.o)
+  (>.<)
+   ---`,
+
+`  /\\___/\\
+ (  *.*  )
+ (  =^=  )
+  (_____)`,
+
+`   /\\-/\\
+  (o_o )
+  (>^<)
+   ---`,
+
+`  /\\___/\\
+ (  T.T  )
+ (  =^=  )
+  (_____)`,
+];
+
+const colors = [
+    '#ff3333', '#3333ff', '#33ff33', '#9933ff', 
+    '#ff9933', '#ffff33', '#ff3399', '#33ffff',
+    '#ff33ff', '#99ff33'
+];
+
+let currentIndex = 0;
+let currentUser = null;
+
+// Initialize public mode
+async function initPublicMode() {
+    currentUser = await generateAnonymousUser();
+    if (currentUser?.success) {
+        updateZadAuth(currentUser.userLabel, currentUser.participantId);
+        document.getElementById('current-user-label').textContent = currentUser.userLabel;
+        startPolling();
+        loadLatestData();
+    }
+}
+
+// Load and display critters
+async function loadLatestData() {
+    const savedCritters = await load('critter');
+    const wall = document.getElementById('critter-wall');
+    wall.innerHTML = '';
+    
+    savedCritters.forEach(critter => {
+        const tile = document.createElement('div');
+        tile.className = 'critter-tile';
+        tile.style.backgroundColor = critter.color || colors[Math.floor(Math.random() * colors.length)];
+        
+        tile.innerHTML = `
+            <div class="critter-ascii">${critter.ascii}</div>
+            <div class="critter-name">${critter.name}</div>
+            <div class="critter-author">by ${critter.author}</div>
+        `;
+        
+        wall.appendChild(tile);
+    });
+}
+
+// Navigation functions
+function prevCritter() {
+    currentIndex = (currentIndex - 1 + critters.length) % critters.length;
+    updatePreview();
+}
+
+function nextCritter() {
+    currentIndex = (currentIndex + 1) % critters.length;
+    updatePreview();
+}
+
+function updatePreview() {
+    document.getElementById('current-critter').textContent = critters[currentIndex];
+}
+
+// Save new critter
+async function saveCritter() {
+    const name = document.getElementById('critter-name').value.trim();
+    if (!name) {
+        alert('Please name your critter!');
+        return;
+    }
+    
+    await save('critter', {
+        name: name,
+        ascii: critters[currentIndex],
+        color: colors[Math.floor(Math.random() * colors.length)]
+    });
+    
+    document.getElementById('critter-name').value = '';
+    await loadLatestData();
+}
+
+// Auto-refresh polling
+let pollingInterval;
+
+function startPolling() {
+    pollingInterval = setInterval(() => loadLatestData(), 2000);
+}
+
+function stopPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+}
+
+// Initialize
+initPublicMode();
+updatePreview();
+</script>
+</body>
+</html>

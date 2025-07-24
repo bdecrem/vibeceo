@@ -1,0 +1,148 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STORM MOLE EXPLORING</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --punk-pink: #ff2e93;
+            --punk-yellow: #ffd700;
+            --punk-black: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--punk-black);
+            color: white;
+            line-height: 1.6;
+        }
+
+        .hero {
+            min-height: 100vh;
+            padding: 2rem;
+            background: linear-gradient(45deg, var(--punk-black), #2a2a2a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glitch-title {
+            font-size: 4rem;
+            color: var(--punk-pink);
+            text-transform: uppercase;
+            text-shadow: 2px 2px var(--punk-yellow);
+            animation: glitch 1s infinite;
+            margin-bottom: 2rem;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--punk-yellow);
+            margin-bottom: 2rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border: 2px solid var(--punk-pink);
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,46,147,0.2);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--punk-pink);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            background: var(--punk-yellow);
+            color: var(--punk-black);
+            transform: scale(1.05);
+        }
+
+        @keyframes glitch {
+            0% {
+                text-shadow: 2px 2px var(--punk-yellow);
+            }
+            25% {
+                text-shadow: -2px 2px #0ff;
+            }
+            50% {
+                text-shadow: 2px -2px #f0f;
+            }
+            75% {
+                text-shadow: -2px -2px var(--punk-yellow);
+            }
+            100% {
+                text-shadow: 2px 2px var(--punk-yellow);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .glitch-title {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1 class="glitch-title">Storm Mole Exploring</h1>
+        <p class="subtitle">Dive deep. Track storms. Get weird.</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Storm Tracking</h3>
+                <p>Real-time storm data visualization with underground perspective. Because weather is punk.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Mole Network</h3>
+                <p>Connect with fellow storm chasers in our underground community. Share intel. Stay radical.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Weather Anarchy</h3>
+                <p>Break the rules of traditional meteorology. Create your own weather rebellion.</p>
+            </div>
+        </div>
+
+        <a href="#explore" class="cta-button">Start Exploring</a>
+    </div>
+</body>
+</html>
+```

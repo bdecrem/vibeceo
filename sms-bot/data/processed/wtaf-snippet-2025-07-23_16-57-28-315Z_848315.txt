@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+build a ZAD app where friends can each describe an building that then gets generated and added to their shared image gallery. Buildings should have consistent lighting, scale, and mood—but the architecture should be imaginative and playful, like something you’d see in a stylized indie animation or art-house game. Think Monument Valley meets editorial illustration.

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Birthday Wishes Wall</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #ff66b2;
+        }
+
+        .public-notice {
+            background: #2a4a2a;
+            border: 1px solid #4a6a4a;
+            color: #8fbc8f;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .wish-card {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff0066;
+        }
+
+        .wish-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .wish-signature {
+            color: #ff66b2;
+            font-style: italic;
+            text-align: right;
+            font-size: 16px;
+        }
+
+        .wish-date {
+            color: #888;
+            font-size: 14px;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        #user-status {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .emoji-decor {
+            font-size: 24px;
+            margin: 0 5px;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="main-screen" class="screen active">
+            <h1>
+                <span class="emoji-decor">🎂</span>
+                Birthday Wishes Wall
+                <span class="emoji-decor">🎈</span>
+            </h1>
+            
+            <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+            
+            <p class="public-notice">📢 Add your birthday wish to the wall! Everyone is welcome!</p>
+
+            <div id="wish-form">
+                <textarea id="wish-text" placeholder="Write your birthday wish here..." maxlength="500"></textarea>
+                <button onclick="submitWish()">Post Birthday Wish 🎉</button>
+            </div>
+
+            <div id="wishes-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const wishes = await load('birthday_wish');
+            updateUI(wishes);
+        }
+
+        function updateUI(wishes) {
+            const container = document.getElementById('wishes-container');
+            
+            // Sort wishes by creation date, newest first
+            const sortedWishes = wishes.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            );
+
+            container.innerHTML = sortedWishes.map(wish => `
+                <div class="wish-card">
+                    <div class="wish-text">${escapeHtml(wish.message)}</div>
+                    <div class="wish-signature">- ${wish.author}</div>
+                    <div class="wish-date">${formatDate(wish.created_at)}</div>
+                </div>
+            `).join('');
+        }
+
+        async function submitWish() {
+            const wishText = document.getElementById('wish-text').value.trim();
+            
+            if (!wishText) {
+                alert('Please write a wish first!');
+                return;
+            }
+
+            await save('birthday_wish', {
+                message: wishText,
+                created_at: new Date().toISOString()
+            });
+
+            document.getElementById('wish-text').value = '';
+            await loadLatestData();
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        // Initialize the app
+        initPublicMode();
+    </script>
+</body>
+</html>

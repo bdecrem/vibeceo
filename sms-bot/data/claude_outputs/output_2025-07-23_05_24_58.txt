@@ -1,0 +1,86 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collaborative City Builder</title>
+<style>
+  body, html { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
+  #canvas { display: block; background: linear-gradient(to bottom, #87CEEB, #F0F8FF); }
+  #form { position: fixed; top: 10px; left: 10px; z-index: 10; }
+  #form input { padding: 10px; font-size: 16px; }
+  #form button { padding: 10px; font-size: 16px; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="form">
+  <input type="text" id="buildingInput" placeholder="Type a building (e.g., Coffee Shop)">
+  <button onclick="addBuilding()">Add Building</button>
+</div>
+<script>
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  var buildings = [];
+  var scrollOffset = 0;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+
+  function generateImage(type) {
+    var img = document.createElement('canvas');
+    img.width = 100;
+    img.height = 200;
+    var imgCtx = img.getContext('2d');
+    imgCtx.fillStyle = '#333';
+    imgCtx.fillRect(0, 0, img.width, img.height);
+    imgCtx.fillStyle = '#FFF';
+    imgCtx.font = '20px Arial';
+    imgCtx.fillText(type, 10, 50);
+    return img;
+  }
+
+  function addBuilding() {
+    var input = document.getElementById('buildingInput');
+    var type = input.value.trim();
+    if (type) {
+      buildings.push({ type: type, image: generateImage(type) });
+      input.value = '';
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    var x = -scrollOffset;
+    buildings.forEach(function(building) {
+      ctx.drawImage(building.image, x, window.innerHeight - building.image.height);
+      x += building.image.width + 10;
+    });
+  }
+
+  function update() {
+    scrollOffset += 2;
+    if (scrollOffset > buildings.length * 110) {
+      scrollOffset = 0;
+    }
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+  gameLoop();
+</script>
+</body>
+</html>
+```

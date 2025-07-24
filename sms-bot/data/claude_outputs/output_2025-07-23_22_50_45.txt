@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>ASCII Critter Picker</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input, select {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .critter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .critter-option {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .critter-option:hover {
+            background: #3a3a3a;
+        }
+
+        .critter-option.selected {
+            background: #ff0066;
+        }
+
+        .critter-art {
+            white-space: pre;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+
+        .critter-name {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .wall {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .wall-critter {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .wall-owner {
+            margin-top: 10px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>ASCII Critter Picker</h1>
+            <p style="text-align: center">Choose your critter friend!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>Pick Your Critter</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+
+            <div class="critter-grid" id="critter-options"></div>
+
+            <h2>The Critter Wall</h2>
+            <div id="critter-wall" class="wall"></div>
+
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        const CRITTERS = [
+            {
+                name: "Mischievous Cat",
+                art: ` /\\___/\\
+( =^.^=)
+ (")_(")
+  |_|_|
+  /_/_/`
+            },
+            {
+                name: "Shy Ghost",
+                art: `  .-.-.
+ (o w o)
+  (   )
+ ( '-' )
+  \\___/`
+            },
+            {
+                name: "Curious Frog",
+                art: ` /\\___/\\
+(  o.o )
+ ( >-< )
+ (")_(")
+  \\___/`
+            },
+            {
+                name: "Sleepy Bear",
+                art: ` /\\___/\\
+( -.-. )
+ (_("))_
+  |   |
+  /_/_/`
+            },
+            {
+                name: "Proud Duck",
+                art: `  _,,_
+ (o><o)
+ (")_/
+  / \\
+ /_._\\`
+            },
+            {
+                name: "Happy Bunny",
+                art: ` /\\__/\\
+(='.'=)
+(\")_(\")
+ |   |
+ /_._\\`
+            },
+            {
+                name: "Wise Owl",
+                art: ` /\\___/\\
+((o,o))
+ ({_})
+  / \\
+ /_._\\`
+            },
+            {
+                name: "Silly Pig",
+                art: ` /\\___/\\
+((*'^'*))
+ ((._.))
+  |   |
+ /_._\\`
+            },
+            {
+                name: "Cool Dog",
+                art: ` /\\___/\\
+( B-) B)
+ (")_(")
+  |   |
+ /_._\\`
+            }
+        ];
+
+        let currentUser = null;
+        let pollingInterval;
+        let selectedCritter = null;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const selections = await load('critter_selection');
+            updateWall(selections);
+        }
+
+        function updateWall(selections) {
+            const wall = document.getElementById('critter-wall');
+            
+            // Get latest selection for each user
+            const latestSelections = selections.reduce((acc, selection) => {
+                if (!acc[selection.author] || 
+                    new Date(selection.created_at) > new Date(acc[selection.author].created_at)) {
+                    acc[selection.author] = selection;
+                }
+                return acc;
+            }, {});
+
+            wall.innerHTML = Object.values(latestSelections).map(selection => `
+                <div class="wall-critter">
+                    <div class="critter-art">${CRITTERS[selection.critterIndex].art}</div>
+                    <div class="wall-owner">Chosen by ${selection.author}</div>
+                </div>
+            `).join('');
+        }
+
+        function showCritterOptions() {
+            const container = document.getElementById('critter-options');
+            container.innerHTML = CRITTERS.map((critter, index) => `
+                <div class="critter-option" onclick="selectCritter(${index})">
+                    <div class="critter-art">${critter.art}</div>
+                    <div class="critter-name">${critter.name}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectCritter(index) {
+            document.querySelectorAll('.critter-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelectorAll('.critter-option')[index].classList.add('selected');
+            
+            await save('critter_selection', {
+                critterIndex: index,
+                created_at: new Date().toISOString()
+            });
+            
+            await loadLatestData();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            showCritterOptions();
+            startPolling();
+            loadLatestData();
+        }
+
+        // Auth boilerplate
+        let currentUser = null;
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

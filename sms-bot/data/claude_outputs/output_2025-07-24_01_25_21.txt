@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Neon Chat</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a2e;
+            --neon: #39ff14;
+            --text: #ffffff;
+            --text-dim: #a0a0b8;
+            --border: #2a2a3e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #141420;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 60px rgba(57, 255, 20, 0.05);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2 {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--neon);
+            text-shadow: 0 0 20px currentColor;
+            margin: 0 0 20px 0;
+        }
+
+        button {
+            background: var(--neon);
+            color: var(--bg);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            margin: 8px 0;
+            min-height: 44px;
+            width: 100%;
+            display: block;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(57, 255, 20, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        input, select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 14px 16px;
+            border-radius: 8px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            min-height: 44px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--neon);
+            box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.1);
+        }
+
+        .message {
+            background: var(--surface);
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .message.own {
+            background: rgba(57, 255, 20, 0.1);
+            border-color: rgba(57, 255, 20, 0.3);
+            margin-left: 20%;
+        }
+
+        .message:not(.own) {
+            margin-right: 20%;
+        }
+
+        .message .author {
+            color: var(--neon);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .message .time {
+            color: var(--text-dim);
+            font-size: 12px;
+            float: right;
+        }
+
+        #user-status {
+            padding: 8px 16px;
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .screen { 
+            display: none;
+            height: 100%;
+        }
+        
+        .screen.active { 
+            display: flex;
+            flex-direction: column;
+        }
+
+        #messages-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding-right: 10px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .input-area button {
+            width: auto;
+        }
+
+        @media (min-width: 600px) {
+            body { 
+                padding: 20px; 
+            }
+            
+            .app-container { 
+                padding: 30px;
+                height: 90vh;
+            }
+            
+            button:not(.input-area button) { 
+                width: auto; 
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Neon Chat</h1>
+            <p>Chat with your friends in style!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <div id="user-status">Chatting as <span id="current-user-label"></span></div>
+            
+            <div id="messages-container"></div>
+            
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type your message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Chat is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (text) {
+                await save('message', {
+                    text,
+                    timestamp: new Date().toISOString()
+                });
+                
+                input.value = '';
+                await loadLatestData();
+                
+                const container = document.getElementById('messages-container');
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadLatestData() {
+            const messages = await load('message');
+            const container = document.getElementById('messages-container');
+            
+            const html = messages
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                .map(msg => {
+                    const isOwn = msg.author === currentUser.userLabel;
+                    return `
+                        <div class="message ${isOwn ? 'own' : ''}">
+                            <div class="author">${msg.author}</div>
+                            <div class="text">${msg.text}</div>
+                            <div class="time">${formatTime(msg.created_at)}</div>
+                        </div>
+                    `;
+                })
+                .join('');
+            
+            container.innerHTML = html;
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

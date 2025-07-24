@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Urban Street Builder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input, select, textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .building-card {
+            background: #2a2a2a;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 8px;
+        }
+
+        .building-image {
+            width: 100%;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .building-meta {
+            font-size: 14px;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #888;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Urban Street Builder</h1>
+            <p>Create your dream buildings and see them come to life in a shared urban landscape.</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Urban Street Builder</h1>
+            <div id="user-status">Architect: <span id="current-user-label"></span></div>
+            
+            <div id="app-content">
+                <div id="building-form">
+                    <textarea id="building-description" 
+                        placeholder="Describe your building (e.g., 'A 30-story modern glass skyscraper with a rooftop garden and curved facade')"></textarea>
+                    <button onclick="generateBuilding()">Generate Building</button>
+                </div>
+
+                <div id="loading" class="loading" style="display: none">
+                    Generating your building...
+                </div>
+
+                <div id="gallery">
+                    <h2>Our Urban Street</h2>
+                    <div id="buildings-container"></div>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isGenerating = false;
+
+        // Standard auth functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Building generation and display
+        async function generateBuilding() {
+            if (isGenerating) return;
+            
+            const description = document.getElementById('building-description').value.trim();
+            if (!description) {
+                alert('Please describe your building!');
+                return;
+            }
+
+            // Enhance prompt for consistency
+            const enhancedPrompt = `Modern urban building: ${description}. Style: Clean architectural lines, dramatic lighting, photorealistic, consistent with modern city architecture, wide angle view`;
+
+            isGenerating = true;
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const imageUrl = await generateImage(enhancedPrompt, 'photographic');
+                await save('building', {
+                    description,
+                    imageUrl,
+                    created_at: new Date().toISOString()
+                });
+                
+                document.getElementById('building-description').value = '';
+                await loadLatestData();
+            } catch (error) {
+                alert('Failed to generate building. Please try again.');
+            } finally {
+                isGenerating = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function loadLatestData() {
+            const buildings = await load('building');
+            
+            // Sort by newest first
+            buildings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const container = document.getElementById('buildings-container');
+            container.innerHTML = buildings.map(building => `
+                <div class="building-card">
+                    <img src="${building.imageUrl}" alt="Generated building" class="building-image">
+                    <p>${building.description}</p>
+                    <div class="building-meta">
+                        Created by ${building.author} on ${new Date(building.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Polling setup
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>
