@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>AMY's Birthday Card! 🎂</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #ff66aa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #ff0066;
+        }
+
+        .public-notice {
+            background: #2a4a2a;
+            border: 1px solid #4a6a4a;
+            color: #8fbc8f;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input, textarea {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .birthday-wish {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff0066;
+        }
+
+        .wish-message {
+            font-size: 18px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .wish-author {
+            color: #ff66aa;
+            font-weight: bold;
+        }
+
+        .wish-time {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        #user-status {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .emoji-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="main-screen" class="screen active">
+            <h1>🎂 Happy Birthday AMY! 🎉</h1>
+            
+            <div id="user-status">Signing as: <span id="current-user-label"></span></div>
+            
+            <div class="public-notice">
+                📢 Sign Amy's birthday card! Everyone can add their wishes!
+            </div>
+
+            <form id="wish-form" onsubmit="submitWish(event)">
+                <textarea 
+                    id="message" 
+                    placeholder="Write your birthday message for Amy here..."
+                    required
+                ></textarea>
+                
+                <input 
+                    type="text" 
+                    id="name" 
+                    placeholder="Your name (optional - will use anonymous name if empty)"
+                >
+                
+                <button type="submit">🎁 Send Birthday Wish!</button>
+            </form>
+
+            <h2 style="margin-top: 30px; color: #ff66aa;">Birthday Wishes</h2>
+            <div id="wishes-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        async function loadLatestData() {
+            const wishes = await load('birthday_wish');
+            const sortedWishes = wishes.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            );
+            
+            const container = document.getElementById('wishes-container');
+            container.innerHTML = sortedWishes.map(wish => `
+                <div class="birthday-wish">
+                    <div class="wish-message">${wish.message}</div>
+                    <div class="wish-author">
+                        ${wish.customName ? '❤️ ' + wish.customName : '🎈 ' + wish.author}
+                    </div>
+                    <div class="wish-time">
+                        ${new Date(wish.created_at).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function submitWish(event) {
+            event.preventDefault();
+            
+            const message = document.getElementById('message').value;
+            const customName = document.getElementById('name').value.trim();
+            
+            await save('birthday_wish', {
+                message,
+                customName
+            });
+
+            // Clear form
+            document.getElementById('message').value = '';
+            document.getElementById('name').value = '';
+
+            // Create emoji animation
+            createEmojiRain();
+
+            // Refresh data
+            await loadLatestData();
+        }
+
+        function createEmojiRain() {
+            const emojis = ['🎂', '🎉', '🎈', '🎁', '🎊', '💝', '🌟'];
+            const container = document.createElement('div');
+            container.className = 'emoji-rain';
+            
+            for (let i = 0; i < 20; i++) {
+                const emoji = document.createElement('div');
+                emoji.style.position = 'absolute';
+                emoji.style.left = Math.random() * 100 + 'vw';
+                emoji.style.top = -20 + 'px';
+                emoji.style.fontSize = '20px';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                // Animation
+                emoji.animate([
+                    { transform: 'translateY(0) rotate(0deg)' },
+                    { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)` }
+                ], {
+                    duration: 1500 + Math.random() * 1000,
+                    easing: 'linear'
+                });
+
+                container.appendChild(emoji);
+            }
+
+            document.body.appendChild(container);
+            setTimeout(() => container.remove(), 2000);
+        }
+
+        // Initialize the app
+        initPublicMode();
+    </script>
+</body>
+</html>

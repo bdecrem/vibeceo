@@ -1,0 +1,101 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLO_WORLD.EXE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(45deg, #FF2E93, #3F88FF);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            overflow: hidden;
+            animation: gradientShift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 8vw;
+            margin: 0;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.8),
+                0 0 20px rgba(255,46,147,0.8),
+                0 0 30px rgba(63,136,255,0.8);
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        .floating {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #emoji1 { top: -100px; left: 20%; animation-delay: 0s; }
+        #emoji2 { bottom: -80px; right: 25%; animation-delay: 1s; }
+        #emoji3 { top: 50%; left: -50px; animation-delay: 2s; }
+        #emoji4 { top: 30%; right: -30px; animation-delay: 3s; }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="floating" id="emoji1">💾</span>
+        <span class="floating" id="emoji2">⚡</span>
+        <span class="floating" id="emoji3">🌀</span>
+        <span class="floating" id="emoji4">✨</span>
+        <h1>HELLO, WORLD!</h1>
+    </div>
+    <div class="prompt">Generated from: Simple Hello World request</div>
+
+    <script>
+        // Easter egg: Type 'hello' to trigger rainbow mode
+        let typed = '';
+        document.addEventListener('keypress', (e) => {
+            typed += e.key;
+            if(typed.includes('hello')) {
+                document.body.style.animation = 'gradientShift 5s ease infinite';
+                typed = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```

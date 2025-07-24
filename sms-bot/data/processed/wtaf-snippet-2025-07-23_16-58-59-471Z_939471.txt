@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+build a ZAD app where friends can each describe an building that then gets generated and added to their shared image gallery. The style should be consistent: elegant but hand-drawn, like a New Yorker cartoon or a vintage magazine illustration. Use consistent line weights, shadowing, and muted but rich color schemes. Prioritize visual storytelling and subtle humor

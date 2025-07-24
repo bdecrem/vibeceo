@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Our Street Builder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+        }
+
+        button {
+            background: #ff0066;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+        }
+
+        button:hover {
+            background: #ff3388;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input, select {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Street View Styles */
+        .street-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 20px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .street {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            min-width: min-content;
+        }
+
+        .building {
+            flex: 0 0 auto;
+            width: 300px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .building img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .building-info {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #ff0066;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Our Street Builder</h1>
+            <p>Build a street together with your friends! Add buildings and watch them appear.</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Our Street</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div id="app-content">
+                <div class="add-building-form">
+                    <input type="text" id="building-description" 
+                           placeholder="Describe your building (e.g., Modern Coffee Shop)"
+                           minlength="3"
+                           maxlength="100">
+                    <button onclick="addBuilding()">Add Building</button>
+                </div>
+
+                <div class="street-container">
+                    <div id="street" class="street">
+                        <!-- Buildings will be added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isGenerating = false;
+
+        // Auth System
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Street Builder Functions
+        async function addBuilding() {
+            if (isGenerating) return;
+            
+            const description = document.getElementById('building-description').value.trim();
+            if (description.length < 3) {
+                alert('Please enter a longer description');
+                return;
+            }
+
+            isGenerating = true;
+            const streetEl = document.getElementById('street');
+            const loadingEl = document.createElement('div');
+            loadingEl.className = 'building loading';
+            loadingEl.textContent = 'Generating building...';
+            streetEl.appendChild(loadingEl);
+
+            try {
+                // Generate image with consistent style prompt
+                const imagePrompt = `${description}, modern urban architecture, clean lines, street view, consistent lighting, photorealistic`;
+                const imageUrl = await generateImage(imagePrompt, 'photorealistic');
+
+                // Save building data
+                await save('building', {
+                    description: description,
+                    imageUrl: imageUrl
+                });
+
+                document.getElementById('building-description').value = '';
+                await loadLatestData();
+            } catch (error) {
+                alert('Failed to generate building. Please try again.');
+                loadingEl.remove();
+            }
+
+            isGenerating = false;
+        }
+
+        // Polling System
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const buildings = await load('building');
+            const streetEl = document.getElementById('street');
+            
+            // Sort by creation date
+            buildings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            // Create HTML for buildings
+            streetEl.innerHTML = buildings.map(building => `
+                <div class="building">
+                    <img src="${building.imageUrl}" alt="${building.description}">
+                    <div class="building-info">
+                        <p>${building.description}</p>
+                        <small>Added by ${building.author}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helper functions for auth system
+        async function checkAvailableSlots() {
+            return await window.checkAvailableSlots();
+        }
+
+        async function generateUser() {
+            return await window.generateUser();
+        }
+
+        async function registerUser(userLabel, passcode, participantId) {
+            return await window.registerUser(userLabel, passcode, participantId);
+        }
+
+        async function authenticateUser(userLabel, passcode) {
+            return await window.authenticateUser(userLabel, passcode);
+        }
+
+        function updateZadAuth(userLabel, participantId) {
+            window.currentUserLabel = userLabel;
+            window.currentParticipantId = participantId;
+        }
+
+        // Initialize auth system
+        initAuth();
+    </script>
+</body>
+</html>

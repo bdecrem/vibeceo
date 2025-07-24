@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make a zad app that lets a group of users choose from a list of 9 ascii "critters" and then adds their selection to a shared wall. The ASCII ART should look like this: Each critter should be exactly 5–7 lines tall, centered, and made only with clean, readable keyboard characters. Each should have a distinct vibe (e.g. mischievous cat, shy ghost, curious frog). Prioritize simplicity, personality, and charm — not complexity. The critters should be easy to recognize and cute at a glance, like they belong in a retro terminal sticker pack or early web chatroom. Each face should be the emotional core. Use expressive eyes and mouths. Avoid overly dense linework, extra limbs, or confusing outlines.
