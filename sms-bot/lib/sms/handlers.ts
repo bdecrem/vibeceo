@@ -26,6 +26,91 @@ export function formatPhoneForPlatform(phoneNumber: string, platform: 'sms' | 'w
   return platform === 'whatsapp' ? `whatsapp:${cleanNumber}` : cleanNumber;
 }
 
+// Helper function to split long messages into chunks
+export function splitMessageIntoChunks(message: string, maxLength: number = 1600): string[] {
+  if (message.length <= maxLength) {
+    return [message];
+  }
+
+  const chunks: string[] = [];
+  let currentChunk = '';
+  const lines = message.split('\n');
+
+  for (const line of lines) {
+    // If adding this line would exceed the limit
+    if (currentChunk.length + line.length + 1 > maxLength) {
+      // If current chunk has content, save it
+      if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
+        currentChunk = '';
+      }
+      
+      // If single line is longer than max, split it
+      if (line.length > maxLength) {
+        const words = line.split(' ');
+        let wordChunk = '';
+        
+        for (const word of words) {
+          if (wordChunk.length + word.length + 1 > maxLength) {
+            if (wordChunk.trim()) {
+              chunks.push(wordChunk.trim());
+            }
+            wordChunk = word;
+          } else {
+            wordChunk += (wordChunk ? ' ' : '') + word;
+          }
+        }
+        
+        if (wordChunk.trim()) {
+          currentChunk = wordChunk + '\n';
+        }
+      } else {
+        currentChunk = line + '\n';
+      }
+    } else {
+      currentChunk += (currentChunk ? '\n' : '') + line;
+    }
+  }
+
+  // Add any remaining content
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+}
+
+// Helper function to send chunked messages
+export async function sendChunkedSmsResponse(
+  to: string,
+  message: string,
+  twilioClient: TwilioClient,
+  maxLength: number = 1500
+): Promise<void> {
+  // Use 1500 as default to leave room for continuation indicators
+  const chunks = splitMessageIntoChunks(message, maxLength);
+  
+  for (let i = 0; i < chunks.length; i++) {
+    let chunk = chunks[i];
+    
+    // Add continuation indicator if there are multiple chunks
+    if (chunks.length > 1) {
+      if (i < chunks.length - 1) {
+        chunk += `\n\n(${i + 1}/${chunks.length} - continued...)`;
+      } else {
+        chunk = `(${i + 1}/${chunks.length} - final)\n\n` + chunk;
+      }
+    }
+    
+    await sendSmsResponse(to, chunk, twilioClient);
+    
+    // Small delay between chunks to ensure order
+    if (i < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+}
+
 // Global variable for next daily message - set at 7am, used at 9am
 let nextDailyMessage: any = null;
 
@@ -2671,7 +2756,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         pageList += `To set index: INDEX [number] or INDEX CREATIONS`;
         
-        await sendSmsResponse(from, pageList, twilioClient);
+        await sendChunkedSmsResponse(from, pageList, twilioClient);
         console.log(`Listed ${filteredContent.length} pages for user ${from} (${userSlug})`);
         return;
         
@@ -3995,6 +4080,12 @@ async function sendSmsResponse(
     const fromNumber = platform === 'whatsapp' 
       ? (process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+18663300015')  // Your verified WhatsApp Business number
       : process.env.TWILIO_PHONE_NUMBER;
+    
+    // Enforce 1600 character limit
+    if (message.length > 1600) {
+      console.error(`Message length ${message.length} exceeds 1600 character limit. Truncating...`);
+      message = message.substring(0, 1597) + '...';
+    }
     
     const response = await twilioClient.messages.create({
       body: message,
