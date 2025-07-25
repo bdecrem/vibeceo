@@ -187,8 +187,8 @@ async function run() {
     const metadata = await extractMetadata(html);
     console.log('📝 Metadata:', metadata);
 
-    const USE_ORIGINAL_HTML_DIRECTLY = false;
-    const USE_WRAPPER_OVERLAY = true;
+    const USE_ORIGINAL_HTML_DIRECTLY = true;
+    const USE_WRAPPER_OVERLAY = false;
 
     let ogHtml;
 
