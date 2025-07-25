@@ -384,9 +384,53 @@ export default function WebtoysSitePage() {
           </div>
           
           <div className="trending-grid">
+            {/* Static Example 1 - replacing Bronze Wolf Singing */}
+            <div className="trending-card">
+              <div className="trending-preview site magic-cursor">
+                🌮
+              </div>
+              <div className="trending-info">
+                <div className="prompt-label">What's this:</div>
+                <div className="prompt-text">"WTAF Create a game where you catch falling tacos with a sombrero"</div>
+                <div className="trending-stats">
+                  <span className="remix-count">🔥 12 remixes</span>
+                  <span className="timestamp">Born today</span>
+                </div>
+                <div className="trending-actions">
+                  <a href="#" className="btn-view">Play Game</a>
+                  <button className="btn-remix" onClick={() => handleTrendingRemixClick("taco-catch-game")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Static Example 2 - replacing Feature Ideas Board */}
+            <div className="trending-card">
+              <div className="trending-preview site magic-cursor">
+                😸
+              </div>
+              <div className="trending-info">
+                <div className="prompt-label">What's this:</div>
+                <div className="prompt-text">"WTAF Make a meme generator but only for cat photos"</div>
+                <div className="trending-stats">
+                  <span className="remix-count">🔥 8 remixes</span>
+                  <span className="timestamp">Dropped yesterday</span>
+                </div>
+                <div className="trending-actions">
+                  <a href="#" className="btn-view">Make Memes</a>
+                  <button className="btn-remix" onClick={() => handleTrendingRemixClick("cat-meme-gen")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             {trendingLoading ? (
               // Loading state
-              Array.from({ length: 4 }).map((_, index) => (
+              Array.from({ length: 2 }).map((_, index) => (
                 <div key={index} className="trending-card">
                   <div className="trending-preview site magic-cursor">
                     ⏳
@@ -410,7 +454,7 @@ export default function WebtoysSitePage() {
               ))
             ) : trendingApps.length > 0 ? (
               // Dynamic content from API
-              trendingApps.slice(0, 4).map((app, index) => (
+              trendingApps.slice(0, 2).map((app, index) => (
                 <div key={app.id} className="trending-card">
                   <div className="trending-preview og-image magic-cursor">
                     <img 
