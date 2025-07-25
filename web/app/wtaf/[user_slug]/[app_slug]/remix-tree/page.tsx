@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import CopiedModal from "@/components/ui/copied-modal"
+import CopiedModal from "../../../../components/ui/copied-modal"
 
 interface AppNode {
   id: string
