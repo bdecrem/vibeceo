@@ -1062,27 +1062,27 @@ export default function WebtoysSitePage() {
         
         .steps-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 3rem;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.5rem;
           margin-top: 3rem;
         }
         
         .step-card {
           text-align: center;
-          padding: 2rem;
+          padding: 1.5rem;
         }
         
         .step-number {
           display: inline-block;
-          width: 80px;
-          height: 80px;
+          width: 60px;
+          height: 60px;
           background: var(--yellow);
           border: 4px solid var(--charcoal);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 2rem;
+          font-size: 1.75rem;
           font-weight: 900;
           margin: 0 auto 1.5rem;
           box-shadow: 0 6px 0 var(--yellow-soft);
