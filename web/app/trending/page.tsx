@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import TruncatedPrompt from "@/components/truncated-prompt"
 import Pagination from "@/components/ui/pagination"
+import CopiedModal from "@/components/ui/copied-modal"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -77,8 +78,12 @@ export default function TrendingPage() {
     const remixCommand = `REMIX ${appSlug}`
     const success = await copyToClipboard(remixCommand)
     if (success) {
-      showCopiedNotification("REMIX command copied!")
+      showCopiedNotification(remixCommand)
     }
+  }
+
+  const closeCopiedModal = () => {
+    setCopiedNotification({ show: false, text: "" })
   }
 
   const getTimestampLabel = (createdAt: string) => {
@@ -128,7 +133,7 @@ export default function TrendingPage() {
 
   useEffect(() => {
     // Set page title
-    document.title = "Trending - WEBTOYS.ai"
+    document.title = "Trending - WEBTOYS"
     fetchTrendingData(currentPage)
   }, [currentPage, fetchTrendingData])
 
@@ -174,13 +179,12 @@ export default function TrendingPage() {
 
   return (
     <>
-      {/* Copied Notification */}
-      {copiedNotification.show && (
-        <div className="copied-notification">
-          <span className="copied-text">{copiedNotification.text}</span>
-          <span className="copied-checkmark">✨</span>
-        </div>
-      )}
+      {/* Copied Modal */}
+      <CopiedModal 
+        show={copiedNotification.show}
+        text={copiedNotification.text}
+        onClose={closeCopiedModal}
+      />
 
       {/* Floating shapes */}
       <div className="floating-shape shape1"></div>
@@ -192,7 +196,7 @@ export default function TrendingPage() {
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
-          <Link href="/" className="logo">WEBTOYS.ai</Link>
+          <Link href="/" className="logo">WEBTOYS</Link>
           <div className="nav-links">
             <Link href="/" className="back-link">
               ← Back to Home

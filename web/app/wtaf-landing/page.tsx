@@ -210,8 +210,8 @@ export default function WebtoysSitePage() {
                 <span className="sms-number">Try it!<br />Text +1-866-330-0015 with:</span>
               </div>
               <div className="sms-examples">
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a sushi restaurant site with 80s vibes")}>
-                  "WTAF Build me a sushi restaurant site with 80s vibes"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a fun sushi bar site")}>
+                  "WTAF Build me a fun sushi bar site"
                 </div>
                 <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Create a game where you catch falling tacos")}>
                   "WTAF Create a game where you catch falling tacos"
@@ -251,10 +251,10 @@ export default function WebtoysSitePage() {
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"Build me a sushi restaurant site with 80s nostalgia vibes"</div>
+                <div className="prompt-text">"Build me a fun sushi bar site"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">View Site</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a sushi restaurant site with 80s nostalgia vibes")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -502,7 +502,7 @@ export default function WebtoysSitePage() {
             <a href="#">Help</a>
           </div>
           <p className="footer-copyright">
-            © 2024 WEBTOYS.ai • Made with ✨ and a sprinkle of chaos
+            © 2024 WEBTOYS • Made with ✨ and a sprinkle of chaos
           </p>
         </div>
       </footer>
