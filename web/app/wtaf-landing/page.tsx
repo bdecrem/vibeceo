@@ -332,7 +332,7 @@ export default function WebtoysSitePage() {
       <section className="how-it-works" id="how">
         <div className="steps-container">
           <div className="section-header">
-            <h2 className="section-title">Magic in 3 Steps</h2>
+            <h2 className="section-title">HOW IT WORKS</h2>
             <p className="section-subtitle">From idea to internet in minutes</p>
           </div>
           
