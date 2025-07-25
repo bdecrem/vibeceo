@@ -342,10 +342,9 @@ export default function WebtoysSitePage() {
                 onMouseEnter={(e) => handleStepHover(e.currentTarget)}
                 onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
               >1</div>
-              <h3 className="step-title">Text Your Idea</h3>
+              <h3 className="step-title">Try it</h3>
               <p className="step-description">
-                Send any idea to (866) 330-0015. Be specific or be vague – 
-                our AI loves a creative challenge!
+                Browse web toys made by others.
               </p>
             </div>
             
@@ -355,10 +354,9 @@ export default function WebtoysSitePage() {
                 onMouseEnter={(e) => handleStepHover(e.currentTarget)}
                 onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
               >2</div>
-              <h3 className="step-title">We Build Magic</h3>
+              <h3 className="step-title">Remix</h3>
               <p className="step-description">
-                Our AI gets to work, crafting your vision into reality. 
-                Usually takes just 2-5 minutes!
+                Copy a REMIX code, text it with your changes to +1-866-330-0015 (WhatsApp works too).
               </p>
             </div>
             
@@ -368,10 +366,9 @@ export default function WebtoysSitePage() {
                 onMouseEnter={(e) => handleStepHover(e.currentTarget)}
                 onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
               >3</div>
-              <h3 className="step-title">Get Your Link</h3>
+              <h3 className="step-title">Make your own</h3>
               <p className="step-description">
-                Receive a link to your creation. Share it, embed it, 
-                or remix it into something new!
+                Text us what you want. We'll turn your idea into a tiny web app.
               </p>
             </div>
           </div>
