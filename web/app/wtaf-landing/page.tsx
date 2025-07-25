@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import CopiedModal from "@/components/ui/copied-modal"
 
 interface WtafApp {
   id: string
@@ -55,12 +56,9 @@ export default function WebtoysSitePage() {
   }
 
   const handleRemixClick = async (example: string) => {
-    const remixPrompt = prompt('Remix this idea:', example)
-    if (remixPrompt) {
-      const success = await copyToClipboard(remixPrompt)
-      if (success) {
-        showCopiedNotification(remixPrompt)
-      }
+    const success = await copyToClipboard(example)
+    if (success) {
+      showCopiedNotification(example)
     }
   }
 
@@ -169,38 +167,16 @@ export default function WebtoysSitePage() {
   return (
     <>
       {/* Copied Modal */}
-      {copiedNotification.show && (
-        <div className="modal-overlay" onClick={closeCopiedModal}>
-          <div className="copied-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <button className="close-button" onClick={closeCopiedModal}>×</button>
-              <div className="header-center">
-                <div className="success-icon">✨</div>
-                <h3 className="modal-title">Copied!</h3>
-              </div>
-              <div className="header-spacer"></div>
-            </div>
-            <div className="modal-body">
-              <p className="instruction-text">
-                Now text this to <span className="phone-number">+1-866-330-0015</span>
-              </p>
-              <div className="copied-text-display">
-                {copiedNotification.text}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="got-it-button" onClick={closeCopiedModal}>
-                Got it!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CopiedModal 
+        show={copiedNotification.show}
+        text={copiedNotification.text}
+        onClose={closeCopiedModal}
+      />
 
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
-          <a href="#" className="logo">WEBTOYS.ai</a>
+          <a href="#" className="logo">WEBTOYS</a>
           <ul className="nav-links">
             <li><a href="#how">How it Works</a></li>
             <li><Link href="/featured">Gallery</Link></li>
@@ -221,31 +197,30 @@ export default function WebtoysSitePage() {
             <h1 className="hero-title">
               <span className="line1">Text It</span>
               <span className="line2">We Build It</span>
-              <span className="line3">Web Magic via SMS</span>
+              <span className="line3">Web Toys over SMS</span>
             </h1>
             
             <p className="hero-description">
-              One text. Infinite possibilities. We turn your SMS into 
-              stunning web pages, fun games, viral memes, and working apps.
+              Chat apps, a paint toy, a todo list, and other web weirdness over SMS. Remix anything. YMMV. New tricks added daily.
             </p>
             
             <div className="phone-display">
               <div className="sms-header">
                 <span className="sms-icon">💬</span>
-                <span className="sms-number">(866) 330-0015</span>
+                <span className="sms-number">Try it!<br />Text +1-866-330-0015 with:</span>
               </div>
               <div className="sms-examples">
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Build me a sushi restaurant site with 80s vibes")}>
-                  "Build me a sushi restaurant site with 80s vibes"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a sushi restaurant site with 80s vibes")}>
+                  "WTAF Build me a sushi restaurant site with 80s vibes"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Create a game where you catch falling tacos")}>
-                  "Create a game where you catch falling tacos"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Create a game where you catch falling tacos")}>
+                  "WTAF Create a game where you catch falling tacos"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Make a meme generator for my cat photos")}>
-                  "Make a meme generator for my cat photos"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Make a meme generator for my cat photos")}>
+                  "WTAF Make a meme generator for my cat photos"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("I need a todo app but make it fun")}>
-                  "I need a todo app but make it fun"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF I need a todo app but make it fun")}>
+                  "WTAF I need a todo app but make it fun"
                 </div>
               </div>
             </div>
@@ -261,7 +236,7 @@ export default function WebtoysSitePage() {
       </section>
       
       {/* Examples Section */}
-      <section className="examples" id="examples">
+      <section className="examples examples-mobile-show" id="examples">
         <div className="examples-container">
           <div className="section-header">
             <h2 className="section-title">Fresh From the Oven</h2>
@@ -279,7 +254,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-text">"Build me a sushi restaurant site with 80s nostalgia vibes"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">View Site</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("Build me a sushi restaurant site with 80s nostalgia vibes")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a sushi restaurant site with 80s nostalgia vibes")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -297,7 +272,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-text">"Create a game where you catch falling tacos with a sombrero"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Play Game</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("Create a game where you catch falling tacos with a sombrero")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Create a game where you catch falling tacos with a sombrero")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -319,7 +294,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-text">"Make a meme generator but only for cat photos"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Make Memes</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("Make a meme generator but only for cat photos")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a meme generator but only for cat photos")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -342,7 +317,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-text">"I need a todo app that makes productivity feel like a game"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Try App</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("I need a todo app that makes productivity feel like a game")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF I need a todo app that makes productivity feel like a game")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -492,7 +467,7 @@ export default function WebtoysSitePage() {
                   </div>
                   <div className="trending-actions">
                     <a href="sms:+18663300015" className="btn-view">Text Now</a>
-                    <button className="btn-remix" onClick={() => handleSMSBubbleClick("Build something amazing")}>
+                    <button className="btn-remix" onClick={() => handleSMSBubbleClick("WTAF Build something amazing")}>
                       <span>🎨</span>
                       <span>Create</span>
                     </button>
@@ -569,210 +544,6 @@ export default function WebtoysSitePage() {
           overflow-x: hidden;
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(42, 42, 42, 0.9);
-          backdrop-filter: blur(10px);
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: modal-fade-in 0.3s ease-out;
-        }
-
-        @keyframes modal-fade-in {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-
-        .copied-modal {
-          background: var(--white-pure);
-          border: 6px solid var(--yellow);
-          border-radius: 2rem;
-          max-width: 600px;
-          width: 90%;
-          position: relative;
-          box-shadow: 0 20px 0 var(--purple-accent), 0 40px 80px var(--purple-shadow);
-          animation: modal-bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-          transform-origin: center;
-        }
-
-        @keyframes modal-bounce-in {
-          0% { 
-            opacity: 0; 
-            transform: scale(0.3) translateY(-50px);
-          }
-          100% { 
-            opacity: 1; 
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        .modal-header {
-          padding: 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 4px solid var(--cream);
-          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--white-pure) 100%);
-          border-radius: 1.4rem 1.4rem 0 0;
-        }
-
-        .header-center {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          flex: 1;
-          justify-content: center;
-        }
-
-        .header-spacer {
-          width: 40px;
-        }
-
-        .success-icon {
-          font-size: 2rem;
-          animation: sparkle-rotate 2s ease-in-out infinite;
-        }
-
-        @keyframes sparkle-rotate {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          25% { transform: rotate(-10deg) scale(1.1); }
-          50% { transform: rotate(10deg) scale(1.2); }
-          75% { transform: rotate(-5deg) scale(1.1); }
-        }
-
-        .modal-title {
-          font-size: 2rem;
-          font-weight: 900;
-          color: var(--charcoal);
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: -1px;
-        }
-
-        .close-button {
-          background: var(--red);
-          border: 3px solid var(--charcoal);
-          color: var(--white-pure);
-          font-size: 1.5rem;
-          cursor: pointer;
-          padding: 0.5rem;
-          line-height: 1;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all 0.3s ease;
-          font-weight: 900;
-          box-shadow: 0 4px 0 var(--red-soft);
-        }
-
-        .close-button:hover {
-          background: var(--red-soft);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 0 var(--red);
-        }
-
-        .modal-body {
-          padding: 2rem;
-          background: var(--white-pure);
-        }
-
-        .instruction-text {
-          font-size: 1.3rem;
-          color: var(--charcoal);
-          margin: 0 0 2rem 0;
-          text-align: center;
-          font-weight: 600;
-        }
-
-        .phone-number {
-          background: var(--blue);
-          color: var(--white-pure);
-          padding: 0.3rem 0.8rem;
-          border-radius: 1rem;
-          font-weight: 900;
-          font-size: 1.1em;
-          border: 2px solid var(--blue-deep);
-          box-shadow: 0 3px 0 var(--blue-deep);
-        }
-
-        .copied-text-display {
-          background: var(--cream);
-          border: 4px solid var(--green-mint);
-          border-radius: 1.5rem;
-          padding: 1.5rem;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
-          font-size: 1.1rem;
-          color: var(--charcoal);
-          word-break: break-word;
-          line-height: 1.4;
-          font-weight: 600;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .copied-text-display::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, var(--green-mint), var(--blue), var(--purple-accent), var(--green-mint));
-          background-size: 200% 200%;
-          border-radius: inherit;
-          z-index: -1;
-          animation: rainbow-border 3s ease-in-out infinite;
-        }
-
-        @keyframes rainbow-border {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-
-        .modal-footer {
-          padding: 2rem;
-          display: flex;
-          justify-content: center;
-          background: var(--white-pure);
-          border-radius: 0 0 1.4rem 1.4rem;
-        }
-
-        .got-it-button {
-          background: var(--green-mint);
-          color: var(--charcoal);
-          border: 4px solid var(--green-sage);
-          padding: 1rem 3rem;
-          border-radius: 2rem;
-          font-size: 1.2rem;
-          font-weight: 800;
-          cursor: pointer;
-          text-transform: uppercase;
-          letter-spacing: -0.5px;
-          transition: all 0.3s ease;
-          box-shadow: 0 6px 0 var(--green-sage);
-        }
-
-        .got-it-button:hover {
-          background: var(--green-sage);
-          color: var(--white-pure);
-          transform: translateY(-3px);
-          box-shadow: 0 9px 0 var(--charcoal);
-        }
-
-        .got-it-button:active {
-          transform: translateY(0);
-          box-shadow: 0 3px 0 var(--green-sage);
-        }
         
         /* Navigation */
         .nav {
@@ -812,6 +583,12 @@ export default function WebtoysSitePage() {
           content: "🎨";
           font-size: 2rem;
           animation: spin 4s ease-in-out infinite;
+        }
+        
+        @media (max-width: 768px) {
+          .logo::before {
+            display: none;
+          }
         }
         
         @keyframes spin {
@@ -982,6 +759,7 @@ export default function WebtoysSitePage() {
         .sms-header {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 1rem;
           margin-bottom: 1.5rem;
           padding-bottom: 1rem;
@@ -993,8 +771,9 @@ export default function WebtoysSitePage() {
         }
         
         .sms-number {
-          font-size: 1.8rem;
-          font-weight: 800;
+          font-size: 1.2rem;
+          font-weight: 700;
+          font-style: italic;
           color: var(--blue-deep);
         }
         
@@ -1079,6 +858,12 @@ export default function WebtoysSitePage() {
         .examples {
           padding: 6rem 2rem;
           background: var(--white-pure);
+        }
+        
+        @media (max-width: 768px) {
+          .examples {
+            padding: 4rem 1rem !important;
+          }
         }
         
         .examples-container {
@@ -1488,18 +1273,38 @@ export default function WebtoysSitePage() {
         .phone-large {
           font-size: 2.5rem;
           font-weight: 900;
-          color: var(--yellow);
+          color: var(--charcoal);
           text-decoration: none;
           display: inline-block;
           padding: 1rem 2rem;
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--yellow);
           border-radius: 2rem;
           transition: all 0.3s ease;
+          border: 3px solid var(--orange);
+          box-shadow: 0 8px 0 var(--orange), 0 12px 30px rgba(0, 0, 0, 0.2);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .phone-large::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+          transition: left 0.5s ease;
+        }
+        
+        .phone-large:hover::before {
+          left: 100%;
         }
         
         .phone-large:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: scale(1.05);
+          background: var(--yellow-soft);
+          transform: translateY(-3px);
+          box-shadow: 0 11px 0 var(--orange), 0 15px 35px rgba(0, 0, 0, 0.3);
         }
         
         /* Footer */
@@ -1556,11 +1361,46 @@ export default function WebtoysSitePage() {
         /* Responsive */
         @media (max-width: 768px) {
           .nav-links {
-            gap: 1rem;
+            display: none;
           }
           
-          .nav-links a:not(.phone-number) {
+          .nav-container {
+            display: block;
+            text-align: center;
+            padding: 1rem;
+          }
+          
+          .logo {
+            display: inline-block;
+          }
+          
+          .examples-mobile-show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          
+          .cta-main {
+            padding: 0.8rem 1.2rem;
+            font-size: 1.1rem;
+            border-radius: 2rem;
+            justify-content: center;
+            gap: 0;
+          }
+          
+          .cta-main span:first-child {
+            margin-right: 0.5rem;
+            font-size: 1.3rem;
+          }
+          
+          .cta-main span:last-child {
             display: none;
+          }
+          
+          .cta-main::after {
+            content: "+1-866-330-0015";
           }
           
           .hero-title {
@@ -1572,7 +1412,15 @@ export default function WebtoysSitePage() {
           }
           
           .phone-display {
-            transform: rotate(0);
+            display: block;
+            max-width: none;
+            margin: 0 auto 2rem;
+            padding: 1.5rem;
+            transform: none;
+          }
+          
+          .sms-icon {
+            display: none;
           }
           
           .examples-grid {
@@ -1585,6 +1433,52 @@ export default function WebtoysSitePage() {
           
           .steps-grid {
             grid-template-columns: 1fr;
+          }
+          
+          .phone-large {
+            font-size: 1.2rem;
+            padding: 0.8rem 1.5rem;
+            margin: 0 auto;
+            width: auto;
+            max-width: 220px;
+            text-align: center;
+            box-shadow: 0 4px 0 var(--orange), 0 6px 15px rgba(0, 0, 0, 0.15);
+            border-radius: 1.5rem;
+            display: block;
+          }
+          
+          .phone-large:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 0 var(--orange), 0 8px 20px rgba(0, 0, 0, 0.2);
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .cta-main {
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            gap: 0;
+          }
+          
+          .cta-main span:first-child {
+            margin-right: 0.4rem;
+            font-size: 1.2rem;
+          }
+          
+          .phone-large {
+            font-size: 1rem;
+            padding: 0.6rem 1.2rem;
+            margin: 0 auto;
+            width: auto;
+            max-width: 180px;
+            box-shadow: 0 3px 0 var(--orange), 0 4px 12px rgba(0, 0, 0, 0.12);
+            border-radius: 1.2rem;
+            display: block;
+          }
+          
+          .phone-large:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 0 var(--orange), 0 6px 15px rgba(0, 0, 0, 0.18);
           }
         }
       `}</style>
