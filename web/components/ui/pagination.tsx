@@ -119,9 +119,28 @@ export default function Pagination({
       </section>
 
       <style jsx>{`
+        /* WEBTOYS Design System Colors */
+        :root {
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          --charcoal: #2A2A2A;
+          --gray-warm: #6B6B6B;
+          --white-pure: #FFFFFF;
+          --black-soft: #1A1A1A;
+        }
+
         .pagination-section {
-          margin-top: 60px;
-          margin-bottom: 40px;
+          margin-top: 4rem;
+          margin-bottom: 3rem;
           display: flex;
           justify-content: center;
         }
@@ -129,104 +148,120 @@ export default function Pagination({
         .pagination {
           display: flex;
           align-items: center;
-          gap: 15px;
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(15px);
-          border: 2px solid ${themeColors.border};
-          border-radius: 50px;
-          padding: 15px 25px;
-          box-shadow: 
-            0 8px 30px rgba(0, 0, 0, 0.4), 
-            inset 0 0 20px ${themeColors.borderGlow};
+          gap: 1rem;
+          background: var(--white-pure);
+          border: 6px solid var(--yellow);
+          border-radius: 4rem;
+          padding: 1.5rem 2.5rem;
+          box-shadow: 0 12px 0 var(--purple-accent), 0 24px 60px var(--purple-shadow);
+          animation: float-gentle 6s ease-in-out infinite;
+        }
+
+        @keyframes float-gentle {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-5px); }
         }
 
         .pagination-btn {
-          padding: 10px 20px;
-          background: rgba(0, 0, 0, 0.7);
-          border: 2px solid ${themeColors.primary};
-          color: ${themeColors.primary};
-          border-radius: 25px;
-          font-family: 'Space Grotesk', sans-serif;
-          font-weight: 600;
-          font-size: 0.9rem;
+          padding: 0.75rem 2rem;
+          background: var(--cream);
+          border: 4px solid var(--charcoal);
+          color: var(--charcoal);
+          border-radius: 2rem;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 800;
+          font-size: 1rem;
           cursor: pointer;
           transition: all 0.3s ease;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          box-shadow: 
-            0 4px 15px ${themeColors.shadow}, 
-            0 0 10px ${themeColors.borderGlow};
+          letter-spacing: -0.5px;
+          box-shadow: 0 4px 0 var(--gray-warm);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
         }
 
         .pagination-btn:hover:not(.disabled) {
-          background: ${themeColors.hover};
-          transform: translateY(-2px);
-          box-shadow: 
-            0 8px 25px ${themeColors.shadowStrong}, 
-            0 0 20px ${themeColors.shadow};
+          background: var(--blue);
+          color: var(--white-pure);
+          transform: translateY(-3px);
+          box-shadow: 0 7px 0 var(--blue-deep);
+        }
+
+        .pagination-btn:active:not(.disabled) {
+          transform: translateY(0);
+          box-shadow: 0 2px 0 var(--blue-deep);
         }
 
         .pagination-btn.disabled {
-          opacity: 0.4;
+          opacity: 0.5;
           cursor: not-allowed;
-          border-color: ${themeColors.disabled};
-          color: ${themeColors.disabledText};
+          background: var(--gray-warm);
+          color: var(--white-pure);
+          border-color: var(--gray-warm);
+          box-shadow: 0 4px 0 #4A4A4A;
         }
 
         .page-numbers {
           display: flex;
-          gap: 8px;
+          gap: 0.5rem;
         }
 
         .page-btn {
-          width: 45px;
-          height: 45px;
-          background: rgba(0, 0, 0, 0.7);
-          border: 2px solid ${themeColors.disabled};
-          color: ${themeColors.secondary};
+          width: 50px;
+          height: 50px;
+          background: var(--white-pure);
+          border: 4px solid var(--charcoal);
+          color: var(--charcoal);
           border-radius: 50%;
-          font-family: 'Space Grotesk', sans-serif;
-          font-weight: 700;
-          font-size: 1rem;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 900;
+          font-size: 1.1rem;
           cursor: pointer;
           transition: all 0.3s ease;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 
-            0 4px 15px ${themeColors.shadow}, 
-            0 0 10px ${themeColors.borderGlow};
+          box-shadow: 0 4px 0 var(--gray-warm);
+          position: relative;
         }
 
         .page-btn:hover {
-          background: ${themeColors.hover};
+          background: var(--yellow-soft);
           transform: translateY(-2px) scale(1.05);
-          box-shadow: 
-            0 8px 25px ${themeColors.shadowStrong}, 
-            0 0 20px ${themeColors.shadow};
+          box-shadow: 0 6px 0 var(--yellow);
         }
 
         .page-btn.active {
-          background: ${themeColors.gradient};
-          border-color: ${themeColors.primary};
-          color: #ffffff;
+          background: var(--red);
+          border-color: var(--charcoal);
+          color: var(--white-pure);
           transform: scale(1.1);
-          box-shadow: 
-            0 8px 25px ${themeColors.shadowActive}, 
-            0 0 25px ${themeColors.shadowStrong};
-          text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 6px 0 var(--red-soft);
+          animation: pulse-active 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-active {
+          0%, 100% { 
+            box-shadow: 0 6px 0 var(--red-soft), 0 0 0 rgba(255, 75, 75, 0.3);
+          }
+          50% { 
+            box-shadow: 0 6px 0 var(--red-soft), 0 0 20px rgba(255, 75, 75, 0.6);
+          }
         }
 
         .page-btn.active:hover {
           transform: scale(1.15);
+          background: var(--red-soft);
         }
 
         @media (max-width: 768px) {
           .pagination {
             flex-direction: column;
-            gap: 20px;
-            padding: 20px;
-            border-radius: 25px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 2rem;
+            box-shadow: 0 8px 0 var(--purple-accent), 0 16px 40px var(--purple-shadow);
           }
 
           .page-numbers {
@@ -234,25 +269,30 @@ export default function Pagination({
           }
 
           .pagination-btn {
-            padding: 12px 25px;
-            font-size: 0.8rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
           }
         }
 
         @media (max-width: 480px) {
           .pagination {
-            padding: 15px;
+            padding: 1rem;
+            gap: 1rem;
           }
 
           .page-btn {
-            width: 40px;
-            height: 40px;
-            font-size: 0.9rem;
+            width: 45px;
+            height: 45px;
+            font-size: 1rem;
           }
 
           .pagination-btn {
-            padding: 10px 20px;
-            font-size: 0.75rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.8rem;
+          }
+
+          .page-numbers {
+            gap: 0.3rem;
           }
         }
       `}</style>
