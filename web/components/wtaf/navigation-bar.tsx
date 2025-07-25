@@ -121,135 +121,202 @@ export default function WTAFNavigationBar({
       </div>
 
       <style jsx>{`
+        /* WEBTOYS Design System Colors */
+        :root {
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          --charcoal: #2A2A2A;
+          --gray-warm: #6B6B6B;
+          --white-pure: #FFFFFF;
+          --black-soft: #1A1A1A;
+        }
+
         .wtaf-nav-bar {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: #000;
-          border-bottom: 2px solid #ff0080;
-          padding: 12px 20px;
+          background: var(--white-pure);
+          border-bottom: 6px solid var(--yellow);
+          padding: 1rem 2rem;
           position: relative;
           z-index: 1000;
-          min-height: 60px;
+          min-height: 80px;
+          box-shadow: 0 8px 20px var(--purple-shadow);
         }
 
         .nav-back-btn {
           display: flex;
           align-items: center;
-          background: transparent;
-          border: none;
-          color: #00ffff;
-          font-family: 'Space Grotesk', sans-serif;
-          font-weight: 600;
-          font-size: 14px;
+          background: var(--cream);
+          border: 3px solid var(--charcoal);
+          color: var(--charcoal);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 700;
+          font-size: 1rem;
           cursor: pointer;
-          transition: all 0.2s ease;
-          padding: 8px 12px;
-          border-radius: 6px;
+          transition: all 0.3s ease;
+          padding: 0.75rem 1.5rem;
+          border-radius: 2rem;
+          text-transform: uppercase;
+          letter-spacing: -0.5px;
+          box-shadow: 0 4px 0 var(--gray-warm);
         }
 
         .nav-back-btn:hover {
-          background: rgba(0, 255, 255, 0.1);
-          transform: translateX(-2px);
+          background: var(--blue);
+          color: var(--white-pure);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 var(--blue-deep);
         }
 
         .nav-branding {
           position: absolute;
           left: 50%;
           transform: translateX(-50%);
-          color: #ff0080;
-          font-family: 'Space Grotesk', sans-serif;
+          background: var(--red);
+          color: var(--white-pure);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-weight: 900;
-          font-size: 16px;
-          letter-spacing: 1px;
-          text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+          font-size: 1.1rem;
+          letter-spacing: -0.5px;
+          text-transform: uppercase;
           white-space: nowrap;
+          padding: 0.75rem 2rem;
+          border-radius: 2rem;
+          border: 3px solid var(--charcoal);
+          box-shadow: 0 4px 0 var(--red-soft);
+          animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { 
+            box-shadow: 0 4px 0 var(--red-soft), 0 0 0 rgba(255, 75, 75, 0.3);
+          }
+          50% { 
+            box-shadow: 0 4px 0 var(--red-soft), 0 0 20px rgba(255, 75, 75, 0.6);
+          }
         }
 
         .nav-actions {
           display: flex;
-          gap: 12px;
+          gap: 1rem;
           align-items: center;
         }
 
         .nav-action-btn {
           display: flex;
           align-items: center;
-          background: transparent;
-          border: 1.5px solid;
-          color: #fff;
-          font-family: 'Space Grotesk', sans-serif;
-          font-weight: 600;
-          font-size: 13px;
+          background: var(--white-pure);
+          border: 3px solid;
+          color: var(--charcoal);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 800;
+          font-size: 0.9rem;
           cursor: pointer;
-          transition: all 0.2s ease;
-          padding: 8px 16px;
-          border-radius: 25px;
-          min-width: 85px;
+          transition: all 0.3s ease;
+          padding: 0.75rem 1.5rem;
+          border-radius: 2rem;
+          min-width: 100px;
           justify-content: center;
+          text-transform: uppercase;
+          letter-spacing: -0.5px;
+          position: relative;
+          overflow: hidden;
         }
 
         .share-btn {
-          border-color: #00ffff;
-          color: #00ffff;
+          border-color: var(--blue);
+          background: var(--blue);
+          color: var(--white-pure);
+          box-shadow: 0 4px 0 var(--blue-deep);
         }
 
         .share-btn:hover {
-          background: #00ffff;
-          color: #000;
-          box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+          background: var(--blue-deep);
+          transform: translateY(-3px);
+          box-shadow: 0 7px 0 var(--charcoal);
         }
 
         .remix-btn {
-          border-color: #ff0080;
-          color: #ff0080;
+          border-color: var(--green-sage);
+          background: var(--green-mint);
+          color: var(--charcoal);
+          box-shadow: 0 4px 0 var(--green-sage);
         }
 
         .remix-btn:hover {
-          background: #ff0080;
-          color: #fff;
-          box-shadow: 0 0 15px rgba(255, 0, 128, 0.3);
+          background: var(--green-sage);
+          color: var(--white-pure);
+          transform: translateY(-3px);
+          box-shadow: 0 7px 0 var(--charcoal);
+        }
+
+        .nav-action-btn:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 0 var(--charcoal);
         }
 
         .nav-action-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
         }
 
         /* Mobile responsiveness */
         @media (max-width: 768px) {
           .wtaf-nav-bar {
-            padding: 10px 16px;
-            min-height: 56px;
+            padding: 0.75rem 1rem;
+            min-height: 70px;
           }
 
           .nav-branding {
-            font-size: 12px;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.5rem;
             max-width: 280px;
             overflow: hidden;
             text-overflow: ellipsis;
           }
 
           .nav-back-btn {
-            font-size: 13px;
-            padding: 6px 8px;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
           }
 
           .nav-action-btn {
-            font-size: 12px;
-            padding: 6px 12px;
-            min-width: 70px;
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            min-width: 80px;
           }
 
           .nav-actions {
-            gap: 8px;
+            gap: 0.5rem;
           }
         }
 
         @media (max-width: 480px) {
+          .wtaf-nav-bar {
+            padding: 0.5rem 0.75rem;
+            min-height: 60px;
+          }
+
           .nav-branding {
-            font-size: 10px;
+            font-size: 0.7rem;
+            padding: 0.4rem 1rem;
             max-width: 200px;
+          }
+
+          .nav-back-btn {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
           }
 
           .nav-action-btn span {
@@ -257,8 +324,13 @@ export default function WTAFNavigationBar({
           }
 
           .nav-action-btn {
-            min-width: 40px;
-            padding: 8px;
+            min-width: 45px;
+            padding: 0.5rem;
+            border-radius: 50%;
+          }
+
+          .nav-actions {
+            gap: 0.4rem;
           }
         }
       `}</style>

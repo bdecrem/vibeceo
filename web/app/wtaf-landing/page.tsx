@@ -1,9 +1,30 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import Link from "next/link"
+
+interface WtafApp {
+  id: string
+  app_slug: string
+  user_slug: string
+  original_prompt: string
+  created_at: string
+  remix_count: number
+  total_descendants?: number
+  recent_remixes?: number
+  is_remix: boolean
+  parent_app_id: string | null
+  is_featured: boolean
+  last_remixed_at: string | null
+  Fave?: boolean
+  Forget?: boolean
+  type: string
+}
 
 export default function WebtoysSitePage() {
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
+  const [trendingApps, setTrendingApps] = useState<WtafApp[]>([])
+  const [trendingLoading, setTrendingLoading] = useState(true)
 
   const showCopiedNotification = (text: string) => {
     setCopiedNotification({ show: true, text })
@@ -43,6 +64,58 @@ export default function WebtoysSitePage() {
     }
   }
 
+  const handleTrendingRemixClick = async (appSlug: string) => {
+    const remixCommand = `REMIX ${appSlug}`
+    const success = await copyToClipboard(remixCommand)
+    if (success) {
+      showCopiedNotification(remixCommand)
+    }
+  }
+
+  const getTimestampLabel = (createdAt: string) => {
+    const now = new Date()
+    const created = new Date(createdAt)
+    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+    
+    if (diffInHours < 24) return "Born today"
+    if (diffInDays === 1) return "Dropped yesterday"
+    if (diffInDays <= 6) return `Dropped ${diffInDays} days ago`
+    return `Vintage: ${diffInDays} days old`
+  }
+
+  const getEmojiForApp = (prompt: string, index: number) => {
+    const lowerPrompt = prompt.toLowerCase()
+    
+    // Game-related keywords
+    if (lowerPrompt.includes('game') || lowerPrompt.includes('play') || lowerPrompt.includes('catch') || lowerPrompt.includes('run') || lowerPrompt.includes('jump')) {
+      return ['🎮', '🕹️', '🎯', '🚀'][index % 4]
+    }
+    
+    // Food/restaurant keywords  
+    if (lowerPrompt.includes('food') || lowerPrompt.includes('restaurant') || lowerPrompt.includes('cafe') || lowerPrompt.includes('coffee') || lowerPrompt.includes('pizza')) {
+      return ['🍕', '☕', '🍔', '🥗'][index % 4]
+    }
+    
+    // Business/shop keywords
+    if (lowerPrompt.includes('shop') || lowerPrompt.includes('store') || lowerPrompt.includes('business') || lowerPrompt.includes('company')) {
+      return ['🏪', '🛍️', '💼', '🏢'][index % 4]
+    }
+    
+    // Meme/fun keywords
+    if (lowerPrompt.includes('meme') || lowerPrompt.includes('funny') || lowerPrompt.includes('joke') || lowerPrompt.includes('cat')) {
+      return ['😂', '🐱', '🎭', '🤡'][index % 4]
+    }
+    
+    // Fitness/health keywords
+    if (lowerPrompt.includes('fitness') || lowerPrompt.includes('workout') || lowerPrompt.includes('health') || lowerPrompt.includes('exercise')) {
+      return ['💪', '🏃‍♂️', '🧘‍♀️', '⚡'][index % 4]
+    }
+    
+    // Default emojis
+    return ['✨', '🌟', '🎨', '🚀'][index % 4]
+  }
+
   // Interactive step numbers
   const handleStepHover = (element: HTMLElement) => {
     element.style.transform = 'rotate(360deg) scale(1.1)'
@@ -51,6 +124,25 @@ export default function WebtoysSitePage() {
   const handleStepLeave = (element: HTMLElement) => {
     element.style.transform = 'rotate(0deg) scale(1)'
   }
+
+  // Fetch trending apps
+  useEffect(() => {
+    const fetchTrendingApps = async () => {
+      try {
+        const response = await fetch('/api/trending-wtaf?limit=4')
+        const data = await response.json()
+        if (data.apps) {
+          setTrendingApps(data.apps)
+        }
+      } catch (error) {
+        console.error('Error fetching trending apps:', error)
+      } finally {
+        setTrendingLoading(false)
+      }
+    }
+
+    fetchTrendingApps()
+  }, [])
 
   // Konami code easter egg
   useEffect(() => {
@@ -111,8 +203,7 @@ export default function WebtoysSitePage() {
           <a href="#" className="logo">WEBTOYS.ai</a>
           <ul className="nav-links">
             <li><a href="#how">How it Works</a></li>
-            <li><a href="#examples">Examples</a></li>
-            <li><a href="#pricing">Pricing</a></li>
+            <li><Link href="/featured">Gallery</Link></li>
             <li><a href="sms:+18663300015" className="phone-number">📱 (866) 330-0015</a></li>
           </ul>
         </div>
@@ -164,7 +255,6 @@ export default function WebtoysSitePage() {
                 <span>📱</span>
                 <span>Text (866) 330-0015 Now</span>
               </a>
-              <p className="cta-sub">$5 per creation • Ready in minutes • 100% magic</p>
             </div>
           </div>
         </div>
@@ -314,6 +404,112 @@ export default function WebtoysSitePage() {
         </div>
       </section>
       
+      {/* What's Trending Now */}
+      <section className="trending" id="trending">
+        <div className="trending-container">
+          <div className="section-header">
+            <h2 className="section-title">What's Trending Now</h2>
+            <p className="section-subtitle">Hot creations everyone's talking about</p>
+          </div>
+          
+          <div className="trending-grid">
+            {trendingLoading ? (
+              // Loading state
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="trending-card">
+                  <div className="trending-preview site magic-cursor">
+                    ⏳
+                  </div>
+                  <div className="trending-info">
+                    <div className="prompt-label">Loading...</div>
+                    <div className="prompt-text">Fetching trending content...</div>
+                    <div className="trending-stats">
+                      <span className="remix-count">🔥 -- remixes</span>
+                      <span className="timestamp">Loading...</span>
+                    </div>
+                    <div className="trending-actions">
+                      <button className="btn-view" disabled>Loading...</button>
+                      <button className="btn-remix" disabled>
+                        <span>🎨</span>
+                        <span>Loading...</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : trendingApps.length > 0 ? (
+              // Dynamic content from API
+              trendingApps.slice(0, 4).map((app, index) => (
+                <div key={app.id} className="trending-card">
+                  <div className="trending-preview og-image magic-cursor">
+                    <img 
+                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`}
+                      alt={`Preview of ${app.original_prompt}`}
+                      onError={(e) => {
+                        // Fallback to emoji if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.nextSibling) {
+                          (target.nextSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div className="emoji-fallback" style={{ display: 'none' }}>
+                      {getEmojiForApp(app.original_prompt, index)}
+                    </div>
+                  </div>
+                  <div className="trending-info">
+                    <div className="prompt-label">Text Message:</div>
+                    <div className="prompt-text">"{app.original_prompt}"</div>
+                    <div className="trending-stats">
+                      <span className="remix-count">🔥 {app.total_descendants || app.remix_count || 0} remixes</span>
+                      <span className="timestamp">{getTimestampLabel(app.created_at)}</span>
+                    </div>
+                    <div className="trending-actions">
+                      <Link href={`/wtaf/${app.user_slug}/${app.app_slug}`} className="btn-view">
+                        View App
+                      </Link>
+                      <button className="btn-remix" onClick={() => handleTrendingRemixClick(app.app_slug)}>
+                        <span>🎨</span>
+                        <span>Remix</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Fallback content if no trending apps
+              <div className="trending-card">
+                <div className="trending-preview site magic-cursor">
+                  🚀
+                </div>
+                <div className="trending-info">
+                  <div className="prompt-label">Text Message:</div>
+                  <div className="prompt-text">"No trending apps at the moment - be the first!"</div>
+                  <div className="trending-stats">
+                    <span className="remix-count">🔥 0 remixes</span>
+                    <span className="timestamp">Waiting for magic</span>
+                  </div>
+                  <div className="trending-actions">
+                    <a href="sms:+18663300015" className="btn-view">Text Now</a>
+                    <button className="btn-remix" onClick={() => handleSMSBubbleClick("Build something amazing")}>
+                      <span>🎨</span>
+                      <span>Create</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="trending-footer">
+            <Link href="/trending" className="btn-see-more">
+              See All Trending →
+            </Link>
+          </div>
+        </div>
+      </section>
+      
       {/* Footer CTA */}
       <section className="footer-cta">
         <h2>Ready to Create?</h2>
@@ -326,8 +522,7 @@ export default function WebtoysSitePage() {
         <div className="footer-content">
           <div className="footer-links">
             <a href="#">About</a>
-            <a href="/featured">Examples</a>
-            <a href="#">Pricing</a>
+            <Link href="/featured">Gallery</Link>
             <a href="#">API</a>
             <a href="#">Help</a>
           </div>
@@ -381,119 +576,202 @@ export default function WebtoysSitePage() {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.85);
+          background: rgba(42, 42, 42, 0.9);
+          backdrop-filter: blur(10px);
           z-index: 1000;
           display: flex;
           align-items: center;
           justify-content: center;
+          animation: modal-fade-in 0.3s ease-out;
+        }
+
+        @keyframes modal-fade-in {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
 
         .copied-modal {
-          background: #1a1a1a;
-          border: 1px solid #333;
-          border-radius: 8px;
-          max-width: 500px;
+          background: var(--white-pure);
+          border: 6px solid var(--yellow);
+          border-radius: 2rem;
+          max-width: 600px;
           width: 90%;
           position: relative;
+          box-shadow: 0 20px 0 var(--purple-accent), 0 40px 80px var(--purple-shadow);
+          animation: modal-bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          transform-origin: center;
+        }
+
+        @keyframes modal-bounce-in {
+          0% { 
+            opacity: 0; 
+            transform: scale(0.3) translateY(-50px);
+          }
+          100% { 
+            opacity: 1; 
+            transform: scale(1) translateY(0);
+          }
         }
 
         .modal-header {
-          padding: 20px;
+          padding: 2rem;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid #333;
+          border-bottom: 4px solid var(--cream);
+          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--white-pure) 100%);
+          border-radius: 1.4rem 1.4rem 0 0;
         }
 
         .header-center {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 1rem;
           flex: 1;
           justify-content: center;
         }
 
         .header-spacer {
-          width: 30px;
+          width: 40px;
         }
 
         .success-icon {
-          font-size: 1.2rem;
+          font-size: 2rem;
+          animation: sparkle-rotate 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle-rotate {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(-10deg) scale(1.1); }
+          50% { transform: rotate(10deg) scale(1.2); }
+          75% { transform: rotate(-5deg) scale(1.1); }
         }
 
         .modal-title {
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: #ffffff;
+          font-size: 2rem;
+          font-weight: 900;
+          color: var(--charcoal);
           margin: 0;
+          text-transform: uppercase;
+          letter-spacing: -1px;
         }
 
         .close-button {
-          background: none;
-          border: none;
-          color: #999;
+          background: var(--red);
+          border: 3px solid var(--charcoal);
+          color: var(--white-pure);
           font-size: 1.5rem;
           cursor: pointer;
-          padding: 5px;
+          padding: 0.5rem;
           line-height: 1;
-          width: 30px;
-          height: 30px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+          font-weight: 900;
+          box-shadow: 0 4px 0 var(--red-soft);
         }
 
         .close-button:hover {
-          color: #ffffff;
+          background: var(--red-soft);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 var(--red);
         }
 
         .modal-body {
-          padding: 20px;
+          padding: 2rem;
+          background: var(--white-pure);
         }
 
         .instruction-text {
-          font-size: 1rem;
-          color: #ccc;
-          margin: 0 0 15px 0;
+          font-size: 1.3rem;
+          color: var(--charcoal);
+          margin: 0 0 2rem 0;
           text-align: center;
+          font-weight: 600;
         }
 
         .phone-number {
-          color: #00ffff;
-          font-weight: 700;
+          background: var(--blue);
+          color: var(--white-pure);
+          padding: 0.3rem 0.8rem;
+          border-radius: 1rem;
+          font-weight: 900;
+          font-size: 1.1em;
+          border: 2px solid var(--blue-deep);
+          box-shadow: 0 3px 0 var(--blue-deep);
         }
 
         .copied-text-display {
-          background: #111;
-          border: 1px solid #333;
-          border-radius: 4px;
-          padding: 15px;
-          font-family: monospace;
-          font-size: 0.9rem;
-          color: #00ffff;
+          background: var(--cream);
+          border: 4px solid var(--green-mint);
+          border-radius: 1.5rem;
+          padding: 1.5rem;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+          font-size: 1.1rem;
+          color: var(--charcoal);
           word-break: break-word;
-          line-height: 1.3;
+          line-height: 1.4;
+          font-weight: 600;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .copied-text-display::before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, var(--green-mint), var(--blue), var(--purple-accent), var(--green-mint));
+          background-size: 200% 200%;
+          border-radius: inherit;
+          z-index: -1;
+          animation: rainbow-border 3s ease-in-out infinite;
+        }
+
+        @keyframes rainbow-border {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
         }
 
         .modal-footer {
-          padding: 20px;
+          padding: 2rem;
           display: flex;
           justify-content: center;
-          border-top: 1px solid #333;
+          background: var(--white-pure);
+          border-radius: 0 0 1.4rem 1.4rem;
         }
 
         .got-it-button {
-          background: #333;
-          color: #ffffff;
-          border: 1px solid #555;
-          padding: 10px 20px;
-          border-radius: 4px;
-          font-size: 0.9rem;
+          background: var(--green-mint);
+          color: var(--charcoal);
+          border: 4px solid var(--green-sage);
+          padding: 1rem 3rem;
+          border-radius: 2rem;
+          font-size: 1.2rem;
+          font-weight: 800;
           cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: -0.5px;
+          transition: all 0.3s ease;
+          box-shadow: 0 6px 0 var(--green-sage);
         }
 
         .got-it-button:hover {
-          background: #444;
+          background: var(--green-sage);
+          color: var(--white-pure);
+          transform: translateY(-3px);
+          box-shadow: 0 9px 0 var(--charcoal);
+        }
+
+        .got-it-button:active {
+          transform: translateY(0);
+          box-shadow: 0 3px 0 var(--green-sage);
         }
         
         /* Navigation */
@@ -548,16 +826,19 @@ export default function WebtoysSitePage() {
           align-items: center;
         }
         
-        .nav-links a {
+        .nav-links a,
+        .nav-links a[href] {
           color: var(--charcoal);
           text-decoration: none;
           font-weight: 600;
           padding: 0.5rem 1.5rem;
           border-radius: 2rem;
           transition: all 0.3s ease;
+          display: inline-block;
         }
         
-        .nav-links a:hover {
+        .nav-links a:hover,
+        .nav-links a[href]:hover {
           background: var(--yellow-soft);
           transform: translateY(-2px);
         }
@@ -862,64 +1143,63 @@ export default function WebtoysSitePage() {
         }
         
         .example-preview {
-          height: 300px;
+          aspect-ratio: 3/2;
+          width: 100%;
           background: var(--white-pure);
           position: relative;
           overflow: hidden;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 1rem;
+          margin-bottom: 1rem;
         }
         
         /* Different preview styles for each example */
         .example-preview.sushi {
           background: linear-gradient(45deg, var(--red-soft) 0%, var(--white-pure) 50%, var(--green-mint) 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 6rem;
+          font-size: 4rem;
         }
         
         .example-preview.game {
           background: var(--black-soft);
           color: var(--green-mint);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 4rem;
+          font-size: 2.5rem;
           font-family: monospace;
+          text-align: center;
         }
         
         .example-preview.meme {
           background: linear-gradient(135deg, var(--purple-accent) 0%, var(--blue) 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
         
         .example-preview.app {
           background: var(--white-pure);
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 1rem;
-          padding: 2rem;
+          gap: 0.5rem;
+          padding: 1rem;
         }
         
         .app-icon {
           background: var(--yellow-soft);
-          border-radius: 1rem;
-          height: 80px;
+          border-radius: 0.5rem;
+          aspect-ratio: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 2rem;
+          font-size: 1.5rem;
         }
         
         .meme-text {
           color: white;
-          font-size: 2rem;
+          font-size: 1.5rem;
           font-weight: 900;
           text-transform: uppercase;
           text-align: center;
           text-shadow: 2px 2px 0 black;
+          line-height: 1.2;
         }
         
         .example-info {
@@ -1056,6 +1336,135 @@ export default function WebtoysSitePage() {
           line-height: 1.6;
         }
         
+        /* Trending Section */
+        .trending {
+          padding: 6rem 2rem;
+          background: var(--white-pure);
+        }
+        
+        .trending-container {
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+        
+        .trending-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 2.5rem;
+        }
+        
+        .trending-card {
+          background: var(--cream);
+          border: 5px solid var(--blue);
+          border-radius: 2rem;
+          overflow: hidden;
+          box-shadow: 0 10px 0 var(--purple-accent);
+          transition: all 0.3s ease;
+          position: relative;
+        }
+        
+        .trending-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 15px 0 var(--purple-accent);
+        }
+        
+        .trending-preview {
+          aspect-ratio: 3/2;
+          width: 100%;
+          background: var(--white-pure);
+          position: relative;
+          overflow: hidden;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 1rem;
+          margin-bottom: 1rem;
+        }
+        
+        /* Different preview styles for each trending type */
+        .trending-preview.site {
+          background: linear-gradient(45deg, var(--purple-accent) 0%, var(--white-pure) 50%, var(--yellow-soft) 100%);
+          font-size: 4rem;
+        }
+        
+        .trending-preview.og-image {
+          background: var(--cream);
+          padding: 0;
+        }
+        
+        .trending-preview.og-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 1rem;
+        }
+        
+        .emoji-fallback {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(45deg, var(--purple-accent) 0%, var(--white-pure) 50%, var(--yellow-soft) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 4rem;
+          border-radius: 1rem;
+        }
+        
+        .trending-info {
+          padding: 2rem;
+        }
+        
+        .trending-stats {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 1rem 0;
+          padding: 0.5rem 0;
+          border-top: 2px solid var(--cream);
+          border-bottom: 2px solid var(--cream);
+        }
+        
+        .remix-count {
+          font-weight: 700;
+          color: var(--red);
+          font-size: 0.9rem;
+        }
+        
+        .timestamp {
+          color: var(--gray-warm);
+          font-size: 0.8rem;
+          font-style: italic;
+        }
+        
+        .trending-actions {
+          display: flex;
+          gap: 1rem;
+        }
+        
+        .trending-footer {
+          text-align: center;
+          margin-top: 4rem;
+        }
+        
+        .btn-see-more {
+          display: inline-block;
+          background: var(--red);
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 2rem;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 1.1rem;
+          transition: all 0.3s ease;
+          box-shadow: 0 6px 0 var(--red-soft);
+        }
+        
+        .btn-see-more:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 9px 0 var(--red-soft);
+        }
+        
         /* Footer CTA */
         .footer-cta {
           padding: 6rem 2rem;
@@ -1114,14 +1523,16 @@ export default function WebtoysSitePage() {
           flex-wrap: wrap;
         }
         
-        .footer-links a {
+        .footer-links a,
+        .footer-links a[href] {
           color: white;
           text-decoration: none;
           opacity: 0.8;
           transition: opacity 0.3s ease;
         }
         
-        .footer-links a:hover {
+        .footer-links a:hover,
+        .footer-links a[href]:hover {
           opacity: 1;
           color: var(--yellow);
         }
@@ -1165,6 +1576,10 @@ export default function WebtoysSitePage() {
           }
           
           .examples-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .trending-grid {
             grid-template-columns: 1fr;
           }
           
