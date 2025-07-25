@@ -214,7 +214,7 @@ export default function CreationsPage() {
   }
 
   useEffect(() => {
-    document.title = `@${userSlug} creations - WEBTOYS.ai`
+    document.title = `@${userSlug} creations - WEBTOYS`
   }, [userSlug])
 
   return (
@@ -237,7 +237,7 @@ export default function CreationsPage() {
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
-          <Link href="/" className="logo">WEBTOYS.ai</Link>
+          <Link href="/" className="logo">WEBTOYS</Link>
           <div className="nav-links">
             <Link href="/trending" className="back-link">
               ← Back to Trending

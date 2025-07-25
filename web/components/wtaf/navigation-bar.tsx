@@ -89,7 +89,7 @@ export default function WTAFNavigationBar({
         aria-label="Go back"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        <span className="hidden sm:inline">Back to WTAF</span>
+        <span className="hidden sm:inline">Back to WEBTOYS</span>
         <span className="sm:hidden">Back</span>
       </button>
 
@@ -144,179 +144,123 @@ export default function WTAFNavigationBar({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: var(--white-pure);
-          border-bottom: 6px solid var(--yellow);
-          padding: 1rem 2rem;
+          background: #f5f5f5;
+          border-bottom: 1px solid #ddd;
+          padding: 0.8rem 1.5rem;
           position: relative;
           z-index: 1000;
-          min-height: 80px;
-          box-shadow: 0 8px 20px var(--purple-shadow);
+          min-height: 60px;
         }
 
         .nav-back-btn {
           display: flex;
           align-items: center;
-          background: var(--cream);
-          border: 3px solid var(--charcoal);
-          color: var(--charcoal);
+          background: transparent;
+          border: none;
+          color: #333;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 700;
-          font-size: 1rem;
+          font-weight: 600;
+          font-size: 0.9rem;
           cursor: pointer;
-          transition: all 0.3s ease;
-          padding: 0.75rem 1.5rem;
-          border-radius: 2rem;
+          transition: all 0.2s ease;
+          padding: 0.5rem 0;
           text-transform: uppercase;
-          letter-spacing: -0.5px;
-          box-shadow: 0 4px 0 var(--gray-warm);
+          letter-spacing: 0.5px;
         }
 
         .nav-back-btn:hover {
-          background: var(--blue);
-          color: var(--white-pure);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 0 var(--blue-deep);
+          color: #666;
         }
 
         .nav-branding {
           position: absolute;
           left: 50%;
           transform: translateX(-50%);
-          background: var(--red);
-          color: var(--white-pure);
+          background: #333;
+          color: white;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 900;
-          font-size: 1.1rem;
-          letter-spacing: -0.5px;
+          font-weight: 700;
+          font-size: 0.85rem;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
           white-space: nowrap;
-          padding: 0.75rem 2rem;
-          border-radius: 2rem;
-          border: 3px solid var(--charcoal);
-          box-shadow: 0 4px 0 var(--red-soft);
-          animation: pulse-glow 3s ease-in-out infinite;
-        }
-
-        @keyframes pulse-glow {
-          0%, 100% { 
-            box-shadow: 0 4px 0 var(--red-soft), 0 0 0 rgba(255, 75, 75, 0.3);
-          }
-          50% { 
-            box-shadow: 0 4px 0 var(--red-soft), 0 0 20px rgba(255, 75, 75, 0.6);
-          }
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
         }
 
         .nav-actions {
           display: flex;
-          gap: 1rem;
+          gap: 0.8rem;
           align-items: center;
         }
 
         .nav-action-btn {
           display: flex;
           align-items: center;
-          background: var(--white-pure);
-          border: 3px solid;
-          color: var(--charcoal);
+          background: white;
+          border: 1px solid #333;
+          color: #333;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 800;
-          font-size: 0.9rem;
+          font-weight: 600;
+          font-size: 0.85rem;
           cursor: pointer;
-          transition: all 0.3s ease;
-          padding: 0.75rem 1.5rem;
-          border-radius: 2rem;
-          min-width: 100px;
+          transition: all 0.2s ease;
+          padding: 0.6rem 1.2rem;
+          border-radius: 20px;
+          min-width: 80px;
           justify-content: center;
           text-transform: uppercase;
-          letter-spacing: -0.5px;
-          position: relative;
-          overflow: hidden;
+          letter-spacing: 0.5px;
         }
 
-        .share-btn {
-          border-color: var(--blue);
-          background: var(--blue);
-          color: var(--white-pure);
-          box-shadow: 0 4px 0 var(--blue-deep);
-        }
-
-        .share-btn:hover {
-          background: var(--blue-deep);
-          transform: translateY(-3px);
-          box-shadow: 0 7px 0 var(--charcoal);
-        }
-
-        .remix-btn {
-          border-color: var(--green-sage);
-          background: var(--green-mint);
-          color: var(--charcoal);
-          box-shadow: 0 4px 0 var(--green-sage);
-        }
-
-        .remix-btn:hover {
-          background: var(--green-sage);
-          color: var(--white-pure);
-          transform: translateY(-3px);
-          box-shadow: 0 7px 0 var(--charcoal);
+        .nav-action-btn:hover {
+          background: #333;
+          color: white;
         }
 
         .nav-action-btn:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 0 var(--charcoal);
+          transform: scale(0.95);
         }
 
         .nav-action-btn:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
-          transform: none;
         }
 
         /* Mobile responsiveness */
         @media (max-width: 768px) {
           .wtaf-nav-bar {
-            padding: 0.75rem 1rem;
-            min-height: 70px;
+            padding: 0.6rem 1rem;
           }
 
           .nav-branding {
-            font-size: 0.9rem;
-            padding: 0.5rem 1.5rem;
-            max-width: 280px;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
           }
 
           .nav-back-btn {
-            font-size: 0.85rem;
-            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
           }
 
           .nav-action-btn {
-            font-size: 0.8rem;
-            padding: 0.5rem 1rem;
-            min-width: 80px;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.8rem;
+            min-width: 70px;
           }
 
           .nav-actions {
-            gap: 0.5rem;
+            gap: 0.6rem;
           }
         }
 
         @media (max-width: 480px) {
-          .wtaf-nav-bar {
-            padding: 0.5rem 0.75rem;
-            min-height: 60px;
-          }
-
           .nav-branding {
-            font-size: 0.7rem;
-            padding: 0.4rem 1rem;
-            max-width: 200px;
-          }
-
-          .nav-back-btn {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.8rem;
+            font-size: 0.65rem;
+            padding: 0.3rem 0.6rem;
+            max-width: 180px;
           }
 
           .nav-action-btn span {
@@ -324,13 +268,9 @@ export default function WTAFNavigationBar({
           }
 
           .nav-action-btn {
-            min-width: 45px;
+            min-width: 40px;
             padding: 0.5rem;
             border-radius: 50%;
-          }
-
-          .nav-actions {
-            gap: 0.4rem;
           }
         }
       `}</style>

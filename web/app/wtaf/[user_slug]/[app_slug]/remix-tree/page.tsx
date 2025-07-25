@@ -2,6 +2,8 @@
 
 import { useParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import CopiedModal from "@/components/ui/copied-modal"
 
 interface AppNode {
   id: string
@@ -54,6 +56,9 @@ export default function RemixTreePage() {
   const currentXRef = useRef(0)
 
   useEffect(() => {
+    // Set page title
+    document.title = `Remix Tree - ${app} - WEBTOYS`
+    
     const fetchGenealogyData = async () => {
       try {
         const response = await fetch(`/api/genealogy?user=${user}&app=${app}&format=tree`)
@@ -183,7 +188,11 @@ export default function RemixTreePage() {
     setCopiedNotification({ show: true, text })
     setTimeout(() => {
       setCopiedNotification({ show: false, text: "" })
-    }, 2000)
+    }, 3000)
+  }
+
+  const closeCopiedModal = () => {
+    setCopiedNotification({ show: false, text: "" })
   }
 
   const copyToClipboard = async (text: string) => {
@@ -199,7 +208,7 @@ export default function RemixTreePage() {
   const handlePromptClick = async (prompt: string) => {
     const success = await copyToClipboard(prompt)
     if (success) {
-      showCopiedNotification("Prompt copied!")
+      showCopiedNotification(prompt)
     }
   }
 
@@ -207,7 +216,7 @@ export default function RemixTreePage() {
     const remixCommand = `REMIX ${appNode.app_slug}`
     const success = await copyToClipboard(remixCommand)
     if (success) {
-      showCopiedNotification("REMIX command copied!")
+      showCopiedNotification(remixCommand)
     }
   }
 
@@ -221,11 +230,11 @@ export default function RemixTreePage() {
     if (node.generation_level === 0) {
       glowClass = 'glow-gen0' // Original app - special gold glow
     } else if (node.generation_level === 1) {
-      glowClass = 'glow-gen1' // ALL 1st generation items - orange glow
+      glowClass = 'glow-gen1' // ALL 1st generation items - blue glow
     } else if (node.generation_level === 2) {
-      glowClass = 'glow-gen2' // ALL 2nd generation items - cyan glow
+      glowClass = 'glow-gen2' // ALL 2nd generation items - green glow
     } else if (node.generation_level === 3) {
-      glowClass = 'glow-gen3' // ALL 3rd generation items - deep pink glow
+      glowClass = 'glow-gen3' // ALL 3rd generation items - red glow
     } else if (node.generation_level === 4) {
       glowClass = 'glow-gen4' // ALL 4th generation items - purple glow
     } else if (node.generation_level >= 5) {
@@ -245,53 +254,58 @@ export default function RemixTreePage() {
         <div className={`node-card ${lineageInfo.glowClass}`}>
           {isOriginal && <div className="original-badge">ORIGINAL</div>}
           <div className="node-image-container">
-          <img 
-            src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${node.user_slug}-${node.app_slug}.png`} 
-            alt={node.app_slug} 
-            className="node-image" 
-          />
-          <div className="node-overlay">
-            <button 
-              className="try-app-btn"
-              onClick={() => window.open(`/wtaf/${node.user_slug}/${node.app_slug}`, '_blank')}
-            >
-              TRY APP
-            </button>
-          </div>
-        </div>
-        <div className="node-content">
-          <div className="node-meta">
-            <div className="creator-info">
-              <span className="creator-label">by</span>
-              <a href={`/${node.user_slug}`} className="creator-handle">
-                @{node.user_slug}
-              </a>
-            </div>
-            <div className="remix-count">
-              <span className="remix-number">{node.remix_count || 0}</span>
-              <span className="remix-label">remixes</span>
+            <img 
+              src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${node.user_slug}-${node.app_slug}.png`} 
+              alt={node.app_slug} 
+              className="node-image" 
+            />
+            <div className="node-overlay">
+              <Link 
+                href={`/${node.user_slug}/${node.app_slug}?demo=true`}
+                className="try-app-btn"
+              >
+                🚀 Try This App
+              </Link>
             </div>
           </div>
-          <div className="node-prompt" onClick={() => handlePromptClick(node.remix_prompt || node.original_prompt)}>
-            "{node.remix_prompt || node.original_prompt}"
-          </div>
-          <div className="node-actions">
-            <button className="remix-btn" onClick={() => handleRemixClick(node)}>
-              REMIX
-            </button>
-            <span className="created-date">{formatDate(node.created_at)}</span>
+          <div className="node-content">
+            <div className="node-meta">
+              <div className="creator-info">
+                <span className="creator-label">by</span>
+                <Link href={`/wtaf/${node.user_slug}/creations`} className="creator-handle">
+                  @{node.user_slug}
+                </Link>
+              </div>
+              <div className="remix-count">
+                <span className="remix-number">{node.remix_count || 0}</span>
+                <span className="remix-label">remix{(node.remix_count || 0) === 1 ? '' : 'es'}</span>
+              </div>
+            </div>
+            <div className="prompt-label">The Text Message:</div>
+            <div className="node-prompt" onClick={() => handlePromptClick(node.remix_prompt || node.original_prompt)}>
+              "{node.remix_prompt || node.original_prompt}"
+            </div>
+            <div className="node-actions">
+              <button className="remix-btn" onClick={() => handleRemixClick(node)}>
+                <span className="remix-icon">🎨</span>
+                <span>Remix This</span>
+              </button>
+              <span className="created-date">{formatDate(node.created_at)}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     )
   }
 
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <div className="loading-text">Loading genealogy tree...</div>
+        <div className="loading-content">
+          <div className="loading-icon">🌳</div>
+          <h3 className="loading-title">Growing the family tree...</h3>
+          <p className="loading-subtitle">Mapping the genealogy of digital creativity</p>
+        </div>
       </div>
     )
   }
@@ -299,1393 +313,1007 @@ export default function RemixTreePage() {
   if (error || !genealogyData) {
     return (
       <div className="error-container">
-        <div className="error-text">Failed to load genealogy tree</div>
-        <div className="error-details">{error}</div>
-      </div>
-    )
-  }
-
-  const buildTreeStructure = () => {
-    const generations = genealogyData.genealogy_tree.generations
-    const firstGeneration = generations[1] || []
-    
-    // Build branch columns
-    const columns = []
-    
-    // Column 1: All first generation remixes
-    columns.push({
-      id: 'generation-1',
-      header: 'Generation 1',
-      nodes: firstGeneration
-    })
-    
-    // Create a column for each generation 2 item ONLY (each represents a new branch)
-    const secondGeneration = generations[2] || []
-    secondGeneration.forEach((branchStarter: AppNode) => {
-      // This gen 2 item starts a new branch, find all its descendants
-      const branchNodes: AppNode[] = [branchStarter]
-      
-      // Find all descendants of this branch starter (gen 3, 4, 5, etc.)
-      Object.keys(generations).forEach(descendantGenNum => {
-        const descendantGenLevel = parseInt(descendantGenNum)
-        if (descendantGenLevel > 2) {
-          generations[descendantGenLevel].forEach((descendant: AppNode) => {
-            // Check if this descendant's path includes the branch starter
-            if (descendant.path && descendant.path.includes(branchStarter.app_slug)) {
-              branchNodes.push(descendant)
-            }
-          })
-        }
-      })
-      
-      columns.push({
-        id: `branch-${branchStarter.app_slug}`,
-        header: `Branch: ${branchStarter.app_slug}`,
-        nodes: branchNodes
-      })
-    })
-    
-    return (
-      <div className="generations-columns">
-        {columns.map((column) => (
-          <div key={column.id} className="generation-column">
-            <div className="generation-header">
-              {column.header}
-              <span className="generation-count">({column.nodes.length})</span>
-            </div>
-            <div className="generation-nodes">
-              {column.nodes.map((node: AppNode) => (
-                <div key={node.id} className="column-node">
-                  {renderTreeNode(node)}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+        <div className="error-content">
+          <div className="error-icon">😅</div>
+          <h3 className="error-title">Oops! Tree got a bit tangled</h3>
+          <p className="error-subtitle">
+            Our remix family tree is taking a break. Try refreshing the page!
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{`Remix Tree - ${genealogyData.parent_app.app_slug} by @${genealogyData.parent_app.user_slug}`}</title>
-        <meta
-          name="description"
-          content="Explore the remix genealogy tree and see how creativity evolves through chaos."
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>
-        {/* Copied Notification */}
-        {copiedNotification.show && (
-          <div className="copied-notification">
-            <span className="copied-text">{copiedNotification.text}</span>
-            <span className="copied-checkmark">✓</span>
-          </div>
-        )}
+    <>
+      {/* Copied Modal */}
+      <CopiedModal 
+        show={copiedNotification.show}
+        text={copiedNotification.text}
+        onClose={closeCopiedModal}
+      />
 
-        {/* Electric sparks */}
-        <div className="sparks">
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
-        </div>
+      {/* Floating shapes */}
+      <div className="floating-shape shape1"></div>
+      <div className="floating-shape shape2"></div>
+      <div className="floating-shape shape3"></div>
+      <div className="floating-shape shape4"></div>
+      <div className="floating-shape shape5"></div>
 
-        {/* Floating punk elements */}
-        <div className="float-element skull">💀</div>
-        <div className="float-element lightning">⚡</div>
-        <div className="float-element fire">🔥</div>
-        <div className="float-element chains">⛓️</div>
-
-        <header>
-          <div className="logo glitch" data-text="REMIX TREE">
-            REMIX TREE
-          </div>
-          <div className="tagline">GENEALOGY OF DIGITAL CHAOS</div>
-          <nav className="nav-back">
-            <a href={`/wtaf/${user}/${app}`} className="back-link">
+      {/* Navigation */}
+      <nav className="nav">
+        <div className="nav-container">
+          <Link href="/" className="logo">WEBTOYS</Link>
+          <div className="nav-links">
+            <Link href={`/${user}/${app}`} className="back-link">
               ← Back to App
-            </a>
-          </nav>
-        </header>
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-        <main>
-          <section className="tree-hero">
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Hero Section */}
+        <section className="tree-hero">
+          <div className="hero-container">
             <div className="hero-content">
-              <h1 className="glitch" data-text="Evolution Through Remixing">
-                Evolution Through Remixing
-              </h1>
-              <p>
-                Witness how a single prompt spawns an entire ecosystem of creativity. Each branch represents a new
-                interpretation, a fresh perspective, a chaotic evolution of the original idea.
+              <h1 className="hero-title">🌳 Remix Family Tree</h1>
+              <p className="hero-description">
+                Witness how a single idea grows into an entire ecosystem of creativity. Each branch 
+                represents a new interpretation, a fresh perspective, and the beautiful evolution of digital art.
               </p>
-              <div className="hero-stats">
-                <div className="hero-stat">
+              <div className="stats-row">
+                <div className="stat-item">
                   <div className="stat-number">{genealogyData.stats.total_descendants}</div>
                   <div className="stat-label">Total Remixes</div>
                 </div>
-                <div className="hero-stat">
+                <div className="stat-item">
                   <div className="stat-number">{genealogyData.stats.max_generation}</div>
                   <div className="stat-label">Generations Deep</div>
                 </div>
-                <div className="hero-stat">
+                <div className="stat-item">
                   <div className="stat-number">{genealogyData.stats.direct_remixes}</div>
-                  <div className="stat-label">Direct Remixes</div>
+                  <div className="stat-label">Direct Children</div>
                 </div>
-                <div className="hero-stat">
+                <div className="stat-item">
                   <div className="stat-number">{genealogyData.stats.deepest_path?.length || 0}</div>
-                  <div className="stat-label">Deepest Path</div>
+                  <div className="stat-label">Deepest Branch</div>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="remix-tree">
-            {isMobile ? (
-              // Mobile horizontal scroll view
-              <div className="mobile-tree-container">
-                {/* Horizontal Progress Trail */}
-                <div className="progress-trail">
-                  <div className="trail-line">
-                    <div
-                      className="trail-progress"
-                      style={{ width: `${((currentColumn + 1) / maxColumns) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="trail-markers">
-                    {Array.from({ length: maxColumns }, (_, i) => (
-                      <button
-                        key={i}
-                        className={`trail-marker ${currentColumn === i ? "active" : ""} ${i < currentColumn ? "completed" : ""}`}
-                        onClick={() => navigateToColumn(i)}
-                      >
-                        <span className="marker-label">{getColumnTitle(i)}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Swipeable Content */}
-                <div
-                  className="swipe-container"
-                  ref={containerRef}
-                  onTouchStart={handleSwipeStart}
-                  onTouchMove={handleSwipeMove}
-                  onTouchEnd={handleSwipeEnd}
-                  onMouseDown={handleSwipeStart}
-                  onMouseMove={handleSwipeMove}
-                  onMouseUp={handleSwipeEnd}
-                >
+        {/* Tree Section */}
+        <section className="remix-tree">
+          {isMobile ? (
+            // Mobile horizontal scroll view
+            <div className="mobile-tree-container">
+              {/* Horizontal Progress Trail */}
+              <div className="progress-trail">
+                <div className="trail-line">
                   <div
-                    className="columns-wrapper"
-                    style={{
-                      transform: `translateX(-${currentColumn * 100}%)`,
-                      transition: isTransitioning ? "transform 0.3s ease-out" : "none",
-                    }}
-                  >
-                    {columnsData.map((columnData, index) => (
-                      <div key={index} className="mobile-column">
-                        <div className="column-content">
-                          {columnData.map((node: AppNode) => (
-                            <div key={node.id} className="mobile-node">
-                              {renderTreeNode(node, node.id === genealogyData.parent_app.id)}
-                            </div>
-                          ))}
-                        </div>
+                    className="trail-progress"
+                    style={{ width: `${((currentColumn + 1) / maxColumns) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="trail-markers">
+                  {Array.from({ length: maxColumns }, (_, i) => (
+                    <button
+                      key={i}
+                      className={`trail-marker ${currentColumn === i ? "active" : ""} ${i < currentColumn ? "completed" : ""}`}
+                      onClick={() => navigateToColumn(i)}
+                    >
+                      <span className="marker-label">{getColumnTitle(i)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Swipeable Content */}
+              <div
+                className="swipe-container"
+                ref={containerRef}
+                onTouchStart={handleSwipeStart}
+                onTouchMove={handleSwipeMove}
+                onTouchEnd={handleSwipeEnd}
+                onMouseDown={handleSwipeStart}
+                onMouseMove={handleSwipeMove}
+                onMouseUp={handleSwipeEnd}
+              >
+                <div
+                  className="columns-wrapper"
+                  style={{
+                    transform: `translateX(-${currentColumn * 100}%)`,
+                    transition: isTransitioning ? "transform 0.3s ease-out" : "none",
+                  }}
+                >
+                  {columnsData.map((columnData, index) => (
+                    <div key={index} className="mobile-column">
+                      <div className="column-content">
+                        {columnData.map((node: AppNode) => (
+                          <div key={node.id} className="mobile-node">
+                            {renderTreeNode(node, node.id === genealogyData.parent_app.id)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Desktop tree view - use same branch structure as mobile
+            <div className="desktop-branch-columns">
+              {columnsData.map((columnData, index) => (
+                <div key={index} className="desktop-column">
+                  <div className="column-header">
+                    <span className="column-title">{getColumnTitle(index)}</span>
+                  </div>
+                  <div className="column-nodes">
+                    {columnData.map((node: AppNode) => (
+                      <div key={node.id} className="desktop-node">
+                        {renderTreeNode(node, node.id === genealogyData.parent_app.id)}
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              // Desktop tree view - use same branch structure as mobile
-              <div className="desktop-branch-columns">
-                {columnsData.map((columnData, index) => (
-                  <div key={index} className="desktop-column">
-                    <div className="column-header">
-                      <span className="column-title">{getColumnTitle(index)}</span>
-                    </div>
-                    <div className="column-nodes">
-                      {columnData.map((node: AppNode) => (
-                        <div key={node.id} className="desktop-node">
-                          {renderTreeNode(node, node.id === genealogyData.parent_app.id)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </main>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <style jsx global>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        {/* Call to Action */}
+        <section className="cta-section">
+          <div className="cta-container">
+            <h2 className="cta-title">Ready to Plant Your Own Tree?</h2>
+            <p className="cta-description">
+              Join the ecosystem of creators growing amazing ideas from simple text messages.
+            </p>
+            <a href="sms:+18663300015" className="cta-button">
+              <span>📱</span>
+              <span>Text (866) 330-0015 Now</span>
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <style jsx global>{`
+        /* WEBTOYS GRAND Design System */
+        :root {
+          /* Core WEBTOYS DNA Colors */
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          --orange: #FF8C42;
+          --orange-soft: #FFB380;
+          
+          /* Professional Additions */
+          --charcoal: #2A2A2A;
+          --gray-warm: #6B6B6B;
+          --white-pure: #FFFFFF;
+          --black-soft: #1A1A1A;
+        }
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--cream);
+          color: var(--charcoal);
+          line-height: 1.6;
+          overflow-x: hidden;
+        }
+
+        /* Floating shapes */
+        .floating-shape {
+          position: fixed;
+          opacity: 0.15;
+          animation: float-shape 25s infinite ease-in-out;
+          pointer-events: none;
+          z-index: 1;
+        }
+        
+        .shape1 {
+          width: 180px;
+          height: 180px;
+          background: var(--yellow);
+          border-radius: 50%;
+          top: 15%;
+          left: 8%;
+          animation-delay: 0s;
+        }
+        
+        .shape2 {
+          width: 120px;
+          height: 120px;
+          background: var(--blue);
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          top: 70%;
+          right: 12%;
+          animation-delay: 8s;
+        }
+        
+        .shape3 {
+          width: 90px;
+          height: 90px;
+          background: var(--red);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          bottom: 25%;
+          left: 18%;
+          animation-delay: 16s;
+        }
+
+        .shape4 {
+          width: 140px;
+          height: 140px;
+          background: var(--purple-accent);
+          border-radius: 20% 80% 20% 80% / 80% 20% 80% 20%;
+          top: 40%;
+          right: 5%;
+          animation-delay: 12s;
+        }
+
+        .shape5 {
+          width: 100px;
+          height: 100px;
+          background: var(--green-mint);
+          border-radius: 50% 20% 50% 20%;
+          top: 80%;
+          left: 50%;
+          animation-delay: 4s;
+        }
+        
+        @keyframes float-shape {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(20px, -20px) rotate(90deg); }
+          50% { transform: translate(-15px, 15px) rotate(180deg); }
+          75% { transform: translate(25px, 8px) rotate(270deg); }
+        }
+
+        /* Loading and Error States */
+        .loading-container, .error-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--cream);
+        }
+
+        .loading-content, .error-content {
+          text-align: center;
+          background: var(--white-pure);
+          padding: 3rem;
+          border-radius: 2rem;
+          box-shadow: 0 10px 0 var(--green-sage), 0 20px 40px var(--purple-shadow);
+          border: 4px solid var(--green-mint);
+          max-width: 500px;
+        }
+
+        .loading-icon, .error-icon {
+          font-size: 4rem;
+          margin-bottom: 1.5rem;
+          animation: bounce 2s ease-in-out infinite;
+        }
+
+        .loading-title, .error-title {
+          font-size: 1.8rem;
+          color: var(--charcoal);
+          margin-bottom: 1rem;
+          font-weight: 800;
+        }
+
+        .loading-subtitle, .error-subtitle {
+          color: var(--gray-warm);
+          font-size: 1.1rem;
+        }
+
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+
+        /* Navigation */
+        .nav {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          background: var(--white-pure);
+          border-bottom: 4px solid var(--green-mint);
+          box-shadow: 0 4px 20px var(--purple-shadow);
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 2rem;
+        }
+        
+        .logo {
+          font-size: 1.8rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, var(--green-sage) 0%, var(--blue) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .logo::before {
+          content: "🌳";
+          font-size: 2rem;
+          animation: spin 4s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(15deg); }
+        }
+
+        .back-link {
+          color: var(--blue-deep);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 0.5rem 1.5rem;
+          border-radius: 2rem;
+          transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+          background: var(--blue);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .main-content {
+          margin-top: 80px;
+        }
+
+        /* Hero Section */
+        .tree-hero {
+          padding: 4rem 2rem;
+          background: linear-gradient(135deg, var(--green-mint) 0%, var(--cream) 60%, rgba(182,255,179,0.1) 100%);
+        }
+
+        .hero-container {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .hero-content {
+          text-align: center;
+          background: var(--white-pure);
+          border: 6px solid var(--green-mint);
+          border-radius: 3rem;
+          padding: 3rem 2rem;
+          box-shadow: 0 12px 0 var(--green-sage), 0 24px 60px var(--purple-shadow);
+          position: relative;
+          z-index: 2;
+        }
+
+        .hero-title {
+          font-size: clamp(2.5rem, 6vw, 4rem);
+          font-weight: 900;
+          color: var(--green-sage);
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+          letter-spacing: -2px;
+          position: relative;
+        }
+
+        .hero-title::after {
+          content: "🌿";
+          position: absolute;
+          top: -20px;
+          right: -40px;
+          font-size: 2rem;
+          animation: sparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+          0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          50% { opacity: 0.5; transform: scale(1.2) rotate(180deg); }
+        }
+
+        .hero-description {
+          font-size: 1.3rem;
+          color: var(--gray-warm);
+          margin-bottom: 2.5rem;
+          font-weight: 500;
+          max-width: 700px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: 3rem;
+          flex-wrap: wrap;
+        }
+
+        .stat-item {
+          text-align: center;
+        }
+
+        .stat-number {
+          font-size: 2.5rem;
+          font-weight: 900;
+          color: var(--red);
+          display: block;
+        }
+
+        .stat-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-weight: 600;
+        }
+
+        /* Tree Section */
+        .remix-tree {
+          padding: 4rem 2rem;
+          background: var(--white-pure);
+        }
+
+        /* Node Styles */
+        .tree-node {
+          position: relative;
+          margin-bottom: 2rem;
+        }
+
+        .original-node .node-card {
+          border: 5px solid var(--yellow);
+          box-shadow: 0 15px 0 var(--orange), 0 30px 80px var(--purple-shadow);
+          transform: scale(1.05);
+        }
+
+        .original-badge {
+          position: absolute;
+          top: -15px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--yellow);
+          color: var(--charcoal);
+          padding: 8px 20px;
+          border-radius: 2rem;
+          font-weight: 800;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          z-index: 10;
+          box-shadow: 0 4px 0 var(--orange);
+          border: 2px solid var(--orange);
+        }
+
+        .node-card {
+          background: var(--cream);
+          border: 4px solid var(--yellow);
+          border-radius: 2rem;
+          padding: 2rem;
+          width: 350px;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 0 var(--purple-accent);
+        }
+
+        .node-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 13px 0 var(--purple-accent);
+        }
+
+        .glow-gen0 {
+          border-color: var(--yellow) !important;
+          box-shadow: 0 15px 0 var(--orange), 0 0 20px rgba(255, 215, 0, 0.3) !important;
+        }
+
+        .glow-gen1 {
+          border-color: var(--blue) !important;
+          box-shadow: 0 8px 0 var(--blue-deep), 0 0 15px rgba(110, 203, 255, 0.3) !important;
+        }
+
+        .glow-gen2 {
+          border-color: var(--green-mint) !important;
+          box-shadow: 0 8px 0 var(--green-sage), 0 0 15px rgba(182, 255, 179, 0.3) !important;
+        }
+
+        .glow-gen3 {
+          border-color: var(--red) !important;
+          box-shadow: 0 8px 0 var(--red-soft), 0 0 15px rgba(255, 75, 75, 0.3) !important;
+        }
+
+        .glow-gen4 {
+          border-color: var(--purple-accent) !important;
+          box-shadow: 0 8px 0 var(--purple-shadow), 0 0 15px rgba(139, 127, 212, 0.3) !important;
+        }
+
+        .glow-gen5 {
+          border: 4px solid transparent !important;
+          background: linear-gradient(var(--cream), var(--cream)) padding-box, 
+                      linear-gradient(45deg, var(--yellow), var(--blue), var(--green-mint), var(--red), var(--purple-accent)) border-box !important;
+          animation: rainbowGlow 3s linear infinite !important;
+          box-shadow: 0 8px 0 var(--charcoal), 0 0 20px rgba(255, 255, 255, 0.5) !important;
+        }
+
+        @keyframes rainbowGlow {
+          0% { filter: hue-rotate(0deg); }
+          100% { filter: hue-rotate(360deg); }
+        }
+
+        .node-image-container {
+          position: relative;
+          margin-bottom: 1.5rem;
+          overflow: hidden;
+          border-radius: 1.5rem;
+          background: var(--white-pure);
+        }
+
+        .node-image {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 3 / 2;
+          object-fit: cover;
+          border-radius: 1.5rem;
+          transition: all 0.3s ease;
+          display: block;
+        }
+
+        .node-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: all 0.3s ease;
+          border-radius: 1.5rem;
+        }
+
+        .node-image-container:hover .node-overlay {
+          opacity: 1;
+        }
+
+        .node-image-container:hover .node-image {
+          transform: scale(1.05);
+        }
+
+        .try-app-btn {
+          background: var(--blue);
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          font-size: 1rem;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          box-shadow: 0 4px 0 var(--blue-deep);
+        }
+
+        .try-app-btn:hover {
+          background: var(--blue-deep);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 var(--blue);
+        }
+
+        .node-content {
+          text-align: center;
+        }
+
+        .node-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .creator-info {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .creator-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          font-weight: 500;
+        }
+
+        .creator-handle {
+          color: var(--red);
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .creator-handle:hover {
+          color: var(--red-soft);
+          transform: translateY(-1px);
+        }
+
+        .remix-count {
+          display: flex;
+          align-items: baseline;
+          gap: 0.3rem;
+          background: var(--purple-accent);
+          color: white;
+          padding: 0.3rem 0.8rem;
+          border-radius: 1rem;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+
+        .remix-number {
+          font-weight: 700;
+          font-size: 1rem;
+        }
+
+        .remix-label {
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        .prompt-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 0.8rem;
+          font-weight: 600;
+        }
+
+        .node-prompt {
+          background: var(--white-pure);
+          border: 3px solid var(--green-mint);
+          border-radius: 1.5rem;
+          padding: 1.2rem;
+          margin-bottom: 1.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--charcoal);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          line-height: 1.4;
+        }
+
+        .node-prompt:hover {
+          background: var(--green-mint);
+          transform: translateY(-2px);
+        }
+
+        .node-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .remix-btn {
+          background: var(--white-pure);
+          border: 3px solid var(--purple-accent);
+          color: var(--purple-accent);
+          padding: 0.8rem 1.5rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .remix-btn:hover {
+          background: var(--purple-accent);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        .remix-icon {
+          font-size: 1.2rem;
+        }
+
+        .created-date {
+          font-size: 0.8rem;
+          color: var(--gray-warm);
+          font-weight: 500;
+        }
+
+        /* Desktop Branch Columns */
+        .desktop-branch-columns {
+          display: flex;
+          gap: 2rem;
+          padding: 2rem;
+          overflow-x: auto;
+          min-height: 70vh;
+        }
+
+        .desktop-column {
+          display: flex;
+          flex-direction: column;
+          min-width: 350px;
+          flex-shrink: 0;
+        }
+
+        .column-header {
+          margin-bottom: 1.5rem;
+          text-align: center;
+        }
+
+        .column-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: var(--blue-deep);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          padding: 0.8rem 1.5rem;
+          background: var(--blue);
+          color: white;
+          border-radius: 2rem;
+          box-shadow: 0 4px 0 var(--blue-deep);
+        }
+
+        .column-nodes {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          align-items: center;
+        }
+
+        .desktop-node {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+        }
+
+        /* Mobile Pagination Styles */
+        .mobile-tree-container {
+          position: relative;
+          width: 100%;
+          max-width: 100vw;
+          overflow: hidden;
+        }
+
+        @media (min-width: 769px) {
+          .mobile-tree-container {
+            display: none; /* Hide mobile view on desktop */
           }
+        }
 
-          body {
-            background: linear-gradient(135deg, #1a0a2e 0%, #16213e 25%, #0f3460 50%, #533a7d 75%, #1a0a2e 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-            color: #ffffff;
-          }
+        .progress-trail {
+          margin-bottom: 2rem;
+          padding: 0 1rem;
+        }
 
-          .loading-container, .error-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-            padding: 20px;
-          }
+        .trail-line {
+          position: relative;
+          height: 6px;
+          background: var(--cream);
+          border-radius: 3px;
+          margin-bottom: 1rem;
+          overflow: hidden;
+          border: 2px solid var(--yellow);
+        }
 
-          .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(157, 78, 221, 0.3);
-            border-top: 3px solid #9d4edd;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-          }
+        .trail-progress {
+          height: 100%;
+          background: var(--green-mint);
+          border-radius: 3px;
+          transition: width 0.3s ease;
+          box-shadow: 0 0 10px rgba(182, 255, 179, 0.5);
+        }
 
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
+        .trail-markers {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+        }
 
-          .loading-text, .error-text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.5rem;
-            color: #9d4edd;
-            margin-bottom: 10px;
-          }
+        .trail-marker {
+          background: var(--white-pure);
+          border: 3px solid var(--yellow);
+          border-radius: 1.5rem;
+          padding: 0.5rem 1rem;
+          color: var(--charcoal);
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          min-width: 60px;
+          text-align: center;
+        }
 
-          .error-details {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1rem;
-          }
+        .trail-marker.active {
+          background: var(--yellow);
+          border-color: var(--orange);
+          box-shadow: 0 4px 0 var(--orange);
+        }
 
-          .copied-notification {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(45deg, #9d4edd, #7209b7);
-            color: #ffffff;
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 
-              0 8px 25px rgba(157, 78, 221, 0.3),
-              0 0 20px rgba(157, 78, 221, 0.2);
-            animation: slideInFade 2s ease-out;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-          }
+        .trail-marker.completed {
+          background: var(--green-mint);
+          border-color: var(--green-sage);
+          color: var(--charcoal);
+        }
 
-          .copied-checkmark {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-          }
+        .marker-label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
 
-          @keyframes slideInFade {
-            0% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
-            20% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            80% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            100% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
-          }
+        .swipe-container {
+          position: relative;
+          width: 100%;
+          height: 70vh;
+          overflow: hidden;
+          cursor: grab;
+        }
 
-          @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
+        .swipe-container:active {
+          cursor: grabbing;
+        }
 
-          .float-element {
-            position: absolute;
-            opacity: 0.4;
-            animation: float 10s ease-in-out infinite;
-            pointer-events: none;
-            filter: drop-shadow(0 0 10px rgba(157, 78, 221, 0.3));
-          }
+        .columns-wrapper {
+          display: flex;
+          width: 100%;
+          height: 100%;
+          will-change: transform;
+        }
 
-          .skull {
-            top: 8%;
-            left: 5%;
-            font-size: 3.5rem;
-            color: rgba(157, 78, 221, 0.3);
-            animation-delay: 0s;
-          }
+        .mobile-column {
+          flex: 0 0 100%;
+          width: 100%;
+          height: 100%;
+          overflow-y: auto;
+        }
 
-          .lightning {
-            top: 30%;
-            right: 8%;
-            font-size: 4rem;
-            color: rgba(114, 9, 183, 0.4);
-            animation-delay: 4s;
-          }
+        .column-content {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          padding: 1rem 0;
+          min-height: 100%;
+        }
 
-          .fire {
-            bottom: 25%;
-            left: 12%;
-            font-size: 3.8rem;
-            color: rgba(168, 85, 247, 0.4);
-            animation-delay: 8s;
-          }
+        .mobile-node {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+        }
 
-          .chains {
-            bottom: 10%;
-            right: 15%;
-            font-size: 3.2rem;
-            color: rgba(196, 125, 255, 0.3);
-            animation-delay: 3s;
-          }
+        /* Call to Action */
+        .cta-section {
+          padding: 5rem 2rem;
+          background: var(--blue-deep);
+          color: white;
+          text-align: center;
+        }
 
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-40px) rotate(15deg); }
-            66% { transform: translateY(30px) rotate(-10deg); }
-          }
+        .cta-container {
+          max-width: 800px;
+          margin: 0 auto;
+        }
 
-          .glitch {
-            position: relative;
-            display: inline-block;
-          }
+        .cta-title {
+          font-size: 3rem;
+          font-weight: 900;
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+        }
 
-          .glitch::before,
-          .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-          }
+        .cta-description {
+          font-size: 1.3rem;
+          margin-bottom: 2.5rem;
+          opacity: 0.9;
+        }
 
-          .glitch::before {
-            animation: glitch1 2s infinite;
-            color: #9d4edd;
-            z-index: -1;
-          }
+        .cta-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 1rem;
+          background: var(--yellow);
+          color: var(--charcoal);
+          padding: 1.5rem 3rem;
+          border-radius: 3rem;
+          font-size: 1.3rem;
+          font-weight: 800;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 0 var(--orange);
+        }
 
-          .glitch::after {
-            animation: glitch2 2s infinite;
-            color: #7209b7;
-            z-index: -2;
-          }
+        .cta-button:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 11px 0 var(--orange);
+        }
 
-          @keyframes glitch1 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(-2px, -1px); }
-            20% { transform: translate(1px, 2px); }
-          }
-
-          @keyframes glitch2 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(2px, 1px); }
-            20% { transform: translate(-1px, -2px); }
-          }
-
-          header {
-            padding: 40px 20px;
-            text-align: center;
-            position: relative;
-            z-index: 10;
-          }
-
-          .logo {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow:
-              0 0 10px #9d4edd,
-              0 0 20px #9d4edd,
-              0 0 30px #9d4edd;
-            margin-bottom: 15px;
-            letter-spacing: -2px;
-          }
-
-          .tagline {
-            font-size: 1rem;
-            color: #9d4edd;
-            font-weight: 500;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 30px;
-            text-shadow: 0 0 5px #9d4edd;
-          }
-
-          .nav-back {
-            margin-top: 20px;
-          }
-
-          .back-link {
-            color: #7209b7;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(114, 9, 183, 0.5);
-            transition: all 0.3s ease;
-          }
-
-          .back-link:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(114, 9, 183, 0.8);
-          }
-
-          main {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 5;
-          }
-
-          .tree-hero {
-            text-align: center;
-            margin-bottom: 80px;
-            padding: 40px 20px;
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .nav-container {
+            padding: 1rem;
           }
 
           .hero-content {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(157, 78, 221, 0.3);
-            border-radius: 30px;
-            padding: 50px 40px;
-            box-shadow:
-              0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(157, 78, 221, 0.1);
-            max-width: 800px;
-            margin: 0 auto;
+            padding: 2rem 1.5rem;
           }
 
-          .tree-hero h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 3.5rem;
-            color: #ffffff;
-            margin-bottom: 25px;
-            font-weight: 700;
-            line-height: 1.1;
-            text-shadow: 0 0 15px #7209b7;
+          .stats-row {
+            gap: 2rem;
           }
 
-          .tree-hero p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            font-weight: 300;
-            margin-bottom: 30px;
+          .stat-number {
+            font-size: 2rem;
           }
 
-          .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-top: 25px;
-          }
-
-          .hero-stat {
-            text-align: center;
-          }
-
-          .hero-stat .stat-number {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: #9d4edd;
-            text-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
-            margin-bottom: 5px;
-          }
-
-          .hero-stat .stat-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          }
-
-          .remix-tree {
-            margin-bottom: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .tree-root {
-            margin-bottom: 60px;
-          }
-
-          .tree-node {
-            position: relative;
-            margin-bottom: 40px;
-          }
-
-          .original-node .node-card {
-            border: 3px solid #9d4edd;
-            box-shadow: 
-              0 0 30px rgba(157, 78, 221, 0.4),
-              inset 0 0 20px rgba(157, 78, 221, 0.1);
-            transform: scale(1.1);
-          }
-
-          .original-badge {
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(45deg, #9d4edd, #7209b7);
-            color: #ffffff;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            z-index: 10;
-            box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+          .desktop-branch-columns {
+            display: none; /* Hide desktop view on mobile */
           }
 
           .node-card {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 25px;
-            width: 350px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            width: 300px;
           }
 
-          .node-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #9d4edd, #7209b7, #a855f7, #9d4edd);
-            background-size: 200% 100%;
-            animation: borderGlow 4s linear infinite;
+          .cta-title {
+            font-size: 2.2rem;
           }
 
-          @keyframes borderGlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
+          .tree-hero {
+            padding: 2rem 1rem;
           }
+        }
 
-          .node-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 
-              0 15px 40px rgba(0, 0, 0, 0.4),
-              0 0 25px rgba(157, 78, 221, 0.2);
-            border-color: rgba(157, 78, 221, 0.3);
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 2.5rem;
           }
 
-          .lineage-emoji {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 2rem;
-            z-index: 15;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            animation: float 3s ease-in-out infinite;
+          .node-card {
+            width: 280px;
+            padding: 1.5rem;
           }
 
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
+          .cta-button {
+            padding: 1.2rem 2rem;
+            font-size: 1.1rem;
           }
 
-          .glow-gen0 {
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.6) !important;
-            border-color: rgba(255, 215, 0, 0.9) !important;
-            background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 223, 0, 0.05)) !important;
+          .hero-content {
+            padding: 2rem 1rem;
           }
-
-          .glow-gen1 {
-            box-shadow: 0 0 20px rgba(255, 165, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.4) !important;
-            border-color: rgba(255, 165, 0, 0.8) !important;
-          }
-
-          .glow-gen2 {
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.4) !important;
-            border-color: rgba(0, 255, 255, 0.8) !important;
-          }
-
-          .glow-gen3 {
-            box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), 0 0 40px rgba(255, 20, 147, 0.4) !important;
-            border-color: rgba(255, 20, 147, 0.8) !important;
-          }
-
-          .glow-gen4 {
-            box-shadow: 0 0 20px rgba(124, 58, 237, 0.6), 0 0 40px rgba(124, 58, 237, 0.4) !important;
-            border-color: rgba(124, 58, 237, 0.8) !important;
-          }
-
-          .glow-gen5 {
-            box-shadow: 
-              0 0 20px rgba(255, 0, 255, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.3),
-              0 0 40px rgba(255, 255, 0, 0.2) !important;
-            border-color: rgba(255, 0, 255, 0.8) !important;
-            animation: rainbowGlow 3s linear infinite !important;
-          }
-
-          @keyframes rainbowGlow {
-            0% { border-color: rgba(255, 0, 255, 0.8); }
-            33% { border-color: rgba(0, 255, 255, 0.8); }
-            66% { border-color: rgba(255, 255, 0, 0.8); }
-            100% { border-color: rgba(255, 0, 255, 0.8); }
-          }
-
-          .node-image-container {
-            position: relative;
-            margin-bottom: 20px;
-            overflow: hidden;
-            border-radius: 12px;
-          }
-
-          .node-image {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-          }
-
-          .node-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: all 0.3s ease;
-            border-radius: 12px;
-          }
-
-          .node-image-container:hover .node-overlay {
-            opacity: 1;
-          }
-
-          .node-image-container:hover .node-image {
-            transform: scale(1.05);
-          }
-
-          .try-app-btn {
-            padding: 12px 25px;
-            background: linear-gradient(45deg, #9d4edd, #7209b7);
-            color: #ffffff;
-            border: none;
-            border-radius: 25px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 500;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-          }
-
-          .try-app-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(157, 78, 221, 0.4);
-          }
-
-          .node-content {
-            text-align: center;
-          }
-
-          .node-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-          }
-
-          .creator-info {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-          }
-
-          .creator-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-          }
-
-          .creator-handle {
-            color: #ffffff;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 400;
-            text-decoration: none;
-            transition: all 0.3s ease;
-          }
-
-          .creator-handle:hover {
-            color: #ffffff;
-          }
-
-          .remix-count {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-          }
-
-          .remix-number {
-            color: #ffffff;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 400;
-          }
-
-          .remix-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8rem;
-          }
-
-          .node-prompt {
-            color: #ffffff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.95rem;
-            font-weight: 400;
-            background: rgba(114, 9, 183, 0.1);
-            border: 2px solid rgba(114, 9, 183, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            line-height: 1.4;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            user-select: none;
-          }
-
-          .node-prompt:hover {
-            background: rgba(114, 9, 183, 0.15);
-            border-color: rgba(114, 9, 183, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(114, 9, 183, 0.2);
-          }
-
-          .node-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .remix-btn {
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #7209b7;
-            color: rgba(255, 255, 255, 0.9);
-            border-radius: 25px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 300;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-          }
-
-          .remix-btn:hover {
-            background: rgba(114, 9, 183, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(114, 9, 183, 0.3);
-          }
-
-          .created-date {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-family: 'Space Grotesk', sans-serif;
-          }
-
-          .main-connection-line {
-            width: 3px;
-            height: 40px;
-            background: linear-gradient(to bottom, #9d4edd, #7209b7);
-            margin: 0 auto 30px;
-            border-radius: 2px;
-            box-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
-          }
-
-          .direct-remixes {
-            width: 100%;
-          }
-
-          .generations-columns {
-            display: flex;
-            gap: 60px;
-            align-items: flex-start;
-            justify-content: center;
-            width: 100%;
-          }
-
-          .generation-column {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 350px;
-          }
-
-          .generation-header {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #9d4edd;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-            text-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
-            background: rgba(157, 78, 221, 0.1);
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: 2px solid rgba(157, 78, 221, 0.3);
-            text-align: center;
-          }
-
-          .generation-count {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 400;
-            margin-left: 8px;
-            text-transform: none;
-            letter-spacing: 0;
-          }
-
-          .generation-nodes {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-            align-items: center;
-          }
-
-          .column-node {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-          }
-
-          .remixes-grid {
-            display: flex;
-            justify-content: center;
-            gap: 60px;
-            flex-wrap: wrap;
-          }
-
-          .first-generation-grid {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-          }
-
-          .remix-branch {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 40px;
-          }
-
-          .remix-connection-line {
-            width: 3px;
-            height: 30px;
-            background: linear-gradient(to bottom, #7209b7, #a855f7);
-            margin-bottom: 20px;
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(114, 9, 183, 0.4);
-          }
-
-          .branch-with-children {
-            display: flex;
-            align-items: flex-start;
-            gap: 40px;
-          }
-
-          .children-horizontal {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-          }
-
-          .horizontal-connection-line {
-            width: 40px;
-            height: 3px;
-            background: linear-gradient(to right, #7209b7, #a855f7);
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(114, 9, 183, 0.4);
-          }
-
-          .children-list {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-          }
-
-          .child-node {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .child-connection-line {
-            width: 3px;
-            height: 20px;
-            background: linear-gradient(to bottom, #a855f7, #c084fc);
-            margin-bottom: 15px;
-            border-radius: 2px;
-            box-shadow: 0 0 6px rgba(168, 85, 247, 0.4);
-          }
-
-          .children-container {
-            margin-top: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .connection-line {
-            width: 3px;
-            height: 30px;
-            background: linear-gradient(to bottom, #a855f7, #c084fc);
-            margin-bottom: 20px;
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
-          }
-
-          .children-grid {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            flex-wrap: wrap;
-          }
-
-          .child-branch {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .branch-line {
-            width: 3px;
-            height: 25px;
-            background: linear-gradient(to bottom, #c084fc, #ddd6fe);
-            margin-bottom: 15px;
-            border-radius: 2px;
-            box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
-          }
-
-          .grandchildren-container {
-            margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .grandchild-connection {
-            width: 2px;
-            height: 25px;
-            background: linear-gradient(to bottom, #ddd6fe, #e9d5ff);
-            margin-bottom: 15px;
-            border-radius: 1px;
-            box-shadow: 0 0 4px rgba(221, 214, 254, 0.4);
-          }
-
-          .grandchildren-grid {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-            flex-wrap: wrap;
-          }
-
-          .grandchild-branch {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .grandchild-line {
-            width: 2px;
-            height: 20px;
-            background: linear-gradient(to bottom, #e9d5ff, #f3e8ff);
-            margin-bottom: 10px;
-            border-radius: 1px;
-            box-shadow: 0 0 3px rgba(233, 213, 255, 0.4);
-          }
-
-          .sparks {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            overflow: hidden;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-          }
-
-          .spark {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #a855f7;
-            border-radius: 50%;
-            opacity: 0;
-            animation: spark 4.5s infinite ease-out;
-            box-shadow: 0 0 6px #a855f7;
-          }
-
-          .spark:nth-child(1) {
-            top: 25%;
-            left: 20%;
-            animation-delay: 0s;
-          }
-
-          .spark:nth-child(2) {
-            top: 70%;
-            left: 80%;
-            animation-delay: 1.8s;
-          }
-
-          .spark:nth-child(3) {
-            top: 50%;
-            left: 10%;
-            animation-delay: 3.6s;
-          }
-
-          .spark:nth-child(4) {
-            top: 30%;
-            left: 90%;
-            animation-delay: 2.7s;
-          }
-
-          @keyframes spark {
-            0% {
-              opacity: 0;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(2);
-            }
-            100% {
-              opacity: 0;
-              transform: scale(1);
-            }
-          }
-
-          @media (max-width: 1200px) {
-            .generations-columns {
-              gap: 40px;
-            }
-            .generation-column {
-              min-width: 320px;
-            }
-            .remixes-grid {
-              gap: 40px;
-            }
-            .children-grid {
-              gap: 30px;
-            }
-          }
-
-          @media (max-width: 768px) {
-            .logo { font-size: 2.5rem; }
-            .tree-hero h1 { font-size: 2.5rem; }
-            .hero-content { padding: 40px 25px; }
-            .node-card { width: 300px; }
-            .desktop-branch-columns {
-              display: none; /* Hide desktop view on mobile */
-            }
-            .stats-container {
-              grid-template-columns: repeat(2, 1fr);
-              gap: 20px;
-            }
-            .copied-notification {
-              top: 20px;
-              right: 20px;
-              padding: 12px 20px;
-              font-size: 0.9rem;
-            }
-            
-            /* Hide hero stats section on mobile */
-            .tree-hero {
-              display: none !important;
-            }
-            
-            /* Make branch navigation sticky at top */
-            .progress-trail {
-              position: sticky !important;
-              top: 0 !important;
-              z-index: 1000 !important;
-              background: transparent !important;
-              backdrop-filter: none !important;
-              padding: 15px 20px !important;
-              border-bottom: none !important;
-              box-shadow: none !important;
-            }
-            
-            /* Stats moved to be part of column content */
-            .stats-container {
-              order: -1; /* Show stats at top of first column */
-              margin-bottom: 20px;
-              width: 100%;
-              max-width: 350px;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .logo { font-size: 2rem; }
-            .tree-hero h1 { font-size: 2rem; }
-            .hero-content { padding: 30px 20px; }
-            .node-card { width: 280px; padding: 20px; }
-            .node-image { height: 150px; }
-            .stats-container {
-              grid-template-columns: 1fr;
-              gap: 15px;
-            }
-            .stat-number { font-size: 2rem; }
-            .copied-notification {
-              top: 15px;
-              right: 15px;
-              padding: 10px 18px;
-              font-size: 0.8rem;
-            }
-          }
-
-          /* Desktop Branch Columns */
-          .desktop-branch-columns {
-            display: flex;
-            gap: 40px;
-            padding: 40px 20px;
-            overflow-x: auto;
-            min-height: 70vh;
-          }
-
-          .desktop-column {
-            display: flex;
-            flex-direction: column;
-            min-width: 320px;
-            flex-shrink: 0;
-          }
-
-          .column-header {
-            margin-bottom: 20px;
-            text-align: center;
-          }
-
-          .column-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: rgba(157, 78, 221, 0.8);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 8px 16px;
-            background: rgba(157, 78, 221, 0.1);
-            border: 1px solid rgba(157, 78, 221, 0.3);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-          }
-
-          .column-nodes {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-          }
-
-          .desktop-node {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-          }
-
-          /* Mobile Pagination Styles */
-          .mobile-tree-container {
-            position: relative;
-            width: 100%;
-            max-width: 100vw;
-            overflow: hidden;
-          }
-
-          @media (min-width: 769px) {
-            .mobile-tree-container {
-              display: none; /* Hide mobile view on desktop */
-            }
-          }
-
-          .progress-trail {
-            margin-bottom: 30px;
-            padding: 0 20px;
-          }
-
-          .trail-line {
-            position: relative;
-            height: 4px;
-            background: rgba(157, 78, 221, 0.2);
-            border-radius: 2px;
-            margin-bottom: 20px;
-            overflow: hidden;
-          }
-
-          .trail-progress {
-            height: 100%;
-            background: linear-gradient(90deg, #9d4edd, #7209b7);
-            border-radius: 2px;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
-          }
-
-          .trail-markers {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-          }
-
-          .trail-marker {
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(157, 78, 221, 0.3);
-            border-radius: 20px;
-            padding: 8px 12px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            min-width: 60px;
-            text-align: center;
-          }
-
-          .trail-marker.active {
-            background: rgba(157, 78, 221, 0.8);
-            border-color: rgba(157, 78, 221, 0.8);
-            color: #ffffff;
-            box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
-          }
-
-          .trail-marker.completed {
-            background: rgba(157, 78, 221, 0.4);
-            border-color: rgba(157, 78, 221, 0.4);
-            color: rgba(255, 255, 255, 0.9);
-          }
-
-          .marker-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .swipe-container {
-            position: relative;
-            width: 100%;
-            height: 70vh;
-            overflow: hidden;
-            cursor: grab;
-          }
-
-          .swipe-container:active {
-            cursor: grabbing;
-          }
-
-          .columns-wrapper {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            will-change: transform;
-          }
-
-          .mobile-column {
-            flex: 0 0 100%;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-          }
-
-          .column-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px 0;
-            min-height: 100%;
-          }
-
-          .mobile-node {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-          }
-        `}</style>
-      </body>
-    </html>
+        }
+      `}</style>
+    </>
   )
-} 
+}

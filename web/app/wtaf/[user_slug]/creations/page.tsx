@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import Link from "next/link"
 import TruncatedPrompt from "@/components/truncated-prompt"
 import Pagination from "@/components/ui/pagination"
+import CopiedModal from "@/components/ui/copied-modal"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -71,7 +72,7 @@ export default function CreationsPage() {
 
   const userData = {
     displayName: userSlug ? userSlug.charAt(0).toUpperCase() + userSlug.slice(1) : "",
-    bio: "Creative technologist crafting unique digital experiences with WEBTOYS.ai",
+    bio: "Creative technologist crafting unique digital experiences with WEBTOYS",
     joinDate: "2024",
     avatar: "🎨"
   }
@@ -81,6 +82,10 @@ export default function CreationsPage() {
     setTimeout(() => {
       setCopiedNotification({ show: false, text: "" })
     }, 3000)
+  }
+
+  const closeCopiedModal = () => {
+    setCopiedNotification({ show: false, text: "" })
   }
 
   const copyToClipboard = async (text: string) => {
@@ -97,14 +102,14 @@ export default function CreationsPage() {
     const remixCommand = `REMIX ${appSlug}`
     const success = await copyToClipboard(remixCommand)
     if (success) {
-      showCopiedNotification("REMIX command copied!")
+      showCopiedNotification(remixCommand)
     }
   }
 
   const handlePromptClick = async (e: React.MouseEvent, prompt: string) => {
     const success = await copyToClipboard(prompt)
     if (success) {
-      showCopiedNotification("Prompt copied!")
+      showCopiedNotification(prompt)
     }
     // Add clicked class for animation
     const target = e.target as HTMLElement
@@ -172,7 +177,7 @@ export default function CreationsPage() {
   useEffect(() => {
     if (userSlug) {
       // Set page title
-      document.title = `@${userSlug} creations - WEBTOYS.ai`
+      document.title = `@${userSlug} creations - WEBTOYS`
       fetchCreationsData(currentPage)
     }
   }, [userSlug, currentPage, fetchCreationsData])
@@ -236,13 +241,12 @@ export default function CreationsPage() {
 
   return (
     <>
-      {/* Copied Notification */}
-      {copiedNotification.show && (
-        <div className="copied-notification">
-          <span className="copied-text">{copiedNotification.text}</span>
-          <span className="copied-checkmark">✨</span>
-        </div>
-      )}
+      {/* Copied Modal */}
+      <CopiedModal 
+        show={copiedNotification.show}
+        text={copiedNotification.text}
+        onClose={closeCopiedModal}
+      />
 
       {/* Floating shapes */}
       <div className="floating-shape shape1"></div>
@@ -254,7 +258,7 @@ export default function CreationsPage() {
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
-          <Link href="/" className="logo">WEBTOYS.ai</Link>
+          <Link href="/" className="logo">WEBTOYS</Link>
           <div className="nav-links">
             <Link href="/trending" className="back-link">
               ← Back to Trending
@@ -538,56 +542,6 @@ export default function CreationsPage() {
           50% { transform: translateY(-10px); }
         }
 
-        /* Copied Notification */
-        .copied-notification {
-          position: fixed;
-          top: 120px;
-          right: 30px;
-          background: var(--green-mint);
-          color: var(--charcoal);
-          padding: 15px 25px;
-          border-radius: 2rem;
-          font-weight: 700;
-          font-size: 1rem;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          box-shadow: 0 8px 25px var(--purple-shadow);
-          animation: slideInFade 3s ease-out;
-          border: 3px solid var(--green-sage);
-        }
-
-        .copied-checkmark {
-          background: var(--green-sage);
-          color: white;
-          border-radius: 50%;
-          width: 25px;
-          height: 25px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.9rem;
-        }
-
-        @keyframes slideInFade {
-          0% {
-            transform: translateX(100px);
-            opacity: 0;
-          }
-          15% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          85% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100px);
-            opacity: 0;
-          }
-        }
 
         /* Floating shapes */
         .floating-shape {
