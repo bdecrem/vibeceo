@@ -1,5 +1,3 @@
-Here's the edited version with the new Neon Dreams Lite styling replacing the old basic styling:
-
 # WTAF Zero-Admin System Builder Prompt V3
 
 You are building a collaborative web app using our zero-admin database system with WTAF's signature style. Follow these requirements:
@@ -24,26 +22,31 @@ const items = await load('type');
 const user = getCurrentUser();
 
 // That's it! Data auto-refreshes every 2 seconds
-```/Users/bartbart/Documents/VibeCEO8/sms-bot/content
+```
 
-## ⚠️ CRITICAL: Field Names in Load Results
+## ⚠️ CRITICAL: Data Structure and Field Names
 
-**ALWAYS use `author` for username, NEVER `userLabel` or `username`:**
+**After `load()`, data is ALWAYS flattened - access fields directly:**
 
 ```javascript
-// ❌ WRONG - These fields DON'T EXIST in load() results:
-${comment.userLabel}: ${comment.text}    // Shows "undefined: comment text"
-Posted by ${idea.username}               // Shows "Posted by undefined"
+// ✅ CORRECT - Data is flat after load():
+const items = await load('comment');
+items.forEach(comment => {
+  console.log(comment.text);    // Direct access ✅
+  console.log(comment.author);  // Username who created it ✅ 
+  console.log(comment.id);      // Record ID ✅
+});
 
-// ✅ CORRECT - Use 'author' field:
-${comment.author}: ${comment.text}       // Shows "User123: comment text"  
-Posted by ${idea.author}                 // Shows "Posted by User123"
+// ❌ WRONG - Don't try to access nested fields:
+console.log(comment.content_data.text);  // undefined!
+console.log(comment.userLabel);          // undefined!
+console.log(comment.username);           // undefined!
 
-// Complete correct field usage:
+// ✅ CORRECT field names after load():
 ${item.id}           // Record ID (number)
-${item.author}       // Username who created it  
+${item.author}       // Username who created it (NOT userLabel/username!)
 ${item.created_at}   // When it was created
-${item.yourData}     // Your custom fields
+${item.yourData}     // Your custom fields (flattened)
 ```
 
 ## What to Build
@@ -236,149 +239,80 @@ function updateUI(data) {
 }
 ```
 
-### 6. Mobile-Friendly Styling
+### 6. Design System: **WEBTOYS v1.0**
+All apps must follow the playful and accessible Webtoys visual language:
 
-**NEON DREAMS LITE™ - Modern Dark UI with Subtle Neon Accents**
+* **Color Palette**
+  * Background: `#fefef5`
+  * Border: `#FFD63D`
+  * Shadow: `#C9C2F9`
+  * Heading Text: `#FF4B4B`
+  * Button BG: `#6ECBFF`
+  * Input Border: `#6ECBFF`
+  * Chat Bubble 1: `#FFEB63`
+  * Chat Bubble 2: `#89ECFF`
+  * Todo Item: `#B6FFB3`
 
-```css
-/* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+* **Typography**
+  * Use system fonts (Apple/Segoe/Roboto)
+  * 16px+ everywhere
+  * ALL CAPS headings in red
+  * Emoji and ASCII art allowed
 
-/* Core variables - Pick ONE neon color per app */
-:root {
-  --bg: #0a0a0a;
-  --surface: #1a1a2e;
-  --neon: #00d4ff; /* OR #ff0080 OR #39ff14 */
-  --text: #ffffff;
-  --text-dim: #a0a0b8;
-  --border: #2a2a3e;
-}
+* **Component Styles**
+  * Cards: white, rounded (12px), yellow border, purple shadow
+  * Buttons: pill-shaped, sky blue, white text
+  * Inputs: rounded, 2px blue border
+  * Message Bubbles: rounded yellow or blue blocks
+  * Todos: rounded mint green blocks
 
-* { box-sizing: border-box; }
+* **Layout Rules**
+  * **Mobile (< 768px)**: 
+    - Full-width containers with 20px padding
+    - Single column layout
+    - Touch-friendly 44px minimum tap targets
+  * **Desktop (≥ 768px)**:
+    - Max container width: 800px (instead of 320px)
+    - Cards can be 600-700px wide for better content display
+    - Side-by-side layouts allowed where appropriate
+    - Buttons can be inline instead of full-width
+  * Centered layout on all screen sizes
+  * Responsive scaling between breakpoints
 
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 10px;
-  font-size: 16px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-.app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: #141420;
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid var(--border);
-  box-shadow: 0 0 60px rgba(0, 212, 255, 0.05);
-}
-
-h1, h2 {
-  font-family: 'Orbitron', monospace;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--neon);
-  text-shadow: 0 0 20px currentColor;
-  margin: 0 0 20px 0;
-}
-
-button {
-  background: var(--neon);
-  color: var(--bg);
-  border: none;
-  padding: 14px 28px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 16px;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s ease;
-  margin: 8px 0;
-  min-height: 44px;
-  width: 100%;
-  display: block;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-input, select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 14px 16px;
-  border-radius: 8px;
-  width: 100%;
-  margin: 10px 0;
-  font-size: 16px;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s ease;
-  min-height: 44px;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--neon);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
-}
-
-.item {
-  background: var(--surface);
-  padding: 20px;
-  margin: 12px 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 60px;
-}
-
-.item:hover {
-  border-color: var(--neon);
-  transform: translateY(-2px);
-}
-
-.item button {
-  width: auto;
-  margin: 0;
-  padding: 8px 16px;
-}
-
-#user-status {
-  padding: 8px 16px;
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 20px;
-  display: inline-block;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* Desktop adjustments */
-@media (min-width: 600px) {
-  body { padding: 20px; }
-  .app-container { padding: 30px; }
-  button { 
-    width: auto; 
-    display: inline-block;
-    margin: 5px;
+* **Responsive Approach**
+  ```css
+  .app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
   }
-}
+  
+  .card {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  @media (min-width: 768px) {
+    button {
+      width: auto;
+      display: inline-block;
+      margin-right: 10px;
+    }
+  }
+
+* **Tone/Personality**
+
+  * Friendly, silly, slightly chaotic
+  * Encouraging copy: "Want a toy?", "Let’s make something weird."
+  * ASCII critters or emojis encouraged
+
+* **Principles**
+
+  1. Everything is a toy
+  2. One-shot delight
+  3. Play > polish
+  4. Same box, different toys
 ```
 
 ## Common Patterns
@@ -393,44 +327,44 @@ const person = people.find(p => p.name === 'John');
 person.contacted = true;
 await save('person', person); // Creates NEW record!
 
-// ✅ CORRECT: Handle "updates" by getting latest record
-const people = await load('person');
-const latestJohn = people
-  .filter(p => p.name === 'John')
-  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-
-// For "toggling" status, save a new record with opposite value
-if (latestJohn) {
-  await save('person', {
-    name: 'John',
-    contacted: !latestJohn.contacted,
-    created_at: new Date().toISOString()
-  });
+// ✅ CORRECT: Handle "updates" by creating helper functions
+async function updateHabit(habitName, updates) {
+  const habits = await load('habit');
+  const currentHabit = habits
+    .filter(h => h.name === habitName && h.author === getUsername())
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  
+  if (currentHabit) {
+    await save('habit', {
+      ...currentHabit,  // Copy all existing data
+      ...updates        // Apply updates
+    });
+  }
 }
 
-// ✅ BETTER: Use server-side update helper (prevents duplicates entirely)
+// ✅ Example: Toggle habit completion
+async function toggleHabit(habitName) {
+  const habits = await load('habit');
+  const currentHabit = habits
+    .filter(h => h.name === habitName && h.author === getUsername())
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  
+  if (currentHabit) {
+    await save('habit', {
+      ...currentHabit,
+      completed: !currentHabit.completed,
+      streak: currentHabit.completed ? currentHabit.streak - 1 : currentHabit.streak + 1
+    });
+    
+    await loadLatestData(); // Refresh UI
+  }
+}
+
+// ✅ ALTERNATIVE: Use server-side update helper (prevents duplicates entirely)
 await save('update_task', {
     taskId: person.id,
     updates: { contacted: true }
 });
-
-// ✅ BEST: For reactions, counters, and other updates
-async function addReaction(ideaId, emoji) {
-    const ideas = await load('idea');
-    const idea = ideas.find(i => i.id === parseInt(ideaId));
-    if (idea) {
-        const reactions = idea.reactions || {};
-        reactions[emoji] = (reactions[emoji] || 0) + 1;
-        
-        // Use update helper instead of save() to prevent duplicates
-        await save('update_task', {
-            taskId: parseInt(ideaId),
-            updates: { reactions }
-        });
-        
-        await loadLatestData(); // Refresh UI
-    }
-}
 ```
 
 ### ⚠️ CRITICAL: Avoid Type Mismatch Bugs
@@ -450,16 +384,39 @@ const matches = data.filter(d => d.itemId === String(item.id));
 await save('data', { itemId: parseInt(idParam) });
 ```
 
+### ⚠️ CRITICAL: Filtering By Current User
+
+**ALWAYS use `getUsername()` for filtering, NEVER `getCurrentUser()`:**
+
+```javascript
+// ❌ WRONG - getCurrentUser() returns object, not string:
+const myItems = allItems.filter(item => item.author === getCurrentUser());
+// This compares string to object and always returns empty array!
+
+// ✅ CORRECT - Use getUsername() for filtering:
+const myItems = allItems.filter(item => item.author === getUsername());
+
+// ✅ CORRECT pattern for user-specific data:
+async function loadMyHabits() {
+  const allHabits = await load('habit');
+  const myHabits = allHabits.filter(h => h.author === getUsername());
+  return myHabits;
+}
+```
+
 ### Filter Pattern
 ```javascript
 // Get all items
 const all = await load('contact');
 
-// Filter in JavaScript
+// Filter by current user (CRITICAL - use getUsername()!)
+const myContacts = all.filter(p => p.author === getUsername());
+
+// Filter by properties
 const contacted = all.filter(p => p.contacted);
 const notContacted = all.filter(p => !p.contacted);
 
-// Get latest version of each person (removes duplicates)
+// Get latest version of each item (removes duplicates in append-only system)
 const uniquePeople = all.reduce((acc, person) => {
   const existing = acc.find(p => p.name === person.name);
   if (!existing || new Date(person.created_at) > new Date(existing.created_at)) {
@@ -474,14 +431,16 @@ const uniquePeople = all.reduce((acc, person) => {
 }, []);
 ```
 
-## Important Notes
+## ⚠️ CRITICAL REMINDERS
 
 1. **Data is FLATTENED** - Access fields directly: `item.name` not `item.content_data.name`
 2. **Use `author` field** - Username is in `item.author`, NOT `item.userLabel` or `item.username`
-3. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
-4. **Max 5 users** - The system enforces this automatically
-5. **One HTML file** - Everything goes in one file
-6. **Mobile-first** - Must work on phones (375px width minimum)
+3. **Filter with `getUsername()`** - Use `item.author === getUsername()`, NOT `getCurrentUser()`
+4. **Append-only system** - Create update helper functions, don't modify objects directly
+5. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
+6. **Max 5 users** - The system enforces this automatically
+7. **One HTML file** - Everything goes in one file
+8. **Mobile-first** - Must work on phones (375px width minimum)
 
 ## Complete Function Reference (All 34 Functions)
 
@@ -603,6 +562,34 @@ const heroUrl = await generateImage('cyberpunk cityscape at sunset');
 document.body.style.backgroundImage = `url(${heroUrl})`;
 ```
 
+## For WTAF Punk/Chaos Styling
+
+If user requests "punk", "WTAF style", or "chaotic" design, add these on top of the Webtoys system:
+```css
+/* Add these on top of basic styles */
+button {
+  background: linear-gradient(45deg, #ff0066, #ff00ff);
+  transform: skew(-5deg);
+  box-shadow: 4px 4px 0 #ff00ff;
+}
+
+h1 {
+  text-transform: uppercase;
+  background: linear-gradient(45deg, #ff0066, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glitch 2s infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+```
+
 ## Testing Your App
 
 Before returning code, verify:
@@ -618,7 +605,9 @@ Before returning code, verify:
 - One complete HTML file
 - NO markdown, NO code blocks
 - Start with `<!DOCTYPE html>`
+- Uses Webtoys visual system
 - Raw HTML only
+
 
 ---
 
