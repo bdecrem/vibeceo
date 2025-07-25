@@ -901,7 +901,16 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🎯 Using ${configType} configuration`);
         logWithTimestamp(`🤖 Models: Classifier=${(config as any).classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
-        // Step 1: Generate complete prompt with config (including admin override)
+        // Step 1: Load WTAF Design System BEFORE generating complete prompt
+        logWithTimestamp(`🎨 Loading WTAF Design System for prompt generation...`);
+        const designSystemForPrompt = await loadWtafDesignSystem();
+        if (designSystemForPrompt) {
+            logWithTimestamp("🎨 WTAF Design System loaded for prompt generation");
+        } else {
+            logWarning("⚠️ WTAF Design System failed to load for prompt generation");
+        }
+        
+        // Step 2: Generate complete prompt with config (including admin override and design system)
         logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
         
         // For games, classifier config is not needed since games skip the classifier entirely
@@ -912,7 +921,8 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             classifierTopP: 1,
             classifierPresencePenalty: 0.3,
             classifierFrequencyPenalty: 0,
-            forceAdminOverride: forceAdminPath
+            forceAdminOverride: forceAdminPath,
+            designSystem: designSystemForPrompt || undefined
         } : {
             classifierModel: (config as any).classifierModel || 'gpt-4o',
             classifierMaxTokens: (config as any).classifierMaxTokens || 600,
@@ -920,7 +930,8 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             classifierTopP: (config as any).classifierTopP || 1,
             classifierPresencePenalty: (config as any).classifierPresencePenalty || 0.3,
             classifierFrequencyPenalty: (config as any).classifierFrequencyPenalty || 0,
-            forceAdminOverride: forceAdminPath
+            forceAdminOverride: forceAdminPath,
+            designSystem: designSystemForPrompt || undefined
         };
         
         // Add marker for minimal test if needed
@@ -958,25 +969,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             logWithTimestamp("🚀 PROMPT 2: Sending complete prompt to Claude...");
             logWithTimestamp(`🔧 Complete prompt being sent to Claude: ${completePrompt.slice(-300)}`); // Last 300 chars
             
-            // Dynamic WTAF Design System injection - load only for standard web pages
-            let designSystemContent = null;
-            const isSpecializedRequest = completePrompt.includes('ADMIN_DUAL_PAGE_REQUEST:') || 
-                                       completePrompt.includes('ZAD_COMPREHENSIVE_REQUEST:') ||
-                                       completePrompt.includes('ZAD_TEST_REQUEST:') ||
-                                       completePrompt.includes('--stack') ||
-                                       completePrompt.includes('--remix') ||
-                                       completePrompt.includes('--stackdb') ||
-                                       completePrompt.includes('--stackdata') ||
-                                       completePrompt.includes('--stackzad');
-            
-            if (!isSpecializedRequest && configType === 'creation') {
-                designSystemContent = await loadWtafDesignSystem();
-                if (designSystemContent) {
-                    logWithTimestamp("🎨 Dynamic WTAF Design System loaded for standard web page");
-                } else {
-                    logWarning("⚠️ WTAF Design System failed to load - proceeding without brand guidelines");
-                }
-            }
+            // WTAF Design System is now loaded earlier and passed through classifierConfig
+            // Use the design system that was loaded before prompt generation
+            let designSystemContent = designSystemForPrompt;
             
             result = await callClaude(CREATION_SYSTEM_PROMPT, completePrompt, {
                 model: config.builderModel,
