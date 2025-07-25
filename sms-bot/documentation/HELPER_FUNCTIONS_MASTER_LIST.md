@@ -1,8 +1,11 @@
 # ZAD Helper Functions Master List
 
+## ⚠️ CRITICAL: ZAD is Append-Only - Always Deduplicate Display Data
+**ZAD never updates records - every `save()` creates a NEW record. You MUST deduplicate when displaying data or you'll show duplicates with mixed states (e.g., both completed and uncompleted versions of the same todo).**
+
 ## Core Data Functions (Available Everywhere)
-1. `save(type, data)` - Save data to ZAD database
-2. `load(type)` - Load all data of a specific type  
+1. `save(type, data)` - Save data to ZAD database (ALWAYS creates new record)
+2. `load(type)` - Load all data of a specific type (RETURNS ALL VERSIONS - must deduplicate)
 3. `query(type, options)` - Advanced queries with filtering/sorting
 
 ## Authentication & User Functions (Available Everywhere)
@@ -53,12 +56,42 @@
 33. `saveNote()` / `loadNotes()` - Alias for save/load
 34. `saveMessage()` / `loadMessages()` - Alias for save/load
 
+## ⚠️ REQUIRED DEDUPLICATION PATTERN (For Generated Apps)
+
+```javascript
+// Standard deduplication pattern - should be in every generated app
+function deduplicate(items, uniqueField = 'name') {
+  return items.reduce((acc, item) => {
+    const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+    if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+      if (existing) {
+        const index = acc.indexOf(existing);
+        acc[index] = item; // Replace with newer version
+      } else {
+        acc.push(item);
+      }
+    }
+    return acc;
+  }, []);
+}
+
+// Usage in every app's loadLatestData function:
+async function loadLatestData() {
+  const all = await load('todo');
+  const mine = all.filter(item => item.author === getUsername());
+  const unique = deduplicate(mine, 'text'); // Deduplicate by todo text
+  const active = unique.filter(item => !item.completed); // Hide completed
+  updateUI(active);
+}
+```
+
 ## Status
 - [x] All functions consolidated in zad-helpers.ts (34 functions total)
-- [x] All functions documented in Claude template (comprehensive reference added)
+- [x] All functions documented in Claude template (comprehensive reference added)  
 - [x] Backend implementations verified (all action types exist in API)
-- [ ] Inline injection updated to use zad-helpers.ts (reverted for now)
-- [ ] Testing completed
+- [x] Builder prompt updated with prominent deduplication examples
+- [x] Critical reminders updated to emphasize deduplication requirement
+- [ ] Testing completed with updated prompt
 
 ## MAJOR PROGRESS COMPLETED ✅
 
