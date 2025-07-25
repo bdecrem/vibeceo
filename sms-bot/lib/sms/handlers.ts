@@ -1730,7 +1730,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
     }
 
     // Handle WTAF command with slug system
-    if (message.match(/^WTAF(?:\s|$)/i)) {
+    if (message.match(/^WTAF(?:[,:\s]|$)/i)) {
       console.log(`Processing WTAF command from ${from}`);
       
       try {
