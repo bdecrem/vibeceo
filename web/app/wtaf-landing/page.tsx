@@ -213,14 +213,14 @@ export default function WebtoysSitePage() {
                 <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a fun sushi bar site")}>
                   "WTAF Build me a fun sushi bar site"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Create a game where you catch falling tacos")}>
-                  "WTAF Create a game where you catch falling tacos"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Create a game where you catch falling tacos with a sombrero")}>
+                  "WTAF Create a game where you catch falling tacos with a sombrero"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Make a meme generator for my cat photos")}>
-                  "WTAF Make a meme generator for my cat photos"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Make a meme generator but only for cat photos")}>
+                  "WTAF Make a meme generator but only for cat photos"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF I need a todo app but make it fun")}>
-                  "WTAF I need a todo app but make it fun"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF I need a todo app that makes productivity feel like a game")}>
+                  "WTAF I need a todo app that makes productivity feel like a game"
                 </div>
               </div>
             </div>
@@ -251,9 +251,9 @@ export default function WebtoysSitePage() {
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"Build me a fun sushi bar site"</div>
+                <div className="prompt-text">"WTAF Build me a fun sushi bar site"</div>
                 <div className="example-actions">
-                  <a href="#" className="btn-view">View Site</a>
+                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">View Site</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -269,7 +269,7 @@ export default function WebtoysSitePage() {
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"Create a game where you catch falling tacos with a sombrero"</div>
+                <div className="prompt-text">"WTAF Create a game where you catch falling tacos with a sombrero"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Play Game</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Create a game where you catch falling tacos with a sombrero")}>
@@ -291,7 +291,7 @@ export default function WebtoysSitePage() {
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"Make a meme generator but only for cat photos"</div>
+                <div className="prompt-text">"WTAF Make a meme generator but only for cat photos"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Make Memes</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a meme generator but only for cat photos")}>
@@ -314,7 +314,7 @@ export default function WebtoysSitePage() {
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"I need a todo app that makes productivity feel like a game"</div>
+                <div className="prompt-text">"WTAF I need a todo app that makes productivity feel like a game"</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Try App</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF I need a todo app that makes productivity feel like a game")}>
