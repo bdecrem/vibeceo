@@ -11,140 +11,191 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- OpenGraph Meta Tags -->
-    <meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" />
-    <meta property="og:description" content="Witness the most psychedelic pachyderm party this side of the multiverse. Dancing purple elephants living their best life." />
-    <meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" />
-    <meta property="og:url" content="https://purpleelephants.wtaf" />
-    <meta property="og:type" content="website" />
-
-    <title>Purple Elephants Test Page</title>
-
+    <title>Brew & Bloom Café - Where Coffee Meets Magic ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-
-        :root {
-            --punk-purple: #7c3aed;
-            --neon-pink: #ff2e93;
-            --electric-blue: #3f88ff;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background: #1a1a1a;
-            color: #fff;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Inter', sans-serif;
+            background: #FFF8F3;
+            color: #2C1810;
             overflow-x: hidden;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2.5rem;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+            z-index: 100;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.1));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #8B4513, #A0522D, #CD853F);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            color: white;
             padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-        }
-
-        h1 {
-            font-size: 4rem;
-            text-transform: uppercase;
-            background: linear-gradient(45deg, var(--punk-purple), var(--neon-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: textGlow 2s ease-in-out infinite;
-        }
-
-        .elephant-container {
             position: relative;
-            height: 400px;
-            margin: 2rem 0;
-            background: linear-gradient(135deg, #2a1a4a, #4a1a2a);
-            border-radius: 20px;
             overflow: hidden;
         }
 
-        .elephant {
-            font-size: 8rem;
-            position: absolute;
-            animation: dance 3s ease-in-out infinite;
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        .elephant:nth-child(1) { left: 20%; top: 30%; animation-delay: 0s; }
-        .elephant:nth-child(2) { right: 20%; top: 40%; animation-delay: 0.5s; }
-        .elephant:nth-child(3) { left: 40%; top: 20%; animation-delay: 1s; }
-
-        @keyframes dance {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-30px) rotate(10deg); }
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: fadeUp 1s ease-out;
         }
 
-        @keyframes textGlow {
-            0%, 100% { text-shadow: 0 0 20px var(--neon-pink); }
-            50% { text-shadow: 0 0 40px var(--electric-blue); }
+        .hero p {
+            font-size: 1.5rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            animation: fadeUp 1s ease-out 0.2s backwards;
         }
 
-        .punk-button {
-            background: var(--punk-purple);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1.2rem;
-            border-radius: 5px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.3s;
+        .section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
             margin-top: 2rem;
         }
 
-        .punk-button:hover {
-            background: var(--neon-pink);
-            transform: scale(1.1);
-            box-shadow: 0 0 20px var(--neon-pink);
+        .menu-item {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
-        .meta-info {
-            margin-top: 3rem;
-            padding: 1rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+        .menu-item:hover {
+            transform: translateY(-5px);
         }
 
-        code {
-            display: block;
-            background: #2a2a2a;
-            padding: 1rem;
-            border-radius: 5px;
-            margin: 1rem 0;
-            text-align: left;
+        .contact {
+            background: #2C1810;
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .btn {
+            background: #FF6B6B;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Purple Elephants Test</h1>
-        
-        <div class="elephant-container">
-            <div class="elephant">🐘</div>
-            <div class="elephant">🐘</div>
-            <div class="elephant">🐘</div>
-        </div>
+    <div class="floating-emoji" style="top: 10%; left: 10%;" data-value="2">☕</div>
+    <div class="floating-emoji" style="top: 20%; right: 15%;" data-value="3">🌺</div>
+    <div class="floating-emoji" style="bottom: 15%; left: 20%;" data-value="4">🥐</div>
+    <div class="floating-emoji" style="bottom: 25%; right: 10%;" data-value="2">✨</div>
 
-        <button class="punk-button">Share This Madness</button>
+    <section class="hero">
+        <h1>Brew & Bloom Café</h1>
+        <p>Where every cup tells a story and every visit blooms into a memory</p>
+        <a href="#menu" class="btn">Explore Our Menu</a>
+    </section>
 
-        <div class="meta-info">
-            <h2>OpenGraph Meta Tags</h2>
-            <code>
-                &lt;meta property="og:title" content="🐘 PURPLE ELEPHANTS GONE WILD 🐘" /&gt;<br>
-                &lt;meta property="og:description" content="Witness the most psychedelic pachyderm party..." /&gt;<br>
-                &lt;meta property="og:image" content="https://source.unsplash.com/random/1200x630?purple,elephant" /&gt;
-            </code>
+    <section class="section" id="menu">
+        <h2>Our Magic Menu</h2>
+        <div class="menu-grid">
+            <div class="menu-item">
+                <h3>Signature Brews</h3>
+                <p>Artisanal coffee creations that dance on your taste buds</p>
+            </div>
+            <div class="menu-item">
+                <h3>Blooming Pastries</h3>
+                <p>Fresh-baked delights that complement your perfect cup</p>
+            </div>
+            <div class="menu-item">
+                <h3>Seasonal Specials</h3>
+                <p>Limited edition flavors that capture the essence of now</p>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section class="contact">
+        <h2>Join Our Coffee Community</h2>
+        <p>Questions or special requests? We'd love to hear from you!</p>
+        <a href="mailto:[CONTACT_EMAIL]" class="btn">Send us a message ✉️</a>
+        <p style="margin-top: 2rem;">Visit us at: 123 Bloom Street, Coffeetown</p>
+        <p>Open daily: 7AM - 8PM</p>
+    </section>
 
     <script>
-        document.querySelector('.punk-button').addEventListener('click', () => {
-            alert('🐘 Share URL copied! Spread the elephant madness! 🐘');
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('.hero h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                alert('☕ You found our secret brew! Here's a special code: COFFEEMAGIC for 10% off!');
+                clicks = 0;
+            }
         });
     </script>
 </body>

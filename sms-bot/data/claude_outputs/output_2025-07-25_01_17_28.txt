@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushi Sunset | Luxury Sushi Experience on Sunset Blvd</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2.5rem;
+            z-index: 100;
+            transition: transform 0.1s ease-out;
+        }
+
+        .hero {
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #FF2E93, #FF61C7);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            margin: 1rem;
+            text-decoration: none;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        .section {
+            padding: 5rem 2rem;
+        }
+
+        .about {
+            background: #fff;
+            position: relative;
+        }
+
+        .menu {
+            background: #f9f9f9;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .testimonials {
+            background: linear-gradient(45deg, #3F88FF, #6E7FFF);
+            color: white;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .testimonial-card {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .contact {
+            background: white;
+        }
+
+        .footer {
+            background: #1a1a1a;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .social-links {
+            margin: 2rem 0;
+        }
+
+        .social-links a {
+            color: white;
+            margin: 0 1rem;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .section {
+                padding: 3rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis -->
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%">🍣</div>
+    <div class="floating-emoji" data-value="3" style="top: 40%; left: 80%">🌊</div>
+    <div class="floating-emoji" data-value="4" style="top: 70%; left: 30%">✨</div>
+    <div class="floating-emoji" data-value="5" style="top: 80%; left: 70%">🎋</div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Savor the Art of Sushi 🍣✨</h1>
+            <p style="font-size: 1.5rem; margin-bottom: 2rem;">Where Sunset Boulevard meets Japanese culinary excellence</p>
+            <a href="#reserve" class="cta-button">Reserve Your Table 🍽️</a>
+        </div>
+    </section>
+
+    <section class="section about">
+        <div class="container">
+            <h2>Our Story 📖</h2>
+            <p>Nestled in the heart of Sunset Boulevard, Sushi Sunset brings the authentic flavors of Japan to Los Angeles. Our master chefs 👨‍🍳, trained in the most prestigious culinary institutions of Tokyo, craft each dish with precision and artistry.</p>
+            <p>Using only the finest ingredients sourced daily from local markets and flown in from Japan's renowned Tsukiji fish market, we ensure every bite tells a story of tradition and innovation.</p>
+        </div>
+    </section>
+
+    <section class="section menu">
+        <div class="container">
+            <h2>Signature Creations 🎨</h2>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <h3>Sunset Roll 🌅</h3>
+                    <p>Spicy tuna, avocado, tempura flakes, topped with seared salmon and gold flakes</p>
+                    <p>$24</p>
+                </div>
+                <div class="menu-item">
+                    <h3>Dragon's Dream 🐉</h3>
+                    <p>Tempura shrimp, cucumber, topped with unagi and avocado</p>
+                    <p>$28</p>
+                </div>
+                <div class="menu-item">
+                    <h3>Ocean Symphony 🌊</h3>
+                    <p>Assorted premium sashimi selection with chef's special garnishes</p>
+                    <p>$45</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section testimonials">
+        <div class="container">
+            <h2>What Our Guests Say ⭐</h2>
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <p>"The best sushi experience in LA! The attention to detail is remarkable."</p>
+                    <p>- Sarah M. ⭐⭐⭐⭐⭐</p>
+                </div>
+                <div class="testimonial-card">
+                    <p>"A perfect blend of traditional and modern Japanese cuisine."</p>
+                    <p>- James K. ⭐⭐⭐⭐⭐</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section contact" id="reserve">
+        <div class="container">
+            <h2>Find Us 📍</h2>
+            <p>8500 Sunset Boulevard, Los Angeles, CA 90069</p>
+            <p>Reservations: <a href="mailto:[CONTACT_EMAIL]">[CONTACT_EMAIL]</a></p>
+            <p>Hours: Tuesday - Sunday, 5:00 PM - 11:00 PM</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="social-links">
+                <a href="#">Instagram</a>
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+            </div>
+            <p>© 2024 Sushi Sunset. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Easter Egg
+        let konamiCode = [];
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.key);
+            if (konamiCode.slice(-10).join('') === 'ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba') {
+                document.body.style.animation = 'rainbow 1s infinite';
+                alert('🍣 Secret Sushi Menu Unlocked!');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import TruncatedPrompt from "@/components/truncated-prompt"
-import CopiedModal from "../ui/copied-modal"
+import CopiedModal from "@/components/ui/copied-modal"
 
 interface WtafApp {
   id: string

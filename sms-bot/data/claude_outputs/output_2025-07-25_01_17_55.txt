@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portland Paddle Co. | Kayak Rentals & Adventures</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #1a3d5c;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 3rem;
+            transition: transform 0.2s ease-out;
+            z-index: 100;
+        }
+
+        #emoji1 { top: 20%; left: 10%; }
+        #emoji2 { top: 40%; right: 15%; }
+        #emoji3 { bottom: 30%; left: 20%; }
+        #emoji4 { bottom: 20%; right: 25%; }
+
+        .hero {
+            background: linear-gradient(135deg, #3F88FF, #ABF7FF);
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            color: white;
+        }
+
+        .hero-text h1 {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .hero-image {
+            position: relative;
+        }
+
+        .hero-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #FF7C5C;
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+        }
+
+        .services {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .services-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .service-card {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .locations {
+            padding: 6rem 2rem;
+            background: #f0f7ff;
+        }
+
+        .testimonials {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .testimonial-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .testimonial-card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        footer {
+            background: #1a3d5c;
+            color: white;
+            padding: 4rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text h1 {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" id="emoji1" data-value="2">🌊</div>
+    <div class="floating-emoji" id="emoji2" data-value="3">🚣</div>
+    <div class="floating-emoji" id="emoji3" data-value="4">🏖️</div>
+    <div class="floating-emoji" id="emoji4" data-value="2">🌅</div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Paddle Your Own Adventure</h1>
+                <p>Experience the stunning coastline of Portland, Maine from a unique perspective. Whether you're a beginner or seasoned paddler, we've got the perfect kayak adventure waiting for you.</p>
+                <a href="#book" class="cta-button">Book Your Kayak Today</a>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Kayaking in Portland">
+            </div>
+        </div>
+    </section>
+
+    <section class="services">
+        <div class="services-grid">
+            <div class="service-card">
+                <h3>Single Kayaks</h3>
+                <p>Perfect for solo adventurers. Our single kayaks are stable, comfortable, and ideal for exploring Portland's waterways.</p>
+                <p>Starting at $35/hour</p>
+            </div>
+            <div class="service-card">
+                <h3>Tandem Kayaks</h3>
+                <p>Share the experience with a friend or loved one. Our tandem kayaks are great for couples and families.</p>
+                <p>Starting at $50/hour</p>
+            </div>
+            <div class="service-card">
+                <h3>Guided Tours</h3>
+                <p>Join our experienced guides for a 2-hour tour of Portland's best kayaking spots and hidden gems.</p>
+                <p>Starting at $75/person</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="locations">
+        <h2>Popular Routes</h2>
+        <div class="services-grid">
+            <div class="service-card">
+                <h3>Casco Bay Islands</h3>
+                <p>Paddle through the calm waters of Casco Bay and discover its beautiful islands.</p>
+            </div>
+            <div class="service-card">
+                <h3>Portland Harbor</h3>
+                <p>Explore the historic Portland Harbor and enjoy views of the city skyline.</p>
+            </div>
+            <div class="service-card">
+                <h3>Sunset Tour</h3>
+                <p>Experience the magic of a Maine sunset from the water.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials">
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <p>"Amazing experience! The staff was super friendly and helpful. Will definitely be back!"</p>
+                <p>- Sarah M.</p>
+            </div>
+            <div class="testimonial-card">
+                <p>"Best way to see Portland! The sunset tour was absolutely magical."</p>
+                <p>- Mike R.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div>
+                <h3>Contact Us</h3>
+                <p>Email: <a href="mailto:[CONTACT_EMAIL]">[CONTACT_EMAIL]</a></p>
+                <p>Phone: (207) 555-0123</p>
+                <p>123 Waterfront Way, Portland, ME 04101</p>
+            </div>
+            <div>
+                <h3>Hours</h3>
+                <p>May - September</p>
+                <p>Daily: 8am - Sunset</p>
+            </div>
+            <div>
+                <h3>Follow Us</h3>
+                <p>Instagram • Facebook • Twitter</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem; font-size: 0.8rem;">
+            <p>Text START to +1-866-330-0015 to join our adventure community!</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((emoji) => {
+                const speed = emoji.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let clicks = 0;
+        document.querySelector('.hero').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                alert('🎉 You found the secret paddle! Free hour rental on your next visit!');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -30,10 +30,10 @@
 		"replace-og-from-upload": "npm run build && node dist/scripts/replace-og-from-upload.js",
 		"test:og-upload": "npm run build && node dist/test-scripts/test-og-upload.js",
 		"fix-og-meta-tags": "npm run build && node dist/scripts/fix-og-meta-tags.js",
-    "trending-og-workflow": "npm run build && node dist/scripts/trending-og-workflow.js",
-    "fix-zad-types": "npm run build && node dist/scripts/fix-zad-types.js",
-    "check-app": "npm run build && node dist/scripts/check-app.js",
-    "fix-single-app": "npm run build && node dist/scripts/fix-single-app.js",
+		"trending-og-workflow": "npm run build && node dist/scripts/trending-og-workflow.js",
+		"fix-zad-types": "npm run build && node dist/scripts/fix-zad-types.js",
+		"check-app": "npm run build && node dist/scripts/check-app.js",
+		"fix-single-app": "npm run build && node dist/scripts/fix-single-app.js",
 		"classify-app-types": "npm run build && node dist/scripts/classify-app-types.js",
 		"classify-app-types-sample": "npm run build && node dist/scripts/classify-app-types-sample.js"
 	},
@@ -53,6 +53,7 @@
 		"node-fetch": "^2.7.0",
 		"openai": "^4.100.0",
 		"p-limit": "^6.2.0",
+		"puppeteer": "^24.15.0",
 		"twilio": "^4.19.0",
 		"unique-names-generator": "^4.7.1"
 	},

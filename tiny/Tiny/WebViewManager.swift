@@ -9,12 +9,20 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate {
     @Published var canGoForward = false
     @Published var currentURL: URL?
     @Published var isLoading = false
+    @Published var pageTitle: String?
+    
+    var onStateChange: (() -> Void)?
     
     func load(_ urlString: String) {
         guard let webView = webView else { return }
         
+        // Don't try to load our custom homepage URL in WebView
+        if urlString == "tiny://home" {
+            return
+        }
+        
         var urlToLoad = urlString
-        if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") {
+        if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") && !urlString.hasPrefix("tiny://") {
             urlToLoad = "https://" + urlString
         }
         
@@ -47,6 +55,8 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate {
             self.canGoBack = webView.canGoBack
             self.canGoForward = webView.canGoForward
             self.currentURL = webView.url
+            self.pageTitle = webView.title
+            self.onStateChange?()
         }
     }
     

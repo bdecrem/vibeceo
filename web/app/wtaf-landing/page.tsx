@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import CopiedModal from "../../components/ui/copied-modal"
+import CopiedModal from "@/components/ui/copied-modal"
 
 interface WtafApp {
   id: string

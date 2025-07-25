@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Todo Tracker</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --surface-light: #141414;
+            --accent: #00cc88;
+            --accent-hover: #00ee99;
+            --text: #ffffff;
+            --text-dim: #666666;
+            --border: #1a1a1a;
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: 16px;
+            padding: var(--space-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        h1, h2 {
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            margin: 0 0 var(--space-md) 0;
+            text-transform: uppercase;
+        }
+
+        h1 { font-size: 24px; }
+        h2 { font-size: 18px; }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            margin: 8px 0;
+            min-height: 44px;
+            width: 100%;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        input {
+            background: var(--surface-light);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: 8px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            font-family: inherit;
+            min-height: 44px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .todo-item {
+            background: var(--surface-light);
+            padding: var(--space-md);
+            margin: var(--space-sm) 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .todo-item button {
+            width: auto;
+            margin: 0 0 0 10px;
+            padding: 8px 16px;
+            font-size: 14px;
+            min-height: 36px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        #user-status {
+            padding: 6px 12px;
+            background: var(--surface-light);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 14px;
+            margin-bottom: var(--space-md);
+        }
+
+        #user-status span {
+            color: var(--accent);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: var(--space-xl); }
+            button { 
+                width: auto; 
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Todo Tracker</h1>
+            <p>Keep track of your daily tasks</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>Todo Tracker</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+
+            <div id="app-content">
+                <input type="text" id="new-todo" placeholder="Enter new task..." onkeypress="handleNewTodoKeypress(event)">
+                <button onclick="addTodo()">Add Task</button>
+                
+                <h2>Your Tasks</h2>
+                <div id="todo-list"></div>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const todos = await load('todo');
+            updateTodoList(todos);
+        }
+
+        function updateTodoList(todos) {
+            const list = document.getElementById('todo-list');
+            const currentUserId = getParticipantId();
+            
+            // Get latest version of each todo
+            const latestTodos = todos
+                .filter(todo => todo.participant_id === currentUserId)
+                .reduce((acc, todo) => {
+                    const existing = acc.find(t => t.text === todo.text);
+                    if (!existing || new Date(todo.created_at) > new Date(existing.created_at)) {
+                        if (existing) {
+                            const index = acc.indexOf(existing);
+                            acc[index] = todo;
+                        } else {
+                            acc.push(todo);
+                        }
+                    }
+                    return acc;
+                }, []);
+
+            list.innerHTML = latestTodos
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map(todo => `
+                    <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                        <span>${todo.text}</span>
+                        <div>
+                            <button onclick="toggleTodo(${todo.id}, ${!todo.completed})">
+                                ${todo.completed ? 'Undo' : 'Complete'}
+                            </button>
+                            <button onclick="deleteTodo(${todo.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        async function addTodo() {
+            const input = document.getElementById('new-todo');
+            const text = input.value.trim();
+            
+            if (text) {
+                await save('todo', {
+                    text,
+                    completed: false,
+                    created_at: new Date().toISOString()
+                });
+                
+                input.value = '';
+                await loadLatestData();
+            }
+        }
+
+        function handleNewTodoKeypress(event) {
+            if (event.key === 'Enter') {
+                addTodo();
+            }
+        }
+
+        async function toggleTodo(todoId, completed) {
+            await save('update_task', {
+                taskId: todoId,
+                updates: { completed }
+            });
+            
+            await loadLatestData();
+        }
+
+        async function deleteTodo(todoId) {
+            await save('update_task', {
+                taskId: todoId,
+                updates: { deleted: true }
+            });
+            
+            await loadLatestData();
+        }
+
+        // Authentication Code
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

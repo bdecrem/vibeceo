@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Feature Ideas Board</title>
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fefef5;
+  color: #333;
+  margin: 0;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border: 3px solid #FFD63D;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 8px 8px 0 #C9C2F9;
+}
+
+h1 {
+  color: #FF4B4B;
+  font-size: 24px;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+}
+
+button {
+  background: #6ECBFF;
+  color: white;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 8px 0;
+  font-size: 16px;
+  width: 100%;
+  min-height: 44px;
+  display: block;
+}
+
+button:hover {
+  background: #5ab8e6;
+}
+
+input, select, textarea {
+  background: white;
+  border: 2px solid #6ECBFF;
+  color: #333;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 16px;
+  min-height: 44px;
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.idea-card {
+  background: white;
+  border: 2px solid #FFD63D;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 15px 0;
+  box-shadow: 4px 4px 0 #C9C2F9;
+}
+
+.idea-meta {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.category-tag {
+  background: #FFEB63;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.reactions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.fire-btn {
+  background: none;
+  border: 1px solid #FFD63D;
+  color: #333;
+  padding: 8px 12px;
+  width: auto;
+  display: inline-block;
+  min-height: 36px;
+}
+
+.comments {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.comment {
+  background: #89ECFF;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin: 5px 0;
+}
+
+.filters {
+  margin: 20px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 600px) {
+  body { padding: 20px; }
+  .app-container { padding: 30px; }
+  
+  button {
+    width: auto;
+    display: inline-block;
+    margin: 5px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+    <div id="welcome-screen" class="screen active">
+        <h1>✨ Feature Ideas Board</h1>
+        <p>Share your amazing ideas and react to others!</p>
+        <button onclick="showNewUserScreen()">New User</button>
+        <button onclick="showReturningUserScreen()">Returning User</button>
+    </div>
+    
+    <div id="new-user-screen" class="screen">
+        <h1>New User</h1>
+        <div id="new-user-info"></div>
+        <button onclick="registerNewUser()">Register & Enter</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="returning-user-screen" class="screen">
+        <h1>Returning User</h1>
+        <select id="user-label-select"></select>
+        <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+        <button onclick="loginReturningUser()">Login</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="main-screen" class="screen">
+        <h1>Feature Ideas Board</h1>
+        <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        
+        <div id="app-content">
+            <div class="new-idea">
+                <input type="text" id="idea-text" placeholder="Share your feature idea (one line)">
+                <select id="idea-category">
+                    <option value="UI/UX">UI/UX</option>
+                    <option value="Performance">Performance</option>
+                    <option value="Security">Security</option>
+                    <option value="Integration">Integration</option>
+                    <option value="Analytics">Analytics</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button onclick="postIdea()">Post Idea</button>
+            </div>
+
+            <div class="filters">
+                <select id="filter-category" onchange="loadLatestData()">
+                    <option value="">All Categories</option>
+                    <option value="UI/UX">UI/UX</option>
+                    <option value="Performance">Performance</option>
+                    <option value="Security">Security</option>
+                    <option value="Integration">Integration</option>
+                    <option value="Analytics">Analytics</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button onclick="toggleSortByFire()">Toggle Sort by 🔥</button>
+            </div>
+
+            <div id="ideas-container"></div>
+        </div>
+        
+        <button onclick="showScreen('welcome-screen')">Leave</button>
+    </div>
+</div>
+
+<script>
+let currentUser = null;
+let sortByFire = false;
+
+async function generateNewUser() {
+  const slots = await checkAvailableSlots();
+  if (slots.isFull) {
+    alert('App is full!');
+    return false;
+  }
+  
+  const user = await generateUser();
+  if (user?.success) {
+    currentUser = user;
+    document.getElementById('new-user-info').innerHTML = 
+      `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+    return true;
+  }
+  return false;
+}
+
+async function registerNewUser() {
+  if (!currentUser) return;
+  
+  const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+  if (result?.success) {
+    updateZadAuth(currentUser.userLabel, currentUser.participantId);
+    enterMainScreen();
+  }
+}
+
+async function showNewUserScreen() {
+  showScreen('new-user-screen');
+  await generateNewUser();
+}
+
+async function loginReturningUser() {
+  const label = document.getElementById('user-label-select').value;
+  const passcode = document.getElementById('returning-passcode').value;
+  
+  const result = await authenticateUser(label, passcode);
+  if (result?.success) {
+    currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+    updateZadAuth(label, result.user.participantId);
+    enterMainScreen();
+  } else {
+    alert('Wrong code!');
+  }
+}
+
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  if (screenId !== 'main-screen') stopPolling();
+}
+
+async function showReturningUserScreen() {
+  showScreen('returning-user-screen');
+  const slots = await checkAvailableSlots();
+  const select = document.getElementById('user-label-select');
+  select.innerHTML = '<option>Select User</option>';
+  slots.usedLabels.forEach(label => {
+    select.innerHTML += `<option>${label}</option>`;
+  });
+}
+
+function enterMainScreen() {
+  showScreen('main-screen');
+  document.getElementById('current-user-label').textContent = currentUser.userLabel;
+  startPolling();
+  loadLatestData();
+}
+
+let pollingInterval;
+
+function startPolling() {
+  pollingInterval = setInterval(() => loadLatestData(), 2000);
+}
+
+function stopPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+}
+
+async function postIdea() {
+  const text = document.getElementById('idea-text').value.trim();
+  const category = document.getElementById('idea-category').value;
+  
+  if (!text) return;
+  
+  await save('idea', {
+    text,
+    category,
+    fires: 0,
+    comments: []
+  });
+  
+  document.getElementById('idea-text').value = '';
+}
+
+async function addFire(ideaId) {
+  const ideas = await load('idea');
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea) return;
+  
+  await save('idea', {
+    ...idea,
+    fires: (idea.fires || 0) + 1
+  });
+}
+
+async function addComment(ideaId) {
+  const comment = prompt('Add a short comment:');
+  if (!comment) return;
+  
+  const ideas = await load('idea');
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea) return;
+  
+  const comments = idea.comments || [];
+  comments.push({
+    text: comment,
+    author: currentUser.userLabel
+  });
+  
+  await save('idea', {
+    ...idea,
+    comments
+  });
+}
+
+function toggleSortByFire() {
+  sortByFire = !sortByFire;
+  loadLatestData();
+}
+
+async function loadLatestData() {
+  const ideas = await load('idea');
+  const categoryFilter = document.getElementById('filter-category').value;
+  
+  let filtered = ideas;
+  if (categoryFilter) {
+    filtered = ideas.filter(idea => idea.category === categoryFilter);
+  }
+  
+  if (sortByFire) {
+    filtered.sort((a, b) => (b.fires || 0) - (a.fires || 0));
+  } else {
+    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+  
+  const container = document.getElementById('ideas-container');
+  container.innerHTML = filtered.map(idea => `
+    <div class="idea-card">
+      <div class="idea-meta">
+        <span class="category-tag">${idea.category}</span>
+        <br>
+        By ${idea.author} • ${new Date(idea.created_at).toLocaleString()}
+      </div>
+      <div class="idea-text">${idea.text}</div>
+      <div class="reactions">
+        <button class="fire-btn" onclick="addFire(${idea.id})">
+          🔥 ${idea.fires || 0}
+        </button>
+        <button class="fire-btn" onclick="addComment(${idea.id})">
+          💭 Comment
+        </button>
+      </div>
+      <div class="comments">
+        ${(idea.comments || []).map(c => `
+          <div class="comment">
+            <strong>${c.author}:</strong> ${c.text}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+const USER_LABELS = ['idea1🎯', 'idea2⚡', 'idea3🌟', 'idea4🔥', 'idea5💎'];
+initAuth();
+</script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAINT OR DIE TRYING | Digital Canvas for Chaotic Souls</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --punk-pink: #ff2e93;
+            --punk-purple: #7c3aed;
+            --punk-cyan: #00ffc6;
+            --punk-black: #111;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--punk-black);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .header {
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(45deg, var(--punk-pink), var(--punk-purple));
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            text-transform: uppercase;
+            text-shadow: 4px 4px var(--punk-black);
+            animation: glitch 3s infinite;
+        }
+
+        .canvas-container {
+            margin: 2rem auto;
+            padding: 1rem;
+            max-width: 800px;
+        }
+
+        #paint-canvas {
+            width: 100%;
+            height: 500px;
+            background: white;
+            border: 3px solid var(--punk-pink);
+            cursor: crosshair;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #222;
+            border: 2px solid var(--punk-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .tool-btn {
+            background: none;
+            border: 2px solid var(--punk-pink);
+            color: white;
+            padding: 0.5rem 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tool-btn:hover {
+            background: var(--punk-pink);
+            transform: translateY(-2px);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 4px 4px var(--punk-black); }
+            25% { text-shadow: -4px -4px var(--punk-cyan); }
+            50% { text-shadow: 4px 4px var(--punk-pink); }
+            75% { text-shadow: -4px -4px var(--punk-purple); }
+            100% { text-shadow: 4px 4px var(--punk-black); }
+        }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--punk-pink);
+            padding: 1rem;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PAINT OR DIE TRYING</h1>
+        <p>The digital canvas app that thinks it's a mosh pit</p>
+    </div>
+
+    <div class="canvas-container">
+        <div class="toolbar">
+            <button class="tool-btn">🖌️ BRUSH</button>
+            <button class="tool-btn">✏️ PENCIL</button>
+            <button class="tool-btn">🎨 COLOR</button>
+            <button class="tool-btn">↩️ UNDO</button>
+        </div>
+        <canvas id="paint-canvas"></canvas>
+    </div>
+
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 10%">🎨</div>
+    <div class="floating-emoji" data-value="3" style="top: 40%; right: 15%">💀</div>
+    <div class="floating-emoji" data-value="4" style="bottom: 30%; left: 20%">⚡</div>
+    <div class="floating-emoji" data-value="5" style="bottom: 20%; right: 25%">🔥</div>
+
+    <div class="cta">📱 Text START to +1-866-330-0015 to get initiated</div>
+    <div class="prompt">Generated from: Create a punk paint app</div>
+
+    <script>
+        // Basic canvas setup
+        const canvas = document.getElementById('paint-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        // Parallax effect for floating emojis
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        document.querySelector('h1').addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                document.body.style.animation = 'glitch 0.3s infinite';
+                setTimeout(() => document.body.style.animation = '', 1000);
+            }
+        });
+    </script>
+</body>
+</html>
+```

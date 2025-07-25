@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushi Elegance | Modern Japanese Dining</title>
+    <style>
+        :root {
+            --cream: #FEFEF5;
+            --charcoal: #2A2A2A;
+            --red: #FF4B4B;
+            --blue: #6ECBFF;
+            --yellow: #FFD63D;
+            --purple-shadow: #C9C2F9;
+            --gray-warm: #6B6B6B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        header {
+            background: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--red);
+        }
+
+        .menu-section {
+            padding: 4rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--red);
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .menu-item {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 8px 0 var(--purple-shadow);
+            transition: transform 0.3s ease;
+            transform: rotate(-2deg);
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px) rotate(-2deg);
+        }
+
+        .menu-item h3 {
+            color: var(--charcoal);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .menu-item p {
+            color: var(--gray-warm);
+            margin-bottom: 1rem;
+        }
+
+        .price {
+            font-weight: bold;
+            color: var(--red);
+            font-size: 1.2rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero {
+            padding: 6rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, var(--cream), white);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--red);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--gray-warm);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .menu-item {
+                transform: none;
+            }
+
+            .menu-item:hover {
+                transform: translateY(-5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" style="top: 10%; left: 5%">🍣</div>
+    <div class="floating-emoji" style="top: 30%; right: 10%">🍶</div>
+    <div class="floating-emoji" style="bottom: 20%; left: 15%">🍱</div>
+    <div class="floating-emoji" style="bottom: 40%; right: 5%">✨</div>
+
+    <header>
+        <nav class="container">
+            <div class="logo">SUSHI ELEGANCE</div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Where Tradition Meets Modern Art</h1>
+            <p>Experience the perfect harmony of authentic Japanese flavors and contemporary presentation</p>
+        </div>
+    </section>
+
+    <section class="menu-section" id="starters">
+        <div class="container">
+            <h2 class="section-title">Starters</h2>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <h3>Edamame</h3>
+                    <p>Lightly salted and steamed young soybeans</p>
+                    <span class="price">$6</span>
+                </div>
+                <div class="menu-item">
+                    <h3>Miso Soup</h3>
+                    <p>Traditional Japanese soup with tofu, seaweed, and green onions</p>
+                    <span class="price">$5</span>
+                </div>
+                <div class="menu-item">
+                    <h3>Seaweed Salad</h3>
+                    <p>A mix of seaweed, sesame seeds, and a light vinaigrette dressing</p>
+                    <span class="price">$7</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="menu-section" id="signature-rolls">
+        <div class="container">
+            <h2 class="section-title">Signature Rolls</h2>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <h3>Modern Dragon</h3>
+                    <p>Eel, cucumber, avocado, topped with tobiko and a special eel sauce</p>
+                    <span class="price">$18</span>
+                </div>
+                <div class="menu-item">
+                    <h3>Spicy Tuna Crunch</h3>
+                    <p>Tuna, spicy mayo, cucumber, topped with tempura flakes and Sriracha</p>
+                    <span class="price">$16</span>
+                </div>
+                <div class="menu-item">
+                    <h3>Rainbow Delight</h3>
+                    <p>California roll topped with assorted sashimi slices</p>
+                    <span class="price">$20</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="menu-section" id="sashimi">
+        <div class="container">
+            <h2 class="section-title">Sashimi & Nigiri</h2>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <h3>Chef's Selection Sashimi Platter</h3>
+                    <p>A variety of the freshest fish, artistically presented</p>
+                    <span class="price">$32</span>
+                </div>
+                <div class="menu-item">
+                    <h3>Nigiri Sampler</h3>
+                    <p>Salmon, tuna, yellowtail, and shrimp nigiri with wasabi and ginger</p>
+                    <span class="price">$24</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const { clientX, clientY } = e;
+            
+            emojis.forEach((emoji) => {
+                const speed = 2;
+                const x = (window.innerWidth - clientX * speed) / 100;
+                const y = (window.innerHeight - clientY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

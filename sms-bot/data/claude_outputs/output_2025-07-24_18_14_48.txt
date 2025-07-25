@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>K-POP CHAT ROOM</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fefef5;
+            color: #333;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 8px 8px 0 #C9C2F9;
+        }
+
+        h1 {
+            color: #ff1493;
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+        }
+
+        button {
+            background: #6ECBFF;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            font-size: 16px;
+            width: 100%;
+            min-height: 44px;
+            display: block;
+        }
+
+        button:hover {
+            background: #5ab8e6;
+        }
+
+        input, select {
+            background: white;
+            border: 2px solid #6ECBFF;
+            color: #333;
+            padding: 16px;
+            border-radius: 8px;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        #chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px solid #ff1493;
+            border-radius: 8px;
+        }
+
+        .chat-bubble {
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.mine {
+            background: #FFEB63;
+            margin-left: auto;
+        }
+
+        .chat-bubble.others {
+            background: #89ECFF;
+            margin-right: auto;
+        }
+
+        .message-author {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #ff1493;
+        }
+
+        #chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-box {
+            flex-grow: 1;
+        }
+
+        #send-btn {
+            width: auto;
+            margin: 10px 0;
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .app-container { padding: 30px; }
+            
+            button {
+                width: auto;
+                display: inline-block;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>🎵 K-POP CHAT ROOM 🎵</h1>
+            <p>Let's talk about our favorite idols! 💫</p>
+            <button onclick="showNewUserScreen()">New Fan</button>
+            <button onclick="showReturningUserScreen()">Returning Fan</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New K-Pop Fan</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Join The Fandom</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back!</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>K-Pop Chat Room</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>! 💕</div>
+            
+            <div id="app-content">
+                <div id="chat-messages"></div>
+                <div id="chat-input">
+                    <input type="text" id="message-box" placeholder="Share your K-pop thoughts! 🎤">
+                    <button id="send-btn" onclick="sendMessage()">Send 💫</button>
+                </div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave Chat</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Chat room is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+            
+            // Add enter key listener for message input
+            document.getElementById('message-box').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const messages = await load('kpop_chat');
+            updateUI(messages);
+        }
+
+        function updateUI(messages) {
+            const chatDiv = document.getElementById('chat-messages');
+            let html = '';
+            
+            messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                .forEach(msg => {
+                    const isMine = msg.author === currentUser.userLabel;
+                    html += `
+                        <div class="chat-bubble ${isMine ? 'mine' : 'others'}">
+                            <div class="message-author">${msg.author}</div>
+                            ${msg.text}
+                        </div>
+                    `;
+                });
+            
+            chatDiv.innerHTML = html;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const messageBox = document.getElementById('message-box');
+            const text = messageBox.value.trim();
+            
+            if (text) {
+                await save('kpop_chat', { text });
+                messageBox.value = '';
+                loadLatestData();
+            }
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

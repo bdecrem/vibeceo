@@ -1,0 +1,122 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Quest</title>
+<style>
+  body, html { margin: 0; padding: 0; font-family: Arial, sans-serif; background: linear-gradient(135deg, #ff9a9e, #fad0c4); color: #333; }
+  #gameCanvas { display: block; margin: 0 auto; background: #fff; }
+  .controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .button { width: 60px; height: 60px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+  .button:active { background: rgba(255, 255, 255, 0.4); }
+  #score { position: fixed; top: 20px; left: 20px; font-size: 24px; }
+  #intro, #end { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); color: #fff; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  #intro button, #end button { margin-top: 20px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="intro">
+  <h1>Task Quest</h1>
+  <p>Complete tasks to earn points!</p>
+  <button onclick="startGame()">Start</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div class="controls">
+  <div class="button" onclick="addTask()">+</div>
+  <div class="button" onclick="completeTask()">✓</div>
+</div>
+<div id="end">
+  <h1>Game Over</h1>
+  <p>Your score: <span id="finalScore"></span></p>
+  <button onclick="restartGame()">Restart</button>
+</div>
+<script>
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d', { alpha: false });
+  var score = 0;
+  var tasks = [];
+  var gameOver = false;
+  var lastTime = 0;
+  var gameSpeed = 1000;
+  var gridWidth, gridHeight, cellSize = 40;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    gridWidth = Math.floor(window.innerWidth / cellSize);
+    gridHeight = Math.floor(window.innerHeight / cellSize);
+  }
+
+  function startGame() {
+    document.getElementById('intro').style.display = 'none';
+    resizeCanvas();
+    gameOver = false;
+    score = 0;
+    tasks = [];
+    requestAnimationFrame(gameLoop);
+  }
+
+  function gameLoop(currentTime) {
+    if (currentTime - lastTime > gameSpeed) {
+      lastTime = currentTime;
+      update();
+    }
+    draw();
+    if (!gameOver) requestAnimationFrame(gameLoop);
+  }
+
+  function update() {
+    if (tasks.length > 0) {
+      tasks.shift();
+      score++;
+      document.getElementById('score').innerText = 'Score: ' + score;
+    } else {
+      gameOver = true;
+      document.getElementById('end').style.display = 'flex';
+      document.getElementById('finalScore').innerText = score;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.fillStyle = '#333';
+    tasks.forEach(function(task, index) {
+      ctx.fillRect(task.x * cellSize, task.y * cellSize, cellSize, cellSize);
+    });
+  }
+
+  function addTask() {
+    if (tasks.length < gridWidth * gridHeight) {
+      var x = Math.floor(Math.random() * gridWidth);
+      var y = Math.floor(Math.random() * gridHeight);
+      tasks.push({ x: x, y: y });
+    }
+  }
+
+  function completeTask() {
+    if (tasks.length > 0) {
+      tasks.pop();
+      score++;
+      document.getElementById('score').innerText = 'Score: ' + score;
+    }
+  }
+
+  function restartGame() {
+    document.getElementById('end').style.display = 'none';
+    startGame();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('intro').style.display = 'flex';
+  });
+</script>
+</body>
+</html>
+```

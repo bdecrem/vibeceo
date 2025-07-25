@@ -1,0 +1,159 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World | WEBTOYS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FF2E93, #FF61C7, #FFA5E5);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8vw;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        h1:hover {
+            transform: scale(1.05);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 4rem;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #emoji1 { top: 20%; left: 20%; animation-delay: 0s; }
+        #emoji2 { top: 30%; right: 20%; animation-delay: 0.5s; }
+        #emoji3 { bottom: 20%; left: 25%; animation-delay: 1s; }
+        #emoji4 { bottom: 30%; right: 25%; animation-delay: 1.5s; }
+
+        .cta {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.2);
+            padding: 15px 30px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .prompt {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        #clickCount {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="hello">Hello World</h1>
+        
+        <div class="floating-emoji" id="emoji1" data-value="2">✨</div>
+        <div class="floating-emoji" id="emoji2" data-value="4">🚀</div>
+        <div class="floating-emoji" id="emoji3" data-value="3">🌈</div>
+        <div class="floating-emoji" id="emoji4" data-value="5">🎮</div>
+
+        <div class="cta">
+            Text START to +1-866-330-0015 to join the playground
+        </div>
+
+        <div class="prompt">
+            Generated from: "Create a Hello World page with WEBTOYS style"
+        </div>
+
+        <span id="clickCount">0</span>
+    </div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg - click counter
+        let clicks = 0;
+        const hello = document.getElementById('hello');
+        const counter = document.getElementById('clickCount');
+
+        hello.addEventListener('click', () => {
+            clicks++;
+            counter.textContent = clicks;
+            
+            if (clicks >= 5) {
+                hello.style.transform = 'rotate(360deg)';
+                hello.style.transition = 'transform 1s';
+                console.log('🎉 You found the secret! Keep clicking for more chaos!');
+                
+                // Rain more emojis
+                const newEmoji = document.createElement('div');
+                newEmoji.className = 'floating-emoji';
+                newEmoji.style.left = Math.random() * 100 + 'vw';
+                newEmoji.style.top = Math.random() * 100 + 'vh';
+                newEmoji.textContent = ['🦄', '💫', '🎪', '🎨'][Math.floor(Math.random() * 4)];
+                document.body.appendChild(newEmoji);
+            }
+        });
+
+        // Console easter egg
+        console.log('🎮 Welcome to WEBTOYS! Try clicking "Hello World" 5 times...');
+    </script>
+</body>
+</html>
+```
