@@ -1745,8 +1745,8 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         // Get or create user slug
         const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
         
-        // Check if user just typed "WTAF" alone
-        const wtafMatch = message.match(/^WTAF\s*$/i);
+        // Check if user just typed "WTAF" alone (with optional punctuation)
+        const wtafMatch = message.match(/^WTAF[,:\s]*$/i);
         if (wtafMatch) {
           // Check if this is their first time - get user from Supabase to see if they have a slug already
           const subscriber = await getSubscriber(normalizedPhoneNumber);
@@ -1783,7 +1783,7 @@ ${response}`;
         let coachPrefix = '';
         
         // Check if this is the coach-specific format (WTAF - coach - prompt)
-        const coachMatch = message.match(/^WTAF\s*-\s*(\w+)\s*-\s*(.+)$/i);
+        const coachMatch = message.match(/^WTAF[,:\s]*-\s*(\w+)\s*-\s*(.+)$/i);
         
         if (coachMatch) {
           // Coach-specific format
@@ -1805,8 +1805,8 @@ ${response}`;
           
           coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
         } else {
-          // Original format - extract content after "WTAF " or "WTAF:"
-          const codePrefix = message.match(/^WTAF[\s:]+/i)?.[0] || 'WTAF ';
+          // Original format - extract content after "WTAF " or "WTAF:" or "WTAF,"
+          const codePrefix = message.match(/^WTAF[,:\s]+/i)?.[0] || 'WTAF ';
           codeContent = message.substring(codePrefix.length).trim();
         }
         
