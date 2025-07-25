@@ -1356,6 +1356,14 @@ export default function WebtoysSitePage() {
         
         /* Responsive */
         @media (max-width: 768px) {
+          .nav {
+            position: static;
+          }
+          
+          .hero {
+            padding-top: 4rem;
+          }
+          
           .nav-links {
             display: none;
           }
