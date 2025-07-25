@@ -317,54 +317,83 @@ All apps must follow the playful and accessible Webtoys visual language:
 
 ## Common Patterns
 
-### ⚠️ IMPORTANT: ZAD is Append-Only
-ZAD always creates NEW records - it never updates existing ones!
+### ⚠️ CRITICAL: ZAD is Append-Only + You Must Deduplicate When Displaying
+ZAD always creates NEW records - it never updates existing ones! This means you get DUPLICATE records that you must handle when displaying data.
 
 ```javascript
-// ❌ WRONG: This creates duplicate records
-const people = await load('person');
-const person = people.find(p => p.name === 'John');
-person.contacted = true;
-await save('person', person); // Creates NEW record!
-
-// ✅ CORRECT: Handle "updates" by creating helper functions
-async function updateHabit(habitName, updates) {
-  const habits = await load('habit');
-  const currentHabit = habits
-    .filter(h => h.name === habitName && h.author === getUsername())
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-  
-  if (currentHabit) {
-    await save('habit', {
-      ...currentHabit,  // Copy all existing data
-      ...updates        // Apply updates
-    });
+// ❌ WRONG: This creates duplicate records AND shows all duplicates
+async function toggleTodo(todoId) {
+  const todos = await load('todo');
+  const todo = todos.find(t => t.id === todoId);
+  if (todo) {
+    await save('todo', { ...todo, completed: !todo.completed }); // Creates NEW record!
   }
 }
 
-// ✅ Example: Toggle habit completion
-async function toggleHabit(habitName) {
-  const habits = await load('habit');
-  const currentHabit = habits
-    .filter(h => h.name === habitName && h.author === getUsername())
+async function loadTodos() {
+  const todos = await load('todo');
+  // ❌ WRONG: Shows all records including duplicates!
+  return todos.filter(t => t.author === getUsername());
+}
+
+// ✅ CORRECT: Always deduplicate when displaying data
+async function loadTodos() {
+  const allTodos = await load('todo');
+  const myTodos = allTodos.filter(t => t.author === getUsername());
+  
+  // CRITICAL: Get latest version of each todo (removes duplicates)
+  const uniqueTodos = myTodos.reduce((acc, todo) => {
+    const existing = acc.find(t => t.text === todo.text); // Match by todo text
+    if (!existing || new Date(todo.created_at) > new Date(existing.created_at)) {
+      if (existing) {
+        const index = acc.indexOf(existing);
+        acc[index] = todo; // Replace with newer version
+      } else {
+        acc.push(todo);
+      }
+    }
+    return acc;
+  }, []);
+  
+  // NOW you can filter completed items if you want to hide them
+  return uniqueTodos.filter(t => !t.completed); // Hide completed todos
+  // OR return uniqueTodos; // Show all todos with correct completion status
+}
+
+// ✅ CORRECT: Toggle with proper deduplication
+async function toggleTodo(todoText) {
+  const todos = await load('todo');
+  const myTodos = todos.filter(t => t.author === getUsername());
+  
+  // Get latest version of this specific todo
+  const currentTodo = myTodos
+    .filter(t => t.text === todoText)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
   
-  if (currentHabit) {
-    await save('habit', {
-      ...currentHabit,
-      completed: !currentHabit.completed,
-      streak: currentHabit.completed ? currentHabit.streak - 1 : currentHabit.streak + 1
+  if (currentTodo) {
+    await save('todo', {
+      ...currentTodo,
+      completed: !currentTodo.completed
     });
-    
     await loadLatestData(); // Refresh UI
   }
 }
 
-// ✅ ALTERNATIVE: Use server-side update helper (prevents duplicates entirely)
-await save('update_task', {
-    taskId: person.id,
-    updates: { contacted: true }
-});
+// ✅ PATTERN: Deduplication helper function (copy this for any app)
+function getLatestVersions(items, uniqueField = 'id') {
+  return items.reduce((acc, item) => {
+    const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+    if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+      if (existing) {
+        const index = acc.indexOf(existing);
+        acc[index] = item;
+      } else {
+        acc.push(item);
+      }
+    }
+    return acc;
+  }, []);
+}
 ```
 
 ### ⚠️ CRITICAL: Avoid Type Mismatch Bugs
@@ -404,43 +433,79 @@ async function loadMyHabits() {
 }
 ```
 
-### Filter Pattern
+### ⚠️ MANDATORY: Deduplication Pattern (Use This In Every App)
+**ALWAYS deduplicate before displaying data - ZAD creates duplicates on every "update"!**
+
 ```javascript
-// Get all items
-const all = await load('contact');
-
-// Filter by current user (CRITICAL - use getUsername()!)
-const myContacts = all.filter(p => p.author === getUsername());
-
-// Filter by properties
-const contacted = all.filter(p => p.contacted);
-const notContacted = all.filter(p => !p.contacted);
-
-// Get latest version of each item (removes duplicates in append-only system)
-const uniquePeople = all.reduce((acc, person) => {
-  const existing = acc.find(p => p.name === person.name);
-  if (!existing || new Date(person.created_at) > new Date(existing.created_at)) {
-    if (existing) {
-      const index = acc.indexOf(existing);
-      acc[index] = person;
-    } else {
-      acc.push(person);
+// ✅ STANDARD PATTERN: Always follow this 3-step process
+async function loadMyData() {
+  // Step 1: Load all data
+  const all = await load('contact');
+  
+  // Step 2: Filter by current user (CRITICAL - use getUsername()!)
+  const myItems = all.filter(item => item.author === getUsername());
+  
+  // Step 3: CRITICAL - Deduplicate to get latest version of each item
+  const uniqueItems = myItems.reduce((acc, item) => {
+    const existing = acc.find(i => i.name === item.name); // Match by unique field
+    if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+      if (existing) {
+        const index = acc.indexOf(existing);
+        acc[index] = item; // Replace with newer version
+      } else {
+        acc.push(item);
+      }
     }
-  }
-  return acc;
-}, []);
+    return acc;
+  }, []);
+  
+  // Step 4: Now you can filter by properties on deduplicated data
+  const active = uniqueItems.filter(i => !i.completed);
+  const completed = uniqueItems.filter(i => i.completed);
+  
+  return active; // Or return what you need
+}
+
+// ✅ REUSABLE: Copy this helper function to every app
+function deduplicate(items, uniqueField = 'name') {
+  return items.reduce((acc, item) => {
+    const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+    if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+      if (existing) {
+        const index = acc.indexOf(existing);
+        acc[index] = item;
+      } else {
+        acc.push(item);
+      }
+    }
+    return acc;
+  }, []);
+}
 ```
 
 ## ⚠️ CRITICAL REMINDERS
 
-1. **Data is FLATTENED** - Access fields directly: `item.name` not `item.content_data.name`
-2. **Use `author` field** - Username is in `item.author`, NOT `item.userLabel` or `item.username`
-3. **Filter with `getUsername()`** - Use `item.author === getUsername()`, NOT `getCurrentUser()`
-4. **Append-only system** - Create update helper functions, don't modify objects directly
-5. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
-6. **Max 5 users** - The system enforces this automatically
-7. **One HTML file** - Everything goes in one file
-8. **Mobile-first** - Must work on phones (375px width minimum)
+1. **ALWAYS DEDUPLICATE DISPLAY DATA** - ZAD creates duplicates, you must use `reduce()` pattern to get latest versions
+2. **Data is FLATTENED** - Access fields directly: `item.name` not `item.content_data.name`
+3. **Use `author` field** - Username is in `item.author`, NOT `item.userLabel` or `item.username`
+4. **Filter with `getUsername()`** - Use `item.author === getUsername()`, NOT `getCurrentUser()`
+5. **Append-only system** - Every `save()` creates NEW record, never updates existing ones
+6. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
+7. **Max 5 users** - The system enforces this automatically
+8. **One HTML file** - Everything goes in one file
+9. **Mobile-first** - Must work on phones (375px width minimum)
+
+### 🚨 MOST COMMON BUG: Not Deduplicating
+```javascript
+// ❌ WRONG: Shows duplicate todos with mixed completion states
+const todos = await load('todo');
+container.innerHTML = todos.map(todo => `<div>${todo.text}</div>`).join('');
+
+// ✅ CORRECT: Always deduplicate first
+const todos = await load('todo');
+const uniqueTodos = deduplicate(todos.filter(t => t.author === getUsername()), 'text');
+container.innerHTML = uniqueTodos.map(todo => `<div>${todo.text}</div>`).join('');
+```
 
 ## Complete Function Reference (All 34 Functions)
 
