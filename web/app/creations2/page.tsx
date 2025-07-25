@@ -1,8 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
-import { useParams } from 'next/navigation'
-import { notFound } from 'next/navigation'
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import TruncatedPrompt from "@/components/truncated-prompt"
 import Pagination from "@/components/ui/pagination"
@@ -13,7 +11,7 @@ export const dynamic = 'force-dynamic'
 interface WtafApp {
   id: string
   app_slug: string
-  user_slug?: string
+  user_slug: string
   original_prompt: string
   created_at: string
   remix_count: number
@@ -38,41 +36,119 @@ interface UserStats {
   total_remixes_received: number
 }
 
-interface PaginationData {
-  page: number
-  limit: number
-  totalCount: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
+// Sample data for testing - in production this comes from API
+const sampleUserStats: UserStats = {
+  user_slug: "alice",
+  follower_count: 342,
+  following_count: 89,
+  total_remix_credits: 127,
+  apps_created_count: 23,
+  published_apps: 18,
+  total_remixes_received: 456
 }
 
-interface CreationsData {
-  success: boolean
-  apps: WtafApp[]
-  user_stats: UserStats
-  pagination: PaginationData
-}
+const sampleApps: WtafApp[] = [
+  {
+    id: "1",
+    app_slug: "cosmic-cat-cafe",
+    user_slug: "alice", 
+    original_prompt: "A café where cats serve coffee and discuss quantum physics with customers",
+    created_at: "2024-07-20T10:30:00Z",
+    remix_count: 12,
+    total_descendants: 12,
+    recent_remixes: 3,
+    is_remix: false,
+    parent_app_id: null,
+    is_featured: false,
+    last_remixed_at: "2024-07-24T15:20:00Z",
+    Fave: true, // This is pinned
+    Forget: false,
+    type: "WTAF"
+  },
+  {
+    id: "2", 
+    app_slug: "dancing-vegetables",
+    user_slug: "alice",
+    original_prompt: "Vegetables that choreograph elaborate dance numbers in grocery stores",
+    created_at: "2024-07-22T14:15:00Z",
+    remix_count: 8,
+    total_descendants: 8,
+    recent_remixes: 1,
+    is_remix: false,
+    parent_app_id: null,
+    is_featured: true,
+    last_remixed_at: "2024-07-23T09:10:00Z",
+    Fave: true, // This is pinned
+    Forget: false,
+    type: "WTAF"
+  },
+  {
+    id: "3",
+    app_slug: "time-traveling-pizza",
+    user_slug: "alice",
+    original_prompt: "Pizza delivery service that travels through time to deliver hot pizza to any era",
+    created_at: "2024-07-23T16:45:00Z",
+    remix_count: 15,
+    total_descendants: 15,
+    recent_remixes: 5,
+    is_remix: false,
+    parent_app_id: null,
+    is_featured: false,
+    last_remixed_at: "2024-07-25T12:30:00Z",
+    Fave: false,
+    Forget: false,
+    type: "WTAF"
+  },
+  {
+    id: "4",
+    app_slug: "musical-plants",
+    user_slug: "alice",
+    original_prompt: "House plants that form a jazz band and perform concerts for their owners",
+    created_at: "2024-07-24T11:20:00Z",
+    remix_count: 6,
+    total_descendants: 6,
+    recent_remixes: 2,
+    is_remix: false,
+    parent_app_id: null,
+    is_featured: false,
+    last_remixed_at: "2024-07-25T08:15:00Z",
+    Fave: false,
+    Forget: false,
+    type: "WTAF"
+  },
+  {
+    id: "5",
+    app_slug: "dream-architect",
+    user_slug: "alice",
+    original_prompt: "Professional who designs and builds custom dreams for people while they sleep",
+    created_at: "2024-07-25T09:30:00Z",
+    remix_count: 3,
+    total_descendants: 3,
+    recent_remixes: 1,
+    is_remix: false,
+    parent_app_id: null,
+    is_featured: false,
+    last_remixed_at: "2024-07-25T14:45:00Z",
+    Fave: false,
+    Forget: false,
+    type: "WTAF"
+  }
+]
 
 export default function CreationsPage() {
-  const params = useParams()
-  const userSlug = params?.user_slug as string
-  
-  const [data, setData] = useState<CreationsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [apps] = useState<WtafApp[]>(sampleApps)
+  const [userStats] = useState<UserStats>(sampleUserStats)
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
-  const limit = 20
-
+  const userSlug = "alice" // Sample user for testing
+  
   // Separate pinned and recent apps
-  const pinnedApps = data?.apps.filter(app => app.Fave) || []
-  const recentApps = data?.apps.filter(app => !app.Fave) || []
+  const pinnedApps = apps.filter(app => app.Fave)
+  const recentApps = apps.filter(app => !app.Fave)
 
   const userData = {
-    displayName: userSlug ? userSlug.charAt(0).toUpperCase() + userSlug.slice(1) : "",
-    bio: "Creative technologist crafting unique digital experiences with WEBTOYS.ai",
-    joinDate: "2024",
+    displayName: "Alice Wondercode",
+    bio: "Creative technologist crafting whimsical digital experiences. Coffee enthusiast, cat whisperer, and part-time dream architect.",
+    joinDate: "April 2024",
     avatar: "🎨"
   }
 
@@ -137,102 +213,9 @@ export default function CreationsPage() {
     return getTimestampLabel(app.created_at)
   }
 
-  const fetchCreationsData = useCallback(async (page: number) => {
-    if (!userSlug) return
-    
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/user-creations?user_slug=${userSlug}&page=${page}&limit=${limit}`, {
-        cache: 'no-store'
-      })
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('User not found')
-        }
-        throw new Error(`Failed to fetch user creations: ${response.status}`)
-      }
-      
-      const result = await response.json()
-      
-      if (!result.success) {
-        throw new Error('Failed to fetch user creations')
-      }
-      
-      setData(result)
-      setError(null)
-    } catch (err) {
-      console.error('Error fetching user creations:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load user creations')
-    } finally {
-      setLoading(false)
-    }
-  }, [userSlug, limit])
-
   useEffect(() => {
-    if (userSlug) {
-      // Set page title
-      document.title = `@${userSlug} creations - WEBTOYS.ai`
-      fetchCreationsData(currentPage)
-    }
-  }, [userSlug, currentPage, fetchCreationsData])
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    // Scroll to top when changing pages
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  if (!userSlug) {
-    return notFound()
-  }
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-content">
-          <div className="loading-icon">🎨</div>
-          <h3 className="loading-title">Loading @{userSlug}'s creations...</h3>
-          <p className="loading-subtitle">Gathering their creative masterpieces</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    if (error.includes('not found')) {
-      return notFound()
-    }
-    
-    return (
-      <div className="error-container">
-        <div className="error-content">
-          <div className="error-icon">😅</div>
-          <h3 className="error-title">Oops! Something went wrong</h3>
-          <p className="error-subtitle">{error}</p>
-          <button 
-            onClick={() => fetchCreationsData(currentPage)}
-            className="retry-btn"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data) {
-    return notFound()
-  }
-
-  // Ensure all apps have user_slug
-  const appsWithUserSlug = data.apps.map(app => ({
-    ...app,
-    user_slug: userSlug
-  }))
-
-  const pinnedAppsWithSlug = appsWithUserSlug.filter(app => app.Fave)
-  const recentAppsWithSlug = appsWithUserSlug.filter(app => !app.Fave)
+    document.title = `@${userSlug} creations - WEBTOYS.ai`
+  }, [userSlug])
 
   return (
     <>
@@ -277,15 +260,15 @@ export default function CreationsPage() {
               <p className="user-bio">{userData.bio}</p>
               <div className="user-stats">
                 <div className="stat-item">
-                  <div className="stat-number">{data.user_stats.published_apps}</div>
+                  <div className="stat-number">{userStats.published_apps}</div>
                   <div className="stat-label">Creations</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-number">{data.user_stats.total_remixes_received}</div>
+                  <div className="stat-number">{userStats.total_remixes_received}</div>
                   <div className="stat-label">Total Remixes</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-number">{data.user_stats.follower_count}</div>
+                  <div className="stat-number">{userStats.follower_count}</div>
                   <div className="stat-label">Followers</div>
                 </div>
                 <div className="stat-item">
@@ -298,14 +281,14 @@ export default function CreationsPage() {
         </section>
 
         {/* Pinned Creations */}
-        {pinnedAppsWithSlug.length > 0 && (
+        {pinnedApps.length > 0 && (
           <section className="pinned-section">
             <div className="section-container">
               <h2 className="section-title">
                 📌 Pinned Creations
               </h2>
               <div className="creations-grid">
-                {pinnedAppsWithSlug.map((app: WtafApp, index: number) => (
+                {pinnedApps.map((app: WtafApp, index: number) => (
                   <div key={app.id} className="creation-card pinned-card" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="pin-badge">📌</div>
                     <div className="image-container">
@@ -359,8 +342,8 @@ export default function CreationsPage() {
           <div className="section-container">
             <h2 className="section-title">Recent Creations</h2>
             <div className="creations-grid">
-              {recentAppsWithSlug.map((app: WtafApp, index: number) => (
-                <div key={app.id} className="creation-card" style={{ animationDelay: `${(index + pinnedAppsWithSlug.length) * 0.1}s` }}>
+              {recentApps.map((app: WtafApp, index: number) => (
+                <div key={app.id} className="creation-card" style={{ animationDelay: `${(index + pinnedApps.length) * 0.1}s` }}>
                   <div className="image-container">
                     <img 
                       src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
@@ -406,28 +389,10 @@ export default function CreationsPage() {
           </div>
         </section>
 
-        {/* Pagination */}
-        {data.pagination && data.pagination.totalPages > 1 && (
-          <section className="pagination-section">
-            <div className="pagination-container">
-              <Pagination
-                currentPage={data.pagination.page}
-                totalPages={data.pagination.totalPages}
-                onPageChange={handlePageChange}
-                hasNextPage={data.pagination.hasNextPage}
-                hasPreviousPage={data.pagination.hasPreviousPage}
-                totalCount={data.pagination.totalCount}
-                limit={data.pagination.limit}
-                theme="green"
-              />
-            </div>
-          </section>
-        )}
-
         {/* Call to Action */}
         <section className="cta-section">
           <div className="cta-container">
-            <h2 className="cta-title">Want to Create Like @{userSlug}?</h2>
+            <h2 className="cta-title">Want to Create Like Alice?</h2>
             <p className="cta-description">
               Join the WEBTOYS community and bring your wildest ideas to life with just a text message.
             </p>
@@ -476,66 +441,6 @@ export default function CreationsPage() {
           color: var(--charcoal);
           line-height: 1.6;
           overflow-x: hidden;
-        }
-
-        /* Loading and Error States */
-        .loading-container, .error-container {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--cream);
-        }
-
-        .loading-content, .error-content {
-          text-align: center;
-          background: var(--white-pure);
-          padding: 3rem;
-          border-radius: 2rem;
-          box-shadow: 0 12px 0 var(--pink), 0 24px 60px var(--purple-shadow);
-          border: 5px solid var(--pink);
-          max-width: 500px;
-        }
-
-        .loading-icon, .error-icon {
-          font-size: 4rem;
-          margin-bottom: 1.5rem;
-          animation: bounce 2s ease-in-out infinite;
-        }
-
-        .loading-title, .error-title {
-          font-size: 1.8rem;
-          color: var(--charcoal);
-          margin-bottom: 1rem;
-          font-weight: 800;
-        }
-
-        .loading-subtitle, .error-subtitle {
-          color: var(--gray-warm);
-          font-size: 1.1rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .retry-btn {
-          background: var(--pink);
-          color: white;
-          padding: 0.8rem 2rem;
-          border: none;
-          border-radius: 2rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 0 var(--pink-soft);
-        }
-
-        .retry-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 0 var(--pink-soft);
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
         }
 
         /* Copied Notification */
@@ -1086,19 +991,6 @@ export default function CreationsPage() {
 
         .remix-icon {
           font-size: 1.2rem;
-        }
-
-        /* Pagination Section */
-        .pagination-section {
-          padding: 3rem 2rem;
-          background: var(--cream);
-        }
-
-        .pagination-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          display: flex;
-          justify-content: center;
         }
 
         /* Call to Action */
