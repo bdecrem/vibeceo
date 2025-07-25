@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chez Alex - Your Cozy Neighborhood Coffee Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4A3428;
+            --secondary: #8B5E3C;
+            --accent: #E6B17E;
+            --cream: #FFF5EA;
+            --text: #2C1810;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: var(--cream);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            z-index: 100;
+            transition: transform 0.1s ease-out;
+        }
+
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-text p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-image {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: rotate(2deg);
+            transition: transform 0.3s ease;
+        }
+
+        .hero-image:hover {
+            transform: rotate(0deg);
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: auto;
+        }
+
+        .menu-section {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .menu-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .menu-item {
+            background: var(--cream);
+            padding: 1.5rem;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .menu-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .contact-section {
+            padding: 4rem 2rem;
+            background: var(--primary);
+            color: white;
+        }
+
+        .contact-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--accent);
+            color: var(--primary);
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        footer {
+            background: var(--text);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text h1 {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-emoji" data-value="2">☕</div>
+    <div class="floating-emoji" data-value="3">🥐</div>
+    <div class="floating-emoji" data-value="4">🎶</div>
+    <div class="floating-emoji" data-value="5">🌅</div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Chez Alex</h1>
+                <p>Where every cup tells a story and every visitor becomes family. Experience artisanal coffee and freshly baked pastries in our cozy corner of the neighborhood.</p>
+                <a href="#menu" class="cta-button">Explore Our Menu</a>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24" alt="Cozy coffee shop interior">
+            </div>
+        </div>
+    </section>
+
+    <section class="menu-section" id="menu">
+        <div class="menu-grid">
+            <div class="menu-item">
+                <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93" alt="Artisanal Coffee">
+                <h3>Signature Lattes</h3>
+                <p>Hand-crafted espresso drinks made with locally roasted beans and topped with our famous latte art.</p>
+            </div>
+            <div class="menu-item">
+                <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff" alt="Fresh Pastries">
+                <h3>Fresh Pastries</h3>
+                <p>Daily baked croissants, muffins, and our famous chocolate chip cookies that sell out every morning.</p>
+            </div>
+            <div class="menu-item">
+                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085" alt="Breakfast Special">
+                <h3>Breakfast Special</h3>
+                <p>Start your day right with our hearty breakfast plate, featuring local eggs and artisanal sourdough.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-section">
+        <div class="contact-content">
+            <h2>Visit Us Today</h2>
+            <p>123 Coffee Lane, Neighborhood District</p>
+            <p>Open Monday-Sunday: 7AM - 7PM</p>
+            <p>For reservations and inquiries: <a href="mailto:[CONTACT_EMAIL]">[CONTACT_EMAIL]</a></p>
+        </div>
+    </section>
+
+    <footer>
+        <p>Text START to +1-866-330-0015 to join our loyalty program</p>
+        <small>Generated from: Create a landing page for Chez Alex coffee shop</small>
+    </footer>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter Egg
+        let clicks = 0;
+        document.querySelector('.hero-text h1').addEventListener('click', () => {
+            clicks++;
+            if (clicks === 5) {
+                document.body.style.background = 'var(--accent)';
+                alert('☕ You've unlocked our secret menu!');
+            }
+        });
+    </script>
+</body>
+</html>

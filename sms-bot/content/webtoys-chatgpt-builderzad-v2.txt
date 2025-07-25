@@ -1,0 +1,577 @@
+# WTAF Public ZAD Builder - Zero Authentication Prompt V2
+
+🚨 CRITICAL: You MUST build a PUBLIC collaborative web app using our zero-admin database system. This is NOT a demo or prototype - it MUST use real ZAD database functions for persistent data storage. This is a PUBLIC ZAD app with unlimited anonymous users - NO authentication required!
+
+⚠️ MANDATORY: You MUST use save() and load() functions for ALL data operations. Do NOT create demo apps or use local storage only. ALL data must persist in the ZAD database and be shared across all users in real-time.
+
+## Quick Start (This is all most apps need!)
+```javascript
+// Save data (anonymous users auto-generated)
+await save('type', { name: 'John', contacted: true });
+
+// Get data back (IT'S FLATTENED - no content_data wrapper!)
+const items = await load('type');
+// Returns: [{ 
+//   id: 123, 
+//   name: 'John', 
+//   contacted: true, 
+//   author: 'Anon47',       // ← WHO created this record (auto-generated)
+//   created_at: '...',      // ← WHEN it was created
+//   participant_id: '...'   // ← Internal ID (auto-generated)
+// }]
+
+// Who's logged in (always returns anonymous user)
+const user = getCurrentUser();
+
+// That's it! Data auto-refreshes every 2 seconds
+```
+
+## ⚠️ CRITICAL: Field Names in Load Results
+
+**ALWAYS use `author` for username, NEVER `userLabel` or `username`:**
+
+```javascript
+// ❌ WRONG - These fields DON'T EXIST in load() results:
+${comment.userLabel}: ${comment.text}    // Shows "undefined: comment text"
+Posted by ${idea.username}               // Shows "Posted by undefined"
+
+// ✅ CORRECT - Use 'author' field:
+${comment.author}: ${comment.text}       // Shows "Anon47: comment text"  
+Posted by ${idea.author}                 // Shows "Posted by Anon47"
+
+// Complete correct field usage:
+${item.id}           // Record ID (number)
+${item.author}       // Anonymous username who created it  
+${item.created_at}   // When it was created
+${item.yourData}     // Your custom fields
+```
+
+## What to Build
+Build: **[USER REQUEST]**
+
+## Core Requirements
+
+### 1. Single HTML File
+- Everything in one file (HTML, CSS, JavaScript)
+- No external dependencies
+- Start with `<!DOCTYPE html>`
+- **MUST include viewport meta tag for mobile**
+
+### 2. Mobile-First Design (REQUIRED)
+```html
+<!-- This meta tag is MANDATORY -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+```
+- Minimum 16px fonts everywhere (prevents iOS zoom)
+- Buttons/inputs minimum 44px tall (touch-friendly)
+- Full-width buttons on mobile screens
+- Test layout works at 375px width
+- No hover-only interactions
+
+### 3. Essential Functions Only
+
+**For saving/loading data:**
+```javascript
+await save('type', data)   // Save anything
+await load('type')         // Get everything back (FLATTENED!)
+```
+
+**For current user:**
+```javascript
+getCurrentUser()           // Returns anonymous user object
+initPublicMode()          // Initialize public mode (call this once)
+```
+
+**That's all you need for 90% of public apps!**
+
+🚨 CRITICAL REQUIREMENT: Your app MUST use these ZAD functions:
+- MUST call `initPublicMode()` on page load
+- MUST use `await save('dataType', yourData)` to store data
+- MUST use `await load('dataType')` to retrieve data
+- MUST implement auto-refresh with `loadLatestData()` every 2 seconds
+- Data MUST persist across page reloads and be visible to all users
+- DO NOT use localStorage, sessionStorage, or any local-only storage
+
+### 4. NO Authentication Required - Public Mode Only
+
+**Simple Public App Structure:**
+```html
+<div class="app-container">
+    <div id="main-screen" class="screen active">
+        <h1>[Your Public App Name]</h1>
+        <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+        
+        <!-- YOUR APP GOES HERE -->
+        <div id="app-content">
+            <!-- Build your features here -->
+        </div>
+    </div>
+</div>
+```
+
+**Required Public Mode JavaScript:**
+```javascript
+let currentUser = null;
+
+// Auto-generate anonymous user on page load
+async function initPublicMode() {
+    currentUser = await generateAnonymousUser();
+    if (currentUser?.success) {
+        updateZadAuth(currentUser.userLabel, currentUser.participantId);
+        document.getElementById('current-user-label').textContent = currentUser.userLabel;
+        startPolling();
+        loadLatestData();
+    }
+}
+
+// Anonymous user labels (auto-rotating)
+const ANON_LABELS = [
+    'Anon1🎯', 'Anon2⚡', 'Anon3🌟', 'Anon4🔥', 'Anon5💎', 'Anon6🚀', 'Anon7🎨', 'Anon8🌙',
+    'Guest1🎭', 'Guest2🎪', 'Guest3🎨', 'Guest4🎵', 'Visitor1🌊', 'Visitor2🌈', 'Visitor3⭐',
+    'User1🎲', 'User2🎯', 'User3🎮', 'User4🎪', 'Someone1🌟', 'Someone2💫', 'Someone3🔮'
+];
+
+// Public mode helper functions are automatically injected by the ZAD system
+// The following functions are available globally:
+// - generateAnonymousUser() - Auto-generates anonymous credentials
+// - updateZadAuth(userLabel, participantId) - Sets up auth state
+
+// 🚨 MANDATORY: Initialize public mode on page load
+initPublicMode();
+
+// 🚨 MANDATORY: Implement data loading function
+async function loadLatestData() {
+    // YOU MUST IMPLEMENT THIS - Load your app's data using load() function
+    // Example: const items = await load('your_data_type');
+    // Then update your UI with the loaded data
+}
+
+// 🚨 MANDATORY: Start auto-refresh immediately
+startPolling();
+```
+
+### 5. Auto-Refresh (Just Add This)
+
+```javascript
+let pollingInterval;
+
+function startPolling() {
+  pollingInterval = setInterval(() => loadLatestData(), 2000);
+}
+
+function stopPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+}
+
+// You implement this one function:
+async function loadLatestData() {
+  const data = await load('your_data_type');
+  updateUI(data); // You write this
+}
+
+function updateUI(data) {
+  // Update your interface with the latest data
+  // Remember: data is FLATTENED!
+}
+```
+
+### 6. Mobile-Friendly Styling
+
+**Choose Style Level:**
+- `basic` - Clean, dark, functional (recommended)
+- `full-wtaf` - All effects and animations
+
+**Basic Mobile-First Style:**
+```css
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  margin: 0;
+  padding: 10px;
+  font-size: 16px; /* Prevents zoom on mobile */
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 20px 0;
+}
+
+
+button {
+  background: #ff0066;
+  color: white;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 16px;
+  width: 100%;
+  min-height: 44px; /* Touch-friendly */
+  display: block;
+}
+
+button:hover {
+  background: #ff3388;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+input, select, textarea {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+  padding: 16px;
+  border-radius: 6px;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 16px; /* Prevents zoom */
+  min-height: 44px; /* Touch-friendly */
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Desktop adjustments */
+@media (min-width: 600px) {
+  body { padding: 20px; }
+  .app-container { padding: 30px; }
+  
+  button {
+    width: auto;
+    display: inline-block;
+    margin: 5px;
+  }
+}
+
+/* List items for data display */
+.item {
+  background: #2a2a2a;
+  padding: 16px;
+  margin: 10px 0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px; /* Touch-friendly */
+}
+
+.item button {
+  width: auto;
+  margin: 0;
+  padding: 8px 16px;
+}
+
+/* Anonymous user indicator */
+#user-status {
+  background: #333;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.8;
+}
+```
+
+## Common Patterns
+
+### ⚠️ IMPORTANT: ZAD is Append-Only
+ZAD always creates NEW records - it never updates existing ones!
+
+```javascript
+// ❌ WRONG: This creates duplicate records
+const people = await load('person');
+const person = people.find(p => p.name === 'John');
+person.contacted = true;
+await save('person', person); // Creates NEW record!
+
+// ✅ CORRECT: Handle "updates" by getting latest record
+const people = await load('person');
+const latestJohn = people
+  .filter(p => p.name === 'John')
+  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+// For "toggling" status, save a new record with opposite value
+if (latestJohn) {
+  await save('person', {
+    name: 'John',
+    contacted: !latestJohn.contacted,
+    created_at: new Date().toISOString()
+  });
+}
+
+// ✅ BETTER: Use server-side update helper (prevents duplicates entirely)
+await save('update_task', {
+    taskId: person.id,
+    updates: { contacted: true }
+});
+
+// ✅ BEST: For reactions, counters, and other updates
+async function addReaction(ideaId, emoji) {
+    const ideas = await load('idea');
+    const idea = ideas.find(i => i.id === parseInt(ideaId));
+    if (idea) {
+        const reactions = idea.reactions || {};
+        reactions[emoji] = (reactions[emoji] || 0) + 1;
+        
+        // Use update helper instead of save() to prevent duplicates
+        await save('update_task', {
+            taskId: parseInt(ideaId),
+            updates: { reactions }
+        });
+        
+        await loadLatestData(); // Refresh UI
+    }
+}
+```
+
+### ⚠️ CRITICAL: Avoid Type Mismatch Bugs
+JavaScript type coercion causes subtle bugs! Always use consistent data types:
+
+```javascript
+// ❌ WRONG: Type mismatch in onclick handlers
+<button onclick="processItem('${item.id}')">Process</button>  // String ID
+const matches = data.filter(d => d.itemId === item.id);      // Number comparison
+// Result: "123" !== 123, so matches always empty!
+
+// ✅ CORRECT: Convert types consistently  
+<button onclick="processItem(${item.id})">Process</button>    // Number ID
+// OR convert when filtering:
+const matches = data.filter(d => d.itemId === String(item.id));
+// OR convert when saving:
+await save('data', { itemId: parseInt(idParam) });
+```
+
+### Filter Pattern
+```javascript
+// Get all items
+const all = await load('contact');
+
+// Filter in JavaScript
+const contacted = all.filter(p => p.contacted);
+const notContacted = all.filter(p => !p.contacted);
+
+// Get latest version of each person (removes duplicates)
+const uniquePeople = all.reduce((acc, person) => {
+  const existing = acc.find(p => p.name === person.name);
+  if (!existing || new Date(person.created_at) > new Date(existing.created_at)) {
+    if (existing) {
+      const index = acc.indexOf(existing);
+      acc[index] = person;
+    } else {
+      acc.push(person);
+    }
+  }
+  return acc;
+}, []);
+```
+
+## Important Notes
+
+1. **Data is FLATTENED** - Access fields directly: `item.name` not `item.content_data.name`
+2. **Use `author` field** - Username is in `item.author`, NOT `item.userLabel` or `item.username`
+3. **Auto-refresh** - Just implement `loadLatestData()` and UI updates every 2 seconds
+4. **Unlimited users** - No user limit, all anonymous
+5. **One HTML file** - Everything goes in one file
+6. **Mobile-first** - Must work on phones (375px width minimum)
+7. **No authentication** - Users are automatically assigned anonymous identities
+
+## Complete Function Reference (All 34 Functions)
+
+### Core Data Functions
+```javascript
+await save('type', data)           // Save data to database
+await load('type')                 // Load all data (returns FLATTENED array)
+await query('type', options)       // Advanced queries with filtering/sorting
+await loadAll()                    // Load all data across all types
+```
+
+### Authentication & User Functions (Public Mode)
+```javascript
+initPublicMode()                   // Initialize public mode (call once)
+getCurrentUser()                   // Get anonymous user object
+getAppId()                         // Get current app's UUID
+getParticipantId()                 // Get current user's participant ID
+getUsername()                      // Get current user's anonymous username
+updateZadAuth(userLabel, participantId) // Update authentication state
+```
+
+### Backend Helper Functions
+```javascript
+await generateAnonymousUser()      // Generate anonymous user credentials
+await greet(name)                  // Backend greeting function
+await generateImage(prompt, style) // Generate AI images from text descriptions
+```
+
+### Real-time Features
+```javascript
+enableLiveUpdates('type', callback) // Enable live data updates for specific type
+startRealtime(callback, interval)   // Start custom polling (beyond basic 2s)
+stopRealtime()                      // Stop live updates
+```
+
+### Advanced Authentication (Public Mode)
+```javascript
+isAuthenticated()                  // Always returns true in public mode
+requireAuth()                      // No-op in public mode
+onUserLogin(callback)              // Fires immediately in public mode
+```
+
+### Convenience Aliases (all work identically to save/load)
+```javascript
+await saveEntry('type', data)      // Same as save('type', data)
+await loadEntries('type')          // Same as load('type')
+await saveData('type', data)       // Same as save('type', data)
+await loadData('type')             // Same as load('type')
+await saveItem('type', data)       // Same as save('type', data)
+await loadItems('type')            // Same as load('type')
+await saveNote('type', data)       // Same as save('type', data)
+await loadNotes('type')            // Same as load('type')
+await saveMessage('type', data)    // Same as save('type', data)
+await loadMessages('type')         // Same as load('type')
+```
+
+### Legacy Functions (no auth screens needed in public mode)
+```javascript
+generateNewUser()                  // No-op in public mode
+registerNewUser()                  // No-op in public mode
+showNewUserScreen()                // No-op in public mode
+loginReturningUser()               // No-op in public mode
+showScreen(screenId)               // Generic screen navigation
+showReturningUserScreen()          // No-op in public mode
+enterMainScreen()                  // No-op in public mode
+leaveApp()                         // Reloads page in public mode
+```
+
+### Usage Examples
+
+**Query with filters:**
+```javascript
+// Get high-priority tasks
+const urgent = await query('task', {
+  where: { priority: 'high' },
+  orderBy: 'created_at',
+  limit: 10
+});
+
+// Get recent anonymous contributions
+const recent = await query('contribution', {
+  orderBy: 'created_at',
+  limit: 20
+});
+```
+
+**Anonymous user info:**
+```javascript
+const username = getUsername();          // "Anon47"
+const userId = getParticipantId();       // "participant_123"
+const user = getCurrentUser();           // Full user object
+```
+
+**Real-time updates:**
+```javascript
+// Enable automatic updates
+enableLiveUpdates('messages', () => {
+  loadLatestData();
+});
+
+// Custom polling interval
+startRealtime(updateWidget, 5000);      // Every 5 seconds
+```
+
+**Generate AI images:**
+```javascript
+// Generate an image for your app
+const imageUrl = await generateImage('cute golden retriever puppy');
+document.getElementById('pet-photo').src = imageUrl;
+
+// Generate with specific style
+const logoUrl = await generateImage('minimalist coffee shop logo', 'artistic');
+document.getElementById('logo').src = logoUrl;
+
+// Generate hero image
+const heroUrl = await generateImage('cyberpunk cityscape at sunset');
+document.body.style.backgroundImage = `url(${heroUrl})`;
+```
+
+## For WTAF Punk/Chaos Styling
+
+If user requests "punk", "WTAF style", or "chaotic" design:
+```css
+/* Add these on top of basic styles */
+button {
+  background: linear-gradient(45deg, #ff0066, #ff00ff);
+  transform: skew(-5deg);
+  box-shadow: 4px 4px 0 #ff00ff;
+}
+
+h1 {
+  text-transform: uppercase;
+  background: linear-gradient(45deg, #ff0066, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glitch 2s infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+```
+
+## Testing Your App
+
+Before returning code, verify:
+- [ ] Viewport meta tag included
+- [ ] All fonts 16px or larger
+- [ ] All buttons/inputs 44px tall minimum
+- [ ] Works at 375px screen width
+- [ ] Data loads and saves correctly
+- [ ] Updates refresh every 2 seconds
+- [ ] Public mode initializes correctly
+- [ ] Anonymous users are auto-generated
+
+## Output Format
+- One complete HTML file
+- NO markdown, NO code blocks
+- Start with `<!DOCTYPE html>`
+- Raw HTML only
+
+## 🚨 FINAL CHECKLIST - VERIFY BEFORE RETURNING CODE:
+- [ ] initPublicMode() is called on page load
+- [ ] save() function is used to store user data
+- [ ] load() function is used to retrieve data from database
+- [ ] loadLatestData() function is implemented and loads real data
+- [ ] startPolling() is called to enable auto-refresh
+- [ ] Data persists across page reloads (not just local DOM manipulation)
+- [ ] Multiple users can see each other's contributions in real-time
+- [ ] NO use of localStorage, sessionStorage, or local-only storage
+
+❌ IF ANY OF THESE ARE MISSING, THE APP WILL NOT WORK. Do not submit code that fails this checklist.
+
+---
+
+**Now build**: [USER REQUEST]

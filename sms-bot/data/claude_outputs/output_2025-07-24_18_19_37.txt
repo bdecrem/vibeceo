@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=VT323&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+/* WEBTOYS Core Variables */
+:root {
+  --webtoys-bg: #FCFCF7;
+  --webtoys-yellow: #FFD63D;
+  --webtoys-blue: #4AC2FF;
+  --webtoys-red: #FF4B4B;
+  --webtoys-purple-shadow: #D3C2F9;
+  --webtoys-purple-text: #A77EFF;
+  --webtoys-green: #A9F7A6;
+  --webtoys-text-primary: #333;
+  --webtoys-text-secondary: #555;
+  --webtoys-text-dark: #222;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Atkinson Hyperlegible", sans-serif;
+  background: var(--webtoys-bg);
+  color: var(--webtoys-text-primary);
+  line-height: 1.6;
+  font-size: 16px;
+  padding: 1rem;
+}
+
+.app-container {
+  background: white;
+  border: 4px solid var(--webtoys-yellow);
+  border-radius: 1rem;
+  box-shadow: 0 8px 0 var(--webtoys-purple-shadow);
+  padding: 1.5rem;
+  max-width: 480px;
+  margin: 1rem auto;
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  color: var(--webtoys-red);
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+button {
+  background: var(--webtoys-blue);
+  border: none;
+  border-radius: 1rem;
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-size: 1rem;
+  font-family: "Work Sans", sans-serif;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  min-height: 44px;
+  width: 100%;
+  display: block;
+  margin: 8px 0;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+input[type="text"], 
+input[type="password"] {
+  padding: 0.75rem;
+  border: 2px solid var(--webtoys-blue);
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-family: "Work Sans", sans-serif;
+  width: 100%;
+  margin: 10px 0;
+  min-height: 44px;
+}
+
+.messages {
+  background: #F6F6F6;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  margin-bottom: 0.5rem;
+  max-width: 80%;
+  font-family: "Work Sans", sans-serif;
+  position: relative;
+}
+
+.message.own {
+  background: var(--webtoys-blue);
+  color: white;
+  margin-left: auto;
+}
+
+.message.other {
+  background: var(--webtoys-yellow);
+  color: var(--webtoys-text-dark);
+}
+
+.message-author {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+  opacity: 0.8;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+}
+
+#user-status {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--webtoys-text-secondary);
+  background: var(--webtoys-green);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.screen {
+  display: none;
+  height: 100%;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-area {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.input-area input {
+  margin: 0;
+  flex: 1;
+}
+
+.input-area button {
+  width: auto;
+  margin: 0;
+}
+
+.emoji-picker {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  background: #f0f0f0;
+  border-radius: 0.5rem;
+}
+
+.emoji-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  padding: 0.25rem;
+  margin: 0;
+  min-height: 44px;
+  width: 44px;
+  cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  button {
+    width: auto;
+    display: inline-block;
+    margin: 5px;
+  }
+}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>✨ WTAF Chat ✨</h1>
+            <p style="text-align: center; margin-bottom: 2rem;">Chat with up to 5 friends!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back!</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div class="messages" id="messages"></div>
+            
+            <div class="emoji-picker">
+                <button class="emoji-btn" onclick="addEmoji('👋')">👋</button>
+                <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
+                <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
+                <button class="emoji-btn" onclick="addEmoji('🎉')">🎉</button>
+                <button class="emoji-btn" onclick="addEmoji('👍')">👍</button>
+                <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const messages = await load('chat_message');
+            updateMessages(messages);
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        }
+
+        function updateMessages(messages) {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            
+            messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                   .forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `message ${msg.author === getCurrentUser() ? 'own' : 'other'}`;
+                div.innerHTML = `
+                    <div class="message-author">${msg.author}</div>
+                    <div class="message-text">${msg.text}</div>
+                    <div class="message-time">${formatTime(msg.created_at)}</div>
+                `;
+                container.appendChild(div);
+            });
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (text) {
+                await save('chat_message', { text });
+                input.value = '';
+                await loadLatestData();
+            }
+        }
+
+        function addEmoji(emoji) {
+            const input = document.getElementById('message-input');
+            input.value += emoji;
+            input.focus();
+        }
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Chat is full! Maximum 5 users reached.');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option value="">Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option value="${label}">${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+            document.getElementById('message-input').focus();
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

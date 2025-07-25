@@ -7,21 +7,38 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		79F849992E2DCC500016A05A /* SafariImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F849982E2DCC500016A05A /* SafariImporter.swift */; };
 		A10001002CAA000000000001 /* TinyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000FF2CAA000000000001 /* TinyApp.swift */; };
 		A10001022CAA000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001012CAA000000000001 /* ContentView.swift */; };
 		A10001042CAA000000000001 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001032CAA000000000001 /* WebView.swift */; };
 		A10001062CAA000000000001 /* WebViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001052CAA000000000001 /* WebViewManager.swift */; };
 		A10001082CAA000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10001072CAA000000000001 /* Assets.xcassets */; };
+		A10001102CAA000000000002 /* BrowserTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001092CAA000000000002 /* BrowserTab.swift */; };
+		A10001122CAA000000000003 /* TabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001112CAA000000000003 /* TabBarView.swift */; };
+		A10001142CAA000000000004 /* TabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001132CAA000000000004 /* TabContentView.swift */; };
+		A10001162CAA000000000005 /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001152CAA000000000005 /* Bookmark.swift */; };
+		A10001182CAA000000000006 /* BookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001172CAA000000000006 /* BookmarkManager.swift */; };
+		A10001202CAA000000000007 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001192CAA000000000007 /* BookmarksView.swift */; };
+		A10001222CAA000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001212CAA000000000008 /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		79F849982E2DCC500016A05A /* SafariImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariImporter.swift; sourceTree = "<group>"; };
 		A10000FC2CAA000000000001 /* Tiny.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tiny.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000FF2CAA000000000001 /* TinyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyApp.swift; sourceTree = "<group>"; };
 		A10001012CAA000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10001032CAA000000000001 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		A10001052CAA000000000001 /* WebViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewManager.swift; sourceTree = "<group>"; };
 		A10001072CAA000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10001092CAA000000000002 /* BrowserTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTab.swift; sourceTree = "<group>"; };
 		A100010A2CAA000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A100010B2CAA000000000002 /* Tiny.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tiny.entitlements; sourceTree = "<group>"; };
+		A10001112CAA000000000003 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarView.swift; sourceTree = "<group>"; };
+		A10001132CAA000000000004 /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
+		A10001152CAA000000000005 /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
+		A10001172CAA000000000006 /* BookmarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManager.swift; sourceTree = "<group>"; };
+		A10001192CAA000000000007 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		A10001212CAA000000000008 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,12 +71,21 @@
 		A10000FE2CAA000000000001 /* Tiny */ = {
 			isa = PBXGroup;
 			children = (
+				79F849982E2DCC500016A05A /* SafariImporter.swift */,
 				A10000FF2CAA000000000001 /* TinyApp.swift */,
 				A10001012CAA000000000001 /* ContentView.swift */,
 				A10001032CAA000000000001 /* WebView.swift */,
 				A10001052CAA000000000001 /* WebViewManager.swift */,
+				A10001092CAA000000000002 /* BrowserTab.swift */,
+				A10001112CAA000000000003 /* TabBarView.swift */,
+				A10001132CAA000000000004 /* TabContentView.swift */,
+				A10001152CAA000000000005 /* Bookmark.swift */,
+				A10001172CAA000000000006 /* BookmarkManager.swift */,
+				A10001192CAA000000000007 /* BookmarksView.swift */,
+				A10001212CAA000000000008 /* HomeView.swift */,
 				A10001072CAA000000000001 /* Assets.xcassets */,
 				A100010A2CAA000000000001 /* Info.plist */,
+				A100010B2CAA000000000002 /* Tiny.entitlements */,
 			);
 			path = Tiny;
 			sourceTree = "<group>";
@@ -137,6 +163,14 @@
 				A10001002CAA000000000001 /* TinyApp.swift in Sources */,
 				A10001042CAA000000000001 /* WebView.swift in Sources */,
 				A10001062CAA000000000001 /* WebViewManager.swift in Sources */,
+				A10001102CAA000000000002 /* BrowserTab.swift in Sources */,
+				A10001122CAA000000000003 /* TabBarView.swift in Sources */,
+				79F849992E2DCC500016A05A /* SafariImporter.swift in Sources */,
+				A10001142CAA000000000004 /* TabContentView.swift in Sources */,
+				A10001162CAA000000000005 /* Bookmark.swift in Sources */,
+				A10001182CAA000000000006 /* BookmarkManager.swift in Sources */,
+				A10001202CAA000000000007 /* BookmarksView.swift in Sources */,
+				A10001222CAA000000000008 /* HomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,7 +303,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tiny/Tiny.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -294,7 +328,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tiny/Tiny.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

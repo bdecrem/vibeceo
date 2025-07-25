@@ -1,0 +1,147 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chez Alex - Your Neighborhood Coffee Haven</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Bitter', serif;
+            background: #f5e6d3;
+            color: #2c1810;
+            line-height: 1.6;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .menu-highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .menu-item h3 {
+            color: #8b4513;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact {
+            background: #2c1810;
+            color: white;
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .contact h2 {
+            margin-bottom: 1rem;
+        }
+
+        .contact a {
+            color: #f5e6d3;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .contact a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-content p {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Chez Alex</h1>
+            <p>Your cozy neighborhood coffee haven where every cup tells a story</p>
+        </div>
+    </div>
+
+    <section class="section">
+        <h2>Welcome to Our Coffee Family</h2>
+        <p>Nestled in the heart of the neighborhood, Chez Alex is more than just a coffee shop - it's a community hub where friendships brew alongside our carefully crafted beverages. Our passion for quality coffee and warm hospitality creates an atmosphere that feels like home.</p>
+        
+        <div class="menu-highlights">
+            <div class="menu-item">
+                <h3>House Special Lavender Latte</h3>
+                <p>Our signature drink featuring house-made lavender syrup and locally roasted espresso</p>
+            </div>
+            <div class="menu-item">
+                <h3>Artisanal Pastries</h3>
+                <p>Fresh-baked daily by our in-house pastry chef, featuring seasonal ingredients</p>
+            </div>
+            <div class="menu-item">
+                <h3>Community Events</h3>
+                <p>Join us for weekly poetry readings, local artist showcases, and coffee tasting workshops</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact">
+        <h2>Come Visit Us</h2>
+        <p>123 Cozy Corner Street</p>
+        <p>Open Daily: 7am - 8pm</p>
+        <p>Questions or Reservations: <a href="mailto:[CONTACT_EMAIL]">[CONTACT_EMAIL]</a></p>
+    </section>
+</body>
+</html>
+```

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushi Sensation | Where Every Roll Tells a Story</title>
+    <style>
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --blue: #6ECBFF;
+            --red: #FF4B4B;
+            --purple: #C9C2F9;
+            --charcoal: #2A2A2A;
+            --gray: #6B6B6B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(254, 254, 245, 0.95);
+            padding: 1rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--red);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--charcoal);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--red);
+        }
+
+        .hero {
+            height: 100vh;
+            background-image: url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: var(--red);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,75,75,0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+        }
+
+        .menu-section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .menu-card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 8px 0 var(--purple);
+            transition: transform 0.3s ease;
+            transform: rotate(-2deg);
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px) rotate(-2deg);
+        }
+
+        .menu-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--red);
+        }
+
+        .menu-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .menu-section {
+                padding: 4rem 1rem;
+            }
+
+            .menu-card {
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">🍣 Sushi Sensation</div>
+            <div class="nav-links">
+                <a href="#menu">Menu</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+                <a href="#reservations">Reservations</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>WHERE EVERY ROLL TELLS A STORY</h1>
+            <p>Experience the art of sushi crafting in our vibrant downtown location. Fresh ingredients, master chefs, and a dash of magic in every bite.</p>
+            <a href="#reservations" class="cta-button">Book Your Table 🎯</a>
+        </div>
+    </section>
+
+    <section class="menu-section" id="menu">
+        <h2>OUR SIGNATURE ROLLS</h2>
+        <div class="menu-grid">
+            <div class="menu-card">
+                <img src="https://images.unsplash.com/photo-1579584425555-c3ce17fd4351" alt="Dragon Roll">
+                <h3>Dragon Roll 🐉</h3>
+                <p>Eel, cucumber, avocado, topped with tobiko and unagi sauce</p>
+            </div>
+            <div class="menu-card">
+                <img src="https://images.unsplash.com/photo-1579871494447-9811cf80d66c" alt="Rainbow Roll">
+                <h3>Rainbow Roll 🌈</h3>
+                <p>California roll topped with assorted sashimi and avocado</p>
+            </div>
+            <div class="menu-card">
+                <img src="https://images.unsplash.com/photo-1553621042-f6e147245754" alt="Volcano Roll">
+                <h3>Volcano Roll 🌋</h3>
+                <p>Spicy tuna, tempura crunch, topped with spicy mayo and sriracha</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="floating-emoji" style="top: 20%; left: 10%">🍱</div>
+    <div class="floating-emoji" style="top: 40%; right: 15%">🍜</div>
+    <div class="floating-emoji" style="top: 60%; left: 20%">🥢</div>
+    <div class="floating-emoji" style="top: 80%; right: 10%">🎋</div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const emojis = document.querySelectorAll('.floating-emoji');
+            const { clientX, clientY } = e;
+            
+            emojis.forEach((emoji, index) => {
+                const speed = (index + 1) * 0.5;
+                const x = (window.innerWidth - clientX * speed) / 100;
+                const y = (window.innerHeight - clientY * speed) / 100;
+                
+                emoji.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        let logoClicks = 0;
+        document.querySelector('.logo').addEventListener('click', () => {
+            logoClicks++;
+            if (logoClicks === 5) {
+                alert('🎉 You found our secret sushi stash! Here\'s a virtual wasabi high-five! 🔥');
+            }
+        });
+    </script>
+</body>
+</html>

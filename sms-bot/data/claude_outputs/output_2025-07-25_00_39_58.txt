@@ -1,0 +1,152 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World - WEBTOYS Style!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FF2E93, #FF61C7, #FFA5E5);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease-in-out infinite;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8vw;
+            color: white;
+            text-shadow: 3px 3px 0px #FF2E93;
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        h1:hover {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 5rem;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+            animation: float 3s infinite;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .secret-message {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        #click-count {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            color: white;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="hello">Hello World</h1>
+    </div>
+    
+    <div class="floating-emoji" data-value="2" style="top: 20%; left: 20%">✨</div>
+    <div class="floating-emoji" data-value="3" style="top: 70%; left: 80%">🚀</div>
+    <div class="floating-emoji" data-value="4" style="top: 30%; left: 70%">🌈</div>
+    <div class="floating-emoji" data-value="5" style="top: 80%; left: 30%">💫</div>
+
+    <div id="click-count"></div>
+    <div class="secret-message">Made with WEBTOYS - Click the text 5 times for a surprise!</div>
+
+    <script>
+        // Parallax effect
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.floating-emoji').forEach((elem) => {
+                const speed = elem.getAttribute('data-value') || 2;
+                const x = (e.clientX * speed) / 100;
+                const y = (e.clientY * speed) / 100;
+                elem.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Easter egg
+        let clicks = 0;
+        const hello = document.getElementById('hello');
+        const clickCount = document.getElementById('click-count');
+        
+        hello.addEventListener('click', () => {
+            clicks++;
+            if(clicks === 5) {
+                clickCount.style.display = 'block';
+                clickCount.textContent = '🎉';
+                setTimeout(() => {
+                    clickCount.style.display = 'none';
+                    clicks = 0;
+                }, 2000);
+            }
+        });
+
+        // Console easter egg
+        console.log('🎮 Welcome to the playground! Try typing "WTAF" anywhere...');
+        
+        let buffer = '';
+        document.addEventListener('keypress', (e) => {
+            buffer += e.key;
+            if(buffer.toLowerCase().includes('wtaf')) {
+                document.body.style.animation = 'gradientShift 1s ease-in-out infinite';
+                setTimeout(() => {
+                    document.body.style.animation = 'gradientShift 15s ease-in-out infinite';
+                }, 3000);
+                buffer = '';
+            }
+        });
+    </script>
+</body>
+</html>
+```
