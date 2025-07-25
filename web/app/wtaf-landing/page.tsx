@@ -333,7 +333,6 @@ export default function WebtoysSitePage() {
         <div className="steps-container">
           <div className="section-header">
             <h2 className="section-title">HOW IT WORKS</h2>
-            <p className="section-subtitle">From idea to internet in minutes</p>
           </div>
           
           <div className="steps-grid">
