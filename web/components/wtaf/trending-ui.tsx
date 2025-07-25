@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import TruncatedPrompt from "@/components/truncated-prompt"
+import CopiedModal from "../ui/copied-modal"
 
 interface WtafApp {
   id: string
@@ -40,7 +41,11 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
     setCopiedNotification({ show: true, text })
     setTimeout(() => {
       setCopiedNotification({ show: false, text: "" })
-    }, 2000)
+    }, 3000)
+  }
+
+  const closeCopiedModal = () => {
+    setCopiedNotification({ show: false, text: "" })
   }
 
   const copyToClipboard = async (text: string) => {
@@ -56,7 +61,7 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
   const handlePromptClick = async (prompt: string) => {
     const success = await copyToClipboard(prompt)
     if (success) {
-      showCopiedNotification("Prompt copied!")
+      showCopiedNotification(prompt)
     }
   }
 
@@ -64,7 +69,7 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
     const remixCommand = `REMIX ${appSlug}`
     const success = await copyToClipboard(remixCommand)
     if (success) {
-      showCopiedNotification("REMIX command copied!")
+      showCopiedNotification(remixCommand)
     }
   }
 
@@ -97,13 +102,13 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet"
       />
-        {/* Copied Notification */}
-        {copiedNotification.show && (
-          <div className="copied-notification">
-            <span className="copied-text">{copiedNotification.text}</span>
-            <span className="copied-checkmark">✓</span>
-          </div>
-        )}
+      
+      {/* Copied Modal */}
+      <CopiedModal 
+        show={copiedNotification.show}
+        text={copiedNotification.text}
+        onClose={closeCopiedModal}
+      />
 
         {/* Electric sparks */}
         <div className="sparks">
@@ -205,57 +210,6 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
             color: #ffffff;
           }
 
-          .copied-notification {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(45deg, #ff6600, #ff3366);
-            color: #ffffff;
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 
-              0 8px 25px rgba(255, 102, 0, 0.3),
-              0 0 20px rgba(255, 102, 0, 0.2);
-            animation: slideInFade 2s ease-out;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-          }
-
-          .copied-checkmark {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-          }
-
-          @keyframes slideInFade {
-            0% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
-            20% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            80% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            100% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
-          }
 
           @keyframes gradientShift {
             0% { background-position: 0% 50%; }
