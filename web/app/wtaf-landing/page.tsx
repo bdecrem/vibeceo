@@ -1,16 +1,15 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import TruncatedPrompt from "@/components/truncated-prompt"
 
-export default function HomePage() {
+export default function WebtoysSitePage() {
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
 
   const showCopiedNotification = (text: string) => {
     setCopiedNotification({ show: true, text })
     setTimeout(() => {
       setCopiedNotification({ show: false, text: "" })
-    }, 5000) // Longer display time for modal
+    }, 5000)
   }
 
   const closeCopiedModal = () => {
@@ -27,1990 +26,1153 @@ export default function HomePage() {
     }
   }
 
-  const [currentSuggestion, setCurrentSuggestion] = useState(0)
-
-  const suggestions = [
-    "wtaf make me a simple todo app",
-    "wtaf make a chat app for me and my friends", 
-    "wtaf build a color palette picker",
-  ]
-
-  const handleSuggestionClick = async (suggestion: string) => {
-    const success = await copyToClipboard(suggestion)
+  const handleSMSBubbleClick = async (text: string) => {
+    const success = await copyToClipboard(text)
     if (success) {
-      showCopiedNotification(suggestion)
+      showCopiedNotification(text)
     }
   }
 
-  const handlePromptClick = async (prompt: string) => {
-    const success = await copyToClipboard(prompt)
-    if (success) {
-      showCopiedNotification(prompt)
+  const handleRemixClick = async (example: string) => {
+    const remixPrompt = prompt('Remix this idea:', example)
+    if (remixPrompt) {
+      const success = await copyToClipboard(remixPrompt)
+      if (success) {
+        showCopiedNotification(remixPrompt)
+      }
     }
   }
 
-  // Auto-cycle through suggestions
+  // Interactive step numbers
+  const handleStepHover = (element: HTMLElement) => {
+    element.style.transform = 'rotate(360deg) scale(1.1)'
+  }
+
+  const handleStepLeave = (element: HTMLElement) => {
+    element.style.transform = 'rotate(0deg) scale(1)'
+  }
+
+  // Konami code easter egg
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSuggestion((prev) => (prev + 1) % suggestions.length)
-    }, 4000)
-    return () => clearInterval(interval)
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA']
+    let konamiIndex = 0
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === konamiCode[konamiIndex]) {
+        konamiIndex++
+        if (konamiIndex === konamiCode.length) {
+          document.body.style.animation = 'rainbow 2s linear infinite'
+          alert('🎉 Unlimited creativity mode activated! 🎉')
+          konamiIndex = 0
+        }
+      } else {
+        konamiIndex = 0
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
+
   return (
     <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-        {/* Copied Modal */}
-        {copiedNotification.show && (
-          <div className="modal-overlay" onClick={closeCopiedModal}>
-            <div className="copied-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <button className="close-button" onClick={closeCopiedModal}>×</button>
-                <div className="header-center">
-                  <div className="success-icon">✨</div>
-                  <h3 className="modal-title">Copied!</h3>
-                </div>
-                <div className="header-spacer"></div>
+      {/* Copied Modal */}
+      {copiedNotification.show && (
+        <div className="modal-overlay" onClick={closeCopiedModal}>
+          <div className="copied-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <button className="close-button" onClick={closeCopiedModal}>×</button>
+              <div className="header-center">
+                <div className="success-icon">✨</div>
+                <h3 className="modal-title">Copied!</h3>
               </div>
-              <div className="modal-body">
-                <p className="instruction-text">
-                  Now text this to <span className="phone-number">+1-866-330-0015</span>
-                </p>
-                <div className="copied-text-display">
-                  {copiedNotification.text}
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="got-it-button" onClick={closeCopiedModal}>
-                  Got it!
-                </button>
+              <div className="header-spacer"></div>
+            </div>
+            <div className="modal-body">
+              <p className="instruction-text">
+                Now text this to <span className="phone-number">+1-866-330-0015</span>
+              </p>
+              <div className="copied-text-display">
+                {copiedNotification.text}
               </div>
             </div>
+            <div className="modal-footer">
+              <button className="got-it-button" onClick={closeCopiedModal}>
+                Got it!
+              </button>
+            </div>
           </div>
-        )}
-
-        {/* Electric sparks */}
-        <div className="sparks">
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
         </div>
+      )}
 
-        {/* Floating punk elements */}
-        <div className="float-element robot">🤖</div>
-        <div className="float-element lightning">⚡</div>
-        <div className="float-element fire">🔥</div>
-        <div className="float-element chains">⛓️</div>
-        <div className="float-element skull">💀</div>
-
-        <header>
-          <div className="logo glitch" data-text="WEBTOYS">
-            WEBTOYS
+      {/* Navigation */}
+      <nav className="nav">
+        <div className="nav-container">
+          <a href="#" className="logo">WEBTOYS.ai</a>
+          <ul className="nav-links">
+            <li><a href="#how">How it Works</a></li>
+            <li><a href="#examples">Examples</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="sms:+18663300015" className="phone-number">📱 (866) 330-0015</a></li>
+          </ul>
+        </div>
+      </nav>
+      
+      {/* Hero Section */}
+      <section className="hero">
+        {/* Floating shapes */}
+        <div className="floating-shape shape1"></div>
+        <div className="floating-shape shape2"></div>
+        <div className="floating-shape shape3"></div>
+        
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              <span className="line1">Text It</span>
+              <span className="line2">We Build It</span>
+              <span className="line3">Web Magic via SMS</span>
+            </h1>
+            
+            <p className="hero-description">
+              One text. Infinite possibilities. We turn your SMS into 
+              stunning web pages, fun games, viral memes, and working apps.
+            </p>
+            
+            <div className="phone-display">
+              <div className="sms-header">
+                <span className="sms-icon">💬</span>
+                <span className="sms-number">(866) 330-0015</span>
+              </div>
+              <div className="sms-examples">
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Build me a sushi restaurant site with 80s vibes")}>
+                  "Build me a sushi restaurant site with 80s vibes"
+                </div>
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Create a game where you catch falling tacos")}>
+                  "Create a game where you catch falling tacos"
+                </div>
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("Make a meme generator for my cat photos")}>
+                  "Make a meme generator for my cat photos"
+                </div>
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("I need a todo app but make it fun")}>
+                  "I need a todo app but make it fun"
+                </div>
+              </div>
+            </div>
+            
+            <div className="cta-section">
+              <a href="sms:+18663300015" className="cta-main">
+                <span>📱</span>
+                <span>Text (866) 330-0015 Now</span>
+              </a>
+              <p className="cta-sub">$5 per creation • Ready in minutes • 100% magic</p>
+            </div>
           </div>
-          <div className="tagline">WEB TOYS, ARTIFACTS & FUN</div>
-        </header>
-
-        <main>
-          <section className="hero">
-            <div className="hero-content">
-              <h1 className="hero-title">
-                One-Shot Prompting Over SMS
-              </h1>
-              <div className="starter-section">
-                <div className="starter-text">
-                  Try it — text <strong>+1-866-330-0015</strong> with:
-                </div>
-                <div className="prompt-suggestions">
-                  <div className="suggestion-container">
-                    <div
-                      className="suggestion-prompt large active"
-                      onClick={() => handleSuggestionClick(suggestions[currentSuggestion])}
-                    >
-                      "{suggestions[currentSuggestion]}"
-                    </div>
-                  </div>
-                </div>
-                <p>
-                  Text us. We'll shoot back a page, app or simple game your friends can remix. It's art meets algorithm.
-                </p>
+        </div>
+      </section>
+      
+      {/* Examples Section */}
+      <section className="examples" id="examples">
+        <div className="examples-container">
+          <div className="section-header">
+            <h2 className="section-title">Fresh From the Oven</h2>
+            <p className="section-subtitle">Real creations from real text messages</p>
+          </div>
+          
+          <div className="examples-grid">
+            {/* Example 1: Sushi Site */}
+            <div className="example-card">
+              <div className="example-preview sushi magic-cursor">
+                🍣
               </div>
-              {/* <div className="cta-section">
-                <a href="https://wtaf.me/bart/satin-horse-storytelling" className="cta-button">Learn More</a>
-                <a href="/featured" className="cta-button secondary">
-                  Gallery
-                </a>
-              </div> */}
-            </div>
-          </section>
-
-          {/* How It Works Section */}
-          <section className="how-it-works">
-            <div className="how-it-works-content">
-              <h2 className="how-it-works-title">How It Works</h2>
-              <div className="steps">
-                <div className="step">
-                  <div className="step-number">1</div>
-                  <div className="step-content">
-                    <h3>Try it</h3>
-                    <p>Browse websites and apps others made with WTAF.</p>
-                  </div>
-                </div>
-                <div className="step">
-                  <div className="step-number">2</div>
-                  <div className="step-content">
-                    <h3>Remix</h3>
-                    <p>Copy a REMIX code, text it with your changes to +1-866-330-0015 (WhatsApp works too).</p>
-                  </div>
-                </div>
-                <div className="step">
-                  <div className="step-number">3</div>
-                  <div className="step-content">
-                    <h3>Make your own</h3>
-                    <p>Text us a sentence. We'll turn it into a tiny web app.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* What You Can Make Section */}
-          <section className="services">
-            <h2 className="section-title featured-title glitch" data-text="WHAT YOU CAN MAKE">
-              <span className="title-icon">⭐</span>
-              WHAT YOU CAN MAKE
-              <span className="title-icon">⭐</span>
-            </h2>
-
-            {/* WEB TOYS */}
-            <div className="category-section">
-              <h3 className="category-title">WEB TOYS</h3>
-              <div className="service-card image-card">
-                <div className="image-container">
-                  <a href="https://wtaf.me/bart/demo-paint-od96qt40">
-                    <img src="/wtaf-landing/images/demo-paint-od96qt40.png" alt="RETRO PAINT 98" className="service-image" />
-                  </a>
-                  <div className="image-overlay">
-                    <a href="https://wtaf.me/bart/demo-paint-od96qt40?demo=true" className="try-app-btn">TRY THIS APP</a>
-                  </div>
-                </div>
-                <div className="image-content">
-                  <div className="app-title">RETRO PAINT 98</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <TruncatedPrompt
-                    prompt="wtaf make a retro paint app like old windows"
-                    maxLength={120}
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick("wtaf make a retro paint app like old windows")}
-                  />
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX demo-paint-od96qt40")}>
-                    REMIX
+              <div className="example-info">
+                <div className="prompt-label">Text Message:</div>
+                <div className="prompt-text">"Build me a sushi restaurant site with 80s nostalgia vibes"</div>
+                <div className="example-actions">
+                  <a href="#" className="btn-view">View Site</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("Build me a sushi restaurant site with 80s nostalgia vibes")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* Simple Web Sites */}
-            <div className="category-section">
-              <h3 className="category-title">Simple Web Sites</h3>
-              <div className="service-card image-card">
-                <div className="image-container">
-                  <a href="https://www.wtaf.me/bart/sand-leaf-breaking">
-                    <img src="/wtaf-landing/images/sand-leaf-breaking.png?v=20250721-1600" alt="Buzzkill Barbershop" className="service-image" />
-                  </a>
-                  <div className="image-overlay">
-                    <a href="/bart/sand-leaf-breaking?demo=true" className="try-app-btn">TRY THIS APP</a>
-                  </div>
-                </div>
-                <div className="image-content">
-                  <div className="app-title">BUZZKILL</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <TruncatedPrompt
-                    prompt='Wtaf make a bold, gritty landing page for a barbershop called "Buzzkill" — vintage punk aesthetic, scissors that animate on hover, neon sign logo, moody background music (pretend), and fake reviews from rockstars and criminals'
-                    maxLength={120}
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick('Wtaf make a bold, gritty landing page for a barbershop called "Buzzkill" — vintage punk aesthetic, scissors that animate on hover, neon sign logo, moody background music (pretend), and fake reviews from rockstars and criminals')}
-                  />
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX sand-leaf-breaking")}>
-                    REMIX
+            
+            {/* Example 2: Game */}
+            <div className="example-card">
+              <div className="example-preview game magic-cursor">
+                <div>🌮 TACO CATCH 🌮</div>
+              </div>
+              <div className="example-info">
+                <div className="prompt-label">Text Message:</div>
+                <div className="prompt-text">"Create a game where you catch falling tacos with a sombrero"</div>
+                <div className="example-actions">
+                  <a href="#" className="btn-view">Play Game</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("Create a game where you catch falling tacos with a sombrero")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* WEBSITES WITH FORMS */}
-            <div className="category-section">
-              <h3 className="category-title">WEBSITES WITH FORMS</h3>
-              <div className="service-card image-card">
-                <div className="image-container">
-                  <a href="https://www.wtaf.me/bart/clay-dragonfly-protecting">
-                    <img src="/wtaf-landing/images/clay-dragonfly-protecting.png" alt="404 Girls AI Band" className="service-image" />
-                  </a>
-                  <div className="image-overlay">
-                    <a href="/bart/clay-dragonfly-protecting?demo=true" className="try-app-btn">TRY THIS APP</a>
-                  </div>
+            
+            {/* Example 3: Meme Generator */}
+            <div className="example-card">
+              <div className="example-preview meme magic-cursor">
+                <div className="meme-text">
+                  CAT MEMES<br/>
+                  GENERATOR<br/>
+                  😸
                 </div>
-                <div className="image-content">
-                  <div className="app-title">404 Girls</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <TruncatedPrompt
-                    prompt='Wtaf --admin build a landing page for a rebellious AI band called "404 Girls" — glitched-out vibes, retro pixel fonts, embedded fake tour dates, and a big JOIN THE UPRISING button. The admin page lets us add tour dates'
-                    maxLength={120}
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick('Wtaf --admin build a landing page for a rebellious AI band called "404 Girls" — glitched-out vibes, retro pixel fonts, embedded fake tour dates, and a big JOIN THE UPRISING button. The admin page lets us add tour dates')}
-                  />
-                  <div className="prompt-label" style={{ textTransform: "none" }}>
-                    This app comes with an{" "}
-                    <a href="https://www.wtaf.me/bart/admin-clay-dragonfly-protecting" style={{ color: "#00ffff", textDecoration: "underline" }}>
-                      admin page
-                    </a>
-                    .
-                  </div>
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX clay-dragonfly-protecting")}>
-                    REMIX
+              </div>
+              <div className="example-info">
+                <div className="prompt-label">Text Message:</div>
+                <div className="prompt-text">"Make a meme generator but only for cat photos"</div>
+                <div className="example-actions">
+                  <a href="#" className="btn-view">Make Memes</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("Make a meme generator but only for cat photos")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* CHAT APPS */}
-            <div className="category-section">
-              <h3 className="category-title">CHAT APPS</h3>
-              <div className="service-card image-card">
-                <div className="image-container">
-                  <a href="https://www.wtaf.me/bart/twilight-mantis-chatting">
-                    <img src="/wtaf-landing/images/twilight-mantis-chatting.png?v=20250721-2344" alt="Kpop Chatroom" className="service-image" />
-                  </a>
-                  <div className="image-overlay">
-                    <a href="/bart/twilight-mantis-chatting?demo=true" className="try-app-btn">TRY THIS APP</a>
-                  </div>
-                </div>
-                <div className="image-content">
-                  <div className="app-title">Kpop Chatroom</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <TruncatedPrompt
-                    prompt='Wtaf Make a chatroom for me and my friends to talk about Kpop - the colorscheme should be hot pink gradients'
-                    maxLength={120}
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick('Wtaf Make a chatroom for me and my friends to talk about Kpop - the colorscheme should be hot pink gradients')}
-                  />
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX twilight-mantis-chatting")}>
-                    REMIX
+            
+            {/* Example 4: Todo App */}
+            <div className="example-card">
+              <div className="example-preview app magic-cursor">
+                <div className="app-icon">✅</div>
+                <div className="app-icon">📝</div>
+                <div className="app-icon">🎯</div>
+                <div className="app-icon">⏰</div>
+                <div className="app-icon">🏆</div>
+                <div className="app-icon">💫</div>
+              </div>
+              <div className="example-info">
+                <div className="prompt-label">Text Message:</div>
+                <div className="prompt-text">"I need a todo app that makes productivity feel like a game"</div>
+                <div className="example-actions">
+                  <a href="#" className="btn-view">Try App</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("I need a todo app that makes productivity feel like a game")}>
+                    <span>🎨</span>
+                    <span>Remix</span>
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* Arcade Games */}
-            <div className="category-section">
-              <h3 className="category-title">Arcade Games</h3>
-              <div className="service-card image-card">
-                <div className="image-container">
-                  <a href="https://wtaf.me/bart/bronze-dolphin-flying">
-                    <img src="/wtaf-landing/images/pong.png" alt="Pong Game" className="service-image" />
-                  </a>
-                  <div className="image-overlay">
-                    <a href="/bart/bronze-dolphin-flying?demo=true" className="try-app-btn">TRY THIS APP</a>
-                  </div>
-                </div>
-                <div className="image-content">
-                  <div className="app-title">Paddle Clash</div>
-                  <div className="prompt-label">The prompt:</div>
-                  <div
-                    className="prompt-showcase"
-                    onClick={() => handlePromptClick("wtaf make a pong-style browser game")}
-                  >
-                    "wtaf make a pong-style browser game"
-                  </div>
-                  <button className="remix-btn" onClick={() => handlePromptClick("REMIX pong-game")}>
-                    REMIX
-                  </button>
-                </div>
-              </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* How it Works */}
+      <section className="how-it-works" id="how">
+        <div className="steps-container">
+          <div className="section-header">
+            <h2 className="section-title">Magic in 3 Steps</h2>
+            <p className="section-subtitle">From idea to internet in minutes</p>
+          </div>
+          
+          <div className="steps-grid">
+            <div className="step-card">
+              <div 
+                className="step-number"
+                onMouseEnter={(e) => handleStepHover(e.currentTarget)}
+                onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
+              >1</div>
+              <h3 className="step-title">Text Your Idea</h3>
+              <p className="step-description">
+                Send any idea to (866) 330-0015. Be specific or be vague – 
+                our AI loves a creative challenge!
+              </p>
             </div>
-
-            <div className="more-link-container">
-              <a href="/featured" className="more-link">
-                CHECK OUT THE GALLERY →
-              </a>
+            
+            <div className="step-card">
+              <div 
+                className="step-number"
+                onMouseEnter={(e) => handleStepHover(e.currentTarget)}
+                onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
+              >2</div>
+              <h3 className="step-title">We Build Magic</h3>
+              <p className="step-description">
+                Our AI gets to work, crafting your vision into reality. 
+                Usually takes just 2-5 minutes!
+              </p>
             </div>
-          </section>
-
-          {/* Trending Section */}
-          <section className="services">
-            <h2 className="section-title trending-title glitch" data-text="Trending">
-              <span className="title-icon">🔥</span>
-              Trending
-              <span className="title-icon">🔥</span>
-            </h2>
-
-            {/* Trending App - Tangerine Bat Tracking */}
-            <div className="service-card image-card">
-              <div className="image-container">
-                <a href="https://wtaf.me/bart/tangerine-bat-tracking">
-                  <img src="/wtaf-landing/images/tangerine-bat-tracking.png" alt="Tangerine Bat Tracking" className="service-image" />
-                </a>
-                <div className="image-overlay">
-                  <a href="https://wtaf.me/bart/tangerine-bat-tracking?demo=true" className="try-app-btn">TRY THIS APP</a>
-                </div>
-              </div>
-              <div className="image-content">
-                <div className="creator-stats-inline">
-                  <div className="creator-info">
-                    <span className="creator-label">by</span>
-                    <a href="/wtaf/bart/creations" className="creator-handle">
-                      @bart
-                    </a>
-                  </div>
-                  <div className="remix-count">
-                    <span className="remix-number">156</span>
-                    <span className="remix-label">remixes</span>
-                  </div>
-                </div>
-                <div className="prompt-label">The prompt:</div>
-                <div
-                  className="prompt-showcase"
-                  onClick={() => handlePromptClick("wtaf make a bat tracking app where you can log sightings and track migration patterns")}
-                >
-                  "wtaf make a bat tracking app where you can log sightings and track migration patterns"
-                </div>
-                <button className="remix-btn" onClick={() => handlePromptClick("REMIX tangerine-bat-tracking")}>
-                  REMIX
-                </button>
-              </div>
+            
+            <div className="step-card">
+              <div 
+                className="step-number"
+                onMouseEnter={(e) => handleStepHover(e.currentTarget)}
+                onMouseLeave={(e) => handleStepLeave(e.currentTarget)}
+              >3</div>
+              <h3 className="step-title">Get Your Link</h3>
+              <p className="step-description">
+                Receive a link to your creation. Share it, embed it, 
+                or remix it into something new!
+              </p>
             </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Footer CTA */}
+      <section className="footer-cta">
+        <h2>Ready to Create?</h2>
+        <p>Your next big idea is just one text away</p>
+        <a href="sms:+18663300015" className="phone-large">📱 (866) 330-0015</a>
+      </section>
+      
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-links">
+            <a href="#">About</a>
+            <a href="/featured">Examples</a>
+            <a href="#">Pricing</a>
+            <a href="#">API</a>
+            <a href="#">Help</a>
+          </div>
+          <p className="footer-copyright">
+            © 2024 WEBTOYS.ai • Made with ✨ and a sprinkle of chaos
+          </p>
+        </div>
+      </footer>
 
-            <div className="more-link-container">
-              <a href="/trending" className="more-link">
-                More Trending →
-              </a>
-            </div>
-          </section>
+      <style jsx global>{`
+        /* WEBTOYS GRAND Design System */
+        :root {
+          /* Core WEBTOYS DNA Colors */
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          
+          /* Professional Additions */
+          --charcoal: #2A2A2A;
+          --gray-warm: #6B6B6B;
+          --white-pure: #FFFFFF;
+          --black-soft: #1A1A1A;
+        }
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--cream);
+          color: var(--charcoal);
+          line-height: 1.6;
+          overflow-x: hidden;
+        }
 
-          <section className="bottom-section">
-            <div className="about-wtaf">
-              <div className="about-content">
-                <h2 className="about-title">About Webtoys</h2>
-                <p className="about-text">
-                  Text your wildest app ideas to <strong>+1-866-330-0015</strong> and watch them materialize into
-                  working code. No planning. No meetings. No bullshit. Just pure creative chaos delivered through SMS.
-                  Each prompt becomes a fully functional app in minutes, not months.
-                </p>
-                <p className="about-subtext">Start with "wtaf" + your idea. The algorithm handles the rest.</p>
-                <div style={{ textAlign: 'center', marginTop: '25px' }}>
-                  <a href="https://wtaf.me/bart/satin-horse-storytelling" className="faq-link">FAQ</a>
-                </div>
-              </div>
-            </div>
-          </section>
-        </main>
+        /* Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.85);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
 
-        <style jsx global>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .copied-modal {
+          background: #1a1a1a;
+          border: 1px solid #333;
+          border-radius: 8px;
+          max-width: 500px;
+          width: 90%;
+          position: relative;
+        }
+
+        .modal-header {
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid #333;
+        }
+
+        .header-center {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          justify-content: center;
+        }
+
+        .header-spacer {
+          width: 30px;
+        }
+
+        .success-icon {
+          font-size: 1.2rem;
+        }
+
+        .modal-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0;
+        }
+
+        .close-button {
+          background: none;
+          border: none;
+          color: #999;
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 5px;
+          line-height: 1;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .close-button:hover {
+          color: #ffffff;
+        }
+
+        .modal-body {
+          padding: 20px;
+        }
+
+        .instruction-text {
+          font-size: 1rem;
+          color: #ccc;
+          margin: 0 0 15px 0;
+          text-align: center;
+        }
+
+        .phone-number {
+          color: #00ffff;
+          font-weight: 700;
+        }
+
+        .copied-text-display {
+          background: #111;
+          border: 1px solid #333;
+          border-radius: 4px;
+          padding: 15px;
+          font-family: monospace;
+          font-size: 0.9rem;
+          color: #00ffff;
+          word-break: break-word;
+          line-height: 1.3;
+        }
+
+        .modal-footer {
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          border-top: 1px solid #333;
+        }
+
+        .got-it-button {
+          background: #333;
+          color: #ffffff;
+          border: 1px solid #555;
+          padding: 10px 20px;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          cursor: pointer;
+        }
+
+        .got-it-button:hover {
+          background: #444;
+        }
+        
+        /* Navigation */
+        .nav {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          background: var(--white-pure);
+          border-bottom: 4px solid var(--yellow);
+          box-shadow: 0 4px 20px var(--purple-shadow);
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 2rem;
+        }
+        
+        .logo {
+          font-size: 1.8rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, var(--red) 0%, var(--blue) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .logo::before {
+          content: "🎨";
+          font-size: 2rem;
+          animation: spin 4s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(180deg); }
+        }
+        
+        .nav-links {
+          display: flex;
+          gap: 2rem;
+          list-style: none;
+          align-items: center;
+        }
+        
+        .nav-links a {
+          color: var(--charcoal);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 0.5rem 1.5rem;
+          border-radius: 2rem;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+          background: var(--yellow-soft);
+          transform: translateY(-2px);
+        }
+        
+        .phone-number {
+          background: var(--blue);
+          color: white !important;
+          box-shadow: 0 4px 0 var(--blue-deep);
+          font-size: 1.1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .phone-number:hover {
+          background: var(--blue-deep) !important;
+          box-shadow: 0 2px 0 var(--blue);
+        }
+        
+        /* Hero Section */
+        .hero {
+          margin-top: 80px;
+          min-height: 90vh;
+          display: flex;
+          align-items: center;
+          position: relative;
+          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--cream) 40%, rgba(108,203,255,0.15) 100%);
+          overflow: hidden;
+        }
+        
+        /* Floating elements */
+        .floating-shape {
+          position: absolute;
+          opacity: 0.3;
+          animation: float-shape 20s infinite ease-in-out;
+        }
+        
+        .shape1 {
+          width: 200px;
+          height: 200px;
+          background: var(--green-mint);
+          border-radius: 50%;
+          top: 10%;
+          left: 5%;
+          animation-delay: 0s;
+        }
+        
+        .shape2 {
+          width: 150px;
+          height: 150px;
+          background: var(--purple-accent);
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          top: 60%;
+          right: 10%;
+          animation-delay: 5s;
+        }
+        
+        .shape3 {
+          width: 100px;
+          height: 100px;
+          background: var(--red-soft);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          bottom: 20%;
+          left: 15%;
+          animation-delay: 10s;
+        }
+        
+        @keyframes float-shape {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(30px, -30px) rotate(90deg); }
+          50% { transform: translate(-20px, 20px) rotate(180deg); }
+          75% { transform: translate(40px, 10px) rotate(270deg); }
+        }
+        
+        .hero-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 2rem;
+          position: relative;
+          z-index: 1;
+        }
+        
+        .hero-content {
+          text-align: center;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+        
+        .hero-title {
+          font-size: clamp(3.5rem, 8vw, 6rem);
+          font-weight: 900;
+          line-height: 0.9;
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+          letter-spacing: -3px;
+        }
+        
+        .line1 {
+          color: var(--red);
+          display: block;
+        }
+        
+        .line2 {
+          color: var(--blue-deep);
+          display: block;
+          margin-left: 2rem;
+        }
+        
+        .line3 {
+          color: var(--charcoal);
+          display: block;
+          font-size: 0.7em;
+          letter-spacing: -1px;
+          margin-top: 0.2em;
+        }
+        
+        .hero-description {
+          font-size: 1.5rem;
+          color: var(--gray-warm);
+          margin-bottom: 3rem;
+          font-weight: 500;
+        }
+        
+        /* Phone Display */
+        .phone-display {
+          background: var(--white-pure);
+          border: 6px solid var(--yellow);
+          border-radius: 3rem;
+          padding: 2rem;
+          box-shadow: 0 12px 0 var(--purple-accent), 0 24px 60px var(--purple-shadow);
+          max-width: 600px;
+          margin: 0 auto 3rem;
+          transform: rotate(-1deg);
+          transition: all 0.3s ease;
+        }
+        
+        .phone-display:hover {
+          transform: rotate(0deg) scale(1.02);
+        }
+        
+        .sms-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 3px solid var(--cream);
+        }
+        
+        .sms-icon {
+          font-size: 2.5rem;
+        }
+        
+        .sms-number {
+          font-size: 1.8rem;
+          font-weight: 800;
+          color: var(--blue-deep);
+        }
+        
+        .sms-examples {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .sms-bubble {
+          background: var(--cream);
+          border: 3px solid var(--green-mint);
+          border-radius: 1.5rem;
+          padding: 1rem 1.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--charcoal);
+          position: relative;
+          animation: bubble-in 0.5s ease-out;
+          animation-fill-mode: both;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .sms-bubble:hover {
+          background: var(--green-mint);
+          transform: translateX(10px);
+        }
+        
+        .sms-bubble:nth-child(1) { animation-delay: 0.2s; }
+        .sms-bubble:nth-child(2) { animation-delay: 0.4s; }
+        .sms-bubble:nth-child(3) { animation-delay: 0.6s; }
+        .sms-bubble:nth-child(4) { animation-delay: 0.8s; }
+        
+        @keyframes bubble-in {
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px);
           }
-
-          body {
-            background: linear-gradient(135deg, 
-              #1a1a1a 0%, 
-              #252525 15%, 
-              #2d1b69 30%, 
-              #4a1b4a 45%, 
-              #8b0000 60%, 
-              #6b1050 75%, 
-              #4b0082 85%, 
-              #000000 100%);
-            background-size: 800% 800%;
-            animation: gradientShift 15s ease infinite;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-            color: #ffffff;
+          100% { 
+            opacity: 1; 
+            transform: translateY(0);
           }
+        }
+        
+        .cta-section {
+          text-align: center;
+        }
+        
+        .cta-main {
+          display: inline-flex;
+          align-items: center;
+          gap: 1.5rem;
+          background: var(--red);
+          color: white;
+          padding: 1.5rem 3rem;
+          border-radius: 3rem;
+          font-size: 1.3rem;
+          font-weight: 800;
+          text-decoration: none;
+          box-shadow: 0 8px 0 var(--red-soft);
+          transition: all 0.3s ease;
+          margin-bottom: 1.5rem;
+        }
+        
+        .cta-main:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 11px 0 var(--red-soft);
+        }
+        
+        .cta-main:active {
+          transform: translateY(0);
+          box-shadow: 0 4px 0 var(--red-soft);
+        }
+        
+        .cta-sub {
+          color: var(--gray-warm);
+          font-size: 1.1rem;
+        }
+        
+        /* Examples Section */
+        .examples {
+          padding: 6rem 2rem;
+          background: var(--white-pure);
+        }
+        
+        .examples-container {
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+        
+        .section-header {
+          text-align: center;
+          margin-bottom: 4rem;
+        }
+        
+        .section-title {
+          font-size: 3.5rem;
+          color: var(--blue-deep);
+          margin-bottom: 1rem;
+          text-transform: uppercase;
+          font-weight: 900;
+          letter-spacing: -2px;
+          position: relative;
+          display: inline-block;
+        }
+        
+        .section-title::after {
+          content: "✨";
+          position: absolute;
+          top: -20px;
+          right: -40px;
+          font-size: 2rem;
+          animation: sparkle 2s ease-in-out infinite;
+        }
+        
+        @keyframes sparkle {
+          0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          50% { opacity: 0.5; transform: scale(1.2) rotate(180deg); }
+        }
+        
+        .section-subtitle {
+          font-size: 1.3rem;
+          color: var(--gray-warm);
+        }
+        
+        .examples-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 2.5rem;
+        }
+        
+        .example-card {
+          background: var(--cream);
+          border: 5px solid var(--yellow);
+          border-radius: 2rem;
+          overflow: hidden;
+          box-shadow: 0 10px 0 var(--purple-accent);
+          transition: all 0.3s ease;
+          position: relative;
+        }
+        
+        .example-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 15px 0 var(--purple-accent);
+        }
+        
+        .example-preview {
+          height: 300px;
+          background: var(--white-pure);
+          position: relative;
+          overflow: hidden;
+          cursor: pointer;
+        }
+        
+        /* Different preview styles for each example */
+        .example-preview.sushi {
+          background: linear-gradient(45deg, var(--red-soft) 0%, var(--white-pure) 50%, var(--green-mint) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 6rem;
+        }
+        
+        .example-preview.game {
+          background: var(--black-soft);
+          color: var(--green-mint);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 4rem;
+          font-family: monospace;
+        }
+        
+        .example-preview.meme {
+          background: linear-gradient(135deg, var(--purple-accent) 0%, var(--blue) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .example-preview.app {
+          background: var(--white-pure);
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+          padding: 2rem;
+        }
+        
+        .app-icon {
+          background: var(--yellow-soft);
+          border-radius: 1rem;
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2rem;
+        }
+        
+        .meme-text {
+          color: white;
+          font-size: 2rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          text-align: center;
+          text-shadow: 2px 2px 0 black;
+        }
+        
+        .example-info {
+          padding: 2rem;
+        }
+        
+        .prompt-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 0.5rem;
+        }
+        
+        .prompt-text {
+          font-size: 1.2rem;
+          color: var(--charcoal);
+          font-weight: 600;
+          margin-bottom: 1.5rem;
+          line-height: 1.4;
+        }
+        
+        .example-actions {
+          display: flex;
+          gap: 1rem;
+        }
+        
+        .btn-view, .btn-remix {
+          padding: 0.75rem 1.5rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          border: none;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+        
+        .btn-view {
+          background: var(--white-pure);
+          color: var(--blue-deep);
+          border: 3px solid var(--blue);
+        }
+        
+        .btn-view:hover {
+          background: var(--blue);
+          color: white;
+          transform: translateY(-2px);
+        }
+        
+        .btn-remix {
+          background: var(--green-mint);
+          color: var(--charcoal);
+          border: 3px solid var(--green-sage);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .btn-remix:hover {
+          background: var(--green-sage);
+          color: white;
+          transform: translateY(-2px);
+        }
+        
+        /* How it Works */
+        .how-it-works {
+          padding: 6rem 2rem;
+          background: linear-gradient(180deg, var(--white-pure) 0%, var(--cream) 100%);
+        }
+        
+        .steps-container {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        
+        .steps-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 3rem;
+          margin-top: 3rem;
+        }
+        
+        .step-card {
+          text-align: center;
+          padding: 2rem;
+        }
+        
+        .step-number {
+          display: inline-block;
+          width: 80px;
+          height: 80px;
+          background: var(--yellow);
+          border: 4px solid var(--charcoal);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2rem;
+          font-weight: 900;
+          margin: 0 auto 1.5rem;
+          box-shadow: 0 6px 0 var(--yellow-soft);
+          animation: bounce 2s ease-in-out infinite;
+          transition: all 0.3s ease;
+        }
+        
+        .step-card:nth-child(2) .step-number {
+          background: var(--blue);
+          box-shadow: 0 6px 0 var(--blue-deep);
+          animation-delay: 0.3s;
+        }
+        
+        .step-card:nth-child(3) .step-number {
+          background: var(--green-mint);
+          box-shadow: 0 6px 0 var(--green-sage);
+          animation-delay: 0.6s;
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .step-title {
+          font-size: 1.5rem;
+          color: var(--charcoal);
+          margin-bottom: 1rem;
+          font-weight: 800;
+        }
+        
+        .step-description {
+          color: var(--gray-warm);
+          font-size: 1.1rem;
+          line-height: 1.6;
+        }
+        
+        /* Footer CTA */
+        .footer-cta {
+          padding: 6rem 2rem;
+          background: var(--blue-deep);
+          color: white;
+          text-align: center;
+        }
+        
+        .footer-cta h2 {
+          font-size: 3rem;
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+        }
+        
+        .footer-cta p {
+          font-size: 1.3rem;
+          margin-bottom: 2rem;
+          opacity: 0.9;
+        }
+        
+        .phone-large {
+          font-size: 2.5rem;
+          font-weight: 900;
+          color: var(--yellow);
+          text-decoration: none;
+          display: inline-block;
+          padding: 1rem 2rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2rem;
+          transition: all 0.3s ease;
+        }
+        
+        .phone-large:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: scale(1.05);
+        }
+        
+        /* Footer */
+        .footer {
+          background: var(--charcoal);
+          color: white;
+          padding: 3rem 2rem;
+          text-align: center;
+        }
+        
+        .footer-content {
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 2rem;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+          color: white;
+          text-decoration: none;
+          opacity: 0.8;
+          transition: opacity 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+          opacity: 1;
+          color: var(--yellow);
+        }
+        
+        .footer-copyright {
+          opacity: 0.6;
+          font-size: 0.9rem;
+        }
+        
+        /* Easter egg cursor */
+        .magic-cursor {
+          cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><text y="28" font-size="28">✨</text></svg>'), auto;
+        }
 
-          /* Modal Overlay */
-          .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Rainbow animation for easter egg */
+        @keyframes rainbow {
+          0% { filter: hue-rotate(0deg); }
+          100% { filter: hue-rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+          .nav-links {
+            gap: 1rem;
           }
-
-          /* Copied Modal */
-          .copied-modal {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            max-width: 500px;
-            width: 90%;
-            position: relative;
+          
+          .nav-links a:not(.phone-number) {
+            display: none;
           }
-
-          /* Modal Header */
-          .modal-header {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #333;
-          }
-
-          .header-center {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-            justify-content: center;
-          }
-
-          .header-spacer {
-            width: 30px; /* Same width as close button to balance */
-          }
-
-          .success-icon {
-            font-size: 1.2rem;
-          }
-
-          .modal-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0;
-          }
-
-          .close-button {
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
-            line-height: 1;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .close-button:hover {
-            color: #ffffff;
-          }
-
-          /* Modal Body */
-          .modal-body {
-            padding: 20px;
-          }
-
-          .instruction-text {
-            font-size: 1rem;
-            color: #ccc;
-            margin: 0 0 15px 0;
-            text-align: center;
-          }
-
-          .phone-number {
-            color: #00ffff;
-            font-weight: 700;
-          }
-
-          .copied-text-display {
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 15px;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.9rem;
-            color: #00ffff;
-            word-break: break-word;
-            line-height: 1.3;
-          }
-
-          /* Modal Footer */
-          .modal-footer {
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            border-top: 1px solid #333;
-          }
-
-          .got-it-button {
-            background: #333;
-            color: #ffffff;
-            border: 1px solid #555;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            cursor: pointer;
-          }
-
-          .got-it-button:hover {
-            background: #444;
-          }
-
-
-
-          /* Mobile Responsive */
-          @media (max-width: 768px) {
-            .copied-modal {
-              width: 95%;
-              margin: 20px;
-            }
-            
-            .modal-header {
-              padding: 20px 20px 15px;
-            }
-            
-            .modal-body {
-              padding: 20px;
-            }
-            
-            .modal-footer {
-              padding: 15px 20px 20px;
-            }
-            
-            .modal-title {
-              font-size: 1.5rem;
-            }
-            
-            .instruction-text {
-              font-size: 1.1rem;
-            }
-            
-            .copied-text-display {
-              font-size: 1rem;
-              padding: 15px;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .modal-header {
-              padding: 15px 15px 10px;
-            }
-            
-            .modal-body {
-              padding: 15px;
-            }
-            
-            .modal-footer {
-              padding: 10px 15px 15px;
-            }
-            
-            .modal-title {
-              font-size: 1.3rem;
-            }
-            
-            .instruction-text {
-              font-size: 1rem;
-            }
-            
-            .got-it-button {
-              padding: 12px 30px;
-              font-size: 1rem;
-            }
-          }
-
-          @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-
-          .float-element {
-            position: absolute;
-            opacity: 0.4;
-            animation: float 6s ease-in-out infinite;
-            pointer-events: none;
-            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.3));
-          }
-
-          .robot {
-            top: 8%;
-            left: 5%;
-            font-size: 3.5rem;
-            color: rgba(100, 200, 255, 0.4);
-            animation-delay: 0s;
-          }
-
-          .skull {
-            top: 60%;
-            left: 3%;
-            font-size: 3.2rem;
-            color: rgba(255, 255, 255, 0.3);
-            animation-delay: 3s;
-          }
-
-          .lightning {
-            top: 30%;
-            right: 8%;
-            font-size: 4rem;
-            color: rgba(255, 255, 0, 0.4);
-            animation-delay: 2s;
-          }
-
-          .fire {
-            bottom: 25%;
-            left: 12%;
-            font-size: 3.8rem;
-            color: rgba(255, 69, 0, 0.4);
-            animation-delay: 4s;
-          }
-
-          .chains {
-            bottom: 10%;
-            right: 15%;
-            font-size: 3.2rem;
-            color: rgba(192, 192, 192, 0.3);
-            animation-delay: 1s;
-          }
-
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-20px) rotate(5deg); }
-            66% { transform: translateY(10px) rotate(-3deg); }
-          }
-
-          .starter-section {
-            margin-top: 30px;
-            margin-bottom: 80px;
-          }
-
-          .starter-text {
-            font-size: 1.4rem;
-            font-weight: 300;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 0 auto 20px;
-            padding: 40px 0 0 0;
-            line-height: 1.7;
-            text-align: center;
-            max-width: 650px;
-          }
-
-          .starter-text strong {
-            color: #ffffff;
-            font-weight: 700;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-          }
-
-          .prompt-suggestions {
-            position: relative !important;
-            height: 120px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            margin: 20px 0 30px 0 !important;
-          }
-
-          .suggestion-container {
-            position: relative !important;
-            width: 100% !important;
-            height: 120px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-
-          .suggestion-prompt {
-            width: 95%;
-            max-width: 700px;
-            padding: 18px 30px;
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 30px;
-            color: #00ffff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 1.3rem;
-            font-weight: 500;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.5s ease;
-            backdrop-filter: blur(5px);
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            user-select: none;
-            margin: 0 auto;
-            display: block;
-          }
-
-          .suggestion-prompt:hover {
-            background: rgba(0, 255, 255, 0.15);
-            border-color: rgba(0, 255, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
-          }
-
-          .suggestion-prompt.large {
-            font-size: 1.8rem;
-          }
-
+          
           .hero-title {
-            font-family: 'Space Grotesk', sans-serif;
             font-size: 3rem;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
-            margin-bottom: 40px;
-            letter-spacing: -2px;
           }
-
-
-
-          .glitch {
-            position: relative;
-            display: inline-block;
+          
+          .line2 {
+            margin-left: 0;
           }
-
-          .glitch::before,
-          .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+          
+          .phone-display {
+            transform: rotate(0);
           }
-
-          .glitch::before {
-            animation: glitch1 2s infinite;
-            color: #ff0080;
-            z-index: -1;
-          }
-
-          .glitch::after {
-            animation: glitch2 2s infinite;
-            color: #00ffff;
-            z-index: -2;
-          }
-
-          @keyframes glitch1 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(-2px, -1px); }
-            20% { transform: translate(1px, 2px); }
-          }
-
-          @keyframes glitch2 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(2px, 1px); }
-            20% { transform: translate(-1px, -2px); }
-          }
-
-          header {
-            padding: 40px 20px;
-            text-align: center;
-            position: relative;
-            z-index: 10;
-          }
-
-          .logo {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 5rem;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow:
-              0 0 10px #ff0080,
-              0 0 20px #ff0080,
-              0 0 30px #ff0080;
-            margin-bottom: 15px;
-            letter-spacing: -2px;
-          }
-
-          .tagline {
-            font-size: 1.2rem;
-            color: #ff0080;
-            font-weight: 500;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            text-shadow: 0 0 5px #ff0080;
-          }
-
-          main {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 5;
-          }
-
-          .hero {
-            text-align: center;
-            margin-bottom: 80px;
-            padding: 60px 40px;
-          }
-
-          .hero-content {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 0, 128, 0.3);
-            border-radius: 30px;
-            padding: 70px 50px;
-            box-shadow:
-              0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(255, 0, 128, 0.1);
-          }
-
-          .hero h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 4.2rem;
-            color: #ffffff;
-            margin-bottom: 35px;
-            font-weight: 700;
-            line-height: 1.1;
-            text-shadow: 0 0 15px #00ffff;
-          }
-
-          .hero p {
-            font-size: 1.4rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.7;
-            max-width: 650px;
-            margin: 0 auto 20px;
-            font-weight: 300;
-          }
-
-          .cta-section {
-            display: flex;
-            gap: 25px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-          }
-
-          .cta-button {
-            display: inline-block;
-            padding: 20px 45px;
-            background: linear-gradient(45deg, #ff0080, #8b0000);
-            color: #ffffff;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 50px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow:
-              0 8px 25px rgba(255, 0, 128, 0.3),
-              0 0 20px rgba(255, 0, 128, 0.2);
-            cursor: pointer;
-          }
-
-          .cta-button.secondary {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00ffff;
-            box-shadow:
-              0 8px 25px rgba(0, 255, 255, 0.2),
-              0 0 20px rgba(0, 255, 255, 0.1);
-          }
-
-          .cta-button:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow:
-              0 15px 35px rgba(255, 0, 128, 0.4),
-              0 0 30px rgba(255, 0, 128, 0.3);
-          }
-
-          .cta-button.secondary:hover {
-            box-shadow:
-              0 15px 35px rgba(0, 255, 255, 0.3),
-              0 0 30px rgba(0, 255, 255, 0.2);
-          }
-
-          .services {
-            display: grid;
+          
+          .examples-grid {
             grid-template-columns: 1fr;
-            gap: 50px;
-            margin-bottom: 90px;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
           }
-
-          .service-card {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 45px 35px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+          
+          .steps-grid {
+            grid-template-columns: 1fr;
           }
-
-          .service-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #ff0080, #00ffff, #ffff00, #ff0080);
-            background-size: 200% 100%;
-            animation: borderGlow 3s linear infinite;
-          }
-
-          @keyframes borderGlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-          }
-
-          .service-card:hover {
-            transform: translateY(-8px);
-            background: rgba(0, 0, 0, 0.7);
-            box-shadow:
-              0 20px 50px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(255, 0, 128, 0.2);
-            border-color: rgba(255, 0, 128, 0.3);
-          }
-
-          .image-container {
-            position: relative;
-            overflow: hidden;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
-          }
-
-          .image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: all 0.3s ease;
-            border-radius: 15px;
-          }
-
-          .image-container:hover .image-overlay {
-            opacity: 1;
-          }
-
-          .image-container:hover .service-image {
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.8));
-          }
-
-          .image-container:hover {
-            border-color: rgba(255, 0, 128, 0.7);
-          }
-
-          .try-app-btn {
-            display: inline-block;
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #ff0080, #8b0000);
-            color: #ffffff;
-            border: none;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(255, 0, 128, 0.3),
-              0 0 20px rgba(255, 0, 128, 0.2);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-            text-decoration: none;
-          }
-
-          .try-app-btn:hover {
-            transform: scale(1.05);
-            box-shadow:
-              0 12px 35px rgba(255, 0, 128, 0.4),
-              0 0 30px rgba(255, 0, 128, 0.3);
-          }
-
-          /* Desktop layout for feature cards with images */
-          @media (min-width: 769px) {
-            .service-card.image-card {
-              display: flex !important;
-              align-items: center !important;
-              gap: 80px !important;
-              padding: 60px 60px !important;
-              max-width: 1800px !important;
-              margin-left: auto !important;
-              margin-right: auto !important;
-              width: 100% !important;
-            }
-            
-            .service-card.image-card .service-image {
-              flex: 0 0 auto !important;
-              margin: 0 !important;
-              width: 500px !important;
-              height: 333px !important;
-              max-width: 500px !important;
-              min-width: 500px !important;
-              aspect-ratio: 3 / 2 !important;
-              object-fit: cover !important;
-            }
-            
-            .service-card.image-card .image-content {
-              flex: 1 !important;
-              display: flex !important;
-              flex-direction: column !important;
-              padding-left: 20px !important;
-            }
-          }
-
-          .service-card .service-image {
-            width: 100%;
-            height: auto;
-            aspect-ratio: 3 / 2;
-            margin: 0 0 20px 0;
-            display: block;
-            object-fit: cover;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-          }
-
-          .service-card:hover .service-image {
-            transform: scale(1.02);
-            filter: drop-shadow(0 0 30px rgba(255, 0, 128, 0.8));
-            border-color: rgba(255, 0, 128, 0.7);
-            box-shadow: 0 10px 40px rgba(255, 0, 128, 0.3);
-          }
-
-          .prompt-showcase {
-            color: #00ffff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 1.2rem;
-            font-weight: 500;
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 15px;
-            padding: 20px 25px;
-            margin: 0 0 25px 0;
-            text-align: left;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            line-height: 1.4;
-          }
-
-          .prompt-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0 10px 12px 10px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-            opacity: 0.8;
-            text-align: center;
-          }
-
-          .sparks {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            overflow: hidden;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-          }
-
-          .spark {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #ffff00;
-            border-radius: 50%;
-            opacity: 0;
-            animation: spark 3s infinite ease-out;
-            box-shadow: 0 0 6px #ffff00;
-          }
-
-          .spark:nth-child(1) {
-            top: 25%;
-            left: 20%;
-            animation-delay: 0s;
-          }
-
-          .spark:nth-child(2) {
-            top: 70%;
-            left: 80%;
-            animation-delay: 1s;
-          }
-
-          .spark:nth-child(3) {
-            top: 50%;
-            left: 10%;
-            animation-delay: 2s;
-          }
-
-          .spark:nth-child(4) {
-            top: 30%;
-            left: 90%;
-            animation-delay: 1.5s;
-          }
-
-          @keyframes spark {
-            0% {
-              opacity: 0;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(2);
-            }
-            100% {
-              opacity: 0;
-              transform: scale(1);
-            }
-          }
-
-          @media (max-width: 768px) {
-            .logo { font-size: 3.5rem; }
-            header { padding: 20px 20px 20px 20px; }
-            .services { grid-template-columns: 1fr; }
-            .service-card { padding: 35px 25px; }
-            .hero h1 { font-size: 2.8rem; line-height: 1.2; }
-            .hero p { font-size: 1.1rem; margin: 0 auto 25px; }
-            .hero-content { padding: 30px 20px; } /* Reduce padding on mobile */
-            .hero { padding: 10px 20px; }
-
-            .starter-text {
-              font-size: 1.1rem;
-              padding-top: 20px !important; /* Reduce padding on mobile */
-            }
-            .suggestion-prompt {
-              font-size: 1.2rem !important; /* Larger than surrounding text on mobile */
-              padding: 12px 18px !important;
-              width: 98%;
-            }
-            .prompt-suggestions {
-              height: 80px !important; /* Reduce height on mobile */
-              margin: 15px 0 20px 0 !important;
-            }
-            .suggestion-container {
-              height: 80px !important;
-            }
-            .starter-section {
-              margin-bottom: 40px !important; /* Reduce bottom margin on mobile */
-            }
-            .prompt-showcase {
-              font-size: 1rem;
-              padding: 16px 20px;
-              line-height: 1.3;
-            }
-            .app-title {
-              margin-top: 20px;
-              margin-bottom: 15px;
-            }
-            .remix-btn {
-              display: block;
-              margin: 15px auto 0 auto;
-            }
-
-            /* Fix mobile image container sizing */
-            .service-card .service-image {
-              width: 100% !important;
-              height: 100% !important;
-              aspect-ratio: 3 / 2 !important;
-              object-fit: cover !important;
-              border-radius: 15px;
-              margin-bottom: 20px;
-              display: block;
-            }
-
-            .image-container {
-              width: 100% !important;
-              height: auto !important;
-              aspect-ratio: 3 / 2 !important;
-              overflow: hidden;
-              border-radius: 15px;
-              margin-bottom: 20px;
-              position: relative;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .logo { font-size: 3rem; }
-            header { padding: 15px 20px 15px 20px; }
-            .service-card { padding: 30px 20px; }
-            .hero h1 { font-size: 2.4rem; line-height: 1.1; }
-            .hero p { font-size: 1rem; margin: 0 auto 20px; }
-            .hero-content { padding: 25px 15px; } /* Even less padding on small mobile */
-            .hero { padding: 5px 20px; }
-            .cta-button { padding: 18px 35px; font-size: 1rem; }
-
-            .starter-text {
-              font-size: 1rem;
-              padding-top: 15px !important; /* Even less padding on small mobile */
-            }
-            .suggestion-prompt {
-              font-size: 1.1rem !important; /* Larger than surrounding text on small mobile */
-              padding: 10px 15px !important;
-            }
-            .prompt-suggestions {
-              height: 70px !important; /* Even smaller height on small mobile */
-              margin: 10px 0 15px 0 !important;
-            }
-            .suggestion-container {
-              height: 70px !important;
-            }
-            .starter-section {
-              margin-bottom: 30px !important; /* Even less bottom margin on small mobile */
-            }
-            .prompt-showcase {
-              font-size: 0.9rem;
-              padding: 14px 18px;
-              line-height: 1.3;
-            }
-            .app-title {
-              margin-top: 18px;
-              margin-bottom: 12px;
-            }
-            .remix-btn {
-              display: block;
-              margin: 12px auto 0 auto;
-              padding: 12px 25px;
-              font-size: 0.9rem;
-            }
-
-            /* Ensure proper image sizing on small mobile */
-            .service-card .service-image {
-              width: 100% !important;
-              height: 100% !important;
-              aspect-ratio: 3 / 2 !important;
-              object-fit: cover !important;
-              border-radius: 15px;
-              margin-bottom: 15px;
-              display: block;
-            }
-
-            .image-container {
-              width: 100% !important;
-              height: auto !important;
-              aspect-ratio: 3 / 2 !important;
-              overflow: hidden;
-              border-radius: 15px;
-              margin-bottom: 15px;
-              position: relative;
-            }
-          }
-
-          .bottom-section {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 60px;
-          }
-
-          .about-wtaf {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 40px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            max-width: 800px;
-            width: 100%;
-          }
-
-          .about-wtaf::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #00ffff, #ff0080, #00ffff);
-            background-size: 200% 100%;
-            animation: borderGlow 4s linear infinite;
-          }
-
-          .about-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            color: #ffffff;
-            margin-bottom: 20px;
-            font-weight: 700;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-          }
-
-          .about-text {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            margin-bottom: 15px;
-            font-weight: 300;
-          }
-
-          .about-text strong {
-            color: #00ffff;
-            font-weight: 600;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-          }
-
-          .about-subtext {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-style: italic;
-            font-weight: 300;
-          }
-
-          .faq-link {
-            display: inline-block;
-            color: #00ffff;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
-            padding: 10px 20px;
-            border: 2px solid rgba(0, 255, 255, 0.4);
-            border-radius: 25px;
-            background: rgba(0, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          }
-
-          .faq-link:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            border-color: rgba(0, 255, 255, 0.8);
-            background: rgba(0, 255, 255, 0.15);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
-          }
-
-          .promo-badge {
-            display: inline-block;
-            background: rgba(255, 255, 0, 0.2);
-            border: 1px solid rgba(255, 255, 0, 0.5);
-            color: #ffff00;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            text-shadow: 0 0 8px rgba(255, 255, 0, 0.5);
-          }
-
-          .promo-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.5rem;
-            color: #ffffff;
-            margin-bottom: 15px;
-            font-weight: 700;
-            text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
-          }
-
-          .promo-text {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.5;
-            margin-bottom: 20px;
-            font-weight: 300;
-          }
-
-          .trending-link {
-            display: inline-block;
-            color: #ff0080;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(255, 0, 128, 0.5);
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
-          }
-
-          .trending-link:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(255, 0, 128, 0.8);
-            border-bottom-color: rgba(255, 0, 128, 0.6);
-            transform: translateX(5px);
-          }
-
-          @media (max-width: 768px) {
-            .about-wtaf { padding: 30px 25px; }
-            .about-title { font-size: 1.7rem; }
-          }
-
-          @media (max-width: 480px) {
-            .about-wtaf { padding: 25px 20px; }
-            .about-title { font-size: 1.5rem; }
-            .about-text { font-size: 1rem; }
-          }
-
-          .promo-emoji {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            animation: flamePulse 2s ease-in-out infinite;
-            filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.6));
-          }
-
-          @keyframes flamePulse {
-            0%, 100% { 
-              transform: scale(1) rotate(0deg);
-              filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.6));
-            }
-            50% { 
-              transform: scale(1.1) rotate(2deg);
-              filter: drop-shadow(0 0 25px rgba(255, 102, 0, 0.8));
-            }
-          }
-
-          .trending-promo {
-            background: linear-gradient(135deg, rgba(255, 0, 128, 0.2), rgba(139, 0, 0, 0.3));
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 0, 128, 0.4);
-            border-radius: 25px;
-            padding: 30px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-              0 8px 30px rgba(255, 0, 128, 0.2),
-              inset 0 0 20px rgba(255, 0, 128, 0.1);
-            transition: all 0.3s ease;
-          }
-
-          .trending-promo:hover {
-            transform: translateY(-5px);
-            box-shadow: 
-              0 15px 40px rgba(255, 0, 128, 0.3),
-              inset 0 0 30px rgba(255, 0, 128, 0.15);
-            border-color: rgba(255, 0, 128, 0.6);
-          }
-
-          .trending-promo::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #ff0080, #ffff00, #ff0080);
-            background-size: 200% 100%;
-            animation: borderGlow 3s linear infinite;
-          }
-
-          /* How It Works Section */
-          .how-it-works {
-            background: linear-gradient(135deg, #001122 0%, #003366 25%, #004477 50%, #0066aa 75%, #0088cc 100%);
-            margin: 80px auto 100px auto;
-            max-width: 1200px;
-            border-radius: 30px;
-            padding: 60px 40px;
-            position: relative;
-            overflow: hidden;
-            border: 3px solid #00ffff;
-            box-shadow: 
-              0 20px 50px rgba(0, 0, 0, 0.6),
-              0 0 30px rgba(0, 255, 255, 0.4),
-              inset 0 0 20px rgba(0, 255, 255, 0.1);
-          }
-
-          .how-it-works-content {
-            position: relative;
-            z-index: 10;
-          }
-
-          .how-it-works-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 3rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-align: center;
-            margin-bottom: 50px;
-            text-shadow: 
-              0 0 20px rgba(0, 255, 255, 0.8),
-              0 0 40px rgba(0, 255, 255, 0.4),
-              0 4px 8px rgba(0, 0, 0, 0.3);
-          }
-
-          .steps {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 40px;
-            max-width: 1000px;
-            margin: 0 auto;
-          }
-
-          .step {
-            text-align: center;
-            padding: 30px 20px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-          }
-
-          .step:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-          }
-
-          .step-number {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #333333 0%, #4a1565 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            font-weight: 900;
-            color: #ffffff;
-            margin: 0 auto 25px;
-            box-shadow: 0 8px 25px rgba(74, 21, 101, 0.4);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-          }
-
-          .step-content h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #00ffff;
-            margin-bottom: 15px;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-          }
-
-          .step-content p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            font-weight: 300;
-            max-width: 280px;
-            margin: 0 auto;
-          }
-
-          /* Mobile responsiveness */
-          @media (max-width: 768px) {
-            .how-it-works {
-              margin: 30px 20px;
-              padding: 25px 20px;
-              border-radius: 25px;
-            }
-
-            .how-it-works-title {
-              font-size: 1.8rem;
-              margin-bottom: 20px;
-            }
-
-            .steps {
-              grid-template-columns: 1fr;
-              gap: 15px;
-              max-width: 400px;
-            }
-
-            .step {
-              padding: 15px 20px;
-              display: flex;
-              align-items: center;
-              text-align: left;
-              gap: 15px;
-            }
-
-            .step-number {
-              width: 30px;
-              height: 30px;
-              font-size: 1rem;
-              margin: 0;
-              flex-shrink: 0;
-            }
-
-            .step-content h3 {
-              font-size: 1.2rem;
-              margin-bottom: 5px;
-            }
-
-            .step-content p {
-              font-size: 0.9rem;
-              max-width: 100%;
-              line-height: 1.4;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .how-it-works {
-              margin: 40px 15px;
-              padding: 30px 20px;
-            }
-
-            .how-it-works-title {
-              font-size: 1.8rem;
-              margin-bottom: 30px;
-            }
-
-            .step-number {
-              width: 60px;
-              height: 60px;
-              font-size: 1.5rem;
-            }
-
-            .step-content h3 {
-              font-size: 1.3rem;
-            }
-
-            .step-content p {
-              font-size: 0.95rem;
-            }
-          }
-
-          /* App title styling */
-          .app-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.4rem;
-            color: #ffffff;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-align: center;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-          }
-
-          /* Creator stats styling */
-          .creator-stats-inline {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-          }
-
-          .creator-info {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-          }
-
-          .creator-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-          }
-
-          .creator-handle {
-            color: #ff0080;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            text-decoration: none;
-            text-shadow: 0 0 8px rgba(255, 0, 128, 0.5);
-            transition: all 0.3s ease;
-          }
-
-          .creator-handle:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(255, 0, 128, 0.8);
-          }
-
-          .remix-count {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-          }
-
-          .remix-number {
-            color: #00ffff;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-          }
-
-          .remix-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8rem;
-          }
-
-          /* More link styling */
-          .more-link-container {
-            text-align: center;
-            margin-top: 30px;
-          }
-
-          .more-link {
-            display: inline-block;
-            padding: 15px 35px;
-            background: linear-gradient(45deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 128, 0.1));
-            border: 2px solid rgba(0, 255, 255, 0.4);
-            color: #00ffff;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            transition: all 0.3s ease;
-            border-radius: 50px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            box-shadow: 
-              0 8px 25px rgba(0, 255, 255, 0.2),
-              0 0 20px rgba(0, 255, 255, 0.1);
-          }
-
-          .more-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-          }
-
-          .more-link:hover::before {
-            left: 100%;
-          }
-
-          .more-link:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            border-color: rgba(0, 255, 255, 0.8);
-            background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 128, 0.2));
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 
-              0 15px 35px rgba(0, 255, 255, 0.3),
-              0 0 30px rgba(0, 255, 255, 0.2);
-          }
-
-          /* Section titles */
-          .section-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          }
-
-          .featured-title {
-            background: linear-gradient(45deg, #ffff00, #ff0080, #00ffff);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease infinite;
-            text-shadow: none;
-            filter: drop-shadow(0 0 15px rgba(255, 255, 0, 0.5));
-          }
-
-          .trending-title {
-            background: linear-gradient(45deg, #ff0080, #ff4500, #ffff00);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease infinite;
-            text-shadow: none;
-            filter: drop-shadow(0 0 15px rgba(255, 0, 128, 0.5));
-          }
-
-          .title-icon {
-            font-size: 2rem;
-            animation: iconPulse 2s ease-in-out infinite;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.6));
-          }
-
-          .featured-title .title-icon {
-            color: #ffff00;
-            animation: starTwinkle 2s ease-in-out infinite;
-          }
-
-          .trending-title .title-icon {
-            color: #ff4500;
-            animation: flameDance 2s ease-in-out infinite;
-          }
-
-          @keyframes starTwinkle {
-            0%, 100% { 
-              transform: scale(1) rotate(0deg);
-              filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.6));
-            }
-            50% { 
-              transform: scale(1.2) rotate(180deg);
-              filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.9));
-            }
-          }
-
-          @keyframes flameDance {
-            0%, 100% { 
-              transform: scale(1) rotate(-5deg);
-              filter: drop-shadow(0 0 10px rgba(255, 69, 0, 0.6));
-            }
-            50% { 
-              transform: scale(1.1) rotate(5deg);
-              filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.9));
-            }
-          }
-
-          @keyframes iconPulse {
-            0%, 100% { 
-              transform: scale(1);
-              opacity: 0.8;
-            }
-            50% { 
-              transform: scale(1.1);
-              opacity: 1;
-            }
-          }
-
-          /* Category sections */
-          .category-section {
-            margin-bottom: 60px;
-          }
-
-          .category-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.2rem;
-            color: #00ffff;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 30px;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            position: relative;
-          }
-
-          .category-title:first-of-type {
-            margin-top: -30px;
-          }
-
-          .category-title::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, #00ffff, #ff0080);
-            border-radius: 2px;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-          }
-
-          /* Remix button styling */
-          .remix-btn {
-            padding: 15px 30px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(0, 255, 255, 0.2),
-              0 0 20px rgba(0, 255, 255, 0.1);
-            margin-top: 15px;
-          }
-
-          .remix-btn:hover {
-            background: rgba(0, 255, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow:
-              0 12px 35px rgba(0, 255, 255, 0.3),
-              0 0 30px rgba(0, 255, 255, 0.2);
-          }
-
-          /* Mobile responsive adjustments for new elements */
-          @media (max-width: 768px) {
-            .how-it-works {
-              margin: 30px auto 60px auto;
-            }
-
-            .section-title {
-              font-size: 2rem;
-              gap: 10px;
-              margin-bottom: 15px;
-            }
-            
-            .title-icon {
-              font-size: 1.5rem;
-            }
-
-            .category-title {
-              font-size: 1.8rem;
-            }
-
-            .category-title:first-of-type {
-              margin-top: -20px;
-            }
-
-            .category-section {
-              margin-bottom: 30px;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .how-it-works {
-              margin: 20px auto 50px auto;
-            }
-
-            .section-title {
-              font-size: 1.7rem;
-              gap: 8px;
-              margin-bottom: 10px;
-            }
-            
-            .title-icon {
-              font-size: 1.3rem;
-            }
-
-            .category-title {
-              font-size: 1.5rem;
-            }
-
-            .category-title:first-of-type {
-              margin-top: -25px;
-            }
-
-            .category-section {
-              margin-bottom: 25px;
-            }
-          }
-        `}</style>
+        }
+      `}</style>
     </>
   )
 }
