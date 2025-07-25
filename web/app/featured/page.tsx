@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import TruncatedPrompt from "@/components/truncated-prompt"
-// import { PromptClick } from "@/components/ui/prompt-click"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -38,7 +37,7 @@ interface FeaturedData {
   stats: FeaturedStats
 }
 
-export default function GalleryPage() {
+export default function FeaturedGalleryPage() {
   const [data, setData] = useState<FeaturedData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +47,7 @@ export default function GalleryPage() {
     setCopiedNotification({ show: true, text })
     setTimeout(() => {
       setCopiedNotification({ show: false, text: "" })
-    }, 2000)
+    }, 3000)
   }
 
   const copyToClipboard = async (text: string) => {
@@ -84,7 +83,7 @@ export default function GalleryPage() {
 
   useEffect(() => {
     // Set page title
-    document.title = "The Gallery"
+    document.title = "Featured Gallery - WEBTOYS.ai"
     
     const fetchFeaturedData = async () => {
       try {
@@ -111,38 +110,27 @@ export default function GalleryPage() {
 
   if (loading) {
     return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="loading-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚡</div>
-            <h3 className="text-2xl text-white mb-4">Loading featured apps...</h3>
-          </div>
+      <div className="loading-container">
+        <div className="loading-content">
+          <div className="loading-icon">🎨</div>
+          <h3 className="loading-title">Loading our featured creations...</h3>
+          <p className="loading-subtitle">Gathering the finest SMS-born masterpieces</p>
         </div>
-      </>
+      </div>
     )
   }
 
   if (error || !data) {
     return (
-      <>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <div className="error-container">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-2xl text-white mb-4">Failed to load featured</h3>
-            <p className="text-gray-300 text-lg">
-              Try refreshing the page or check back later.
-            </p>
-          </div>
+      <div className="error-container">
+        <div className="error-content">
+          <div className="error-icon">😅</div>
+          <h3 className="error-title">Oops! Something went wrong</h3>
+          <p className="error-subtitle">
+            Our featured apps are taking a coffee break. Try refreshing the page!
+          </p>
         </div>
-      </>
+      </div>
     )
   }
 
@@ -150,672 +138,771 @@ export default function GalleryPage() {
 
   return (
     <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-        {/* Copied Notification */}
-        {copiedNotification.show && (
-          <div className="copied-notification">
-            <span className="copied-text">{copiedNotification.text}</span>
-            <span className="copied-checkmark">✓</span>
-          </div>
-        )}
-
-        {/* Electric sparks */}
-        <div className="sparks">
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
-          <div className="spark"></div>
+      {/* Copied Notification */}
+      {copiedNotification.show && (
+        <div className="copied-notification">
+          <span className="copied-text">{copiedNotification.text}</span>
+          <span className="copied-checkmark">✨</span>
         </div>
+      )}
 
-        {/* Floating punk elements */}
-        <div className="float-element skull">💀</div>
-        <div className="float-element lightning">⚡</div>
-        <div className="float-element fire">🔥</div>
-        <div className="float-element chains">⛓️</div>
+      {/* Floating shapes */}
+      <div className="floating-shape shape1"></div>
+      <div className="floating-shape shape2"></div>
+      <div className="floating-shape shape3"></div>
+      <div className="floating-shape shape4"></div>
 
-        <header>
-          <div className="logo glitch" data-text="THE GALLERY">
-            THE GALLERY
-          </div>
-          <div className="tagline">VIBECODED CHAOS UNLEASHED</div>
-          <nav className="nav-back">
+      {/* Navigation */}
+      <nav className="nav">
+        <div className="nav-container">
+          <Link href="/" className="logo">WEBTOYS.ai</Link>
+          <div className="nav-links">
             <Link href="/" className="back-link">
-              ← Back to WTAF
+              ← Back to Home
             </Link>
-          </nav>
-        </header>
+          </div>
+        </div>
+      </nav>
 
-        <main>
-          <section className="gallery-hero">
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Hero Section */}
+        <section className="gallery-hero">
+          <div className="hero-container">
             <div className="hero-content">
-              <h1 className="glitch" data-text="Apps Born from Pure Chaos">
-                Apps Born from Pure Chaos
-              </h1>
-              <p>
-                Each creation spawned from a single SMS. No meetings. No wireframes. Just raw prompts transformed into
-                digital reality through algorithmic rebellion.
+              <h1 className="hero-title">Featured Gallery</h1>
+              <p className="hero-description">
+                Our handpicked collection of the most creative, surprising, and delightful 
+                apps born from simple text messages. Each one a small miracle of AI creativity.
               </p>
-            </div>
-          </section>
-
-          <section className="gallery-grid">
-            {apps.map((app: WtafApp) => (
-              <div key={app.id} className="gallery-card">
-                <div className="image-container">
-                  <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
-                  <div className="image-overlay">
-                    <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</Link>
-                  </div>
+              <div className="stats-row">
+                <div className="stat-item">
+                  <div className="stat-number">{apps.length}</div>
+                  <div className="stat-label">Featured Apps</div>
                 </div>
-                <div className="card-content">
-                  <div className="prompt-label">The prompt:</div>
-                  <TruncatedPrompt
-                    prompt={app.original_prompt}
-                    maxLength={120}
-                    className="prompt-showcase"
-                    copyOnClick={true}
-                  />
-                  {app.type !== 'ZAD' && (
-                    <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>REMIX</button>
-                  )}
+                <div className="stat-item">
+                  <div className="stat-number">{stats.totalRemixesThisWeek}</div>
+                  <div className="stat-label">Remixes This Week</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">{stats.appsWithRecentActivity}</div>
+                  <div className="stat-label">Recently Active</div>
                 </div>
               </div>
-            ))}
-          </section>
-        </main>
+            </div>
+          </div>
+        </section>
 
-        <style jsx global>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        {/* Gallery Grid */}
+        <section className="gallery-section">
+          <div className="gallery-container">
+            <div className="gallery-grid">
+              {apps.map((app: WtafApp, index: number) => (
+                <div key={app.id} className="gallery-card" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <div className="image-container">
+                    <img 
+                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      alt={app.app_slug} 
+                      className="gallery-image" 
+                    />
+                    <div className="image-overlay">
+                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
+                        Try This App
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="card-content">
+                    <div className="creator-info">
+                      <span className="creator-label">by</span>
+                      <Link href={`/wtaf/${app.user_slug}/creations`} className="creator-handle">
+                        @{app.user_slug}
+                      </Link>
+                      {app.remix_count > 0 && (
+                        <div className="remix-count">
+                          {app.remix_count} remix{app.remix_count !== 1 ? 'es' : ''}
+                        </div>
+                      )}
+                    </div>
+                    <div className="prompt-label">The Text Message:</div>
+                    <TruncatedPrompt
+                      prompt={app.original_prompt}
+                      maxLength={120}
+                      className="prompt-showcase"
+                      copyOnClick={true}
+                    />
+                    {app.type !== 'ZAD' && (
+                      <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>
+                        <span className="remix-icon">🎨</span>
+                        <span>Remix This</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Call to Action */}
+        <section className="cta-section">
+          <div className="cta-container">
+            <h2 className="cta-title">Ready to Create Your Own?</h2>
+            <p className="cta-description">
+              Join thousands of creators who've brought their ideas to life with just a text message.
+            </p>
+            <a href="sms:+18663300015" className="cta-button">
+              <span>📱</span>
+              <span>Text (866) 330-0015 Now</span>
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <style jsx global>{`
+        /* WEBTOYS GRAND Design System */
+        :root {
+          /* Core WEBTOYS DNA Colors */
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          
+          /* Professional Additions */
+          --charcoal: #2A2A2A;
+          --gray-warm: #6B6B6B;
+          --white-pure: #FFFFFF;
+          --black-soft: #1A1A1A;
+        }
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--cream);
+          color: var(--charcoal);
+          line-height: 1.6;
+          overflow-x: hidden;
+        }
+
+        /* Copied Notification */
+        .copied-notification {
+          position: fixed;
+          top: 120px;
+          right: 30px;
+          background: var(--green-mint);
+          color: var(--charcoal);
+          padding: 15px 25px;
+          border-radius: 2rem;
+          font-weight: 700;
+          font-size: 1rem;
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 8px 25px var(--purple-shadow);
+          animation: slideInFade 3s ease-out;
+          border: 3px solid var(--green-sage);
+        }
+
+        .copied-checkmark {
+          background: var(--green-sage);
+          color: white;
+          border-radius: 50%;
+          width: 25px;
+          height: 25px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.9rem;
+        }
+
+        @keyframes slideInFade {
+          0% {
+            transform: translateX(100px);
+            opacity: 0;
           }
-
-          body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a4d4d 25%, #004d4d 50%, #003366 75%, #000033 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 14s ease infinite;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-            color: #ffffff;
+          15% {
+            transform: translateX(0);
+            opacity: 1;
           }
-
-          .copied-notification {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(45deg, #00ffff, #0080ff);
-            color: #ffffff;
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 
-              0 8px 25px rgba(0, 255, 255, 0.3),
-              0 0 20px rgba(0, 255, 255, 0.2);
-            animation: slideInFade 2s ease-out;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          85% {
+            transform: translateX(0);
+            opacity: 1;
           }
-
-          .copied-checkmark {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
+          100% {
+            transform: translateX(100px);
+            opacity: 0;
           }
+        }
 
-          @keyframes slideInFade {
-            0% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
-            20% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            80% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-            100% {
-              transform: translateX(100px);
-              opacity: 0;
-            }
+        /* Floating shapes */
+        .floating-shape {
+          position: fixed;
+          opacity: 0.2;
+          animation: float-shape 25s infinite ease-in-out;
+          pointer-events: none;
+          z-index: 1;
+        }
+        
+        .shape1 {
+          width: 180px;
+          height: 180px;
+          background: var(--yellow);
+          border-radius: 50%;
+          top: 15%;
+          left: 8%;
+          animation-delay: 0s;
+        }
+        
+        .shape2 {
+          width: 120px;
+          height: 120px;
+          background: var(--blue);
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          top: 70%;
+          right: 12%;
+          animation-delay: 8s;
+        }
+        
+        .shape3 {
+          width: 90px;
+          height: 90px;
+          background: var(--red);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          bottom: 25%;
+          left: 18%;
+          animation-delay: 16s;
+        }
+
+        .shape4 {
+          width: 140px;
+          height: 140px;
+          background: var(--purple-accent);
+          border-radius: 20% 80% 20% 80% / 80% 20% 80% 20%;
+          top: 40%;
+          right: 5%;
+          animation-delay: 12s;
+        }
+        
+        @keyframes float-shape {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(20px, -20px) rotate(90deg); }
+          50% { transform: translate(-15px, 15px) rotate(180deg); }
+          75% { transform: translate(25px, 8px) rotate(270deg); }
+        }
+
+        /* Loading States */
+        .loading-container, .error-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--cream);
+        }
+
+        .loading-content, .error-content {
+          text-align: center;
+          background: var(--white-pure);
+          padding: 3rem;
+          border-radius: 2rem;
+          box-shadow: 0 10px 0 var(--yellow), 0 20px 40px var(--purple-shadow);
+          border: 4px solid var(--yellow);
+          max-width: 500px;
+        }
+
+        .loading-icon, .error-icon {
+          font-size: 4rem;
+          margin-bottom: 1.5rem;
+          animation: bounce 2s ease-in-out infinite;
+        }
+
+        .loading-title, .error-title {
+          font-size: 1.8rem;
+          color: var(--charcoal);
+          margin-bottom: 1rem;
+          font-weight: 800;
+        }
+
+        .loading-subtitle, .error-subtitle {
+          color: var(--gray-warm);
+          font-size: 1.1rem;
+        }
+
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+
+        /* Navigation */
+        .nav {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          background: var(--white-pure);
+          border-bottom: 4px solid var(--yellow);
+          box-shadow: 0 4px 20px var(--purple-shadow);
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 2rem;
+        }
+        
+        .logo {
+          font-size: 1.8rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, var(--red) 0%, var(--blue) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .logo::before {
+          content: "🎨";
+          font-size: 2rem;
+          animation: spin 4s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(180deg); }
+        }
+
+        .back-link {
+          color: var(--blue-deep);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 0.5rem 1.5rem;
+          border-radius: 2rem;
+          transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+          background: var(--blue);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .main-content {
+          margin-top: 80px;
+        }
+
+        /* Hero Section */
+        .gallery-hero {
+          padding: 4rem 2rem;
+          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--cream) 60%, rgba(108,203,255,0.1) 100%);
+        }
+
+        .hero-container {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .hero-content {
+          text-align: center;
+          background: var(--white-pure);
+          border: 6px solid var(--yellow);
+          border-radius: 3rem;
+          padding: 3rem 2rem;
+          box-shadow: 0 12px 0 var(--purple-accent), 0 24px 60px var(--purple-shadow);
+          position: relative;
+          z-index: 2;
+        }
+
+        .hero-title {
+          font-size: clamp(2.5rem, 6vw, 4rem);
+          font-weight: 900;
+          color: var(--blue-deep);
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+          letter-spacing: -2px;
+          position: relative;
+        }
+
+        .hero-title::after {
+          content: "✨";
+          position: absolute;
+          top: -20px;
+          right: -40px;
+          font-size: 2rem;
+          animation: sparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+          0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          50% { opacity: 0.5; transform: scale(1.2) rotate(180deg); }
+        }
+
+        .hero-description {
+          font-size: 1.3rem;
+          color: var(--gray-warm);
+          margin-bottom: 2.5rem;
+          font-weight: 500;
+          max-width: 700px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: 3rem;
+          flex-wrap: wrap;
+        }
+
+        .stat-item {
+          text-align: center;
+        }
+
+        .stat-number {
+          font-size: 2.5rem;
+          font-weight: 900;
+          color: var(--red);
+          display: block;
+        }
+
+        .stat-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-weight: 600;
+        }
+
+        /* Gallery Section */
+        .gallery-section {
+          padding: 4rem 2rem;
+          background: var(--white-pure);
+        }
+
+        .gallery-container {
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 3rem;
+        }
+
+        .gallery-card {
+          background: var(--cream);
+          border: 5px solid var(--yellow);
+          border-radius: 2rem;
+          overflow: hidden;
+          box-shadow: 0 10px 0 var(--purple-accent);
+          transition: all 0.3s ease;
+          position: relative;
+          animation: cardSlideIn 0.6s ease-out both;
+        }
+
+        @keyframes cardSlideIn {
+          0% {
+            opacity: 0;
+            transform: translateY(30px);
           }
-
-          @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
           }
+        }
 
-          .float-element {
-            position: absolute;
-            opacity: 0.4;
-            animation: float 7s ease-in-out infinite;
-            pointer-events: none;
-            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+        .gallery-card:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 18px 0 var(--purple-accent);
+        }
+
+        .image-container {
+          position: relative;
+          overflow: hidden;
+          background: var(--white-pure);
+        }
+
+        .gallery-image {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 3 / 2;
+          object-fit: cover;
+          transition: all 0.3s ease;
+          display: block;
+        }
+
+        .image-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: all 0.3s ease;
+        }
+
+        .image-container:hover .image-overlay {
+          opacity: 1;
+        }
+
+        .image-container:hover .gallery-image {
+          transform: scale(1.05);
+        }
+
+        .try-app-btn {
+          background: var(--blue);
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          font-size: 1rem;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          box-shadow: 0 4px 0 var(--blue-deep);
+        }
+
+        .try-app-btn:hover {
+          background: var(--blue-deep);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 var(--blue);
+        }
+
+        .card-content {
+          padding: 2rem;
+        }
+
+        .creator-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .creator-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          font-weight: 500;
+        }
+
+        .creator-handle {
+          color: var(--red);
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .creator-handle:hover {
+          color: var(--red-soft);
+          transform: translateY(-1px);
+        }
+
+        .remix-count {
+          background: var(--purple-accent);
+          color: white;
+          padding: 0.3rem 0.8rem;
+          border-radius: 1rem;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+
+        .prompt-label {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 0.8rem;
+          font-weight: 600;
+        }
+
+        .prompt-showcase {
+          background: var(--white-pure);
+          border: 3px solid var(--green-mint);
+          border-radius: 1.5rem;
+          padding: 1.2rem;
+          margin-bottom: 1.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--charcoal);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          line-height: 1.4;
+        }
+
+        .prompt-showcase:hover {
+          background: var(--green-mint);
+          transform: translateY(-2px);
+        }
+
+        .prompt-showcase.clicked {
+          animation: copyPulse 0.6s ease-out;
+        }
+
+        @keyframes copyPulse {
+          0% {
+            transform: scale(1);
+            background: var(--white-pure);
           }
-
-          .skull {
-            top: 8%;
-            left: 5%;
-            font-size: 3.5rem;
-            color: rgba(0, 255, 255, 0.3);
-            animation-delay: 0s;
+          50% {
+            transform: scale(1.02);
+            background: var(--green-mint);
           }
-
-          .lightning {
-            top: 30%;
-            right: 8%;
-            font-size: 4rem;
-            color: rgba(0, 255, 150, 0.4);
-            animation-delay: 2.5s;
+          100% {
+            transform: scale(1);
+            background: var(--white-pure);
           }
+        }
 
-          .fire {
-            bottom: 25%;
-            left: 12%;
-            font-size: 3.8rem;
-            color: rgba(0, 200, 255, 0.4);
-            animation-delay: 5s;
-          }
+        .remix-btn {
+          background: var(--white-pure);
+          border: 3px solid var(--purple-accent);
+          color: var(--purple-accent);
+          padding: 0.8rem 1.5rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0 auto;
+        }
 
-          .chains {
-            bottom: 10%;
-            right: 15%;
-            font-size: 3.2rem;
-            color: rgba(100, 200, 255, 0.3);
-            animation-delay: 1.5s;
-          }
+        .remix-btn:hover {
+          background: var(--purple-accent);
+          color: white;
+          transform: translateY(-2px);
+        }
 
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-25px) rotate(7deg); }
-            66% { transform: translateY(15px) rotate(-5deg); }
-          }
+        .remix-icon {
+          font-size: 1.2rem;
+        }
 
-          .glitch {
-            position: relative;
-            display: inline-block;
-          }
+        /* Call to Action */
+        .cta-section {
+          padding: 5rem 2rem;
+          background: var(--blue-deep);
+          color: white;
+          text-align: center;
+        }
 
-          .glitch::before,
-          .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-          }
+        .cta-container {
+          max-width: 800px;
+          margin: 0 auto;
+        }
 
-          .glitch::before {
-            animation: glitch1 2s infinite;
-            color: #00ffff;
-            z-index: -1;
-          }
+        .cta-title {
+          font-size: 3rem;
+          font-weight: 900;
+          margin-bottom: 1.5rem;
+          text-transform: uppercase;
+        }
 
-          .glitch::after {
-            animation: glitch2 2s infinite;
-            color: #0080ff;
-            z-index: -2;
-          }
+        .cta-description {
+          font-size: 1.3rem;
+          margin-bottom: 2.5rem;
+          opacity: 0.9;
+        }
 
-          @keyframes glitch1 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(-2px, -1px); }
-            20% { transform: translate(1px, 2px); }
-          }
+        .cta-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 1rem;
+          background: var(--yellow);
+          color: var(--charcoal);
+          padding: 1.5rem 3rem;
+          border-radius: 3rem;
+          font-size: 1.3rem;
+          font-weight: 800;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 0 var(--yellow-soft);
+        }
 
-          @keyframes glitch2 {
-            0%, 90%, 100% { transform: translate(0); }
-            10% { transform: translate(2px, 1px); }
-            20% { transform: translate(-1px, -2px); }
-          }
+        .cta-button:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 11px 0 var(--yellow-soft);
+        }
 
-          header {
-            padding: 40px 20px;
-            text-align: center;
-            position: relative;
-            z-index: 10;
-          }
-
-          .logo {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 4rem;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow:
-              0 0 10px #00ffff,
-              0 0 20px #00ffff,
-              0 0 30px #00ffff;
-            margin-bottom: 15px;
-            letter-spacing: -2px;
-          }
-
-          .tagline {
-            font-size: 1.1rem;
-            color: #00ffff;
-            font-weight: 500;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 30px;
-            text-shadow: 0 0 5px #00ffff;
-          }
-
-          .nav-back {
-            margin-top: 20px;
-          }
-
-          .back-link {
-            color: #0080ff;
-            text-decoration: none;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
-            transition: all 0.3s ease;
-          }
-
-          .back-link:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 128, 255, 0.8);
-          }
-
-          main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 5;
-          }
-
-          .gallery-hero {
-            text-align: center;
-            margin-bottom: 80px;
-            padding: 40px 20px;
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .nav-container {
+            padding: 1rem;
           }
 
           .hero-content {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 30px;
-            padding: 50px 40px;
-            box-shadow:
-              0 12px 40px rgba(0, 0, 0, 0.4),
-              inset 0 0 20px rgba(0, 255, 255, 0.1);
-            max-width: 800px;
-            margin: 0 auto;
+            padding: 2rem 1.5rem;
           }
 
-          .gallery-hero h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 3.5rem;
-            color: #ffffff;
-            margin-bottom: 25px;
-            font-weight: 700;
-            line-height: 1.1;
-            text-shadow: 0 0 15px #0080ff;
+          .stats-row {
+            gap: 2rem;
           }
 
-          .gallery-hero p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            font-weight: 300;
+          .stat-number {
+            font-size: 2rem;
           }
 
           .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 40px;
-            margin-bottom: 80px;
-          }
-
-          .gallery-card {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 30px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-          }
-
-          .gallery-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #00ffff, #0080ff, #00ff80, #00ffff);
-            background-size: 200% 100%;
-            animation: borderGlow 3s linear infinite;
-          }
-
-          @keyframes borderGlow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-          }
-
-          .gallery-card:hover {
-            transform: translateY(-8px);
-            background: rgba(0, 0, 0, 0.7);
-            box-shadow:
-              0 20px 50px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.2);
-            border-color: rgba(0, 255, 255, 0.3);
-          }
-
-          .image-container {
-            position: relative;
-            margin-bottom: 25px;
-            overflow: hidden;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
-          }
-
-          .gallery-image {
-            width: 100%;
-            height: auto;
-            aspect-ratio: 3 / 2;
-            object-fit: cover;
-            border-radius: 15px;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
-            transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
-          }
-
-          .image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: all 0.3s ease;
-            border-radius: 15px;
-          }
-
-          .image-container:hover .image-overlay {
-            opacity: 1;
-          }
-
-          .image-container:hover .gallery-image {
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.8));
-          }
-
-          .image-container:hover {
-            border-color: rgba(0, 255, 255, 0.7);
-          }
-
-          .try-app-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #00ffff, #0080ff);
-            color: #000000;
-            border: none;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(0, 255, 255, 0.3),
-              0 0 20px rgba(0, 255, 255, 0.2);
-          }
-
-          .try-app-btn:hover {
-            transform: scale(1.05);
-            box-shadow:
-              0 12px 35px rgba(0, 255, 255, 0.4),
-              0 0 30px rgba(0, 255, 255, 0.3);
-          }
-
-          .card-content {
-            text-align: center;
+            grid-template-columns: 1fr;
+            gap: 2rem;
           }
 
           .creator-info {
-            display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            text-align: center;
           }
 
-          .creator-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-            text-transform: lowercase;
+          .cta-title {
+            font-size: 2.2rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 2.5rem;
           }
 
-          .creator-handle {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: #00ffff;
-            font-weight: 700;
-            text-decoration: none;
-            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            transition: all 0.3s ease;
-            cursor: pointer;
+          .gallery-card {
+            border-width: 3px;
           }
 
-          .creator-handle:hover {
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-            transform: translateY(-1px);
+          .card-content {
+            padding: 1.5rem;
           }
 
-          .remix-count {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.8rem;
-            color: #0080ff;
-            font-weight: 600;
-            background: rgba(0, 128, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 128, 255, 0.3);
-            text-shadow: 0 0 5px rgba(0, 128, 255, 0.5);
+          .cta-button {
+            padding: 1.2rem 2rem;
+            font-size: 1.1rem;
           }
-
-          .prompt-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-            opacity: 0.8;
-          }
-
-          .prompt-showcase {
-            color: #0080ff;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 1rem;
-            font-weight: 500;
-            background: rgba(0, 128, 255, 0.1);
-            border: 2px solid rgba(0, 128, 255, 0.3);
-            border-radius: 15px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 8px rgba(0, 128, 255, 0.5);
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            line-height: 1.4;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            user-select: none;
-          }
-
-          .prompt-showcase:hover {
-            background: rgba(0, 128, 255, 0.15);
-            border-color: rgba(0, 128, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 128, 255, 0.2);
-          }
-
-          .prompt-showcase.clicked {
-            animation: copyPulse 0.6s ease-out;
-          }
-
-          @keyframes copyPulse {
-            0% {
-              transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
-            }
-            50% {
-              transform: scale(1.02);
-              background: rgba(0, 128, 255, 0.3);
-              box-shadow: 0 0 30px rgba(0, 128, 255, 0.6);
-            }
-            100% {
-              transform: scale(1);
-              background: rgba(0, 128, 255, 0.1);
-            }
-          }
-
-          .remix-btn {
-            padding: 12px 25px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #0080ff;
-            color: #0080ff;
-            border-radius: 50px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-              0 8px 25px rgba(0, 128, 255, 0.2),
-              0 0 20px rgba(0, 128, 255, 0.1);
-          }
-
-          .remix-btn:hover {
-            background: rgba(0, 128, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow:
-              0 12px 35px rgba(0, 128, 255, 0.3),
-              0 0 30px rgba(0, 128, 255, 0.2);
-          }
-
-          .sparks {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            overflow: hidden;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-          }
-
-          .spark {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #00ff96;
-            border-radius: 50%;
-            opacity: 0;
-            animation: spark 3.5s infinite ease-out;
-            box-shadow: 0 0 6px #00ff96;
-          }
-
-          .spark:nth-child(1) {
-            top: 25%;
-            left: 20%;
-            animation-delay: 0s;
-          }
-
-          .spark:nth-child(2) {
-            top: 70%;
-            left: 80%;
-            animation-delay: 1.2s;
-          }
-
-          .spark:nth-child(3) {
-            top: 50%;
-            left: 10%;
-            animation-delay: 2.4s;
-          }
-
-          .spark:nth-child(4) {
-            top: 30%;
-            left: 90%;
-            animation-delay: 1.8s;
-          }
-
-          @keyframes spark {
-            0% {
-              opacity: 0;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(2);
-            }
-            100% {
-              opacity: 0;
-              transform: scale(1);
-            }
-          }
-
-          @media (max-width: 768px) {
-            .gallery-grid {
-              grid-template-columns: 1fr;
-            }
-            .logo { font-size: 3rem; }
-            .gallery-grid { 
-              gap: 30px;
-            }
-            .gallery-card { padding: 25px 20px; }
-            .gallery-hero h1 { font-size: 2.5rem; line-height: 1.2; }
-            .gallery-hero p { font-size: 1rem; }
-            .hero-content { padding: 40px 25px; }
-          }
-
-          @media (max-width: 480px) {
-            .logo { font-size: 2.5rem; }
-            .gallery-card { padding: 20px 15px; }
-            .gallery-hero h1 { font-size: 2rem; line-height: 1.1; }
-            .hero-content { padding: 30px 20px; }
-            .try-app-btn { padding: 12px 25px; font-size: 0.9rem; }
-            .remix-btn { padding: 10px 20px; font-size: 0.8rem; }
-          }
-        `}</style>
+        }
+      `}</style>
     </>
   )
 }
