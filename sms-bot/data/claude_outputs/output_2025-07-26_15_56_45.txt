@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>AI Journal Buddy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* CHAOS Theme */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .screen {
+            display: none;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 40px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            transform: rotate(-2deg);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 3px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            margin-bottom: 16px;
+            min-height: 44px;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: var(--border);
+            border: 3px solid var(--text);
+            box-shadow: 4px 4px 0 var(--shadow);
+            padding: 12px 24px;
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-size: 16px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 44px;
+            width: 100%;
+            margin-bottom: 16px;
+            transform: rotate(1deg);
+        }
+
+        button:active {
+            transform: translate(2px, 2px) rotate(1deg);
+            box-shadow: 2px 2px 0 var(--shadow);
+        }
+
+        .entry-card {
+            border: 3px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 4px 4px 0 var(--shadow);
+            transform: rotate(-1deg);
+        }
+
+        .entry-card:nth-child(2n) {
+            transform: rotate(1deg);
+        }
+
+        .entry-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-box {
+            border: 3px dashed var(--border);
+            padding: 16px;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255,214,61,0.1);
+            transform: rotate(1deg);
+        }
+
+        #goals-display {
+            font-style: italic;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(201,194,249,0.2);
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Auth Screens -->
+        <div id="welcome-screen" class="screen active">
+            <h1>AI Journal Buddy 📝</h1>
+            <p>Your intelligent journaling companion</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New Journal 📖</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Writing</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back ✨</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Open Journal</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Goals Screen -->
+        <div id="goals-screen" class="screen">
+            <h1>Set Your Goals 🎯</h1>
+            <p>What do you want to achieve through journaling?</p>
+            <textarea id="goals-input" placeholder="e.g., Self-reflection, Track progress, Understand emotions..."></textarea>
+            <button onclick="saveGoals()">Set Goals</button>
+        </div>
+
+        <!-- Main Journal Screen -->
+        <div id="main-screen" class="screen">
+            <h1>My Journal ✍️</h1>
+            <div id="user-status">Writing as <span id="current-user-label"></span></div>
+            
+            <div id="goals-display"></div>
+            
+            <div class="suggestion-box" id="ai-suggestion">
+                Loading suggestion...
+            </div>
+
+            <textarea id="entry-input" placeholder="What's on your mind?"></textarea>
+            <button onclick="saveEntry()">Save Entry</button>
+            
+            <div id="entries-container"></div>
+            
+            <button onclick="showScreen('welcome-screen')">Close Journal</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Initialize auth
+        initAuth();
+
+        async function saveGoals() {
+            const goals = document.getElementById('goals-input').value;
+            if (!goals) {
+                alert('Please enter your goals!');
+                return;
+            }
+            
+            await save('goals', { text: goals });
+            enterMainScreen();
+        }
+
+        async function saveEntry() {
+            const text = document.getElementById('entry-input').value;
+            if (!text) {
+                alert('Please write something!');
+                return;
+            }
+            
+            await save('entry', { text });
+            document.getElementById('entry-input').value = '';
+            await loadLatestData();
+        }
+
+        async function generateNextPrompt(entries, goals) {
+            const prompt = `Based on these journal entries: "${entries.map(e => e.text).join('" "')}"\n\nAnd these goals: "${goals.text}"\n\nSuggest an introspective journal prompt for their next entry. Make it specific and thoughtful. Return only the prompt, no explanations.`;
+            
+            try {
+                return await generateText(prompt, {
+                    maxTokens: 100,
+                    temperature: 0.8
+                });
+            } catch (error) {
+                return "What's been on your mind today?";
+            }
+        }
+
+        async function loadLatestData() {
+            // Load goals
+            const allGoals = await load('goals');
+            const myGoals = allGoals.filter(g => g.author === getUsername());
+            const latestGoal = myGoals.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            )[0];
+
+            if (latestGoal) {
+                document.getElementById('goals-display').textContent = 
+                    `🎯 Goals: ${latestGoal.text}`;
+            }
+
+            // Load entries
+            const allEntries = await load('entry');
+            const myEntries = allEntries.filter(e => e.author === getUsername());
+            
+            // Deduplicate and sort
+            const uniqueEntries = myEntries.reduce((acc, entry) => {
+                const existing = acc.find(e => e.text === entry.text);
+                if (!existing || new Date(entry.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = entry;
+                    } else {
+                        acc.push(entry);
+                    }
+                }
+                return acc;
+            }, []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Display entries
+            document.getElementById('entries-container').innerHTML = 
+                uniqueEntries.map(entry => `
+                    <div class="entry-card">
+                        <div class="entry-date">
+                            ${new Date(entry.created_at).toLocaleString()}
+                        </div>
+                        ${entry.text}
+                    </div>
+                `).join('');
+
+            // Generate new suggestion
+            if (latestGoal) {
+                document.getElementById('ai-suggestion').classList.add('loading');
+                const suggestion = await generateNextPrompt(uniqueEntries, latestGoal);
+                document.getElementById('ai-suggestion').classList.remove('loading');
+                document.getElementById('ai-suggestion').textContent = `💡 ${suggestion}`;
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function enterMainScreen() {
+            const goals = await load('goals');
+            const hasGoals = goals.some(g => g.author === getUsername());
+            
+            if (!hasGoals) {
+                showScreen('goals-screen');
+            } else {
+                showScreen('main-screen');
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                await loadLatestData();
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        // Required auth functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                showScreen('goals-screen');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+    </script>
+</body>
+</html>

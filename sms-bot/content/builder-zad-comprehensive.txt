@@ -247,81 +247,110 @@ function updateUI(data) {
 }
 ```
 
-### 6. Design System: **WEBTOYS v1.0**
-All apps must follow the playful and accessible Webtoys visual language:
+### 6. Design System: **WEBTOYS v2.0**
+All apps must follow the rebellious and playful Webtoys visual language:
 
-* **Color Palette**
-  * Background: `#fefef5`
-  * Border: `#FFD63D`
-  * Shadow: `#C9C2F9`
-  * Heading Text: `#FF4B4B`
-  * Button BG: `#6ECBFF`
-  * Input Border: `#6ECBFF`
-  * Chat Bubble 1: `#FFEB63`
-  * Chat Bubble 2: `#89ECFF`
-  * Todo Item: `#B6FFB3`
+* **Theme Selection** (Pick ONE per app)
+  * **CHAOS** (Classic): Warm cream bg (#FCFCF7), yellow borders (#FFD63D), purple shadows (#C9C2F9)
+  * **MIDNIGHT**: Dark bg (#0A0A0A), neon green borders (#00FF88), hot pink shadows (#FF00FF)
+  * **BRUTAL**: Clean bg (#F0F0F0), black borders (#000000), red shadows (#FF1744)
+  * **VAPOR**: Pink bg (#FFE0F7), hot pink borders (#FF006E), deep purple shadows (#3700B3)
 
 * **Typography**
-  * Use system fonts (Apple/Segoe/Roboto)
-  * 16px+ everywhere
-  * ALL CAPS headings in red
-  * Emoji and ASCII art allowed
+  * Primary: 'Space Grotesk' with system fallback
+  * Mono: 'JetBrains Mono' for code/special text
+  * Scale: 16px base → 20px large → 28px xl → 40px hero → 64px chaos
+  * Headers: UPPERCASE + bold + slight rotation (-2deg to 2deg)
+  * Body: Regular case, 1.6 line height
+  * Special: Mono font for error messages, ASCII art
 
-* **Component Styles**
-  * Cards: white, rounded (12px), yellow border, purple shadow
-  * Buttons: pill-shaped, sky blue, white text
-  * Inputs: rounded, 2px blue border
-  * Message Bubbles: rounded yellow or blue blocks
-  * Todos: rounded mint green blocks
+* **Layout Patterns** (Pick ONE per app)
+  * **CHAOS GRID**: Auto-fit grid (250px min), items randomly rotated (-2deg to 2deg)
+  * **SPLIT PERSONALITY**: Two column (50/50), stacks on mobile
+  * **DOOM SCROLL**: Single column (max 666px), vertical flow
+  * **GLITCH STACK**: Overlapping cards with offset positioning
+
+* **Component Variants**
+  * **Cards**: 
+    - Standard: 4px border, 8px shadow offset, slight rotation
+    - Glitch: Animated sweep effect on hover
+    - Punk: Diagonal stripe border pattern
+    - Destroyed: Asymmetric border radius
+  * **Buttons**:
+    - Anarchy: Bold bg, hard shadow, squish on click
+    - Ghost: Transparent with border, rotates on hover
+    - Danger: Warning emoji slides in on hover
+    - Standard: Uppercase, tracked out, transforms on click
+  * **Inputs**:
+    - 3px borders, mono font
+    - Focus: Scale(1.02) + color shift
+    - Error: Red border + shake animation
+  * **Messages**:
+    - User: Theme secondary color bg
+    - System: Theme primary color bg
+    - Error: Red bg with skull emoji prefix
+    - Success: Green bg with rock emoji prefix
+
+* **Animation Presets**
+  ```css
+  .shake { animation: shake 0.5s; }
+  .glitch-text { animation: glitch-text 2s infinite; }
+  .rebel-bounce { animation: rebel-bounce 2s infinite; }
+  .flicker { animation: flicker 3s infinite; }
+  ```
 
 * **Layout Rules**
-  * **Mobile (< 768px)**: 
-    - Full-width containers with 20px padding
-    - Single column layout
-    - Touch-friendly 44px minimum tap targets
+  * **Mobile (< 768px)**:
+    - Full-width with 20px padding
+    - Stack all layouts to single column
+    - 48px minimum tap targets
+    - Cards full width minus padding
   * **Desktop (≥ 768px)**:
-    - Max container width: 800px (instead of 320px)
-    - Cards can be 600-700px wide for better content display
-    - Side-by-side layouts allowed where appropriate
-    - Buttons can be inline instead of full-width
-  * Centered layout on all screen sizes
-  * Responsive scaling between breakpoints
+    - Max width varies by layout (666px-1200px)
+    - Cards maintain aspect ratio
+    - Multi-column layouts activate
+    - Hover states enabled
 
-* **Responsive Approach**
+* **Utility Classes**
   ```css
-  .app-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .card {
-    width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
-  }
-  
-  @media (min-width: 768px) {
-    button {
-      width: auto;
-      display: inline-block;
-      margin-right: 10px;
-    }
-  }
+  .tilt-left { transform: rotate(-2deg); }
+  .tilt-right { transform: rotate(2deg); }
+  .uppercase { text-transform: uppercase; }
+  .glitch-text { animation: glitch-text 2s infinite; }
+  .no-select { user-select: none; }
+  ```
 
 * **Tone/Personality**
+  * Rebellious but playful: "Break something beautiful"
+  * Error messages with attitude: "You broke it, genius!"
+  * Success with swagger: "Hell yeah, that worked!"
+  * CTAs that dare: "SMASH IT", "BREAK THINGS", "TRY ME"
+  * Placeholder text: "Type something rebellious..."
+  * Loading states: "Breaking things..." / "Causing chaos..."
 
-  * Friendly, silly, slightly chaotic
-  * Encouraging copy: "Want a toy?", "Let’s make something weird."
-  * ASCII critters or emojis encouraged
+* **Required Elements**
+  * Every app needs ONE contextual easter egg - either emoji rain (5 clicks on header → relevant emojis fall: todos get ✅📝, recipes get 🍕🍰, etc.) or theme color shift (hold mouse 3sec → colors pulse to match app vibe: todos→green, recipes→food colors, etc.). Add cursor: help as discovery hint.
+  * At least one element should break the grid (rotation, offset, or overlap)
+  * Error states must be delightful, not frustrating
+  * Include at least 3 emoji strategically (not randomly)
 
 * **Principles**
+  1. Digital toys for mischievous minds
+  2. Break one rule per component
+  3. Delight through controlled chaos
+  4. Less daycare, more underground arcade
+  5. Make it screenshot-worthy
 
-  1. Everything is a toy
-  2. One-shot delight
-  3. Play > polish
-  4. Same box, different toys
-```
+* **Implementation Example**
+  ```html
+  <div data-theme="midnight" class="app-container chaos-grid">
+    <div class="card destroyed tilt-left">
+      <h1 class="uppercase glitch-text">REBEL TOY</h1>
+      <p>Description with attitude</p>
+      <button class="btn anarchy">SMASH IT</button>
+    </div>
+  </div>
+  ```
 
 ## When to Use AI Functions
 
@@ -340,6 +369,31 @@ All apps must follow the playful and accessible Webtoys visual language:
 - **Design tools**: logo generator, pattern creator, color palette maker
 - **Game assets**: character sprites, backgrounds, items
 - **Any app that needs dynamic images**: If it needs pictures, use it!
+
+## ⚠️ AI Functions: ALWAYS CACHE RESULTS!
+
+**generateText() and generateImage() are expensive - don't call them in loops!**
+
+```javascript
+// ❌ BAD: Calling AI every 2 seconds
+setInterval(() => generateText(prompt), 2000); // 💸 EXPENSIVE!
+
+// ✅ GOOD: Cache results and only call when data changes
+let aiCache = { text: null, dataHash: null };
+
+async function getAISuggestion(data) {
+    const dataHash = JSON.stringify(data);
+    if (aiCache.text && dataHash === aiCache.dataHash) {
+        return aiCache.text; // Return cached result
+    }
+    
+    const text = await generateText(buildPrompt(data));
+    aiCache = { text, dataHash };
+    return text;
+}
+
+// Only regenerate when data actually changes in your loadLatestData()
+```
 
 ## Common Patterns
 
@@ -728,33 +782,6 @@ const customResponse = await generateText(userInput, {
 });
 ```
 
-## For WTAF Punk/Chaos Styling
-
-If user requests "punk", "WTAF style", or "chaotic" design, add these on top of the Webtoys system:
-```css
-/* Add these on top of basic styles */
-button {
-  background: linear-gradient(45deg, #ff0066, #ff00ff);
-  transform: skew(-5deg);
-  box-shadow: 4px 4px 0 #ff00ff;
-}
-
-h1 {
-  text-transform: uppercase;
-  background: linear-gradient(45deg, #ff0066, #00ffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: glitch 2s infinite;
-}
-
-@keyframes glitch {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
-}
-```
 
 ## Testing Your App
 

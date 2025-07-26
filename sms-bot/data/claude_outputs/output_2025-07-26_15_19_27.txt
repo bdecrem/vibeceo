@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>AI Journal Buddy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* CHAOS Theme */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .screen {
+            display: none;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1, h2 {
+            font-family: 'Space Grotesk', system-ui;
+            text-transform: uppercase;
+            font-weight: bold;
+            transform: rotate(-1deg);
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background: var(--border);
+            border: 3px solid var(--text);
+            box-shadow: 4px 4px 0 var(--shadow);
+            padding: 12px 24px;
+            font-family: 'Space Grotesk', system-ui;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin: 10px 0;
+            min-height: 44px;
+            width: 100%;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            transition: all 0.2s;
+        }
+
+        button:active {
+            transform: translateY(2px) rotate(-1deg);
+            box-shadow: 2px 2px 0 var(--shadow);
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 3px solid var(--border);
+            background: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            min-height: 44px;
+            margin: 10px 0;
+        }
+
+        textarea {
+            min-height: 120px;
+        }
+
+        .journal-entry {
+            background: white;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--shadow);
+            padding: 20px;
+            margin: 20px 0;
+            transform: rotate(1deg);
+        }
+
+        .journal-entry:nth-child(2n) {
+            transform: rotate(-1deg);
+        }
+
+        .date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .suggestion {
+            background: var(--shadow);
+            padding: 15px;
+            border: 3px solid var(--border);
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        .goals {
+            background: white;
+            border: 3px solid var(--border);
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        #user-status {
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 20px;
+        }
+
+        .emoji-prompt {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Auth screens -->
+        <div id="welcome-screen" class="screen active">
+            <h1>🌟 AI Journal Buddy</h1>
+            <p>Your personal reflection companion with AI-powered prompts</p>
+            <button onclick="showNewUserScreen()">New Journal</button>
+            <button onclick="showReturningUserScreen()">Return to Journal</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New Journal</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Writing</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Open Journal</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main app screen -->
+        <div id="main-screen" class="screen">
+            <div id="user-status"></div>
+            
+            <div id="goals-section" style="display:none">
+                <h2>🎯 Your Goals</h2>
+                <div id="goals-display" class="goals"></div>
+            </div>
+
+            <div id="entry-section" style="display:none">
+                <h2>✍️ New Entry</h2>
+                <textarea id="entry-input" placeholder="What's on your mind today?"></textarea>
+                <button onclick="saveEntry()">Save Entry</button>
+                
+                <div id="ai-suggestion" class="suggestion"></div>
+                
+                <h2>📖 Previous Entries</h2>
+                <div id="entries-container"></div>
+            </div>
+
+            <div id="goals-form" style="display:block">
+                <h2>First, let's set your goals</h2>
+                <textarea id="goals-input" placeholder="What do you want to achieve? What are you working towards?"></textarea>
+                <button onclick="saveGoals()">Set Goals</button>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">Exit Journal</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let userGoals = '';
+
+        // Auth flow functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your Journal ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select Journal</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        async function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            await loadGoals();
+            startPolling();
+            loadLatestData();
+        }
+
+        // Journal specific functions
+        async function saveGoals() {
+            const goals = document.getElementById('goals-input').value;
+            if (!goals) {
+                alert('Please enter your goals!');
+                return;
+            }
+            await save('goals', { text: goals });
+            userGoals = goals;
+            document.getElementById('goals-form').style.display = 'none';
+            document.getElementById('goals-section').style.display = 'block';
+            document.getElementById('entry-section').style.display = 'block';
+            document.getElementById('goals-display').textContent = goals;
+            await suggestTopic();
+        }
+
+        async function loadGoals() {
+            const goals = await load('goals');
+            const myGoals = goals.filter(g => g.author === getUsername());
+            if (myGoals.length > 0) {
+                const latestGoal = myGoals.sort((a, b) => 
+                    new Date(b.created_at) - new Date(a.created_at)
+                )[0];
+                userGoals = latestGoal.text;
+                document.getElementById('goals-form').style.display = 'none';
+                document.getElementById('goals-section').style.display = 'block';
+                document.getElementById('entry-section').style.display = 'block';
+                document.getElementById('goals-display').textContent = userGoals;
+                await suggestTopic();
+            }
+        }
+
+        async function saveEntry() {
+            const text = document.getElementById('entry-input').value;
+            if (!text) {
+                alert('Please write something!');
+                return;
+            }
+            await save('entry', { text });
+            document.getElementById('entry-input').value = '';
+            await loadLatestData();
+            await suggestTopic();
+        }
+
+        async function suggestTopic() {
+            const entries = await load('entry');
+            const myEntries = entries.filter(e => e.author === getUsername());
+            const latestEntry = myEntries.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            )[0];
+
+            const prompt = `Based on these goals: "${userGoals}" ${latestEntry ? `and this recent journal entry: "${latestEntry.text}"` : ''}, suggest a thoughtful topic or question for the next journal entry. Make it specific and relevant to personal growth. Keep it to one sentence.`;
+
+            const suggestion = await generateText(prompt, {
+                maxTokens: 100,
+                temperature: 0.7
+            });
+
+            document.getElementById('ai-suggestion').innerHTML = `
+                <span class="emoji-prompt">💭</span>
+                Next writing prompt: ${suggestion}
+            `;
+        }
+
+        async function loadLatestData() {
+            const entries = await load('entry');
+            const myEntries = entries.filter(e => e.author === getUsername());
+            
+            // Deduplicate entries
+            const uniqueEntries = myEntries.reduce((acc, entry) => {
+                const existing = acc.find(e => e.text === entry.text);
+                if (!existing || new Date(entry.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = entry;
+                    } else {
+                        acc.push(entry);
+                    }
+                }
+                return acc;
+            }, []);
+
+            // Sort by date descending
+            const sorted = uniqueEntries.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            );
+
+            document.getElementById('entries-container').innerHTML = sorted.map(entry => `
+                <div class="journal-entry">
+                    <div class="date">${new Date(entry.created_at).toLocaleString()}</div>
+                    <div class="text">${entry.text}</div>
+                </div>
+            `).join('');
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize the app
+        initAuth();
+    </script>
+</body>
+</html>
