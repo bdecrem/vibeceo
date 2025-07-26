@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+build a ZAD app that's a VERY SIMPLE flash card app to to memorize simple words in a foreign lanugage the user picks (to English)
