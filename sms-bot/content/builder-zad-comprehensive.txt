@@ -329,7 +329,7 @@ All apps must follow the rebellious and playful Webtoys visual language:
   * Loading states: "Breaking things..." / "Causing chaos..."
 
 * **Required Elements**
-  * Every app needs ONE contextual easter egg - either emoji rain (5 clicks on header → relevant emojis fall: todos get ✅📝, recipes get 🍕🍰, etc.) or theme color shift (hold mouse 3sec → colors pulse to match app vibe: todos→green, recipes→food colors, etc.). Add cursor: help as discovery hint.
+  * Easter Egg: Add floating emoji (match app type) that pulses on hover. Click → themed emoji rain. Style: cursor: pointer; animation: pulse 2s infinite;
   * At least one element should break the grid (rotation, offset, or overlap)
   * Error states must be delightful, not frustrating
   * Include at least 3 emoji strategically (not randomly)
@@ -369,31 +369,6 @@ All apps must follow the rebellious and playful Webtoys visual language:
 - **Design tools**: logo generator, pattern creator, color palette maker
 - **Game assets**: character sprites, backgrounds, items
 - **Any app that needs dynamic images**: If it needs pictures, use it!
-
-## ⚠️ AI Functions: ALWAYS CACHE RESULTS!
-
-**generateText() and generateImage() are expensive - don't call them in loops!**
-
-```javascript
-// ❌ BAD: Calling AI every 2 seconds
-setInterval(() => generateText(prompt), 2000); // 💸 EXPENSIVE!
-
-// ✅ GOOD: Cache results and only call when data changes
-let aiCache = { text: null, dataHash: null };
-
-async function getAISuggestion(data) {
-    const dataHash = JSON.stringify(data);
-    if (aiCache.text && dataHash === aiCache.dataHash) {
-        return aiCache.text; // Return cached result
-    }
-    
-    const text = await generateText(buildPrompt(data));
-    aiCache = { text, dataHash };
-    return text;
-}
-
-// Only regenerate when data actually changes in your loadLatestData()
-```
 
 ## Common Patterns
 

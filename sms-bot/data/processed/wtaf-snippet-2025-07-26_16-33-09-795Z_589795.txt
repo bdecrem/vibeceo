@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+Make a ZAD journaling app that uses our generateText function. First it asks me what my goals are. Then I add journal entries, which is displayed in reverse chronological order. then the AI then suggests a topic for the next journal entry in view of what I just said and my goals
