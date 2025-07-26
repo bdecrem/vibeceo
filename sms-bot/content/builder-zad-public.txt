@@ -175,123 +175,82 @@ function updateUI(data) {
 }
 ```
 
-### 6. Mobile-Friendly Styling
+### 6. Design System: **WEBTOYS v1.0**
+All apps must follow the playful and accessible Webtoys visual language:
 
-**Choose Style Level:**
-- `basic` - Clean, dark, functional (recommended)
-- `full-wtaf` - All effects and animations
+* **Color Palette**
+  * Background: `#fefef5`
+  * Border: `#FFD63D`
+  * Shadow: `#C9C2F9`
+  * Heading Text: `#FF4B4B`
+  * Button BG: `#6ECBFF`
+  * Input Border: `#6ECBFF`
+  * Chat Bubble 1: `#FFEB63`
+  * Chat Bubble 2: `#89ECFF`
+  * Todo Item: `#B6FFB3`
 
-**Basic Mobile-First Style:**
-```css
-* {
-  box-sizing: border-box;
-}
+* **Typography**
+  * Use system fonts (Apple/Segoe/Roboto)
+  * 16px+ everywhere
+  * ALL CAPS headings in red
+  * Emoji and ASCII art allowed
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #0a0a0a;
-  color: #fff;
-  margin: 0;
-  padding: 10px;
-  font-size: 16px; /* Prevents zoom on mobile */
-}
+* **Component Styles**
+  * Cards: white, rounded (12px), yellow border, purple shadow
+  * Buttons: pill-shaped, sky blue, white text
+  * Inputs: rounded, 2px blue border
+  * Message Bubbles: rounded yellow or blue blocks
+  * Todos: rounded mint green blocks
 
-.app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 0 40px rgba(0,0,0,0.5);
-}
+* **Layout Rules**
+  * **Mobile (< 768px)**: 
+    - Full-width containers with 20px padding
+    - Single column layout
+    - Touch-friendly 44px minimum tap targets
+  * **Desktop (≥ 768px)**:
+    - Max container width: 800px (instead of 320px)
+    - Cards can be 600-700px wide for better content display
+    - Side-by-side layouts allowed where appropriate
+    - Buttons can be inline instead of full-width
+  * Centered layout on all screen sizes
+  * Responsive scaling between breakpoints
 
-h1 {
-  font-size: 24px;
-  margin: 0 0 20px 0;
-}
-
-
-button {
-  background: #ff0066;
-  color: white;
-  border: none;
-  padding: 16px 24px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  margin: 8px 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 16px;
-  width: 100%;
-  min-height: 44px; /* Touch-friendly */
-  display: block;
-}
-
-button:hover {
-  background: #ff3388;
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
-input, select, textarea {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: white;
-  padding: 16px;
-  border-radius: 6px;
-  width: 100%;
-  margin: 10px 0;
-  font-size: 16px; /* Prevents zoom */
-  min-height: 44px; /* Touch-friendly */
-}
-
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* Desktop adjustments */
-@media (min-width: 600px) {
-  body { padding: 20px; }
-  .app-container { padding: 30px; }
-  
-  button {
-    width: auto;
-    display: inline-block;
-    margin: 5px;
+* **Responsive Approach**
+  ```css
+  .app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
   }
-}
+  
+  .card {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  @media (min-width: 768px) {
+    button {
+      width: auto;
+      display: inline-block;
+      margin-right: 10px;
+    }
+  }
 
-/* List items for data display */
-.item {
-  background: #2a2a2a;
-  padding: 16px;
-  margin: 10px 0;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 60px; /* Touch-friendly */
-}
+* **Tone/Personality**
 
-.item button {
-  width: auto;
-  margin: 0;
-  padding: 8px 16px;
-}
+  * Friendly, silly, slightly chaotic
+  * Encouraging copy: "Want a toy?", "Let’s make something weird."
+  * ASCII critters or emojis encouraged
 
-/* Anonymous user indicator */
-#user-status {
-  background: #333;
-  padding: 8px 12px;
-  border-radius: 4px;
-  margin: 10px 0;
-  font-size: 14px;
-  text-align: center;
-  opacity: 0.8;
-}
+* **Principles**
+
+  1. Everything is a toy
+  2. One-shot delight
+  3. Play > polish
+  4. Same box, different toys
 ```
+
 
 ## Common Patterns
 
@@ -514,33 +473,6 @@ const heroUrl = await generateImage('cyberpunk cityscape at sunset');
 document.body.style.backgroundImage = `url(${heroUrl})`;
 ```
 
-## For WTAF Punk/Chaos Styling
-
-If user requests "punk", "WTAF style", or "chaotic" design:
-```css
-/* Add these on top of basic styles */
-button {
-  background: linear-gradient(45deg, #ff0066, #ff00ff);
-  transform: skew(-5deg);
-  box-shadow: 4px 4px 0 #ff00ff;
-}
-
-h1 {
-  text-transform: uppercase;
-  background: linear-gradient(45deg, #ff0066, #00ffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: glitch 2s infinite;
-}
-
-@keyframes glitch {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
-}
-```
 
 ## Testing Your App
 

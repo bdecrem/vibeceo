@@ -219,6 +219,16 @@ ZERO_ADMIN_DATA: true
 APP_TYPE: zero_admin_data`;
             logWithTimestamp("🚀 ZAD-api override: Created comprehensive ZAD with API conversion prompt without classifier");
         }
+        // 🌐 PUBLIC ZAD OVERRIDE CHECK: Skip classifier entirely if public keyword is present
+        else if (cleanedInput.toLowerCase().includes('public')) {
+            logWithTimestamp("🌐 PUBLIC ZAD OVERRIDE: Detected 'public' keyword - skipping classifier");
+            expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: true
+APP_TYPE: zero_admin_data`;
+            logWithTimestamp("🌐 PUBLIC ZAD override: Routing directly to public ZAD builder without classifier");
+        }
         else {
             // APP PATH: Use classifier to expand and clarify the request
             logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");

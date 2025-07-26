@@ -1108,6 +1108,50 @@ async function generateImage(prompt, style) {
     }
 }
 
+// Backend Helper Function: generateText(prompt, options)
+// Generate AI text responses
+async function generateText(prompt, options = {}) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🤖 Calling backend generateText function for:', prompt);
+        
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'generate_text',
+                content_data: { 
+                    prompt: prompt,
+                    maxTokens: options.maxTokens,
+                    temperature: options.temperature,
+                    systemPrompt: options.systemPrompt,
+                    username: username
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(\`Text generation failed: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateText function result:', result);
+        
+        return result.text;
+        
+    } catch (error) {
+        console.error('❌ GenerateText error:', error);
+        alert(\`Text generation failed: \${error.message}\`);
+        throw error;
+    }
+}
+
 // Load data from ZAD API
 async function load(type) {
     try {
@@ -1200,13 +1244,14 @@ async function query(type, options = {}) {
                 window.updateZadAuth = updateZadAuth;
                 window.greet = greet; // Add greet function to window object
                 window.generateImage = generateImage; // Add generateImage function to window object
+                window.generateText = generateText; // Add generateText function to window object
                 window.checkAvailableSlots = checkAvailableSlots;
                 window.generateUser = generateUser;
                 window.registerUser = registerUser;
                 window.authenticateUser = authenticateUser;
 
 console.log('🚀 ZAD Helper Functions loaded successfully');
-                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name), generateImage(prompt, style)');
+                console.log('Available functions: initAuth(), save(type, data), load(type), query(type, options), updateZadAuth(userLabel, participantId), greet(name), generateImage(prompt, style), generateText(prompt, options)');
 console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
 
 // DEMO MODE: Complete demo mode implementation with localStorage isolation

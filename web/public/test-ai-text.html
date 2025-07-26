@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Test - Magic 8 Ball</title>
+    <style>
+        body {
+            background: #fefef5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border: 5px solid #FFD63D;
+            border-radius: 30px;
+            box-shadow: 15px 15px 0 #C9C2F9;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #FF4B4B;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #FFD63D;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #FFD63D;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        #answer {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            min-height: 100px;
+            display: none;
+        }
+        #answer.show {
+            display: block;
+        }
+        .loading {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 AI Magic 8-Ball</h1>
+        <p>Ask any question and get an AI-powered mystical answer!</p>
+        
+        <input type="text" id="question" placeholder="Will my code work on the first try?" />
+        <button onclick="askQuestion()">Ask the Oracle</button>
+        
+        <div id="answer"></div>
+    </div>
+
+    <!-- ZAD Helpers will be injected inline during app creation -->
+    <script>
+        // ZAD Helper Functions - Inline for testing
+        console.log('🚀 Loading ZAD Helper Functions...');
+
+        // Get app ID
+        function getAppId() {
+            return 'test-app-' + Date.now();
+        }
+
+        // Get participant ID
+        function getParticipantId() {
+            return 'test-participant-' + Date.now();
+        }
+
+        // Get username
+        function getUsername() {
+            return 'Test User';
+        }
+
+        // Generate Text Helper Function (following generateImage pattern)
+        async function generateText(prompt, options = {}) {
+            try {
+                const app_id = getAppId();
+                const participant_id = getParticipantId();
+                const username = getUsername();
+                
+                console.log('🤖 Calling backend generateText function for:', prompt);
+                
+                // Simple client call - all logic happens on backend
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: app_id,
+                        participant_id: participant_id,
+                        action_type: 'generate_text',
+                        content_data: {
+                            prompt: prompt,
+                            maxTokens: options.maxTokens,
+                            temperature: options.temperature,
+                            systemPrompt: options.systemPrompt,
+                            username: username
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Text generation failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Backend generateText function result:', result);
+                
+                // Return the generated text
+                return result.text;
+                
+            } catch (error) {
+                console.error('❌ generateText error:', error);
+                throw error;
+            }
+        }
+
+        // Simple test of the generateText function
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const answerDiv = document.getElementById('answer');
+            
+            if (!question.trim()) {
+                alert('Please ask a question!');
+                return;
+            }
+            
+            // Show loading state
+            answerDiv.innerHTML = '<div class="loading">The mystical AI is contemplating...</div>';
+            answerDiv.classList.add('show');
+            
+            try {
+                // Test the generateText function!
+                const answer = await generateText(
+                    `You are a mystical magic 8-ball. Answer this question with wisdom and a bit of humor: ${question}`,
+                    {
+                        systemPrompt: 'You are a wise and slightly sarcastic magic 8-ball. Give short, mystical answers.',
+                        maxTokens: 100,
+                        temperature: 0.8
+                    }
+                );
+                
+                // Display the answer
+                answerDiv.innerHTML = `<strong>The Oracle says:</strong><br><br>${answer}`;
+                
+            } catch (error) {
+                answerDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('question').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askQuestion();
+        });
+    </script>
+</body>
+</html>

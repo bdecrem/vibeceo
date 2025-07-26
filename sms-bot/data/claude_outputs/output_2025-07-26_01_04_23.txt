@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF Rhyme Time!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            min-height: 44px;
+            width: 100%;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+            min-height: 44px;
+        }
+
+        .rhyme-card {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .rhyme-word {
+            display: inline-block;
+            background: #FFEB63;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 16px;
+        }
+
+        .history-item {
+            background: #B6FFB3;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        #user-status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+                margin-right: 10px;
+            }
+
+            .search-container {
+                display: flex;
+                gap: 10px;
+            }
+
+            .search-container button {
+                flex-shrink: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>🎵 WTAF Rhyme Time! 🎵</h1>
+            <p>Find rhymes with your friends!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New Rhymer</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Rhyming!</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back!</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Let's Rhyme!</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>🎵 WTAF Rhyme Time! 🎵</h1>
+            <div id="user-status"></div>
+
+            <div class="rhyme-card">
+                <div class="search-container">
+                    <input type="text" id="word-input" placeholder="Enter a word to find rhymes..." maxlength="20">
+                    <button onclick="findRhymes()">Find Rhymes! 🎯</button>
+                </div>
+                <div id="results"></div>
+            </div>
+
+            <div class="rhyme-card">
+                <h3>Recent Searches 📚</h3>
+                <div id="history"></div>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('user-status').textContent = `Rhyming as ${currentUser.userLabel}`;
+            startPolling();
+            loadLatestData();
+        }
+
+        async function findRhymes() {
+            const word = document.getElementById('word-input').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('results');
+
+            if (!word) {
+                alert('Please enter a word!');
+                return;
+            }
+
+            resultDiv.innerHTML = 'Finding rhymes... 🎵';
+
+            try {
+                const rhymes = await generateText(`Find rhyming words for: ${word}`, {
+                    systemPrompt: 'You are a rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. Include perfect rhymes and near rhymes. No explanations or other text.',
+                    maxTokens: 150,
+                    temperature: 0.7
+                });
+
+                // Save the search
+                await save('rhyme_search', {
+                    word: word,
+                    rhymes: rhymes
+                });
+
+                // Display results
+                const rhymeList = rhymes.split(',').map(w => w.trim()).filter(w => w);
+                resultDiv.innerHTML = `
+                    <h3>Rhymes with "${word}":</h3>
+                    ${rhymeList.map(rhyme => 
+                        `<span class="rhyme-word">${rhyme}</span>`
+                    ).join('')}
+                `;
+
+                document.getElementById('word-input').value = '';
+                loadLatestData();
+            } catch (error) {
+                resultDiv.innerHTML = 'Error finding rhymes. Please try again! 😅';
+            }
+        }
+
+        function deduplicate(items, uniqueField = 'word') {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        async function loadLatestData() {
+            const searches = await load('rhyme_search');
+            const mySearches = searches.filter(s => s.author === getUsername());
+            const uniqueSearches = deduplicate(mySearches);
+
+            const historyHtml = uniqueSearches
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5)
+                .map(search => `
+                    <div class="history-item" onclick="showPastRhymes('${search.word}', '${search.rhymes}')">
+                        "${search.word}" 🎵
+                    </div>
+                `).join('');
+
+            document.getElementById('history').innerHTML = historyHtml || 'No searches yet!';
+        }
+
+        function showPastRhymes(word, rhymes) {
+            const rhymeList = rhymes.split(',').map(w => w.trim()).filter(w => w);
+            document.getElementById('results').innerHTML = `
+                <h3>Rhymes with "${word}":</h3>
+                ${rhymeList.map(rhyme => 
+                    `<span class="rhyme-word">${rhyme}</span>`
+                ).join('')}
+            `;
+        }
+
+        // Enter key handler
+        document.getElementById('word-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                findRhymes();
+            }
+        });
+
+        initAuth();
+    </script>
+</body>
+</html>

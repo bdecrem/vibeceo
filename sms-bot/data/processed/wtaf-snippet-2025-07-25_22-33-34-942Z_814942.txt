@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+wtaf Make me a simple PAINT app with a nostalgic "MacPaint" vibe that has a pencil, brush, color and thickness selection, one more FUN feature of your choice, and UNDO button and a Gallery Wall that shows who created each shared piece public

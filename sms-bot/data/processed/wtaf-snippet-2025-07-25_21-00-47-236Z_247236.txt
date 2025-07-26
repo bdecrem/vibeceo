@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+A rapid decision-making tool where someone posts a question and others vote Yes or No. Show the question at top, display live vote counts as large numbers, list who voted what below, and highlight when all users have voted. Include a 'New Question' button that archives the previous question. Add optional anonymous voting toggle.

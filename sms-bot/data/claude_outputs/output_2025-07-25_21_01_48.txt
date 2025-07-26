@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Quick Vote!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1, h2 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+            min-height: 44px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .card {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .vote-counts {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .yes-count { color: #4CAF50; }
+        .no-count { color: #FF4B4B; }
+
+        .vote-list {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        .vote-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+        }
+
+        .vote-yes { background: #B6FFB3; }
+        .vote-no { background: #FFB3B3; }
+        .vote-anon { font-style: italic; }
+
+        .question-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            margin: 10px 0;
+            min-height: 44px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .toggle-container input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .vote-buttons {
+                display: flex;
+                gap: 20px;
+            }
+            
+            button {
+                width: auto;
+            }
+        }
+
+        .all-voted {
+            background: #FFD63D;
+            color: #FF4B4B;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Auth Screens -->
+        <div id="welcome-screen" class="screen active">
+            <h1>📊 Quick Vote!</h1>
+            <p>Make fast decisions together!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New Voter</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Voting!</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back!</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-screen" class="screen">
+            <div id="user-status">Voter: <span id="current-user-label"></span></div>
+            
+            <div id="app-content">
+                <div class="card" id="question-card">
+                    <h2 id="current-question">Waiting for question...</h2>
+                    
+                    <div class="vote-counts">
+                        <div class="yes-count">0</div>
+                        <div class="no-count">0</div>
+                    </div>
+
+                    <div id="vote-buttons" class="vote-buttons">
+                        <button onclick="vote(true)">👍 YES</button>
+                        <button onclick="vote(false)">👎 NO</button>
+                    </div>
+
+                    <div class="toggle-container">
+                        <input type="checkbox" id="anon-toggle">
+                        <label for="anon-toggle">Vote Anonymously</label>
+                    </div>
+
+                    <div id="all-voted" style="display: none;" class="all-voted">
+                        🎉 Everyone has voted! 🎉
+                    </div>
+
+                    <div class="vote-list" id="vote-list"></div>
+                </div>
+
+                <div class="card">
+                    <h2>Ask New Question</h2>
+                    <input type="text" id="new-question" class="question-input" 
+                           placeholder="Type your question here...">
+                    <button onclick="askNewQuestion()">📝 Post Question</button>
+                </div>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">Leave</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Auth code (standard from template)
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Voting System
+        async function askNewQuestion() {
+            const questionText = document.getElementById('new-question').value.trim();
+            if (!questionText) return;
+
+            await save('question', {
+                text: questionText,
+                timestamp: Date.now()
+            });
+
+            document.getElementById('new-question').value = '';
+            await loadLatestData();
+        }
+
+        async function vote(isYes) {
+            const anon = document.getElementById('anon-toggle').checked;
+            const questions = await load('question');
+            const currentQuestion = getLatestQuestion(questions);
+            
+            if (!currentQuestion) return;
+
+            await save('vote', {
+                questionId: currentQuestion.id,
+                isYes,
+                anonymous: anon
+            });
+
+            await loadLatestData();
+        }
+
+        function getLatestQuestion(questions) {
+            if (!questions.length) return null;
+            return questions.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            )[0];
+        }
+
+        function deduplicate(items, uniqueField = 'id') {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        async function loadLatestData() {
+            const questions = await load('question');
+            const votes = await load('vote');
+            const currentQuestion = getLatestQuestion(questions);
+
+            if (!currentQuestion) {
+                document.getElementById('current-question').textContent = 'Waiting for question...';
+                document.querySelector('.yes-count').textContent = '0';
+                document.querySelector('.no-count').textContent = '0';
+                document.getElementById('vote-list').innerHTML = '';
+                document.getElementById('all-voted').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('current-question').textContent = currentQuestion.text;
+
+            const questionVotes = deduplicate(
+                votes.filter(v => v.questionId === currentQuestion.id),
+                'author'
+            );
+
+            const yesVotes = questionVotes.filter(v => v.isYes);
+            const noVotes = questionVotes.filter(v => !v.isYes);
+
+            document.querySelector('.yes-count').textContent = yesVotes.length;
+            document.querySelector('.no-count').textContent = noVotes.length;
+
+            const voteList = document.getElementById('vote-list');
+            voteList.innerHTML = questionVotes.map(vote => `
+                <div class="vote-item ${vote.isYes ? 'vote-yes' : 'vote-no'}">
+                    ${vote.anonymous ? 'Anonymous' : vote.author}: 
+                    ${vote.isYes ? '👍 YES' : '👎 NO'}
+                </div>
+            `).join('');
+
+            // Check if all users have voted
+            const slots = await checkAvailableSlots();
+            const totalUsers = slots.usedLabels.length;
+            const allVoted = questionVotes.length === totalUsers;
+            document.getElementById('all-voted').style.display = 
+                allVoted ? 'block' : 'none';
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

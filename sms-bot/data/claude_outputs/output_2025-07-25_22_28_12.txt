@@ -1,0 +1,376 @@
+I'll help you create a nostalgic MacPaint-style public drawing app with a shared gallery wall. I'll include pencil, brush, color picker, thickness control, an undo button, and add a "Spray Paint" tool as the fun feature. The drawings will be saved as base64 PNG data.
+
+Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF MacPaint</title>
+    <style>
+        /* WEBTOYS Design System */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            padding: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        #drawing-canvas {
+            background: white;
+            border: 1px solid #6ECBFF;
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6ECBFF;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 20px;
+            font-size: 16px;
+            height: 44px;
+            cursor: pointer;
+            flex: 1;
+            min-width: 80px;
+            text-transform: uppercase;
+        }
+
+        button.active {
+            background: #FF4B4B;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            flex: 2;
+            min-width: 100px;
+            height: 44px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            padding: 10px;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-info {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            button, input[type="color"], input[type="range"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🎨 WTAF MacPaint</h1>
+        <div id="user-status">Artist: <span id="current-user-label"></span></div>
+
+        <div class="canvas-container">
+            <canvas id="drawing-canvas" width="600" height="400"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="pencil" class="active">✏️ Pencil</button>
+            <button id="brush">🖌️ Brush</button>
+            <button id="spray">🎨 Spray</button>
+            <input type="color" id="color" value="#000000">
+            <input type="range" id="size" min="1" max="50" value="5">
+            <button id="undo">↩️ Undo</button>
+            <button id="save">💾 Save</button>
+        </div>
+
+        <h2>🖼️ Gallery Wall</h2>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        // Initialize canvas and context
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let currentColor = '#000000';
+        let currentSize = 5;
+        let lastX = 0;
+        let lastY = 0;
+        let drawingStates = [];
+        
+        // Save initial canvas state
+        saveState();
+
+        // Tool selection
+        document.querySelectorAll('button').forEach(btn => {
+            if(['pencil', 'brush', 'spray'].includes(btn.id)) {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTool = btn.id;
+                });
+            }
+        });
+
+        // Color and size controls
+        document.getElementById('color').addEventListener('input', (e) => currentColor = e.target.value);
+        document.getElementById('size').addEventListener('input', (e) => currentSize = e.target.value);
+
+        // Drawing functions
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+            ctx.strokeStyle = currentColor;
+            ctx.fillStyle = currentColor;
+            
+            switch(currentTool) {
+                case 'pencil':
+                    ctx.lineWidth = currentSize;
+                    ctx.lineCap = 'round';
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    break;
+                    
+                case 'brush':
+                    ctx.lineWidth = currentSize * 2;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    break;
+                    
+                case 'spray':
+                    for(let i = 0; i < currentSize * 2; i++) {
+                        const angle = Math.random() * 360;
+                        const radius = Math.random() * currentSize * 2;
+                        const sprayX = x + radius * Math.cos(angle);
+                        const sprayY = y + radius * Math.sin(angle);
+                        ctx.beginPath();
+                        ctx.arc(sprayX, sprayY, 1, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+            }
+            
+            lastX = x;
+            lastY = y;
+        }
+
+        // Event listeners for drawing
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = (e.clientX || e.touches[0].clientX) - rect.left;
+            lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+            saveState();
+        }
+
+        // Undo functionality
+        function saveState() {
+            drawingStates.push(canvas.toDataURL());
+            if (drawingStates.length > 10) drawingStates.shift();
+        }
+
+        document.getElementById('undo').addEventListener('click', () => {
+            if (drawingStates.length > 1) {
+                drawingStates.pop();
+                const img = new Image();
+                img.src = drawingStates[drawingStates.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        });
+
+        // Save drawing
+        document.getElementById('save').addEventListener('click', async () => {
+            const drawing = canvas.toDataURL();
+            await save('drawing', {
+                image: drawing,
+                created_at: new Date().toISOString()
+            });
+            
+            // Clear canvas after saving
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawingStates = [];
+            saveState();
+            
+            await loadLatestData();
+        });
+
+        // Initialize public mode and data loading
+        let currentUser = null;
+
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        // Load and display drawings
+        async function loadLatestData() {
+            const drawings = await load('drawing');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            drawings.reverse().forEach(drawing => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="${drawing.image}" alt="Drawing">
+                    <div class="gallery-info">
+                        Created by: ${drawing.author}<br>
+                        ${new Date(drawing.created_at).toLocaleString()}
+                    </div>
+                `;
+                gallery.appendChild(item);
+            });
+        }
+
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize the app
+        initPublicMode();
+    </script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. 🎨 Drawing Tools:
+   - Pencil (thin precise lines)
+   - Brush (thicker smooth lines)
+   - Spray Paint (fun particle effect)
+
+2. 🎚️ Controls:
+   - Color picker
+   - Size slider
+   - Undo button
+   - Save button
+
+3. 🖼️ Features:
+   - Real-time gallery wall
+   - Shows creator's anonymous name
+   - Timestamp for each drawing
+   - Mobile-responsive design
+   - Touch support for mobile drawing
+
+4. 🎯 Technical Features:
+   - Auto-refresh every 2 seconds
+   - Persistent storage using ZAD
+   - Anonymous user support
+   - Base64 image storage
+   - Undo history (last 10 states)
+
+5. 🎨 WEBTOYS Design System:
+   - Playful color scheme
+   - Rounded corners
+   - Yellow borders
+   - Purple shadows
+   - Sky blue buttons
+   - Mobile-first layout
+
+The app allows anyone to draw and immediately share their creations with others. Each drawing appears in the gallery with the creator's anonymous name and timestamp. The interface is touch-friendly and works well on both desktop and mobile devices.

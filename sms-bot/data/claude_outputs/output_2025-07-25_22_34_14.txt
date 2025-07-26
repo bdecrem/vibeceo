@@ -1,0 +1,332 @@
+Here's a nostalgic MacPaint-style public drawing app with real-time gallery sharing. I'll use the ZAD system for persistent storage and public sharing!
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>ZAD Paint</title>
+    <style>
+        /* WEBTOYS Design System */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #fefef5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+
+        canvas {
+            background: white;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            min-height: 44px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .color-picker {
+            min-height: 44px;
+            min-width: 44px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .thickness {
+            min-height: 44px;
+            min-width: 60px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .gallery-item p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Fun feature: Rainbow mode button */
+        .rainbow-mode {
+            background: linear-gradient(90deg, red, orange, yellow, green, blue, violet);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        #user-status {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar button {
+                width: calc(50% - 5px);
+            }
+            
+            canvas {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🎨 ZAD Paint</h1>
+        <div id="user-status">Artist: <span id="current-user-label"></span></div>
+
+        <div class="toolbar">
+            <button id="pencil">✏️ Pencil</button>
+            <button id="brush">🖌️ Brush</button>
+            <input type="color" class="color-picker" id="color" value="#000000">
+            <input type="range" class="thickness" id="thickness" min="1" max="20" value="2">
+            <button id="rainbow">🌈 Rainbow Mode</button>
+            <button id="undo">↩️ Undo</button>
+            <button id="save">💾 Save to Gallery</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas" width="600" height="400"></canvas>
+        </div>
+
+        <h2>🖼️ Gallery Wall</h2>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let rainbowMode = false;
+        let hue = 0;
+        let undoStack = [];
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const gallery = document.getElementById('gallery');
+
+        // Initialize tools
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 2;
+
+        // Tool selection
+        document.getElementById('pencil').addEventListener('click', () => {
+            ctx.lineWidth = document.getElementById('thickness').value;
+            rainbowMode = false;
+        });
+
+        document.getElementById('brush').addEventListener('click', () => {
+            ctx.lineWidth = document.getElementById('thickness').value * 2;
+            rainbowMode = false;
+        });
+
+        document.getElementById('rainbow').addEventListener('click', () => {
+            rainbowMode = !rainbowMode;
+        });
+
+        document.getElementById('color').addEventListener('input', (e) => {
+            ctx.strokeStyle = e.target.value;
+            rainbowMode = false;
+        });
+
+        document.getElementById('thickness').addEventListener('input', (e) => {
+            ctx.lineWidth = e.target.value;
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = getCoords(e);
+            // Save state for undo
+            undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const [currentX, currentY] = getCoords(e);
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            
+            if (rainbowMode) {
+                hue = (hue + 1) % 360;
+                ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+            }
+            
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+
+            [lastX, lastY] = [currentX, currentY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            if (e.touches) {
+                return [
+                    (e.touches[0].clientX - rect.left) * scaleX,
+                    (e.touches[0].clientY - rect.top) * scaleY
+                ];
+            }
+            return [
+                (e.clientX - rect.left) * scaleX,
+                (e.clientY - rect.top) * scaleY
+            ];
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startDrawing(e);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            draw(e);
+        });
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Undo functionality
+        document.getElementById('undo').addEventListener('click', () => {
+            if (undoStack.length > 0) {
+                ctx.putImageData(undoStack.pop(), 0, 0);
+            }
+        });
+
+        // Save to gallery
+        document.getElementById('save').addEventListener('click', async () => {
+            const imageData = canvas.toDataURL('image/png');
+            await save('drawing', {
+                image: imageData,
+                created_at: new Date().toISOString()
+            });
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            undoStack = [];
+            
+            await loadLatestData();
+        });
+
+        // Load gallery
+        async function loadLatestData() {
+            const drawings = await load('drawing');
+            gallery.innerHTML = '';
+            
+            drawings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 12)
+                .forEach(drawing => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `
+                        <img src="${drawing.image}" alt="Drawing">
+                        <p>By: ${drawing.author}</p>
+                        <p>${new Date(drawing.created_at).toLocaleDateString()}</p>
+                    `;
+                    gallery.appendChild(item);
+                });
+        }
+
+        // Initialize public mode and start polling
+        let pollingInterval;
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize app
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        initPublicMode();
+    </script>
+</body>
+</html>
