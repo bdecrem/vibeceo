@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroCanvas - A Nostalgic Digital Paint Experience</title>
+    <style>
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --blue: #6ECBFF;
+            --red: #FF4B4B;
+            --green-mint: #B6FFB3;
+            --purple-shadow: #C9C2F9;
+            --charcoal: #2A2A2A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            padding: 1.5rem;
+            border-bottom: 4px solid var(--yellow);
+            box-shadow: 0 4px 0 var(--purple-shadow);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--red);
+            margin-bottom: 1rem;
+            letter-spacing: -2px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 6px solid var(--yellow);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            box-shadow: 0 12px 0 var(--purple-shadow);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tool-btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 400px;
+            border: 2px solid var(--charcoal);
+            background: white;
+            cursor: crosshair;
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--charcoal);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 8px 0 var(--purple-shadow);
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .canvas-container {
+                padding: 1rem;
+            }
+            
+            .toolbar {
+                gap: 0.5rem;
+            }
+            
+            .tool-btn {
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>RetroCanvas 🎨</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>PAINT LIKE IT'S 1984 ✨</h1>
+            <p>Create digital masterpieces with our nostalgic paint app inspired by the classic MacPaint</p>
+        </section>
+
+        <div class="canvas-container">
+            <div class="toolbar">
+                <button class="tool-btn">✏️ Pencil</button>
+                <button class="tool-btn">🖌️ Brush</button>
+                <button class="tool-btn">↩️ Undo</button>
+                <button class="tool-btn">💾 Save</button>
+            </div>
+
+            <div class="color-picker">
+                <div class="color-swatch" style="background: black"></div>
+                <div class="color-swatch" style="background: red"></div>
+                <div class="color-swatch" style="background: blue"></div>
+                <div class="color-swatch" style="background: green"></div>
+                <div class="color-swatch" style="background: yellow"></div>
+            </div>
+
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <section class="gallery">
+            <article class="gallery-item">
+                <img src="https://picsum.photos/300/200" alt="Artwork 1">
+                <h3>Pixel Paradise</h3>
+            </article>
+            <article class="gallery-item">
+                <img src="https://picsum.photos/300/201" alt="Artwork 2">
+                <h3>Digital Dreams</h3>
+            </article>
+            <article class="gallery-item">
+                <img src="https://picsum.photos/300/202" alt="Artwork 3">
+                <h3>Retro Vibes</h3>
+            </article>
+        </section>
+    </main>
+
+    <div class="floating-emoji" style="top: 20%; left: 10%">🎨</div>
+    <div class="floating-emoji" style="top: 40%; right: 15%">✨</div>
+    <div class="floating-emoji" style="bottom: 30%; left: 20%">🖌️</div>
+    <div class="floating-emoji" style="bottom: 20%; right: 10%">🎯</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+    </script>
+</body>
+</html>

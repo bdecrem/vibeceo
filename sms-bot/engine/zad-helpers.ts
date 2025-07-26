@@ -1068,6 +1068,58 @@ async function generateImage(prompt: string, style?: string): Promise<string> {
     }
 }
 
+/**
+ * Generate Text Helper Function
+ * Generates text from a prompt using AI language model
+ * Perfect for: chat responses, content generation, creative writing, Q&A
+ */
+async function generateText(prompt: string, options?: { 
+    maxTokens?: number, 
+    temperature?: number,
+    systemPrompt?: string 
+}): Promise<string> {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+        
+        console.log('🤖 Calling backend generateText function for:', prompt);
+        
+        // Simple client call - all logic happens on backend
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                participant_id: participant_id,
+                participant_data: { userLabel: username, username: username },
+                action_type: 'generate_text',
+                content_data: { 
+                    prompt: prompt,
+                    maxTokens: options?.maxTokens || 500,
+                    temperature: options?.temperature || 0.7,
+                    systemPrompt: options?.systemPrompt || 'You are a helpful assistant.'
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Text generation failed: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Backend generateText function result:', result);
+        
+        // Return the generated text
+        return result.text;
+        
+    } catch (error) {
+        console.error('❌ GenerateText error:', error);
+        alert(`Text generation failed: ${(error as Error).message}`);
+        return '';
+    }
+}
+
 // Make functions globally available with proper typing
 (window as any).save = save;
 (window as any).load = load;
@@ -1085,6 +1137,7 @@ async function generateImage(prompt: string, style?: string): Promise<string> {
 (window as any).authenticateUser = authenticateUser;
 (window as any).greet = greet;
 (window as any).generateImage = generateImage;
+(window as any).generateText = generateText;
 (window as any).enableLiveUpdates = enableLiveUpdates;
 (window as any).onUserLogin = onUserLogin;
 (window as any).isAuthenticated = isAuthenticated;
@@ -1114,11 +1167,11 @@ async function generateImage(prompt: string, style?: string): Promise<string> {
 (window as any).enterMainScreen = enterMainScreen;
 (window as any).leaveApp = leaveApp;
 
-console.log('🚀 ZAD Helper Functions loaded successfully - ALL 35 FUNCTIONS AVAILABLE');
+console.log('🚀 ZAD Helper Functions loaded successfully - ALL 36 FUNCTIONS AVAILABLE');
 console.log('📊 Data functions: save(), load(), loadAll(), query()');
 console.log('🔐 Auth functions: initAuth(), getCurrentUser(), updateZadAuth()');
 console.log('🌐 Backend helpers: checkAvailableSlots(), generateUser(), registerUser(), authenticateUser(), greet()');
-console.log('🎨 AI functions: generateImage()');
+console.log('🎨 AI functions: generateImage(), generateText()');
 console.log('⚡ Real-time: enableLiveUpdates(), startRealtime(), stopRealtime()');
 console.log('🔧 Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
 console.log('📱 Legacy auth: generateNewUser(), registerNewUser(), showNewUserScreen(), etc.');

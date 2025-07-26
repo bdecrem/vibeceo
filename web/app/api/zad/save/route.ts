@@ -479,6 +479,84 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // BACKEND HELPER FUNCTION: Handle "generate_text" action type  
+    if (action_type === 'generate_text') {
+      const { prompt, maxTokens, temperature, systemPrompt } = content_data || {};
+      console.log('🤖 Backend helper: generateText for app:', app_id, 'prompt:', prompt);
+      
+      if (!prompt) {
+        return NextResponse.json({ 
+          error: 'Text prompt is required',
+          success: false 
+        }, { status: 400 });
+      }
+
+      try {
+        // Initialize OpenAI client (following same pattern as generateImage)
+        const { OpenAI } = await import('openai');
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+        
+        if (!OPENAI_API_KEY) {
+          console.warn('⚠️ OPENAI_API_KEY not found, using mock response');
+          const mockText = `Mock response for: "${prompt}"\n\nThis is a placeholder response. To enable real AI text generation, please set the OPENAI_API_KEY environment variable.`;
+          return NextResponse.json({ 
+            success: true,
+            text: mockText,
+            prompt: prompt,
+            mock: true
+          }, { status: 200 });
+        }
+
+        const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+        
+        // Generate text using GPT-4
+        console.log('🤖 Generating text with GPT-4:', prompt);
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4-turbo-preview",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt || "You are a helpful assistant embedded in a collaborative web app. Be concise and engaging."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: maxTokens || 500,
+          temperature: temperature || 0.7,
+        });
+        
+        const generatedText = completion.choices[0].message.content;
+        if (!generatedText) {
+          throw new Error("No text in GPT-4 response");
+        }
+        
+        console.log('✅ Generated text:', generatedText.substring(0, 100) + '...');
+        
+        return NextResponse.json({ 
+          success: true,
+          text: generatedText,
+          prompt: prompt,
+          model: "gpt-4-turbo-preview"
+        }, { status: 200 });
+        
+      } catch (error) {
+        console.error('❌ Text generation error:', error);
+        
+        // Fallback to error message
+        console.warn('⚠️ Falling back to error response');
+        const errorText = `Error generating text: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        
+        return NextResponse.json({ 
+          success: false,
+          text: errorText,
+          prompt: prompt,
+          error: true
+        }, { status: 500 });
+      }
+    }
+
     // BACKEND HELPER FUNCTION: Delete record
     if (action_type === 'delete') {
       const { recordId } = content_data || {};

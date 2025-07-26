@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Rhyming Dictionary</title>
+    <style>
+        body {
+            background: #fefef5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border: 5px solid #FFD63D;
+            border-radius: 30px;
+            box-shadow: 15px 15px 0 #C9C2F9;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            color: #FF4B4B;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        input {
+            width: 100%;
+            padding: 20px;
+            border: 3px solid #6ECBFF;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            background: #6ECBFF;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        #rhymes {
+            margin-top: 30px;
+            padding: 25px;
+            background: #FFEB63;
+            border-radius: 20px;
+            min-height: 150px;
+            display: none;
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+        #rhymes.show {
+            display: block;
+        }
+        .loading {
+            color: #999;
+            font-style: italic;
+        }
+        .rhyme-word {
+            display: inline-block;
+            background: white;
+            padding: 5px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            border: 2px solid #FFD63D;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 RHYME TIME</h1>
+        <p class="subtitle">Find perfect rhymes instantly with AI</p>
+        
+        <input type="text" id="word" placeholder="Enter a word (e.g., cat)" />
+        <button onclick="findRhymes()">Find Rhymes</button>
+        
+        <div id="rhymes"></div>
+    </div>
+
+    <script>
+        // ZAD Helper Functions - Inline for testing
+        console.log('🚀 Loading ZAD Helper Functions...');
+
+        // Get app ID
+        function getAppId() {
+            return 'test-app-' + Date.now();
+        }
+
+        // Get participant ID
+        function getParticipantId() {
+            return 'test-participant-' + Date.now();
+        }
+
+        // Get username
+        function getUsername() {
+            return 'Test User';
+        }
+
+        // Generate Text Helper Function (following generateImage pattern)
+        async function generateText(prompt, options = {}) {
+            try {
+                const app_id = getAppId();
+                const participant_id = getParticipantId();
+                const username = getUsername();
+                
+                console.log('🤖 Calling backend generateText function for:', prompt);
+                
+                // Simple client call - all logic happens on backend
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: app_id,
+                        participant_id: participant_id,
+                        action_type: 'generate_text',
+                        content_data: {
+                            prompt: prompt,
+                            maxTokens: options.maxTokens,
+                            temperature: options.temperature,
+                            systemPrompt: options.systemPrompt,
+                            username: username
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Text generation failed: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Backend generateText function result:', result);
+                
+                // Return the generated text
+                return result.text;
+                
+            } catch (error) {
+                console.error('❌ generateText error:', error);
+                throw error;
+            }
+        }
+
+        // Find rhymes function
+        async function findRhymes() {
+            const word = document.getElementById('word').value.trim();
+            const rhymesDiv = document.getElementById('rhymes');
+            
+            if (!word) {
+                alert('Please enter a word!');
+                return;
+            }
+            
+            // Show loading state
+            rhymesDiv.innerHTML = '<div class="loading">Finding rhymes for "' + word + '"...</div>';
+            rhymesDiv.classList.add('show');
+            
+            try {
+                // Call generateText with specific rhyming prompt
+                const rhymes = await generateText(
+                    `Find rhyming words for: ${word}`,
+                    {
+                        systemPrompt: 'You are a rhyming dictionary assistant. The user will give you a word and you should return ONLY a comma-separated list of words that rhyme with it. Include both perfect rhymes and near rhymes. Return 10-15 words maximum. Do not include any explanation or other text, just the comma-separated list of rhyming words.',
+                        maxTokens: 100,
+                        temperature: 0.7
+                    }
+                );
+                
+                // Display the rhymes as individual words
+                const rhymeWords = rhymes.split(',').map(w => w.trim()).filter(w => w);
+                rhymesDiv.innerHTML = '<strong>Rhymes with "' + word + '":</strong><br><br>' + 
+                    rhymeWords.map(w => '<span class="rhyme-word">' + w + '</span>').join('');
+                
+            } catch (error) {
+                rhymesDiv.innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('word').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') findRhymes();
+        });
+    </script>
+</body>
+</html>

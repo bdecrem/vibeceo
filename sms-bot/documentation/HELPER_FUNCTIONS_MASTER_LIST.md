@@ -23,38 +23,39 @@
 13. `authenticateUser(userLabel, passcode)` - Authenticate existing user
 14. `greet(name)` - Backend greeting function
 
-## AI/Image Generation Functions (Available Everywhere)
+## AI Functions (Available Everywhere)
 15. `generateImage(prompt, style?)` - Generate image from text description
+16. `generateText(prompt, options?)` - Generate text using AI language model
 
 ## Real-time Features (Advanced)
-16. `enableLiveUpdates(type, callback)` - Enable live data updates
-17. `startRealtime(callback, interval)` - Start polling for changes
-18. `stopRealtime()` - Stop live updates
+17. `enableLiveUpdates(type, callback)` - Enable live data updates
+18. `startRealtime(callback, interval)` - Start polling for changes
+19. `stopRealtime()` - Stop live updates
 
 ## Advanced Auth Functions (Advanced)
-19. `onUserLogin(callback)` - Auth event handler
-20. `isAuthenticated()` - Check if user is logged in
-21. `requireAuth()` - Force authentication
+20. `onUserLogin(callback)` - Auth event handler
+21. `isAuthenticated()` - Check if user is logged in
+22. `requireAuth()` - Force authentication
 
 ## Data Function Variants (Advanced)
-22. `loadAll()` - Load all data across types
+23. `loadAll()` - Load all data across types
 
 ## Legacy Auth Functions (Backwards Compatibility)
-23. `generateNewUser()` - Legacy auth function
-24. `registerNewUser()` - Legacy auth function  
-25. `showNewUserScreen()` - Legacy auth function
-26. `loginReturningUser()` - Legacy auth function
-26. `showScreen(screenId)` - Legacy screen function
-27. `showReturningUserScreen()` - Legacy auth function
-28. `enterMainScreen()` - Legacy auth function
-29. `leaveApp()` - Legacy auth function
+24. `generateNewUser()` - Legacy auth function
+25. `registerNewUser()` - Legacy auth function  
+26. `showNewUserScreen()` - Legacy auth function
+27. `loginReturningUser()` - Legacy auth function
+28. `showScreen(screenId)` - Legacy screen function
+29. `showReturningUserScreen()` - Legacy auth function
+30. `enterMainScreen()` - Legacy auth function
+31. `leaveApp()` - Legacy auth function
 
 ## Convenience Aliases (Backwards Compatibility)
-30. `saveEntry()` / `loadEntries()` - Alias for save/load
-31. `saveData()` / `loadData()` - Alias for save/load
-32. `saveItem()` / `loadItems()` - Alias for save/load  
-33. `saveNote()` / `loadNotes()` - Alias for save/load
-34. `saveMessage()` / `loadMessages()` - Alias for save/load
+32. `saveEntry()` / `loadEntries()` - Alias for save/load
+33. `saveData()` / `loadData()` - Alias for save/load
+34. `saveItem()` / `loadItems()` - Alias for save/load  
+35. `saveNote()` / `loadNotes()` - Alias for save/load
+36. `saveMessage()` / `loadMessages()` - Alias for save/load
 
 ## ⚠️ REQUIRED DEDUPLICATION PATTERN (For Generated Apps)
 
@@ -86,11 +87,12 @@ async function loadLatestData() {
 ```
 
 ## Status
-- [x] All functions consolidated in zad-helpers.ts (34 functions total)
+- [x] All functions consolidated in zad-helpers.ts (36 functions total)
 - [x] All functions documented in Claude template (comprehensive reference added)  
 - [x] Backend implementations verified (all action types exist in API)
 - [x] Builder prompt updated with prominent deduplication examples
 - [x] Critical reminders updated to emphasize deduplication requirement
+- [x] NEW: Added generateText() function for AI text generation
 - [ ] Testing completed with updated prompt
 
 ## MAJOR PROGRESS COMPLETED ✅

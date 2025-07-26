@@ -384,21 +384,24 @@ export default function WebtoysSitePage() {
           </div>
           
           <div className="trending-grid">
-            {/* Static Example 1 - replacing Bronze Wolf Singing */}
+            {/* Static Example 1 - Punk Billboard */}
             <div className="trending-card">
-              <div className="trending-preview site magic-cursor">
-                🌮
+              <div className="trending-preview og-image magic-cursor">
+                <img 
+                  src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-tangerine-bat-tracking.png"
+                  alt="Punk billboard page"
+                />
               </div>
               <div className="trending-info">
                 <div className="prompt-label">What's this:</div>
-                <div className="prompt-text">"WTAF Create a game where you catch falling tacos with a sombrero"</div>
+                <div className="prompt-text">"WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page"</div>
                 <div className="trending-stats">
                   <span className="remix-count">🔥 12 remixes</span>
                   <span className="timestamp">Born today</span>
                 </div>
                 <div className="trending-actions">
-                  <a href="#" className="btn-view">Play Game</a>
-                  <button className="btn-remix" onClick={() => handleTrendingRemixClick("taco-catch-game")}>
+                  <a href="/bart/punk-billboard" className="btn-view">View Billboard</a>
+                  <button className="btn-remix" onClick={() => handleTrendingRemixClick("punk-billboard")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -406,10 +409,13 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Static Example 2 - replacing Feature Ideas Board */}
+            {/* Static Example 2 - Cat Meme Generator */}
             <div className="trending-card">
-              <div className="trending-preview site magic-cursor">
-                😸
+              <div className="trending-preview og-image magic-cursor">
+                <img 
+                  src="https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-cantaloupe-chorus-kissing.png"
+                  alt="Cat meme generator"
+                />
               </div>
               <div className="trending-info">
                 <div className="prompt-label">What's this:</div>
@@ -427,94 +433,6 @@ export default function WebtoysSitePage() {
                 </div>
               </div>
             </div>
-            
-            {trendingLoading ? (
-              // Loading state
-              Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="trending-card">
-                  <div className="trending-preview site magic-cursor">
-                    ⏳
-                  </div>
-                  <div className="trending-info">
-                    <div className="prompt-label">Loading...</div>
-                    <div className="prompt-text">Fetching trending content...</div>
-                    <div className="trending-stats">
-                      <span className="remix-count">🔥 -- remixes</span>
-                      <span className="timestamp">Loading...</span>
-                    </div>
-                    <div className="trending-actions">
-                      <button className="btn-view" disabled>Loading...</button>
-                      <button className="btn-remix" disabled>
-                        <span>🎨</span>
-                        <span>Loading...</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : trendingApps.length > 0 ? (
-              // Dynamic content from API
-              trendingApps.slice(0, 2).map((app, index) => (
-                <div key={app.id} className="trending-card">
-                  <div className="trending-preview og-image magic-cursor">
-                    <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`}
-                      alt={`Preview of ${app.original_prompt}`}
-                      onError={(e) => {
-                        // Fallback to emoji if image fails to load
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        if (target.nextSibling) {
-                          (target.nextSibling as HTMLElement).style.display = 'flex';
-                        }
-                      }}
-                    />
-                    <div className="emoji-fallback" style={{ display: 'none' }}>
-                      {getEmojiForApp(app.original_prompt, index)}
-                    </div>
-                  </div>
-                  <div className="trending-info">
-                    <div className="prompt-label">Text Message:</div>
-                    <div className="prompt-text">"{app.original_prompt}"</div>
-                    <div className="trending-stats">
-                      <span className="remix-count">🔥 {app.total_descendants || app.remix_count || 0} remixes</span>
-                      <span className="timestamp">{getTimestampLabel(app.created_at)}</span>
-                    </div>
-                    <div className="trending-actions">
-                      <Link href={`/wtaf/${app.user_slug}/${app.app_slug}`} className="btn-view">
-                        View App
-                      </Link>
-                      <button className="btn-remix" onClick={() => handleTrendingRemixClick(app.app_slug)}>
-                        <span>🎨</span>
-                        <span>Remix</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              // Fallback content if no trending apps
-              <div className="trending-card">
-                <div className="trending-preview site magic-cursor">
-                  🚀
-                </div>
-                <div className="trending-info">
-                  <div className="prompt-label">Text Message:</div>
-                  <div className="prompt-text">"No trending apps at the moment - be the first!"</div>
-                  <div className="trending-stats">
-                    <span className="remix-count">🔥 0 remixes</span>
-                    <span className="timestamp">Waiting for magic</span>
-                  </div>
-                  <div className="trending-actions">
-                    <a href="sms:+18663300015" className="btn-view">Text Now</a>
-                    <button className="btn-remix" onClick={() => handleSMSBubbleClick("WTAF Build something amazing")}>
-                      <span>🎨</span>
-                      <span>Create</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
           
           <div className="trending-footer">
@@ -525,10 +443,11 @@ export default function WebtoysSitePage() {
         </div>
       </section>
       
-      {/* Footer CTA */}
+      {/* About Section */}
       <section className="footer-cta">
-        <h2>Ready to Create?</h2>
-        <p>Your next big idea is just one text away</p>
+        <h2>About Webtoys</h2>
+        <p>Text your wildest app ideas to +1-866-330-0015 and watch them materialize into working code. No planning. No meetings. No bullshit. Just pure creative chaos delivered through SMS. Each prompt becomes a fully functional app in minutes, not months.</p>
+        <p>Start with "wtaf" + your idea. The algorithm handles the rest.</p>
         <a href="sms:+18663300015" className="phone-large">📱 (866) 330-0015</a>
       </section>
       

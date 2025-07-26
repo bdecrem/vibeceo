@@ -2,6 +2,14 @@
 
 You are building a collaborative web app using our zero-admin database system with WTAF's signature style. Follow these requirements:
 
+## 🤖 NEW: AI Capabilities Available!
+Your app can now use AI for both images AND text:
+- `generateImage(prompt)` - Create images from descriptions
+- `generateText(prompt, options)` - Get AI-powered text responses
+
+Perfect for: chatbots, content generators, Q&A systems, creative writing tools, image galleries, rhyming dictionaries, 
+joke generators, story creators, translation tools, code helpers, and ANY app that needs dynamic text generation!
+
 ## Quick Start (This is all most apps need!)
 ```javascript
 // Save data
@@ -315,6 +323,24 @@ All apps must follow the playful and accessible Webtoys visual language:
   4. Same box, different toys
 ```
 
+## When to Use AI Functions
+
+### Use generateText when the user asks for:
+- **Word games**: rhyming dictionary, puns, word associations, anagrams
+- **Language tools**: thesaurus, dictionary, translator, grammar checker
+- **Content generation**: story writer, joke generator, poetry creator, mad libs
+- **Chatbots**: Q&A bot, conversation partner, role-playing character
+- **Educational tools**: flashcard generator, quiz maker, study buddy
+- **Creative tools**: name generator, idea brainstormer, writing prompts
+- **Game helpers**: riddle solver, trivia questions, word puzzles
+- **Any app that needs dynamic text**: If the app would benefit from AI-generated text, use it!
+
+### Use generateImage when the user asks for:
+- **Visual content**: meme generator, avatar creator, illustration maker
+- **Design tools**: logo generator, pattern creator, color palette maker
+- **Game assets**: character sprites, backgrounds, items
+- **Any app that needs dynamic images**: If it needs pictures, use it!
+
 ## Common Patterns
 
 ### ⚠️ CRITICAL: ZAD is Append-Only + You Must Deduplicate When Displaying
@@ -535,6 +561,7 @@ await registerUser(userLabel, passcode, participantId) // Register new user
 await authenticateUser(userLabel, passcode) // Authenticate existing user
 await greet(name)                  // Backend greeting function
 await generateImage(prompt, style) // Generate AI images from text descriptions
+await generateText(prompt, options) // Generate AI text responses
 ```
 
 ### Real-time Features
@@ -627,6 +654,80 @@ const heroUrl = await generateImage('cyberpunk cityscape at sunset');
 document.body.style.backgroundImage = `url(${heroUrl})`;
 ```
 
+**Generate AI text:**
+```javascript
+// Simple text generation
+const response = await generateText('Write a haiku about coding');
+document.getElementById('haiku').textContent = response;
+
+// Chat-style response
+const chatReply = await generateText(userMessage, {
+  systemPrompt: 'You are a witty chatbot in a collaborative app',
+  maxTokens: 150,
+  temperature: 0.8
+});
+addChatMessage(chatReply);
+
+// Creative content generation
+const story = await generateText('Tell a short story about a robot learning to paint', {
+  maxTokens: 300,
+  temperature: 0.9
+});
+document.getElementById('story-content').innerHTML = story;
+
+// Q&A assistant
+const answer = await generateText(`Answer this question: ${userQuestion}`, {
+  systemPrompt: 'You are a helpful Q&A assistant. Be concise and accurate.',
+  temperature: 0.3
+});
+showAnswer(answer);
+
+// Rhyming dictionary (perfect for word games!)
+const rhymes = await generateText(`Find rhyming words for: ${word}`, {
+  systemPrompt: 'You are a rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. No explanations.',
+  maxTokens: 100
+});
+displayRhymes(rhymes.split(','));
+
+// Joke generator
+const joke = await generateText('Tell me a programming joke', {
+  systemPrompt: 'You are a comedian. Tell short, funny jokes.',
+  temperature: 0.9
+});
+
+// Language tools (thesaurus, definitions, translations)
+const synonyms = await generateText(`Find synonyms for: ${word}`, {
+  systemPrompt: 'Return only a comma-separated list of synonyms.',
+  maxTokens: 50
+});
+
+// Mad libs or fill-in-the-blank games
+const madlib = await generateText(`Complete this story: Once upon a time, a ${noun} went to ${place}...`, {
+  maxTokens: 200,
+  temperature: 0.8
+});
+
+// Code helpers
+const codeExplanation = await generateText(`Explain this code: ${codeSnippet}`, {
+  systemPrompt: 'You are a helpful programming tutor. Explain code simply.',
+  maxTokens: 300
+});
+
+// Name generators
+const characterName = await generateText('Generate a fantasy character name', {
+  systemPrompt: 'Create unique, creative character names. Return only the name.',
+  maxTokens: 20,
+  temperature: 0.9
+});
+
+// Any text-based tool you can imagine!
+const customResponse = await generateText(userInput, {
+  systemPrompt: 'You are whatever the app needs you to be!',
+  maxTokens: 500,
+  temperature: 0.7
+});
+```
+
 ## For WTAF Punk/Chaos Styling
 
 If user requests "punk", "WTAF style", or "chaotic" design, add these on top of the Webtoys system:
@@ -665,6 +766,43 @@ Before returning code, verify:
 - [ ] Data loads and saves correctly
 - [ ] Updates refresh every 2 seconds
 - [ ] Authentication flow works
+
+## Example App: Rhyming Dictionary
+If user asks for "rhyming dictionary" or similar, here's a complete pattern:
+
+```javascript
+// In your app's main function
+async function findRhymes() {
+    const word = document.getElementById('word-input').value;
+    const resultDiv = document.getElementById('results');
+    
+    if (!word) {
+        alert('Please enter a word!');
+        return;
+    }
+    
+    resultDiv.innerHTML = 'Finding rhymes...';
+    
+    try {
+        const rhymes = await generateText(`Find rhyming words for: ${word}`, {
+            systemPrompt: 'You are a rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. Include perfect rhymes and near rhymes. No explanations or other text.',
+            maxTokens: 150,
+            temperature: 0.7
+        });
+        
+        // Parse and display the rhymes
+        const rhymeList = rhymes.split(',').map(w => w.trim()).filter(w => w);
+        resultDiv.innerHTML = `
+            <h3>Rhymes with "${word}":</h3>
+            ${rhymeList.map(rhyme => 
+                `<span class="rhyme-word">${rhyme}</span>`
+            ).join('')}
+        `;
+    } catch (error) {
+        resultDiv.innerHTML = 'Error finding rhymes. Please try again.';
+    }
+}
+```
 
 ## Output Format
 - One complete HTML file
