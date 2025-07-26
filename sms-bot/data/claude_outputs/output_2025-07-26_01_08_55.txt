@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Language Flash Cards</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #fefef5;
+            min-height: 100vh;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            min-height: 44px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .card {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .word {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+                margin-right: 10px;
+            }
+            
+            .controls {
+                display: flex;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>Language Flash Cards 🗣️</h1>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <!-- New User Screen -->
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Returning User Screen -->
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="main-screen" class="screen">
+            <h1>Language Flash Cards</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+
+            <div id="language-setup" style="margin: 20px 0;">
+                <select id="language-select">
+                    <option value="">Select Language</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Italian">Italian</option>
+                </select>
+                <input type="text" id="word-input" placeholder="Enter word in English">
+                <input type="text" id="translation-input" placeholder="Enter translation">
+                <button onclick="addCard()">Add Card</button>
+            </div>
+
+            <div id="flashcard" class="card" onclick="flipCard()">
+                <div class="word" id="card-text">Click 'Start Practice' to begin!</div>
+            </div>
+
+            <div class="controls">
+                <button onclick="startPractice()">Start Practice</button>
+                <button onclick="nextCard()">Next Card →</button>
+                <button onclick="showScreen('welcome-screen')">Exit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentCards = [];
+        let currentCardIndex = 0;
+        let isShowingTranslation = false;
+
+        // Auth code
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        async function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            await loadLatestData();
+        }
+
+        // Flashcard functionality
+        async function addCard() {
+            const language = document.getElementById('language-select').value;
+            const word = document.getElementById('word-input').value;
+            const translation = document.getElementById('translation-input').value;
+
+            if (!language || !word || !translation) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            await save('flashcard', {
+                language,
+                word,
+                translation
+            });
+
+            document.getElementById('word-input').value = '';
+            document.getElementById('translation-input').value = '';
+            await loadLatestData();
+        }
+
+        function deduplicate(items) {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i.word === item.word && i.language === item.language);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        async function loadLatestData() {
+            const allCards = await load('flashcard');
+            const myCards = allCards.filter(card => card.author === getUsername());
+            currentCards = deduplicate(myCards);
+            if (currentCards.length === 0) {
+                document.getElementById('card-text').textContent = 'Add some cards to get started!';
+            }
+        }
+
+        function startPractice() {
+            if (currentCards.length === 0) {
+                alert('Add some cards first!');
+                return;
+            }
+            currentCardIndex = 0;
+            isShowingTranslation = false;
+            showCurrentCard();
+        }
+
+        function showCurrentCard() {
+            if (currentCards.length === 0) return;
+            const card = currentCards[currentCardIndex];
+            document.getElementById('card-text').textContent = 
+                isShowingTranslation ? card.translation : card.word;
+        }
+
+        function flipCard() {
+            if (currentCards.length === 0) return;
+            isShowingTranslation = !isShowingTranslation;
+            showCurrentCard();
+        }
+
+        function nextCard() {
+            if (currentCards.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % currentCards.length;
+            isShowingTranslation = false;
+            showCurrentCard();
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

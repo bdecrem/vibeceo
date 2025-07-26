@@ -178,9 +178,9 @@ export default function WebtoysSitePage() {
         <div className="nav-container">
           <a href="#" className="logo">WEBTOYS</a>
           <ul className="nav-links">
-            <li><a href="#how">How it Works</a></li>
+            <li><a href="#how">How it works</a></li>
             <li><Link href="/featured">Gallery</Link></li>
-            <li><a href="sms:+18663300015" className="phone-number">📱 (866) 330-0015</a></li>
+            {/* <li><a href="sms:+18663300015" className="phone-number">📱 (866) 330-0015</a></li> */}
           </ul>
         </div>
       </nav>
@@ -213,8 +213,8 @@ export default function WebtoysSitePage() {
                 <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a fun sushi bar site")}>
                   "WTAF Build me a fun sushi bar site"
                 </div>
-                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Create a game where you catch falling tacos with a sombrero")}>
-                  "WTAF Create a game where you catch falling tacos with a sombrero"
+                <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Make me a rhyming dictionary")}>
+                  "WTAF Make me a rhyming dictionary"
                 </div>
                 <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Make a meme generator but only for cat photos")}>
                   "WTAF Make a meme generator but only for cat photos"
@@ -262,17 +262,20 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 2: Game */}
+            {/* Example 2: Rhyming Dictionary */}
             <div className="example-card">
-              <div className="example-preview game magic-cursor">
-                <div>🌮 TACO CATCH 🌮</div>
+              <div className="example-preview rhyme-dict magic-cursor" style={{
+                backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}>
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF Create a game where you catch falling tacos with a sombrero"</div>
+                <div className="prompt-text">"WTAF Make me a rhyming dictionary"</div>
                 <div className="example-actions">
-                  <a href="#" className="btn-view">Play Game</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Create a game where you catch falling tacos with a sombrero")}>
+                  <a href="/bart/matte-quokka-crafting" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make me a rhyming dictionary")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -280,21 +283,20 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 3: Meme Generator */}
+            {/* Example 3: ZAD Paint */}
             <div className="example-card">
-              <div className="example-preview meme magic-cursor">
-                <div className="meme-text">
-                  CAT MEMES<br/>
-                  GENERATOR<br/>
-                  😸
-                </div>
+              <div className="example-preview paint-app magic-cursor" style={{
+                backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}>
               </div>
               <div className="example-info">
                 <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF Make a meme generator but only for cat photos"</div>
+                <div className="prompt-text">"WTAF make a retro paint app like old windows"</div>
                 <div className="example-actions">
-                  <a href="#" className="btn-view">Make Memes</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a meme generator but only for cat photos")}>
+                  <a href="/bart/flame-cheetah-accumulating" className="btn-view">Paint!</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -445,10 +447,9 @@ export default function WebtoysSitePage() {
       
       {/* About Section */}
       <section className="footer-cta">
-        <h2>About Webtoys</h2>
+        <h2 className="about-title">About Webtoys</h2>
         <p>Text your wildest app ideas to +1-866-330-0015 and watch them materialize into working code. No planning. No meetings. No bullshit. Just pure creative chaos delivered through SMS. Each prompt becomes a fully functional app in minutes, not months.</p>
         <p>Start with "wtaf" + your idea. The algorithm handles the rest.</p>
-        <a href="sms:+18663300015" className="phone-large">📱 (866) 330-0015</a>
       </section>
       
       {/* Footer */}
@@ -457,8 +458,7 @@ export default function WebtoysSitePage() {
           <div className="footer-links">
             <a href="#">About</a>
             <Link href="/featured">Gallery</Link>
-            <a href="#">API</a>
-            <a href="#">Help</a>
+            <a href="/bart/satin-horse-storytelling">Help</a>
           </div>
           <p className="footer-copyright">
             © 2024 WEBTOYS • Made with ✨ and a sprinkle of chaos
@@ -557,9 +557,10 @@ export default function WebtoysSitePage() {
         
         .nav-links {
           display: flex;
-          gap: 2rem;
+          gap: 0.25rem;
           list-style: none;
           align-items: center;
+          margin-left: auto;
         }
         
         .nav-links a,
@@ -906,16 +907,12 @@ export default function WebtoysSitePage() {
           font-size: 4rem;
         }
         
-        .example-preview.game {
-          background: var(--black-soft);
-          color: var(--green-mint);
-          font-size: 2.5rem;
-          font-family: monospace;
-          text-align: center;
+        .example-preview.rhyme-dict {
+          /* Background image is set inline */
         }
         
-        .example-preview.meme {
-          background: linear-gradient(135deg, var(--purple-accent) 0%, var(--blue) 100%);
+        .example-preview.paint-app {
+          /* Background image is set inline */
         }
         
         .example-preview.app {
@@ -1214,13 +1211,23 @@ export default function WebtoysSitePage() {
           padding: 6rem 2rem;
           background: var(--blue-deep);
           color: white;
-          text-align: center;
+          text-align: left;
+          max-width: 1400px;
+          margin: 0 auto;
         }
         
         .footer-cta h2 {
           font-size: 3rem;
           margin-bottom: 1.5rem;
           text-transform: uppercase;
+        }
+        
+        .footer-cta h2.about-title {
+          font-size: 1.3rem;
+          color: var(--black-soft);
+          font-weight: bold;
+          text-transform: none;
+          margin-bottom: 1rem;
         }
         
         .footer-cta p {
@@ -1363,11 +1370,7 @@ export default function WebtoysSitePage() {
           }
           
           .cta-main span:last-child {
-            display: none;
-          }
-          
-          .cta-main::after {
-            content: "+1-866-330-0015";
+            display: inline;
           }
           
           .hero-title {

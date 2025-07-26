@@ -138,7 +138,8 @@ setTimeout(function() {
 			'/wtaf/',  // WTAF homepage
 			'/creations',
 			'/wtaf/trending',
-			'/wtaf/featured'
+			'/wtaf/featured',
+			'/',  // Main homepage (for Fresh From The Oven and example cards)
 		];
 		
 		// Check if referer is from a wtaf.me internal navigation page
