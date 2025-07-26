@@ -566,7 +566,6 @@ export default function WebtoysSitePage() {
         konamiIndex++
         if (konamiIndex === konamiCode.length) {
           document.body.style.animation = 'rainbow 2s linear infinite'
-          alert('🎉 Unlimited creativity mode activated! 🎉')
           konamiIndex = 0
         }
       } else {
@@ -666,17 +665,11 @@ export default function WebtoysSitePage() {
         onClose={closeCopiedModal}
       />
 
-      {/* Navigation */}
-      <nav className="nav">
-        <div className="nav-container">
-          <a href="#" className="logo" onClick={handleLogoClick}>WEBTOYS</a>
-          <ul className="nav-links">
-            <li><a href="#how">How it works</a></li>
-            <li><Link href="/featured">Gallery</Link></li>
-            {/* <li><a href="sms:+18663300015" className="phone-number">📱 (866) 330-0015</a></li> */}
-          </ul>
-        </div>
-      </nav>
+      {/* Neon Header */}
+      <header className="header-neon">
+        <h1 className="logo-neon" onClick={handleLogoClick}>WEBTOYS</h1>
+        <p className="tagline">Professional Websites on Acid</p>
+      </header>
       
       {/* Hero Section */}
       <section className="hero">
@@ -954,9 +947,12 @@ export default function WebtoysSitePage() {
       
       {/* About Section */}
       <section className="footer-cta">
-        <h2 className="about-title">About Webtoys</h2>
-        <p>Your app ideas are too spicy for traditional development. Text them to +1-866-330-0015 and we'll turn them into reality faster than you can say "technical debt." While others are stuck in sprint planning, you'll be shipping digital mayhem.</p>
-        <p>Warning: Side effects may include uncontrollable creativity and chronic disruption.</p>
+        <h2 className="ready-title">Ready to Get Weird?</h2>
+        <p className="era-over">Your boring website era is over.</p>
+        <div className="about-content">
+          <p>Your app ideas are too spicy for traditional development. Text them to +1-866-330-0015 and we'll turn them into reality faster than you can say "technical debt." While others are stuck in sprint planning, you'll be shipping digital mayhem.</p>
+          <p>Warning: Side effects may include uncontrollable creativity and chronic disruption.</p>
+        </div>
       </section>
       
       {/* Footer */}
@@ -1084,124 +1080,90 @@ export default function WebtoysSitePage() {
         }
 
         
-        /* Navigation */
-        .nav {
-          position: fixed;
-          top: 0;
-          width: 100%;
-          background: var(--white-pure);
-          border-bottom: 4px solid var(--yellow);
-          box-shadow: 0 4px 20px var(--purple-shadow);
-          z-index: 1000;
-          transition: all 0.3s ease;
-        }
-        
-        .nav-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 2rem;
-        }
-        
-        .logo {
-          font-size: 1.8rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, var(--red) 0%, var(--blue) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          text-decoration: none;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
+        /* Neon Header */
+        .header-neon {
+          background: #0A0A0A;
+          padding: 80px 20px;
+          text-align: center;
           position: relative;
+          overflow: hidden;
+        }
+
+        .header-neon::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: 
+            radial-gradient(circle at 20% 50%, rgba(255, 75, 75, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(110, 203, 255, 0.3) 0%, transparent 50%);
+          animation: pulse-bg 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-bg {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+
+        .logo-neon {
+          font-size: clamp(3rem, 10vw, 8rem);
+          font-weight: 900;
+          letter-spacing: -3px;
+          margin: 0;
+          color: var(--cream);
+          text-transform: uppercase;
+          position: relative;
+          z-index: 1;
+          cursor: pointer;
           text-shadow: 
-            0 0 10px rgba(255, 75, 75, 0.8),
-            0 0 20px rgba(255, 75, 75, 0.6),
-            0 0 30px rgba(110, 203, 255, 0.6),
-            0 0 40px rgba(110, 203, 255, 0.4);
-          animation: neon-flicker 2.5s infinite alternate;
+            0 0 10px var(--red),
+            0 0 20px var(--red),
+            0 0 30px var(--red),
+            0 0 40px var(--red),
+            0 0 70px var(--red),
+            0 0 80px var(--red);
+          animation: neon-flicker 2s infinite alternate;
         }
-        
+
         @keyframes neon-flicker {
-          0%, 100% {
+          0%, 100% { 
+            opacity: 1;
             text-shadow: 
-              0 0 10px rgba(255, 75, 75, 0.8),
-              0 0 20px rgba(255, 75, 75, 0.6),
-              0 0 30px rgba(110, 203, 255, 0.6),
-              0 0 40px rgba(110, 203, 255, 0.4);
+              0 0 10px var(--red),
+              0 0 20px var(--red),
+              0 0 30px var(--red),
+              0 0 40px var(--red),
+              0 0 70px var(--red),
+              0 0 80px var(--red);
           }
-          50% {
+          50% { 
+            opacity: 0.9;
             text-shadow: 
-              0 0 15px rgba(255, 75, 75, 1),
-              0 0 25px rgba(255, 75, 75, 0.8),
-              0 0 35px rgba(110, 203, 255, 0.8),
-              0 0 50px rgba(110, 203, 255, 0.6);
+              0 0 5px var(--red),
+              0 0 10px var(--red),
+              0 0 15px var(--red),
+              0 0 20px var(--red),
+              0 0 35px var(--red),
+              0 0 40px var(--red);
           }
         }
-        
-        .logo::before {
-          content: "🎨";
-          font-size: 2rem;
-          animation: spin 4s ease-in-out infinite;
-        }
-        
-        @media (max-width: 768px) {
-          .logo::before {
-            display: none;
-          }
-        }
-        
-        @keyframes spin {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(180deg); }
-        }
-        
-        .nav-links {
-          display: flex;
-          gap: 0.25rem;
-          list-style: none;
-          align-items: center;
-          margin-left: auto;
-        }
-        
-        .nav-links a,
-        .nav-links a[href] {
-          color: var(--charcoal);
-          text-decoration: none;
-          font-weight: 600;
-          padding: 0.5rem 1.5rem;
-          border-radius: 2rem;
-          transition: all 0.3s ease;
-          display: inline-block;
-        }
-        
-        .nav-links a:hover,
-        .nav-links a[href]:hover {
-          background: var(--yellow-soft);
-          transform: translateY(-2px);
-        }
-        
-        .phone-number {
-          background: var(--blue);
-          color: white !important;
-          box-shadow: 0 4px 0 var(--blue-deep);
-          font-size: 1.1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        
-        .phone-number:hover {
-          background: var(--blue-deep) !important;
-          box-shadow: 0 2px 0 var(--blue);
+
+        .tagline {
+          font-size: 1.25rem;
+          color: var(--blue);
+          margin-top: 20px;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+          position: relative;
+          z-index: 1;
+          text-shadow: 0 0 10px rgba(110, 203, 255, 0.8);
         }
         
         /* Hero Section */
         .hero {
-          margin-top: 80px;
+          margin-top: 0;
           min-height: 90vh;
           display: flex;
           align-items: center;
@@ -1934,31 +1896,39 @@ export default function WebtoysSitePage() {
         /* Footer CTA */
         .footer-cta {
           padding: 6rem 2rem;
-          background: var(--blue-deep);
-          color: white;
-          text-align: left;
-          max-width: 1400px;
+          background: var(--charcoal);
+          color: var(--cream);
+          text-align: center;
+        }
+        
+        .footer-cta h2.ready-title {
+          font-size: clamp(2.5rem, 6vw, 4rem);
+          color: var(--yellow);
+          text-transform: uppercase;
+          letter-spacing: -2px;
+          margin-bottom: 1rem;
+          text-shadow: 0 0 20px rgba(255, 214, 61, 0.5);
+        }
+        
+        .footer-cta .era-over {
+          font-size: 1.5rem;
+          color: var(--blue);
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 3rem;
+          text-shadow: 0 0 10px rgba(110, 203, 255, 0.5);
+        }
+        
+        .about-content {
+          max-width: 800px;
           margin: 0 auto;
         }
         
-        .footer-cta h2 {
-          font-size: 3rem;
+        .about-content p {
+          font-size: 1.1rem;
+          line-height: 1.8;
           margin-bottom: 1.5rem;
-          text-transform: uppercase;
-        }
-        
-        .footer-cta h2.about-title {
-          font-size: 1.3rem;
-          color: var(--black-soft);
-          font-weight: bold;
-          text-transform: none;
-          margin-bottom: 1rem;
-        }
-        
-        .footer-cta p {
-          font-size: 1.3rem;
-          margin-bottom: 2rem;
-          opacity: 0.9;
+          opacity: 0.8;
         }
         
         .phone-large {
@@ -2182,26 +2152,21 @@ export default function WebtoysSitePage() {
         
         /* Responsive */
         @media (max-width: 768px) {
-          .nav {
-            position: static;
+          .header-neon {
+            padding: 60px 20px;
+          }
+          
+          .logo-neon {
+            font-size: 3rem;
+          }
+          
+          .tagline {
+            font-size: 1rem;
+            letter-spacing: 2px;
           }
           
           .hero {
             padding-top: 4rem;
-          }
-          
-          .nav-links {
-            display: none;
-          }
-          
-          .nav-container {
-            display: block;
-            text-align: center;
-            padding: 1rem;
-          }
-          
-          .logo {
-            display: inline-block;
           }
           
           .examples-mobile-show {

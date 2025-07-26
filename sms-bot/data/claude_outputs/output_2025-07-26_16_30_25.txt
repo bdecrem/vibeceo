@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>AI Journal Buddy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* CHAOS Theme */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1, h2 {
+            font-weight: bold;
+            text-transform: uppercase;
+            transform: rotate(-1deg);
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 4px solid var(--border);
+            box-shadow: 8px 8px 0 var(--shadow);
+            padding: 20px;
+            margin-bottom: 30px;
+            transform: rotate(1deg);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: rotate(-1deg);
+        }
+
+        textarea, input {
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            border: 3px solid var(--border);
+            margin-bottom: 20px;
+            font-size: 16px;
+            min-height: 100px;
+        }
+
+        input {
+            min-height: auto;
+        }
+
+        button {
+            background: var(--border);
+            border: 3px solid var(--text);
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-size: 16px;
+            padding: 12px 24px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 44px;
+            width: 100%;
+            margin-bottom: 10px;
+            transform: rotate(-1deg);
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02) rotate(1deg);
+        }
+
+        .journal-entry {
+            margin-bottom: 30px;
+        }
+
+        .date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .ai-suggestion {
+            border-left: 4px solid var(--border);
+            padding-left: 15px;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        #floating-emoji {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 40px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+                margin-right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Auth Screens -->
+        <div id="welcome-screen" class="screen active">
+            <h1>AI Journal Buddy 📝</h1>
+            <p>Your personal journaling companion with AI-powered insights.</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Goals Screen -->
+        <div id="goals-screen" class="screen">
+            <h1>Set Your Goals</h1>
+            <div class="card">
+                <p>What are your main goals for journaling? Be specific!</p>
+                <textarea id="goals-input" placeholder="Example: I want to track my personal growth, understand my emotions better, and develop a daily writing habit."></textarea>
+                <button onclick="saveGoals()">Set Goals & Start Writing</button>
+            </div>
+        </div>
+
+        <!-- Main Journal Screen -->
+        <div id="main-screen" class="screen">
+            <h1>My Journal</h1>
+            <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+            
+            <div class="card">
+                <textarea id="entry-input" placeholder="What's on your mind today?"></textarea>
+                <button onclick="saveEntry()">Save Entry</button>
+                <button onclick="showGoals()">View Goals</button>
+                <button onclick="showScreen('welcome-screen')">Leave</button>
+            </div>
+
+            <div id="ai-suggestion" class="ai-suggestion"></div>
+            <div id="entries-container"></div>
+        </div>
+    </div>
+
+    <div id="floating-emoji" onclick="triggerEmojiRain()">📝</div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+        let aiCache = { suggestion: null, dataHash: null };
+
+        // Auth functions from template
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('App is full!');
+                return false;
+            }
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                showScreen('goals-screen');
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                await loadGoals();
+            } else {
+                alert('Wrong code!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        // Journal specific functions
+        async function saveGoals() {
+            const goals = document.getElementById('goals-input').value;
+            if (!goals) {
+                alert('Please enter your goals!');
+                return;
+            }
+            await save('goals', { text: goals });
+            enterMainScreen();
+        }
+
+        async function loadGoals() {
+            const goals = await load('goals');
+            const myGoals = goals.filter(g => g.author === getUsername());
+            if (myGoals.length > 0) {
+                enterMainScreen();
+            } else {
+                showScreen('goals-screen');
+            }
+        }
+
+        async function showGoals() {
+            const goals = await load('goals');
+            const myGoals = goals.filter(g => g.author === getUsername());
+            if (myGoals.length > 0) {
+                const latestGoal = myGoals[myGoals.length - 1];
+                alert(`Your Goals:\n\n${latestGoal.text}`);
+            }
+        }
+
+        async function saveEntry() {
+            const text = document.getElementById('entry-input').value;
+            if (!text) {
+                alert('Please write something!');
+                return;
+            }
+            await save('entry', { text });
+            document.getElementById('entry-input').value = '';
+            await loadLatestData();
+        }
+
+        function deduplicate(items, uniqueField = 'created_at') {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        async function getAISuggestion(entries, goals) {
+            const dataHash = JSON.stringify({ entries, goals });
+            if (aiCache.suggestion && dataHash === aiCache.dataHash) {
+                return aiCache.suggestion;
+            }
+
+            const latestEntry = entries[0]?.text || '';
+            const latestGoal = goals[goals.length - 1]?.text || '';
+
+            const prompt = `Based on this journal entry: "${latestEntry}" 
+                          and these goals: "${latestGoal}",
+                          suggest a thoughtful topic for their next journal entry.
+                          Keep it brief (1-2 sentences) and make it personal.`;
+
+            const suggestion = await generateText(prompt, {
+                maxTokens: 100,
+                temperature: 0.7
+            });
+
+            aiCache = { suggestion, dataHash };
+            return suggestion;
+        }
+
+        async function loadLatestData() {
+            const entries = await load('entry');
+            const goals = await load('goals');
+
+            const myEntries = entries.filter(e => e.author === getUsername());
+            const myGoals = goals.filter(g => g.author === getUsername());
+
+            const uniqueEntries = deduplicate(myEntries)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const container = document.getElementById('entries-container');
+            container.innerHTML = uniqueEntries.map(entry => `
+                <div class="card journal-entry">
+                    <div class="date">${new Date(entry.created_at).toLocaleString()}</div>
+                    <div class="text">${entry.text}</div>
+                </div>
+            `).join('');
+
+            // Get and display AI suggestion
+            if (uniqueEntries.length > 0) {
+                const suggestion = await getAISuggestion(uniqueEntries, myGoals);
+                document.getElementById('ai-suggestion').innerHTML = `
+                    <strong>💡 Writing Prompt:</strong> ${suggestion}
+                `;
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = getUsername();
+            startPolling();
+            loadLatestData();
+        }
+
+        function triggerEmojiRain() {
+            const emojis = ['📝', '✍️', '📓', '💭', '💡', '🎯'];
+            for (let i = 0; i < 20; i++) {
+                const emoji = document.createElement('div');
+                emoji.style.position = 'fixed';
+                emoji.style.left = `${Math.random() * 100}vw`;
+                emoji.style.top = '-20px';
+                emoji.style.fontSize = '24px';
+                emoji.innerHTML = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.zIndex = '1000';
+                emoji.style.pointerEvents = 'none';
+                document.body.appendChild(emoji);
+
+                const animation = emoji.animate([
+                    { transform: 'translateY(0)', opacity: 1 },
+                    { transform: `translateY(${window.innerHeight + 20}px)`, opacity: 0 }
+                ], {
+                    duration: 1500 + Math.random() * 1000,
+                    easing: 'linear'
+                });
+
+                animation.onfinish = () => emoji.remove();
+            }
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>
