@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import CopiedModal from "@/components/ui/copied-modal"
 
@@ -22,10 +22,367 @@ interface WtafApp {
   type: string
 }
 
+// Dev Console Component
+function DevConsole() {
+  const [showHandle, setShowHandle] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [flickering, setFlickering] = useState(false)
+  const [consoleInput, setConsoleInput] = useState('')
+  const [consoleHistory, setConsoleHistory] = useState<string[]>([
+    '🎮 WEBTOYS DEVELOPER ZONE v0.666',
+    '💀 Reality.exe has entered the chat',
+    '🔥 Type "help" for commands or "wtaf" to see the real magic',
+    '> '
+  ])
+  const inputRef = useRef<HTMLInputElement>(null)
+  const idleTimerRef = useRef<NodeJS.Timeout>()
+  const scrollTimerRef = useRef<NodeJS.Timeout>()
+
+  // Show handle only when scrolled to bottom
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
+      const scrollPosition = window.scrollY
+      const isAtBottom = scrollPosition >= scrollHeight - 50 // 50px threshold
+      
+      if (isAtBottom && !showHandle) {
+        // Clear any existing timer
+        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+        
+        // Show after 1 second delay
+        scrollTimerRef.current = setTimeout(() => {
+          setShowHandle(true)
+        }, 1000)
+      } else if (!isAtBottom) {
+        // Hide immediately when not at bottom
+        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+        setShowHandle(false)
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+    }
+  }, [showHandle])
+
+  // Idle detection for flicker
+  useEffect(() => {
+    const resetIdle = () => {
+      setFlickering(false)
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(() => setFlickering(true), 30000)
+    }
+
+    const events = ['mousemove', 'keydown', 'scroll', 'touchstart']
+    events.forEach(e => window.addEventListener(e, resetIdle))
+    resetIdle()
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetIdle))
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    }
+  }, [])
+
+  // Focus input when drawer opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isOpen])
+
+  const handleCommand = (cmd: string) => {
+    const lowerCmd = cmd.toLowerCase().trim()
+    let response = ''
+
+    switch(lowerCmd) {
+      case 'help':
+        response = `🎮 CONSOLE COMMANDS:
+  help      - Show this help
+  wtaf      - Show WTAF SMS commands  
+  zad       - Show ZAD helper functions
+  chaos     - Activate chaos mode
+  vibecheck - Check your vibe levels
+  konami    - Show the sacred code
+  stats     - Show site statistics
+  clear     - Clear console
+  exit      - Close console`
+        break
+      case 'wtaf':
+        response = `🧪 WTAF COMMANDS (via SMS):
+  
+💻 CODER:
+  WTAF [idea]     - Build an app from your prompt
+  SLUG [name]     - Change your custom URL
+  INDEX           - List pages, set homepage
+  FAVE [num]      - Mark page as favorite
+  
+🎨 DEGEN:
+  EDIT [page] [changes] - Modify existing pages
+  MEME [idea]     - Generate dank memes
+  
+🧱 STACK:
+  --stack [app] [req]     - Use app as template
+  --stackdb [app] [req]   - Create live-updating app
+  --stackzad [app] [req]  - Share data with ZAD app
+  
+🌐 OPERATOR:
+  PUBLIC [desc]   - Create public ZAD app
+  
+Text these to +1-866-330-0015 to build chaos!`
+        break
+      case 'zad':
+      case 'helpers':
+        response = `🧠 ZAD HELPER FUNCTIONS:
+
+📦 Core Data:
+  save(type, data)    - Save to ZAD (creates new record)
+  load(type)          - Load all data (needs deduplication!)
+  query(type, opts)   - Advanced queries
+
+🤖 AI Functions:
+  generateImage(prompt)  - Create images from text
+  generateText(prompt)   - Generate AI text content
+
+🔐 Auth Helpers:
+  getCurrentUser()    - Get user object
+  getUsername()       - Get current username
+  isAuthenticated()   - Check login status
+
+⚡ Real-time:
+  enableLiveUpdates(type, callback) - Live data sync
+
+💡 Pro tip: Include these in your WTAF prompts!
+Example: "WTAF make a story app that uses generateText()"
+
+Type "zad-warning" to see critical deduplication info.`
+        break
+      case 'zad-warning':
+        response = `⚠️ CRITICAL ZAD KNOWLEDGE:
+
+ZAD is APPEND-ONLY - it NEVER updates records!
+Every save() creates a NEW record.
+
+You MUST deduplicate when displaying data:
+
+function deduplicate(items, uniqueField = 'name') {
+  return items.reduce((acc, item) => {
+    const existing = acc.find(i => 
+      i[uniqueField] === item[uniqueField]
+    );
+    if (!existing || 
+        new Date(item.created_at) > 
+        new Date(existing.created_at)) {
+      // Keep newest version
+      if (existing) {
+        acc[acc.indexOf(existing)] = item;
+      } else {
+        acc.push(item);
+      }
+    }
+    return acc;
+  }, []);
+}
+
+Without this, you'll see duplicates everywhere! 🤯`
+        break
+      case 'chaos':
+        document.body.style.animation = 'rainbow 2s linear infinite'
+        response = '🔥 CHAOS MODE ACTIVATED! Reality.exe has stopped responding...'
+        break
+      case 'vibecheck':
+        const vibes = ['IMMACULATE', 'TRANSCENDENT', 'LEGENDARY', 'GODLIKE', 'UNHINGED']
+        const vibe = vibes[Math.floor(Math.random() * vibes.length)]
+        response = `✨ Vibe Status: ${vibe} (${Math.floor(Math.random() * 900 + 100)}%)`
+        break
+      case 'konami':
+        response = '🎮 The Sacred Code: ↑ ↑ ↓ ↓ ← → ← → B A'
+        break
+      case 'stats':
+        response = `📊 WEBTOYS Statistics:
+  Apps Generated: ${Math.floor(Math.random() * 9000 + 1000)}
+  Chaos Level: MAXIMUM
+  Server Temperature: 🔥🔥🔥
+  Time Until Singularity: NaN`
+        break
+      case 'clear':
+        setConsoleHistory(['> '])
+        return
+      case 'exit':
+        setIsOpen(false)
+        return
+      default:
+        // Check if they're trying to use WTAF commands in console
+        if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ')) {
+          response = `📱 Nice try! But WTAF commands only work via SMS.\n\nText "${cmd}" to +1-866-330-0015 instead!\n\nType "wtaf" here to see all SMS commands.`
+        } else if (lowerCmd) {
+          response = `Command not found: "${cmd}". Type "help" for available commands.`
+        }
+    }
+
+    if (response) {
+      setConsoleHistory(prev => [...prev, `> ${cmd}`, response, '> '])
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (consoleInput.trim()) {
+      handleCommand(consoleInput)
+      setConsoleInput('')
+    }
+  }
+
+  return (
+    <>
+      {/* Dev Handle - Only shows when at bottom of page */}
+      {showHandle && (
+        <div 
+          className={`dev-handle ${flickering ? 'flickering' : ''}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          ▚ dev
+        </div>
+      )}
+
+      {/* Dev Drawer */}
+      {isOpen && (
+        <div className="dev-drawer">
+          <div className="console-output">
+            {consoleHistory.map((line, i) => (
+              <div key={i} className="console-line">{line}</div>
+            ))}
+          </div>
+          <form onSubmit={handleSubmit} className="console-input-form">
+            <span className="console-prompt">&gt; </span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={consoleInput}
+              onChange={(e) => setConsoleInput(e.target.value)}
+              className="console-input"
+              placeholder="Enter command..."
+              autoComplete="off"
+              spellCheck="false"
+            />
+          </form>
+        </div>
+      )}
+
+      <style jsx>{`
+        .dev-handle {
+          position: fixed;
+          bottom: 0;
+          left: 20px;
+          background: #1a1a1a;
+          color: #FF4B4B;
+          font-size: 12px;
+          font-family: monospace;
+          padding: 3px 10px;
+          border-radius: 6px 6px 0 0;
+          box-shadow: 0 -2px 10px rgba(255, 75, 75, 0.4);
+          cursor: pointer;
+          opacity: 0.6;
+          transition: all 0.3s ease;
+          z-index: 9999;
+          user-select: none;
+        }
+
+        .dev-handle:hover {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
+
+        .dev-handle.flickering {
+          animation: handle-flicker 2s infinite;
+        }
+
+        @keyframes handle-flicker {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; transform: translateY(-1px); }
+        }
+
+        .dev-drawer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: #000;
+          color: #FF4B4B;
+          font-family: 'Courier New', monospace;
+          font-size: 14px;
+          padding: 20px;
+          box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.8);
+          z-index: 9998;
+          max-height: 40vh;
+          overflow-y: auto;
+          border-top: 2px solid #FF4B4B;
+        }
+
+        .console-output {
+          margin-bottom: 10px;
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+
+        .console-line {
+          margin: 4px 0;
+          line-height: 1.4;
+        }
+
+        .console-input-form {
+          display: flex;
+          align-items: center;
+          border-top: 1px solid #333;
+          padding-top: 10px;
+        }
+
+        .console-prompt {
+          color: #FFD63D;
+          margin-right: 8px;
+        }
+
+        .console-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: #FF4B4B;
+          font-family: inherit;
+          font-size: inherit;
+          outline: none;
+        }
+
+        .console-input::placeholder {
+          color: #666;
+        }
+
+        @media (max-width: 768px) {
+          .dev-handle {
+            left: 10px;
+            font-size: 11px;
+            padding: 2px 8px;
+          }
+
+          .dev-drawer {
+            font-size: 12px;
+            padding: 15px;
+            max-height: 30vh;
+          }
+        }
+      `}</style>
+    </>
+  )
+}
+
 export default function WebtoysSitePage() {
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
   const [trendingApps, setTrendingApps] = useState<WtafApp[]>([])
   const [trendingLoading, setTrendingLoading] = useState(true)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [showSecretWidget, setShowSecretWidget] = useState(false)
+  const [widgetHovered, setWidgetHovered] = useState(false)
 
   const showCopiedNotification = (text: string) => {
     setCopiedNotification({ show: true, text })
@@ -142,6 +499,63 @@ export default function WebtoysSitePage() {
     fetchTrendingApps()
   }, [])
 
+  // Mouse tracking for parallax
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY })
+    }
+    
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+  // Secret widget appearance logic
+  useEffect(() => {
+    let hasCheckedScroll = false
+
+    // Show widget randomly after some interaction
+    const showWidget = () => {
+      const random = Math.random()
+      if (random > 0.7) { // 30% chance
+        setTimeout(() => {
+          setShowSecretWidget(true)
+        }, 3000) // Show after 3 seconds
+      }
+    }
+
+    // Trigger on scroll - but only check once
+    const handleScroll = () => {
+      if (window.scrollY > 500 && !showSecretWidget && !hasCheckedScroll) {
+        hasCheckedScroll = true // Only check once per session
+        showWidget()
+      }
+    }
+
+    // Also show on page load sometimes
+    if (Math.random() > 0.5) { // 50% chance
+      setTimeout(() => {
+        setShowSecretWidget(true)
+      }, 5000) // Show after 5 seconds
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [showSecretWidget])
+
+  // Console Easter Eggs
+  useEffect(() => {
+    console.log('%c🚀 WEBTOYS: Where digital dreams go to party', 'font-size: 20px; color: #FF4B4B; font-weight: bold;')
+    console.log('%c💀 Warning: This console may contain traces of genius', 'font-size: 14px; color: #6ECBFF;')
+    console.log('%c🔥 Type "unleashChaos()" to see what happens...', 'font-size: 12px; color: #FFD63D;')
+    
+    // Add unleashChaos function to window
+    ;(window as any).unleashChaos = () => {
+      document.body.style.animation = 'rainbow 2s linear infinite'
+      alert('🎭 CHAOS MODE ACTIVATED! Reality is now optional.')
+      return '🔥🔥🔥 MAXIMUM CHAOS ACHIEVED 🔥🔥🔥'
+    }
+  }, [])
+
   // Konami code easter egg
   useEffect(() => {
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA']
@@ -163,9 +577,88 @@ export default function WebtoysSitePage() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
+  
+  // Logo click counter for easter egg
+  const [logoClickCount, setLogoClickCount] = useState(0)
+  
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setLogoClickCount(prev => prev + 1)
+    
+    if (logoClickCount === 4) {
+      alert('🎭 YOU FOUND THE SECRET! Text "CHAOS MODE" to unlock premium mayhem.')
+      setLogoClickCount(0)
+    }
+  }
 
   return (
     <>
+      {/* Floating Emojis with Parallax */}
+      <div className="floating-emojis">
+        <div 
+          className="floating-emoji emoji-1" 
+          style={{
+            transform: `translate(${mousePosition.x * 0.05}px, ${mousePosition.y * 0.05}px)`
+          }}
+        >
+          🚀
+        </div>
+        <div 
+          className="floating-emoji emoji-2" 
+          style={{
+            transform: `translate(${mousePosition.x * -0.03}px, ${mousePosition.y * -0.03}px)`
+          }}
+        >
+          💀
+        </div>
+        <div 
+          className="floating-emoji emoji-3" 
+          style={{
+            transform: `translate(${mousePosition.x * 0.04}px, ${mousePosition.y * -0.04}px)`
+          }}
+        >
+          🔥
+        </div>
+        <div 
+          className="floating-emoji emoji-4" 
+          style={{
+            transform: `translate(${mousePosition.x * -0.06}px, ${mousePosition.y * 0.06}px)`
+          }}
+        >
+          ⚡
+        </div>
+        <div 
+          className="floating-emoji emoji-5" 
+          style={{
+            transform: `translate(${mousePosition.x * 0.07}px, ${mousePosition.y * 0.03}px)`
+          }}
+        >
+          🎭
+        </div>
+      </div>
+
+      {/* Secret Konami Widget */}
+      {showSecretWidget && (
+        <div 
+          className={`secret-widget ${widgetHovered ? 'hovered' : ''}`}
+          onMouseEnter={() => setWidgetHovered(true)}
+          onMouseLeave={() => setWidgetHovered(false)}
+          onClick={() => setWidgetHovered(!widgetHovered)}
+        >
+          <div className="widget-icon">🕹️</div>
+          {widgetHovered && (
+            <div className="widget-hint">
+              <div className="hint-text">Psst... try the Konami code:</div>
+              <div className="hint-code">↑ ↑ ↓ ↓ ← → ← → B A</div>
+              <div className="hint-subtext">Break all the rules 🎮</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dev Console Handle */}
+      <DevConsole />
+
       {/* Copied Modal */}
       <CopiedModal 
         show={copiedNotification.show}
@@ -176,7 +669,7 @@ export default function WebtoysSitePage() {
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
-          <a href="#" className="logo">WEBTOYS</a>
+          <a href="#" className="logo" onClick={handleLogoClick}>WEBTOYS</a>
           <ul className="nav-links">
             <li><a href="#how">How it works</a></li>
             <li><Link href="/featured">Gallery</Link></li>
@@ -187,6 +680,20 @@ export default function WebtoysSitePage() {
       
       {/* Hero Section */}
       <section className="hero">
+        {/* Gradient Mesh Background */}
+        <div className="gradient-mesh">
+          <div className="gradient-blob blob-1"></div>
+          <div className="gradient-blob blob-2"></div>
+          <div className="gradient-blob blob-3"></div>
+        </div>
+        
+        {/* Glitch Lines */}
+        <div className="glitch-lines">
+          <div className="glitch-line"></div>
+          <div className="glitch-line"></div>
+          <div className="glitch-line"></div>
+        </div>
+        
         {/* Floating shapes */}
         <div className="floating-shape shape1"></div>
         <div className="floating-shape shape2"></div>
@@ -195,13 +702,13 @@ export default function WebtoysSitePage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              <span className="line1">Text It</span>
-              <span className="line2">We Build It</span>
-              <span className="line3">Web Toys over SMS</span>
+              <span className="line1">YOUR WEBSITE</span>
+              <span className="line2">NEEDS THERAPY</span>
+              <span className="line3">Text us. We'll fix that.</span>
             </h1>
             
             <p className="hero-description">
-              Chat apps, a paint toy, a todo list, and other web weirdness over SMS. Remix anything. YMMV. New tricks added daily.
+              Forget everything you know about web development. Just text us your unhinged ideas and watch the chaos unfold. No code. No meetings. No sanity required.
             </p>
             
             <div className="phone-display">
@@ -239,8 +746,8 @@ export default function WebtoysSitePage() {
       <section className="examples examples-mobile-show" id="examples">
         <div className="examples-container">
           <div className="section-header">
-            <h2 className="section-title">Fresh From the Oven</h2>
-            <p className="section-subtitle">Real creations from real text messages</p>
+            <h2 className="section-title">FRESH DIGITAL CHAOS</h2>
+            <p className="section-subtitle">Straight from the minds of digital rebels</p>
           </div>
           
           <div className="examples-grid">
@@ -381,8 +888,8 @@ export default function WebtoysSitePage() {
       <section className="trending" id="trending">
         <div className="trending-container">
           <div className="section-header">
-            <h2 className="section-title">What's Trending Now</h2>
-            <p className="section-subtitle">Hot creations everyone's talking about</p>
+            <h2 className="section-title">VIRAL EXPERIMENTS</h2>
+            <p className="section-subtitle">Stuff that broke the internet (in a good way)</p>
           </div>
           
           <div className="trending-grid">
@@ -448,8 +955,8 @@ export default function WebtoysSitePage() {
       {/* About Section */}
       <section className="footer-cta">
         <h2 className="about-title">About Webtoys</h2>
-        <p>Text your wildest app ideas to +1-866-330-0015 and watch them materialize into working code. No planning. No meetings. No bullshit. Just pure creative chaos delivered through SMS. Each prompt becomes a fully functional app in minutes, not months.</p>
-        <p>Start with "wtaf" + your idea. The algorithm handles the rest.</p>
+        <p>Your app ideas are too spicy for traditional development. Text them to +1-866-330-0015 and we'll turn them into reality faster than you can say "technical debt." While others are stuck in sprint planning, you'll be shipping digital mayhem.</p>
+        <p>Warning: Side effects may include uncontrollable creativity and chronic disruption.</p>
       </section>
       
       {/* Footer */}
@@ -487,6 +994,79 @@ export default function WebtoysSitePage() {
           --gray-warm: #6B6B6B;
           --white-pure: #FFFFFF;
           --black-soft: #1A1A1A;
+        }
+
+        /* Floating Emojis */
+        .floating-emojis {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 1;
+          overflow: hidden;
+        }
+
+        .floating-emoji {
+          position: absolute;
+          font-size: 3rem;
+          opacity: 0.15;
+          animation: float-emoji 20s infinite linear;
+          transition: transform 0.3s ease-out;
+        }
+
+        .emoji-1 {
+          top: 10%;
+          left: 15%;
+          animation-duration: 25s;
+          animation-delay: 0s;
+        }
+
+        .emoji-2 {
+          top: 70%;
+          right: 10%;
+          animation-duration: 30s;
+          animation-delay: 5s;
+        }
+
+        .emoji-3 {
+          top: 30%;
+          right: 25%;
+          animation-duration: 22s;
+          animation-delay: 10s;
+        }
+
+        .emoji-4 {
+          bottom: 20%;
+          left: 8%;
+          animation-duration: 28s;
+          animation-delay: 15s;
+        }
+
+        .emoji-5 {
+          top: 50%;
+          left: 50%;
+          animation-duration: 35s;
+          animation-delay: 7s;
+        }
+
+        @keyframes float-emoji {
+          0% { 
+            transform: rotate(0deg) translateY(0); 
+          }
+          25% { 
+            transform: rotate(90deg) translateY(-30px); 
+          }
+          50% { 
+            transform: rotate(180deg) translateY(0); 
+          }
+          75% { 
+            transform: rotate(270deg) translateY(30px); 
+          }
+          100% { 
+            transform: rotate(360deg) translateY(0); 
+          }
         }
         
         * {
@@ -536,6 +1116,30 @@ export default function WebtoysSitePage() {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          position: relative;
+          text-shadow: 
+            0 0 10px rgba(255, 75, 75, 0.8),
+            0 0 20px rgba(255, 75, 75, 0.6),
+            0 0 30px rgba(110, 203, 255, 0.6),
+            0 0 40px rgba(110, 203, 255, 0.4);
+          animation: neon-flicker 2.5s infinite alternate;
+        }
+        
+        @keyframes neon-flicker {
+          0%, 100% {
+            text-shadow: 
+              0 0 10px rgba(255, 75, 75, 0.8),
+              0 0 20px rgba(255, 75, 75, 0.6),
+              0 0 30px rgba(110, 203, 255, 0.6),
+              0 0 40px rgba(110, 203, 255, 0.4);
+          }
+          50% {
+            text-shadow: 
+              0 0 15px rgba(255, 75, 75, 1),
+              0 0 25px rgba(255, 75, 75, 0.8),
+              0 0 35px rgba(110, 203, 255, 0.8),
+              0 0 50px rgba(110, 203, 255, 0.6);
+          }
         }
         
         .logo::before {
@@ -604,6 +1208,127 @@ export default function WebtoysSitePage() {
           position: relative;
           background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--cream) 40%, rgba(108,203,255,0.15) 100%);
           overflow: hidden;
+        }
+
+        /* Gradient Mesh Background */
+        .gradient-mesh {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 0;
+          opacity: 0.4;
+        }
+
+        .gradient-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          mix-blend-mode: multiply;
+          animation: blob-move 30s infinite ease-in-out;
+        }
+
+        .blob-1 {
+          width: 600px;
+          height: 600px;
+          background: linear-gradient(45deg, var(--red), var(--purple-accent));
+          top: -200px;
+          left: -200px;
+          animation-duration: 35s;
+        }
+
+        .blob-2 {
+          width: 500px;
+          height: 500px;
+          background: linear-gradient(45deg, var(--blue), var(--green-mint));
+          bottom: -150px;
+          right: -150px;
+          animation-duration: 40s;
+          animation-delay: 10s;
+        }
+
+        .blob-3 {
+          width: 400px;
+          height: 400px;
+          background: linear-gradient(45deg, var(--yellow), var(--red));
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation-duration: 45s;
+          animation-delay: 20s;
+        }
+
+        @keyframes blob-move {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+          }
+          25% {
+            transform: translate(100px, -50px) scale(1.1);
+          }
+          50% {
+            transform: translate(-50px, 100px) scale(0.9);
+          }
+          75% {
+            transform: translate(50px, 50px) scale(1.05);
+          }
+        }
+
+        /* Glitch Lines */
+        .glitch-lines {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 2;
+          pointer-events: none;
+        }
+
+        .glitch-line {
+          position: absolute;
+          width: 100%;
+          height: 2px;
+          background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(255, 75, 75, 0.8) 10%, 
+            rgba(110, 203, 255, 0.8) 50%, 
+            rgba(255, 75, 75, 0.8) 90%, 
+            transparent 100%
+          );
+          opacity: 0;
+          animation: glitch-scan 8s infinite linear;
+        }
+
+        .glitch-line:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        .glitch-line:nth-child(2) {
+          animation-delay: 2.5s;
+        }
+
+        .glitch-line:nth-child(3) {
+          animation-delay: 5s;
+        }
+
+        @keyframes glitch-scan {
+          0% {
+            top: -2px;
+            opacity: 0;
+          }
+          5% {
+            opacity: 1;
+          }
+          95% {
+            opacity: 1;
+          }
+          100% {
+            top: 100%;
+            opacity: 0;
+          }
         }
         
         /* Floating elements */
@@ -1322,6 +2047,137 @@ export default function WebtoysSitePage() {
         @keyframes rainbow {
           0% { filter: hue-rotate(0deg); }
           100% { filter: hue-rotate(360deg); }
+        }
+
+        /* Secret Widget */
+        .secret-widget {
+          position: fixed;
+          bottom: 30px;
+          right: 30px;
+          z-index: 9999;
+          cursor: pointer;
+          animation: widget-appear 0.5s ease-out;
+        }
+
+        @keyframes widget-appear {
+          0% {
+            opacity: 0;
+            transform: scale(0) rotate(180deg);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+          }
+        }
+
+        .widget-icon {
+          font-size: 2.5rem;
+          filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.6));
+          animation: glitch-icon 3s infinite;
+          transition: all 0.3s ease;
+        }
+
+        @keyframes glitch-icon {
+          0%, 100% {
+            transform: translate(0, 0);
+            filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.6));
+          }
+          20% {
+            transform: translate(-2px, 2px);
+            filter: drop-shadow(0 0 15px rgba(110, 203, 255, 0.8));
+          }
+          40% {
+            transform: translate(-2px, -2px);
+            filter: drop-shadow(0 0 20px rgba(255, 214, 61, 0.8));
+          }
+          60% {
+            transform: translate(2px, 2px);
+            filter: drop-shadow(0 0 15px rgba(139, 127, 212, 0.8));
+          }
+          80% {
+            transform: translate(2px, -2px);
+            filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.6));
+          }
+        }
+
+        .secret-widget.hovered .widget-icon {
+          transform: scale(1.2) rotate(15deg);
+          filter: drop-shadow(0 0 20px rgba(255, 75, 75, 1));
+        }
+
+        .widget-hint {
+          position: absolute;
+          bottom: 60px;
+          right: 0;
+          background: rgba(26, 26, 26, 0.95);
+          color: white;
+          padding: 1rem 1.5rem;
+          border-radius: 12px;
+          border: 2px solid var(--red);
+          box-shadow: 0 0 30px rgba(255, 75, 75, 0.5);
+          min-width: 250px;
+          animation: hint-appear 0.3s ease-out;
+          backdrop-filter: blur(10px);
+        }
+
+        @keyframes hint-appear {
+          0% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .hint-text {
+          font-size: 0.9rem;
+          color: var(--yellow);
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+        }
+
+        .hint-code {
+          font-size: 1.2rem;
+          font-weight: 900;
+          color: white;
+          text-align: center;
+          padding: 0.5rem;
+          background: rgba(255, 75, 75, 0.2);
+          border-radius: 8px;
+          margin-bottom: 0.5rem;
+          font-family: monospace;
+          letter-spacing: 2px;
+        }
+
+        .hint-subtext {
+          font-size: 0.8rem;
+          color: var(--blue);
+          text-align: center;
+          font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+          .secret-widget {
+            bottom: 20px;
+            right: 20px;
+          }
+
+          .widget-icon {
+            font-size: 2rem;
+          }
+
+          .widget-hint {
+            right: -10px;
+            min-width: 200px;
+            padding: 0.8rem 1rem;
+          }
+
+          .hint-code {
+            font-size: 1rem;
+            letter-spacing: 1px;
+          }
         }
         
         /* Responsive */

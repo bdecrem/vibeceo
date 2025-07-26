@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>🎤 RHYME CRIMES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        /* MIDNIGHT Theme */
+        :root {
+            --bg: #0A0A0A;
+            --border: #00FF88;
+            --shadow: #FF00FF;
+            --text: #FFFFFF;
+            --card: #111111;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+            min-height: 100vh;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 40px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            transform: rotate(-2deg);
+            text-shadow: 3px 3px var(--shadow);
+            color: var(--border);
+        }
+
+        .card {
+            background: var(--card);
+            border: 4px solid var(--border);
+            box-shadow: 8px 8px var(--shadow);
+            padding: 20px;
+            margin: 20px 0;
+            transform: rotate(1deg);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: rotate(-1deg) scale(1.02);
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 44px;
+            border: 3px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        input:focus {
+            outline: none;
+            transform: scale(1.02);
+            border-color: var(--shadow);
+        }
+
+        button {
+            background: var(--border);
+            color: var(--bg);
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .rhyme-word {
+            display: inline-block;
+            background: var(--card);
+            border: 2px solid var(--border);
+            padding: 8px 16px;
+            margin: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            transform: rotate(var(--rotation));
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rhyme-word:hover {
+            background: var(--border);
+            color: var(--bg);
+            transform: scale(1.1) rotate(var(--rotation));
+        }
+
+        #rhyme-history {
+            margin-top: 40px;
+        }
+
+        .history-item {
+            opacity: 0.7;
+            font-size: 14px;
+            margin: 4px 0;
+        }
+
+        #mic-status {
+            color: var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .flicker {
+            animation: flicker 3s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            52% { opacity: 0.9; }
+            54% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                margin: 10px 0;
+                transform: none;
+            }
+            
+            h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Auth Screens -->
+        <div id="welcome-screen" class="screen active">
+            <h1>🎤 RHYME CRIMES</h1>
+            <p>Drop bars. Find rhymes. Commit lyrical crimes.</p>
+            <button onclick="showNewUserScreen()">New MC</button>
+            <button onclick="showReturningUserScreen()">Return to the Mic</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New MC</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Hit the Stage</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Back to Spit</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Grab the Mic</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-screen" class="screen">
+            <h1 class="flicker">🎤 RHYME CRIMES</h1>
+            <div id="user-status">MC <span id="current-user-label"></span> on the mic</div>
+
+            <div class="card">
+                <input type="text" 
+                       id="word-input" 
+                       placeholder="Drop a word to find rhymes..."
+                       onkeypress="if(event.key === 'Enter') findRhymes()">
+                <button onclick="findRhymes()">FIND RHYMES</button>
+                <div id="mic-status" class="flicker">🎙️ mic check...</div>
+                <div id="results"></div>
+            </div>
+
+            <div id="rhyme-history">
+                <h3>YOUR RECENT CRIMES</h3>
+                <div id="history-list"></div>
+            </div>
+
+            <button onclick="showScreen('welcome-screen')">DROP THE MIC</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let searchHistory = [];
+
+        // Auth Functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Studio is full! Come back later!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your MC Name: ${user.userLabel}<br>Secret Code: ${user.passcode}<br>Keep these safe!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code, MC!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select Your MC Name</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Rhyme Functions
+        async function findRhymes() {
+            const word = document.getElementById('word-input').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('results');
+            
+            if (!word) {
+                alert('Drop a word first!');
+                return;
+            }
+
+            resultDiv.innerHTML = '🎙️ Finding rhymes...';
+            document.getElementById('mic-status').textContent = '🎙️ searching the streets...';
+
+            try {
+                const rhymes = await generateText(`Find rhyming words for: ${word}`, {
+                    systemPrompt: 'You are a hip hop rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. Include perfect rhymes, near rhymes, and slang that would work well in rap lyrics. No explanations.',
+                    maxTokens: 150,
+                    temperature: 0.8
+                });
+
+                const rhymeList = rhymes.split(',')
+                    .map(w => w.trim())
+                    .filter(w => w && w !== word);
+
+                // Save search to history
+                await save('rhyme_search', {
+                    word: word,
+                    rhymes: rhymeList.join(',')
+                });
+
+                // Display results with random rotations
+                resultDiv.innerHTML = `
+                    <h3>Rhymes with "${word}":</h3>
+                    ${rhymeList.map(rhyme => {
+                        const rotation = Math.random() * 4 - 2;
+                        return `<span class="rhyme-word" 
+                                     style="--rotation: ${rotation}deg"
+                                     onclick="copyToInput('${rhyme}')">${rhyme}</span>`;
+                    }).join('')}
+                `;
+
+                document.getElementById('mic-status').textContent = '🎙️ ready to spit';
+                document.getElementById('word-input').value = '';
+
+            } catch (error) {
+                resultDiv.innerHTML = '🎤 Mic feedback! Try again...';
+            }
+        }
+
+        function copyToInput(word) {
+            document.getElementById('word-input').value = word;
+            findRhymes();
+        }
+
+        // Data Loading
+        async function loadLatestData() {
+            const allSearches = await load('rhyme_search');
+            const mySearches = allSearches.filter(s => s.author === getUsername());
+            
+            // Deduplicate and get latest 5 searches
+            const uniqueSearches = mySearches.reduce((acc, search) => {
+                const existing = acc.find(s => s.word === search.word);
+                if (!existing || new Date(search.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = search;
+                    } else {
+                        acc.push(search);
+                    }
+                }
+                return acc;
+            }, []);
+
+            const recentSearches = uniqueSearches
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+
+            document.getElementById('history-list').innerHTML = recentSearches
+                .map(search => `
+                    <div class="history-item">
+                        <strong>${search.word}</strong>: ${search.rhymes.split(',').slice(0, 3).join(', ')}...
+                    </div>
+                `).join('');
+        }
+
+        // Polling
+        let pollingInterval;
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize
+        initAuth();
+    </script>
+</body>
+</html>

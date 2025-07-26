@@ -198,6 +198,118 @@ async function addBuilding() {
 - `'cartoon'` - Cartoon/illustration style
 - `'abstract'` - Abstract art style
 
+## ⚠️ CRITICAL: AI HELPER FUNCTION BEST PRACTICES
+
+**Both `generateText()` and `generateImage()` make expensive API calls that cost money and take time!**
+
+### ❌ NEVER DO THIS - Common Mistakes to Avoid
+
+```javascript
+// BAD: Calling AI in polling loops or on every render
+setInterval(async () => {
+    const suggestion = await generateText(prompt); // 💸 EXPENSIVE!
+    displaySuggestion(suggestion);
+}, 2000);
+
+// BAD: Calling AI without checking if data changed
+async function loadData() {
+    const items = await load('entries');
+    displayItems(items);
+    await suggestNext(); // 💸 Calls AI every time!
+}
+
+// BAD: Regenerating images unnecessarily
+function updateUI() {
+    const imageUrl = await generateImage('random art'); // 💸 New image every update!
+    document.getElementById('header-img').src = imageUrl;
+}
+```
+
+### ✅ ALWAYS DO THIS - Best Practices
+
+```javascript
+// GOOD: Cache AI responses and only regenerate when input changes
+let aiCache = { content: null, dataHash: null };
+
+async function generateAISuggestion(data, forceRefresh = false) {
+    const dataHash = JSON.stringify(data);
+    
+    // Return cached result if data hasn't changed
+    if (!forceRefresh && aiCache.content && aiCache.dataHash === dataHash) {
+        return aiCache.content;
+    }
+    
+    // Only call AI when truly needed
+    const result = await generateText(buildPrompt(data), options);
+    aiCache = { content: result, dataHash: dataHash };
+    return result;
+}
+
+// GOOD: Separate data polling from AI generation
+let lastDataForAI = null;
+
+async function updateUI() {
+    const data = await load('entries');
+    displayData(data);
+    
+    // Only regenerate AI content if data actually changed
+    const dataStr = JSON.stringify(data);
+    if (dataStr !== lastDataForAI) {
+        lastDataForAI = dataStr;
+        const suggestion = await generateAISuggestion(data);
+        displaySuggestion(suggestion);
+    }
+}
+
+// GOOD: Use localStorage for persistent AI cache
+async function getCachedAIResponse(prompt, cacheKey) {
+    const cached = localStorage.getItem(`ai_cache_${cacheKey}`);
+    if (cached) {
+        const { text, timestamp } = JSON.parse(cached);
+        // Cache for 5 minutes
+        if (Date.now() - timestamp < 300000) {
+            return text;
+        }
+    }
+    
+    const text = await generateText(prompt);
+    localStorage.setItem(`ai_cache_${cacheKey}`, JSON.stringify({
+        text,
+        timestamp: Date.now()
+    }));
+    return text;
+}
+
+// GOOD: Cache images in localStorage
+async function getCachedImage(prompt, cacheKey) {
+    const cached = localStorage.getItem(`img_cache_${cacheKey}`);
+    if (cached) {
+        const { url, timestamp } = JSON.parse(cached);
+        // Cache images for 1 hour
+        if (Date.now() - timestamp < 3600000) {
+            return url;
+        }
+    }
+    
+    const url = await generateImage(prompt);
+    localStorage.setItem(`img_cache_${cacheKey}`, JSON.stringify({
+        url,
+        timestamp: Date.now()
+    }));
+    return url;
+}
+```
+
+### Best Practices Summary:
+1. **Cache AI responses** - Store results and reuse them when possible
+2. **Check if data changed** - Only call AI when input data actually changes
+3. **Separate polling from AI** - Don't call AI functions in polling loops
+4. **Use localStorage** - Persist AI responses across page reloads
+5. **Add loading states** - Show users when AI is working
+6. **Provide manual refresh** - Let users explicitly request new AI content
+7. **Cache images longer** - Images can be cached for hours, not just minutes
+8. **Use unique cache keys** - Base cache keys on the input prompt or data
+
 ## ✅ VERIFICATION CHECKLIST
 
 ### For Developers

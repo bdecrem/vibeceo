@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>🎤 Hip Hop Rhyme Machine</title>
+    <style>
+        /* WEBTOYS CHAOS THEME */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .screen {
+            display: none;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 40px;
+            text-transform: uppercase;
+            font-weight: bold;
+            transform: rotate(-2deg);
+            margin-bottom: 24px;
+            text-shadow: 2px 2px var(--shadow);
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 3px solid var(--border);
+            background: var(--bg);
+            margin-bottom: 16px;
+            min-height: 48px;
+        }
+
+        button {
+            background: var(--border);
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transform: rotate(1deg);
+            box-shadow: 4px 4px var(--shadow);
+            transition: all 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98) rotate(1deg);
+            box-shadow: 2px 2px var(--shadow);
+        }
+
+        .rhyme-word {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 6px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            transform: rotate(var(--rotation));
+            background: var(--bg);
+            box-shadow: 2px 2px var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rhyme-word:hover {
+            transform: scale(1.1) rotate(var(--rotation));
+            background: var(--border);
+        }
+
+        #results {
+            margin-top: 24px;
+            min-height: 200px;
+        }
+
+        #rhyme-history {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px dashed var(--border);
+        }
+
+        .history-item {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            75% { transform: translateX(5px) rotate(1deg); }
+        }
+
+        @media (min-width: 768px) {
+            input, button {
+                font-size: 20px;
+            }
+
+            .rhyme-word {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>🎤 Hip Hop Rhyme Machine</h1>
+            <p>Drop a word, get fresh rhymes for your next track!</p>
+            <button onclick="showNewUserScreen()">New MC</button>
+            <button onclick="showReturningUserScreen()">Returning MC</button>
+        </div>
+
+        <!-- New User Screen -->
+        <div id="new-user-screen" class="screen">
+            <h1>New MC Setup</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Spitting 🎯</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Returning User Screen -->
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Enter the Cypher</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="main-screen" class="screen">
+            <h1>🎤 Rhyme Machine</h1>
+            <div id="user-status">MC: <span id="current-user-label"></span></div>
+            
+            <div id="app-content">
+                <input type="text" 
+                       id="word-input" 
+                       placeholder="Drop a word to rhyme..." 
+                       onkeypress="if(event.key === 'Enter') findRhymes()">
+                <button onclick="findRhymes()">GET FRESH RHYMES 🔥</button>
+                
+                <div id="results"></div>
+                <div id="rhyme-history"></div>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave the Booth</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let rhymeCache = {};
+        let pollingInterval;
+
+        // Initialize auth system
+        initAuth();
+
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Studio is full!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your MC Name: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function findRhymes() {
+            const wordInput = document.getElementById('word-input');
+            const word = wordInput.value.trim().toLowerCase();
+            const resultDiv = document.getElementById('results');
+            
+            if (!word) {
+                wordInput.classList.add('shake');
+                setTimeout(() => wordInput.classList.remove('shake'), 500);
+                return;
+            }
+
+            // Check cache first
+            if (rhymeCache[word]) {
+                displayRhymes(word, rhymeCache[word]);
+                return;
+            }
+
+            resultDiv.innerHTML = '🎵 Finding fresh rhymes...';
+            
+            try {
+                const rhymes = await generateText(`Find hip hop style rhyming words for: ${word}`, {
+                    systemPrompt: 'You are a hip hop rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. Include perfect rhymes, near rhymes, and slang that would work well in rap lyrics. No explanations.',
+                    maxTokens: 150,
+                    temperature: 0.8
+                });
+
+                const rhymeList = rhymes.split(',')
+                    .map(w => w.trim())
+                    .filter(w => w && w !== word);
+
+                // Cache the results
+                rhymeCache[word] = rhymeList;
+                
+                // Save to ZAD
+                await save('rhyme_search', {
+                    word: word,
+                    rhymes: rhymeList.join(',')
+                });
+
+                displayRhymes(word, rhymeList);
+                await loadLatestData();
+
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Mic feedback! Try again...';
+            }
+        }
+
+        function displayRhymes(word, rhymeList) {
+            const resultDiv = document.getElementById('results');
+            
+            if (!rhymeList.length) {
+                resultDiv.innerHTML = '😢 No rhymes found. Try another word!';
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <h3>🎵 Rhymes with "${word}":</h3>
+                <div class="rhyme-list">
+                    ${rhymeList.map(rhyme => {
+                        const rotation = Math.random() * 4 - 2;
+                        return `<span class="rhyme-word" 
+                                     style="--rotation: ${rotation}deg"
+                                     onclick="document.getElementById('word-input').value='${rhyme}'; findRhymes()">
+                                ${rhyme}
+                            </span>`;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        async function loadLatestData() {
+            const searches = await load('rhyme_search');
+            const mySearches = searches.filter(s => s.author === getUsername());
+            
+            // Deduplicate searches
+            const uniqueSearches = mySearches.reduce((acc, search) => {
+                const existing = acc.find(s => s.word === search.word);
+                if (!existing || new Date(search.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = search;
+                    } else {
+                        acc.push(search);
+                    }
+                }
+                return acc;
+            }, []);
+
+            // Show recent searches
+            const historyDiv = document.getElementById('rhyme-history');
+            if (uniqueSearches.length) {
+                historyDiv.innerHTML = `
+                    <h3>🎤 Your Recent Searches:</h3>
+                    ${uniqueSearches
+                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                        .slice(0, 5)
+                        .map(search => `
+                            <div class="history-item">
+                                "${search.word}" → ${search.rhymes.split(',').slice(0, 3).join(', ')}...
+                            </div>
+                        `).join('')}
+                `;
+            }
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Easter egg: Konami code shows a special rhyme
+        let konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    document.getElementById('word-input').value = 'microphone';
+                    findRhymes();
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+    </script>
+</body>
+</html>
