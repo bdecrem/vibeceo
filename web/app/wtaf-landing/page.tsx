@@ -27,16 +27,20 @@ function DevConsole() {
   const [showHandle, setShowHandle] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [flickering, setFlickering] = useState(false)
+  const [consoleHeight, setConsoleHeight] = useState(150) // Default height in pixels
+  const [isDragging, setIsDragging] = useState(false)
   const [consoleInput, setConsoleInput] = useState('')
-  const [consoleHistory, setConsoleHistory] = useState<string[]>([
-    '🎮 WEBTOYS DEVELOPER ZONE v0.666',
-    '💀 Reality.exe has entered the chat',
-    '🔥 Type "help" for commands or "wtaf" to see the real magic',
-    '> '
+  const [consoleHistory, setConsoleHistory] = useState<Array<{text: string, type?: string}>>([
+    {text: '🎮 WEBTOYS DEVELOPER ZONE v0.666', type: 'header'},
+    {text: '💀 Reality.exe has entered the chat', type: 'system'},
+    {text: '🔥 Type "help" for commands or "wtaf" to see the real magic', type: 'info'}
   ])
   const inputRef = useRef<HTMLInputElement>(null)
+  const consoleOutputRef = useRef<HTMLDivElement>(null)
   const idleTimerRef = useRef<NodeJS.Timeout>()
   const scrollTimerRef = useRef<NodeJS.Timeout>()
+  const dragStartY = useRef<number>(0)
+  const dragStartHeight = useRef<number>(0)
 
   // Show handle only when scrolled to bottom
   useEffect(() => {
@@ -86,12 +90,85 @@ function DevConsole() {
     }
   }, [])
 
-  // Focus input when drawer opens
+  // Focus input when drawer opens and manage body scroll
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus()
+    if (isOpen) {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+      // Prevent body scroll when console is open on mobile
+      if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.width = '100%'
+      }
+    } else {
+      // Restore body scroll
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.width = ''
+      }
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.width = ''
+      }
     }
   }, [isOpen])
+
+  // Auto-scroll to bottom when new content is added
+  useEffect(() => {
+    if (consoleOutputRef.current) {
+      consoleOutputRef.current.scrollTop = consoleOutputRef.current.scrollHeight
+    }
+  }, [consoleHistory])
+
+  // Handle drag functionality
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true)
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    dragStartY.current = clientY
+    dragStartHeight.current = consoleHeight
+    e.preventDefault()
+  }
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    const deltaY = dragStartY.current - clientY
+    const newHeight = Math.max(100, Math.min(window.innerHeight * 0.8, dragStartHeight.current + deltaY))
+    setConsoleHeight(newHeight)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDragMove)
+      document.addEventListener('mouseup', handleDragEnd)
+      document.addEventListener('touchmove', handleDragMove)
+      document.addEventListener('touchend', handleDragEnd)
+      document.body.style.cursor = 'ns-resize'
+      document.body.style.userSelect = 'none'
+      
+      return () => {
+        document.removeEventListener('mousemove', handleDragMove)
+        document.removeEventListener('mouseup', handleDragEnd)
+        document.removeEventListener('touchmove', handleDragMove)
+        document.removeEventListener('touchend', handleDragEnd)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+  }, [isDragging])
 
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
@@ -198,7 +275,11 @@ Without this, you'll see duplicates everywhere! 🤯`
         response = `✨ Vibe Status: ${vibe} (${Math.floor(Math.random() * 900 + 100)}%)`
         break
       case 'konami':
-        response = '🎮 The Sacred Code: ↑ ↑ ↓ ↓ ← → ← → B A'
+        // Check if we're in browser context to avoid hydration mismatch
+        const isMobileCheck = typeof window !== 'undefined' && window.innerWidth <= 768
+        response = isMobileCheck 
+          ? '🎮 The Sacred Code: Tap the WEBTOYS logo with this rhythm:\n👆👆 (pause) 👆👆 (pause) 👆👆👆👆 rapid!\n\nFind the rhythm and unlock the magic!' 
+          : '🎮 The Sacred Code: ↑ ↑ ↓ ↓ ← → ← → B A'
         break
       case 'stats':
         response = `📊 WEBTOYS Statistics:
@@ -208,7 +289,7 @@ Without this, you'll see duplicates everywhere! 🤯`
   Time Until Singularity: NaN`
         break
       case 'clear':
-        setConsoleHistory(['> '])
+        setConsoleHistory([])
         return
       case 'exit':
         setIsOpen(false)
@@ -223,7 +304,11 @@ Without this, you'll see duplicates everywhere! 🤯`
     }
 
     if (response) {
-      setConsoleHistory(prev => [...prev, `> ${cmd}`, response, '> '])
+      setConsoleHistory(prev => [
+        ...prev, 
+        {text: `> ${cmd}`, type: 'command'},
+        {text: response, type: 'response'}
+      ])
     }
   }
 
@@ -249,25 +334,47 @@ Without this, you'll see duplicates everywhere! 🤯`
 
       {/* Dev Drawer */}
       {isOpen && (
-        <div className="dev-drawer">
-          <div className="console-output">
-            {consoleHistory.map((line, i) => (
-              <div key={i} className="console-line">{line}</div>
-            ))}
+        <div className="dev-drawer" style={{ height: `${consoleHeight}px` }}>
+          {/* Handle Bar */}
+          <div 
+            className="console-handle"
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+          >
+            <div className="handle-grip">
+              <div className="handle-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="console-input-form">
-            <span className="console-prompt">&gt; </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={consoleInput}
-              onChange={(e) => setConsoleInput(e.target.value)}
-              className="console-input"
-              placeholder="Enter command..."
-              autoComplete="off"
-              spellCheck="false"
-            />
-          </form>
+          
+          <div className="console-content">
+            <div className="console-output" ref={consoleOutputRef}>
+              {consoleHistory.map((item, i) => (
+                <div key={i} className={`console-line ${item.type || ''}`}>
+                  {item.text}
+                </div>
+              ))}
+            </div>
+            <form onSubmit={handleSubmit} className="console-input-form">
+              <span className="console-prompt">&gt; </span>
+              <input
+                ref={inputRef}
+                type="text"
+                value={consoleInput}
+                onChange={(e) => setConsoleInput(e.target.value)}
+                className="console-input"
+                placeholder="Enter command..."
+                autoComplete="off"
+                spellCheck="false"
+              />
+            </form>
+          </div>
         </div>
       )}
 
@@ -310,26 +417,127 @@ Without this, you'll see duplicates everywhere! 🤯`
           left: 0;
           right: 0;
           background: #000;
-          color: #FF4B4B;
+          color: #fff;
           font-family: 'Courier New', monospace;
           font-size: 14px;
-          padding: 20px;
           box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.8);
           z-index: 9998;
-          max-height: 40vh;
-          overflow-y: auto;
-          border-top: 2px solid #FF4B4B;
+          border-top: 1px solid rgba(255, 255, 255, 0.3);
+          display: flex;
+          flex-direction: column;
+          transition: height 0.1s ease;
+        }
+
+        .console-handle {
+          position: absolute;
+          top: -10px;
+          left: 0;
+          right: 0;
+          height: 20px;
+          background: transparent;
+          cursor: ns-resize;
+          user-select: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+        }
+
+        .handle-grip {
+          background: #666;
+          border-radius: 6px;
+          padding: 4px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .console-handle:hover .handle-grip {
+          background: #777;
+          transform: translateY(-1px);
+        }
+
+        .console-handle:active .handle-grip {
+          background: #555;
+          transform: translateY(0);
+        }
+
+        .handle-dots {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(2, 1fr);
+          gap: 3px;
+        }
+
+        .handle-dots span {
+          display: block;
+          width: 3px;
+          height: 3px;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 50%;
+        }
+
+        .console-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          padding-top: 20px;
+          overflow: hidden;
         }
 
         .console-output {
+          flex: 1;
           margin-bottom: 10px;
           white-space: pre-wrap;
           word-break: break-all;
+          overflow-y: auto;
+          padding-right: 10px;
+        }
+
+        .console-output::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .console-output::-webkit-scrollbar-track {
+          background: #111;
+        }
+
+        .console-output::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+        }
+
+        .console-output::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
         }
 
         .console-line {
           margin: 4px 0;
           line-height: 1.4;
+          color: #fff;
+        }
+
+        .console-line.header {
+          color: #FF4B4B;
+        }
+
+        .console-line.system {
+          color: #fff;
+        }
+
+        .console-line.info {
+          color: #FFD63D;
+        }
+
+        .console-line.command {
+          color: #6ECBFF;
+        }
+
+        .console-line.response {
+          color: #B6FFB3;
         }
 
         .console-input-form {
@@ -340,7 +548,7 @@ Without this, you'll see duplicates everywhere! 🤯`
         }
 
         .console-prompt {
-          color: #FFD63D;
+          color: #fff;
           margin-right: 8px;
         }
 
@@ -348,7 +556,7 @@ Without this, you'll see duplicates everywhere! 🤯`
           flex: 1;
           background: transparent;
           border: none;
-          color: #FF4B4B;
+          color: #fff;
           font-family: inherit;
           font-size: inherit;
           outline: none;
@@ -367,14 +575,67 @@ Without this, you'll see duplicates everywhere! 🤯`
 
           .dev-drawer {
             font-size: 12px;
+            max-height: 50vh;
+          }
+
+          .console-content {
             padding: 15px;
-            max-height: 30vh;
+            padding-top: 30px;
+          }
+          
+          /* Fix console on mobile to prevent viewport issues */
+          .dev-handle {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 20px !important;
+            font-size: 11px !important;
+            z-index: 9999 !important;
+          }
+          
+          .dev-drawer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            font-size: 12px !important;
+            z-index: 9998 !important;
+          }
+          
+          /* Ensure console input doesn't cause zoom */
+          .console-input {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+            -webkit-appearance: none;
+            border-radius: 0;
+          }
+
+          .console-handle {
+            height: 16px;
+            top: -8px;
+          }
+
+          .handle-grip {
+            padding: 3px 8px;
+          }
+
+          .handle-dots {
+            gap: 2px;
+          }
+
+          .handle-dots span {
+            width: 2px;
+            height: 2px;
           }
         }
       `}</style>
     </>
   )
 }
+
+// IMPORTANT: Ensure your layout.tsx or _app.tsx includes:
+// <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+// This prevents horizontal scrolling and zoom issues on mobile devices
 
 export default function WebtoysSitePage() {
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
@@ -383,6 +644,7 @@ export default function WebtoysSitePage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showSecretWidget, setShowSecretWidget] = useState(false)
   const [widgetHovered, setWidgetHovered] = useState(false)
+  const [isMobile, setIsMobile] = useState<boolean | null>(null) // Start as null to avoid hydration mismatch
 
   const showCopiedNotification = (text: string) => {
     setCopiedNotification({ show: true, text })
@@ -509,6 +771,20 @@ export default function WebtoysSitePage() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
+  // Check if mobile - only run on client to avoid hydration issues
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    // Only set mobile state after component mounts (client-side only)
+    if (typeof window !== 'undefined') {
+      checkMobile()
+      window.addEventListener('resize', checkMobile)
+      return () => window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
+
   // Secret widget appearance logic
   useEffect(() => {
     let hasCheckedScroll = false
@@ -561,11 +837,12 @@ export default function WebtoysSitePage() {
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA']
     let konamiIndex = 0
 
+    // Desktop version
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === konamiCode[konamiIndex]) {
         konamiIndex++
         if (konamiIndex === konamiCode.length) {
-          document.body.style.animation = 'rainbow 2s linear infinite'
+          activateKonamiMode()
           konamiIndex = 0
         }
       } else {
@@ -573,20 +850,75 @@ export default function WebtoysSitePage() {
       }
     }
 
+    const activateKonamiMode = () => {
+      document.body.style.animation = 'rainbow 2s linear infinite'
+      alert('🎮 KONAMI MODE ACTIVATED! You unlocked the secret!')
+    }
+
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
   
   // Logo click counter for easter egg
   const [logoClickCount, setLogoClickCount] = useState(0)
+  const [logoTapPattern, setLogoTapPattern] = useState<number[]>([])
+  const [lastLogoTapTime, setLastLogoTapTime] = useState(0)
   
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    setLogoClickCount(prev => prev + 1)
+    const currentTime = Date.now()
     
-    if (logoClickCount === 4) {
-      alert('🎭 YOU FOUND THE SECRET! Text "CHAOS MODE" to unlock premium mayhem.')
-      setLogoClickCount(0)
+    // Desktop: simple 5-click easter egg
+    if (isMobile !== true) { // Handles both false and null states
+      setLogoClickCount(prev => prev + 1)
+      
+      if (logoClickCount === 4) {
+        alert('🎭 YOU FOUND THE SECRET! Text "CHAOS MODE" to unlock premium mayhem.')
+        setLogoClickCount(0)
+      }
+      return
+    }
+    
+    // Mobile: tap pattern detection
+    // Pattern: 2 taps, pause, 2 taps, pause, 4 rapid taps
+    const timeSinceLastTap = currentTime - lastLogoTapTime
+    
+    // If more than 1 second since last tap, start new pattern
+    if (timeSinceLastTap > 1000) {
+      setLogoTapPattern([currentTime])
+    } else {
+      setLogoTapPattern(prev => [...prev, currentTime])
+    }
+    
+    setLastLogoTapTime(currentTime)
+    
+    // Check if pattern matches (allowing some timing flexibility)
+    if (logoTapPattern.length >= 7) { // We're adding the 8th tap
+      const pattern = [...logoTapPattern, currentTime]
+      
+      // Check for: 2 quick taps, pause, 2 quick taps, pause, 4 rapid taps
+      if (pattern.length >= 8) {
+        const gap1 = pattern[2] - pattern[1] // Gap after first 2 taps
+        const gap2 = pattern[4] - pattern[3] // Gap after second 2 taps
+        
+        const isPatternMatch = 
+          pattern[1] - pattern[0] < 500 && // First two taps are quick
+          gap1 > 600 && gap1 < 1500 && // First pause
+          pattern[3] - pattern[2] < 500 && // Second two taps are quick
+          gap2 > 600 && gap2 < 1500 && // Second pause
+          pattern[5] - pattern[4] < 400 && // Last 4 taps are rapid
+          pattern[6] - pattern[5] < 400 &&
+          pattern[7] - pattern[6] < 400
+        
+        if (isPatternMatch) {
+          document.body.style.animation = 'rainbow 2s linear infinite'
+          alert('🎮 MOBILE KONAMI UNLOCKED! You discovered the secret tap rhythm!')
+          setLogoTapPattern([])
+        }
+      }
     }
   }
 
@@ -648,8 +980,16 @@ export default function WebtoysSitePage() {
           {widgetHovered && (
             <div className="widget-hint">
               <div className="hint-text">Psst... try the Konami code:</div>
-              <div className="hint-code">↑ ↑ ↓ ↓ ← → ← → B A</div>
-              <div className="hint-subtext">Break all the rules 🎮</div>
+              <div className="hint-code">
+                {isMobile === true 
+                  ? '👆👆 ⏸ 👆👆 ⏸ 👆👆👆👆' 
+                  : '↑ ↑ ↓ ↓ ← → ← → B A'}
+              </div>
+              <div className="hint-subtext">
+                {isMobile === true 
+                  ? 'Tap the logo with rhythm! 📱' 
+                  : 'Break all the rules 🎮'}
+              </div>
             </div>
           )}
         </div>
@@ -707,7 +1047,10 @@ export default function WebtoysSitePage() {
             <div className="phone-display">
               <div className="sms-header">
                 <span className="sms-icon">💬</span>
-                <span className="sms-number">Try it!<br />Text +1-866-330-0015 with:</span>
+                <span className="sms-number">
+                  <span className="sms-try-it">Try it!</span>
+                  <span className="sms-phone-text">Text +1-866-330-0015 with:</span>
+                </span>
               </div>
               <div className="sms-examples">
                 <div className="sms-bubble" onClick={() => handleSMSBubbleClick("WTAF Build me a fun sushi bar site")}>
@@ -1071,12 +1414,19 @@ export default function WebtoysSitePage() {
           box-sizing: border-box;
         }
         
+        html {
+          overflow-x: hidden;
+          max-width: 100%;
+        }
+        
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           background: var(--cream);
           color: var(--charcoal);
           line-height: 1.6;
           overflow-x: hidden;
+          max-width: 100%;
+          position: relative;
         }
 
         
@@ -1422,6 +1772,17 @@ export default function WebtoysSitePage() {
           font-weight: 700;
           font-style: italic;
           color: var(--blue-deep);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .sms-try-it {
+          display: block;
+        }
+        
+        .sms-phone-text {
+          display: block;
         }
         
         .sms-examples {
@@ -1903,6 +2264,7 @@ export default function WebtoysSitePage() {
         
         .footer-cta h2.ready-title {
           font-size: clamp(2.5rem, 6vw, 4rem);
+          font-weight: 900;
           color: var(--yellow);
           text-transform: uppercase;
           letter-spacing: -2px;
@@ -1925,7 +2287,7 @@ export default function WebtoysSitePage() {
         }
         
         .about-content p {
-          font-size: 1.1rem;
+          font-size: 0.95rem;
           line-height: 1.8;
           margin-bottom: 1.5rem;
           opacity: 0.8;
@@ -2150,10 +2512,60 @@ export default function WebtoysSitePage() {
           }
         }
         
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+          body {
+            -webkit-text-size-adjust: 100%;
+          }
+          
+          .dev-handle, .dev-drawer {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+          }
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
+          /* Prevent horizontal scrolling and zoom on mobile */
+          html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            position: relative !important;
+            touch-action: pan-y !important; /* Allow only vertical scrolling */
+          }
+          
+          /* Prevent zoom on all interactive elements */
+          input, textarea, button, select, a, .dev-handle, .console-handle {
+            touch-action: manipulation !important;
+          }
+          
+          /* Ensure all content respects viewport bounds */
+          .hero, .examples, .how-it-works, .trending, .footer-cta, .footer,
+          .hero-container, .examples-container, .steps-container, .trending-container {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+          }
+          
+          /* Fix floating elements that might cause overflow */
+          .floating-emojis {
+            display: none; /* Hide on mobile to prevent overflow */
+          }
+          
+          .floating-shape {
+            max-width: 100px !important;
+            right: 10px !important;
+            left: auto !important;
+          }
+          
+          .secret-widget {
+            right: 20px !important;
+            max-width: calc(100vw - 40px);
+          }
+          
           .header-neon {
             padding: 60px 20px;
+            overflow: hidden;
           }
           
           .logo-neon {
@@ -2204,10 +2616,10 @@ export default function WebtoysSitePage() {
           
           .phone-display {
             display: block;
-            max-width: none;
+            max-width: calc(100% - 2rem);
             margin: 0 auto 2rem;
             padding: 1.5rem;
-            transform: none;
+            transform: none !important;
           }
           
           .sms-icon {
@@ -2224,6 +2636,29 @@ export default function WebtoysSitePage() {
           
           .steps-grid {
             grid-template-columns: 1fr;
+          }
+          
+          /* Fix rotated phone display on mobile */
+          .phone-display {
+            transform: none !important;
+          }
+          
+          .phone-display:hover {
+            transform: none !important;
+          }
+          
+          /* Disable rotation animations on mobile */
+          .section-title {
+            transform: none !important;
+          }
+          
+          .section-title::after {
+            display: none !important; /* Hide sparkle that might overflow */
+          }
+          
+          /* Ensure step numbers don't rotate on mobile */
+          .step-number {
+            transform: none !important;
           }
           
           .phone-large {
