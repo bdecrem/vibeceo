@@ -951,14 +951,6 @@ export default function WebtoysSitePage() {
           ⚡
         </div>
         <div 
-          className="floating-emoji emoji-4" 
-          style={{
-            transform: `translate(${mousePosition.x * -0.06}px, ${mousePosition.y * 0.06}px)`
-          }}
-        >
-          🎪
-        </div>
-        <div 
           className="floating-emoji emoji-5" 
           style={{
             transform: `translate(${mousePosition.x * 0.07}px, ${mousePosition.y * 0.03}px)`
@@ -1386,38 +1378,59 @@ export default function WebtoysSitePage() {
         }
 
         .emoji-1 {
-          top: 10%;
-          left: 5%;
+          top: 5%;
+          left: 2%;
           animation-duration: 25s;
           animation-delay: 0s;
         }
 
         .emoji-2 {
-          top: 18%;
-          right: 15%;
+          top: 12%;
+          right: 3%;
           animation-duration: 30s;
           animation-delay: 5s;
         }
 
         .emoji-3 {
-          bottom: 25%;
-          left: 12%;
+          bottom: 15%;
+          left: 5%;
           animation-duration: 22s;
           animation-delay: 10s;
         }
 
         .emoji-4 {
-          top: 45%;
-          right: 8%;
+          top: 40%;
+          right: 2%;
           animation-duration: 28s;
           animation-delay: 4s;
         }
 
         .emoji-5 {
-          bottom: 12%;
-          right: 22%;
+          bottom: 5%;
+          right: 8%;
           animation-duration: 35s;
           animation-delay: 7s;
+        }
+
+        .emoji-6 {
+          top: 25%;
+          left: 3%;
+          animation-duration: 35s;
+          animation-delay: 12s;
+        }
+
+        .emoji-7 {
+          top: 65%;
+          right: 5%;
+          animation-duration: 32s;
+          animation-delay: 15s;
+        }
+
+        .emoji-8 {
+          bottom: 25%;
+          right: 15%;
+          animation-duration: 28s;
+          animation-delay: 18s;
         }
 
         @keyframes float-emoji {
