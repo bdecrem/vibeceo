@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webtoys:MUSIC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #8338ec;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #8338ec;
+            box-shadow: 0 0 0 3px rgba(131, 56, 236, 0.2);
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ff006e, #8338ec);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(131, 56, 236, 0.3);
+        }
+        
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .status-text {
+            margin-bottom: 10px;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .progress.active {
+            opacity: 1;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff006e, #8338ec);
+            width: 0%;
+            transition: width 0.3s;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .audio-player {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .error {
+            color: #ff006e;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .audio-controls {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .audio-title {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Webtoys:MUSIC</h1>
+        <p class="subtitle">AI Music Generation</p>
+        
+        <div class="input-group">
+            <label for="prompt">Describe your music</label>
+            <input type="text" id="prompt" placeholder="e.g. minimal dub techno, upbeat jazz, ambient forest sounds" />
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="noVocals" checked />
+            <label for="noVocals">Instrumental</label>
+        </div>
+        
+        <button id="generateBtn" onclick="generateMusic()">Generate Music</button>
+        
+        <div class="status" id="status">
+            <span class="status-text">Ready to create music</span>
+            <div class="progress" id="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+        
+        <div class="audio-player" id="audioPlayer">
+            <div class="audio-controls">
+                <div class="audio-title">Your generated track (1:35)</div>
+                <audio id="audioElement" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let pollInterval = null;
+        let pollAttempts = 0;
+        
+        function updateStatus(text, showProgress = false) {
+            document.getElementById('status').innerHTML = `
+                <span class="status-text">${text}</span>
+                ${showProgress ? '<div class="progress active" id="progress"><div class="progress-bar" id="progressBar"></div></div>' : ''}
+            `;
+        }
+        
+        function updateProgress(percent) {
+            const bar = document.getElementById('progressBar');
+            if (bar) {
+                bar.style.width = percent + '%';
+            }
+        }
+        
+        async function generateMusic() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const noVocals = document.getElementById('noVocals').checked;
+            
+            if (!prompt) {
+                updateStatus('Please enter a music description');
+                return;
+            }
+            
+            const button = document.getElementById('generateBtn');
+            button.disabled = true;
+            document.getElementById('audioPlayer').style.display = 'none';
+            
+            updateStatus('Submitting your request...', true);
+            updateProgress(10);
+            
+            // Build the final prompt
+            let finalPrompt = prompt;
+            if (noVocals && !prompt.toLowerCase().includes('vocal')) {
+                finalPrompt += ', instrumental, no vocals';
+            }
+            
+            try {
+                const response = await fetch('/api/sonauto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: finalPrompt })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                currentTaskId = data.task_id;
+                
+                updateStatus('Generating your music...', true);
+                updateProgress(20);
+                
+                // Start polling
+                pollAttempts = 0;
+                pollForResult();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus(`<span class="error">Error: ${error.message}</span>`);
+                button.disabled = false;
+            }
+        }
+        
+        async function pollForResult() {
+            if (pollAttempts >= 60) { // 2 minutes max
+                updateStatus('<span class="error">Generation timed out. Please try again.</span>');
+                document.getElementById('generateBtn').disabled = false;
+                return;
+            }
+            
+            pollAttempts++;
+            updateProgress(20 + (pollAttempts * 1.3)); // Progress from 20% to ~100%
+            
+            try {
+                const response = await fetch(`/api/sonauto?taskId=${currentTaskId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                let status = data;
+                
+                // Handle string response
+                if (typeof data === 'string') {
+                    status = { status: data };
+                }
+                
+                const statusText = (status.status || '').toUpperCase();
+                
+                if (statusText === 'SUCCESS' || statusText === 'COMPLETED') {
+                    console.log('Success! Full response:', status);
+                    
+                    // Try multiple possible locations for audio URL
+                    const audioUrl = (status.song_paths && status.song_paths[0]) ||
+                                   status.audio_url || 
+                                   status.url ||
+                                   (status.data && status.data.audio_url) ||
+                                   (status.data && status.data.url) ||
+                                   (status.result && status.result.audio_url) ||
+                                   (status.result && status.result.url) ||
+                                   (status.generation && status.generation.audio_url) ||
+                                   (status.generation && status.generation.url);
+                    
+                    if (audioUrl) {
+                        updateStatus('✨ Music generated successfully!');
+                        playAudio(audioUrl);
+                    } else {
+                        updateStatus('<span class="error">Generated but no audio URL found. Check console for details.</span>');
+                        console.log('Could not find audio URL in response:', status);
+                    }
+                    
+                    document.getElementById('generateBtn').disabled = false;
+                    
+                } else if (statusText === 'FAILED' || statusText === 'FAILURE') {
+                    updateStatus('<span class="error">Generation failed. Please try again.</span>');
+                    document.getElementById('generateBtn').disabled = false;
+                    
+                } else {
+                    // Continue polling
+                    setTimeout(pollForResult, 2000);
+                }
+                
+            } catch (error) {
+                console.error('Polling error:', error);
+                setTimeout(pollForResult, 2000);
+            }
+        }
+        
+        function playAudio(url) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioElement = document.getElementById('audioElement');
+            
+            audioElement.src = url;
+            audioPlayer.style.display = 'block';
+            audioElement.play().catch(e => {
+                console.log('Autoplay prevented:', e);
+            });
+        }
+        
+        // Enter key support
+        document.getElementById('prompt').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('generateBtn').disabled) {
+                generateMusic();
+            }
+        });
+    </script>
+</body>
+</html>

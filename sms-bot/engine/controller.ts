@@ -299,6 +299,16 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🚀 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // 🎵 MUSIC: Check for --music flag to force music app generation
+    let isMusicRequest = false;
+    if (userPrompt && (userPrompt.includes('--music '))) {
+        logWithTimestamp("🎵 MUSIC OVERRIDE DETECTED: Using music app builder");
+        // Clean the prompt by removing the music flag
+        userPrompt = userPrompt.replace(/--music\s*/g, '').trim();
+        isMusicRequest = true;
+        logWithTimestamp(`🎵 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
+    
     // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
     let isStackDBRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
@@ -951,6 +961,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         if (isZadApi) {
             promptToProcess = userPrompt + ' ZAD_API_MARKER';
             logWithTimestamp("🚀 Added ZAD_API_MARKER to prompt for comprehensive ZAD with API conversion");
+        }
+        
+        // Add marker for Music if needed
+        if (isMusicRequest) {
+            promptToProcess = userPrompt + ' MUSIC_MARKER';
+            logWithTimestamp("🎵 Added MUSIC_MARKER to prompt for music app generation");
         }
         
         const completePrompt = await generateCompletePrompt(promptToProcess, classifierConfig);

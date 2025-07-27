@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+--music make a simple music creation app where I can select a genre, a bpm, and a few more things and it generates a song with those requirements for me

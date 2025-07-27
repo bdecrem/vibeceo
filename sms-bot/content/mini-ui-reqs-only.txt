@@ -1,0 +1,65 @@
+
+
+## MINIMUM Design System: **WEBTOYS v2.0**
+All apps must follow the rebellious and playful Webtoys visual language:
+
+* **Theme Selection** (Pick ONE per app)
+  * **CHAOS** (Classic): Warm cream bg (#FCFCF7), yellow borders (#FFD63D), purple shadows (#C9C2F9)
+  * **MIDNIGHT**: Dark bg (#0A0A0A), neon green borders (#00FF88), hot pink shadows (#FF00FF)
+  * **BRUTAL**: Clean bg (#F0F0F0), black borders (#000000), red shadows (#FF1744)
+  * **VAPOR**: Pink bg (#FFE0F7), hot pink borders (#FF006E), deep purple shadows (#3700B3)
+
+* **Typography**
+  * Primary: 'Space Grotesk' with system fallback
+  * Mono: 'JetBrains Mono' for code/special text
+  * Scale: 16px base → 20px large → 28px xl → 40px hero → 64px chaos
+  * Headers: UPPERCASE + bold + slight rotation (-2deg to 2deg)
+  * Body: Regular case, 1.6 line height
+  * Special: Mono font for error messages, ASCII art
+
+* **Layout Patterns** (Pick ONE per app)
+  * **CHAOS GRID**: Auto-fit grid (250px min), items randomly rotated (-2deg to 2deg)
+  * **SPLIT PERSONALITY**: Two column (50/50), stacks on mobile
+  * **DOOM SCROLL**: Single column (max 666px), vertical flow
+  * **GLITCH STACK**: Overlapping cards with offset positioning
+
+* **Component Variants**
+  * **Cards**: 
+    - Standard: 4px border, 8px shadow offset, slight rotation
+    - Glitch: Animated sweep effect on hover
+    - Punk: Diagonal stripe border pattern
+    - Destroyed: Asymmetric border radius
+  * **Buttons**:
+    - Anarchy: Bold bg, hard shadow, squish on click
+    - Ghost: Transparent with border, rotates on hover
+    - Danger: Warning emoji slides in on hover
+    - Standard: Uppercase, tracked out, transforms on click
+  * **Inputs**:
+    - 3px borders, mono font
+    - Focus: Scale(1.02) + color shift
+    - Error: Red border + shake animation
+  * **Messages**:
+    - User: Theme secondary color bg
+    - System: Theme primary color bg
+    - Error: Red bg with skull emoji prefix
+    - Success: Green bg with rock emoji prefix
+
+* **Animation Presets**
+  ```css
+  .shake { animation: shake 0.5s; }
+  .glitch-text { animation: glitch-text 2s infinite; }
+  .rebel-bounce { animation: rebel-bounce 2s infinite; }
+  .flicker { animation: flicker 3s infinite; }
+  ```
+
+* **Layout Rules**
+  * **Mobile (< 768px)**:
+    - Full-width with 20px padding
+    - Stack all layouts to single column
+    - 48px minimum tap targets
+    - Cards full width minus padding
+  * **Desktop (≥ 768px)**:
+    - Max width varies by layout (666px-1200px)
+    - Cards maintain aspect ratio
+    - Multi-column layouts activate
+    - Hover states enabled

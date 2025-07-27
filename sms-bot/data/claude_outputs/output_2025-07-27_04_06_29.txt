@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS RADIO BUILDER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --blue: #6ECBFF;
+            --purple: #C9C2F9;
+            --red: #FF4B4B;
+            --mint: #B6FFB3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui;
+            background: var(--cream);
+            padding: 2rem;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--red);
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            transform: rotate(-2deg);
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            transform: rotate(1deg);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 1rem;
+            border: 3px solid var(--yellow);
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        button {
+            background: var(--blue);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 2rem;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: rotate(-1deg) translateY(-2px);
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: rotate(-1deg) translateY(0);
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+        }
+
+        .loading.active {
+            display: block;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .player-card {
+            padding: 2rem;
+            margin: 2rem 0;
+            min-height: 120px;
+        }
+
+        audio {
+            width: 100%;
+            height: 54px;
+            margin: 1rem 0;
+        }
+
+        .feedback {
+            display: none;
+        }
+
+        .feedback.active {
+            display: block;
+        }
+
+        .radio-station {
+            display: none;
+        }
+
+        .radio-station.active {
+            display: block;
+        }
+
+        .seed-display {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ AI Radio Builder</h1>
+        
+        <div class="card">
+            <div class="input-group">
+                <label>Describe your perfect song:</label>
+                <textarea id="prompt" rows="3" placeholder="e.g. Upbeat electronic music with dreamy synths"></textarea>
+            </div>
+            <button onclick="generateFirstSong()">Generate Song 🎵</button>
+        </div>
+
+        <div id="loading" class="loading">
+            Making music magic... (20-30 seconds) 🎹
+        </div>
+
+        <div id="player" class="card player-card" style="display: none">
+            <h3>Your Song:</h3>
+            <audio id="audioPlayer" controls></audio>
+            <div id="seedDisplay" class="seed-display"></div>
+        </div>
+
+        <div id="feedback" class="feedback card">
+            <div class="input-group">
+                <label>How should we adjust it?</label>
+                <input type="text" id="feedbackInput" placeholder="e.g. more bass, slower tempo, add piano">
+            </div>
+            <button onclick="generateVariation()">Adjust Song 🎛️</button>
+        </div>
+
+        <div id="radioStation" class="radio-station card">
+            <h3>Love this vibe? Let's make a radio station!</h3>
+            <button onclick="createRadioStation()">Create Radio Station 📻</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSeed = null;
+        let currentPrompt = '';
+
+        async function generateFirstSong() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return;
+
+            currentPrompt = prompt;
+            showLoading(true);
+            
+            const result = await generateMusic(prompt, true);
+            
+            if (result.success) {
+                currentSeed = result.seed;
+                document.getElementById('player').style.display = 'block';
+                document.getElementById('seedDisplay').textContent = `Song DNA: #${currentSeed}`;
+                document.getElementById('audioPlayer').src = result.audioUrl;
+                document.getElementById('feedback').classList.add('active');
+                document.getElementById('radioStation').classList.add('active');
+            }
+            
+            showLoading(false);
+        }
+
+        async function generateVariation() {
+            const feedback = document.getElementById('feedbackInput').value;
+            if (!feedback) return;
+
+            const newPrompt = `${currentPrompt}, ${feedback}`;
+            showLoading(true);
+
+            const result = await generateMusic(newPrompt, true, currentSeed);
+            
+            if (result.success) {
+                document.getElementById('audioPlayer').src = result.audioUrl;
+            }
+            
+            showLoading(false);
+        }
+
+        async function createRadioStation() {
+            showLoading(true);
+            
+            // Generate 3 variations using the same seed
+            for (let i = 0; i < 3; i++) {
+                const result = await generateMusic(currentPrompt, true, currentSeed);
+                if (result.success) {
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = result.audioUrl;
+                    document.getElementById('radioStation').appendChild(audio);
+                }
+            }
+            
+            showLoading(false);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        // Using the provided API integration code
+        async function generateMusic(prompt, isInstrumental = true, seed = null) {
+            try {
+                const finalPrompt = isInstrumental && !prompt.toLowerCase().includes('vocal') 
+                    ? `${prompt}, instrumental, no vocals` 
+                    : prompt;
+                
+                const requestBody = { prompt: finalPrompt };
+                if (seed) {
+                    requestBody.seed = seed;
+                }
+                
+                const response = await fetch('/api/sonauto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                const taskId = data.task_id;
+                
+                return await pollForCompletion(taskId);
+                
+            } catch (error) {
+                console.error('Generation failed:', error);
+                return null;
+            }
+        }
+
+        async function pollForCompletion(taskId) {
+            const maxAttempts = 60;
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`/api/sonauto?taskId=${taskId}`);
+                    const result = await response.json();
+                    
+                    const status = typeof result === 'string' ? result : result.status;
+                    
+                    if (status === 'SUCCESS' || status === 'COMPLETED') {
+                        const audioUrl = result.song_paths?.[0] || result.url;
+                        const seed = result.seed;
+                        const tags = result.tags;
+                        return { success: true, audioUrl, seed, tags, data: result };
+                    }
+                    
+                    if (status === 'FAILED') {
+                        return { success: false, error: 'Generation failed' };
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    attempts++;
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    attempts++;
+                }
+            }
+            
+            return { success: false, error: 'Generation timed out' };
+        }
+    </script>
+</body>
+</html>

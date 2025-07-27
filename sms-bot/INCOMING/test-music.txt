@@ -1,0 +1,5 @@
+SENDER:+1234567890
+USER_SLUG:test-music
+ORIGINAL_REQUEST:wtaf --music make me a simple music generator where I type a prompt and get a song
+
+wtaf --music make me a simple music generator where I type a prompt and get a song

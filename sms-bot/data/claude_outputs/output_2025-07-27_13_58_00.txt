@@ -1,0 +1,260 @@
+I'll create a Greatest Hits Music Mashup Generator that lets users pick two iconic songs and generate an AI mashup of their styles. I'll use the CHAOS theme with a playful card-based interface.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GREATEST HITS MASHUP MACHINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FCFCF7;
+            --yellow: #FFD63D;
+            --purple: #C9C2F9;
+            --red: #FF4B4B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui;
+            background: var(--cream);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            transform: rotate(-1deg);
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--red);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .song-card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .song-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .song-card.selected {
+            border-color: var(--red);
+            background: #FFF4CC;
+        }
+
+        .song-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .song-artist {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .mashup-section {
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        button {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transform: rotate(-1deg);
+            box-shadow: 4px 4px 0 var(--purple);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: rotate(1deg) scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .player-card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            margin: 2rem auto;
+            max-width: 600px;
+            display: none;
+        }
+
+        .player-card.visible {
+            display: block;
+        }
+
+        audio {
+            width: 100%;
+            margin: 1rem 0;
+            height: 54px;
+        }
+
+        .loading {
+            display: none;
+            font-size: 1.25rem;
+            margin: 2rem 0;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Greatest Hits Mashup Machine 🎵</h1>
+        <p>Pick any two legendary songs and we'll create an AI mashup of their styles!</p>
+    </div>
+
+    <div class="grid" id="songGrid"></div>
+
+    <div class="mashup-section">
+        <button id="mashupBtn" disabled>Create Mashup ✨</button>
+        <div class="loading" id="loading">
+            Generating your mashup... 🎹
+        </div>
+        <div class="player-card" id="playerCard">
+            <h3>Your Magical Mashup</h3>
+            <audio id="audioPlayer" controls></audio>
+            <p id="mashupDescription"></p>
+        </div>
+    </div>
+
+    <script>
+        const songs = [
+            { title: "Bohemian Rhapsody", artist: "Queen", year: 1975 },
+            { title: "Billie Jean", artist: "Michael Jackson", year: 1983 },
+            { title: "Like a Rolling Stone", artist: "Bob Dylan", year: 1965 },
+            { title: "Sweet Dreams", artist: "Eurythmics", year: 1983 },
+            { title: "Smells Like Teen Spirit", artist: "Nirvana", year: 1991 },
+            { title: "Yesterday", artist: "The Beatles", year: 1965 },
+            { title: "Purple Rain", artist: "Prince", year: 1984 },
+            { title: "Respect", artist: "Aretha Franklin", year: 1967 },
+            { title: "Born to Run", artist: "Bruce Springsteen", year: 1975 },
+            { title: "Hotel California", artist: "Eagles", year: 1977 }
+        ];
+
+        let selectedSongs = [];
+
+        function createSongCards() {
+            const grid = document.getElementById('songGrid');
+            songs.forEach(song => {
+                const card = document.createElement('div');
+                card.className = 'song-card';
+                card.innerHTML = `
+                    <div class="song-title">${song.title}</div>
+                    <div class="song-artist">${song.artist} (${song.year})</div>
+                `;
+                card.addEventListener('click', () => toggleSongSelection(card, song));
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleSongSelection(card, song) {
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+                selectedSongs = selectedSongs.filter(s => s.title !== song.title);
+            } else if (selectedSongs.length < 2) {
+                card.classList.add('selected');
+                selectedSongs.push(song);
+            }
+
+            document.getElementById('mashupBtn').disabled = selectedSongs.length !== 2;
+        }
+
+        document.getElementById('mashupBtn').addEventListener('click', async () => {
+            const loading = document.getElementById('loading');
+            const playerCard = document.getElementById('playerCard');
+            const mashupDescription = document.getElementById('mashupDescription');
+
+            loading.style.display = 'block';
+            playerCard.classList.remove('visible');
+
+            const prompt = `Create a mashup combining the style of ${selectedSongs[0].title} by ${selectedSongs[0].artist} with ${selectedSongs[1].title} by ${selectedSongs[1].artist}. Make it instrumental.`;
+
+            try {
+                const result = await generateMusic(prompt);
+                if (result.success) {
+                    document.getElementById('audioPlayer').src = result.audioUrl;
+                    mashupDescription.textContent = `A unique blend of ${selectedSongs[0].title} meets ${selectedSongs[1].title}`;
+                    playerCard.classList.add('visible');
+                }
+            } catch (error) {
+                mashupDescription.textContent = "Oops! Something went wrong. Please try again.";
+            }
+
+            loading.style.display = 'none';
+        });
+
+        createSongCards();
+    </script>
+</body>
+</html>
+```
+
+This app features:
+1. A grid of iconic songs with fun hover effects
+2. Click to select any two songs
+3. Generate button creates an AI mashup
+4. Full audio player with proper styling
+5. Loading state with bouncing animation
+6. Mobile-responsive design
+7. Error handling
+8. CHAOS theme with playful rotations and shadows
+
+The interface is intuitive: click two songs, hit the mashup button, and enjoy your AI-generated creation!
