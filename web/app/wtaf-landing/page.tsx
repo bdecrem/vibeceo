@@ -2722,7 +2722,11 @@ export default function WebtoysSitePage() {
           }
           
           .header-neon {
-            padding: 30px 20px;
+            padding: 60px 20px;
+            min-height: 33vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             overflow: hidden;
           }
           
