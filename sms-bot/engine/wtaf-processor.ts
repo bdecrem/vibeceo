@@ -661,6 +661,14 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 timeout,
                 `GPT ${config.model} call`
             );
+        } else if (config.model.startsWith('together:')) {
+            // Extract the actual model name after 'together:'
+            const togetherModel = config.model.substring('together:'.length);
+            result = await withTimeout(
+                callTogetherAPI(togetherModel, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature),
+                timeout,
+                `Together.ai ${togetherModel} call`
+            );
         } else {
             throw new Error(`Unsupported model: ${config.model}`);
         }
@@ -736,6 +744,13 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                         callClaudeAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature),
                         timeout,
                         `Claude ${fallback.model} fallback call`
+                    );
+                } else if (fallback.model.startsWith('together:')) {
+                    const togetherModel = fallback.model.substring('together:'.length);
+                    fallbackResult = await withTimeout(
+                        callTogetherAPI(togetherModel, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature),
+                        timeout,
+                        `Together.ai ${togetherModel} fallback call`
                     );
                 } else {
                     fallbackResult = await withTimeout(
@@ -858,4 +873,61 @@ async function callOpenAIAPI(model: string, systemPrompt: string, userPrompt: st
     }
     logSuccess(`✅ ${model} response received, length: ${result.length} chars`);
     return result;
+}
+
+/**
+ * Call Together.ai API directly
+ */
+async function callTogetherAPI(model: string, systemPrompt: string, userPrompt: string, maxTokens: number, temperature: number): Promise<string> {
+    const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
+    
+    if (!TOGETHER_API_KEY) {
+        throw new Error("TOGETHER_API_KEY not found in environment");
+    }
+    
+    logWithTimestamp(`🚀 Calling Together.ai: ${model} with ${maxTokens} tokens`);
+    
+    const headers: Record<string, string> = {
+        "Authorization": `Bearer ${TOGETHER_API_KEY}`,
+        "Content-Type": "application/json"
+    };
+    
+    const payload = {
+        model: model,
+        max_tokens: maxTokens,
+        temperature: temperature,
+        messages: [
+            {
+                role: "system",
+                content: systemPrompt
+            },
+            {
+                role: "user",
+                content: userPrompt
+            }
+        ]
+    };
+    
+    const response = await fetch("https://api.together.xyz/v1/chat/completions", {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+    
+    const responseJson = await response.json();
+    logWithTimestamp(`📊 Together.ai response received - status code: ${response.status}`);
+    
+    if (!response.ok) {
+        logError(`Together.ai API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Together.ai API error: ${response.status} ${response.statusText}`);
+    }
+    
+    if (responseJson.choices && responseJson.choices.length > 0 && responseJson.choices[0].message) {
+        const result = responseJson.choices[0].message.content;
+        logSuccess(`✅ ${model} response received, length: ${result.length} chars`);
+        return result;
+    } else {
+        logWarning(`Unexpected Together.ai API response structure: ${JSON.stringify(responseJson)}`);
+        throw new Error("Invalid Together.ai response structure");
+    }
 } 

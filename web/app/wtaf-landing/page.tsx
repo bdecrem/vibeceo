@@ -932,7 +932,7 @@ export default function WebtoysSitePage() {
             transform: `translate(${mousePosition.x * 0.05}px, ${mousePosition.y * 0.05}px)`
           }}
         >
-          🚀
+          ✨
         </div>
         <div 
           className="floating-emoji emoji-2" 
@@ -940,7 +940,7 @@ export default function WebtoysSitePage() {
             transform: `translate(${mousePosition.x * -0.03}px, ${mousePosition.y * -0.03}px)`
           }}
         >
-          💀
+          🚀
         </div>
         <div 
           className="floating-emoji emoji-3" 
@@ -948,7 +948,7 @@ export default function WebtoysSitePage() {
             transform: `translate(${mousePosition.x * 0.04}px, ${mousePosition.y * -0.04}px)`
           }}
         >
-          🔥
+          ⚡
         </div>
         <div 
           className="floating-emoji emoji-4" 
@@ -956,7 +956,7 @@ export default function WebtoysSitePage() {
             transform: `translate(${mousePosition.x * -0.06}px, ${mousePosition.y * 0.06}px)`
           }}
         >
-          ⚡
+          🎪
         </div>
         <div 
           className="floating-emoji emoji-5" 
@@ -964,7 +964,31 @@ export default function WebtoysSitePage() {
             transform: `translate(${mousePosition.x * 0.07}px, ${mousePosition.y * 0.03}px)`
           }}
         >
-          🎭
+          🔮
+        </div>
+        <div 
+          className="floating-emoji emoji-6" 
+          style={{
+            transform: `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)`
+          }}
+        >
+          💎
+        </div>
+        <div 
+          className="floating-emoji emoji-7" 
+          style={{
+            transform: `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * -0.06}px)`
+          }}
+        >
+          🦄
+        </div>
+        <div 
+          className="floating-emoji emoji-8" 
+          style={{
+            transform: `translate(${mousePosition.x * -0.04}px, ${mousePosition.y * 0.04}px)`
+          }}
+        >
+          🎨
         </div>
       </div>
 
@@ -1008,7 +1032,7 @@ export default function WebtoysSitePage() {
       {/* Neon Header */}
       <header className="header-neon">
         <h1 className="logo-neon" onClick={handleLogoClick}>WEBTOYS</h1>
-        <p className="tagline">Professional Websites on Acid</p>
+        <p className="tagline">SHIP FROM YOUR FLIP PHONE</p>
       </header>
       
       {/* Hero Section */}
@@ -1035,9 +1059,7 @@ export default function WebtoysSitePage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              <span className="line1">YOUR WEBSITE</span>
-              <span className="line2">NEEDS THERAPY</span>
-              <span className="line3">Text us. We'll fix that.</span>
+              YOUR WEBSITE NEEDS THERAPY
             </h1>
             
             <p className="hero-description">
@@ -1080,6 +1102,18 @@ export default function WebtoysSitePage() {
       
       {/* Examples Section */}
       <section className="examples examples-mobile-show" id="examples">
+        {/* Gradient Mesh Background for Examples */}
+        <div className="examples-gradient-mesh">
+          <div className="examples-gradient-blob blob-1"></div>
+          <div className="examples-gradient-blob blob-2"></div>
+          <div className="examples-gradient-blob blob-3"></div>
+        </div>
+        
+        {/* Floating shapes for Examples */}
+        <div className="examples-floating-shape shape1"></div>
+        <div className="examples-floating-shape shape2"></div>
+        <div className="examples-floating-shape shape3"></div>
+        
         <div className="examples-container">
           <div className="section-header">
             <h2 className="section-title">FRESH DIGITAL CHAOS</h2>
@@ -1291,7 +1325,6 @@ export default function WebtoysSitePage() {
       {/* About Section */}
       <section className="footer-cta">
         <h2 className="ready-title">Ready to Get Weird?</h2>
-        <p className="era-over">Your boring website era is over.</p>
         <div className="about-content">
           <p>Your app ideas are too spicy for traditional development. Text them to +1-866-330-0015 and we'll turn them into reality faster than you can say "technical debt." While others are stuck in sprint planning, you'll be shipping digital mayhem.</p>
           <p>Warning: Side effects may include uncontrollable creativity and chronic disruption.</p>
@@ -1301,13 +1334,8 @@ export default function WebtoysSitePage() {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
-          <div className="footer-links">
-            <a href="#">About</a>
-            <Link href="/featured">Gallery</Link>
-            <a href="/bart/satin-horse-storytelling">Help</a>
-          </div>
           <p className="footer-copyright">
-            © 2024 WEBTOYS • Made with ✨ and a sprinkle of chaos
+            © 2025 WEBTOYS
           </p>
         </div>
       </footer>
@@ -1343,49 +1371,51 @@ export default function WebtoysSitePage() {
           width: 100%;
           height: 100%;
           pointer-events: none;
-          z-index: 1;
+          z-index: 9999;
           overflow: hidden;
         }
 
         .floating-emoji {
           position: absolute;
-          font-size: 3rem;
-          opacity: 0.15;
-          animation: float-emoji 20s infinite linear;
+          font-size: 2.5rem;
+          opacity: 1;
+          animation: float-emoji 30s infinite linear;
           transition: transform 0.3s ease-out;
+          z-index: 10;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
         .emoji-1 {
           top: 10%;
-          left: 15%;
+          left: 5%;
           animation-duration: 25s;
           animation-delay: 0s;
         }
 
         .emoji-2 {
-          top: 70%;
-          right: 10%;
+          top: 18%;
+          right: 15%;
           animation-duration: 30s;
           animation-delay: 5s;
         }
 
         .emoji-3 {
-          top: 30%;
-          right: 25%;
+          bottom: 25%;
+          left: 12%;
           animation-duration: 22s;
           animation-delay: 10s;
         }
 
         .emoji-4 {
-          bottom: 20%;
-          left: 8%;
+          top: 45%;
+          right: 8%;
           animation-duration: 28s;
-          animation-delay: 15s;
+          animation-delay: 4s;
         }
 
         .emoji-5 {
-          top: 50%;
-          left: 50%;
+          bottom: 12%;
+          right: 22%;
           animation-duration: 35s;
           animation-delay: 7s;
         }
@@ -1433,7 +1463,7 @@ export default function WebtoysSitePage() {
         /* Neon Header */
         .header-neon {
           background: #0A0A0A;
-          padding: 80px 20px;
+          padding: 40px 20px;
           text-align: center;
           position: relative;
           overflow: hidden;
@@ -1458,9 +1488,9 @@ export default function WebtoysSitePage() {
         }
 
         .logo-neon {
-          font-size: clamp(3rem, 10vw, 8rem);
-          font-weight: 900;
-          letter-spacing: -3px;
+          font-size: clamp(2.5rem, 8vw, 6rem);
+          font-weight: 800;
+          letter-spacing: -2px;
           margin: 0;
           color: var(--cream);
           text-transform: uppercase;
@@ -1518,7 +1548,7 @@ export default function WebtoysSitePage() {
           display: flex;
           align-items: center;
           position: relative;
-          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--cream) 40%, rgba(108,203,255,0.15) 100%);
+          background: #FEFEF5;
           overflow: hidden;
         }
 
@@ -1531,7 +1561,8 @@ export default function WebtoysSitePage() {
           height: 100%;
           overflow: hidden;
           z-index: 0;
-          opacity: 0.4;
+          opacity: 0;
+          display: none;
         }
 
         .gradient-blob {
@@ -1597,6 +1628,7 @@ export default function WebtoysSitePage() {
           overflow: hidden;
           z-index: 2;
           pointer-events: none;
+          display: none;
         }
 
         .glitch-line {
@@ -1646,7 +1678,8 @@ export default function WebtoysSitePage() {
         /* Floating elements */
         .floating-shape {
           position: absolute;
-          opacity: 0.3;
+          opacity: 0;
+          display: none;
           animation: float-shape 20s infinite ease-in-out;
         }
         
@@ -1702,38 +1735,35 @@ export default function WebtoysSitePage() {
         }
         
         .hero-title {
-          font-size: clamp(3.5rem, 8vw, 6rem);
-          font-weight: 900;
-          line-height: 0.9;
-          margin-bottom: 1.5rem;
+          font-size: clamp(2rem, 4vw, 3.5rem);
+          font-weight: 700;
+          line-height: 1.1;
+          margin-bottom: 2.5rem;
           text-transform: uppercase;
-          letter-spacing: -3px;
-        }
-        
-        .line1 {
-          color: var(--red);
-          display: block;
-        }
-        
-        .line2 {
-          color: var(--blue-deep);
-          display: block;
-          margin-left: 2rem;
-        }
-        
-        .line3 {
-          color: var(--charcoal);
-          display: block;
-          font-size: 0.7em;
           letter-spacing: -1px;
-          margin-top: 0.2em;
+          color: var(--red);
+          transform: rotate(-2deg);
+          display: inline-block;
+        }
+        
+        .hero-subtitle {
+          font-size: clamp(1.5rem, 3vw, 2rem);
+          font-weight: 700;
+          color: var(--charcoal);
+          text-transform: uppercase;
+          letter-spacing: -1px;
+          margin-bottom: 2rem;
         }
         
         .hero-description {
-          font-size: 1.5rem;
+          font-size: 1.1rem;
           color: var(--gray-warm);
           margin-bottom: 3rem;
-          font-weight: 500;
+          font-weight: 400;
+          line-height: 1.6;
+          max-width: 700px;
+          margin-left: auto;
+          margin-right: auto;
         }
         
         /* Phone Display */
@@ -1865,7 +1895,97 @@ export default function WebtoysSitePage() {
         /* Examples Section */
         .examples {
           padding: 6rem 2rem;
-          background: var(--white-pure);
+          background: linear-gradient(135deg, rgba(255,214,61,0.15) 0%, var(--white-pure) 40%, rgba(110,203,255,0.1) 100%);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        /* Examples section gradient mesh */
+        .examples-gradient-mesh {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 0;
+          opacity: 0.3;
+        }
+        
+        .examples-gradient-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          mix-blend-mode: multiply;
+          animation: blob-move 30s infinite ease-in-out;
+        }
+        
+        .examples-gradient-blob.blob-1 {
+          width: 600px;
+          height: 600px;
+          background: linear-gradient(45deg, var(--red), var(--purple-accent));
+          top: -200px;
+          left: -200px;
+          animation-duration: 35s;
+        }
+        
+        .examples-gradient-blob.blob-2 {
+          width: 500px;
+          height: 500px;
+          background: linear-gradient(45deg, var(--blue), var(--green-mint));
+          bottom: -150px;
+          right: -150px;
+          animation-duration: 40s;
+          animation-delay: 10s;
+        }
+        
+        .examples-gradient-blob.blob-3 {
+          width: 400px;
+          height: 400px;
+          background: linear-gradient(45deg, var(--yellow), var(--red));
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation-duration: 45s;
+          animation-delay: 20s;
+        }
+        
+        /* Examples floating shapes */
+        .examples-floating-shape {
+          position: absolute;
+          opacity: 0.2;
+          animation: float-shape 20s infinite ease-in-out;
+          z-index: 1;
+        }
+        
+        .examples-floating-shape.shape1 {
+          width: 150px;
+          height: 150px;
+          background: var(--green-mint);
+          border-radius: 50%;
+          top: 10%;
+          right: 5%;
+          animation-delay: 0s;
+        }
+        
+        .examples-floating-shape.shape2 {
+          width: 120px;
+          height: 120px;
+          background: var(--purple-accent);
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          top: 60%;
+          left: 5%;
+          animation-delay: 5s;
+        }
+        
+        .examples-floating-shape.shape3 {
+          width: 80px;
+          height: 80px;
+          background: var(--red-soft);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          bottom: 20%;
+          right: 15%;
+          animation-delay: 10s;
         }
         
         @media (max-width: 768px) {
@@ -1877,6 +1997,8 @@ export default function WebtoysSitePage() {
         .examples-container {
           max-width: 1400px;
           margin: 0 auto;
+          position: relative;
+          z-index: 2;
         }
         
         .section-header {
@@ -1885,14 +2007,15 @@ export default function WebtoysSitePage() {
         }
         
         .section-title {
-          font-size: 3.5rem;
-          color: var(--blue-deep);
+          font-size: clamp(2rem, 4vw, 3.5rem);
+          color: var(--red);
           margin-bottom: 1rem;
           text-transform: uppercase;
-          font-weight: 900;
-          letter-spacing: -2px;
+          font-weight: 700;
+          letter-spacing: -1px;
           position: relative;
           display: inline-block;
+          transform: rotate(-2deg);
         }
         
         .section-title::after {
@@ -2057,7 +2180,7 @@ export default function WebtoysSitePage() {
         /* How it Works */
         .how-it-works {
           padding: 6rem 2rem;
-          background: linear-gradient(180deg, var(--white-pure) 0%, var(--cream) 100%);
+          background: var(--cream);
         }
         
         .steps-container {
@@ -2121,8 +2244,9 @@ export default function WebtoysSitePage() {
         
         .step-description {
           color: var(--gray-warm);
-          font-size: 1.1rem;
+          font-size: 1rem;
           line-height: 1.6;
+          font-weight: 400;
         }
         
         /* Trending Section */
@@ -2263,20 +2387,20 @@ export default function WebtoysSitePage() {
         }
         
         .footer-cta h2.ready-title {
-          font-size: clamp(2.5rem, 6vw, 4rem);
-          font-weight: 900;
+          font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+          font-weight: 700;
           color: var(--yellow);
           text-transform: uppercase;
-          letter-spacing: -2px;
+          letter-spacing: 0;
           margin-bottom: 1rem;
-          text-shadow: 0 0 20px rgba(255, 214, 61, 0.5);
+          text-shadow: 0 0 30px rgba(255, 214, 61, 0.4);
         }
         
         .footer-cta .era-over {
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           color: var(--blue);
-          text-transform: uppercase;
-          letter-spacing: 2px;
+          text-transform: none;
+          letter-spacing: normal;
           margin-bottom: 3rem;
           text-shadow: 0 0 10px rgba(110, 203, 255, 0.5);
         }
@@ -2334,7 +2458,7 @@ export default function WebtoysSitePage() {
         .footer {
           background: var(--charcoal);
           color: white;
-          padding: 3rem 2rem;
+          padding: 1rem 2rem;
           text-align: center;
         }
         
@@ -2552,6 +2676,27 @@ export default function WebtoysSitePage() {
             display: none; /* Hide on mobile to prevent overflow */
           }
           
+          .emoji-6 {
+            top: 35%;
+            left: 35%;
+            animation-duration: 35s;
+            animation-delay: 12s;
+          }
+          
+          .emoji-7 {
+            top: 55%;
+            right: 35%;
+            animation-duration: 32s;
+            animation-delay: 15s;
+          }
+          
+          .emoji-8 {
+            bottom: 35%;
+            left: 20%;
+            animation-duration: 28s;
+            animation-delay: 18s;
+          }
+          
           .floating-shape {
             max-width: 100px !important;
             right: 10px !important;
@@ -2564,7 +2709,7 @@ export default function WebtoysSitePage() {
           }
           
           .header-neon {
-            padding: 60px 20px;
+            padding: 30px 20px;
             overflow: hidden;
           }
           
@@ -2607,7 +2752,7 @@ export default function WebtoysSitePage() {
           }
           
           .hero-title {
-            font-size: 3rem;
+            font-size: 2rem;
           }
           
           .line2 {
