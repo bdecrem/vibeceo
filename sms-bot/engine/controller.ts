@@ -135,9 +135,9 @@ const REQUEST_CONFIGS = {
         builderTemperature: 0.5   // More conservative for edits
     },
     game: {
-        builderModel: 'gpt-4o',    // Games might work better with GPT?
-        builderMaxTokens: 16000,
-        builderTemperature: 0.3
+        builderModel: 'together:Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8',  // Using Together.ai with Qwen3 large coder
+        builderMaxTokens: 8192,
+        builderTemperature: 0.7
     },
     zad: {
         classifierModel: 'gpt-4o',
