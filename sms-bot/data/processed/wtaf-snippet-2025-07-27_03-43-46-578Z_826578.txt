@@ -1,0 +1,7 @@
+SENDER:+16508989508
+USER_SLUG:bart
+--music Sound Emoji Mixer 🎵➕😀  Drag and drop emojis into a "mixing bowl". The combination creates a unique song:
+  - 🌊 + 🌅 = "ocean waves at sunset, peaceful"
+  - 🤖 + 🎸 = "robot rock, electronic guitar"
+  - 🌮 + 🎺 = "mariachi food truck vibes"
+  Mix up to 3 emojis. Shake the bowl to generate!

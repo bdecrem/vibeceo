@@ -1,0 +1,250 @@
+I'll create a music mashup app that lets users pick from classic hits and generate AI mashups. I'll use the CHAOS theme with floating cards and playful interactions.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLASSIC HITS MASHUP MACHINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FCFCF7;
+            --yellow: #FFD63D;
+            --purple: #C9C2F9;
+            --red: #FF4B4B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui;
+            background: var(--cream);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--red);
+            text-align: center;
+            transform: rotate(-2deg);
+            margin-bottom: 2rem;
+        }
+
+        .hits-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hit-card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .hit-card:hover {
+            transform: translateY(-5px) rotate(2deg);
+        }
+
+        .hit-card.selected {
+            border-color: var(--red);
+            background: #fff4cc;
+        }
+
+        .mashup-section {
+            max-width: 600px;
+            margin: 3rem auto;
+            text-align: center;
+        }
+
+        button {
+            background: var(--yellow);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 var(--purple);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0 var(--purple);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 2px 2px 0 var(--purple);
+        }
+
+        .loading {
+            display: none;
+            margin: 2rem 0;
+            font-size: 1.2rem;
+        }
+
+        .player-container {
+            margin: 2rem 0;
+            padding: 2rem;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            min-height: 120px;
+        }
+
+        audio {
+            width: 100%;
+            height: 54px;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>CLASSIC HITS MASHUP MACHINE ✨</h1>
+
+    <div class="hits-container">
+        <div class="hit-card" data-prompt="classic rock anthem with electric guitar riffs like Queen's Bohemian Rhapsody">
+            <h3>Bohemian Rhapsody</h3>
+            <p>Queen (1975)</p>
+        </div>
+        <div class="hit-card" data-prompt="funky disco groove like Stayin' Alive by the Bee Gees">
+            <h3>Stayin' Alive</h3>
+            <p>Bee Gees (1977)</p>
+        </div>
+        <div class="hit-card" data-prompt="smooth pop ballad like Billie Jean by Michael Jackson">
+            <h3>Billie Jean</h3>
+            <p>Michael Jackson (1982)</p>
+        </div>
+        <div class="hit-card" data-prompt="upbeat pop rock like Sweet Dreams by Eurythmics">
+            <h3>Sweet Dreams</h3>
+            <p>Eurythmics (1983)</p>
+        </div>
+        <div class="hit-card" data-prompt="energetic pop punk like Smells Like Teen Spirit">
+            <h3>Smells Like Teen Spirit</h3>
+            <p>Nirvana (1991)</p>
+        </div>
+        <div class="hit-card" data-prompt="R&B pop fusion like I Will Always Love You">
+            <h3>I Will Always Love You</h3>
+            <p>Whitney Houston (1992)</p>
+        </div>
+    </div>
+
+    <div class="mashup-section">
+        <button id="generateBtn" disabled>Pick Two Songs to Mashup!</button>
+        <div class="loading">Generating your mashup... (20-30 seconds) 🎵</div>
+        <div class="player-container">
+            <audio id="audioPlayer" controls></audio>
+        </div>
+    </div>
+
+    <script>
+        const cards = document.querySelectorAll('.hit-card');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.querySelector('.loading');
+        const audioPlayer = document.getElementById('audioPlayer');
+        let selectedCards = [];
+
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                if (card.classList.contains('selected')) {
+                    card.classList.remove('selected');
+                    selectedCards = selectedCards.filter(c => c !== card);
+                } else if (selectedCards.length < 2) {
+                    card.classList.add('selected');
+                    selectedCards.push(card);
+                }
+
+                generateBtn.disabled = selectedCards.length !== 2;
+            });
+        });
+
+        generateBtn.addEventListener('click', async () => {
+            const prompts = selectedCards.map(card => card.dataset.prompt);
+            const mashupPrompt = `Create a musical mashup combining elements of ${prompts[0]} and ${prompts[1]}. Make it instrumental.`;
+
+            generateBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const result = await generateMusic(mashupPrompt);
+                if (result.success) {
+                    audioPlayer.src = result.audioUrl;
+                    audioPlayer.play();
+                }
+            } catch (error) {
+                alert('Failed to generate mashup. Please try again!');
+            }
+
+            loading.style.display = 'none';
+            generateBtn.disabled = false;
+        });
+
+        async function generateMusic(prompt) {
+            const response = await fetch('/api/sonauto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+
+            const data = await response.json();
+            return await pollForCompletion(data.task_id);
+        }
+
+        async function pollForCompletion(taskId) {
+            const maxAttempts = 60;
+            let attempts = 0;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`/api/sonauto?taskId=${taskId}`);
+                    const result = await response.json();
+                    
+                    const status = typeof result === 'string' ? result : result.status;
+                    
+                    if (status === 'SUCCESS' || status === 'COMPLETED') {
+                        const audioUrl = result.song_paths?.[0] || result.url;
+                        return { success: true, audioUrl };
+                    }
+                    
+                    if (status === 'FAILED') {
+                        return { success: false, error: 'Generation failed' };
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    attempts++;
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    attempts++;
+                }
+            }
+            
+            return { success: false, error: 'Generation timed out' };
+        }
+    </script>
+</body>
+</html>

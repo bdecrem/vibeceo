@@ -1,0 +1,314 @@
+I'll create a playful yet professional music playlist generator that helps users refine their music through feedback and create radio stations. I'll use the CHAOS theme from WEBTOYS v2.0 with cream background, yellow borders, and purple shadows.
+
+Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS RADIO BUILDER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FCFCF7;
+            --yellow: #FFD63D;
+            --purple: #C9C2F9;
+            --red: #FF4B4B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--cream);
+            padding: 2rem;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        h1, h2 {
+            text-transform: uppercase;
+            font-weight: bold;
+            transform: rotate(-1deg);
+            margin-bottom: 2rem;
+            color: var(--red);
+        }
+
+        .container {
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            transform: rotate(1deg);
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 3px solid var(--yellow);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+            background: var(--cream);
+        }
+
+        button {
+            background: var(--yellow);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            box-shadow: 4px 4px 0 var(--purple);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: rotate(1deg) scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.98);
+            box-shadow: 2px 2px 0 var(--purple);
+        }
+
+        .status {
+            font-family: 'JetBrains Mono', monospace;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status.generating {
+            background: var(--yellow);
+            animation: pulse 2s infinite;
+        }
+
+        .player-card {
+            padding: 2rem;
+            min-height: 120px;
+        }
+
+        audio {
+            width: 100%;
+            height: 54px;
+            margin: 1rem 0;
+        }
+
+        .feedback-history {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Radio Vibes Builder</h1>
+        
+        <div class="card">
+            <h2>1. Start Your Radio Journey</h2>
+            <input type="text" id="initialPrompt" placeholder="Describe your perfect song (e.g. 'upbeat jazz with heavy bass')" />
+            <button onclick="generateInitialSong()">Generate First Song ✨</button>
+        </div>
+
+        <div class="card player-card" id="playerCard" style="display: none;">
+            <h2>2. Listen & Refine</h2>
+            <audio id="audioPlayer" controls></audio>
+            <div id="currentPrompt" class="feedback-history"></div>
+            <textarea id="feedback" placeholder="How should we adjust this? (e.g. 'more bass', 'slower tempo', 'add piano')" rows="3"></textarea>
+            <button onclick="generateRefinedSong()">Refine The Vibe 🎨</button>
+        </div>
+
+        <div class="card" id="radioCard" style="display: none;">
+            <h2>3. Create Your Radio</h2>
+            <p>Love this vibe? Let's make more songs like this!</p>
+            <button onclick="createRadioStation()">Start Radio Station 📻</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        let currentPrompt = '';
+        let feedbackHistory = [];
+
+        async function generateInitialSong() {
+            const prompt = document.getElementById('initialPrompt').value;
+            if (!prompt) {
+                showError("Please describe your perfect song first! 🎵");
+                return;
+            }
+            
+            currentPrompt = prompt;
+            await generateMusic(prompt);
+            document.getElementById('playerCard').style.display = 'block';
+            updatePromptHistory();
+        }
+
+        async function generateRefinedSong() {
+            const feedback = document.getElementById('feedback').value;
+            if (!feedback) {
+                showError("Please provide some feedback first! 🎯");
+                return;
+            }
+
+            feedbackHistory.push(feedback);
+            currentPrompt = `${currentPrompt}, ${feedback}`;
+            await generateMusic(currentPrompt);
+            document.getElementById('radioCard').style.display = 'block';
+            updatePromptHistory();
+            document.getElementById('feedback').value = '';
+        }
+
+        async function createRadioStation() {
+            showStatus("Creating your radio station... 📻");
+            // Generate 3 similar songs
+            for (let i = 0; i < 3; i++) {
+                await generateMusic(currentPrompt);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            showStatus("Your radio station is ready! 🎉");
+        }
+
+        async function generateMusic(prompt) {
+            showStatus("Generating your music... 🎵");
+            try {
+                const response = await fetch('/api/sonauto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt + ", instrumental, no vocals" })
+                });
+                
+                const data = await response.json();
+                const result = await pollForCompletion(data.task_id);
+                
+                if (result.success) {
+                    const audio = document.getElementById('audioPlayer');
+                    audio.src = result.audioUrl;
+                    audio.play();
+                    showStatus("Ready to play! 🎧");
+                } else {
+                    showError("Oops! Something went wrong. Try again! 🎸");
+                }
+            } catch (error) {
+                showError("Connection error. Check your internet! 🌐");
+            }
+        }
+
+        async function pollForCompletion(taskId) {
+            const maxAttempts = 60;
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`/api/sonauto?taskId=${taskId}`);
+                    const result = await response.json();
+                    
+                    const status = typeof result === 'string' ? result : result.status;
+                    
+                    if (status === 'SUCCESS' || status === 'COMPLETED') {
+                        return { 
+                            success: true, 
+                            audioUrl: result.song_paths?.[0] || result.url 
+                        };
+                    }
+                    
+                    if (status === 'FAILED') {
+                        return { success: false };
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    attempts++;
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    attempts++;
+                }
+            }
+            
+            return { success: false };
+        }
+
+        function showStatus(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status generating';
+        }
+
+        function showError(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status shake';
+        }
+
+        function updatePromptHistory() {
+            const historyElement = document.getElementById('currentPrompt');
+            historyElement.innerHTML = `<strong>Current vibe:</strong> ${currentPrompt}<br>
+                ${feedbackHistory.map(f => `<br>↳ ${f}`).join('')}`;
+        }
+    </script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. A three-step process for building a personalized radio station
+2. Full error handling and status updates
+3. History tracking of all refinements
+4. Playful WEBTOYS styling with rotated cards and fun animations
+5. Mobile-responsive design
+6. Clear user feedback and guidance
+7. Complete audio player integration
+8. Feedback history display
+
+The interface guides users through:
+1. Initial song description
+2. Listening and refinement
+3. Radio station creation
+
+All styled with the CHAOS theme's cream/yellow/purple color scheme and playful rotated elements.

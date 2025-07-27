@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS Beat Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --blue: #6ECBFF;
+            --purple: #C9C2F9;
+            --red: #FF4B4B;
+            --green: #B6FFB3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui;
+            background: var(--cream);
+            color: #2A2A2A;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-transform: uppercase;
+            color: var(--red);
+            transform: rotate(-2deg);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .track-section {
+            background: white;
+            border: 4px solid var(--yellow);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 0 var(--purple);
+            transform: rotate(1deg);
+        }
+
+        .track-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--blue);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem;
+            border: 3px solid var(--yellow);
+            border-radius: 0.5rem;
+            font-family: 'Space Grotesk', system-ui;
+            font-size: 1rem;
+        }
+
+        button {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: rotate(1deg) scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .player-wrapper {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.5);
+            border-radius: 0.5rem;
+        }
+
+        audio {
+            width: 100%;
+            height: 54px;
+            margin: 1rem 0;
+        }
+
+        .status {
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            background: var(--green);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Beat Builder</h1>
+
+        <div class="track-section">
+            <h2>🥁 Drums</h2>
+            <div class="input-group">
+                <input type="text" id="drumPrompt" placeholder="Describe your drum beat..." value="Hip hop drums with heavy kick">
+                <button onclick="generateDrums()">Generate Beat</button>
+            </div>
+            <div id="drumStatus" class="status"></div>
+            <div class="player-wrapper">
+                <audio id="drumPlayer" controls></audio>
+            </div>
+        </div>
+
+        <div class="track-section">
+            <h2>🎸 Bass</h2>
+            <div class="input-group">
+                <input type="text" id="bassPrompt" placeholder="Describe your bass line..." value="Deep funky bassline">
+                <button onclick="generateBass()">Add Bass</button>
+            </div>
+            <div id="bassStatus" class="status"></div>
+            <div class="player-wrapper">
+                <audio id="bassPlayer" controls></audio>
+            </div>
+        </div>
+
+        <div class="track-section">
+            <h2>🎹 Melody</h2>
+            <div class="input-group">
+                <input type="text" id="melodyPrompt" placeholder="Describe your melody..." value="Smooth jazzy piano melody">
+                <button onclick="generateMelody()">Add Melody</button>
+            </div>
+            <div id="melodyStatus" class="status"></div>
+            <div class="player-wrapper">
+                <audio id="melodyPlayer" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function generateMusic(prompt, elementId, statusId) {
+            const status = document.getElementById(statusId);
+            const player = document.getElementById(elementId);
+            
+            status.textContent = "Generating your music... (20-30 seconds)";
+            status.classList.add("visible", "loading");
+
+            try {
+                const response = await fetch('/api/sonauto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        prompt: prompt + ", instrumental, no vocals" 
+                    })
+                });
+                
+                const data = await response.json();
+                const result = await pollForCompletion(data.task_id);
+                
+                if (result.success) {
+                    player.src = result.audioUrl;
+                    status.textContent = "✨ Generation complete!";
+                    status.classList.remove("loading");
+                } else {
+                    status.textContent = "❌ Generation failed. Please try again.";
+                    status.classList.remove("loading");
+                }
+            } catch (error) {
+                status.textContent = "❌ Error: " + error.message;
+                status.classList.remove("loading");
+            }
+        }
+
+        async function pollForCompletion(taskId) {
+            const maxAttempts = 60;
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`/api/sonauto?taskId=${taskId}`);
+                    const result = await response.json();
+                    
+                    const status = typeof result === 'string' ? result : result.status;
+                    
+                    if (status === 'SUCCESS' || status === 'COMPLETED') {
+                        const audioUrl = result.song_paths?.[0] || result.url;
+                        return { success: true, audioUrl };
+                    }
+                    
+                    if (status === 'FAILED') {
+                        return { success: false, error: 'Generation failed' };
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    attempts++;
+                } catch (error) {
+                    attempts++;
+                }
+            }
+            
+            return { success: false, error: 'Generation timed out' };
+        }
+
+        function generateDrums() {
+            const prompt = document.getElementById('drumPrompt').value;
+            generateMusic(prompt, 'drumPlayer', 'drumStatus');
+        }
+
+        function generateBass() {
+            const prompt = document.getElementById('bassPrompt').value;
+            generateMusic(prompt, 'bassPlayer', 'bassStatus');
+        }
+
+        function generateMelody() {
+            const prompt = document.getElementById('melodyPrompt').value;
+            generateMusic(prompt, 'melodyPlayer', 'melodyStatus');
+        }
+    </script>
+</body>
+</html>

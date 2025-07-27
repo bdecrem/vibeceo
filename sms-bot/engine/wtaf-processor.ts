@@ -219,6 +219,16 @@ ZERO_ADMIN_DATA: true
 APP_TYPE: zero_admin_data`;
             logWithTimestamp("🚀 ZAD-api override: Created comprehensive ZAD with API conversion prompt without classifier");
         }
+        // 🎵 MUSIC OVERRIDE CHECK: Skip classifier entirely if music marker is present
+        else if (cleanedInput.includes('MUSIC_MARKER')) {
+            logWithTimestamp("🎵 MUSIC OVERRIDE: Skipping classifier, going to music app builder");
+            expandedPrompt = `MUSIC_APP_REQUEST: ${cleanedInput.replace('MUSIC_MARKER', '').trim()}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: false
+APP_TYPE: music_app`;
+            logWithTimestamp("🎵 Music override: Created music app prompt without classifier");
+        }
         // 🌐 PUBLIC ZAD OVERRIDE CHECK: Skip classifier entirely if public keyword is present
         else if (cleanedInput.toLowerCase().includes('public')) {
             logWithTimestamp("🌐 PUBLIC ZAD OVERRIDE: Detected 'public' keyword - skipping classifier");
@@ -458,6 +468,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-zad-comprehensive.txt';
         builderType = 'Comprehensive ZAD Builder (.txt)';
         logWithTimestamp(`🎨 Using .txt comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
+    } else if (userPrompt.includes('MUSIC_APP_REQUEST:')) {
+        logWithTimestamp(`🎵 MUSIC_APP_REQUEST detected - using music app builder`);
+        // Extract the user request from the music app request
+        const requestMatch = userPrompt.match(/MUSIC_APP_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("MUSIC_APP_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🎵 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-music.txt';
+        builderType = 'Music App Builder';
+        logWithTimestamp(`🎵 Using music app builder for: ${userRequest.slice(0, 50)}...`);
     } else {
         // Standard app
         builderFile = 'builder-app.json';
