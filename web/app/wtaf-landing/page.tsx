@@ -2684,9 +2684,9 @@ export default function WebtoysSitePage() {
             max-width: 100% !important;
           }
           
-          /* Fix floating elements that might cause overflow */
+          /* Keep floating emojis visible on mobile */
           .floating-emojis {
-            display: none; /* Hide on mobile to prevent overflow */
+            overflow: hidden !important;
           }
           
           .emoji-6 {
