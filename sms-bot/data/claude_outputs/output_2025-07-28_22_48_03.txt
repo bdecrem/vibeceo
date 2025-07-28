@@ -1,0 +1,585 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pac-Man</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            background: #000;
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+        }
+        .hidden {
+            display: none;
+        }
+        h1 {
+            font-size: 48px;
+            color: #FF0;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #FF0;
+        }
+        p {
+            font-size: 20px;
+            margin: 10px 0;
+            max-width: 80%;
+        }
+        button {
+            background: #FF0;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .controls {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+        }
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+        .d-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            user-select: none;
+        }
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 3; }
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="introScreen" class="screen">
+        <h1>PAC-MAN</h1>
+        <p>Eat all the dots while avoiding ghosts!</p>
+        <p>Use arrow keys or on-screen controls to move</p>
+        <button id="startButton">START GAME</button>
+    </div>
+
+    <div id="gameScreen" class="screen hidden">
+        <div class="score-display">SCORE: <span id="score">0</span></div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="controls">
+            <div class="d-pad">
+                <div class="d-btn up">↑</div>
+                <div class="d-btn left">←</div>
+                <div class="d-btn right">→</div>
+                <div class="d-btn down">↓</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="endScreen" class="screen hidden">
+        <h1>GAME OVER</h1>
+        <p>Your Score: <span id="finalScore">0</span></p>
+        <button id="restartButton">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        var introScreen = document.getElementById('introScreen');
+        var gameScreen = document.getElementById('gameScreen');
+        var endScreen = document.getElementById('endScreen');
+        var startButton = document.getElementById('startButton');
+        var restartButton = document.getElementById('restartButton');
+        var scoreElement = document.getElementById('score');
+        var finalScoreElement = document.getElementById('finalScore');
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+
+        var controlsHeight = 120;
+        var blockSize = 0;
+        var gridWidth = 19;
+        var gridHeight = 21;
+        var score = 0;
+        var gameRunning = false;
+        var lastTime = 0;
+        var gameInterval = 150; // ms per update
+        var accumulatedTime = 0;
+
+        // Game grid (1 = wall, 0 = dot, 2 = empty, 3 = power pellet)
+        var grid = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+            [1,3,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,3,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
+            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+            [1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1],
+            [2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2],
+            [1,1,1,1,0,1,2,1,1,2,1,1,2,1,0,1,1,1,1],
+            [2,2,2,2,0,2,2,1,2,2,2,1,2,2,0,2,2,2,2],
+            [1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1],
+            [2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2],
+            [1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+            [1,3,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,3,1],
+            [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
+            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        var dots = [];
+        var powerPellets = [];
+        var walls = [];
+
+        // Initialize game objects from grid
+        function initGameObjects() {
+            dots = [];
+            powerPellets = [];
+            walls = [];
+            
+            for (var y = 0; y < gridHeight; y++) {
+                for (var x = 0; x < gridWidth; x++) {
+                    if (grid[y][x] === 0) {
+                        dots.push({x: x, y: y});
+                    } else if (grid[y][x] === 3) {
+                        powerPellets.push({x: x, y: y});
+                    } else if (grid[y][x] === 1) {
+                        walls.push({x: x, y: y});
+                    }
+                }
+            }
+        }
+
+        // Player object
+        var player = {
+            x: 9,
+            y: 15,
+            direction: {x: 0, y: 0},
+            nextDirection: {x: 0, y: 0},
+            speed: 0.15,
+            draw: function() {
+                ctx.fillStyle = '#FFFF00';
+                var drawX = (this.x + 0.5) * blockSize;
+                var drawY = (this.y + 0.5) * blockSize;
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, blockSize/2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+            },
+            update: function(deltaTime) {
+                // Try to change direction if requested
+                if (this.nextDirection.x !== 0 || this.nextDirection.y !== 0) {
+                    var nextX = Math.floor(this.x) + this.nextDirection.x;
+                    var nextY = Math.floor(this.y) + this.nextDirection.y;
+                    if (isValidPosition(nextX, nextY)) {
+                        this.direction = {x: this.nextDirection.x, y: this.nextDirection.y};
+                    }
+                }
+
+                // Move in current direction if valid
+                if (this.direction.x !== 0 || this.direction.y !== 0) {
+                    var nextX = this.x + this.direction.x * this.speed * deltaTime;
+                    var nextY = this.y + this.direction.y * this.speed * deltaTime;
+                    
+                    // Check if we can move to the next position
+                    var gridX = Math.floor(nextX);
+                    var gridY = Math.floor(nextY);
+                    
+                    if (isValidPosition(gridX, gridY)) {
+                        this.x = nextX;
+                        this.y = nextY;
+                    }
+                }
+
+                // Handle tunnel
+                if (this.x < -0.5) this.x = gridWidth - 0.5;
+                if (this.x > gridWidth - 0.5) this.x = -0.5;
+
+                // Check for dot collection
+                checkDotCollection();
+            }
+        };
+
+        // Ghost object
+        var ghosts = [];
+        function createGhost(x, y, color) {
+            return {
+                x: x,
+                y: y,
+                direction: {x: 0, y: -1},
+                speed: 0.07,
+                color: color,
+                draw: function() {
+                    ctx.fillStyle = this.color;
+                    var drawX = (this.x + 0.5) * blockSize;
+                    var drawY = (this.y + 0.5) * blockSize;
+                    ctx.beginPath();
+                    ctx.arc(drawX, drawY, blockSize/2 - 2, 0, Math.PI * 2);
+                    ctx.fill();
+                },
+                update: function(deltaTime) {
+                    // Simple AI: occasionally change direction randomly
+                    if (Math.random() < 0.02) {
+                        var directions = [
+                            {x: 0, y: -1}, {x: 1, y: 0},
+                            {x: 0, y: 1}, {x: -1, y: 0}
+                        ];
+                        var newDir = directions[Math.floor(Math.random() * directions.length)];
+                        
+                        var nextX = Math.floor(this.x) + newDir.x;
+                        var nextY = Math.floor(this.y) + newDir.y;
+                        if (isValidPosition(nextX, nextY)) {
+                            this.direction = newDir;
+                        }
+                    }
+
+                    // Move in current direction if valid
+                    var nextX = this.x + this.direction.x * this.speed * deltaTime;
+                    var nextY = this.y + this.direction.y * this.speed * deltaTime;
+                    
+                    var gridX = Math.floor(nextX);
+                    var gridY = Math.floor(nextY);
+                    
+                    if (isValidPosition(gridX, gridY)) {
+                        this.x = nextX;
+                        this.y = nextY;
+                    } else {
+                        // If can't move forward, choose a new direction
+                        var directions = [
+                            {x: 0, y: -1}, {x: 1, y: 0},
+                            {x: 0, y: 1}, {x: -1, y: 0}
+                        ];
+                        var validDirections = [];
+                        
+                        for (var i = 0; i < directions.length; i++) {
+                            var dir = directions[i];
+                            var nextX = Math.floor(this.x) + dir.x;
+                            var nextY = Math.floor(this.y) + dir.y;
+                            if (isValidPosition(nextX, nextY)) {
+                                validDirections.push(dir);
+                            }
+                        }
+                        
+                        if (validDirections.length > 0) {
+                            this.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                        }
+                    }
+
+                    // Handle tunnel
+                    if (this.x < -0.5) this.x = gridWidth - 0.5;
+                    if (this.x > gridWidth - 0.5) this.x = -0.5;
+
+                    // Check for collision with player
+                    var distX = Math.abs(this.x - player.x);
+                    var distY = Math.abs(this.y - player.y);
+                    if (distX < 1 && distY < 1) {
+                        endGame();
+                    }
+                }
+            };
+        }
+
+        // Check if position is valid (not a wall)
+        function isValidPosition(x, y) {
+            // Handle tunnel
+            if (x < 0 || x >= gridWidth) return true;
+            
+            // Check if out of bounds
+            if (y < 0 || y >= gridHeight) return false;
+            
+            // Check if wall
+            if (grid[y][x] === 1) return false;
+            
+            return true;
+        }
+
+        // Check for dot collection
+        function checkDotCollection() {
+            var playerGridX = Math.floor(player.x);
+            var playerGridY = Math.floor(player.y);
+            
+            // Check dots
+            for (var i = 0; i < dots.length; i++) {
+                var dot = dots[i];
+                if (dot.x === playerGridX && dot.y === playerGridY) {
+                    dots.splice(i, 1);
+                    score += 10;
+                    scoreElement.textContent = score;
+                    break;
+                }
+            }
+            
+            // Check power pellets
+            for (var i = 0; i < powerPellets.length; i++) {
+                var pellet = powerPellets[i];
+                if (pellet.x === playerGridX && pellet.y === playerGridY) {
+                    powerPellets.splice(i, 1);
+                    score += 50;
+                    scoreElement.textContent = score;
+                    break;
+                }
+            }
+            
+            // Check win condition
+            if (dots.length === 0 && powerPellets.length === 0) {
+                endGame();
+            }
+        }
+
+        // Draw game elements
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw walls
+            ctx.fillStyle = '#2222FF';
+            for (var i = 0; i < walls.length; i++) {
+                var wall = walls[i];
+                ctx.fillRect(
+                    wall.x * blockSize, 
+                    wall.y * blockSize, 
+                    blockSize, 
+                    blockSize
+                );
+            }
+            
+            // Draw dots
+            ctx.fillStyle = '#FFFF00';
+            for (var i = 0; i < dots.length; i++) {
+                var dot = dots[i];
+                ctx.beginPath();
+                ctx.arc(
+                    (dot.x + 0.5) * blockSize,
+                    (dot.y + 0.5) * blockSize,
+                    blockSize/10,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Draw power pellets
+            ctx.fillStyle = '#FFFF00';
+            for (var i = 0; i < powerPellets.length; i++) {
+                var pellet = powerPellets[i];
+                ctx.beginPath();
+                ctx.arc(
+                    (pellet.x + 0.5) * blockSize,
+                    (pellet.y + 0.5) * blockSize,
+                    blockSize/4,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Draw player
+            player.draw();
+            
+            // Draw ghosts
+            for (var i = 0; i < ghosts.length; i++) {
+                ghosts[i].draw();
+            }
+        }
+
+        // Update game state
+        function update(deltaTime) {
+            if (!gameRunning) return;
+            
+            player.update(deltaTime);
+            
+            for (var i = 0; i < ghosts.length; i++) {
+                ghosts[i].update(deltaTime);
+            }
+        }
+
+        // Game loop
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            var deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            accumulatedTime += deltaTime;
+            
+            while (accumulatedTime >= gameInterval) {
+                update(gameInterval);
+                accumulatedTime -= gameInterval;
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize canvas size
+        function initCanvas() {
+            var width = window.innerWidth;
+            var height = window.innerHeight - controlsHeight;
+            
+            blockSize = Math.min(
+                width / gridWidth,
+                height / gridHeight
+            );
+            
+            canvas.width = gridWidth * blockSize;
+            canvas.height = gridHeight * blockSize;
+            
+            // Center the canvas
+            canvas.style.position = 'absolute';
+            canvas.style.left = (width - canvas.width) / 2 + 'px';
+            canvas.style.top = (height - canvas.height) / 2 + 'px';
+        }
+
+        // Start game
+        function startGame() {
+            introScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            endScreen.classList.add('hidden');
+            
+            score = 0;
+            scoreElement.textContent = score;
+            
+            initCanvas();
+            initGameObjects();
+            
+            // Reset player
+            player.x = 9;
+            player.y = 15;
+            player.direction = {x: 0, y: 0};
+            player.nextDirection = {x: 0, y: 0};
+            
+            // Create ghosts
+            ghosts = [
+                createGhost(9, 9, '#FF0000'),  // Red
+                createGhost(8, 9, '#FF88FF'),  // Pink
+                createGhost(9, 8, '#00FFFF'),  // Cyan
+                createGhost(10, 9, '#FF8800')  // Orange
+            ];
+            
+            gameRunning = true;
+            lastTime = 0;
+            accumulatedTime = 0;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // End game
+        function endGame() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+        }
+
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            if (!gameRunning) return;
+            
+            switch(e.keyCode) {
+                case 37: // Left
+                    player.nextDirection = {x: -1, y: 0};
+                    break;
+                case 38: // Up
+                    player.nextDirection = {x: 0, y: -1};
+                    break;
+                case 39: // Right
+                    player.nextDirection = {x: 1, y: 0};
+                    break;
+                case 40: // Down
+                    player.nextDirection = {x: 0, y: 1};
+                    break;
+            }
+            
+            // Prevent arrow keys from scrolling the page
+            if (e.keyCode >= 37 && e.keyCode <= 40) {
+                e.preventDefault();
+            }
+        }
+
+        // Handle touch controls
+        function setupTouchControls() {
+            var upBtn = document.querySelector('.up');
+            var downBtn = document.querySelector('.down');
+            var leftBtn = document.querySelector('.left');
+            var rightBtn = document.querySelector('.right');
+            
+            upBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                player.nextDirection = {x: 0, y: -1};
+            });
+            
+            downBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                player.nextDirection = {x: 0, y: 1};
+            });
+            
+            leftBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                player.nextDirection = {x: -1, y: 0};
+            });
+            
+            rightBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                player.nextDirection = {x: 1, y: 0};
+            });
+        }
+
+        // Event listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('resize', function() {
+            if (gameRunning) {
+                initCanvas();
+            }
+        });
+
+        // Initialize touch controls
+        setupTouchControls();
+    </script>
+</body>
+</html>
+```

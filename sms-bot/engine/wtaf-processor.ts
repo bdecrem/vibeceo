@@ -24,6 +24,7 @@ import { fileURLToPath } from 'url';
 import { OPENAI_API_KEY, ANTHROPIC_API_KEY, WORKER_TIMEOUT_MS, ZAD_TIMEOUT_MS } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 import { detectRequestType as utilsDetectRequestType } from './shared/utils.js';
+import { postProcessGameHTML } from './game-post-processor.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -710,6 +711,15 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(result.substring(0, 1000) + (result.length > 1000 ? "\n... [TRUNCATED - showing first 1000 chars] ..." : ""));
         logWithTimestamp("=" + "=".repeat(80));
         
+        // Apply post-processing for games
+        if (requestType === 'game') {
+            logWithTimestamp(`🔧 Applying game post-processing...`);
+            const originalLength = result.length;
+            result = await postProcessGameHTML(result);
+            const processedLength = result.length;
+            logWithTimestamp(`✅ Post-processing complete: ${originalLength} → ${processedLength} chars`);
+        }
+        
         return result;
     } catch (error) {
         logWarning(`Primary model ${config.model} failed, trying fallbacks: ${error instanceof Error ? error.message : String(error)}`);
@@ -789,6 +799,15 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                     } else if (userPrompt.includes('ZAD_PUBLIC_REQUEST:')) {
                         logWithTimestamp(`🌐 ZAD public detected - skipping fallback authentication function validation`);
                     }
+                }
+                
+                // Apply post-processing for games
+                if (requestType === 'game') {
+                    logWithTimestamp(`🔧 Applying game post-processing to fallback result...`);
+                    const originalLength = fallbackResult.length;
+                    fallbackResult = await postProcessGameHTML(fallbackResult);
+                    const processedLength = fallbackResult.length;
+                    logWithTimestamp(`✅ Post-processing complete: ${originalLength} → ${processedLength} chars`);
                 }
                 
                 return fallbackResult;

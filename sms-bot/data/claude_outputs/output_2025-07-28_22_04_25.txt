@@ -1,0 +1,385 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🏓 WTAF Pong</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #gameCanvas {
+            background: #000;
+            display: block;
+        }
+        #controls {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 120px;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .paddle-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+        }
+        .paddle-btn:active {
+            background: rgba(255,255,255,0.4);
+        }
+        #screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-align: center;
+            z-index: 2000;
+        }
+        button {
+            background: #ff00ff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 10px;
+            font-family: monospace;
+        }
+        h1 {
+            font-size: 40px;
+            margin: 0;
+        }
+        p {
+            font-size: 20px;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="controls">
+        <div class="paddle-btn" id="up1">⬆️</div>
+        <div class="paddle-btn" id="up2">⬆️</div>
+        <div class="paddle-btn" id="down1">⬇️</div>
+        <div class="paddle-btn" id="down2">⬇️</div>
+    </div>
+    
+    <div id="screen">
+        <h1>🏓 WTAF Pong</h1>
+        <p>Bounce the ball, don't let it escape! Player 1: Arrow Keys | Player 2: W/S</p>
+        <button id="startBtn">START GAME</button>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+        var screen = document.getElementById('screen');
+        var startBtn = document.getElementById('startBtn');
+        
+        var controlsHeight = 120;
+        var lastTime = 0;
+        var gameState = 'intro'; // intro, playing, ended
+        
+        // Game objects
+        var ball = {
+            x: 0,
+            y: 0,
+            radius: 10,
+            dx: 5,
+            dy: 5,
+            speed: 7
+        };
+        
+        var paddle1 = {
+            x: 20,
+            y: 0,
+            width: 15,
+            height: 100,
+            dy: 0,
+            speed: 8
+        };
+        
+        var paddle2 = {
+            x: 0,
+            y: 0,
+            width: 15,
+            height: 100,
+            dy: 0,
+            speed: 8
+        };
+        
+        var score = {
+            player1: 0,
+            player2: 0,
+            max: 7
+        };
+        
+        var keys = {};
+        
+        function resizeCanvas() {
+            var width = window.innerWidth;
+            var height = window.innerHeight - controlsHeight;
+            
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(dpr, dpr);
+            
+            // Update paddle positions
+            paddle1.y = (height / 2) - (paddle1.height / 2);
+            paddle2.x = width - 20 - paddle2.width;
+            paddle2.y = (height / 2) - (paddle2.height / 2);
+            
+            // Reset ball position if needed
+            if (gameState === 'playing') {
+                ball.x = width / 2;
+                ball.y = height / 2;
+            }
+        }
+        
+        function resetBall() {
+            ball.x = canvas.width / (window.devicePixelRatio || 1) / 2;
+            ball.y = canvas.height / (window.devicePixelRatio || 1) / 2;
+            
+            // Random direction
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
+            ball.dy = (Math.random() * 2 - 1) * ball.speed;
+        }
+        
+        function initGame() {
+            resizeCanvas();
+            resetBall();
+            score.player1 = 0;
+            score.player2 = 0;
+            gameState = 'playing';
+            screen.style.display = 'none';
+        }
+        
+        function update(deltaTime) {
+            if (gameState !== 'playing') return;
+            
+            // Move paddles
+            if (keys['ArrowUp']) paddle2.dy = -paddle2.speed;
+            else if (keys['ArrowDown']) paddle2.dy = paddle2.speed;
+            else paddle2.dy = 0;
+            
+            if (keys['KeyW']) paddle1.dy = -paddle1.speed;
+            else if (keys['KeyS']) paddle1.dy = paddle1.speed;
+            else paddle1.dy = 0;
+            
+            paddle1.y += paddle1.dy;
+            paddle2.y += paddle2.dy;
+            
+            // Constrain paddles to screen
+            var height = canvas.height / (window.devicePixelRatio || 1);
+            paddle1.y = Math.max(0, Math.min(height - paddle1.height, paddle1.y));
+            paddle2.y = Math.max(0, Math.min(height - paddle2.height, paddle2.y));
+            
+            // Move ball
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Top/bottom wall collision
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > height) {
+                ball.dy = -ball.dy;
+            }
+            
+            // Paddle collision
+            // Left paddle
+            if (ball.dx < 0 && 
+                ball.x - ball.radius < paddle1.x + paddle1.width &&
+                ball.x + ball.radius > paddle1.x &&
+                ball.y + ball.radius > paddle1.y &&
+                ball.y - ball.radius < paddle1.y + paddle1.height) {
+                
+                var hitPosition = (ball.y - (paddle1.y + paddle1.height/2)) / (paddle1.height/2);
+                ball.dx = Math.abs(ball.dx);
+                ball.dy = hitPosition * ball.speed;
+            }
+            
+            // Right paddle
+            if (ball.dx > 0 && 
+                ball.x + ball.radius > paddle2.x &&
+                ball.x - ball.radius < paddle2.x + paddle2.width &&
+                ball.y + ball.radius > paddle2.y &&
+                ball.y - ball.radius < paddle2.y + paddle2.height) {
+                
+                var hitPosition = (ball.y - (paddle2.y + paddle2.height/2)) / (paddle2.height/2);
+                ball.dx = -Math.abs(ball.dx);
+                ball.dy = hitPosition * ball.speed;
+            }
+            
+            // Scoring
+            var width = canvas.width / (window.devicePixelRatio || 1);
+            if (ball.x < 0) {
+                score.player2++;
+                checkGameOver();
+                resetBall();
+            } else if (ball.x > width) {
+                score.player1++;
+                checkGameOver();
+                resetBall();
+            }
+        }
+        
+        function checkGameOver() {
+            if (score.player1 >= score.max || score.player2 >= score.max) {
+                gameState = 'ended';
+                screen.innerHTML = `
+                    <h1>GAME OVER</h1>
+                    <p>Player 1: ${score.player1} | Player 2: ${score.player2}</p>
+                    <p>${score.player1 > score.player2 ? 'Player 1 Wins! 🏆' : 'Player 2 Wins! 🏆'}</p>
+                    <button id="restartBtn">PLAY AGAIN</button>
+                `;
+                screen.style.display = 'flex';
+                document.getElementById('restartBtn').addEventListener('click', initGame);
+            }
+        }
+        
+        function draw() {
+            var width = canvas.width / (window.devicePixelRatio || 1);
+            var height = canvas.height / (window.devicePixelRatio || 1);
+            
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw center line
+            ctx.setLineDash([10, 15]);
+            ctx.beginPath();
+            ctx.moveTo(width/2, 0);
+            ctx.lineTo(width/2, height);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw paddles
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+            
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
+            
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.closePath();
+            
+            // Draw score
+            ctx.font = '40px monospace';
+            ctx.fillStyle = '#00ff00';
+            ctx.textAlign = 'center';
+            ctx.fillText(score.player1.toString(), width/4, 50);
+            
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillText(score.player2.toString(), 3*width/4, 50);
+        }
+        
+        function gameLoop(timestamp) {
+            var deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            update(deltaTime);
+            draw();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        window.addEventListener('resize', resizeCanvas);
+        
+        window.addEventListener('keydown', function(e) {
+            keys[e.code] = true;
+        });
+        
+        window.addEventListener('keyup', function(e) {
+            keys[e.code] = false;
+        });
+        
+        // Mobile controls
+        document.getElementById('up1').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            keys['KeyW'] = true;
+        });
+        
+        document.getElementById('up1').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            keys['KeyW'] = false;
+        });
+        
+        document.getElementById('down1').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            keys['KeyS'] = true;
+        });
+        
+        document.getElementById('down1').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            keys['KeyS'] = false;
+        });
+        
+        document.getElementById('up2').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            keys['ArrowUp'] = true;
+        });
+        
+        document.getElementById('up2').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            keys['ArrowUp'] = false;
+        });
+        
+        document.getElementById('down2').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            keys['ArrowDown'] = true;
+        });
+        
+        document.getElementById('down2').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            keys['ArrowDown'] = false;
+        });
+        
+        startBtn.addEventListener('click', initGame);
+        
+        // Initialize
+        resizeCanvas();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+```
