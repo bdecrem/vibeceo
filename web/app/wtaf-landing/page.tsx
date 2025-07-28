@@ -1058,7 +1058,15 @@ export default function WebtoysSitePage() {
               We turn five-word SMS commands into weird little web apps. No logins. No code. Just fun, remixable internet artifacts — shipped from your flip phone.
             </p>
             <p className="hero-description" style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
-              v0.1 — some things work, more don't.
+              v0.1 — <span className="hover-reveal">some things<span className="hover-content">
+                <span>• meme generators</span>
+                <span>• paint apps</span>
+                <span>• sushi menus</span>
+                <span>• rhyme dictionaries</span>
+                <span>• cat photos</span>
+                <span>• todo games</span>
+                <span>• punk billboards</span>
+              </span></span> work, more don't.
             </p>
             
             <div className="phone-display">
@@ -1780,6 +1788,68 @@ export default function WebtoysSitePage() {
           max-width: 700px;
           margin-left: auto;
           margin-right: auto;
+        }
+
+        /* Hover reveal effect */
+        .hover-reveal {
+          position: relative;
+          cursor: help;
+          text-decoration: underline;
+          text-decoration-style: dotted;
+          text-underline-offset: 2px;
+          color: var(--blue-deep);
+        }
+
+        .hover-content {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-10px);
+          background: var(--charcoal);
+          color: var(--cream);
+          padding: 1rem;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          white-space: nowrap;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+          z-index: 10;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .hover-content::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 8px solid transparent;
+          border-top-color: var(--charcoal);
+        }
+
+        .hover-content span {
+          display: block;
+          margin: 0.25rem 0;
+        }
+
+        /* Desktop hover */
+        @media (hover: hover) {
+          .hover-reveal:hover .hover-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-15px);
+          }
+        }
+
+        /* Mobile tap */
+        @media (hover: none) {
+          .hover-reveal:active .hover-content,
+          .hover-reveal:focus .hover-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-15px);
+          }
         }
         
         /* Phone Display */
