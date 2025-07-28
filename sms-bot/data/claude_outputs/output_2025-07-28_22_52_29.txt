@@ -1,0 +1,595 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pac-Man</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: #000;
+        }
+        .controls {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 120px;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: #444;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #fff;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div class="controls">
+        <div class="btn" id="upBtn">↑</div>
+        <div class="btn" id="leftBtn">←</div>
+        <div class="btn" id="downBtn">↓</div>
+        <div class="btn" id="rightBtn">→</div>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('game');
+        var ctx = canvas.getContext('2d');
+        var controlsHeight = 120;
+        
+        function resize() {
+            canvas.width = window.innerWidth * devicePixelRatio;
+            canvas.height = (window.innerHeight - controlsHeight) * devicePixelRatio;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = (window.innerHeight - controlsHeight) + 'px';
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+        
+        // Game state
+        var state = 'title'; // title, playing, gameover
+        var score = 0;
+        var lives = 3;
+        
+        // Maze layout (1 = wall, 0 = dot, 2 = empty, 3 = power pellet)
+        var maze = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,2,2,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
+            [2,2,2,2,2,2,0,2,2,2,1,2,2,2,2,2,2,1,2,2,2,0,2,2,2,2,2,2],
+            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,3,0,0,1,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,0,0,3,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        var cellSize = Math.min(
+            Math.floor(canvas.width / maze[0].length),
+            Math.floor(canvas.height / maze.length)
+        );
+        
+        // Center the maze
+        var offsetX = (canvas.width - maze[0].length * cellSize) / 2;
+        var offsetY = (canvas.height - maze.length * cellSize) / 2;
+        
+        // Player
+        var player = {
+            x: 14,
+            y: 23,
+            direction: 'right',
+            nextDirection: 'right',
+            speed: 0.15,
+            mouth: 0,
+            mouthDir: 1
+        };
+        
+        // Ghosts
+        var ghosts = [
+            {x: 14, y: 11, direction: 'up', color: '#FF0000', mode: 'chase'}, // Blinky
+            {x: 12, y: 14, direction: 'left', color: '#FFB8FF', mode: 'chase'}, // Pinky
+            {x: 14, y: 14, direction: 'down', color: '#00FFFF', mode: 'chase'}, // Inky
+            {x: 16, y: 14, direction: 'right', color: '#FFB852', mode: 'chase'} // Clyde
+        ];
+        
+        var ghostSpeed = 0.1;
+        var powerMode = false;
+        var powerTimer = 0;
+        
+        // Dots
+        var dots = [];
+        var totalDots = 0;
+        
+        // Initialize dots
+        function initDots() {
+            dots = [];
+            totalDots = 0;
+            for (var y = 0; y < maze.length; y++) {
+                for (var x = 0; x < maze[y].length; x++) {
+                    if (maze[y][x] === 0 || maze[y][x] === 3) {
+                        dots.push({x: x, y: y, type: maze[y][x] === 3 ? 'power' : 'dot'});
+                        if (maze[y][x] === 0) totalDots++;
+                    }
+                }
+            }
+        }
+        
+        initDots();
+        
+        // Input handling
+        var keys = {left: false, right: false, up: false, down: false};
+        
+        function setKey(key, value) {
+            keys[key] = value;
+            if (value) {
+                player.nextDirection = key;
+            }
+        }
+        
+        // Touch controls
+        document.getElementById('leftBtn').addEventListener('touchstart', function(e) { e.preventDefault(); setKey('left', true); });
+        document.getElementById('rightBtn').addEventListener('touchstart', function(e) { e.preventDefault(); setKey('right', true); });
+        document.getElementById('upBtn').addEventListener('touchstart', function(e) { e.preventDefault(); setKey('up', true); });
+        document.getElementById('downBtn').addEventListener('touchstart', function(e) { e.preventDefault(); setKey('down', true); });
+        
+        document.getElementById('leftBtn').addEventListener('touchend', function() { setKey('left', false); });
+        document.getElementById('rightBtn').addEventListener('touchend', function() { setKey('right', false); });
+        document.getElementById('upBtn').addEventListener('touchend', function() { setKey('up', false); });
+        document.getElementById('downBtn').addEventListener('touchend', function() { setKey('down', false); });
+        
+        // Keyboard controls
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') setKey('left', true);
+            if (e.key === 'ArrowRight') setKey('right', true);
+            if (e.key === 'ArrowUp') setKey('up', true);
+            if (e.key === 'ArrowDown') setKey('down', true);
+        });
+        
+        window.addEventListener('keyup', function(e) {
+            if (e.key === 'ArrowLeft') setKey('left', false);
+            if (e.key === 'ArrowRight') setKey('right', false);
+            if (e.key === 'ArrowUp') setKey('up', false);
+            if (e.key === 'ArrowDown') setKey('down', false);
+        });
+        
+        // Check if position is valid
+        function canMoveTo(x, y) {
+            var tileX = Math.floor(x);
+            var tileY = Math.floor(y);
+            
+            if (tileX < 0 || tileX >= maze[0].length || tileY < 0 || tileY >= maze.length) {
+                return false;
+            }
+            
+            return maze[tileY][tileX] !== 1;
+        }
+        
+        // Get opposite direction
+        function opposite(dir) {
+            if (dir === 'left') return 'right';
+            if (dir === 'right') return 'left';
+            if (dir === 'up') return 'down';
+            if (dir === 'down') return 'up';
+            return dir;
+        }
+        
+        // Get random direction
+        function getRandomDirection() {
+            var dirs = ['left', 'right', 'up', 'down'];
+            return dirs[Math.floor(Math.random() * dirs.length)];
+        }
+        
+        // Move ghost
+        function moveGhost(ghost) {
+            // Try to change direction randomly or when hitting a wall
+            if (Math.random() < 0.02 || !canMoveTo(
+                ghost.x + (ghost.direction === 'right' ? 0.5 : ghost.direction === 'left' ? -0.5 : 0),
+                ghost.y + (ghost.direction === 'down' ? 0.5 : ghost.direction === 'up' ? -0.5 : 0)
+            )) {
+                var possibleDirs = [];
+                var dirs = ['left', 'right', 'up', 'down'];
+                
+                for (var i = 0; i < dirs.length; i++) {
+                    var dir = dirs[i];
+                    if (dir === opposite(ghost.direction)) continue;
+                    
+                    var newX = ghost.x + (dir === 'right' ? 0.5 : dir === 'left' ? -0.5 : 0);
+                    var newY = ghost.y + (dir === 'down' ? 0.5 : dir === 'up' ? -0.5 : 0);
+                    
+                    if (canMoveTo(newX, newY)) {
+                        possibleDirs.push(dir);
+                    }
+                }
+                
+                if (possibleDirs.length > 0) {
+                    ghost.direction = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                }
+            }
+            
+            // Move in current direction
+            if (ghost.direction === 'left' && canMoveTo(ghost.x - ghostSpeed, ghost.y)) {
+                ghost.x -= ghostSpeed;
+            }
+            if (ghost.direction === 'right' && canMoveTo(ghost.x + ghostSpeed, ghost.y)) {
+                ghost.x += ghostSpeed;
+            }
+            if (ghost.direction === 'up' && canMoveTo(ghost.x, ghost.y - ghostSpeed)) {
+                ghost.y -= ghostSpeed;
+            }
+            if (ghost.direction === 'down' && canMoveTo(ghost.x, ghost.y + ghostSpeed)) {
+                ghost.y += ghostSpeed;
+            }
+            
+            // Wrap around tunnel
+            if (ghost.x < -0.5) ghost.x = maze[0].length - 0.5;
+            if (ghost.x > maze[0].length - 0.5) ghost.x = -0.5;
+        }
+        
+        // Move player
+        function movePlayer() {
+            // Try to change direction if requested
+            if (player.nextDirection !== player.direction) {
+                var newX = player.x + (player.nextDirection === 'right' ? 0.5 : player.nextDirection === 'left' ? -0.5 : 0);
+                var newY = player.y + (player.nextDirection === 'down' ? 0.5 : player.nextDirection === 'up' ? -0.5 : 0);
+                
+                if (canMoveTo(newX, newY)) {
+                    player.direction = player.nextDirection;
+                }
+            }
+            
+            // Move in current direction
+            var moved = false;
+            if (player.direction === 'left' && canMoveTo(player.x - player.speed, player.y)) {
+                player.x -= player.speed;
+                moved = true;
+            }
+            if (player.direction === 'right' && canMoveTo(player.x + player.speed, player.y)) {
+                player.x += player.speed;
+                moved = true;
+            }
+            if (player.direction === 'up' && canMoveTo(player.x, player.y - player.speed)) {
+                player.y -= player.speed;
+                moved = true;
+            }
+            if (player.direction === 'down' && canMoveTo(player.x, player.y + player.speed)) {
+                player.y += player.speed;
+                moved = true;
+            }
+            
+            // Wrap around tunnel
+            if (player.x < -0.5) player.x = maze[0].length - 0.5;
+            if (player.x > maze[0].length - 0.5) player.x = -0.5;
+            
+            // Animate mouth
+            if (moved) {
+                player.mouth += player.mouthDir * 0.2;
+                if (player.mouth >= 1 || player.mouth <= 0) {
+                    player.mouthDir *= -1;
+                }
+            }
+            
+            // Check dot collisions
+            for (var i = 0; i < dots.length; i++) {
+                var dot = dots[i];
+                var dx = Math.abs(player.x - dot.x);
+                var dy = Math.abs(player.y - dot.y);
+                
+                if (dx < 0.5 && dy < 0.5) {
+                    if (dot.type === 'dot') {
+                        score += 10;
+                        dots.splice(i, 1);
+                        i--;
+                    } else if (dot.type === 'power') {
+                        score += 50;
+                        dots.splice(i, 1);
+                        i--;
+                        powerMode = true;
+                        powerTimer = 300; // 5 seconds at 60fps
+                        for (var j = 0; j < ghosts.length; j++) {
+                            ghosts[j].mode = 'frightened';
+                        }
+                    }
+                }
+            }
+            
+            // Check ghost collisions
+            for (var i = 0; i < ghosts.length; i++) {
+                var ghost = ghosts[i];
+                var dx = Math.abs(player.x - ghost.x);
+                var dy = Math.abs(player.y - ghost.y);
+                
+                if (dx < 0.8 && dy < 0.8) {
+                    if (ghost.mode === 'frightened') {
+                        score += 200;
+                        ghost.x = 14;
+                        ghost.y = 14;
+                        ghost.mode = 'chase';
+                    } else {
+                        lives--;
+                        if (lives <= 0) {
+                            state = 'gameover';
+                        } else {
+                            resetPlayer();
+                        }
+                        return;
+                    }
+                }
+            }
+            
+            // Check win condition
+            if (dots.length === 0) {
+                state = 'gameover';
+            }
+        }
+        
+        function resetPlayer() {
+            player.x = 14;
+            player.y = 23;
+            player.direction = 'right';
+            player.nextDirection = 'right';
+        }
+        
+        // Update game state
+        function update() {
+            if (state !== 'playing') return;
+            
+            movePlayer();
+            
+            for (var i = 0; i < ghosts.length; i++) {
+                moveGhost(ghosts[i]);
+            }
+            
+            // Update power mode
+            if (powerMode) {
+                powerTimer--;
+                if (powerTimer <= 0) {
+                    powerMode = false;
+                    for (var i = 0; i < ghosts.length; i++) {
+                        ghosts[i].mode = 'chase';
+                    }
+                }
+            }
+        }
+        
+        // Draw functions
+        function drawMaze() {
+            for (var y = 0; y < maze.length; y++) {
+                for (var x = 0; x < maze[y].length; x++) {
+                    var px = offsetX + x * cellSize;
+                    var py = offsetY + y * cellSize;
+                    
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = '#2222FF';
+                        ctx.fillRect(px, py, cellSize, cellSize);
+                    }
+                }
+            }
+        }
+        
+        function drawDots() {
+            for (var i = 0; i < dots.length; i++) {
+                var dot = dots[i];
+                var px = offsetX + dot.x * cellSize + cellSize/2;
+                var py = offsetY + dot.y * cellSize + cellSize/2;
+                
+                if (dot.type === 'dot') {
+                    ctx.fillStyle = '#FFFF00';
+                    ctx.beginPath();
+                    ctx.arc(px, py, cellSize/10, 0, Math.PI*2);
+                    ctx.fill();
+                } else if (dot.type === 'power') {
+                    ctx.fillStyle = '#FFFF00';
+                    ctx.beginPath();
+                    ctx.arc(px, py, cellSize/4, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        function drawPlayer() {
+            var px = offsetX + player.x * cellSize + cellSize/2;
+            var py = offsetY + player.y * cellSize + cellSize/2;
+            var radius = cellSize/2 - 2;
+            
+            ctx.fillStyle = '#FFFF00';
+            
+            ctx.beginPath();
+            
+            if (player.direction === 'right') {
+                ctx.arc(px, py, radius, Math.PI/4 + player.mouth, Math.PI*7/4 - player.mouth);
+            } else if (player.direction === 'left') {
+                ctx.arc(px, py, radius, Math.PI*5/4 + player.mouth, Math.PI*3/4 - player.mouth, true);
+            } else if (player.direction === 'up') {
+                ctx.arc(px, py, radius, Math.PI*7/4 + player.mouth, Math.PI*5/4 - player.mouth);
+            } else if (player.direction === 'down') {
+                ctx.arc(px, py, radius, Math.PI/4 + player.mouth, Math.PI*3/4 - player.mouth, true);
+            }
+            
+            ctx.lineTo(px, py);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawGhosts() {
+            for (var i = 0; i < ghosts.length; i++) {
+                var ghost = ghosts[i];
+                var px = offsetX + ghost.x * cellSize + cellSize/2;
+                var py = offsetY + ghost.y * cellSize + cellSize/2;
+                var radius = cellSize/2 - 2;
+                
+                // Body
+                ctx.fillStyle = ghost.mode === 'frightened' ? (powerTimer < 60 && powerTimer % 10 < 5 ? '#FFFFFF' : '#0000FF') : ghost.color;
+                ctx.beginPath();
+                ctx.arc(px, py - 2, radius, Math.PI, 0, false);
+                ctx.lineTo(px + radius, py + radius - 2);
+                
+                // Wavy bottom
+                for (var j = 0; j < 3; j++) {
+                    ctx.lineTo(px + radius - j * radius/1.5, py + radius/2 - 2);
+                    ctx.lineTo(px + radius - (j*2+1) * radius/3, py + radius - 2);
+                }
+                
+                ctx.lineTo(px - radius, py + radius - 2);
+                ctx.lineTo(px - radius, py - 2);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Eyes
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(px - radius/3, py - 2, radius/3, 0, Math.PI*2);
+                ctx.arc(px + radius/3, py - 2, radius/3, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Pupils
+                ctx.fillStyle = '#0000FF';
+                var pupilOffsetX = 0;
+                var pupilOffsetY = 0;
+                
+                if (ghost.direction === 'left') pupilOffsetX = -radius/6;
+                if (ghost.direction === 'right') pupilOffsetX = radius/6;
+                if (ghost.direction === 'up') pupilOffsetY = -radius/6;
+                if (ghost.direction === 'down') pupilOffsetY = radius/6;
+                
+                ctx.beginPath();
+                ctx.arc(px - radius/3 + pupilOffsetX, py - 2 + pupilOffsetY, radius/6, 0, Math.PI*2);
+                ctx.arc(px + radius/3 + pupilOffsetX, py - 2 + pupilOffsetY, radius/6, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        
+        function drawUI() {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '20px Arial';
+            ctx.fillText('SCORE: ' + score, 20, 30);
+            ctx.fillText('LIVES: ' + lives, 20, 60);
+        }
+        
+        function drawTitle() {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#FFFF00';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('PAC-MAN', canvas.width/2, canvas.height/2 - 40);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '20px Arial';
+            ctx.fillText('Use arrow keys or buttons to move', canvas.width/2, canvas.height/2 + 20);
+            ctx.fillText('Eat dots, avoid ghosts!', canvas.width/2, canvas.height/2 + 50);
+            ctx.fillText('Press SPACE to start', canvas.width/2, canvas.height/2 + 100);
+            ctx.textAlign = 'left';
+        }
+        
+        function drawGameover() {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#FFFF00';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 40);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '25px Arial';
+            ctx.fillText('Final Score: ' + score, canvas.width/2, canvas.height/2 + 20);
+            ctx.fillText('Press SPACE to restart', canvas.width/2, canvas.height/2 + 70);
+            ctx.textAlign = 'left';
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawMaze();
+            drawDots();
+            drawPlayer();
+            drawGhosts();
+            drawUI();
+            
+            if (state === 'title') {
+                drawTitle();
+            } else if (state === 'gameover') {
+                drawGameover();
+            }
+        }
+        
+        // Game loop
+        var lastTime = 0;
+        var fps = 60;
+        var frameTime = 1000 / fps;
+        
+        function gameLoop(currentTime) {
+            if (currentTime - lastTime >= frameTime) {
+                update();
+                lastTime = currentTime;
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start game
+        window.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                if (state === 'title' || state === 'gameover') {
+                    state = 'playing';
+                    score = 0;
+                    lives = 3;
+                    resetPlayer();
+                    initDots();
+                    for (var i = 0; i < ghosts.length; i++) {
+                        ghosts[i].x = [14, 12, 14, 16][i];
+                        ghosts[i].y = [11, 14, 14, 14][i];
+                        ghosts[i].mode = 'chase';
+                    }
+                }
+            }
+        });
+        
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+```

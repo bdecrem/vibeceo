@@ -1,0 +1,24 @@
+I'll modify the app to use the VAPOR theme from the WEBTOYS design system, which has a hot pink background. I'll update the CSS variables in the style section while keeping all functionality intact.
+
+The key change is updating the theme colors in the CSS variables from CHAOS to VAPOR:
+
+```css
+/* Change from:
+:root {
+    --bg: #FCFCF7;
+    --border: #FFD63D;
+    --shadow: #C9C2F9;
+    --text: #0A0A0A;
+}
+*/
+
+/* To: */
+:root {
+    --bg: #FFE0F7;  /* Pink background */
+    --border: #FF006E;  /* Hot pink borders */
+    --shadow: #3700B3;  /* Deep purple shadows */
+    --text: #0A0A0A;
+}
+```
+
+Would you like me to show you the complete modified file with this change?

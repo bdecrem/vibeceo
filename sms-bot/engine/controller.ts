@@ -574,6 +574,20 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         const { appSlug, userRequest } = parsed;
         logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
         
+        // Check if the target app is a ZAD app
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+        const { data: appInfo, error: appError } = await supabase
+            .from('wtaf_content')
+            .select('type')
+            .eq('app_slug', appSlug)
+            .single();
+        
+        const isZadApp = appInfo?.type === 'ZAD';
+        if (isZadApp) {
+            logWithTimestamp(`🤝 Target app is a ZAD app - will use ZAD remix approach`);
+        }
+        
         // Load HTML content (includes ownership verification)
         const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
         if (htmlContent === null) {
@@ -582,20 +596,41 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             return false;
         }
         
-        // Build remix prompt with HTML template
-        const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+        let remixSystemPrompt: string;
+        let enhancedPrompt: string;
         
-        // Load remix system prompt
-        const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
-        const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
-        logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
+        if (isZadApp) {
+            // For ZAD apps, use the dedicated ZAD remix prompt
+            const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
+            remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
+            logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
+            
+            // Build ZAD-specific remix prompt
+            enhancedPrompt = `Here's the complete ZAD app HTML to modify:
+
+${htmlContent}
+
+User request: ${userRequest}
+
+Apply the visual changes while preserving ALL functionality exactly as shown above.`;
+        } else {
+            // For regular WTAF apps, use the standard remix approach
+            enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
+            remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
+            logWithTimestamp(`📄 Standard remix prompt loaded: ${remixSystemPrompt.length} characters`);
+        }
         
-        // Send directly to Claude with remix prompt (bypass wtaf-processor entirely)
-        logWithTimestamp("🚀 Sending remix request directly to Claude (using remix approach)");
+        // Send directly to Claude with appropriate prompt
+        logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : 'standard'} remix request directly to Claude`);
         const config = REQUEST_CONFIGS.creation;
+        
+        // For ZAD remixes, try to use maximum possible tokens
+        const maxTokens = isZadApp ? 8192 : config.builderMaxTokens;
+        
         const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
             model: config.builderModel,
-            maxTokens: config.builderMaxTokens,
+            maxTokens: maxTokens,
             temperature: config.builderTemperature
         });
         
@@ -1493,6 +1528,20 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             const { appSlug, userRequest } = parsed;
             logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
             
+            // Check if the target app is a ZAD app
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+            const { data: appInfo, error: appError } = await supabase
+                .from('wtaf_content')
+                .select('type')
+                .eq('app_slug', appSlug)
+                .single();
+            
+            const isZadApp = appInfo?.type === 'ZAD';
+            if (isZadApp) {
+                logWithTimestamp(`🤝 Target app is a ZAD app - will use ZAD remix approach`);
+            }
+            
             // Load HTML content (includes ownership verification)
             const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
             if (htmlContent === null) {
@@ -1501,16 +1550,33 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 return false;
             }
             
-            // Build remix prompt with HTML template
-            const enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            let remixSystemPrompt: string;
+            let enhancedPrompt: string;
             
-            // Load remix system prompt
-            const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
-            const remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
-            logWithTimestamp(`📄 Remix system prompt loaded: ${remixSystemPrompt.length} characters`);
+            if (isZadApp) {
+                // For ZAD apps, use the dedicated ZAD remix prompt
+                const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
+                remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
+                logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
+                
+                // Build ZAD-specific remix prompt
+                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
+
+${htmlContent}
+
+User request: ${userRequest}
+
+Apply the visual changes while preserving ALL functionality exactly as shown above.`;
+            } else {
+                // For regular WTAF apps, use the standard remix approach
+                enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+                const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
+                remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
+                logWithTimestamp(`📄 Standard remix prompt loaded: ${remixSystemPrompt.length} characters`);
+            }
             
-            // Send directly to Claude with remix prompt (dedicated remix approach)
-            logWithTimestamp("🚀 Sending remix request directly to Claude (using dedicated remix approach)");
+            // Send directly to Claude with appropriate prompt
+            logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : 'standard'} remix request directly to Claude`);
             const config = REQUEST_CONFIGS.creation;
             const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
                 model: config.builderModel,
