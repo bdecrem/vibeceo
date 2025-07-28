@@ -1,0 +1,422 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <title>Emoji Tetris</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            background: rgba(0,0,0,0.2);
+        }
+        #controls {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 120px;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            font-size: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            cursor: pointer;
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 120px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            text-align: center;
+            z-index: 500;
+        }
+        #gameScreen {
+            display: none;
+        }
+        #endScreen {
+            display: none;
+        }
+        button {
+            background: #ff6b6b;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            border-radius: 30px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        h1 {
+            font-size: 40px;
+            margin: 0 0 10px 0;
+        }
+        p {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: white;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreDisplay">Score: 0</div>
+    
+    <div id="startScreen" class="screen">
+        <h1>🧱 Emoji Tetris</h1>
+        <p>Stack the blocks! Clear lines to score!</p>
+        <button id="startBtn">▶️ Start Game</button>
+    </div>
+    
+    <div id="gameScreen">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    
+    <div id="endScreen" class="screen">
+        <h1>Game Over!</h1>
+        <p>Your Score: <span id="finalScore">0</span></p>
+        <button id="restartBtn">🔄 Play Again</button>
+    </div>
+    
+    <div id="controls">
+        <div class="btn" id="leftBtn">⬅️</div>
+        <div class="btn" id="rotateBtn">🔄</div>
+        <div class="btn" id="rightBtn">➡️</div>
+        <div class="btn" id="downBtn">⬇️</div>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+        var startScreen = document.getElementById('startScreen');
+        var gameScreen = document.getElementById('gameScreen');
+        var endScreen = document.getElementById('endScreen');
+        var scoreDisplay = document.getElementById('scoreDisplay');
+        var finalScore = document.getElementById('finalScore');
+        var startBtn = document.getElementById('startBtn');
+        var restartBtn = document.getElementById('restartBtn');
+        
+        var dpr = window.devicePixelRatio || 1;
+        var controlsHeight = 120;
+        var cols = 10;
+        var rows = 20;
+        var blockSize;
+        var grid = [];
+        var score = 0;
+        var gameOver = false;
+        
+        var pieces = [
+            { shape: [[1,1,1,1]], color: '#ff6b6b' }, // I
+            { shape: [[1,1],[1,1]], color: '#4ecdc4' }, // O
+            { shape: [[0,1,0],[1,1,1]], color: '#ffe66d' }, // T
+            { shape: [[0,1,1],[1,1,0]], color: '#ff9f1c' }, // S
+            { shape: [[1,1,0],[0,1,1]], color: '#9b5de5' }, // Z
+            { shape: [[1,0,0],[1,1,1]], color: '#00bbf9' }, // J
+            { shape: [[0,0,1],[1,1,1]], color: '#f15bb5' }  // L
+        ];
+        
+        var currentPiece = null;
+        var nextPiece = null;
+        var dropCounter = 0;
+        var dropInterval = 1000;
+        var lastTime = 0;
+        
+        function resizeCanvas() {
+            var width = window.innerWidth;
+            var height = window.innerHeight - controlsHeight;
+            
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            blockSize = Math.min(
+                Math.floor(width / cols),
+                Math.floor(height / rows)
+            );
+            
+            ctx.scale(dpr, dpr);
+        }
+        
+        function createGrid() {
+            grid = [];
+            for (var y = 0; y < rows; y++) {
+                grid.push(Array(cols).fill(0));
+            }
+        }
+        
+        function createPiece() {
+            var piece = nextPiece || {
+                shape: JSON.parse(JSON.stringify(pieces[Math.floor(Math.random() * pieces.length)].shape)),
+                color: pieces.find(p => JSON.stringify(p.shape) === JSON.stringify(currentPiece ? currentPiece.shape : nextPiece ? nextPiece.shape : pieces[Math.floor(Math.random() * pieces.length)].shape)).color,
+                x: Math.floor(cols / 2) - 1,
+                y: 0
+            };
+            
+            nextPiece = {
+                shape: JSON.parse(JSON.stringify(pieces[Math.floor(Math.random() * pieces.length)].shape)),
+                color: pieces[Math.floor(Math.random() * pieces.length)].color
+            };
+            
+            return piece;
+        }
+        
+        function drawGrid() {
+            for (var y = 0; y < rows; y++) {
+                for (var x = 0; x < cols; x++) {
+                    if (grid[y][x]) {
+                        ctx.fillStyle = grid[y][x];
+                        ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+                        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                        ctx.strokeRect(x * blockSize, y * blockSize, blockSize, blockSize);
+                    }
+                }
+            }
+        }
+        
+        function drawPiece() {
+            if (!currentPiece) return;
+            
+            ctx.fillStyle = currentPiece.color;
+            for (var y = 0; y < currentPiece.shape.length; y++) {
+                for (var x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        ctx.fillRect(
+                            (currentPiece.x + x) * blockSize,
+                            (currentPiece.y + y) * blockSize,
+                            blockSize, blockSize
+                        );
+                        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                        ctx.strokeRect(
+                            (currentPiece.x + x) * blockSize,
+                            (currentPiece.y + y) * blockSize,
+                            blockSize, blockSize
+                        );
+                    }
+                }
+            }
+        }
+        
+        function rotatePiece() {
+            if (!currentPiece) return;
+            
+            var originalShape = currentPiece.shape;
+            var newShape = [];
+            
+            for (var x = 0; x < originalShape[0].length; x++) {
+                var newRow = [];
+                for (var y = originalShape.length - 1; y >= 0; y--) {
+                    newRow.push(originalShape[y][x]);
+                }
+                newShape.push(newRow);
+            }
+            
+            var original = currentPiece.shape;
+            currentPiece.shape = newShape;
+            
+            if (checkCollision()) {
+                currentPiece.shape = original;
+            }
+        }
+        
+        function checkCollision() {
+            if (!currentPiece) return false;
+            
+            for (var y = 0; y < currentPiece.shape.length; y++) {
+                for (var x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (!currentPiece.shape[y][x]) continue;
+                    
+                    var newX = currentPiece.x + x;
+                    var newY = currentPiece.y + y;
+                    
+                    if (
+                        newX < 0 || 
+                        newX >= cols || 
+                        newY >= rows ||
+                        (newY >= 0 && grid[newY][newX])
+                    ) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        function mergePiece() {
+            if (!currentPiece) return;
+            
+            for (var y = 0; y < currentPiece.shape.length; y++) {
+                for (var x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        var gridY = currentPiece.y + y;
+                        if (gridY >= 0) {
+                            grid[gridY][currentPiece.x + x] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+        }
+        
+        function clearLines() {
+            var linesCleared = 0;
+            
+            for (var y = rows - 1; y >= 0; y--) {
+                if (grid[y].every(cell => cell !== 0)) {
+                    grid.splice(y, 1);
+                    grid.unshift(Array(cols).fill(0));
+                    linesCleared++;
+                    y++;
+                }
+            }
+            
+            if (linesCleared > 0) {
+                score += linesCleared * 100;
+                scoreDisplay.textContent = 'Score: ' + score;
+                
+                // Increase speed with score
+                dropInterval = Math.max(100, 1000 - Math.floor(score / 500) * 50);
+            }
+        }
+        
+        function movePiece(dir) {
+            if (!currentPiece) return;
+            
+            currentPiece.x += dir;
+            if (checkCollision()) {
+                currentPiece.x -= dir;
+            }
+        }
+        
+        function dropPiece() {
+            if (!currentPiece) return;
+            
+            currentPiece.y++;
+            if (checkCollision()) {
+                currentPiece.y--;
+                mergePiece();
+                clearLines();
+                currentPiece = createPiece();
+                
+                if (checkCollision()) {
+                    gameOver = true;
+                }
+            }
+        }
+        
+        function update(time) {
+            if (gameOver) {
+                showEndScreen();
+                return;
+            }
+            
+            var deltaTime = time - lastTime;
+            lastTime = time;
+            
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                dropPiece();
+                dropCounter = 0;
+            }
+            
+            draw();
+            requestAnimationFrame(update);
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawPiece();
+        }
+        
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            endScreen.style.display = 'none';
+            
+            resizeCanvas();
+            createGrid();
+            score = 0;
+            gameOver = false;
+            scoreDisplay.textContent = 'Score: 0';
+            
+            nextPiece = null;
+            currentPiece = createPiece();
+            
+            lastTime = 0;
+            dropCounter = 0;
+            dropInterval = 1000;
+            
+            requestAnimationFrame(update);
+        }
+        
+        function showEndScreen() {
+            gameScreen.style.display = 'none';
+            endScreen.style.display = 'flex';
+            finalScore.textContent = score;
+        }
+        
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        document.getElementById('leftBtn').addEventListener('click', function() { movePiece(-1); });
+        document.getElementById('rightBtn').addEventListener('click', function() { movePiece(1); });
+        document.getElementById('rotateBtn').addEventListener('click', rotatePiece);
+        document.getElementById('downBtn').addEventListener('click', dropPiece);
+        
+        window.addEventListener('keydown', function(e) {
+            if (gameScreen.style.display === 'block') {
+                switch(e.keyCode) {
+                    case 37: movePiece(-1); break;
+                    case 39: movePiece(1); break;
+                    case 38: rotatePiece(); break;
+                    case 40: dropPiece(); break;
+                }
+            }
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
+```
