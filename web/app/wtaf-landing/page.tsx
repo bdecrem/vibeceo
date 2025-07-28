@@ -1886,12 +1886,14 @@ export default function WebtoysSitePage() {
           margin-bottom: 1.5rem;
           padding-bottom: 1rem;
           border-bottom: 3px solid var(--cream);
+          position: relative;
         }
         
         .sms-phone-emoji {
           font-size: 2rem;
           transform: rotate(-15deg);
-          margin-right: -0.5rem;
+          position: absolute;
+          left: 1rem;
         }
         
         .sms-pulse-dot {
