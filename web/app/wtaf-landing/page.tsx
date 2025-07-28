@@ -1057,8 +1057,8 @@ export default function WebtoysSitePage() {
             <p className="hero-description">
               We turn five-word SMS commands into weird little web apps. No logins. No code. Just fun, remixable internet artifacts — shipped from your flip phone.
             </p>
-            <p className="hero-description" style={{ fontSize: '0.9rem', marginTop: '1rem', opacity: 0.8 }}>
-              V 0.1 somethings work, more don't.
+            <p className="hero-description" style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
+              v0.1 some things work, more don't.
             </p>
             
             <div className="phone-display">
