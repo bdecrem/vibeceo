@@ -929,7 +929,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-1" 
           style={{
-            transform: `translate(${mousePosition.x * 0.05}px, ${mousePosition.y * 0.05}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * 0.05}px, ${mousePosition.y * 0.05}px)` : undefined
           }}
         >
           ✨
@@ -937,7 +937,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-2" 
           style={{
-            transform: `translate(${mousePosition.x * -0.03}px, ${mousePosition.y * -0.03}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * -0.03}px, ${mousePosition.y * -0.03}px)` : undefined
           }}
         >
           🚀
@@ -945,7 +945,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-3" 
           style={{
-            transform: `translate(${mousePosition.x * 0.04}px, ${mousePosition.y * -0.04}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * 0.04}px, ${mousePosition.y * -0.04}px)` : undefined
           }}
         >
           ⚡
@@ -953,7 +953,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-5" 
           style={{
-            transform: `translate(${mousePosition.x * 0.07}px, ${mousePosition.y * 0.03}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * 0.07}px, ${mousePosition.y * 0.03}px)` : undefined
           }}
         >
           🔮
@@ -961,7 +961,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-6" 
           style={{
-            transform: `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)` : undefined
           }}
         >
           💎
@@ -969,7 +969,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-7" 
           style={{
-            transform: `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * -0.06}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * -0.06}px)` : undefined
           }}
         >
           🦄
@@ -977,7 +977,7 @@ export default function WebtoysSitePage() {
         <div 
           className="floating-emoji emoji-8" 
           style={{
-            transform: `translate(${mousePosition.x * -0.04}px, ${mousePosition.y * 0.04}px)`
+            transform: isMobile === false ? `translate(${mousePosition.x * -0.04}px, ${mousePosition.y * 0.04}px)` : undefined
           }}
         >
           🎨
@@ -1454,19 +1454,19 @@ export default function WebtoysSitePage() {
 
         @keyframes float-emoji {
           0% { 
-            transform: rotate(0deg) translateY(0); 
+            transform: rotate(0deg) translateY(0) translateX(0); 
           }
           25% { 
-            transform: rotate(90deg) translateY(-30px); 
+            transform: rotate(90deg) translateY(-30px) translateX(15px); 
           }
           50% { 
-            transform: rotate(180deg) translateY(0); 
+            transform: rotate(180deg) translateY(0) translateX(-10px); 
           }
           75% { 
-            transform: rotate(270deg) translateY(30px); 
+            transform: rotate(270deg) translateY(30px) translateX(20px); 
           }
           100% { 
-            transform: rotate(360deg) translateY(0); 
+            transform: rotate(360deg) translateY(0) translateX(0); 
           }
         }
         
