@@ -1066,7 +1066,15 @@ export default function WebtoysSitePage() {
                 <span>• cat photos</span>
                 <span>• todo games</span>
                 <span>• punk billboards</span>
-              </span></span> work, more don't.
+              </span></span> work, more <span className="hover-reveal">don't<span className="hover-content">
+                <span>• complex logic</span>
+                <span>• user accounts</span>
+                <span>• databases</span>
+                <span>• payments</span>
+                <span>• file uploads</span>
+                <span>• real-time sync</span>
+                <span>• your startup idea</span>
+              </span></span>.
             </p>
             
             <div className="phone-display">
