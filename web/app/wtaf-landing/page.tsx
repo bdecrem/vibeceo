@@ -2888,6 +2888,45 @@ export default function WebtoysSitePage() {
           
           .steps-grid {
             grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+          }
+          
+          /* Compact How It Works on mobile */
+          .how-it-works {
+            padding: 3rem 1rem;
+          }
+          
+          .step-card {
+            padding: 0.75rem;
+          }
+          
+          .step-number {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            margin: 0 auto 0.75rem;
+            border-width: 3px;
+            box-shadow: 0 4px 0 var(--yellow-soft);
+          }
+          
+          .step-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+          }
+          
+          .step-description {
+            font-size: 0.9rem;
+            line-height: 1.4;
+          }
+          
+          /* Reduce section header spacing */
+          .how-it-works .section-header {
+            margin-bottom: 2rem;
+          }
+          
+          .how-it-works .section-title {
+            margin-bottom: 0.5rem;
           }
           
           /* Fix rotated phone display on mobile */
