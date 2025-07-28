@@ -1079,10 +1079,10 @@ export default function WebtoysSitePage() {
             
             <div className="phone-display">
               <div className="sms-header">
-                <span className="sms-icon">💬</span>
+                <div className="sms-pulse-dot"></div>
                 <span className="sms-number">
-                  <span className="sms-try-it">Try it!</span>
-                  <span className="sms-phone-text">Text +1-866-330-0015 with:</span>
+                  <span className="sms-phone-text">+1-866-330-0015</span>
+                  <span className="sms-try-it">Text me your wildest idea</span>
                 </span>
               </div>
               <div className="sms-examples">
@@ -1887,26 +1887,69 @@ export default function WebtoysSitePage() {
           border-bottom: 3px solid var(--cream);
         }
         
-        .sms-icon {
-          font-size: 2.5rem;
+        .sms-pulse-dot {
+          width: 12px;
+          height: 12px;
+          background: var(--green-mint);
+          border-radius: 50%;
+          position: relative;
+          animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .sms-pulse-dot::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100%;
+          height: 100%;
+          background: var(--green-mint);
+          border-radius: 50%;
+          animation: pulse-ring 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+        
+        @keyframes pulse-ring {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(2.5);
+            opacity: 0;
+          }
         }
         
         .sms-number {
-          font-size: 1.2rem;
-          font-weight: 700;
-          font-style: italic;
-          color: var(--blue-deep);
           display: flex;
           flex-direction: column;
           align-items: center;
-        }
-        
-        .sms-try-it {
-          display: block;
+          gap: 0.25rem;
         }
         
         .sms-phone-text {
-          display: block;
+          font-size: 1.4rem;
+          font-weight: 800;
+          color: var(--charcoal);
+          letter-spacing: -0.5px;
+        }
+        
+        .sms-try-it {
+          font-size: 0.9rem;
+          color: var(--gray-warm);
+          font-weight: 400;
+          font-style: italic;
         }
         
         .sms-examples {
@@ -2874,8 +2917,13 @@ export default function WebtoysSitePage() {
             width: 100%;
           }
           
-          .sms-icon {
+          .sms-pulse-dot {
             display: none;
+          }
+          
+          .sms-header {
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
           }
           
           .examples-grid {
