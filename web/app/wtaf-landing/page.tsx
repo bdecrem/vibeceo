@@ -2859,10 +2859,19 @@ export default function WebtoysSitePage() {
           
           .phone-display {
             display: block;
-            max-width: calc(100% - 2rem);
-            margin: 0 auto 2rem;
-            padding: 1.5rem;
+            max-width: calc(100% - 1rem);
+            margin: 0 0.5rem 2rem;
+            padding: 1.2rem 0.8rem;
             transform: none !important;
+            border-width: 4px;
+            border-radius: 2rem;
+          }
+          
+          .sms-bubble {
+            padding: 1rem 1.2rem;
+            font-size: 1rem;
+            border-width: 2px;
+            width: 100%;
           }
           
           .sms-icon {
