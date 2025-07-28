@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.wtaf.me'),
-  title: 'WEBTOYS',
-  description: 'Ship from your flip phone 📞. One-shot prompting over SMS. Real prompts. Real chaos. Shipped to the web.',
+  title: 'Trending - WEBTOYS',
+  description: 'Viral experiments and trending web toys. See what\'s breaking the internet in a good way.',
   openGraph: {
-    title: 'WEBTOYS',
-    description: 'Ship from your flip phone 📞. One-shot prompting over SMS. Real prompts. Real chaos. Shipped to the web.',
+    title: 'Trending - WEBTOYS',
+    description: 'Viral experiments and trending web toys. See what\'s breaking the internet in a good way.',
     type: 'website',
     siteName: 'WEBTOYS',
-    url: 'https://www.wtaf.me/wtaf-landing',
+    url: 'https://www.wtaf.me/trending',
     images: [
       {
         url: 'https://www.wtaf.me/images/webtoys-og.png',
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WEBTOYS',
-    description: 'Ship from your flip phone 📞. One-shot prompting over SMS. Real prompts. Real chaos. Shipped to the web.',
+    title: 'Trending - WEBTOYS',
+    description: 'Viral experiments and trending web toys. See what\'s breaking the internet in a good way.',
     images: ['https://www.wtaf.me/images/webtoys-og.png']
   }
 };
 
-export default function WtafLandingLayout({
+export default function TrendingLayout({
   children,
 }: {
   children: React.ReactNode;
