@@ -1,0 +1,333 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(45deg, #1a1a1a, #333);
+  color: #fff;
+  font-family: sans-serif;
+  touch-action: none;
+  overflow: hidden;
+}
+#game {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+#controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  box-sizing: border-box;
+  z-index: 1000;
+}
+.btn {
+  width: 60px;
+  height: 60px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+#score {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 24px;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="controls">
+  <button class="btn" id="left">⬅️</button>
+  <button class="btn" id="rotate">🔄</button>
+  <button class="btn" id="down">⬇️</button>
+  <button class="btn" id="right">➡️</button>
+</div>
+<div id="score">Score: 0</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const controlsHeight = 120;
+
+let width, height, blockSize;
+let gameState = 'intro';
+let score = 0;
+let board = [];
+let currentPiece = null;
+let dropInterval = 1000;
+let lastDrop = 0;
+
+const pieces = [
+  [[1,1,1,1]], // I
+  [[1,1],[1,1]], // O  
+  [[0,1,0],[1,1,1]], // T
+  [[1,1,0],[0,1,1]], // S
+  [[0,1,1],[1,1,0]], // Z
+  [[1,0,0],[1,1,1]], // L
+  [[0,0,1],[1,1,1]]  // J
+];
+
+const colors = ['#00f0f0','#f0f000','#a000f0','#00f000','#f00000','#f0a000','#0000f0'];
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  width = window.innerWidth * dpr;
+  height = (window.innerHeight - controlsHeight) * dpr;
+  
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = (window.innerHeight - controlsHeight) + 'px';
+  
+  blockSize = Math.floor(width / 10 / dpr) * dpr;
+}
+
+function init() {
+  board = Array(20).fill().map(() => Array(10).fill(0));
+  score = 0;
+  document.getElementById('score').textContent = 'Score: 0';
+  dropInterval = 1000;
+  spawnPiece();
+}
+
+function spawnPiece() {
+  const type = Math.floor(Math.random() * pieces.length);
+  currentPiece = {
+    x: 3,
+    y: 0,
+    shape: pieces[type],
+    color: colors[type]
+  };
+  
+  if (collision()) {
+    gameState = 'over';
+  }
+}
+
+function collision() {
+  for (let y = 0; y < currentPiece.shape.length; y++) {
+    for (let x = 0; x < currentPiece.shape[y].length; x++) {
+      if (currentPiece.shape[y][x]) {
+        const boardX = currentPiece.x + x;
+        const boardY = currentPiece.y + y;
+        
+        if (boardX < 0 || boardX >= 10 || boardY >= 20 ||
+            (boardY >= 0 && board[boardY][boardX])) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function merge() {
+  for (let y = 0; y < currentPiece.shape.length; y++) {
+    for (let x = 0; x < currentPiece.shape[y].length; x++) {
+      if (currentPiece.shape[y][x]) {
+        const boardY = currentPiece.y + y;
+        if (boardY >= 0) {
+          board[boardY][currentPiece.x + x] = currentPiece.color;
+        }
+      }
+    }
+  }
+}
+
+function clearLines() {
+  let linesCleared = 0;
+  
+  for (let y = 19; y >= 0; y--) {
+    if (board[y].every(cell => cell !== 0)) {
+      board.splice(y, 1);
+      board.unshift(Array(10).fill(0));
+      linesCleared++;
+      y++;
+    }
+  }
+  
+  if (linesCleared) {
+    score += [40, 100, 300, 1200][linesCleared - 1];
+    document.getElementById('score').textContent = 'Score: ' + score;
+    dropInterval = Math.max(100, 1000 - Math.floor(score/500) * 100);
+  }
+}
+
+function rotate() {
+  const oldShape = currentPiece.shape;
+  currentPiece.shape = currentPiece.shape[0].map((_, i) => 
+    currentPiece.shape.map(row => row[i]).reverse()
+  );
+  
+  if (collision()) {
+    currentPiece.shape = oldShape;
+  }
+}
+
+function update(time) {
+  if (gameState === 'play' && time - lastDrop > dropInterval) {
+    currentPiece.y++;
+    
+    if (collision()) {
+      currentPiece.y--;
+      merge();
+      clearLines();
+      spawnPiece();
+    }
+    
+    lastDrop = time;
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, width, height);
+  
+  if (gameState === 'intro') {
+    ctx.fillStyle = '#fff';
+    ctx.font = '48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TETRIS', width/2, height/3);
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Tap to Start', width/2, height/2);
+    return;
+  }
+  
+  if (gameState === 'over') {
+    ctx.fillStyle = '#fff';
+    ctx.font = '48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', width/2, height/3);
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Score: ' + score, width/2, height/2);
+    ctx.fillText('Tap to Restart', width/2, height*2/3);
+    return;
+  }
+
+  const offsetX = (width - blockSize * 10) / 2;
+  
+  for (let y = 0; y < 20; y++) {
+    for (let x = 0; x < 10; x++) {
+      if (board[y][x]) {
+        ctx.fillStyle = board[y][x];
+        ctx.fillRect(offsetX + x * blockSize, y * blockSize, blockSize-1, blockSize-1);
+      }
+    }
+  }
+  
+  if (currentPiece) {
+    ctx.fillStyle = currentPiece.color;
+    for (let y = 0; y < currentPiece.shape.length; y++) {
+      for (let x = 0; x < currentPiece.shape[y].length; x++) {
+        if (currentPiece.shape[y][x]) {
+          ctx.fillRect(
+            offsetX + (currentPiece.x + x) * blockSize,
+            (currentPiece.y + y) * blockSize,
+            blockSize-1,
+            blockSize-1
+          );
+        }
+      }
+    }
+  }
+}
+
+function gameLoop(time) {
+  update(time);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+canvas.addEventListener('click', function() {
+  if (gameState === 'intro') {
+    gameState = 'play';
+    init();
+  } else if (gameState === 'over') {
+    gameState = 'intro';
+  }
+});
+
+document.getElementById('left').addEventListener('click', function() {
+  if (gameState === 'play') {
+    currentPiece.x--;
+    if (collision()) currentPiece.x++;
+  }
+});
+
+document.getElementById('right').addEventListener('click', function() {
+  if (gameState === 'play') {
+    currentPiece.x++;
+    if (collision()) currentPiece.x--;
+  }
+});
+
+document.getElementById('down').addEventListener('click', function() {
+  if (gameState === 'play') {
+    currentPiece.y++;
+    if (collision()) {
+      currentPiece.y--;
+      merge();
+      clearLines();
+      spawnPiece();
+    }
+  }
+});
+
+document.getElementById('rotate').addEventListener('click', function() {
+  if (gameState === 'play') rotate();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (gameState === 'play') {
+    switch(e.keyCode) {
+      case 37: // left
+        currentPiece.x--;
+        if (collision()) currentPiece.x++;
+        break;
+      case 39: // right
+        currentPiece.x++;
+        if (collision()) currentPiece.x--;
+        break;
+      case 40: // down
+        currentPiece.y++;
+        if (collision()) {
+          currentPiece.y--;
+          merge();
+          clearLines();
+          spawnPiece();
+        }
+        break;
+      case 38: // up
+        rotate();
+        break;
+    }
+  }
+});
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```

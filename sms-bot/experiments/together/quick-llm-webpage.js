@@ -42,7 +42,7 @@ async function callTogetherAI(systemPrompt, userPrompt, retries = 3) {
                 
                 const requestBody = {
                     model: model,
-                    max_tokens: 8192,
+                    max_tokens: 32768,
                     temperature: 0.7,
                     messages: [
                         {
@@ -182,10 +182,10 @@ async function main() {
     // Load system prompt from game-tech-spec.json
     let systemPrompt;
     try {
-        const promptPath = path.join(__dirname, '..', '..', 'content', 'builder-game-fixed-controls.json');
+        const promptPath = path.join(__dirname, '..', '..', 'content', 'builder-game.json');
         const promptData = JSON.parse(fs.readFileSync(promptPath, 'utf8'));
         systemPrompt = promptData.content || promptData.prompt || promptData.system || JSON.stringify(promptData);
-        console.log(`📖 Loaded system prompt from builder-game-fixed-controls.json (${systemPrompt.length} chars)`);
+        console.log(`📖 Loaded system prompt from builder-game.json (${systemPrompt.length} chars)`);
     } catch (error) {
         console.error('❌ Error loading builder-game.json:', error.message);
         console.log('Using default system prompt...');
