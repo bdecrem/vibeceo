@@ -2770,25 +2770,25 @@ export default function WebtoysSitePage() {
             overflow: hidden !important;
           }
           
-          .emoji-6 {
-            top: 35%;
-            left: 35%;
-            animation-duration: 35s;
-            animation-delay: 12s;
+          /* Hide diamond, lightning, and paint palette on mobile */
+          .emoji-3,
+          .emoji-6,
+          .emoji-8 {
+            display: none !important;
           }
           
+          /* Move unicorn to left side */
           .emoji-7 {
             top: 55%;
-            right: 35%;
+            left: 5%;
+            right: auto;
             animation-duration: 32s;
             animation-delay: 15s;
           }
           
-          .emoji-8 {
-            bottom: 35%;
-            left: 20%;
-            animation-duration: 28s;
-            animation-delay: 18s;
+          /* Move rocket more to the left to be fully visible */
+          .emoji-2 {
+            right: 10%;
           }
           
           .floating-shape {
