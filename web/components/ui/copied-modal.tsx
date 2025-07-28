@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 
 interface CopiedModalProps {
   show: boolean
@@ -8,7 +8,27 @@ interface CopiedModalProps {
   onClose: () => void
 }
 
+type DeviceType = 'desktop' | 'android' | 'iphone' | 'unknown'
+
 export default function CopiedModal({ show, text, onClose }: CopiedModalProps) {
+  const [deviceType, setDeviceType] = useState<DeviceType>('unknown')
+
+  useEffect(() => {
+    const detectDevice = () => {
+      const userAgent = navigator.userAgent.toLowerCase()
+      
+      if (/iphone|ipod|ipad/.test(userAgent)) {
+        return 'iphone'
+      } else if (/android/.test(userAgent)) {
+        return 'android'
+      } else {
+        return 'desktop'
+      }
+    }
+
+    setDeviceType(detectDevice())
+  }, [])
+
   if (!show) return null
 
   return (
@@ -16,26 +36,26 @@ export default function CopiedModal({ show, text, onClose }: CopiedModalProps) {
       {/* Modal */}
       <div className="modal-overlay" onClick={onClose}>
         <div className="copied-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <button className="close-button" onClick={onClose}>×</button>
-            <div className="header-center">
-              <div className="success-icon">✨</div>
-              <h3 className="modal-title">Copied!</h3>
+          <button className="close-button" onClick={onClose}>×</button>
+          <div className="modal-content">
+            <div className="success-indicator">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-            <div className="header-spacer"></div>
-          </div>
-          <div className="modal-body">
-            <p className="instruction-text">
-              Now text this to <span className="phone-number">+1-866-330-0015</span>
-            </p>
+            <h3 className="modal-title">COPIED!</h3>
             <div className="copied-text-display">
               {text}
             </div>
-          </div>
-          <div className="modal-footer">
-            <button className="got-it-button" onClick={onClose}>
-              Got it!
-            </button>
+            <p className="instruction-text">
+              Now text this to
+            </p>
+            <a href="sms:+18663300015" className="phone-button">
+              +1-866-330-0015
+            </a>
+            <p className="paste-hint">
+              👉 Long press to paste the magic
+            </p>
           </div>
         </div>
       </div>
@@ -49,13 +69,13 @@ export default function CopiedModal({ show, text, onClose }: CopiedModalProps) {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(42, 42, 42, 0.9);
-          backdrop-filter: blur(10px);
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
           z-index: 1000;
           display: flex;
           align-items: center;
           justify-content: center;
-          animation: modal-fade-in 0.3s ease-out;
+          animation: modal-fade-in 0.2s ease-out;
         }
 
         @keyframes modal-fade-in {
@@ -64,187 +84,123 @@ export default function CopiedModal({ show, text, onClose }: CopiedModalProps) {
         }
 
         .copied-modal {
-          background: #FEFEF5; /* var(--white-pure) */
-          border: 6px solid #FFD63D; /* var(--yellow) */
-          border-radius: 2rem;
-          max-width: 600px;
+          background: #FFFFFF;
+          border: 3px solid #FDE047;
+          border-radius: 1rem;
+          max-width: 400px;
           width: 90%;
           position: relative;
-          box-shadow: 0 20px 0 #8B7FD4, 0 40px 80px rgba(201, 194, 249, 0.25); /* var(--purple-accent), var(--purple-shadow) */
-          animation: modal-bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-          transform-origin: center;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          animation: modal-slide-up 0.3s ease-out;
         }
 
-        @keyframes modal-bounce-in {
+        @keyframes modal-slide-up {
           0% { 
             opacity: 0; 
-            transform: scale(0.3) translateY(-50px);
+            transform: translateY(20px);
           }
           100% { 
             opacity: 1; 
-            transform: scale(1) translateY(0);
+            transform: translateY(0);
           }
         }
 
-        .modal-header {
-          padding: 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 4px solid #FFF4CC; /* var(--cream) */
-          background: linear-gradient(135deg, #FFF4CC 0%, #FEFEF5 100%); /* var(--yellow-soft) to var(--white-pure) */
-          border-radius: 1.4rem 1.4rem 0 0;
+        .modal-content {
+          padding: 2.5rem 2rem;
+          text-align: center;
         }
 
-        .header-center {
-          display: flex;
+        .success-indicator {
+          display: inline-flex;
           align-items: center;
-          gap: 1rem;
-          flex: 1;
           justify-content: center;
-        }
-
-        .header-spacer {
-          width: 40px;
-        }
-
-        .success-icon {
-          font-size: 2rem;
-          animation: sparkle-rotate 2s ease-in-out infinite;
-        }
-
-        @keyframes sparkle-rotate {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          25% { transform: rotate(-10deg) scale(1.1); }
-          50% { transform: rotate(10deg) scale(1.2); }
-          75% { transform: rotate(-5deg) scale(1.1); }
+          width: 32px;
+          height: 32px;
+          background: #B6FFB3;
+          border-radius: 50%;
+          margin-bottom: 1rem;
+          color: #2A2A2A;
         }
 
         .modal-title {
-          font-size: 2rem;
-          font-weight: 900;
-          color: #2A2A2A; /* var(--charcoal) */
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: -1px;
+          font-size: 1.75rem;
+          font-weight: 800;
+          color: #2A2A2A;
+          margin: 0 0 1.5rem 0;
         }
 
         .close-button {
-          background: #FF4B4B; /* var(--red) */
-          border: 3px solid #2A2A2A; /* var(--charcoal) */
-          color: #FEFEF5; /* var(--white-pure) */
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background: transparent;
+          border: none;
+          color: #6B6B6B;
           font-size: 1.5rem;
           cursor: pointer;
-          padding: 0.5rem;
-          line-height: 1;
-          width: 40px;
-          height: 40px;
+          padding: 0.25rem;
+          width: 32px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 50%;
-          transition: all 0.3s ease;
-          font-weight: 900;
-          box-shadow: 0 4px 0 #FF7A7A; /* var(--red-soft) */
+          border-radius: 4px;
+          transition: all 0.2s ease;
         }
 
         .close-button:hover {
-          background: #FF7A7A; /* var(--red-soft) */
-          transform: translateY(-2px);
-          box-shadow: 0 6px 0 #FF4B4B; /* var(--red) */
-        }
-
-        .modal-body {
-          padding: 2rem;
-          background: #FEFEF5; /* var(--white-pure) */
-        }
-
-        .instruction-text {
-          font-size: 1.3rem;
-          color: #2A2A2A; /* var(--charcoal) */
-          margin: 0 0 2rem 0;
-          text-align: center;
-          font-weight: 600;
-        }
-
-        .phone-number {
-          background: #6ECBFF; /* var(--blue) */
-          color: #FEFEF5; /* var(--white-pure) */
-          padding: 0.3rem 0.8rem;
-          border-radius: 1rem;
-          font-weight: 900;
-          font-size: 1.1em;
-          border: 2px solid #4A9FD4; /* var(--blue-deep) */
-          box-shadow: 0 3px 0 #4A9FD4; /* var(--blue-deep) */
+          background: #F5F5F5;
+          color: #2A2A2A;
         }
 
         .copied-text-display {
-          background: #FFF4CC; /* var(--cream) */
-          border: 4px solid #B6FFB3; /* var(--green-mint) */
-          border-radius: 1.5rem;
-          padding: 1.5rem;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+          background: #FEFEF5;
+          border: 2px solid #B6FFB3;
+          border-radius: 1rem;
+          padding: 1.25rem 1.75rem;
+          font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Consolas', monospace;
           font-size: 1.1rem;
-          color: #2A2A2A; /* var(--charcoal) */
-          word-break: break-word;
-          line-height: 1.4;
           font-weight: 600;
-          position: relative;
-          overflow: hidden;
+          color: #2A2A2A;
+          word-break: break-word;
+          line-height: 1.5;
+          margin-bottom: 1.5rem;
         }
 
-        .copied-text-display::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, #B6FFB3, #6ECBFF, #8B7FD4, #B6FFB3); /* var(--green-mint), var(--blue), var(--purple-accent), var(--green-mint) */
-          background-size: 200% 200%;
-          border-radius: inherit;
-          z-index: -1;
-          animation: rainbow-border 3s ease-in-out infinite;
+        .instruction-text {
+          font-size: 0.9rem;
+          color: #6B6B6B;
+          margin: 0 0 1rem 0;
         }
 
-        @keyframes rainbow-border {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-
-        .modal-footer {
-          padding: 2rem;
-          display: flex;
-          justify-content: center;
-          background: #FEFEF5; /* var(--white-pure) */
-          border-radius: 0 0 1.4rem 1.4rem;
-        }
-
-        .got-it-button {
-          background: #B6FFB3; /* var(--green-mint) */
-          color: #2A2A2A; /* var(--charcoal) */
-          border: 4px solid #7FB069; /* var(--green-sage) */
-          padding: 1rem 3rem;
+        .phone-button {
+          display: inline-block;
+          background: #87CEEB;
+          color: white;
+          padding: 0.75rem 1.5rem;
           border-radius: 2rem;
-          font-size: 1.2rem;
-          font-weight: 800;
-          cursor: pointer;
-          text-transform: uppercase;
-          letter-spacing: -0.5px;
-          transition: all 0.3s ease;
-          box-shadow: 0 6px 0 #7FB069; /* var(--green-sage) */
+          font-size: 1.1rem;
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          margin-bottom: 1rem;
         }
 
-        .got-it-button:hover {
-          background: #7FB069; /* var(--green-sage) */
-          color: #FEFEF5; /* var(--white-pure) */
-          transform: translateY(-3px);
-          box-shadow: 0 9px 0 #2A2A2A; /* var(--charcoal) */
+        .phone-button:hover {
+          background: #5FA8D3;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
         }
 
-        .got-it-button:active {
+        .phone-button:active {
           transform: translateY(0);
-          box-shadow: 0 3px 0 #7FB069; /* var(--green-sage) */
+        }
+
+        .paste-hint {
+          font-size: 0.8rem;
+          color: #6B6B6B;
+          margin: 0;
+          font-style: italic;
         }
       `}</style>
     </>

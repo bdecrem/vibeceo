@@ -1,0 +1,248 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, #4dc3ff, #1a90ff);
+    overflow: hidden;
+    touch-action: none;
+}
+#game {
+    display: block;
+    touch-action: none;
+}
+#controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+#jump {
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    color: white;
+    user-select: none;
+    -webkit-user-select: none;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="controls">
+    <div id="jump">⬆️</div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const CONTROLS_HEIGHT = 120;
+let gameWidth, gameHeight;
+
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    gameWidth = window.innerWidth;
+    gameHeight = window.innerHeight - CONTROLS_HEIGHT;
+    
+    canvas.width = gameWidth * dpr;
+    canvas.height = gameHeight * dpr;
+    canvas.style.width = gameWidth + 'px';
+    canvas.style.height = gameHeight + 'px';
+    
+    ctx.scale(dpr, dpr);
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const state = {
+    phase: 'intro', // intro, playing, gameover
+    bird: {
+        x: gameWidth / 3,
+        y: gameHeight / 2,
+        velocity: 0,
+        size: 30
+    },
+    pipes: [],
+    score: 0,
+    gravity: 0.5,
+    jumpForce: -10,
+    pipeGap: 150,
+    pipeWidth: 60,
+    pipeSpawnInterval: 1500,
+    lastPipeSpawn: 0
+};
+
+function generatePipe() {
+    const minHeight = 50;
+    const maxHeight = gameHeight - state.pipeGap - minHeight;
+    const height = Math.random() * (maxHeight - minHeight) + minHeight;
+    
+    return {
+        x: gameWidth,
+        height: height,
+        passed: false
+    };
+}
+
+function jump() {
+    if (state.phase === 'intro') {
+        state.phase = 'playing';
+    }
+    if (state.phase === 'playing') {
+        state.bird.velocity = state.jumpForce;
+    }
+    if (state.phase === 'gameover') {
+        resetGame();
+    }
+}
+
+function resetGame() {
+    state.bird.y = gameHeight / 2;
+    state.bird.velocity = 0;
+    state.pipes = [];
+    state.score = 0;
+    state.phase = 'playing';
+    state.lastPipeSpawn = 0;
+}
+
+function checkCollision(bird, pipe) {
+    // Check collision with upper pipe
+    if (bird.x + bird.size > pipe.x && 
+        bird.x < pipe.x + state.pipeWidth &&
+        bird.y < pipe.height) {
+        return true;
+    }
+    
+    // Check collision with lower pipe
+    if (bird.x + bird.size > pipe.x && 
+        bird.x < pipe.x + state.pipeWidth &&
+        bird.y + bird.size > pipe.height + state.pipeGap) {
+        return true;
+    }
+    
+    return false;
+}
+
+let lastTime = 0;
+function gameLoop(timestamp) {
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+    
+    ctx.clearRect(0, 0, gameWidth, gameHeight);
+    
+    // Draw background
+    ctx.fillStyle = '#4dc3ff';
+    ctx.fillRect(0, 0, gameWidth, gameHeight);
+    
+    if (state.phase === 'intro') {
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Tap to Start', gameWidth/2, gameHeight/2);
+        
+    } else if (state.phase === 'playing') {
+        // Update bird
+        state.bird.velocity += state.gravity;
+        state.bird.y += state.bird.velocity;
+        
+        // Generate pipes
+        if (timestamp - state.lastPipeSpawn > state.pipeSpawnInterval) {
+            state.pipes.push(generatePipe());
+            state.lastPipeSpawn = timestamp;
+        }
+        
+        // Update and draw pipes
+        for (let i = state.pipes.length - 1; i >= 0; i--) {
+            const pipe = state.pipes[i];
+            pipe.x -= 5;
+            
+            // Remove off-screen pipes
+            if (pipe.x + state.pipeWidth < 0) {
+                state.pipes.splice(i, 1);
+                continue;
+            }
+            
+            // Check if pipe was passed
+            if (!pipe.passed && state.bird.x > pipe.x + state.pipeWidth) {
+                pipe.passed = true;
+                state.score++;
+            }
+            
+            // Draw pipes
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(pipe.x, 0, state.pipeWidth, pipe.height);
+            ctx.fillRect(pipe.x, pipe.height + state.pipeGap, 
+                        state.pipeWidth, gameHeight - pipe.height - state.pipeGap);
+            
+            // Check collision
+            if (checkCollision(state.bird, pipe)) {
+                state.phase = 'gameover';
+            }
+        }
+        
+        // Check bounds
+        if (state.bird.y > gameHeight - state.bird.size || state.bird.y < 0) {
+            state.phase = 'gameover';
+        }
+        
+    } else if (state.phase === 'gameover') {
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', gameWidth/2, gameHeight/2 - 50);
+        ctx.fillText('Score: ' + state.score, gameWidth/2, gameHeight/2);
+        ctx.fillText('Tap to Restart', gameWidth/2, gameHeight/2 + 50);
+    }
+    
+    // Draw bird
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath();
+    ctx.arc(state.bird.x, state.bird.y, state.bird.size/2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw score
+    if (state.phase === 'playing') {
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('Score: ' + state.score, 10, 40);
+    }
+    
+    requestAnimationFrame(gameLoop);
+}
+
+// Event listeners
+document.getElementById('jump').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    jump();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') {
+        jump();
+    }
+});
+
+// Start game loop
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```

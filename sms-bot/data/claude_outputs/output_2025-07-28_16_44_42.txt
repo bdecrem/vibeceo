@@ -1,0 +1,334 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(45deg, #1a1a1a, #4a4a4a);
+  overflow: hidden;
+  touch-action: none;
+  font-family: sans-serif;
+}
+#game {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+#controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+}
+.btn {
+  width: 60px;
+  height: 60px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 24px;
+  margin: 0 10px;
+  touch-action: none;
+}
+#score {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-size: 24px;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">Score: 0</div>
+<div id="controls">
+  <button class="btn" id="left">⬅️</button>
+  <button class="btn" id="rotate">🔄</button>
+  <button class="btn" id="down">⬇️</button>
+  <button class="btn" id="right">➡️</button>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const controlsHeight = 120;
+
+let dpr = window.devicePixelRatio || 1;
+let gamePhase = 'intro';
+let score = 0;
+let dropInterval = 1000;
+let lastDrop = 0;
+let grid = [];
+let currentPiece = null;
+let nextPiece = null;
+
+const COLS = 10;
+const ROWS = 20;
+let blockSize;
+
+const pieces = [
+  [[1,1,1,1]], // I
+  [[1,1],[1,1]], // O  
+  [[0,1,0],[1,1,1]], // T
+  [[1,1,0],[0,1,1]], // S
+  [[0,1,1],[1,1,0]], // Z
+  [[1,0,0],[1,1,1]], // J
+  [[0,0,1],[1,1,1]]  // L
+];
+
+const colors = ['#00f0f0','#f0f000','#a000f0','#00f000','#f00000','#0000f0','#f0a000'];
+
+function resize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight - controlsHeight;
+  
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  
+  ctx.scale(dpr, dpr);
+  
+  blockSize = Math.floor(Math.min(w/COLS, h/ROWS));
+}
+
+function init() {
+  grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+  score = 0;
+  dropInterval = 1000;
+  document.getElementById('score').textContent = 'Score: 0';
+  spawnPiece();
+}
+
+function spawnPiece() {
+  if (!nextPiece) {
+    nextPiece = {
+      shape: pieces[Math.floor(Math.random() * pieces.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
+      x: Math.floor(COLS/2) - 1,
+      y: 0
+    };
+  }
+  
+  currentPiece = nextPiece;
+  nextPiece = {
+    shape: pieces[Math.floor(Math.random() * pieces.length)],
+    color: colors[Math.floor(Math.random() * colors.length)],
+    x: Math.floor(COLS/2) - 1,
+    y: 0
+  };
+  
+  if (!isValidMove(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+    gamePhase = 'end';
+  }
+}
+
+function isValidMove(x, y, shape) {
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (shape[r][c]) {
+        let newX = x + c;
+        let newY = y + r;
+        if (newX < 0 || newX >= COLS || newY >= ROWS) return false;
+        if (newY >= 0 && grid[newY][newX]) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function rotate(shape) {
+  let newShape = Array(shape[0].length).fill().map(() => Array(shape.length).fill(0));
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      newShape[c][shape.length-1-r] = shape[r][c];
+    }
+  }
+  return newShape;
+}
+
+function merge() {
+  for (let r = 0; r < currentPiece.shape.length; r++) {
+    for (let c = 0; c < currentPiece.shape[r].length; c++) {
+      if (currentPiece.shape[r][c]) {
+        let y = currentPiece.y + r;
+        if (y >= 0) {
+          grid[y][currentPiece.x + c] = currentPiece.color;
+        }
+      }
+    }
+  }
+}
+
+function clearLines() {
+  let linesCleared = 0;
+  for (let r = ROWS-1; r >= 0; r--) {
+    if (grid[r].every(cell => cell)) {
+      grid.splice(r, 1);
+      grid.unshift(Array(COLS).fill(0));
+      linesCleared++;
+      r++;
+    }
+  }
+  if (linesCleared) {
+    score += linesCleared * 100;
+    document.getElementById('score').textContent = 'Score: ' + score;
+    dropInterval = Math.max(100, 1000 - Math.floor(score/100) * 50);
+  }
+}
+
+function update(time) {
+  if (gamePhase === 'play') {
+    if (time - lastDrop > dropInterval) {
+      if (isValidMove(currentPiece.x, currentPiece.y + 1, currentPiece.shape)) {
+        currentPiece.y++;
+      } else {
+        merge();
+        clearLines();
+        spawnPiece();
+      }
+      lastDrop = time;
+    }
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width/dpr, canvas.height/dpr);
+  
+  if (gamePhase === 'intro') {
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TETRIS', canvas.width/dpr/2, canvas.height/dpr/2);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Tap to Start', canvas.width/dpr/2, canvas.height/dpr/2 + 40);
+    return;
+  }
+  
+  if (gamePhase === 'end') {
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Game Over', canvas.width/dpr/2, canvas.height/dpr/2);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Score: ' + score, canvas.width/dpr/2, canvas.height/dpr/2 + 40);
+    ctx.fillText('Tap to Restart', canvas.width/dpr/2, canvas.height/dpr/2 + 80);
+    return;
+  }
+  
+  const offsetX = (canvas.width/dpr - COLS * blockSize) / 2;
+  const offsetY = (canvas.height/dpr - ROWS * blockSize) / 2;
+  
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.fillStyle = grid[r][c] || '#111';
+      ctx.fillRect(offsetX + c * blockSize, offsetY + r * blockSize, blockSize-1, blockSize-1);
+    }
+  }
+  
+  if (currentPiece) {
+    ctx.fillStyle = currentPiece.color;
+    for (let r = 0; r < currentPiece.shape.length; r++) {
+      for (let c = 0; c < currentPiece.shape[r].length; c++) {
+        if (currentPiece.shape[r][c]) {
+          let x = offsetX + (currentPiece.x + c) * blockSize;
+          let y = offsetY + (currentPiece.y + r) * blockSize;
+          ctx.fillRect(x, y, blockSize-1, blockSize-1);
+        }
+      }
+    }
+  }
+}
+
+function gameLoop(time) {
+  update(time);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+canvas.addEventListener('click', function() {
+  if (gamePhase === 'intro') {
+    gamePhase = 'play';
+    init();
+  } else if (gamePhase === 'end') {
+    gamePhase = 'play';
+    init();
+  }
+});
+
+document.getElementById('left').addEventListener('click', function() {
+  if (gamePhase === 'play' && isValidMove(currentPiece.x - 1, currentPiece.y, currentPiece.shape)) {
+    currentPiece.x--;
+  }
+});
+
+document.getElementById('right').addEventListener('click', function() {
+  if (gamePhase === 'play' && isValidMove(currentPiece.x + 1, currentPiece.y, currentPiece.shape)) {
+    currentPiece.x++;
+  }
+});
+
+document.getElementById('down').addEventListener('click', function() {
+  if (gamePhase === 'play' && isValidMove(currentPiece.x, currentPiece.y + 1, currentPiece.shape)) {
+    currentPiece.y++;
+    lastDrop = performance.now();
+  }
+});
+
+document.getElementById('rotate').addEventListener('click', function() {
+  if (gamePhase === 'play') {
+    let newShape = rotate(currentPiece.shape);
+    if (isValidMove(currentPiece.x, currentPiece.y, newShape)) {
+      currentPiece.shape = newShape;
+    }
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (gamePhase !== 'play') return;
+  
+  switch(e.keyCode) {
+    case 37: // left
+      if (isValidMove(currentPiece.x - 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x--;
+      }
+      break;
+    case 39: // right
+      if (isValidMove(currentPiece.x + 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x++;
+      }
+      break;
+    case 40: // down
+      if (isValidMove(currentPiece.x, currentPiece.y + 1, currentPiece.shape)) {
+        currentPiece.y++;
+        lastDrop = performance.now();
+      }
+      break;
+    case 38: // up
+      let newShape = rotate(currentPiece.shape);
+      if (isValidMove(currentPiece.x, currentPiece.y, newShape)) {
+        currentPiece.shape = newShape;
+      }
+      break;
+  }
+});
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```

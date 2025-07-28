@@ -668,24 +668,58 @@ export default function WebtoysSitePage() {
   }
 
   const handleSMSBubbleClick = async (text: string) => {
-    const success = await copyToClipboard(text)
-    if (success) {
-      showCopiedNotification(text)
+    // Detect if Android
+    const userAgent = navigator.userAgent.toLowerCase()
+    const isAndroid = /android/.test(userAgent)
+    
+    if (isAndroid) {
+      // On Android, directly open SMS app with pre-filled text
+      const smsUrl = `sms:+18663300015?body=${encodeURIComponent(text)}`
+      window.location.href = smsUrl
+    } else {
+      // On other devices, show the copy modal
+      const success = await copyToClipboard(text)
+      if (success) {
+        showCopiedNotification(text)
+      }
     }
   }
 
   const handleRemixClick = async (example: string) => {
-    const success = await copyToClipboard(example)
-    if (success) {
-      showCopiedNotification(example)
+    // Detect if Android
+    const userAgent = navigator.userAgent.toLowerCase()
+    const isAndroid = /android/.test(userAgent)
+    
+    if (isAndroid) {
+      // On Android, directly open SMS app with pre-filled text
+      const smsUrl = `sms:+18663300015?body=${encodeURIComponent(example)}`
+      window.location.href = smsUrl
+    } else {
+      // On other devices, show the copy modal
+      const success = await copyToClipboard(example)
+      if (success) {
+        showCopiedNotification(example)
+      }
     }
   }
 
   const handleTrendingRemixClick = async (appSlug: string) => {
     const remixCommand = `REMIX ${appSlug}`
-    const success = await copyToClipboard(remixCommand)
-    if (success) {
-      showCopiedNotification(remixCommand)
+    
+    // Detect if Android
+    const userAgent = navigator.userAgent.toLowerCase()
+    const isAndroid = /android/.test(userAgent)
+    
+    if (isAndroid) {
+      // On Android, directly open SMS app with pre-filled text
+      const smsUrl = `sms:+18663300015?body=${encodeURIComponent(remixCommand)}`
+      window.location.href = smsUrl
+    } else {
+      // On other devices, show the copy modal
+      const success = await copyToClipboard(remixCommand)
+      if (success) {
+        showCopiedNotification(remixCommand)
+      }
     }
   }
 
@@ -1083,7 +1117,7 @@ export default function WebtoysSitePage() {
                 <div className="sms-pulse-dot"></div>
                 <span className="sms-number">
                   <span className="sms-phone-text">+1-866-330-0015</span>
-                  <span className="sms-try-it">Text us your wildest idea</span>
+                  <span className="sms-try-it">Text us with your web toy request</span>
                 </span>
               </div>
               <div className="sms-examples">
@@ -1105,7 +1139,7 @@ export default function WebtoysSitePage() {
             <div className="cta-section">
               <a href="sms:+18663300015" className="cta-main">
                 <span>📱</span>
-                <span>Text (866) 330-0015 Now</span>
+                <span>Text +1-866-330-0015 Now</span>
               </a>
             </div>
           </div>
@@ -1139,8 +1173,8 @@ export default function WebtoysSitePage() {
                 🍣
               </div>
               <div className="example-info">
-                <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF Build me a fun sushi bar site"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF Build me a fun sushi bar site</div>
                 <div className="example-actions">
                   <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">View Site</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
@@ -1160,8 +1194,8 @@ export default function WebtoysSitePage() {
               }}>
               </div>
               <div className="example-info">
-                <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF Make me a rhyming dictionary"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF Make me a rhyming dictionary</div>
                 <div className="example-actions">
                   <a href="/bart/matte-quokka-crafting" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make me a rhyming dictionary")}>
@@ -1181,8 +1215,8 @@ export default function WebtoysSitePage() {
               }}>
               </div>
               <div className="example-info">
-                <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF make a retro paint app like old windows"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF make a retro paint app like old windows</div>
                 <div className="example-actions">
                   <a href="/bart/flame-cheetah-accumulating" className="btn-view">Paint!</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
@@ -1204,8 +1238,8 @@ export default function WebtoysSitePage() {
                 <div className="app-icon">💫</div>
               </div>
               <div className="example-info">
-                <div className="prompt-label">Text Message:</div>
-                <div className="prompt-text">"WTAF I need a todo app that makes productivity feel like a game"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF I need a todo app that makes productivity feel like a game</div>
                 <div className="example-actions">
                   <a href="#" className="btn-view">Try App</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF I need a todo app that makes productivity feel like a game")}>
@@ -1284,8 +1318,8 @@ export default function WebtoysSitePage() {
                 />
               </div>
               <div className="trending-info">
-                <div className="prompt-label">What's this:</div>
-                <div className="prompt-text">"WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page</div>
                 <div className="trending-stats">
                   <span className="remix-count">🔥 12 remixes</span>
                   <span className="timestamp">Born today</span>
@@ -1309,8 +1343,8 @@ export default function WebtoysSitePage() {
                 />
               </div>
               <div className="trending-info">
-                <div className="prompt-label">What's this:</div>
-                <div className="prompt-text">"WTAF Make a meme generator but only for cat photos"</div>
+                <div className="prompt-label">The prompt:</div>
+                <div className="prompt-text">WTAF Make a meme generator but only for cat photos</div>
                 <div className="trending-stats">
                   <span className="remix-count">🔥 8 remixes</span>
                   <span className="timestamp">Dropped yesterday</span>
@@ -1893,7 +1927,8 @@ export default function WebtoysSitePage() {
           font-size: 2rem;
           transform: rotate(-15deg);
           position: absolute;
-          left: 1rem;
+          left: 50%;
+          margin-left: -8rem;
         }
         
         .sms-pulse-dot {
@@ -2010,15 +2045,15 @@ export default function WebtoysSitePage() {
         .cta-main {
           display: inline-flex;
           align-items: center;
-          gap: 1.5rem;
+          gap: 0.75rem;
           background: var(--red);
           color: white;
-          padding: 1.5rem 3rem;
-          border-radius: 3rem;
-          font-size: 1.3rem;
-          font-weight: 800;
+          padding: 0.75rem 2rem;
+          border-radius: 2rem;
+          font-size: 1rem;
+          font-weight: 400;
           text-decoration: none;
-          box-shadow: 0 8px 0 var(--red-soft);
+          box-shadow: 0 6px 0 var(--red-soft);
           transition: all 0.3s ease;
           margin-bottom: 1.5rem;
         }
@@ -2265,19 +2300,21 @@ export default function WebtoysSitePage() {
         }
         
         .prompt-label {
-          font-size: 0.9rem;
+          font-size: 0.875rem;
           color: var(--gray-warm);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 0.5rem;
+          text-transform: none;
+          letter-spacing: 0;
+          margin-bottom: 0.75rem;
+          font-family: system-ui, -apple-system, sans-serif;
         }
         
         .prompt-text {
-          font-size: 1.2rem;
-          color: var(--charcoal);
-          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--gray-warm);
+          font-weight: 400;
           margin-bottom: 1.5rem;
           line-height: 1.4;
+          font-family: system-ui, -apple-system, sans-serif;
         }
         
         .example-actions {
@@ -2885,16 +2922,16 @@ export default function WebtoysSitePage() {
           }
           
           .cta-main {
-            padding: 0.8rem 1.2rem;
-            font-size: 1.1rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
             border-radius: 2rem;
             justify-content: center;
-            gap: 0;
+            gap: 0.5rem;
           }
           
           .cta-main span:first-child {
-            margin-right: 0.5rem;
-            font-size: 1.3rem;
+            margin-right: 0;
+            font-size: 1.1rem;
           }
           
           .cta-main span:last-child {

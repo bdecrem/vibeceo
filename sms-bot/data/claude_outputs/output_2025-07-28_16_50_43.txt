@@ -1,0 +1,244 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🐍 SLITHER.IO.WTF</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: linear-gradient(to bottom right, #111, #333); color: #fff; font-family: monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; touch-action: none; }
+    canvas { display: block; width: 100%; background: #000; }
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); text-align: center; z-index: 2000; padding: 20px; }
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #0f0; text-shadow: 0 0 10px #0f0; }
+    p { margin: 0.5rem 0; max-width: 500px; line-height: 1.5; }
+    button { margin-top: 1.5rem; padding: 12px 24px; font-size: 1.2rem; background: #0f0; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0a0; }
+    .hidden { display: none; }
+    .controls { position: fixed; bottom: 0; width: 100%; height: 120px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); z-index: 1000; }
+    .dpad { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 10px; }
+    .dpad-btn { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; }
+    .dpad-btn:active { background: rgba(255,255,255,0.4); }
+    #up { grid-column: 2; grid-row: 1; }
+    #left { grid-column: 1; grid-row: 2; }
+    #right { grid-column: 3; grid-row: 2; }
+    #down { grid-column: 2; grid-row: 3; }
+    .score { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; z-index: 10; }
+  </style>
+</head>
+<body>
+  <div id="intro" class="screen">
+    <h1>🐍 SLITHER.IO.WTF</h1>
+    <p>EAT THE 🍎 TO GROW. DON'T HIT YOURSELF!</p>
+    <p>USE ARROW KEYS OR D-PAD TO MOVE</p>
+    <button id="start-btn">START GAME</button>
+  </div>
+
+  <div id="game-over" class="screen hidden">
+    <h1>GAME OVER</h1>
+    <p>FINAL LENGTH: <span id="final-score">0</span></p>
+    <button id="restart-btn">PLAY AGAIN</button>
+  </div>
+
+  <div class="score">LENGTH: <span id="score">1</span></div>
+  <canvas id="game-canvas"></canvas>
+
+  <div class="controls">
+    <div class="dpad">
+      <div class="dpad-btn" id="up">⬆️</div>
+      <div class="dpad-btn" id="left">⬅️</div>
+      <div class="dpad-btn" id="down">⬇️</div>
+      <div class="dpad-btn" id="right">➡️</div>
+    </div>
+  </div>
+
+  <script>
+    var canvas = document.getElementById('game-canvas');
+    var ctx = canvas.getContext('2d');
+    var scoreEl = document.getElementById('score');
+    var finalScoreEl = document.getElementById('final-score');
+    var introScreen = document.getElementById('intro');
+    var gameOverScreen = document.getElementById('game-over');
+    var startBtn = document.getElementById('start-btn');
+    var restartBtn = document.getElementById('restart-btn');
+
+    var dpr = window.devicePixelRatio || 1;
+    var controlsHeight = 120;
+    var grid = 20;
+    var width = window.innerWidth;
+    var height = window.innerHeight - controlsHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.scale(dpr, dpr);
+
+    var snake = [];
+    var food = {};
+    var direction = 'right';
+    var nextDirection = direction;
+    var score = 1;
+    var gameSpeed = 120;
+    var lastTime = 0;
+    var gameRunning = false;
+    var requestId;
+
+    function initGame() {
+      snake = [
+        {x: 5, y: 10},
+        {x: 4, y: 10},
+        {x: 3, y: 10}
+      ];
+      direction = 'right';
+      nextDirection = direction;
+      score = 1;
+      scoreEl.textContent = score;
+      spawnFood();
+    }
+
+    function spawnFood() {
+      var max_X = Math.floor(width / grid) - 1;
+      var max_Y = Math.floor(height / grid) - 1;
+      var newFood;
+      var overlapping;
+      do {
+        overlapping = false;
+        newFood = {
+          x: Math.floor(Math.random() * max_X),
+          y: Math.floor(Math.random() * max_Y)
+        };
+        for (var i = 0; i < snake.length; i++) {
+          if (newFood.x === snake[i].x && newFood.y === snake[i].y) {
+            overlapping = true;
+            break;
+          }
+        }
+      } while (overlapping);
+      food = newFood;
+    }
+
+    function update() {
+      direction = nextDirection;
+
+      var head = {x: snake[0].x, y: snake[0].y};
+
+      if (direction === 'right') head.x++;
+      if (direction === 'left') head.x--;
+      if (direction === 'up') head.y--;
+      if (direction === 'down') head.y++;
+
+      if (head.x < 0 || head.x >= width / grid || head.y < 0 || head.y >= height / grid) {
+        endGame();
+        return;
+      }
+
+      for (var i = 0; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) {
+          endGame();
+          return;
+        }
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreEl.textContent = score;
+        spawnFood();
+        if (score % 5 === 0 && gameSpeed > 50) {
+          gameSpeed -= 5;
+        }
+      } else {
+        snake.pop();
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.fillStyle = '#0f0';
+      for (var i = 0; i < snake.length; i++) {
+        ctx.fillRect(snake[i].x * grid, snake[i].y * grid, grid - 1, grid - 1);
+      }
+
+      ctx.fillStyle = '#f00';
+      ctx.fillRect(food.x * grid, food.y * grid, grid - 1, grid - 1);
+    }
+
+    function gameLoop(timestamp) {
+      if (!gameRunning) return;
+
+      var elapsed = timestamp - lastTime;
+
+      if (elapsed > gameSpeed) {
+        update();
+        draw();
+        lastTime = timestamp;
+      }
+
+      requestId = requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      introScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      initGame();
+      gameRunning = true;
+      lastTime = 0;
+      requestId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      if (requestId) {
+        cancelAnimationFrame(requestId);
+      }
+      finalScoreEl.textContent = score;
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    function changeDirection(newDir) {
+      if (newDir === 'up' && direction !== 'down') nextDirection = 'up';
+      if (newDir === 'down' && direction !== 'up') nextDirection = 'down';
+      if (newDir === 'left' && direction !== 'right') nextDirection = 'left';
+      if (newDir === 'right' && direction !== 'left') nextDirection = 'right';
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    document.getElementById('up').addEventListener('click', function() { changeDirection('up'); });
+    document.getElementById('down').addEventListener('click', function() { changeDirection('down'); });
+    document.getElementById('left').addEventListener('click', function() { changeDirection('left'); });
+    document.getElementById('right').addEventListener('click', function() { changeDirection('right'); });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowUp') changeDirection('up');
+      if (e.key === 'ArrowDown') changeDirection('down');
+      if (e.key === 'ArrowLeft') changeDirection('left');
+      if (e.key === 'ArrowRight') changeDirection('right');
+    });
+
+    window.addEventListener('resize', function() {
+      var newWidth = window.innerWidth;
+      var newHeight = window.innerHeight - controlsHeight;
+      if (newWidth !== width || newHeight !== height) {
+        width = newWidth;
+        height = newHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.scale(dpr, dpr);
+        if (gameRunning) {
+          draw();
+        }
+      }
+    });
+
+    initGame();
+    draw();
+  </script>
+</body>
+</html>
+```

@@ -136,7 +136,7 @@ const REQUEST_CONFIGS = {
     },
     game: {
         builderModel: 'together:Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8',  // Using Together.ai with Qwen3 large coder
-        builderMaxTokens: 8192,
+        builderMaxTokens: 32768,  // Maximum output for complete game generation
         builderTemperature: 0.7
     },
     zad: {
