@@ -1051,7 +1051,7 @@ export default function WebtoysSitePage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              YOUR WEBSITE NEEDS THERAPY
+              YOUR BROWSER DESERVES BETTER TOYS
             </h1>
             
             <p className="hero-description">
