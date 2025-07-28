@@ -2338,7 +2338,7 @@ export default function WebtoysSitePage() {
         
         .step-description {
           color: var(--gray-warm);
-          font-size: 1rem;
+          font-size: 1.1rem;
           line-height: 1.6;
           font-weight: 400;
         }
@@ -2916,8 +2916,8 @@ export default function WebtoysSitePage() {
           }
           
           .step-description {
-            font-size: 0.9rem;
-            line-height: 1.4;
+            font-size: 1.1rem;
+            line-height: 1.6;
           }
           
           /* Reduce section header spacing */
