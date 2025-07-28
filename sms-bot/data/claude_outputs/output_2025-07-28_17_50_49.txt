@@ -1,0 +1,246 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(45deg, #1a1a1a, #333);
+  overflow: hidden;
+  touch-action: none;
+}
+#controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.btn {
+  width: 60px;
+  height: 60px;
+  margin: 5px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 24px;
+  touch-action: none;
+}
+#score {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  color: white;
+  font-size: 24px;
+}
+#message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 32px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">Score: 0</div>
+<div id="message"></div>
+<div id="controls">
+  <button class="btn" id="up">⬆️</button>
+  <button class="btn" id="left">⬅️</button>
+  <button class="btn" id="down">⬇️</button>
+  <button class="btn" id="right">➡️</button>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const messageEl = document.getElementById('message');
+
+let width, height, tileSize;
+let snake, food, direction, nextDirection;
+let score = 0;
+let gameLoop;
+let gameState = 'intro';
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  width = window.innerWidth;
+  height = window.innerHeight - 120;
+  
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  
+  ctx.scale(dpr, dpr);
+  
+  tileSize = Math.min(Math.floor(width/20), Math.floor(height/20));
+}
+
+function init() {
+  snake = [{x: 10, y: 10}];
+  direction = {x: 1, y: 0};
+  nextDirection = {x: 1, y: 0};
+  score = 0;
+  spawnFood();
+  scoreEl.textContent = 'Score: 0';
+}
+
+function spawnFood() {
+  while(true) {
+    food = {
+      x: Math.floor(Math.random() * (width/tileSize)),
+      y: Math.floor(Math.random() * (height/tileSize))
+    };
+    
+    let collision = false;
+    for(let segment of snake) {
+      if(segment.x === food.x && segment.y === food.y) {
+        collision = true;
+        break;
+      }
+    }
+    if(!collision) break;
+  }
+}
+
+function update() {
+  if(gameState !== 'playing') return;
+  
+  direction = nextDirection;
+  
+  const head = {
+    x: snake[0].x + direction.x,
+    y: snake[0].y + direction.y
+  };
+  
+  if(head.x < 0) head.x = Math.floor(width/tileSize) - 1;
+  if(head.x >= width/tileSize) head.x = 0;
+  if(head.y < 0) head.y = Math.floor(height/tileSize) - 1;
+  if(head.y >= height/tileSize) head.y = 0;
+  
+  for(let segment of snake) {
+    if(head.x === segment.x && head.y === segment.y) {
+      gameOver();
+      return;
+    }
+  }
+  
+  snake.unshift(head);
+  
+  if(head.x === food.x && head.y === food.y) {
+    score++;
+    scoreEl.textContent = 'Score: ' + score;
+    spawnFood();
+  } else {
+    snake.pop();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, width, height);
+  
+  if(gameState === 'intro') {
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = '32px sans-serif';
+    ctx.fillText('🐍 SNAKE 🐍', width/2, height/3);
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Tap to Start', width/2, height/2);
+    return;
+  }
+  
+  ctx.fillStyle = '#0f0';
+  for(let segment of snake) {
+    ctx.fillRect(segment.x * tileSize, segment.y * tileSize, tileSize-1, tileSize-1);
+  }
+  
+  ctx.fillStyle = '#f00';
+  ctx.fillRect(food.x * tileSize, food.y * tileSize, tileSize-1, tileSize-1);
+}
+
+function gameOver() {
+  gameState = 'gameover';
+  clearInterval(gameLoop);
+  messageEl.textContent = '🏆 Game Over!\nScore: ' + score + '\nTap to Restart';
+}
+
+function startGame() {
+  if(gameState === 'playing') return;
+  
+  gameState = 'playing';
+  messageEl.textContent = '';
+  init();
+  if(gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(update, 150);
+  requestAnimationFrame(gameStep);
+}
+
+function gameStep() {
+  draw();
+  if(gameState === 'playing') {
+    requestAnimationFrame(gameStep);
+  }
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+document.addEventListener('keydown', function(e) {
+  switch(e.key) {
+    case 'ArrowLeft':
+      if(direction.x !== 1) nextDirection = {x: -1, y: 0};
+      break;
+    case 'ArrowRight':
+      if(direction.x !== -1) nextDirection = {x: 1, y: 0};
+      break;
+    case 'ArrowUp':
+      if(direction.y !== 1) nextDirection = {x: 0, y: -1};
+      break;
+    case 'ArrowDown':
+      if(direction.y !== -1) nextDirection = {x: 0, y: 1};
+      break;
+  }
+});
+
+document.getElementById('left').addEventListener('click', function() {
+  if(direction.x !== 1) nextDirection = {x: -1, y: 0};
+});
+document.getElementById('right').addEventListener('click', function() {
+  if(direction.x !== -1) nextDirection = {x: 1, y: 0};
+});
+document.getElementById('up').addEventListener('click', function() {
+  if(direction.y !== 1) nextDirection = {x: 0, y: -1};
+});
+document.getElementById('down').addEventListener('click', function() {
+  if(direction.y !== -1) nextDirection = {x: 0, y: 1};
+});
+
+['touchstart', 'mousedown'].forEach(evt => {
+  canvas.addEventListener(evt, function(e) {
+    e.preventDefault();
+    if(gameState !== 'playing') {
+      startGame();
+    }
+  });
+});
+
+draw();
+</script>
+</body>
+</html>
+```
