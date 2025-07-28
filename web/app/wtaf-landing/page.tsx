@@ -1079,10 +1079,11 @@ export default function WebtoysSitePage() {
             
             <div className="phone-display">
               <div className="sms-header">
+                <span className="sms-phone-emoji">📱</span>
                 <div className="sms-pulse-dot"></div>
                 <span className="sms-number">
                   <span className="sms-phone-text">+1-866-330-0015</span>
-                  <span className="sms-try-it">Text me your wildest idea</span>
+                  <span className="sms-try-it">Text us your wildest idea</span>
                 </span>
               </div>
               <div className="sms-examples">
@@ -1885,6 +1886,12 @@ export default function WebtoysSitePage() {
           margin-bottom: 1.5rem;
           padding-bottom: 1rem;
           border-bottom: 3px solid var(--cream);
+        }
+        
+        .sms-phone-emoji {
+          font-size: 2rem;
+          transform: rotate(-15deg);
+          margin-right: -0.5rem;
         }
         
         .sms-pulse-dot {
@@ -2917,7 +2924,8 @@ export default function WebtoysSitePage() {
             width: 100%;
           }
           
-          .sms-pulse-dot {
+          .sms-pulse-dot,
+          .sms-phone-emoji {
             display: none;
           }
           
