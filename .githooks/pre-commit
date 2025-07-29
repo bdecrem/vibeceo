@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pre-commit hook to ensure documentation is updated
+
+echo "🔍 Checking documentation sync..."
+
+# Run documentation validation
+npm run docs:validate
+
+if [ $? -ne 0 ]; then
+    echo "❌ Documentation is out of sync with code!"
+    echo "📝 Running auto-generation..."
+    npm run docs:generate
+    echo "✅ Documentation updated. Please review and add to commit."
+    exit 1
+fi
+
+echo "✅ Documentation is in sync!"

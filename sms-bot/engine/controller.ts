@@ -27,6 +27,7 @@ import {
     generateOGImage,
     updateOGImageInHTML 
 } from './storage-manager.js';
+import { applyDiffToHTML } from './diff-parser.js';
 import {
     sendSuccessNotification,
     sendFailureNotification,
@@ -598,21 +599,42 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         
         let remixSystemPrompt: string;
         let enhancedPrompt: string;
+        let useDiffApproach = false;
         
         if (isZadApp) {
-            // For ZAD apps, use the dedicated ZAD remix prompt
-            const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
-            remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
-            logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
+            // Check if ZAD app is large (>30KB) and needs diff approach
+            const htmlSize = htmlContent.length;
+            useDiffApproach = htmlSize > 30000;
             
-            // Build ZAD-specific remix prompt
-            enhancedPrompt = `Here's the complete ZAD app HTML to modify:
+            if (useDiffApproach) {
+                // Use diff-based approach for large ZAD apps
+                const zadDiffPath = join(__dirname, '..', 'content', 'remix-zad-diff-prompt.txt');
+                remixSystemPrompt = await readFile(zadDiffPath, 'utf8');
+                logWithTimestamp(`📄 ZAD diff remix prompt loaded for large app (${htmlSize} chars)`);
+                
+                // Build diff-specific prompt
+                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
+
+${htmlContent}
+
+User request: ${userRequest}
+
+Output ONLY the changes in git diff format. Do not output the entire HTML.`;
+            } else {
+                // For smaller ZAD apps, use the standard ZAD remix prompt
+                const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
+                remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
+                logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
+                
+                // Build ZAD-specific remix prompt
+                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
 
 ${htmlContent}
 
 User request: ${userRequest}
 
 Apply the visual changes while preserving ALL functionality exactly as shown above.`;
+            }
         } else {
             // For regular WTAF apps, use the standard remix approach
             enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -639,8 +661,23 @@ Apply the visual changes while preserving ALL functionality exactly as shown abo
         await writeFile(outputFile, result, 'utf8');
         logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
         
-        // Extract code blocks and deploy normally
-        const code = extractCodeBlocks(result);
+        let code: string;
+        
+        if (useDiffApproach) {
+            // Apply diff to original HTML
+            try {
+                logWithTimestamp(`🔧 Applying diff to original HTML...`);
+                code = applyDiffToHTML(htmlContent, result);
+                logWithTimestamp(`✅ Diff applied successfully, result: ${code.length} chars`);
+            } catch (error) {
+                logError(`Failed to apply diff: ${error instanceof Error ? error.message : String(error)}`);
+                await sendFailureNotification("diff-apply", senderPhone);
+                return false;
+            }
+        } else {
+            // Extract code blocks for standard approach
+            code = extractCodeBlocks(result);
+        }
         if (!code.trim()) {
             logWarning("No code block found in remix response.");
             await sendFailureNotification("no-code", senderPhone);

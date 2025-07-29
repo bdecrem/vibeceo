@@ -260,3 +260,8 @@ The system automatically classifies apps into 5 types:
 - Skip error transformation
 - Hardcode configuration values
 - Make direct Supabase calls in controller
+
+<!-- AUTO-GENERATED-START -->
+<!-- This section is automatically updated by npm run docs:generate -->
+<!-- DO NOT EDIT MANUALLY -->
+<!-- AUTO-GENERATED-END -->
