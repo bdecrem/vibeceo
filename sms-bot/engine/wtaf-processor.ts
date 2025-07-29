@@ -61,6 +61,7 @@ export interface BuilderConfig {
     model: string;
     maxTokens: number;
     temperature: number;
+    topP?: number; // Optional top_p parameter for sampling (OpenAI only, not supported by Anthropic)
     designSystem?: string; // Optional WTAF design system content for apps
 }
 
@@ -658,7 +659,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             );
         } else if (config.model.startsWith('gpt')) {
             result = await withTimeout(
-                callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature),
+                callOpenAIAPI(config.model, systemPrompt, builderUserPrompt, config.maxTokens, config.temperature, config.topP),
                 timeout,
                 `GPT ${config.model} call`
             );
@@ -765,7 +766,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                     );
                 } else {
                     fallbackResult = await withTimeout(
-                        callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature),
+                        callOpenAIAPI(fallback.model, systemPrompt, builderUserPrompt, fallback.maxTokens, config.temperature, config.topP),
                         timeout,
                         `GPT ${fallback.model} fallback call`
                     );

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>CHAOS CHAT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* CHAOS Theme */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 40px;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            background: var(--border);
+            border: 3px solid var(--text);
+            box-shadow: 4px 4px var(--shadow);
+            padding: 12px 24px;
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            min-height: 44px;
+            width: 100%;
+            margin: 8px 0;
+            transform: rotate(1deg);
+            transition: all 0.2s;
+        }
+
+        button:active {
+            transform: translateY(4px) rotate(1deg);
+            box-shadow: 0px 0px var(--shadow);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 3px solid var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        #chat-container {
+            border: 3px solid var(--text);
+            height: 60vh;
+            margin: 20px 0;
+            padding: 16px;
+            overflow-y: auto;
+            background: white;
+            box-shadow: 4px 4px var(--shadow);
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 12px;
+            border: 2px solid var(--text);
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.mine {
+            background: var(--border);
+            margin-left: auto;
+            transform: rotate(1deg);
+        }
+
+        .message.others {
+            background: var(--shadow);
+            transform: rotate(-1deg);
+        }
+
+        .message .author {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        #message-input {
+            width: calc(100% - 88px);
+            margin-right: 8px;
+        }
+
+        #send-button {
+            width: 80px;
+            display: inline-block;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+        }
+
+        #floating-emoji {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 32px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes emojiRain {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+
+        .raining-emoji {
+            position: fixed;
+            font-size: 24px;
+            animation: emojiRain 3s linear;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>CHAOS CHAT 💬</h1>
+            <p>Where messages get wild!</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <!-- New User Screen -->
+        <div id="new-user-screen" class="screen">
+            <h1>Join the Chaos</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Start Chatting</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Returning User Screen -->
+        <div id="returning-user-screen" class="screen">
+            <h1>Welcome Back</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Enter Chat</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <!-- Main Chat Screen -->
+        <div id="main-screen" class="screen">
+            <h1>CHAOS CHAT</h1>
+            <div id="user-status">Chatting as: <span id="current-user-label"></span></div>
+            
+            <div id="chat-container"></div>
+            
+            <div class="input-container">
+                <input type="text" id="message-input" placeholder="Type something chaotic..." maxlength="280">
+                <button id="send-button" onclick="sendMessage()">SEND</button>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave Chat</button>
+        </div>
+    </div>
+
+    <div id="floating-emoji" onclick="triggerEmojiRain()">💬</div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Authentication flow functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Chat is full! Try again later!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code! Try again!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select Your ID</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+            
+            // Enable enter key to send messages
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        }
+
+        // Chat functionality
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                await save('message', {
+                    text: message,
+                    timestamp: new Date().toISOString()
+                });
+                
+                input.value = '';
+                await loadLatestData();
+            }
+        }
+
+        async function loadLatestData() {
+            const messages = await load('message');
+            
+            // Deduplicate messages
+            const uniqueMessages = messages.reduce((acc, msg) => {
+                const existing = acc.find(m => 
+                    m.text === msg.text && 
+                    m.author === msg.author && 
+                    m.timestamp === msg.timestamp
+                );
+                if (!existing) acc.push(msg);
+                return acc;
+            }, []);
+            
+            // Sort by timestamp
+            uniqueMessages.sort((a, b) => 
+                new Date(a.timestamp) - new Date(b.timestamp)
+            );
+            
+            // Update UI
+            const container = document.getElementById('chat-container');
+            container.innerHTML = uniqueMessages.map(msg => `
+                <div class="message ${msg.author === getUsername() ? 'mine' : 'others'}">
+                    <div class="author">${msg.author}</div>
+                    <div class="text">${msg.text}</div>
+                </div>
+            `).join('');
+            
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Emoji rain effect
+        function triggerEmojiRain() {
+            const emojis = ['💬', '🗨️', '💭', '🤪', '🎉', '💫'];
+            for (let i = 0; i < 20; i++) {
+                const emoji = document.createElement('div');
+                emoji.className = 'raining-emoji';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = `${Math.random() * 100}vw`;
+                emoji.style.animationDuration = `${2 + Math.random() * 2}s`;
+                document.body.appendChild(emoji);
+                setTimeout(() => emoji.remove(), 3000);
+            }
+        }
+
+        // Initialize
+        initAuth();
+    </script>
+</body>
+</html>

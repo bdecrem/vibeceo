@@ -1,0 +1,248 @@
+Here's a mobile-friendly Pong game with touch controls. The paddle follows your finger's position on the screen:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Pong</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            background: #000;
+            max-width: 100%;
+            max-height: 100vh;
+            touch-action: none;
+        }
+
+        .score-overlay {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="score-overlay">
+        <span id="playerScore">0</span> - <span id="aiScore">0</span>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerScoreElement = document.getElementById('playerScore');
+        const aiScoreElement = document.getElementById('aiScore');
+
+        // Game constants
+        const PADDLE_HEIGHT = 100;
+        const PADDLE_WIDTH = 15;
+        const BALL_SIZE = 10;
+        const BALL_SPEED = 7;
+        const AI_SPEED = 5;
+
+        // Game state
+        const game = {
+            playerScore: 0,
+            aiScore: 0,
+            ballX: 0,
+            ballY: 0,
+            ballSpeedX: BALL_SPEED,
+            ballSpeedY: BALL_SPEED,
+            playerY: 0,
+            aiY: 0,
+            isPlaying: true
+        };
+
+        // Resize canvas for responsive design
+        function resizeCanvas() {
+            const aspectRatio = 4/3;
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+
+            if (width / height > aspectRatio) {
+                width = height * aspectRatio;
+            } else {
+                height = width / aspectRatio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Reset paddle and ball positions
+            game.playerY = (canvas.height - PADDLE_HEIGHT) / 2;
+            game.aiY = (canvas.height - PADDLE_HEIGHT) / 2;
+            resetBall();
+        }
+
+        function resetBall() {
+            game.ballX = canvas.width / 2;
+            game.ballY = canvas.height / 2;
+            game.ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * BALL_SPEED;
+            game.ballSpeedY = (Math.random() * 2 - 1) * BALL_SPEED;
+        }
+
+        // Touch handling
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const relativeY = touch.clientY - rect.top;
+            game.playerY = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, relativeY - PADDLE_HEIGHT/2));
+        }
+
+        // Update game state
+        function update() {
+            if (!game.isPlaying) return;
+
+            // Move ball
+            game.ballX += game.ballSpeedX;
+            game.ballY += game.ballSpeedY;
+
+            // Ball collision with top and bottom
+            if (game.ballY <= 0 || game.ballY >= canvas.height - BALL_SIZE) {
+                game.ballSpeedY = -game.ballSpeedY;
+            }
+
+            // Ball collision with paddles
+            if (game.ballX <= PADDLE_WIDTH && 
+                game.ballY >= game.playerY && 
+                game.ballY <= game.playerY + PADDLE_HEIGHT) {
+                game.ballSpeedX = -game.ballSpeedX;
+                const relativeIntersectY = (game.playerY + (PADDLE_HEIGHT/2)) - game.ballY;
+                game.ballSpeedY = -relativeIntersectY * 0.1;
+            }
+
+            if (game.ballX >= canvas.width - PADDLE_WIDTH - BALL_SIZE && 
+                game.ballY >= game.aiY && 
+                game.ballY <= game.aiY + PADDLE_HEIGHT) {
+                game.ballSpeedX = -game.ballSpeedX;
+                const relativeIntersectY = (game.aiY + (PADDLE_HEIGHT/2)) - game.ballY;
+                game.ballSpeedY = -relativeIntersectY * 0.1;
+            }
+
+            // Score points
+            if (game.ballX <= 0) {
+                game.aiScore++;
+                aiScoreElement.textContent = game.aiScore;
+                resetBall();
+            }
+            if (game.ballX >= canvas.width) {
+                game.playerScore++;
+                playerScoreElement.textContent = game.playerScore;
+                resetBall();
+            }
+
+            // AI movement
+            const aiCenter = game.aiY + PADDLE_HEIGHT/2;
+            if (aiCenter < game.ballY - 35) {
+                game.aiY += AI_SPEED;
+            } else if (aiCenter > game.ballY + 35) {
+                game.aiY -= AI_SPEED;
+            }
+            game.aiY = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, game.aiY));
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2, 0);
+            ctx.lineTo(canvas.width/2, canvas.height);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw paddles
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, game.playerY, PADDLE_WIDTH, PADDLE_HEIGHT);
+            ctx.fillRect(canvas.width - PADDLE_WIDTH, game.aiY, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+            // Draw ball
+            ctx.fillRect(game.ballX - BALL_SIZE/2, game.ballY - BALL_SIZE/2, BALL_SIZE, BALL_SIZE);
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('touchstart', handleTouch, {passive: false});
+        canvas.addEventListener('touchmove', handleTouch, {passive: false});
+
+        // Start game
+        resizeCanvas();
+        gameLoop();
+    </script>
+</body>
+</html>
+```
+
+This Pong implementation includes:
+
+1. **Mobile-First Design**:
+   - Responsive canvas that maintains aspect ratio
+   - Touch controls for the paddle
+   - Proper viewport meta tags
+   - Prevention of unwanted scrolling/zooming
+
+2. **Game Features**:
+   - Score tracking
+   - AI opponent with smooth movement
+   - Ball physics with angle reflection
+   - Center line visual
+   - Score display overlay
+
+3. **Controls**:
+   - Touch anywhere on the screen and move your finger up/down
+   - The paddle follows your finger's vertical position
+   - The AI controls the right paddle automatically
+
+4. **Responsive Design**:
+   - Adjusts to screen size while maintaining 4:3 aspect ratio
+   - Scales all game elements proportionally
+   - Works in both portrait and landscape orientations
+
+5. **Performance Optimizations**:
+   - Uses requestAnimationFrame for smooth animation
+   - Minimal DOM updates
+   - Efficient canvas clearing and redrawing
+
+To play:
+1. Touch and move your finger up and down on the screen
+2. Try to hit the ball past the AI paddle
+3. First player to score wins
+4. The ball speed and angle change based on where it hits the paddle
+
+The game automatically restarts after each point, and the AI provides a challenging opponent while still being beatable.

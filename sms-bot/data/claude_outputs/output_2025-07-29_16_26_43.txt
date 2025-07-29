@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woodpecker's Sparkly Adventure | WEBTOYS</title>
+    <style>
+        :root {
+            --hot-pink: #FF69B4;
+            --pink-light: #FFB6C1;
+            --pink-dark: #FF1493;
+            --cream: #FEFEF5;
+            --charcoal: #2A2A2A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--pink-light) 0%, var(--hot-pink) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            width: 50%;
+            padding: 4rem;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 5vw, 5rem);
+            color: white;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+
+        .woodpecker {
+            position: absolute;
+            right: 10%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40%;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(-50%) translateX(0); }
+            50% { transform: translateY(-60%) translateX(20px); }
+        }
+
+        .sparkle {
+            position: absolute;
+            font-size: 2rem;
+            animation: sparkle 1.5s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .features {
+            padding: 6rem 0;
+            background: white;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            border: 4px solid var(--hot-pink);
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 8px 0 var(--pink-dark);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .hero-content {
+                width: 100%;
+                padding: 2rem;
+                text-align: center;
+            }
+
+            .woodpecker {
+                position: relative;
+                width: 80%;
+                margin: 2rem auto;
+                right: auto;
+                top: auto;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Sparkly Woodpecker Magic ✨</h1>
+            <p style="color: white; font-size: 1.25rem;">Watch our fabulous feathered friend soar through a shower of shimmering sparkles!</p>
+        </div>
+        <img src="woodpecker.png" alt="Flying Woodpecker" class="woodpecker">
+        <span class="sparkle" style="top: 20%; left: 20%;">✨</span>
+        <span class="sparkle" style="top: 40%; left: 80%;">✨</span>
+        <span class="sparkle" style="top: 60%; left: 30%;">✨</span>
+        <span class="sparkle" style="top: 80%; left: 70%;">✨</span>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Magical Flight 🪄</h3>
+                    <p>Experience the grace of our woodpecker's enchanted journey through sparkly skies.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Pink Power 💖</h3>
+                    <p>Wrapped in vibrant hot pink energy, our woodpecker spreads joy wherever it flies.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Sparkle Trail ✨</h3>
+                    <p>Watch as glittering sparkles dance in our woodpecker's magical wake.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function createSparkles() {
+            const hero = document.querySelector('.hero');
+            setInterval(() => {
+                const sparkle = document.createElement('span');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = '✨';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                hero.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 1500);
+            }, 500);
+        }
+        createSparkles();
+    </script>
+</body>
+</html>

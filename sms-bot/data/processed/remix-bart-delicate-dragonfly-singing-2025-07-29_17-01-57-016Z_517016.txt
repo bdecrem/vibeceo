@@ -1,0 +1,5 @@
+SENDER:+12028569601
+USER_SLUG:bart
+REMIX_COMMAND:--remix delicate-dragonfly-singing make it purple with sparkles
+
+ORIGINAL_REQUEST:REMIX delicate-dragonfly-singing make it purple with sparkles

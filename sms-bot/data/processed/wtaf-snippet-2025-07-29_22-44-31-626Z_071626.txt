@@ -1,0 +1,3 @@
+SENDER:+16508989508
+USER_SLUG:bart
+make a snake game. make sure to start in the middle. if i hit the wall i die. the speed should be MEDIUM FAST

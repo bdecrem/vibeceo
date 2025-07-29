@@ -1,0 +1,365 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Tetris</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        body { 
+            overflow: hidden;
+            touch-action: none;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            background: #111;
+            width: 100%;
+            height: calc(100vh - 120px);
+        }
+        #controls {
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 120px; 
+            background: rgba(0, 0, 0, 0.7); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 10px; 
+            z-index: 1000;
+        }
+        button {
+            width: 60px; 
+            height: 60px; 
+            font-size: 24px; 
+            background: rgba(255,255,255,0.2); 
+            border: 2px solid white; 
+            border-radius: 10px; 
+            color: white;
+            touch-action: manipulation;
+        }
+        #downBtn {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="controls">
+        <button id="leftBtn">←</button>
+        <button id="rotateBtn">↻</button>
+        <button id="rightBtn">→</button>
+        <button id="downBtn">↓</button>
+    </div>
+    
+    <script>
+        // Game constants
+        const COLS = 10;
+        const ROWS = 20;
+        const controlsHeight = 120;
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - controlsHeight;
+        
+        const canvasDisplayWidth = canvas.width;
+        const canvasDisplayHeight = canvas.height;
+        const blockSizeX = Math.floor(canvasDisplayWidth / COLS);
+        const blockSizeY = Math.floor(canvasDisplayHeight / ROWS);
+        const blockSize = Math.min(blockSizeX, blockSizeY);
+        const offsetX = (canvasDisplayWidth - (blockSize * COLS)) / 2;
+        const offsetY = (canvasDisplayHeight - (blockSize * ROWS)) / 2;
+        
+        // Tetromino shapes
+        const SHAPES = [
+            { shape: [[1, 1, 1, 1]], color: '#00f0f0' }, // I
+            { shape: [[1, 1, 1], [0, 1, 0]], color: '#0000f0' }, // T
+            { shape: [[1, 1, 1], [1, 0, 0]], color: '#f0a000' }, // L
+            { shape: [[1, 1, 1], [0, 0, 1]], color: '#0000f0' }, // J
+            { shape: [[1, 1], [1, 1]], color: '#f0f000' }, // O
+            { shape: [[0, 1, 1], [1, 1, 0]], color: '#00f000' }, // S
+            { shape: [[1, 1, 0], [0, 1, 1]], color: '#f00000' }  // Z
+        ];
+        
+        // Game state
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece = null;
+        let score = 0;
+        let gameOver = false;
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        
+        // Create a new piece
+        function createPiece() {
+            const typeId = Math.floor(Math.random() * SHAPES.length);
+            const piece = {
+                shape: SHAPES[typeId].shape,
+                color: SHAPES[typeId].color,
+                x: Math.floor(COLS / 2) - Math.floor(SHAPES[typeId].shape[0].length / 2),
+                y: 0
+            };
+            return piece;
+        }
+        
+        // Draw a single block
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(offsetX + x * blockSize, offsetY + y * blockSize, blockSize - 1, blockSize - 1);
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeRect(offsetX + x * blockSize, offsetY + y * blockSize, blockSize - 1, blockSize - 1);
+        }
+        
+        // Draw the board
+        function drawBoard() {
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x]) {
+                        drawBlock(x, y, board[y][x]);
+                    }
+                }
+            }
+        }
+        
+        // Draw the current piece
+        function drawPiece() {
+            if (!currentPiece) return;
+            
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        drawBlock(currentPiece.x + x, currentPiece.y + y, currentPiece.color);
+                    }
+                }
+            }
+        }
+        
+        // Rotate the current piece
+        function rotatePiece() {
+            if (!currentPiece) return;
+            
+            const originalShape = currentPiece.shape;
+            // Transpose matrix
+            const rows = originalShape.length;
+            const cols = originalShape[0].length;
+            const newShape = Array(cols).fill().map(() => Array(rows).fill(0));
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    newShape[x][rows - 1 - y] = originalShape[y][x];
+                }
+            }
+            
+            const originalPiece = { ...currentPiece, shape: originalShape };
+            currentPiece.shape = newShape;
+            
+            // If rotation causes collision, revert
+            if (checkCollision()) {
+                currentPiece.shape = originalShape;
+            }
+        }
+        
+        // Check for collisions
+        function checkCollision() {
+            if (!currentPiece) return false;
+            
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        const newX = currentPiece.x + x;
+                        const newY = currentPiece.y + y;
+                        
+                        if (
+                            newX < 0 || 
+                            newX >= COLS || 
+                            newY >= ROWS ||
+                            (newY >= 0 && board[newY][newX])
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // Merge piece with board
+        function mergePiece() {
+            if (!currentPiece) return;
+            
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        const boardY = currentPiece.y + y;
+                        if (boardY >= 0) { // Only merge if on the board
+                            board[boardY][currentPiece.x + x] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clear completed lines
+        function clearLines() {
+            let linesCleared = 0;
+            
+            for (let y = ROWS - 1; y >= 0; y--) {
+                if (board[y].every(cell => cell !== 0)) {
+                    // Remove the line
+                    board.splice(y, 1);
+                    // Add new empty line at top
+                    board.unshift(Array(COLS).fill(0));
+                    linesCleared++;
+                    y++; // Recheck same index
+                }
+            }
+            
+            // Update score
+            if (linesCleared > 0) {
+                score += [0, 40, 100, 300, 1200][linesCleared] * (Math.floor(score/1000) + 1);
+            }
+        }
+        
+        // Move piece
+        function movePiece(dir) {
+            if (!currentPiece || gameOver) return;
+            
+            currentPiece.x += dir;
+            if (checkCollision()) {
+                currentPiece.x -= dir;
+            }
+        }
+        
+        // Drop piece
+        function dropPiece() {
+            if (!currentPiece || gameOver) return;
+            
+            currentPiece.y++;
+            if (checkCollision()) {
+                currentPiece.y--;
+                mergePiece();
+                clearLines();
+                currentPiece = createPiece();
+                
+                // Game over check
+                if (checkCollision()) {
+                    gameOver = true;
+                }
+            }
+            dropCounter = 0;
+        }
+        
+        // Hard drop
+        function hardDrop() {
+            if (!currentPiece || gameOver) return;
+            
+            while (!checkCollision()) {
+                currentPiece.y++;
+            }
+            currentPiece.y--;
+            dropPiece();
+        }
+        
+        // Draw score
+        function drawScore() {
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(`Score: ${score}`, canvas.width - 20, 30);
+            
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 30);
+                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+                ctx.font = '20px Arial';
+                ctx.fillText('Tap to restart', canvas.width / 2, canvas.height / 2 + 60);
+            }
+        }
+        
+        // Game loop
+        function update(time = 0) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            
+            if (!gameOver) {
+                dropCounter += deltaTime;
+                if (dropCounter > dropInterval) {
+                    dropPiece();
+                }
+            }
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw game
+            drawBoard();
+            drawPiece();
+            drawScore();
+            
+            requestAnimationFrame(update);
+        }
+        
+        // Initialize game
+        function init() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            currentPiece = createPiece();
+            score = 0;
+            gameOver = false;
+            dropCounter = 0;
+            dropInterval = 1000;
+        }
+        
+        // Event listeners for buttons
+        document.getElementById('leftBtn').addEventListener('click', () => movePiece(-1));
+        document.getElementById('rightBtn').addEventListener('click', () => movePiece(1));
+        document.getElementById('rotateBtn').addEventListener('click', rotatePiece);
+        document.getElementById('downBtn').addEventListener('click', hardDrop);
+        
+        // Touch events to prevent scrolling
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', e => e.preventDefault());
+        });
+        
+        // Restart game on canvas click when game over
+        canvas.addEventListener('click', () => {
+            if (gameOver) {
+                init();
+            }
+        });
+        
+        // Prevent scrolling on touch
+        document.body.addEventListener('touchmove', e => {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Start the game
+        init();
+        update();
+    </script>
+</body>
+</html>
+```

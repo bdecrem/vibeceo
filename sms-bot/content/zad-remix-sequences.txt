@@ -1,0 +1,29 @@
+# ZAD REMIX SEQUENCE OPTIONS
+
+## SEQUENCE 1 (FAILED): Priority Order in User Message
+System: "You are Claude, a helpful AI assistant."
+User: 
+1. Short remix instructions
+2. User request  
+3. HTML source
+4. ZAD builder rules (HIGHEST PRIORITY)
+
+## SEQUENCE 2 (CURRENT): ZAD Rules in System
+System: ZAD builder rules + short remix instructions
+User: User request + HTML source
+
+## SEQUENCE 3 (BACKUP): Traditional Split
+System: Short remix instructions + ZAD builder rules
+User: HTML source + User request
+
+## SEQUENCE 4 (BACKUP): Reverse Priority
+System: "You are Claude, a helpful AI assistant."
+User:
+1. ZAD builder rules (FIRST)
+2. Short remix instructions
+3. User request
+4. HTML source
+
+## TO SWAP SEQUENCES:
+Edit controller.ts lines ~604-625 and ~1557-1578
+Replace the sequence logic with desired option above. 

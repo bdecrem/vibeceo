@@ -1,0 +1,346 @@
+I'll create a mobile-friendly Tetris game with touch controls and responsive design. Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Tetris</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            background: #111;
+            overflow: hidden;
+            touch-action: none;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: auto;
+            background: #000;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+
+        #score {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <div class="btn" id="leftBtn">←</div>
+        <div class="btn" id="rotateBtn">↻</div>
+        <div class="btn" id="rightBtn">→</div>
+        <div class="btn" id="dropBtn">↓</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game constants
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = Math.min(window.innerWidth / COLS, (window.innerHeight - 100) / ROWS);
+        
+        // Set canvas size
+        canvas.width = COLS * BLOCK_SIZE;
+        canvas.height = ROWS * BLOCK_SIZE;
+        
+        // Center canvas
+        canvas.style.marginTop = `${(window.innerHeight - canvas.height - 80) / 2}px`;
+
+        // Tetromino shapes
+        const SHAPES = [
+            [[1,1,1,1]], // I
+            [[1,1,1],[0,1,0]], // T
+            [[1,1,1],[1,0,0]], // L
+            [[1,1,1],[0,0,1]], // J
+            [[1,1],[1,1]], // O
+            [[1,1,0],[0,1,1]], // S
+            [[0,1,1],[1,1,0]] // Z
+        ];
+
+        const COLORS = [
+            '#00f0f0', // cyan
+            '#f0a000', // orange
+            '#0000f0', // blue
+            '#f0f000', // yellow
+            '#00f000', // green
+            '#f00000', // red
+            '#a000f0'  // purple
+        ];
+
+        // Game state
+        let score = 0;
+        let grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let gridColors = Array(ROWS).fill().map(() => Array(COLS).fill(''));
+        let currentPiece = null;
+        let currentColor = '';
+        let gameOver = false;
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+
+        class Piece {
+            constructor(shape, color) {
+                this.shape = shape;
+                this.color = color;
+                this.x = Math.floor(COLS / 2) - Math.floor(shape[0].length / 2);
+                this.y = 0;
+            }
+        }
+
+        function createPiece() {
+            const index = Math.floor(Math.random() * SHAPES.length);
+            return new Piece([...SHAPES[index]], COLORS[index]);
+        }
+
+        function collide() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x] &&
+                        (grid[y + currentPiece.y] &&
+                        grid[y + currentPiece.y][x + currentPiece.x]) !== 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function rotate() {
+            const rotated = currentPiece.shape[0].map((_, i) =>
+                currentPiece.shape.map(row => row[i]).reverse()
+            );
+            const prevShape = currentPiece.shape;
+            currentPiece.shape = rotated;
+            if (collide()) {
+                currentPiece.shape = prevShape;
+            }
+        }
+
+        function merge() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        grid[y + currentPiece.y][x + currentPiece.x] = value;
+                        gridColors[y + currentPiece.y][x + currentPiece.x] = currentPiece.color;
+                    }
+                });
+            });
+        }
+
+        function clearLines() {
+            let linesCleared = 0;
+            outer: for (let y = ROWS - 1; y >= 0; y--) {
+                for (let x = 0; x < COLS; x++) {
+                    if (grid[y][x] === 0) {
+                        continue outer;
+                    }
+                }
+                
+                grid.splice(y, 1);
+                gridColors.splice(y, 1);
+                grid.unshift(Array(COLS).fill(0));
+                gridColors.unshift(Array(COLS).fill(''));
+                linesCleared++;
+                y++;
+            }
+            
+            if (linesCleared > 0) {
+                score += [40, 100, 300, 1200][linesCleared - 1];
+                document.getElementById('score').textContent = `Score: ${score}`;
+                dropInterval = Math.max(100, 1000 - Math.floor(score / 100) * 50);
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            grid.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        ctx.fillStyle = gridColors[y][x];
+                        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                    }
+                });
+            });
+            
+            // Draw current piece
+            if (currentPiece) {
+                ctx.fillStyle = currentPiece.color;
+                currentPiece.shape.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value) {
+                            ctx.fillRect(
+                                (currentPiece.x + x) * BLOCK_SIZE,
+                                (currentPiece.y + y) * BLOCK_SIZE,
+                                BLOCK_SIZE - 1,
+                                BLOCK_SIZE - 1
+                            );
+                        }
+                    });
+                });
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('Tap to restart', canvas.width / 2, canvas.height / 2 + 30);
+            }
+        }
+
+        function moveDown() {
+            currentPiece.y++;
+            if (collide()) {
+                currentPiece.y--;
+                merge();
+                clearLines();
+                currentPiece = createPiece();
+                if (collide()) {
+                    gameOver = true;
+                }
+            }
+            dropCounter = 0;
+        }
+
+        function update(time = 0) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            
+            if (!gameOver) {
+                dropCounter += deltaTime;
+                if (dropCounter > dropInterval) {
+                    moveDown();
+                }
+            }
+            
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        // Controls
+        document.getElementById('leftBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (!gameOver) {
+                currentPiece.x--;
+                if (collide()) currentPiece.x++;
+            }
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (!gameOver) {
+                currentPiece.x++;
+                if (collide()) currentPiece.x--;
+            }
+        });
+
+        document.getElementById('rotateBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (!gameOver) rotate();
+        });
+
+        document.getElementById('dropBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (!gameOver) moveDown();
+        });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (gameOver) {
+                grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+                gridColors = Array(ROWS).fill().map(() => Array(COLS).fill(''));
+                score = 0;
+                document.getElementById('score').textContent = 'Score: 0';
+                gameOver = false;
+                dropInterval = 1000;
+                currentPiece = createPiece();
+            }
+        });
+
+        // Start game
+        currentPiece = createPiece();
+        update();
+    </script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. Responsive canvas sizing that maintains the correct aspect ratio
+2. Touch controls with buttons for left, right, rotate, and drop
+3. Score tracking and display
+4. Progressive difficulty (pieces fall faster as score increases)
+5. Game over detection and restart functionality
+6. Colorful pieces with clean graphics
+7. Line clearing with scoring system
+8. Collision detection and piece rotation
+
+The controls are:
+- Left arrow: Move piece left
+- Right arrow: Move piece right
+- Rotate button: Rotate piece clockwise
+- Down arrow: Drop piece faster
+
+Features:
+- Standard Tetris scoring system (40, 100, 300, 1200 points for 1,2,3,4 lines)
+- Speed increases as score goes up
+- Game over detection with restart option
+- Mobile-optimized touch controls
+- Responsive design that works on any screen size
+
+The game follows standard Tetris rules:
+- Pieces fall from the top
+- Complete lines are cleared
+- Game ends when pieces stack to the top
+- Score increases with more lines cleared simultaneously
+
+To play, simply tap the controls at the bottom of the screen. The game will automatically adjust to your device's screen size while maintaining playable proportions.

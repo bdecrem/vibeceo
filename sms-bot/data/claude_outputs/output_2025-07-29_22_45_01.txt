@@ -1,0 +1,266 @@
+Here's a medium-fast Snake game that starts in the middle and has wall collision death:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            background: #001100;
+            touch-action: none;
+        }
+
+        #score {
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        // Game constants
+        const GRID_SIZE = 20;
+        const GAME_SPEED = 80; // Lower = faster
+        const CELL_COLOR = '#00FF00';
+        const FOOD_COLOR = '#FF0000';
+        
+        let snake = [];
+        let food = {};
+        let direction = 'right';
+        let nextDirection = 'right';
+        let score = 0;
+        let gameLoop;
+        let gridWidth;
+        let gridHeight;
+
+        function resizeCanvas() {
+            // Make the canvas fill the screen while maintaining square cells
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight - scoreElement.offsetHeight;
+            const cellSize = Math.floor(Math.min(screenWidth, screenHeight) / GRID_SIZE);
+            
+            canvas.width = cellSize * GRID_SIZE;
+            canvas.height = cellSize * GRID_SIZE;
+            
+            gridWidth = GRID_SIZE;
+            gridHeight = GRID_SIZE;
+            
+            // Center the canvas
+            canvas.style.margin = 'auto';
+        }
+
+        function initGame() {
+            // Start snake in middle
+            const middleX = Math.floor(gridWidth / 2);
+            const middleY = Math.floor(gridHeight / 2);
+            
+            snake = [
+                {x: middleX, y: middleY},
+                {x: middleX - 1, y: middleY},
+                {x: middleX - 2, y: middleY}
+            ];
+            
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            scoreElement.textContent = 'Score: 0';
+            spawnFood();
+        }
+
+        function spawnFood() {
+            while (true) {
+                food = {
+                    x: Math.floor(Math.random() * gridWidth),
+                    y: Math.floor(Math.random() * gridHeight)
+                };
+                // Make sure food doesn't spawn on snake
+                if (!snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+                    break;
+                }
+            }
+        }
+
+        function draw() {
+            const cellWidth = canvas.width / gridWidth;
+            const cellHeight = canvas.height / gridHeight;
+
+            // Clear canvas
+            ctx.fillStyle = '#001100';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw snake
+            ctx.fillStyle = CELL_COLOR;
+            snake.forEach(segment => {
+                ctx.fillRect(
+                    segment.x * cellWidth + 1,
+                    segment.y * cellHeight + 1,
+                    cellWidth - 2,
+                    cellHeight - 2
+                );
+            });
+
+            // Draw food
+            ctx.fillStyle = FOOD_COLOR;
+            ctx.fillRect(
+                food.x * cellWidth + 1,
+                food.y * cellHeight + 1,
+                cellWidth - 2,
+                cellHeight - 2
+            );
+        }
+
+        function move() {
+            direction = nextDirection;
+            const head = {x: snake[0].x, y: snake[0].y};
+
+            switch(direction) {
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+                case 'left': head.x--; break;
+                case 'right': head.x++; break;
+            }
+
+            // Check wall collision
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+                gameOver();
+                return;
+            }
+
+            // Check self collision
+            if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver();
+                return;
+            }
+
+            snake.unshift(head);
+
+            // Check food collision
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = 'Score: ' + score;
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameLoop);
+            alert('Game Over! Score: ' + score);
+            initGame();
+            gameLoop = setInterval(gameStep, GAME_SPEED);
+        }
+
+        function gameStep() {
+            move();
+            draw();
+        }
+
+        // Touch controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, false);
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, false);
+
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0 && direction !== 'left') nextDirection = 'right';
+                else if (dx < 0 && direction !== 'right') nextDirection = 'left';
+            } else {
+                if (dy > 0 && direction !== 'up') nextDirection = 'down';
+                else if (dy < 0 && direction !== 'down') nextDirection = 'up';
+            }
+        }, false);
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
+            }
+        });
+
+        // Initialize game
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initGame();
+        gameLoop = setInterval(gameStep, GAME_SPEED);
+    </script>
+</body>
+</html>
+```
+
+This Snake game implementation features:
+
+1. Medium-fast speed (adjustable via GAME_SPEED constant)
+2. Starts in the middle of the screen
+3. Dies on wall collision
+4. Responsive design that works on both mobile and desktop
+5. Touch controls (swipe in any direction)
+6. Keyboard controls (arrow keys)
+7. Score tracking
+8. Clean visual style with slight gap between cells
+9. Proper mobile viewport settings
+10. Prevents browser scrolling during touch events
+
+To play:
+- On mobile: Swipe in the direction you want to go
+- On desktop: Use arrow keys
+- Collect the red food to grow and increase score
+- Avoid hitting walls and yourself
+- Game resets automatically after death
+
+The snake moves at a medium-fast pace and the controls are responsive. The game will automatically adjust to your screen size while maintaining square cells for proper gameplay.

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background: #111; }
+        #gameContainer { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #gameCanvas {
+            border: 2px solid #444;
+            background: #000;
+        }
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            touch-action: manipulation;
+        }
+        #score {
+            color: white;
+            font-family: Arial;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Score: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            <button class="btn" ontouchstart="moveLeft()" onmousedown="moveLeft()">←</button>
+            <button class="btn" ontouchstart="moveRight()" onmousedown="moveRight()">→</button>
+            <button class="btn" ontouchstart="rotate()" onmousedown="rotate()">↻</button>
+            <button class="btn" ontouchstart="drop()" onmousedown="drop()">↓</button>
+        </div>
+    </div>
+    <script>
+        const COLS = 10;
+        const ROWS = 20;
+        let unit;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+
+        const pieces = [
+            [[1,1,1,1]], // I
+            [[1,1],[1,1]], // O
+            [[1,1,1],[0,1,0]], // T
+            [[1,1,1],[1,0,0]], // L
+            [[1,1,1],[0,0,1]], // J
+            [[1,1,0],[0,1,1]], // S
+            [[0,1,1],[1,1,0]]  // Z
+        ];
+
+        let grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece = null;
+        let currentX = 0;
+        let currentY = 0;
+        let gameLoop;
+        let dropInterval = 1000;
+
+        function initGame() {
+            unit = Math.floor(Math.min(window.innerWidth / 12, window.innerHeight / 22));
+            canvas.width = COLS * unit;
+            canvas.height = ROWS * unit;
+            newPiece();
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, dropInterval);
+        }
+
+        function newPiece() {
+            const pieceType = Math.floor(Math.random() * pieces.length);
+            currentPiece = pieces[pieceType];
+            currentX = Math.floor(COLS/2) - Math.floor(currentPiece[0].length/2);
+            currentY = 0;
+            if (collision()) gameOver();
+        }
+
+        function collision() {
+            for (let y = 0; y < currentPiece.length; y++) {
+                for (let x = 0; x < currentPiece[y].length; x++) {
+                    if (currentPiece[y][x]) {
+                        const newX = currentX + x;
+                        const newY = currentY + y;
+                        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                        if (newY >= 0 && grid[newY][newX]) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function merge() {
+            for (let y = 0; y < currentPiece.length; y++) {
+                for (let x = 0; x < currentPiece[y].length; x++) {
+                    if (currentPiece[y][x]) {
+                        grid[currentY + y][currentX + x] = 1;
+                    }
+                }
+            }
+            checkLines();
+            newPiece();
+        }
+
+        function checkLines() {
+            for (let y = ROWS-1; y >= 0; y--) {
+                if (grid[y].every(cell => cell)) {
+                    grid.splice(y, 1);
+                    grid.unshift(Array(COLS).fill(0));
+                    score += 100;
+                    document.getElementById('score').textContent = `Score: ${score}`;
+                    if (score % 1000 === 0) {
+                        dropInterval = Math.max(100, dropInterval - 100);
+                        clearInterval(gameLoop);
+                        gameLoop = setInterval(update, dropInterval);
+                    }
+                }
+            }
+        }
+
+        function update() {
+            currentY++;
+            if (collision()) {
+                currentY--;
+                merge();
+            }
+            render();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (grid[y][x]) {
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(x * unit, y * unit, unit-1, unit-1);
+                    }
+                }
+            }
+            
+            // Draw current piece
+            ctx.fillStyle = '#0f0';
+            for (let y = 0; y < currentPiece.length; y++) {
+                for (let x = 0; x < currentPiece[y].length; x++) {
+                    if (currentPiece[y][x]) {
+                        ctx.fillRect((currentX + x) * unit, (currentY + y) * unit, unit-1, unit-1);
+                    }
+                }
+            }
+        }
+
+        function moveLeft() {
+            currentX--;
+            if (collision()) currentX++;
+            render();
+        }
+
+        function moveRight() {
+            currentX++;
+            if (collision()) currentX--;
+            render();
+        }
+
+        function rotate() {
+            const newPiece = currentPiece[0].map((_, i) => 
+                currentPiece.map(row => row[i]).reverse()
+            );
+            const oldPiece = currentPiece;
+            currentPiece = newPiece;
+            if (collision()) currentPiece = oldPiece;
+            render();
+        }
+
+        function drop() {
+            while (!collision()) {
+                currentY++;
+            }
+            currentY--;
+            merge();
+            render();
+        }
+
+        function gameOver() {
+            clearInterval(gameLoop);
+            grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            score = 0;
+            document.getElementById('score').textContent = 'Score: 0';
+            dropInterval = 1000;
+            initGame();
+        }
+
+        window.addEventListener('resize', initGame);
+        initGame();
+    </script>
+</body>
+</html>
+{"controls": ["left", "right", "rotate", "drop"], "canvasId": "gameCanvas", "gameType": "tetris"}
