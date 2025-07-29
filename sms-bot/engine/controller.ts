@@ -43,6 +43,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
+ * Helper function to determine the next modification number for remix chains
+ * Parses "modification 1:", "modification 2:" patterns to find the highest number
+ */
+function getNextModificationNumber(originalPrompt: string): number {
+    const modificationPattern = /modification (\d+):/g;
+    let highestNumber = 0;
+    let match;
+    
+    while ((match = modificationPattern.exec(originalPrompt)) !== null) {
+        const modNumber = parseInt(match[1], 10);
+        if (modNumber > highestNumber) {
+            highestNumber = modNumber;
+        }
+    }
+    
+    return highestNumber + 1;
+}
+
+/**
  * Call Claude API directly for stackables (bypass wtaf-processor)
  * Simple Claude call without complex builder logic
  */
@@ -599,6 +618,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         
         let remixSystemPrompt: string;
         let enhancedPrompt: string;
+        let combinedPromptForStorage: string; // For database storage
         
         if (isZadApp) {
             // FRESH ZAD GENERATION: Load original prompt and create new ZAD app
@@ -624,6 +644,11 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             logWithTimestamp(`📋 Original prompt loaded: "${originalPrompt}"`);
             logWithTimestamp(`🎨 Remix request: "${userRequest}"`);
             
+            // Create combined prompt for storage with modification numbering
+            const modificationNumber = getNextModificationNumber(originalPrompt);
+            combinedPromptForStorage = `${originalPrompt}. modification ${modificationNumber}: ${userRequest}`;
+            logWithTimestamp(`📜 Combined prompt for lineage: "${combinedPromptForStorage}"`);
+            
             // Use ZAD builder system with dual requirements
             const zadBuilderPath = join(__dirname, '..', 'content', 'builder-zad-comprehensive.txt');
             const zadBuilderRules = await readFile(zadBuilderPath, 'utf8');
@@ -639,6 +664,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
             remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
             logWithTimestamp(`📄 Standard remix prompt loaded: ${remixSystemPrompt.length} characters`);
+            
+            // For regular WTAF apps, just use the user request
+            combinedPromptForStorage = userRequest || "remix request";
         }
         
         // Send directly to Claude with appropriate prompt
@@ -668,7 +696,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
         
         // Deploy remix result
-        const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
+        const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, combinedPromptForStorage);
         if (deployResult.publicUrl) {
             // Generate OG image
             try {
@@ -1572,6 +1600,7 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             
             let remixSystemPrompt: string;
             let enhancedPrompt: string;
+            let combinedPromptForStorage: string; // For database storage
             
             if (isZadApp) {
                 // FRESH ZAD GENERATION: Load original prompt and create new ZAD app
@@ -1597,6 +1626,11 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 logWithTimestamp(`📋 Original prompt loaded: "${originalPrompt}"`);
                 logWithTimestamp(`🎨 Remix request: "${userRequest}"`);
                 
+                // Create combined prompt for storage with modification numbering
+                const modificationNumber = getNextModificationNumber(originalPrompt);
+                combinedPromptForStorage = `${originalPrompt}. modification ${modificationNumber}: ${userRequest}`;
+                logWithTimestamp(`📜 Combined prompt for lineage: "${combinedPromptForStorage}"`);
+                
                 // Use ZAD builder system with dual requirements
                 const zadBuilderPath = join(__dirname, '..', 'content', 'builder-zad-comprehensive.txt');
                 const zadBuilderRules = await readFile(zadBuilderPath, 'utf8');
@@ -1612,6 +1646,9 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 const remixPromptPath = join(__dirname, '..', 'content', 'remix-gpt-prompt.txt');
                 remixSystemPrompt = await readFile(remixPromptPath, 'utf8');
                 logWithTimestamp(`📄 Standard remix prompt loaded: ${remixSystemPrompt.length} characters`);
+                
+                // For regular WTAF apps, just use the user request
+                combinedPromptForStorage = userRequest || "remix request";
             }
             
             // Send directly to Claude with appropriate prompt
@@ -1637,7 +1674,7 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             }
             
             // Deploy remix result
-            const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, userRequest || "remix request");
+            const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, combinedPromptForStorage);
             if (deployResult.publicUrl) {
                 // Generate OG image
                 try {
