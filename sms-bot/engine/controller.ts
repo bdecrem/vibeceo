@@ -27,7 +27,7 @@ import {
     generateOGImage,
     updateOGImageInHTML 
 } from './storage-manager.js';
-import { applyDiffToHTML } from './diff-parser.js';
+
 import {
     sendSuccessNotification,
     sendFailureNotification,
@@ -599,42 +599,40 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         
         let remixSystemPrompt: string;
         let enhancedPrompt: string;
-        let useDiffApproach = false;
         
         if (isZadApp) {
-            // Check if ZAD app is large (>30KB) and needs diff approach
-            const htmlSize = htmlContent.length;
-            useDiffApproach = htmlSize > 30000;
+            // FRESH ZAD GENERATION: Load original prompt and create new ZAD app
+            // This bypasses surgical editing entirely and uses proven ZAD creation
             
-            if (useDiffApproach) {
-                // Use diff-based approach for large ZAD apps
-                const zadDiffPath = join(__dirname, '..', 'content', 'remix-zad-diff-prompt.txt');
-                remixSystemPrompt = await readFile(zadDiffPath, 'utf8');
-                logWithTimestamp(`📄 ZAD diff remix prompt loaded for large app (${htmlSize} chars)`);
-                
-                // Build diff-specific prompt
-                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
-
-${htmlContent}
-
-User request: ${userRequest}
-
-Output ONLY the changes in git diff format. Do not output the entire HTML.`;
-            } else {
-                // For smaller ZAD apps, use the standard ZAD remix prompt
-                const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
-                remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
-                logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
-                
-                // Build ZAD-specific remix prompt
-                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
-
-${htmlContent}
-
-User request: ${userRequest}
-
-Apply the visual changes while preserving ALL functionality exactly as shown above.`;
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+            
+            // Load original prompt from database
+            const { data: originalData, error: originalError } = await supabase
+                .from('wtaf_content')
+                .select('original_prompt')
+                .eq('app_slug', appSlug)
+                .single();
+            
+            if (originalError || !originalData?.original_prompt) {
+                logError(`❌ Could not load original prompt for ${appSlug}: ${originalError?.message}`);
+                await sendFailureNotification("remix-original-prompt", senderPhone);
+                return false;
             }
+            
+            const originalPrompt = originalData.original_prompt;
+            logWithTimestamp(`📋 Original prompt loaded: "${originalPrompt}"`);
+            logWithTimestamp(`🎨 Remix request: "${userRequest}"`);
+            
+            // Use ZAD builder system with dual requirements
+            const zadBuilderPath = join(__dirname, '..', 'content', 'builder-zad-comprehensive.txt');
+            const zadBuilderRules = await readFile(zadBuilderPath, 'utf8');
+            
+            remixSystemPrompt = zadBuilderRules;
+            
+            enhancedPrompt = `The user is requesting that you do this: "${originalPrompt}" and added "${userRequest}".`;
+            
+            logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
         } else {
             // For regular WTAF apps, use the standard remix approach
             enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -661,23 +659,8 @@ Apply the visual changes while preserving ALL functionality exactly as shown abo
         await writeFile(outputFile, result, 'utf8');
         logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
         
-        let code: string;
-        
-        if (useDiffApproach) {
-            // Apply diff to original HTML
-            try {
-                logWithTimestamp(`🔧 Applying diff to original HTML...`);
-                code = applyDiffToHTML(htmlContent, result);
-                logWithTimestamp(`✅ Diff applied successfully, result: ${code.length} chars`);
-            } catch (error) {
-                logError(`Failed to apply diff: ${error instanceof Error ? error.message : String(error)}`);
-                await sendFailureNotification("diff-apply", senderPhone);
-                return false;
-            }
-        } else {
-            // Extract code blocks for standard approach
-            code = extractCodeBlocks(result);
-        }
+        // Extract code blocks from Claude's response
+        const code = extractCodeBlocks(result);
         if (!code.trim()) {
             logWarning("No code block found in remix response.");
             await sendFailureNotification("no-code", senderPhone);
@@ -1591,19 +1574,38 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             let enhancedPrompt: string;
             
             if (isZadApp) {
-                // For ZAD apps, use the dedicated ZAD remix prompt
-                const zadRemixPath = join(__dirname, '..', 'content', 'remix-zad-prompt.txt');
-                remixSystemPrompt = await readFile(zadRemixPath, 'utf8');
-                logWithTimestamp(`📄 ZAD remix prompt loaded: ${remixSystemPrompt.length} characters`);
+                // FRESH ZAD GENERATION: Load original prompt and create new ZAD app
+                // This bypasses surgical editing entirely and uses proven ZAD creation
                 
-                // Build ZAD-specific remix prompt
-                enhancedPrompt = `Here's the complete ZAD app HTML to modify:
-
-${htmlContent}
-
-User request: ${userRequest}
-
-Apply the visual changes while preserving ALL functionality exactly as shown above.`;
+                const { createClient } = await import('@supabase/supabase-js');
+                const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+                
+                // Load original prompt from database
+                const { data: originalData, error: originalError } = await supabase
+                    .from('wtaf_content')
+                    .select('original_prompt')
+                    .eq('app_slug', appSlug)
+                    .single();
+                
+                if (originalError || !originalData?.original_prompt) {
+                    logError(`❌ Could not load original prompt for ${appSlug}: ${originalError?.message}`);
+                    await sendFailureNotification("remix-original-prompt", senderPhone);
+                    return false;
+                }
+                
+                const originalPrompt = originalData.original_prompt;
+                logWithTimestamp(`📋 Original prompt loaded: "${originalPrompt}"`);
+                logWithTimestamp(`🎨 Remix request: "${userRequest}"`);
+                
+                // Use ZAD builder system with dual requirements
+                const zadBuilderPath = join(__dirname, '..', 'content', 'builder-zad-comprehensive.txt');
+                const zadBuilderRules = await readFile(zadBuilderPath, 'utf8');
+                
+                remixSystemPrompt = zadBuilderRules;
+                
+                enhancedPrompt = `The user is requesting that you do this: "${originalPrompt}" and added "${userRequest}".`;
+                
+                logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
             } else {
                 // For regular WTAF apps, use the standard remix approach
                 enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);

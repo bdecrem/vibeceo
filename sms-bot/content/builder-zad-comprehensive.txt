@@ -375,6 +375,66 @@ All apps must follow the rebellious and playful Webtoys visual language:
 ### ⚠️ CRITICAL: ZAD is Append-Only + You Must Deduplicate When Displaying
 ZAD always creates NEW records - it never updates existing ones! This means you get DUPLICATE records that you must handle when displaying data.
 
+### 🔥 SPECIAL CASE: Reactions, Votes, Likes (Incremental Updates)
+
+**❌ WRONG: Don't save entire objects with reactions:**
+```javascript
+// This creates duplicate message records!
+await save('message', { 
+  ...existingMessage, 
+  reactions: updatedReactions 
+});
+```
+
+**✅ CORRECT: Save reactions as separate records:**
+```javascript
+// Save individual reactions (append-only)
+async function toggleReaction(messageId, emoji) {
+  // Save as separate 'reaction' record
+  await save('reaction', {
+    messageId: messageId,
+    emoji: emoji,
+    action: 'toggle' // or 'add'/'remove'
+  });
+  
+  await loadLatestData();
+}
+
+// Load and aggregate reactions
+async function loadMessagesWithReactions() {
+  const [messages, reactions] = await Promise.all([
+    load('message'),
+    load('reaction')
+  ]);
+  
+  // Deduplicate messages first
+  const uniqueMessages = getLatestVersions(messages, 'id');
+  
+  // Aggregate reactions per message
+  return uniqueMessages.map(message => {
+    const messageReactions = reactions
+      .filter(r => r.messageId === message.id)
+      .reduce((acc, reaction) => {
+        if (!acc[reaction.emoji]) acc[reaction.emoji] = [];
+        
+        // Handle toggle: remove if exists, add if not
+        const userIndex = acc[reaction.emoji].indexOf(reaction.author);
+        if (userIndex > -1) {
+          acc[reaction.emoji].splice(userIndex, 1);
+        } else {
+          acc[reaction.emoji].push(reaction.author);
+        }
+        
+        return acc;
+      }, {});
+    
+    return { ...message, reactions: messageReactions };
+  });
+}
+```
+
+**Key Principle:** One reaction = one record. Let ZAD aggregate them when displaying.
+
 ```javascript
 // ❌ WRONG: This creates duplicate records AND shows all duplicates
 async function toggleTodo(todoId) {
