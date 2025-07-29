@@ -1,0 +1,44 @@
+I'll modify the app to use the VAPOR theme (pink) from the WEBTOYS design system while keeping all functionality intact. Here are the surgical changes needed:
+
+1. Change the theme variables in the CSS section from CHAOS to VAPOR
+2. Update emoji theme to match pink aesthetic 
+
+The only changes needed are in the CSS variables and a few emojis - everything else works perfectly and should remain untouched.
+
+Here's the surgical change to make in the `<style>` section:
+
+```css
+/* Change from:
+:root {
+    --bg: #FCFCF7;
+    --border: #FFD63D; 
+    --shadow: #C9C2F9;
+    --text: #0A0A0A;
+}
+*/
+
+/* To: */
+:root {
+    --bg: #FFE0F7;      /* Vapor pink background */
+    --border: #FF006E;  /* Hot pink borders */
+    --shadow: #3700B3;  /* Deep purple shadows */
+    --text: #0A0A0A;    /* Keep text dark for contrast */
+}
+```
+
+And update these emojis in the HTML:
+
+```html
+<h1>CHAOS CHAT 💬</h1>
+<!-- To -->
+<h1>VAPOR CHAT 💖</h1>
+
+<div id="easter-egg" onclick="triggerEmojiRain()">💬</div>
+<!-- To -->
+<div id="easter-egg" onclick="triggerEmojiRain()">💖</div>
+
+<!-- In the triggerEmojiRain() function, update emojis array: -->
+const emojis = ['💖', '💝', '💗', '💓', '💕'];
+```
+
+Would you like me to provide the complete modified file with these surgical changes applied?

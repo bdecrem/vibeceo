@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>CHAOS CHAT</title>
+    <style>
+        /* WEBTOYS CHAOS THEME */
+        :root {
+            --bg: #FCFCF7;
+            --border: #FFD63D;
+            --shadow: #C9C2F9;
+            --text: #0A0A0A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            max-width: 666px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 40px;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px var(--shadow);
+        }
+
+        button {
+            background: var(--border);
+            border: 3px solid var(--text);
+            padding: 12px 24px;
+            font-size: 18px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin: 10px 0;
+            min-height: 44px;
+            width: 100%;
+            box-shadow: 4px 4px var(--shadow);
+            transform: rotate(1deg);
+            transition: all 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98) rotate(1deg);
+            box-shadow: 2px 2px var(--shadow);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 3px solid var(--text);
+            min-height: 44px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        #chat-container {
+            border: 3px solid var(--text);
+            height: 60vh;
+            margin: 20px 0;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+            box-shadow: 4px 4px var(--shadow);
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.mine {
+            background: var(--border);
+            margin-left: auto;
+            transform: rotate(1deg);
+        }
+
+        .message.others {
+            background: var(--shadow);
+            margin-right: auto;
+            transform: rotate(-1deg);
+        }
+
+        .message .author {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        #message-input {
+            width: calc(100% - 44px);
+        }
+
+        #send-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #send-button {
+            width: 44px;
+            padding: 0;
+            font-size: 24px;
+        }
+
+        /* Easter Egg */
+        #easter-egg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes rain {
+            0% { transform: translateY(-100vh); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .emoji-rain {
+            position: fixed;
+            font-size: 24px;
+            animation: rain 1s linear;
+            z-index: 1000;
+        }
+
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>CHAOS CHAT 💬</h1>
+            <p>Join the chaos! Chat with up to 5 friends.</p>
+            <button onclick="showNewUserScreen()">New User</button>
+            <button onclick="showReturningUserScreen()">Returning User</button>
+        </div>
+
+        <div id="new-user-screen" class="screen">
+            <h1>New User</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning User</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <h1>CHAOS CHAT</h1>
+            <div id="user-status">Chatting as <span id="current-user-label"></span></div>
+            
+            <div id="chat-container"></div>
+            
+            <div id="send-container">
+                <input type="text" id="message-input" placeholder="Type something chaotic..." maxlength="280">
+                <button id="send-button" onclick="sendMessage()">📨</button>
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')">Leave Chat</button>
+        </div>
+    </div>
+
+    <div id="easter-egg" onclick="triggerEmojiRain()">💬</div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Auth code
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Chat is full! Try again later!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Wrong code! Try again!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select User</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Chat functionality
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                await save('message', {
+                    text: message,
+                    timestamp: new Date().toISOString()
+                });
+                input.value = '';
+                await loadLatestData();
+            }
+        }
+
+        // Handle enter key
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('message-input');
+            input?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        });
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const messages = await load('message');
+            const uniqueMessages = deduplicate(messages, 'text');
+            
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = uniqueMessages
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                .map(msg => `
+                    <div class="message ${msg.author === getUsername() ? 'mine' : 'others'}">
+                        <div class="author">${msg.author}</div>
+                        ${msg.text}
+                    </div>
+                `).join('');
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Deduplication helper
+        function deduplicate(items, uniqueField = 'text') {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        // Easter egg
+        function triggerEmojiRain() {
+            const emojis = ['💬', '💭', '🗨️', '🗯️', '💫'];
+            for (let i = 0; i < 20; i++) {
+                const emoji = document.createElement('div');
+                emoji.className = 'emoji-rain';
+                emoji.style.left = `${Math.random() * 100}vw`;
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                document.body.appendChild(emoji);
+                setTimeout(() => emoji.remove(), 1000);
+            }
+        }
+
+        // Initialize auth
+        initAuth();
+    </script>
+</body>
+</html>

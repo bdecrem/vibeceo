@@ -1,0 +1,255 @@
+Here's a mobile-friendly Pong game with touch controls and smooth gameplay:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Pong</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            background: #000;
+            max-width: 100%;
+            max-height: 100vh;
+            touch-action: none;
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            color: white;
+            font-size: 24px;
+            font-family: monospace;
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="score">
+        <span id="playerScore">0</span> - <span id="aiScore">0</span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerScoreElement = document.getElementById('playerScore');
+        const aiScoreElement = document.getElementById('aiScore');
+
+        // Game constants
+        const PADDLE_HEIGHT = 100;
+        const PADDLE_WIDTH = 15;
+        const BALL_SIZE = 10;
+        const BALL_SPEED = 7;
+        const AI_SPEED = 5;
+
+        // Game state
+        const game = {
+            playerScore: 0,
+            aiScore: 0,
+            ballSpeedX: BALL_SPEED,
+            ballSpeedY: BALL_SPEED,
+            paused: false
+        };
+
+        // Game objects
+        const player = {
+            y: 0,
+            score: 0
+        };
+
+        const ai = {
+            y: 0,
+            score: 0
+        };
+
+        const ball = {
+            x: 0,
+            y: 0,
+            reset: function() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                game.ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * BALL_SPEED;
+                game.ballSpeedY = (Math.random() * 2 - 1) * BALL_SPEED;
+            }
+        };
+
+        // Setup canvas size
+        function setupCanvas() {
+            const aspectRatio = 4/3;
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            
+            if (width / height > aspectRatio) {
+                width = height * aspectRatio;
+            } else {
+                height = width / aspectRatio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Reset positions
+            player.y = (canvas.height - PADDLE_HEIGHT) / 2;
+            ai.y = (canvas.height - PADDLE_HEIGHT) / 2;
+            ball.reset();
+        }
+
+        // Handle touch input
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const relativeY = touch.clientY - rect.top;
+            player.y = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, relativeY - PADDLE_HEIGHT/2));
+        }
+
+        // Update game state
+        function update() {
+            if (game.paused) return;
+
+            // Move ball
+            ball.x += game.ballSpeedX;
+            ball.y += game.ballSpeedY;
+
+            // Ball collision with top and bottom
+            if (ball.y < 0 || ball.y > canvas.height - BALL_SIZE) {
+                game.ballSpeedY = -game.ballSpeedY;
+            }
+
+            // AI movement
+            const aiCenter = ai.y + PADDLE_HEIGHT/2;
+            const ballCenter = ball.y + BALL_SIZE/2;
+            if (aiCenter < ballCenter - 35) {
+                ai.y += AI_SPEED;
+            } else if (aiCenter > ballCenter + 35) {
+                ai.y -= AI_SPEED;
+            }
+
+            // Keep AI paddle on screen
+            ai.y = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, ai.y));
+
+            // Paddle collision
+            if (ball.x < PADDLE_WIDTH && ball.y + BALL_SIZE > player.y && ball.y < player.y + PADDLE_HEIGHT) {
+                game.ballSpeedX = -game.ballSpeedX;
+                const hitPos = (ball.y - player.y) / PADDLE_HEIGHT;
+                game.ballSpeedY = (hitPos - 0.5) * 2 * BALL_SPEED;
+            }
+
+            if (ball.x > canvas.width - PADDLE_WIDTH - BALL_SIZE && 
+                ball.y + BALL_SIZE > ai.y && ball.y < ai.y + PADDLE_HEIGHT) {
+                game.ballSpeedX = -game.ballSpeedX;
+                const hitPos = (ball.y - ai.y) / PADDLE_HEIGHT;
+                game.ballSpeedY = (hitPos - 0.5) * 2 * BALL_SPEED;
+            }
+
+            // Score points
+            if (ball.x < 0) {
+                ai.score++;
+                aiScoreElement.textContent = ai.score;
+                ball.reset();
+            } else if (ball.x > canvas.width) {
+                player.score++;
+                playerScoreElement.textContent = player.score;
+                ball.reset();
+            }
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2, 0);
+            ctx.lineTo(canvas.width/2, canvas.height);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw paddles
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, player.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+            ctx.fillRect(canvas.width - PADDLE_WIDTH, ai.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+            // Draw ball
+            ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE);
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        window.addEventListener('resize', setupCanvas);
+        canvas.addEventListener('touchstart', handleTouch, {passive: false});
+        canvas.addEventListener('touchmove', handleTouch, {passive: false});
+        document.addEventListener('visibilitychange', () => {
+            game.paused = document.hidden;
+        });
+
+        // Start game
+        setupCanvas();
+        gameLoop();
+    </script>
+</body>
+</html>
+```
+
+This Pong implementation includes:
+
+1. **Mobile-Optimized Controls**:
+   - Touch controls for moving the paddle
+   - Responsive canvas sizing
+   - Proper viewport settings
+
+2. **Game Features**:
+   - Score tracking
+   - AI opponent with smooth movement
+   - Ball physics with angle reflection
+   - Center line visual
+   - Pause when tab/window is hidden
+
+3. **Responsive Design**:
+   - Maintains 4:3 aspect ratio
+   - Scales to fit screen
+   - Clear visuals and scoring
+
+4. **Performance Optimizations**:
+   - Efficient rendering
+   - Simple collision detection
+   - Smooth animation using requestAnimationFrame
+
+To play:
+1. Touch and drag anywhere on the screen to move your paddle (left side)
+2. The AI controls the right paddle
+3. Try to get the ball past the AI's paddle to score
+4. First to reach any score wins (no limit implemented)
+
+The game automatically adjusts to screen size and orientation changes. The AI difficulty is balanced for mobile play but can be adjusted by changing the `AI_SPEED` constant.

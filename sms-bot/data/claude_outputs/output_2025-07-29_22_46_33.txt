@@ -1,0 +1,317 @@
+I'll create a simplified mobile-friendly Pac-Man game with touch controls. Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Pac-Man</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: auto;
+            touch-action: none;
+        }
+        
+        #score {
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 10px;
+            font-size: 20px;
+        }
+        
+        .d-pad {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .d-pad-button {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #up { top: 0; left: 50px; }
+        #right { top: 50px; left: 100px; }
+        #down { top: 100px; left: 50px; }
+        #left { top: 50px; left: 0; }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="d-pad">
+        <div class="d-pad-button" id="up"></div>
+        <div class="d-pad-button" id="right"></div>
+        <div class="d-pad-button" id="down"></div>
+        <div class="d-pad-button" id="left"></div>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+
+// Game constants
+const CELL_SIZE = 20;
+const GRID_WIDTH = 15;
+const GRID_HEIGHT = 15;
+const PACMAN_SPEED = 2;
+const GHOST_SPEED = 1.5;
+
+// Set canvas size
+function resizeCanvas() {
+    const size = Math.min(window.innerWidth, window.innerHeight - 100);
+    canvas.width = GRID_WIDTH * CELL_SIZE;
+    canvas.height = GRID_HEIGHT * CELL_SIZE;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Game state
+const game = {
+    score: 0,
+    pacman: {
+        x: CELL_SIZE * 7,
+        y: CELL_SIZE * 11,
+        direction: { x: 0, y: 0 },
+        nextDirection: { x: 0, y: 0 }
+    },
+    ghosts: [
+        { x: CELL_SIZE * 7, y: CELL_SIZE * 7, direction: { x: 1, y: 0 }, color: 'red' },
+        { x: CELL_SIZE * 8, y: CELL_SIZE * 7, direction: { x: -1, y: 0 }, color: 'pink' }
+    ],
+    dots: [],
+    walls: [
+        // Outer walls
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,0,0,1,0,0,0,1,0,0,1,1,1],
+        [1,1,0,0,0,1,0,0,0,1,0,0,0,1,1],
+        [1,1,0,1,1,1,1,1,1,1,1,1,0,1,1],
+        [1,1,1,1,0,0,0,1,0,0,0,1,1,1,1],
+        [1,1,0,1,1,1,1,1,1,1,1,1,0,1,1],
+        [1,1,0,0,0,1,0,0,0,1,0,0,0,1,1],
+        [1,1,1,0,0,1,0,0,0,1,0,0,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]
+    ]
+};
+
+// Initialize dots
+function initDots() {
+    for (let y = 0; y < GRID_HEIGHT; y++) {
+        for (let x = 0; x < GRID_WIDTH; x++) {
+            if (!isWall(x, y)) {
+                game.dots.push({ x: x * CELL_SIZE + CELL_SIZE/2, y: y * CELL_SIZE + CELL_SIZE/2 });
+            }
+        }
+    }
+}
+
+function isWall(x, y) {
+    if (y >= game.walls.length) return false;
+    if (x >= game.walls[y].length) return false;
+    return game.walls[y][x] === 0;
+}
+
+// Check wall collision
+function checkWallCollision(x, y) {
+    const gridX = Math.floor(x / CELL_SIZE);
+    const gridY = Math.floor(y / CELL_SIZE);
+    return isWall(gridX, gridY);
+}
+
+// Control handlers
+function handleDirection(dx, dy) {
+    game.pacman.nextDirection = { x: dx, y: dy };
+}
+
+// Touch controls
+document.getElementById('up').addEventListener('touchstart', () => handleDirection(0, -1));
+document.getElementById('down').addEventListener('touchstart', () => handleDirection(0, 1));
+document.getElementById('left').addEventListener('touchstart', () => handleDirection(-1, 0));
+document.getElementById('right').addEventListener('touchstart', () => handleDirection(1, 0));
+
+// Keyboard controls
+window.addEventListener('keydown', (e) => {
+    switch(e.key) {
+        case 'ArrowUp': handleDirection(0, -1); break;
+        case 'ArrowDown': handleDirection(0, 1); break;
+        case 'ArrowLeft': handleDirection(-1, 0); break;
+        case 'ArrowRight': handleDirection(1, 0); break;
+    }
+});
+
+// Game loop
+function update() {
+    // Update Pac-Man position
+    const nextX = game.pacman.x + game.pacman.nextDirection.x * PACMAN_SPEED;
+    const nextY = game.pacman.y + game.pacman.nextDirection.y * PACMAN_SPEED;
+    
+    if (!checkWallCollision(nextX, nextY)) {
+        game.pacman.direction = game.pacman.nextDirection;
+        game.pacman.x = nextX;
+        game.pacman.y = nextY;
+    }
+    
+    // Update ghost positions
+    game.ghosts.forEach(ghost => {
+        // Simple ghost AI: Change direction when hitting a wall
+        const nextX = ghost.x + ghost.direction.x * GHOST_SPEED;
+        const nextY = ghost.y + ghost.direction.y * GHOST_SPEED;
+        
+        if (checkWallCollision(nextX, nextY)) {
+            // Choose a random new direction
+            const directions = [[1,0], [-1,0], [0,1], [0,-1]];
+            const newDir = directions[Math.floor(Math.random() * directions.length)];
+            ghost.direction = { x: newDir[0], y: newDir[1] };
+        } else {
+            ghost.x = nextX;
+            ghost.y = nextY;
+        }
+    });
+    
+    // Collect dots
+    game.dots = game.dots.filter(dot => {
+        const dx = dot.x - game.pacman.x;
+        const dy = dot.y - game.pacman.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < CELL_SIZE/2) {
+            game.score += 10;
+            scoreElement.textContent = `Score: ${game.score}`;
+            return false;
+        }
+        return true;
+    });
+    
+    // Check ghost collisions
+    game.ghosts.forEach(ghost => {
+        const dx = ghost.x - game.pacman.x;
+        const dy = ghost.y - game.pacman.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < CELL_SIZE) {
+            // Reset game
+            game.score = 0;
+            game.pacman.x = CELL_SIZE * 7;
+            game.pacman.y = CELL_SIZE * 11;
+            game.pacman.direction = { x: 0, y: 0 };
+            game.pacman.nextDirection = { x: 0, y: 0 };
+            initDots();
+        }
+    });
+}
+
+function render() {
+    // Clear canvas
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw walls
+    ctx.fillStyle = 'blue';
+    game.walls.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            if (cell === 0) {
+                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        });
+    });
+    
+    // Draw dots
+    ctx.fillStyle = 'white';
+    game.dots.forEach(dot => {
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    // Draw Pac-Man
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(game.pacman.x, game.pacman.y, CELL_SIZE/2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw ghosts
+    game.ghosts.forEach(ghost => {
+        ctx.fillStyle = ghost.color;
+        ctx.beginPath();
+        ctx.arc(ghost.x, ghost.y, CELL_SIZE/2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+// Start game
+initDots();
+gameLoop();
+</script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. A simplified maze layout
+2. Touch-friendly D-pad controls
+3. Basic ghost AI
+4. Dot collection and scoring
+5. Collision detection
+6. Mobile-responsive canvas sizing
+7. Game reset on ghost collision
+
+Key features:
+- Virtual D-pad for mobile controls
+- Keyboard support for desktop play
+- Score tracking
+- Collision detection with walls and ghosts
+- Simple ghost AI that changes direction when hitting walls
+- Responsive canvas that scales to fit the screen
+- Clean, minimal visual style
+
+The game follows classic Pac-Man rules:
+- Collect dots to score points
+- Avoid ghosts
+- Navigate through the maze
+- Game resets when touching a ghost
+
+To play:
+- Use the virtual D-pad on mobile devices
+- Use arrow keys on desktop
+- Collect all dots while avoiding ghosts
+- Score increases by 10 points per dot
+- Game resets when caught by a ghost
+
+The game is optimized for mobile with touch controls and appropriate scaling, while still being playable on desktop browsers.

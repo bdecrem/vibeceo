@@ -1,0 +1,8 @@
+{
+  "requestType": "remix",
+  "appSlug": "pink-chimp-retreating",
+  "userSlug": "bart",
+  "userRequest": "make it purple and add sparkles",
+  "senderPhone": "+19108675309",
+  "timestamp": "2025-07-29T18:25:03.594Z"
+}

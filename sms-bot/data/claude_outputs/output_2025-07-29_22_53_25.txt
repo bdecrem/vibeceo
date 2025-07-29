@@ -1,0 +1,303 @@
+Here's a simple mobile-friendly platformer game with a jumping character, platforms, and basic touch controls:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simple Platformer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #333;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+            background: #87CEEB;
+        }
+        
+        .control-btn {
+            position: fixed;
+            bottom: 20px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.3);
+            border: 2px solid white;
+            border-radius: 50%;
+            touch-action: none;
+        }
+        
+        #leftBtn {
+            left: 20px;
+        }
+        
+        #rightBtn {
+            left: 120px;
+        }
+        
+        #jumpBtn {
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="leftBtn" class="control-btn"></div>
+    <div id="rightBtn" class="control-btn"></div>
+    <div id="jumpBtn" class="control-btn"></div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game constants
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -12;
+        const MOVE_SPEED = 5;
+        const PLAYER_WIDTH = 40;
+        const PLAYER_HEIGHT = 40;
+        
+        // Game state
+        const game = {
+            player: {
+                x: 100,
+                y: 100,
+                vx: 0,
+                vy: 0,
+                isJumping: false
+            },
+            platforms: [],
+            controls: {
+                left: false,
+                right: false,
+                jump: false
+            }
+        };
+        
+        // Initialize platforms
+        function initPlatforms() {
+            // Ground
+            game.platforms.push({
+                x: 0,
+                y: canvas.height - 40,
+                width: canvas.width,
+                height: 40
+            });
+            
+            // Add some floating platforms
+            const platformPositions = [
+                {x: 200, y: canvas.height - 120},
+                {x: 400, y: canvas.height - 200},
+                {x: 100, y: canvas.height - 280},
+                {x: 300, y: canvas.height - 360}
+            ];
+            
+            platformPositions.forEach(pos => {
+                game.platforms.push({
+                    x: pos.x,
+                    y: pos.y,
+                    width: 100,
+                    height: 20
+                });
+            });
+        }
+        
+        // Handle controls
+        function setupControls() {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const jumpBtn = document.getElementById('jumpBtn');
+            
+            // Touch controls
+            leftBtn.addEventListener('touchstart', () => game.controls.left = true);
+            leftBtn.addEventListener('touchend', () => game.controls.left = false);
+            
+            rightBtn.addEventListener('touchstart', () => game.controls.right = true);
+            rightBtn.addEventListener('touchend', () => game.controls.right = false);
+            
+            jumpBtn.addEventListener('touchstart', () => {
+                if (!game.player.isJumping) {
+                    game.controls.jump = true;
+                }
+            });
+            jumpBtn.addEventListener('touchend', () => game.controls.jump = false);
+            
+            // Keyboard controls
+            window.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        game.controls.left = true;
+                        break;
+                    case 'ArrowRight':
+                        game.controls.right = true;
+                        break;
+                    case ' ':
+                        if (!game.player.isJumping) {
+                            game.controls.jump = true;
+                        }
+                        break;
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        game.controls.left = false;
+                        break;
+                    case 'ArrowRight':
+                        game.controls.right = false;
+                        break;
+                    case ' ':
+                        game.controls.jump = false;
+                        break;
+                }
+            });
+        }
+        
+        // Check collision between player and platform
+        function checkCollision(player, platform) {
+            return player.x < platform.x + platform.width &&
+                   player.x + PLAYER_WIDTH > platform.x &&
+                   player.y < platform.y + platform.height &&
+                   player.y + PLAYER_HEIGHT > platform.y;
+        }
+        
+        // Update game state
+        function update() {
+            // Handle horizontal movement
+            if (game.controls.left) {
+                game.player.vx = -MOVE_SPEED;
+            } else if (game.controls.right) {
+                game.player.vx = MOVE_SPEED;
+            } else {
+                game.player.vx = 0;
+            }
+            
+            // Apply gravity
+            game.player.vy += GRAVITY;
+            
+            // Handle jumping
+            if (game.controls.jump && !game.player.isJumping) {
+                game.player.vy = JUMP_FORCE;
+                game.player.isJumping = true;
+            }
+            
+            // Update position
+            game.player.x += game.player.vx;
+            game.player.y += game.player.vy;
+            
+            // Check platform collisions
+            game.player.isJumping = true;
+            for (let platform of game.platforms) {
+                if (checkCollision(game.player, platform)) {
+                    // Landing on top of platform
+                    if (game.player.vy > 0 && 
+                        game.player.y + PLAYER_HEIGHT - game.player.vy <= platform.y) {
+                        game.player.y = platform.y - PLAYER_HEIGHT;
+                        game.player.vy = 0;
+                        game.player.isJumping = false;
+                    }
+                    // Hitting platform from below
+                    else if (game.player.vy < 0) {
+                        game.player.y = platform.y + platform.height;
+                        game.player.vy = 0;
+                    }
+                }
+            }
+            
+            // Screen boundaries
+            if (game.player.x < 0) game.player.x = 0;
+            if (game.player.x + PLAYER_WIDTH > canvas.width) {
+                game.player.x = canvas.width - PLAYER_WIDTH;
+            }
+            
+            // Reset if fallen off
+            if (game.player.y > canvas.height) {
+                game.player.x = 100;
+                game.player.y = 100;
+                game.player.vy = 0;
+            }
+        }
+        
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw platforms
+            ctx.fillStyle = '#4CAF50';
+            game.platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+            
+            // Draw player
+            ctx.fillStyle = '#FF5722';
+            ctx.fillRect(game.player.x, game.player.y, PLAYER_WIDTH, PLAYER_HEIGHT);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Handle canvas resize
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initPlatforms(); // Recreate platforms for new dimensions
+        }
+        
+        // Initialize game
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        setupControls();
+        gameLoop();
+        
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', (e) => e.preventDefault(), {passive: false});
+        document.addEventListener('touchmove', (e) => e.preventDefault(), {passive: false});
+    </script>
+</body>
+</html>
+```
+
+This platformer game includes:
+
+1. A player character that can move left/right and jump
+2. Multiple platforms including a ground platform
+3. Simple physics with gravity and jumping
+4. Both touch and keyboard controls
+5. Platform collision detection
+6. Screen boundary checking
+7. Player reset when falling off
+8. Responsive canvas that adjusts to screen size
+9. Mobile-friendly controls with virtual buttons
+
+Controls:
+- Mobile: Use the left and right buttons to move, and the right circular button to jump
+- Keyboard: Arrow keys for movement, spacebar for jump
+
+The game features:
+- Simple physics system with gravity
+- Platform collision detection
+- Responsive design that works on both mobile and desktop
+- Clean visual style with contrasting colors
+- Smooth movement and controls
+
+The player character is represented by an orange square, platforms are green, and the background is sky blue. The goal is simply to jump from platform to platform without falling off.
+
+To play, simply load the HTML file in a mobile browser. The game will automatically adjust to your screen size and provide touch controls at the bottom of the screen.

@@ -1,0 +1,302 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <title>Tetris</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; color: #fff; font-family: sans-serif; touch-action: none; }
+    canvas { display: block; background: #000; }
+    #controls { position: fixed; bottom: 0; width: 100%; height: 120px; background: #333; display: flex; justify-content: center; align-items: center; }
+    .btn { width: 60px; height: 60px; margin: 5px; background: #555; border: none; border-radius: 10px; color: #fff; font-size: 24px; }
+    #screen { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 120px); display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 2000; }
+    #screen h1 { font-size: 40px; margin-bottom: 20px; }
+    #screen p { font-size: 20px; margin-bottom: 30px; text-align: center; max-width: 80%; }
+    #screen button { padding: 15px 30px; font-size: 20px; background: #f00; border: none; border-radius: 10px; color: #fff; cursor: pointer; }
+    #score { position: absolute; top: 20px; left: 20px; font-size: 24px; z-index: 100; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="score">Score: 0</div>
+  <div id="screen">
+    <h1>🧱 Tetris</h1>
+    <p>Stack the blocks! Clear lines to score points.</p>
+    <button id="start">Start Game</button>
+  </div>
+  <div id="controls">
+    <button class="btn" id="left">←</button>
+    <button class="btn" id="rotate">↻</button>
+    <button class="btn" id="right">→</button>
+    <button class="btn" id="down">↓</button>
+  </div>
+
+  <script>
+    var canvas = document.getElementById('game');
+    var ctx = canvas.getContext('2d');
+    var scoreElement = document.getElementById('score');
+    var screen = document.getElementById('screen');
+    var startButton = document.getElementById('start');
+    var leftButton = document.getElementById('left');
+    var rightButton = document.getElementById('right');
+    var rotateButton = document.getElementById('rotate');
+    var downButton = document.getElementById('down');
+
+    var dpr = window.devicePixelRatio || 1;
+    var controlsHeight = 120;
+    var gridWidth = 10;
+    var gridHeight = 20;
+    var blockSize;
+    var grid = [];
+    var score = 0;
+    var dropInterval = 1000;
+    var lastDropTime = 0;
+    var gamePhase = 'intro'; // intro, playing, end
+
+    var currentPiece = null;
+    var nextPieceType = null;
+
+    var pieces = {
+      'I': { shape: [[1,1,1,1]], color: '#0ff' },
+      'O': { shape: [[1,1],[1,1]], color: '#ff0' },
+      'T': { shape: [[0,1,0],[1,1,1]], color: '#a0f' },
+      'S': { shape: [[0,1,1],[1,1,0]], color: '#0f0' },
+      'Z': { shape: [[1,1,0],[0,1,1]], color: '#f00' },
+      'J': { shape: [[1,0,0],[1,1,1]], color: '#00f' },
+      'L': { shape: [[0,0,1],[1,1,1]], color: '#fa0' }
+    };
+
+    function init() {
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      document.addEventListener('keydown', handleKeyDown);
+      startButton.addEventListener('click', startGame);
+      leftButton.addEventListener('touchstart', function(e){ e.preventDefault(); movePiece(-1, 0); });
+      rightButton.addEventListener('touchstart', function(e){ e.preventDefault(); movePiece(1, 0); });
+      rotateButton.addEventListener('touchstart', function(e){ e.preventDefault(); rotatePiece(); });
+      downButton.addEventListener('touchstart', function(e){ e.preventDefault(); movePiece(0, 1); });
+      leftButton.addEventListener('mousedown', function(){ movePiece(-1, 0); });
+      rightButton.addEventListener('mousedown', function(){ movePiece(1, 0); });
+      rotateButton.addEventListener('mousedown', function(){ rotatePiece(); });
+      downButton.addEventListener('mousedown', function(){ movePiece(0, 1); });
+      requestAnimationFrame(gameLoop);
+    }
+
+    function resizeCanvas() {
+      var width = window.innerWidth;
+      var height = window.innerHeight - controlsHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      blockSize = Math.min(
+        Math.floor(canvas.width / gridWidth),
+        Math.floor(canvas.height / gridHeight)
+      );
+      ctx.scale(dpr, dpr);
+    }
+
+    function startGame() {
+      gamePhase = 'playing';
+      screen.style.display = 'none';
+      resetGame();
+    }
+
+    function resetGame() {
+      grid = [];
+      for (var y = 0; y < gridHeight; y++) {
+        grid[y] = [];
+        for (var x = 0; x < gridWidth; x++) {
+          grid[y][x] = 0;
+        }
+      }
+      score = 0;
+      dropInterval = 1000;
+      scoreElement.textContent = 'Score: 0';
+      spawnPiece();
+    }
+
+    function spawnPiece() {
+      var types = Object.keys(pieces);
+      if (!nextPieceType) nextPieceType = types[Math.floor(Math.random() * types.length)];
+      var type = nextPieceType;
+      nextPieceType = types[Math.floor(Math.random() * types.length)];
+      currentPiece = {
+        type: type,
+        shape: pieces[type].shape,
+        color: pieces[type].color,
+        x: Math.floor(gridWidth / 2) - Math.floor(pieces[type].shape[0].length / 2),
+        y: 0
+      };
+
+      if (checkCollision()) {
+        endGame();
+      }
+    }
+
+    function checkCollision(offsetX, offsetY, shape) {
+      var s = shape || currentPiece.shape;
+      var x = currentPiece.x + (offsetX || 0);
+      var y = currentPiece.y + (offsetY || 0);
+
+      for (var r = 0; r < s.length; r++) {
+        for (var c = 0; c < s[r].length; c++) {
+          if (s[r][c]) {
+            var newX = x + c;
+            var newY = y + r;
+            if (newX < 0 || newX >= gridWidth || newY >= gridHeight) {
+              return true;
+            }
+            if (newY >= 0 && grid[newY][newX]) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function rotatePiece() {
+      if (gamePhase !== 'playing') return;
+      var rows = currentPiece.shape.length;
+      var cols = currentPiece.shape[0].length;
+      var newShape = [];
+      for (var c = 0; c < cols; c++) {
+        newShape[c] = [];
+        for (var r = 0; r < rows; r++) {
+          newShape[c][r] = currentPiece.shape[rows - 1 - r][c];
+        }
+      }
+      if (!checkCollision(0, 0, newShape)) {
+        currentPiece.shape = newShape;
+      }
+    }
+
+    function movePiece(deltaX, deltaY) {
+      if (gamePhase !== 'playing') return;
+      if (!checkCollision(deltaX, deltaY)) {
+        currentPiece.x += deltaX;
+        currentPiece.y += deltaY;
+        if (deltaY > 0) {
+          lastDropTime = performance.now();
+        }
+        return true;
+      } else if (deltaY > 0) {
+        lockPiece();
+        clearLines();
+        spawnPiece();
+      }
+      return false;
+    }
+
+    function lockPiece() {
+      for (var r = 0; r < currentPiece.shape.length; r++) {
+        for (var c = 0; c < currentPiece.shape[r].length; c++) {
+          if (currentPiece.shape[r][c]) {
+            var y = currentPiece.y + r;
+            var x = currentPiece.x + c;
+            if (y >= 0) {
+              grid[y][x] = currentPiece.color;
+            }
+          }
+        }
+      }
+    }
+
+    function clearLines() {
+      var linesCleared = 0;
+      for (var y = gridHeight - 1; y >= 0; y--) {
+        var isLine = true;
+        for (var x = 0; x < gridWidth; x++) {
+          if (!grid[y][x]) {
+            isLine = false;
+            break;
+          }
+        }
+        if (isLine) {
+          linesCleared++;
+          for (var yy = y; yy > 0; yy--) {
+            grid[yy] = grid[yy-1].slice();
+          }
+          grid[0] = [];
+          for (var xx = 0; xx < gridWidth; xx++) {
+            grid[0][xx] = 0;
+          }
+          y++;
+        }
+      }
+      if (linesCleared > 0) {
+        score += linesCleared * 100;
+        dropInterval = Math.max(100, 1000 - Math.floor(score / 500) * 100);
+        scoreElement.textContent = 'Score: ' + score;
+      }
+    }
+
+    function endGame() {
+      gamePhase = 'end';
+      screen.innerHTML = '<h1>Game Over</h1><p>Final Score: '+score+'</p><button id="restart">Play Again</button>';
+      screen.style.display = 'flex';
+      document.getElementById('restart').addEventListener('click', startGame);
+    }
+
+    function handleKeyDown(e) {
+      if (gamePhase !== 'playing') return;
+      switch(e.keyCode) {
+        case 37: movePiece(-1, 0); break;
+        case 39: movePiece(1, 0); break;
+        case 40: movePiece(0, 1); break;
+        case 38: rotatePiece(); break;
+      }
+    }
+
+    function update(deltaTime, currentTime) {
+      if (gamePhase !== 'playing') return;
+      if (currentTime - lastDropTime > dropInterval) {
+        movePiece(0, 1);
+        lastDropTime = currentTime;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (gamePhase !== 'playing') return;
+
+      // Draw grid
+      for (var y = 0; y < gridHeight; y++) {
+        for (var x = 0; x < gridWidth; x++) {
+          if (grid[y][x]) {
+            ctx.fillStyle = grid[y][x];
+            ctx.fillRect(x * blockSize, y * blockSize, blockSize - 1, blockSize - 1);
+          }
+        }
+      }
+
+      // Draw current piece
+      if (currentPiece) {
+        ctx.fillStyle = currentPiece.color;
+        for (var r = 0; r < currentPiece.shape.length; r++) {
+          for (var c = 0; c < currentPiece.shape[r].length; c++) {
+            if (currentPiece.shape[r][c]) {
+              ctx.fillRect((currentPiece.x + c) * blockSize, (currentPiece.y + r) * blockSize, blockSize - 1, blockSize - 1);
+            }
+          }
+        }
+      }
+    }
+
+    var lastTime = 0;
+    function gameLoop(currentTime) {
+      var deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      update(deltaTime, currentTime);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+```

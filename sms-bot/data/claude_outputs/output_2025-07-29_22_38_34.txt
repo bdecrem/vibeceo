@@ -1,0 +1,285 @@
+Here's a complete Snake game where hitting the walls results in game over. The game uses touch controls for mobile and keyboard arrows for desktop:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            background: #34495e;
+            margin-top: 20px;
+            border: 2px solid #ecf0f1;
+        }
+
+        #score {
+            color: #ecf0f1;
+            font-size: 24px;
+            margin-top: 10px;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="controls">
+        <button class="control-btn" id="leftBtn">←</button>
+        <button class="control-btn" id="upBtn">↑</button>
+        <button class="control-btn" id="downBtn">↓</button>
+        <button class="control-btn" id="rightBtn">→</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        // Game constants
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 20;
+        let GAME_SPEED = 150; // milliseconds between moves
+
+        // Set canvas size based on screen size
+        function setupCanvas() {
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 150;
+            const size = Math.min(maxWidth, maxHeight);
+            canvas.width = Math.floor(size / GRID_SIZE) * GRID_SIZE;
+            canvas.height = canvas.width;
+        }
+        setupCanvas();
+        window.addEventListener('resize', setupCanvas);
+
+        // Game state
+        let snake = [
+            { x: Math.floor(GRID_SIZE/2), y: Math.floor(GRID_SIZE/2) }
+        ];
+        let direction = 'right';
+        let nextDirection = 'right';
+        let food = { x: 5, y: 5 };
+        let score = 0;
+        let gameOver = false;
+
+        // Generate new food position
+        function generateFood() {
+            while (true) {
+                const newFood = {
+                    x: Math.floor(Math.random() * GRID_SIZE),
+                    y: Math.floor(Math.random() * GRID_SIZE)
+                };
+                // Check if food spawns on snake
+                if (!snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
+                    food = newFood;
+                    break;
+                }
+            }
+        }
+
+        // Game controls
+        function handleDirection(newDirection) {
+            const opposites = {
+                'left': 'right',
+                'right': 'left',
+                'up': 'down',
+                'down': 'up'
+            };
+            if (opposites[newDirection] !== direction) {
+                nextDirection = newDirection;
+            }
+        }
+
+        // Touch controls
+        document.getElementById('leftBtn').addEventListener('touchstart', () => handleDirection('left'));
+        document.getElementById('rightBtn').addEventListener('touchstart', () => handleDirection('right'));
+        document.getElementById('upBtn').addEventListener('touchstart', () => handleDirection('up'));
+        document.getElementById('downBtn').addEventListener('touchstart', () => handleDirection('down'));
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            const keyDirections = {
+                'ArrowLeft': 'left',
+                'ArrowRight': 'right',
+                'ArrowUp': 'up',
+                'ArrowDown': 'down'
+            };
+            if (keyDirections[e.key]) {
+                handleDirection(keyDirections[e.key]);
+            }
+            if (e.key === 'Enter' && gameOver) {
+                resetGame();
+            }
+        });
+
+        function resetGame() {
+            snake = [{ x: Math.floor(GRID_SIZE/2), y: Math.floor(GRID_SIZE/2) }];
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            gameOver = false;
+            generateFood();
+            scoreElement.textContent = `Score: ${score}`;
+            gameLoop();
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            direction = nextDirection;
+            const head = { ...snake[0] };
+
+            switch (direction) {
+                case 'right': head.x++; break;
+                case 'left': head.x--; break;
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+            }
+
+            // Check wall collision
+            if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+                gameOver = true;
+                return;
+            }
+
+            // Check self collision
+            if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver = true;
+                return;
+            }
+
+            snake.unshift(head);
+
+            // Check food collision
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = `Score: ${score}`;
+                generateFood();
+                GAME_SPEED = Math.max(50, GAME_SPEED - 2); // Speed up the game
+            } else {
+                snake.pop();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw snake
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#e74c3c' : '#2ecc71';
+                ctx.fillRect(
+                    segment.x * CELL_SIZE,
+                    segment.y * CELL_SIZE,
+                    CELL_SIZE - 1,
+                    CELL_SIZE - 1
+                );
+            });
+
+            // Draw food
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(
+                food.x * CELL_SIZE,
+                food.y * CELL_SIZE,
+                CELL_SIZE - 1,
+                CELL_SIZE - 1
+            );
+
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', canvas.width/2, canvas.height/2);
+                ctx.font = '20px Arial';
+                ctx.fillText('Press Enter to Restart', canvas.width/2, canvas.height/2 + 40);
+            }
+        }
+
+        function gameLoop() {
+            if (!gameOver) {
+                update();
+                draw();
+                setTimeout(gameLoop, GAME_SPEED);
+            } else {
+                draw();
+            }
+        }
+
+        // Start the game
+        generateFood();
+        gameLoop();
+
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    </script>
+</body>
+</html>
+```
+
+This Snake game implementation includes:
+
+1. Wall collision detection that ends the game
+2. Touch controls for mobile devices
+3. Keyboard controls for desktop
+4. Responsive canvas sizing
+5. Score tracking
+6. Gradually increasing difficulty (snake speeds up as you eat food)
+7. Game over screen with restart option
+8. Prevention of snake reversing into itself
+9. Visual feedback with different colors for snake head and body
+10. Mobile-friendly UI with touch buttons
+
+To play:
+- Use arrow keys on desktop or touch buttons on mobile
+- Guide the snake (green with red head) to the yellow food
+- Avoid hitting walls and the snake's own body
+- Score increases by 10 for each food eaten
+- Game speeds up slightly with each food eaten
+- Press Enter to restart after game over
+
+The game is optimized for mobile with:
+- Touch controls positioned for easy access
+- Responsive canvas sizing
+- Prevention of unwanted scrolling/zooming
+- Clear visual feedback
+- Appropriate button sizing for touch input

@@ -155,9 +155,16 @@ const REQUEST_CONFIGS = {
         builderTemperature: 0.5   // More conservative for edits
     },
     game: {
-        builderModel: 'together:Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8',  // Using Together.ai with Qwen3 large coder
-        builderMaxTokens: 32768,  // Maximum output for complete game generation
-        builderTemperature: 0.7
+        // GPT-4 settings (commented out for easy reversion):
+        // builderModel: 'gpt-4-1106-preview',  // Latest GPT-4 Turbo model (aka GPT-4.1)
+        // builderMaxTokens: 4096,              // Maximum supported by this model
+        // builderTemperature: 0.2,             // Prioritizes accuracy and determinism
+        // builderTopP: 0.1                     // Narrow sampling distribution for predictable output
+        
+        // Claude settings:
+        builderModel: 'claude-3-5-sonnet-20241022',  // Using Claude Sonnet for games
+        builderMaxTokens: 8192,                      // Claude supports more tokens
+        builderTemperature: 0.25                     // Lower temperature for more deterministic game generation
     },
     zad: {
         classifierModel: 'gpt-4o',

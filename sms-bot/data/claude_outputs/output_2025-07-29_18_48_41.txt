@@ -1,0 +1,311 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+  <title>🏓 Pong</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #1a1a2e, #16213e);
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas {
+      background: #0f3460;
+      display: block;
+    }
+    #controls {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 120px;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #e94560;
+      border: none;
+      color: white;
+      padding: 15px 25px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(15, 52, 96, 0.9);
+      z-index: 10;
+    }
+    h1 {
+      font-size: 48px;
+      margin: 0;
+    }
+    p {
+      font-size: 20px;
+      max-width: 80%;
+      text-align: center;
+      margin: 10px 0 30px;
+    }
+    #game-screen {
+      display: none;
+    }
+    #end-screen {
+      display: none;
+    }
+    .score-display {
+      position: absolute;
+      top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div id="start-screen" class="screen">
+  <h1>🏓 Pong</h1>
+  <p>Bounce the ball, don't let it pass! First to 5 wins.</p>
+  <button id="start-button">START GAME</button>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="score-display">Player: <span id="player-score">0</span> | AI: <span id="ai-score">0</span></div>
+  <canvas id="game-canvas"></canvas>
+</div>
+
+<div id="end-screen" class="screen">
+  <h1 id="result-text">You Win!</h1>
+  <p>Final Score: <span id="final-player">0</span> - <span id="final-ai">0</span></p>
+  <button id="restart-button">PLAY AGAIN</button>
+</div>
+
+<div id="controls">
+  <button id="up-button">⬆️ UP</button>
+  <button id="down-button">⬇️ DOWN</button>
+</div>
+
+<script>
+  var dpr = window.devicePixelRatio || 1;
+  var controlsHeight = 120;
+  var canvas = document.getElementById('game-canvas');
+  var ctx = canvas.getContext('2d');
+  var cw, ch, width, height;
+
+  function resizeCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight - controlsHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.scale(dpr, dpr);
+    cw = width;
+    ch = height;
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  var gamePhase = 'start';
+  var playerScore = 0;
+  var aiScore = 0;
+  var winScore = 5;
+
+  var paddleWidth = 15;
+  var paddleHeight = 100;
+  var ballSize = 15;
+  var playerY = ch / 2 - paddleHeight / 2;
+  var aiY = ch / 2 - paddleHeight / 2;
+  var ballX = cw / 2;
+  var ballY = ch / 2;
+  var ballSpeedX = 5;
+  var ballSpeedY = 3;
+  var playerSpeed = 0;
+  var aiSpeed = 4;
+  var lastTime = 0;
+  var frameRate = 1000 / 60;
+
+  document.getElementById('start-button').addEventListener('click', function() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    gamePhase = 'game';
+    resetBall();
+    playerScore = 0;
+    aiScore = 0;
+    updateScore();
+  });
+
+  document.getElementById('restart-button').addEventListener('click', function() {
+    document.getElementById('end-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    gamePhase = 'game';
+    resetBall();
+    playerScore = 0;
+    aiScore = 0;
+    updateScore();
+  });
+
+  function resetBall() {
+    ballX = cw / 2;
+    ballY = ch / 2;
+    ballSpeedX = -ballSpeedX;
+    ballSpeedY = (Math.random() * 4) - 2;
+  }
+
+  function updateScore() {
+    document.getElementById('player-score').textContent = playerScore;
+    document.getElementById('ai-score').textContent = aiScore;
+  }
+
+  function update() {
+    if (gamePhase !== 'game') return;
+
+    playerY += playerSpeed;
+    if (playerY < 0) playerY = 0;
+    if (playerY > ch - paddleHeight) playerY = ch - paddleHeight;
+
+    var aiCenter = aiY + paddleHeight / 2;
+    if (aiCenter < ballY - 15) {
+      aiY += aiSpeed;
+    } else if (aiCenter > ballY + 15) {
+      aiY -= aiSpeed;
+    }
+    if (aiY < 0) aiY = 0;
+    if (aiY > ch - paddleHeight) aiY = ch - paddleHeight;
+
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    if (ballY < 0 || ballY > ch - ballSize) {
+      ballSpeedY = -ballSpeedY;
+    }
+
+    if (ballX < paddleWidth) {
+      if (ballY + ballSize > playerY && ballY < playerY + paddleHeight) {
+        var deltaY = ballY - (playerY + paddleHeight / 2);
+        ballSpeedX = -ballSpeedX * 1.05;
+        ballSpeedY = deltaY * 0.2;
+      } else {
+        aiScore++;
+        updateScore();
+        if (aiScore >= winScore) {
+          endGame(false);
+        } else {
+          resetBall();
+        }
+      }
+    }
+
+    if (ballX > cw - paddleWidth - ballSize) {
+      if (ballY + ballSize > aiY && ballY < aiY + paddleHeight) {
+        var deltaY = ballY - (aiY + paddleHeight / 2);
+        ballSpeedX = -ballSpeedX * 1.05;
+        ballSpeedY = deltaY * 0.2;
+      } else {
+        playerScore++;
+        updateScore();
+        if (playerScore >= winScore) {
+          endGame(true);
+        } else {
+          resetBall();
+        }
+      }
+    }
+  }
+
+  function endGame(playerWon) {
+    gamePhase = 'end';
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('end-screen').style.display = 'flex';
+    document.getElementById('result-text').textContent = playerWon ? "You Win! 🎉" : "AI Wins! 🤖";
+    document.getElementById('final-player').textContent = playerScore;
+    document.getElementById('final-ai').textContent = aiScore;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = '#fff';
+    
+    ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+    ctx.fillRect(cw - paddleWidth, aiY, paddleWidth, paddleHeight);
+    
+    ctx.beginPath();
+    ctx.arc(ballX + ballSize/2, ballY + ballSize/2, ballSize/2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    for (var i = 0; i < ch; i += 20) {
+      ctx.fillRect(cw/2 - 2, i, 4, 10);
+    }
+  }
+
+  function gameLoop(timestamp) {
+    var elapsed = timestamp - lastTime;
+    if (elapsed > frameRate) {
+      update();
+      draw();
+      lastTime = timestamp;
+    }
+    requestAnimationFrame(gameLoop);
+  }
+
+  document.getElementById('up-button').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    playerSpeed = -7;
+  });
+  document.getElementById('down-button').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    playerSpeed = 7;
+  });
+  document.getElementById('up-button').addEventListener('touchend', function() {
+    playerSpeed = 0;
+  });
+  document.getElementById('down-button').addEventListener('touchend', function() {
+    playerSpeed = 0;
+  });
+
+  document.getElementById('up-button').addEventListener('mousedown', function() {
+    playerSpeed = -7;
+  });
+  document.getElementById('down-button').addEventListener('mousedown', function() {
+    playerSpeed = 7;
+  });
+  document.addEventListener('mouseup', function() {
+    playerSpeed = 0;
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowUp') playerSpeed = -7;
+    if (e.key === 'ArrowDown') playerSpeed = 7;
+  });
+  document.addEventListener('keyup', function() {
+    playerSpeed = 0;
+  });
+
+  requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
+```
