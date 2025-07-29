@@ -1,0 +1,1001 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Tetris</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .game-board {
+            position: relative;
+            background-color: #0f3460;
+            border: 2px solid #4ecdc4;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 150px;
+        }
+
+        .panel {
+            background: rgba(15, 52, 96, 0.7);
+            border: 2px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        #next-piece {
+            width: 120px;
+            height: 120px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .controls h2 {
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .key {
+            display: inline-block;
+            background: #0f3460;
+            border: 1px solid #4ecdc4;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-family: monospace;
+        }
+
+        button {
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #game-over h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .side-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>WTAF TETRIS</h1>
+        <p>Classic puzzle game with a modern twist</p>
+    </header>
+    
+    <div class="game-container">
+        <div class="game-board">
+            <canvas id="board" width="300" height="600"></canvas>
+            <div id="game-over">
+                <h2>GAME OVER</h2>
+                <button id="restart-button">Play Again</button>
+            </div>
+        </div>
+        
+        <div class="side-panel">
+            <div class="panel">
+                <h2>Score</h2>
+                <p id="score">0</p>
+            </div>
+            
+            <div class="panel">
+                <h2>Level</h2>
+                <p id="level">1</p>
+            </div>
+            
+            <div class="panel">
+                <h2>Lines</h2>
+                <p id="lines">0</p>
+            </div>
+            
+            <div class="panel">
+                <h2>Next Piece</h2>
+                <canvas id="next-piece" width="120" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <h2>Controls</h2>
+        <p>
+            <span class="key">←</span> <span class="key">→</span> Move
+            <span class="key">↑</span> Rotate
+            <span class="key">↓</span> Soft Drop
+            <span class="key">Space</span> Hard Drop
+        </p>
+        <button id="start-button">Start Game</button>
+        <button id="pause-button">Pause</button>
+    </div>
+
+    <script>
+        // Game constants
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        const COLORS = [
+            null,
+            '#FF0D72', // I
+            '#0DC2FF', // J
+            '#0DFF72', // L
+            '#F538FF', // O
+            '#FF8E0D', // S
+            '#FFE138', // T
+            '#3877FF'  // Z
+        ];
+
+        // Tetromino shapes
+        const SHAPES = [
+            [],
+            [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // I
+            [[2,0,0], [2,2,2], [0,0,0]],                   // J
+            [[0,0,3], [3,3,3], [0,0,0]],                   // L
+            [[4,4], [4,4]],                                // O
+            [[0,5,5], [5,5,0], [0,0,0]],                   // S
+            [[0,6,0], [6,6,6], [0,0,0]],                   // T
+            [[7,7,0], [0,7,7], [0,0,0]]                    // Z
+        ];
+
+        // Game variables
+        let canvas = document.getElementById('board');
+        let nextCanvas = document.getElementById('next-piece');
+        let boardCtx = canvas.getContext('2d');
+        let nextCtx = nextCanvas.getContext('2d');
+        let board = createMatrix(COLS, ROWS);
+        let player = {
+            pos: {x: 0, y: 0},
+            matrix: null,
+            score: 0,
+            level: 1,
+            lines: 0,
+            nextPiece: null
+        };
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        let gameActive = false;
+        let gameAnimation = null;
+
+        // DOM elements
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const linesElement = document.getElementById('lines');
+        const startButton = document.getElementById('start-button');
+        const pauseButton = document.getElementById('pause-button');
+        const restartButton = document.getElementById('restart-button');
+        const gameOverElement = document.getElementById('game-over');
+
+        // Initialize the game
+        function init() {
+            boardCtx.scale(BLOCK_SIZE, BLOCK_SIZE);
+            nextCtx.scale(BLOCK_SIZE, BLOCK_SIZE);
+            resetGame();
+            drawNextPiece();
+            updateScore();
+        }
+
+        // Create matrix
+        function createMatrix(w, h) {
+            const matrix = [];
+            while (h--) {
+                matrix.push(new Array(w).fill(0));
+            }
+            return matrix;
+        }
+
+        // Create a piece
+        function createPiece(type) {
+            return SHAPES[type].map(row => [...row]);
+        }
+
+        // Draw the board
+        function drawMatrix(matrix, offset) {
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        boardCtx.fillStyle = COLORS[value];
+                        boardCtx.fillRect(x + offset.x, y + offset.y, 1, 1);
+                        boardCtx.strokeStyle = '#000';
+                        boardCtx.strokeRect(x + offset.x, y + offset.y, 1, 1);
+                    }
+                });
+            });
+        }
+
+        // Draw the next piece preview
+        function drawNextPiece() {
+            nextCtx.fillStyle = '#0f3460';
+            nextCtx.fillRect(0, 0, nextCanvas.width / BLOCK_SIZE, nextCanvas.height / BLOCK_SIZE);
+            
+            if (player.nextPiece) {
+                const matrix = createPiece(player.nextPiece);
+                const offsetX = (4 - matrix[0].length) / 2;
+                const offsetY = (4 - matrix.length) / 2;
+                
+                matrix.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value !== 0) {
+                            nextCtx.fillStyle = COLORS[value];
+                            nextCtx.fillRect(x + offsetX, y + offsetY, 1, 1);
+                            nextCtx.strokeStyle = '#000';
+                            nextCtx.strokeRect(x + offsetX, y + offsetY, 1, 1);
+                        }
+                    });
+                });
+            }
+        }
+
+        // Draw the game
+        function draw() {
+            boardCtx.fillStyle = '#0f3460';
+            boardCtx.fillRect(0, 0, canvas.width / BLOCK_SIZE, canvas.height / BLOCK_SIZE);
+            
+            drawMatrix(board, {x: 0, y: 0});
+            drawMatrix(player.matrix, player.pos);
+        }
+
+        // Merge player piece with board
+        function merge(board, player) {
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        board[y + player.pos.y][x + player.pos.x] = value;
+                    }
+                });
+            });
+        }
+
+        // Rotate matrix
+        function rotate(matrix, dir) {
+            for (let y = 0; y < matrix.length; ++y) {
+                for (let x = 0; x < y; ++x) {
+                    [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+                }
+            }
+
+            if (dir > 0) {
+                matrix.forEach(row => row.reverse());
+            } else {
+                matrix.reverse();
+            }
+        }
+
+        // Player movement
+        function playerMove(dir) {
+            player.pos.x += dir;
+            if (collide(board, player)) {
+                player.pos.x -= dir;
+            }
+        }
+
+        // Player rotation
+        function playerRotate(dir) {
+            const pos = player.pos.x;
+            let offset = 1;
+            rotate(player.matrix, dir);
+            while (collide(board, player)) {
+                player.pos.x += offset;
+                offset = -(offset + (offset > 0 ? 1 : -1));
+                if (offset > player.matrix[0].length) {
+                    rotate(player.matrix, -dir);
+                    player.pos.x = pos;
+                    return;
+                }
+            }
+        }
+
+        // Player drop
+        function playerDrop() {
+            player.pos.y++;
+            if (collide(board, player)) {
+                player.pos.y--;
+                merge(board, player);
+                playerReset();
+                sweepRows();
+                updateScore();
+            }
+            dropCounter = 0;
+        }
+
+        // Hard drop
+        function playerHardDrop() {
+            while (!collide(board, player)) {
+                player.pos.y++;
+            }
+            player.pos.y--;
+            playerDrop();
+        }
+
+        // Collision detection
+        function collide(board, player) {
+            const [m, o] = [player.matrix, player.pos];
+            for (let y = 0; y < m.length; ++y) {
+                for (let x = 0; x < m[y].length; ++x) {
+                    if (m[y][x] !== 0 &&
+                        (board[y + o.y] &&
+                        board[y + o.y][x + o.x]) !== 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Reset player
+        function playerReset() {
+            const pieces = 'ILJOTSZ';
+            if (player.nextPiece) {
+                player.matrix = createPiece(player.nextPiece);
+            } else {
+                player.matrix = createPiece(pieces.length * Math.random() | 0);
+            }
+            
+            player.nextPiece = pieces.length * Math.random() | 0;
+            drawNextPiece();
+            
+            player.pos.y = 0;
+            player.pos.x = (board[0].length / 2 | 0) -
+                          (player.matrix[0].length / 2 | 0);
+            
+            if (collide(board, player)) {
+                gameOver();
+            }
+        }
+
+        // Sweep completed rows
+        function sweepRows() {
+            let rowCount = 0;
+            outer: for (let y = board.length - 1; y >= 0; --y) {
+                for (let x = 0; x < board[y].length; ++x) {
+                    if (board[y][x] === 0) {
+                        continue outer;
+                    }
+                }
+
+                const row = board.splice(y, 1)[0].fill(0);
+                board.unshift(row);
+                ++y;
+                rowCount++;
+            }
+            
+            if (rowCount > 0) {
+                player.lines += rowCount;
+                player.score += rowCount * 100 * player.level;
+                
+                // Level up every 10 lines
+                player.level = Math.floor(player.lines / 10) + 1;
+                dropInterval = 1000 - (player.level - 1) * 100;
+                if (dropInterval < 100) dropInterval = 100;
+            }
+        }
+
+        // Update score display
+        function updateScore() {
+            scoreElement.textContent = player.score;
+            levelElement.textContent = player.level;
+            linesElement.textContent = player.lines;
+        }
+
+        // Game over
+        function gameOver() {
+            gameActive = false;
+            cancelAnimationFrame(gameAnimation);
+            gameOverElement.style.display = 'flex';
+        }
+
+        // Reset game
+        function resetGame() {
+            board = createMatrix(COLS, ROWS);
+            player.score = 0;
+            player.level = 1;
+            player.lines = 0;
+            player.nextPiece = null;
+            dropInterval = 1000;
+            updateScore();
+            playerReset();
+            gameOverElement.style.display = 'none';
+        }
+
+        // Game loop
+        function update(time = 0) {
+            if (!gameActive) return;
+            
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                playerDrop();
+            }
+            
+            draw();
+            gameAnimation = requestAnimationFrame(update);
+        }
+
+        // Start game
+        function startGame() {
+            if (!gameActive) {
+                gameActive = true;
+                lastTime = performance.now();
+                update();
+            }
+        }
+
+        // Pause game
+        function pauseGame() {
+            gameActive = !gameActive;
+            pauseButton.textContent = gameActive ? 'Pause' : 'Resume';
+            if (gameActive) {
+                lastTime = performance.now();
+                update();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', event => {
+            if (!gameActive) return;
+            
+            switch (event.keyCode) {
+                case 37: // Left arrow
+                    playerMove(-1);
+                    break;
+                case 39: // Right arrow
+                    playerMove(1);
+                    break;
+                case 40: // Down arrow
+                    playerDrop();
+                    break;
+                case 38: // Up arrow
+                    playerRotate(1);
+                    break;
+                case 32: // Space
+                    playerHardDrop();
+                    break;
+            }
+        });
+
+        startButton.addEventListener('click', () => {
+            resetGame();
+            startGame();
+        });
+
+        pauseButton.addEventListener('click', pauseGame);
+
+        restartButton.addEventListener('click', () => {
+            resetGame();
+            startGame();
+        });
+
+        // Initialize the game
+        init();
+    </script>
+
+    <div id="controls" style="position: fixed; bottom: 0; width: 100%; height: 120px; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div class="btn" id="leftBtn" style="width: 60px; height: 60px; margin: 0 5px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; cursor: pointer;">←</div>
+        <div class="btn" id="rotateBtn" style="width: 60px; height: 60px; margin: 0 5px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; cursor: pointer;">↻</div>
+        <div class="btn" id="rightBtn" style="width: 60px; height: 60px; margin: 0 5px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; cursor: pointer;">→</div>
+        <div class="btn" id="downBtn" style="width: 60px; height: 60px; margin: 0 5px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; cursor: pointer;">↓</div>
+    </div>
+    <script>
+    (function() {
+        // Add touch event handlers for mobile controls
+        var leftBtn = document.getElementById('leftBtn');
+        var rightBtn = document.getElementById('rightBtn');
+        var upBtn = document.getElementById('upBtn');
+        var downBtn = document.getElementById('downBtn');
+        var rotateBtn = document.getElementById('rotateBtn');
+        var actionBtn = document.getElementById('actionBtn');
+        
+        function simulateKeyPress(keyCode) {
+            var event = new KeyboardEvent('keydown', {
+                keyCode: keyCode,
+                which: keyCode,
+                bubbles: true
+            });
+            document.dispatchEvent(event);
+        }
+        
+        if (leftBtn) {
+            leftBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(37); // Left arrow
+            });
+            leftBtn.addEventListener('click', function() {
+                simulateKeyPress(37);
+            });
+        }
+        
+        if (rightBtn) {
+            rightBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(39); // Right arrow
+            });
+            rightBtn.addEventListener('click', function() {
+                simulateKeyPress(39);
+            });
+        }
+        
+        if (upBtn) {
+            upBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(38); // Up arrow
+            });
+            upBtn.addEventListener('click', function() {
+                simulateKeyPress(38);
+            });
+        }
+        
+        if (downBtn) {
+            downBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(40); // Down arrow
+            });
+            downBtn.addEventListener('click', function() {
+                simulateKeyPress(40);
+            });
+        }
+        
+        if (rotateBtn) {
+            rotateBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(38); // Up arrow for rotate
+            });
+            rotateBtn.addEventListener('click', function() {
+                simulateKeyPress(38);
+            });
+        }
+        
+        if (actionBtn) {
+            actionBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyPress(32); // Space bar
+            });
+            actionBtn.addEventListener('click', function() {
+                simulateKeyPress(32);
+            });
+        }
+    })();
+    </script></body>
+</html>
+```
+
+<!-- WTAF_ADMIN_PAGE_STARTS_HERE -->
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTAF Tetris Admin</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: calc(100vh - 120px);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(15, 52, 96, 0.7);
+            border-radius: 10px;
+            border: 2px solid #4ecdc4;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(15, 52, 96, 0.7);
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .stat-card h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .submissions-table {
+            background: rgba(15, 52, 96, 0.7);
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #4ecdc4;
+        }
+
+        th {
+            background-color: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+        }
+
+        tr:hover {
+            background-color: rgba(78, 205, 196, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 2px solid #ff6b6b;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WTAF TETRIS ADMIN</h1>
+            <p>Game Submissions Dashboard</p>
+        </header>
+
+        <div class="controls">
+            <button id="refresh-btn">Refresh Data</button>
+            <button id="export-btn">Export to CSV</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Submissions</h3>
+                <div class="value" id="total-submissions">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Top Score</h3>
+                <div class="value" id="top-score">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Score</h3>
+                <div class="value" id="avg-score">0</div>
+            </div>
+        </div>
+
+        <div class="submissions-table">
+            <h2>Game Submissions</h2>
+            <div id="table-container">
+                <div class="empty-state">Loading submissions...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabase = window.supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        const APP_TABLE_ID = 'wtaf_tetris_game';
+
+        // DOM elements
+        const tableContainer = document.getElementById('table-container');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const totalSubmissionsEl = document.getElementById('total-submissions');
+        const topScoreEl = document.getElementById('top-score');
+        const avgScoreEl = document.getElementById('avg-score');
+
+        // Fetch submissions from Supabase
+        async function fetchSubmissions() {
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_submissions')
+                    .select('*')
+                    .eq('app_id', APP_TABLE_ID)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                renderSubmissions(data);
+                updateStats(data);
+            } catch (error) {
+                console.error('Error fetching submissions:', error);
+                tableContainer.innerHTML = `<div class="error">Failed to load submissions: ${error.message}</div>`;
+            }
+        }
+
+        // Render submissions table
+        function renderSubmissions(data) {
+            if (!data || data.length === 0) {
+                tableContainer.innerHTML = '<div class="empty-state">No submissions yet</div>';
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Player Name</th>
+                            <th>Score</th>
+                            <th>Level</th>
+                            <th>Lines</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(row => {
+                const gameData = row.submission_data || {};
+                const date = new Date(row.created_at).toLocaleString();
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${gameData.playerName || 'Anonymous'}</td>
+                        <td>${gameData.score || 0}</td>
+                        <td>${gameData.level || 1}</td>
+                        <td>${gameData.lines || 0}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            tableContainer.innerHTML = tableHTML;
+        }
+
+        // Update statistics
+        function updateStats(data) {
+            if (!data || data.length === 0) {
+                totalSubmissionsEl.textContent = '0';
+                topScoreEl.textContent = '0';
+                avgScoreEl.textContent = '0';
+                return;
+            }
+
+            totalSubmissionsEl.textContent = data.length;
+            
+            const scores = data.map(row => parseInt(row.submission_data?.score) || 0);
+            const topScore = Math.max(...scores);
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            
+            topScoreEl.textContent = topScore;
+            avgScoreEl.textContent = Math.round(avgScore);
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            // In a real implementation, this would fetch fresh data
+            // For this example, we'll use the current data in the table
+            alert('CSV export would download all submission data in real implementation');
+            
+            // Example implementation:
+            /*
+            const csvContent = 'data:text/csv;charset=utf-8,' 
+                + 'Date,Player Name,Score,Level,Lines\n'
+                + data.map(row => {
+                    const gameData = row.submission_data || {};
+                    const date = new Date(row.created_at).toLocaleString();
+                    return `${date},${gameData.playerName || 'Anonymous'},${gameData.score || 0},${gameData.level || 1},${gameData.lines || 0}`;
+                }).join('\n');
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'tetris_submissions.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            */
+        }
+
+        // Event listeners
+        refreshBtn.addEventListener('click', fetchSubmissions);
+        exportBtn.addEventListener('click', exportToCSV);
+
+        // Initialize
+        fetchSubmissions();
+    </script>
+</body>
+</html>
+```
