@@ -615,6 +615,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             logWithTimestamp(`🤝 Target app is a ZAD app - will use ZAD remix approach`);
         }
         
+        // Check if the target app is a game
+        const isGameApp = appInfo?.type === 'GAME';
+        if (isGameApp) {
+            logWithTimestamp(`🎮 Target app is a GAME - will use game remix approach`);
+        }
+        
         // Load HTML content (includes ownership verification)
         const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
         if (htmlContent === null) {
@@ -665,6 +671,15 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             enhancedPrompt = `The user is requesting that you do this: "${originalPrompt}" and added "${userRequest}".`;
             
             logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
+        } else if (appInfo?.type === 'GAME') {
+            // For games, use the game-specific remix approach
+            enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            const gameRemixPromptPath = join(__dirname, '..', 'content', 'remix-games-prompt.txt');
+            remixSystemPrompt = await readFile(gameRemixPromptPath, 'utf8');
+            logWithTimestamp(`🎮 Game remix prompt loaded: ${remixSystemPrompt.length} characters`);
+            
+            // For games, just use the user request
+            combinedPromptForStorage = userRequest || "remix request";
         } else {
             // For regular WTAF apps, use the standard remix approach
             enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -677,7 +692,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
         
         // Send directly to Claude with appropriate prompt
-        logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : 'standard'} remix request directly to Claude`);
+        logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : 'standard'} remix request directly to Claude`);
         const config = REQUEST_CONFIGS.creation;
         
         // For ZAD remixes, try to use maximum possible tokens
@@ -1126,9 +1141,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                 logWithTimestamp(`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`);
                 
                 // Deploy public page (normal app)
+                // Determine the coach type for database storage
+                const coachType = configType === 'game' ? 'game' : (coach || "unknown");
+                
                 const publicResult = await saveCodeToSupabase(
                     publicHtml.trim(), 
-                    coach || "unknown", 
+                    coachType, 
                     userSlug, 
                     senderPhone, 
                     originalUserInput
@@ -1163,10 +1181,17 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             } else {
                 // Single page deployment
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
-                const result = await saveCodeToSupabase(code, coach || "unknown", userSlug, senderPhone, originalUserInput);
+                
+                // Determine the coach type for database storage
+                const coachType = configType === 'game' ? 'game' : (coach || "unknown");
+                
+                const result = await saveCodeToSupabase(code, coachType, userSlug, senderPhone, originalUserInput);
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
+                    if (configType === 'game') {
+                        logWithTimestamp(`🎮 Game app will be stored with type: 'GAME'`);
+                    }
                 }
             }
             
@@ -1593,8 +1618,13 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 .single();
             
             const isZadApp = appInfo?.type === 'ZAD';
+            const isGameApp = appInfo?.type === 'GAME';
+            
             if (isZadApp) {
                 logWithTimestamp(`🤝 Target app is a ZAD app - will use ZAD remix approach`);
+            }
+            if (isGameApp) {
+                logWithTimestamp(`🎮 Target app is a GAME - will use game remix approach`);
             }
             
             // Load HTML content (includes ownership verification)
@@ -1647,6 +1677,15 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 enhancedPrompt = `The user is requesting that you do this: "${originalPrompt}" and added "${userRequest}".`;
                 
                 logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
+            } else if (isGameApp) {
+                // For games, use the game-specific remix approach
+                enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+                const gameRemixPromptPath = join(__dirname, '..', 'content', 'remix-games-prompt.txt');
+                remixSystemPrompt = await readFile(gameRemixPromptPath, 'utf8');
+                logWithTimestamp(`🎮 Game remix prompt loaded: ${remixSystemPrompt.length} characters`);
+                
+                // For games, just use the user request
+                combinedPromptForStorage = userRequest || "remix request";
             } else {
                 // For regular WTAF apps, use the standard remix approach
                 enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -1659,7 +1698,7 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             }
             
             // Send directly to Claude with appropriate prompt
-            logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : 'standard'} remix request directly to Claude`);
+            logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : 'standard'} remix request directly to Claude`);
             const config = REQUEST_CONFIGS.creation;
             const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
                 model: config.builderModel,
