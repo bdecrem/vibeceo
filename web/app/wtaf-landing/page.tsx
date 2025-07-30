@@ -1313,20 +1313,20 @@ export default function WebtoysSitePage() {
           </div>
           
           <div className="examples-grid">
-            {/* Example 1: Punk Billboard */}
+            {/* Example 1: Positive Mudpuppy Repairing */}
             <div className="example-card">
-              <a href="/bart/tangerine-bat-tracking" className="example-preview billboard magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-tangerine-bat-tracking.png')`,
+              <a href="/bart/positive-mudpuppy-repairing" className="example-preview music-app magic-cursor" style={{
+                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-positive-mudpuppy-repairing.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page</div>
+                <div className="prompt-text">WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)</div>
                 <div className="example-actions">
-                  <a href="/bart/tangerine-bat-tracking" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page")}>
+                  <a href="/bart/positive-mudpuppy-repairing" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -1334,20 +1334,20 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 2: Cat Meme Generator */}
+            {/* Example 2: Lilac Vampire Singing */}
             <div className="example-card">
-              <a href="/bart/cantaloupe-chorus-kissing" className="example-preview meme-gen magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-cantaloupe-chorus-kissing.png')`,
+              <a href="/bart/lilac-vampire-singing" className="example-preview music-gen magic-cursor" style={{
+                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-lilac-vampire-singing.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Make a meme generator but only for cat photos</div>
+                <div className="prompt-text">WTAF --music make a music app that lets me describe a song and it then makes that</div>
                 <div className="example-actions">
-                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a meme generator but only for cat photos")}>
+                  <a href="/bart/lilac-vampire-singing" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF --music make a music app that lets me describe a song and it then makes that")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
