@@ -439,6 +439,33 @@ export async function loadSubmissionEmails(userSlug: string, appSlug: string): P
 /**
  * Check if user has DEGEN role (required for stackemail)
  */
+/**
+ * Role hierarchy: admin > operator > degen > coder
+ * Higher roles have all privileges of lower roles
+ */
+const ROLE_HIERARCHY = {
+    admin: 4,
+    operator: 3,
+    degen: 2,
+    coder: 1
+} as const;
+
+export type Role = keyof typeof ROLE_HIERARCHY;
+
+/**
+ * Check if user has a role at or above the required level
+ */
+export function hasRoleOrHigher(userRole: string | null, requiredRole: Role): boolean {
+    if (!userRole || !(userRole in ROLE_HIERARCHY)) {
+        return false;
+    }
+    
+    const userLevel = ROLE_HIERARCHY[userRole as Role];
+    const requiredLevel = ROLE_HIERARCHY[requiredRole];
+    
+    return userLevel >= requiredLevel;
+}
+
 export async function checkDegenRole(userSlug: string): Promise<boolean> {
     try {
         logWithTimestamp(`🔒 Checking DEGEN role for user: ${userSlug}`);
@@ -454,7 +481,8 @@ export async function checkDegenRole(userSlug: string): Promise<boolean> {
             return false;
         }
         
-        const hasDegenRole = userData.role === 'degen';
+        // Check if user has degen role or higher (operator, admin)
+        const hasDegenRole = hasRoleOrHigher(userData.role, 'degen');
         logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | DEGEN access: ${hasDegenRole}`);
         
         return hasDegenRole;
@@ -484,8 +512,8 @@ export async function checkElevatedRole(userSlug: string): Promise<boolean> {
             return false;
         }
         
-        const elevatedRoles = ['coder', 'degen', 'admin', 'operator'];
-        const hasElevatedRole = elevatedRoles.includes(userData.role);
+        // Check if user has coder role or higher (coder, degen, operator, admin)
+        const hasElevatedRole = hasRoleOrHigher(userData.role, 'coder');
         logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | Elevated access: ${hasElevatedRole}`);
         
         return hasElevatedRole;
