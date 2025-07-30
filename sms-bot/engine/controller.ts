@@ -1714,11 +1714,71 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             logWithTimestamp(`💾 Remix output saved to: ${outputFile}`);
             
             // Extract code blocks and deploy normally
-            const code = extractCodeBlocks(result);
+            let code = extractCodeBlocks(result);
             if (!code.trim()) {
                 logWarning("No code block found in remix response.");
                 await sendFailureNotification("no-code", senderPhone);
                 return false;
+            }
+            
+            // POST-PROCESSING FIX: For game remixes, check for JavaScript placeholders and inject original code
+            if (isGameApp && htmlContent) {
+                logWithTimestamp(`🔧 Checking for JavaScript placeholders in game remix...`);
+                
+                // Common placeholder patterns that Claude uses
+                const placeholderPatterns = [
+                    /\/\/ All JavaScript code remains unchanged/gi,
+                    /\/\/ All JavaScript code stays identical/gi,
+                    /\/\/ JavaScript remains exactly the same/gi,
+                    /\/\/ \[Rest of JavaScript code remains exactly the same\]/gi,
+                    /<!-- JavaScript remains exactly the same -->/gi,
+                    /\[ALL JAVASCRIPT CODE REMAINS EXACTLY THE SAME AS IN THE ORIGINAL FILE\]/gi
+                ];
+                
+                // Check if any placeholders exist
+                const hasPlaceholders = placeholderPatterns.some(pattern => pattern.test(code));
+                
+                if (hasPlaceholders) {
+                    logWithTimestamp(`⚠️ Found JavaScript placeholders - injecting original JavaScript`);
+                    
+                    // Extract all script sections from original HTML
+                    const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+                    const originalScripts: string[] = [];
+                    let scriptMatch;
+                    
+                    while ((scriptMatch = scriptRegex.exec(htmlContent)) !== null) {
+                        const scriptContent = scriptMatch[1].trim();
+                        if (scriptContent && !scriptContent.match(/^\/\/.*remains/i)) {
+                            originalScripts.push(scriptContent);
+                        }
+                    }
+                    
+                    if (originalScripts.length > 0) {
+                        logWithTimestamp(`📜 Found ${originalScripts.length} script sections in original`);
+                        
+                        // Replace placeholder scripts with original scripts
+                        let scriptIndex = 0;
+                        code = code.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, (match, content) => {
+                            // Check if this script contains a placeholder
+                            const isPlaceholder = placeholderPatterns.some(pattern => pattern.test(content));
+                            
+                            if (isPlaceholder && scriptIndex < originalScripts.length) {
+                                logWithTimestamp(`✅ Replacing placeholder script ${scriptIndex + 1} with original`);
+                                const replacement = `<script>\n${originalScripts[scriptIndex]}\n</script>`;
+                                scriptIndex++;
+                                return replacement;
+                            }
+                            
+                            return match; // Keep non-placeholder scripts as-is
+                        });
+                        
+                        logSuccess(`🎮 Successfully injected ${scriptIndex} original JavaScript sections`);
+                    } else {
+                        logWarning(`⚠️ No original JavaScript found to inject`);
+                    }
+                } else {
+                    logWithTimestamp(`✅ No JavaScript placeholders detected - remix appears complete`);
+                }
             }
             
             // Deploy remix result
