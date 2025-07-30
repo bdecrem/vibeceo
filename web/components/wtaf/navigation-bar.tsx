@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Share2, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface WTAFNavigationBarProps {
   userSlug: string;
@@ -19,16 +19,24 @@ export default function WTAFNavigationBar({
 }: WTAFNavigationBarProps) {
   const router = useRouter();
   const [isSharing, setIsSharing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleBack = () => {
+    console.log('🔙 Back button clicked');
     // Smart back navigation - try to go back in history first
     if (typeof window !== 'undefined') {
       // Check if there's a history to go back to
       if (window.history.length > 1) {
+        console.log('🔙 Going back in history');
         router.back();
       } else {
         // Fallback to user's creations page
-        router.push(`/wtaf/${userSlug}/creations`);
+        console.log('🔙 No history, going to user page:', userSlug);
+        router.push(`/${userSlug}`);
       }
     }
   };
@@ -80,6 +88,10 @@ export default function WTAFNavigationBar({
     }
   };
 
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <div className="wtaf-nav-bar">
       {/* Back Button */}
@@ -87,6 +99,7 @@ export default function WTAFNavigationBar({
         onClick={handleBack}
         className="nav-back-btn"
         aria-label="Go back"
+        type="button"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         <span className="hidden sm:inline">Back to WEBTOYS</span>
@@ -166,6 +179,8 @@ export default function WTAFNavigationBar({
           padding: 0.5rem 0;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          position: relative;
+          z-index: 10;
         }
 
         .nav-back-btn:hover {
