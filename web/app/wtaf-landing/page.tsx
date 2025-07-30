@@ -1308,8 +1308,8 @@ export default function WebtoysSitePage() {
       <section className="trending" id="trending">
         <div className="trending-container">
           <div className="section-header">
-            <h2 className="section-title">VIRAL EXPERIMENTS</h2>
-            <p className="section-subtitle">Stuff that broke the internet (in a good way)</p>
+            <h2 className="section-title">FRESH FROM THE TOY FURNACE</h2>
+            <p className="section-subtitle">Hot drops from the SMS machine</p>
           </div>
           
           <div className="trending-grid">
