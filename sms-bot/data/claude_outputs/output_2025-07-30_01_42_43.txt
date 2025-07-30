@@ -1,0 +1,324 @@
+Here's a retro-style public Paint app with a shared gallery wall using ZAD:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF PAINT</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-align: center;
+            font-size: 24px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        #canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            margin-bottom: 20px;
+        }
+
+        #paint-canvas {
+            border: 1px solid #6ECBFF;
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            height: 44px;
+            min-width: 44px;
+        }
+
+        button.active {
+            background: #FF4B4B;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 44px;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: none;
+            border-radius: 22px;
+            overflow: hidden;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .artwork {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .artwork img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .artwork-info {
+            text-align: center;
+            font-size: 16px;
+        }
+
+        #user-status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+        
+        <h1>🎨 WTAF PAINT</h1>
+        
+        <div id="canvas-container">
+            <canvas id="paint-canvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="pencil" class="active">✏️ Pencil</button>
+            <button id="brush">🖌️ Brush</button>
+            <button id="spray">✨ Neon Spray</button>
+            <input type="color" id="color" value="#000000">
+            <input type="range" id="size" min="1" max="50" value="5">
+            <button id="undo">↩️ Undo</button>
+            <button id="save">💾 Save</button>
+        </div>
+
+        <h1>Gallery Wall</h1>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let undoStack = [];
+        
+        const canvas = document.getElementById('paint-canvas');
+        const ctx = canvas.getContext('2d');
+        const gallery = document.getElementById('gallery');
+
+        // Set canvas size
+        function resizeCanvas() {
+            const size = Math.min(400, window.innerWidth - 40);
+            canvas.width = size;
+            canvas.height = size;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Tool selection
+        document.querySelectorAll('.controls button').forEach(btn => {
+            if (btn.id !== 'undo' && btn.id !== 'save') {
+                btn.addEventListener('click', () => {
+                    document.querySelector('.active').classList.remove('active');
+                    btn.classList.add('active');
+                    currentTool = btn.id;
+                });
+            }
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+            // Save state for undo
+            undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+            ctx.strokeStyle = document.getElementById('color').value;
+            ctx.lineWidth = document.getElementById('size').value;
+
+            switch (currentTool) {
+                case 'pencil':
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    break;
+                    
+                case 'brush':
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    break;
+                    
+                case 'spray':
+                    const density = 50;
+                    const radius = ctx.lineWidth;
+                    for (let i = 0; i < density; i++) {
+                        const offsetX = (Math.random() - 0.5) * radius * 2;
+                        const offsetY = (Math.random() - 0.5) * radius * 2;
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.fillRect(x + offsetX, y + offsetY, 1, 1);
+                    }
+                    break;
+            }
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Undo function
+        document.getElementById('undo').addEventListener('click', () => {
+            if (undoStack.length > 0) {
+                ctx.putImageData(undoStack.pop(), 0, 0);
+            }
+        });
+
+        // Save artwork
+        document.getElementById('save').addEventListener('click', async () => {
+            const artworkData = canvas.toDataURL();
+            const author = getCurrentUser().userLabel;
+            
+            await save('artwork', {
+                image: artworkData,
+                author: author,
+                timestamp: new Date().toISOString()
+            });
+
+            loadLatestData();
+            
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            undoStack = [];
+        });
+
+        // Load artwork
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            
+            gallery.innerHTML = '';
+            
+            artworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach(artwork => {
+                    const div = document.createElement('div');
+                    div.className = 'artwork';
+                    div.innerHTML = `
+                        <img src="${artwork.image}" alt="Artwork">
+                        <div class="artwork-info">
+                            Created by ${artwork.author}
+                        </div>
+                    `;
+                    gallery.appendChild(div);
+                });
+        }
+
+        // Initialize
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        // Initialize on load
+        initPublicMode();
+    </script>
+</body>
+</html>
+
+This Paint app features:
+
+1. A square canvas that's responsive and touch-friendly
+2. Three tools: Pencil, Brush, and Neon Spray
+3. Color picker and thickness slider
+4. Undo functionality
+5. Save button that stores artwork in the ZAD database
+6. Real-time gallery that shows all artwork with creator names
+7. Full mobile support with touch events
+8. MacPaint-inspired retro styling
+9. Auto-refresh every 2 seconds to show new artwork
+10. Anonymous user system with auto-generated usernames
+
+All data persists in ZAD and is shared between users. The gallery updates in real-time as new artwork is added by anyone using the app.

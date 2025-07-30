@@ -82,7 +82,38 @@ initAuth()                // Start auth system (call this once)
 
 **That's all you need for 90% of apps!**
 
-### 4. Simple Authentication (Just Copy This)
+### 4. Simple Authentication
+
+**For PUBLIC apps (when window.currentUser = 'all_users'):**
+```javascript
+// PUBLIC mode - no authentication needed
+async function initPublicMode() {
+    // Generate anonymous user ID
+    const anonymousId = 'anon_' + Math.random().toString(36).substr(2, 12);
+    const anonymousUser = {
+        userLabel: 'Anonymous User',
+        participantId: anonymousId,
+        username: 'Anonymous User'
+    };
+    
+    // Update ZAD auth
+    updateZadAuth(anonymousUser.userLabel, anonymousUser.participantId);
+    
+    // Update UI
+    document.getElementById('current-user-label').textContent = anonymousUser.userLabel;
+    
+    // Start your app
+    loadLatestData();
+    startPolling();
+}
+
+// Initialize on page load
+if (window.currentUser === 'all_users') {
+    document.addEventListener('DOMContentLoaded', initPublicMode);
+}
+```
+
+**For regular ZAD apps (Just Copy This):
 
 ```html
 <div class="app-container">
@@ -605,9 +636,15 @@ The source ZAD app contains this data structure:
 
 1. **Shared Data Access** - Your save() and load() calls access the source app's data
 2. **Admin Focus** - Build management interfaces, dashboards, bulk operations
-3. **Same Authentication** - Use the same ZAD auth system (users can login with same credentials)
+3. **Authentication** - For PUBLIC apps use anonymous mode, for regular ZAD use normal auth
 4. **Different Interface** - Provide a different view of the same data
 5. **Real-time Sync** - Changes appear in both apps instantly
+
+### PUBLIC App Notes
+- PUBLIC apps have `window.currentUser = 'all_users'` 
+- Anyone can read/write data without authentication
+- Use the PUBLIC mode authentication shown above
+- All users are anonymous with generated IDs
 
 ### What You're Building
 {USER_REQUEST}
@@ -616,4 +653,8 @@ The source ZAD app contains this data structure:
 
 ---
 
-**Now build**: [USER REQUEST]
+**Now build**: {USER_REQUEST}
+
+Return complete HTML wrapped in ```html code blocks. Include full HTML structure with embedded CSS and JavaScript.
+
+Do not explain or comment. Output only the HTML code block.

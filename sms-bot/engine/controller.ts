@@ -288,6 +288,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
     // Store the original user input before any processing for database storage
     const originalUserInput = userPrompt;
     
+    // Check if this is a PUBLIC ZAD request
+    const isPublicZadRequest = userPrompt.toLowerCase().includes('public');
+    
     // 🔧 ADMIN OVERRIDE: Check for --admin flag to force admin processing
     let forceAdminPath = false;
     let isMinimalTest = false;
@@ -523,6 +526,146 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
     }
     
+    // 🌐 STACKPUBLIC: Check for --stackpublic flag to create apps with shared data from PUBLIC apps
+    if (userPrompt && (userPrompt.startsWith('--stackpublic ') || userPrompt.startsWith('wtaf --stackpublic '))) {
+        logWithTimestamp("🌐 STACKPUBLIC DETECTED: Processing app with shared PUBLIC data access");
+        
+        // Import stackpublic functions dynamically
+        const { parseStackPublicCommand, getPublicAppUUIDForStackPublic, loadStackedHTMLContent, buildEnhancedZadPromptWithData, extractAppIdFromHtml, checkDegenRole } = await import('./stackables-manager.js');
+        
+        // Check DEGEN role first
+        const hasDegenRole = await checkDegenRole(userSlug);
+        if (!hasDegenRole) {
+            logError(`❌ User ${userSlug} does not have DEGEN role - stackpublic requires DEGEN access`);
+            await sendFailureNotification("stackpublic-permission", senderPhone);
+            return false;
+        }
+        
+        // Parse the stackpublic command
+        const parsed = parseStackPublicCommand(userPrompt);
+        if (!parsed) {
+            logError(`❌ Invalid stackpublic command format`);
+            await sendFailureNotification("stackpublic-format", senderPhone);
+            return false;
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`🌐 Stackpublic request: ${appSlug} → "${userRequest}"`);
+        
+        // Get PUBLIC app UUID (no ownership check needed)
+        const publicAppUuid = await getPublicAppUUIDForStackPublic(appSlug);
+        if (!publicAppUuid) {
+            logError(`❌ App '${appSlug}' not found or not a PUBLIC app`);
+            await sendFailureNotification("stackpublic-notfound", senderPhone);
+            return false;
+        }
+        
+        // Load HTML content from the PUBLIC app
+        const htmlContent = await loadStackedHTMLContent(null, appSlug); // null for userSlug since it's PUBLIC
+        if (!htmlContent) {
+            logError(`❌ Could not load HTML content from PUBLIC app '${appSlug}'`);
+            await sendFailureNotification("stackpublic-load", senderPhone);
+            return false;
+        }
+        
+        // Use the PUBLIC app UUID we already fetched
+        const extractedAppId = publicAppUuid;
+        
+        logWithTimestamp(`✅ Using PUBLIC app UUID for data access: ${extractedAppId}`);
+        
+        // Build enhanced prompt with extracted APP_ID
+        const { enhancedPrompt, dataStructureAnalysis, sampleDataSection } = await buildEnhancedZadPromptWithData(userRequest, extractedAppId);
+        
+        // Send directly to Claude with stackzad system prompt (same as stackzad)
+        logWithTimestamp("🚀 Sending stackpublic request directly to Claude (bypassing wtaf-processor)");
+        
+        // Load stackzad-specific system prompt and replace placeholders
+        const stackzadTemplatePath = join(__dirname, '..', 'content', 'stackzad-system-prompt.txt');
+        let stackzadSystemPrompt = await readFile(stackzadTemplatePath, 'utf8');
+        
+        // Replace placeholders with actual data
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{USER_REQUEST}', userRequest || 'admin interface');
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{DATA_STRUCTURE_ANALYSIS}', 
+            dataStructureAnalysis || 'No data structure analysis available');
+        stackzadSystemPrompt = stackzadSystemPrompt.replace('{SAMPLE_DATA}', 
+            sampleDataSection || 'No sample data available');
+            
+        logWithTimestamp(`📄 Stackpublic system prompt loaded: ${stackzadSystemPrompt.length} characters`);
+        
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackzadSystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: config.builderTemperature
+        });
+        
+        // Extract code blocks and deploy
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackpublic response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Use the SAME pattern as stackzad - inject SHARED_DATA_UUID without replacing all UUIDs
+        logWithTimestamp(`🔄 Injecting SHARED_DATA_UUID for shared PUBLIC data access: ${extractedAppId}`);
+        
+        const sharedDataInjection = `\n// STACKPUBLIC: Shared PUBLIC data configuration\nwindow.SHARED_DATA_UUID = '${extractedAppId}';\nwindow.currentUser = 'all_users'; // PUBLIC mode indicator\nconsole.log('🌐 STACKPUBLIC: Using shared data from PUBLIC app:', window.SHARED_DATA_UUID);\n`;
+        
+        // Find where to inject (after window.APP_ID or at start of first script tag)
+        let codeWithSharedUuid = code;
+        if (code.includes('window.APP_ID')) {
+            // Inject right after window.APP_ID line
+            codeWithSharedUuid = code.replace(
+                /(window\.APP_ID\s*=\s*['"][^'"]+['"];?)/,
+                `$1${sharedDataInjection}`
+            );
+        } else if (code.includes('<script>')) {
+            // Inject at the beginning of the first script tag
+            codeWithSharedUuid = code.replace(
+                '<script>',
+                `<script>${sharedDataInjection}`
+            );
+        } else {
+            logWarning('Could not find suitable injection point for SHARED_DATA_UUID');
+        }
+        
+        logWithTimestamp(`✅ Injected SHARED_DATA_UUID for PUBLIC app`);
+        
+        // Also check the data type is correct
+        if (!code.includes("await load('artwork')")) {
+            logWarning(`⚠️ App might be loading wrong data type - PUBLIC app uses different data structure`);
+        }
+        
+        // Deploy stackpublic result - using SHARED_DATA_UUID pattern like stackzad
+        const deployResult = await saveCodeToSupabase(codeWithSharedUuid, coach || "unknown", userSlug, senderPhone, userRequest || "stackpublic request", null, false);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const newAppSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackpublic: ${userSlug}/${newAppSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackpublic HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackpublic: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            const needsEmail = code.includes('[CONTACT_EMAIL]');
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKPUBLIC PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Final URL: ${deployResult.publicUrl}`);
+            return true;
+        } else {
+            logError("Failed to deploy stackpublic content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+    
     // 📧 STACKEMAIL: Check for --stackemail flag to send emails to app submitters
     if (userPrompt && (userPrompt.startsWith('--stackemail ') || userPrompt.startsWith('wtaf --stackemail '))) {
         logWithTimestamp("📧 STACKEMAIL DETECTED: Processing email to app submitters");
@@ -601,6 +744,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         const { appSlug, userRequest } = parsed;
         logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
         
+        // Check if this is a clone request (empty userRequest)
+        const isCloneRequest = userRequest === "";
+        if (isCloneRequest) {
+            logWithTimestamp(`📋 CLONE REQUEST DETECTED: Making exact copy of ${appSlug}`);
+        }
+        
         // Check if the target app is a ZAD app
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
@@ -627,6 +776,54 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
             await sendFailureNotification("remix-ownership", senderPhone);
             return false;
+        }
+        
+        // Handle clone request - simply copy the HTML exactly
+        if (isCloneRequest) {
+            logWithTimestamp(`📋 Cloning app ${appSlug} as exact copy`);
+            
+            // Deploy the cloned app
+            const deployResult = await saveCodeToSupabase(
+                htmlContent,
+                "clone", // Use "clone" as the coach type
+                userSlug,
+                senderPhone,
+                `clone of ${appSlug}` // Simple clone prompt for storage
+            );
+            
+            if (deployResult?.publicUrl && deployResult?.uuid) {
+                logWithTimestamp(`✅ Clone deployed successfully: ${deployResult.publicUrl}`);
+                
+                // Generate OG image for the clone
+                try {
+                    const urlParts = deployResult.publicUrl.split('/');
+                    const newAppSlug = urlParts[urlParts.length - 1];
+                    logWithTimestamp(`🖼️ Generating OG image for clone: ${userSlug}/${newAppSlug}`);
+                    await generateOGImage(userSlug, newAppSlug);
+                } catch (error) {
+                    logWarning(`OG generation failed for clone: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                // Handle social updates for the clone
+                const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                const originalAppInfo = await getAppInfoForRemix(appSlug);
+                if (originalAppInfo) {
+                    await handleRemixSocialUpdates(
+                        appSlug,
+                        originalAppInfo.userSlug,
+                        userSlug,
+                        deployResult.uuid,
+                        "clone" // Use "clone" as the remix prompt
+                    );
+                }
+                
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                return true;
+            } else {
+                logError(`❌ Clone deployment failed`);
+                await sendFailureNotification("deploy", senderPhone);
+                return false;
+            }
         }
         
         let remixSystemPrompt: string;
@@ -1150,7 +1347,10 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                     coachType, 
                     userSlug, 
                     senderPhone, 
-                    originalUserInput
+                    originalUserInput,
+                    null,
+                    false,
+                    isPublicZadRequest
                 );
                 
                 if (publicResult.appSlug && publicResult.publicUrl && publicResult.uuid) {
@@ -1186,7 +1386,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
                 // Determine the coach type for database storage
                 const coachType = configType === 'game' ? 'game' : (coach || "unknown");
                 
-                const result = await saveCodeToSupabase(code, coachType, userSlug, senderPhone, originalUserInput);
+                const result = await saveCodeToSupabase(code, coachType, userSlug, senderPhone, originalUserInput, null, false, isPublicZadRequest);
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
@@ -1609,6 +1809,12 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             const { appSlug, userRequest } = parsed;
             logWithTimestamp(`🎨 Remix request: ${appSlug} → "${userRequest}"`);
             
+            // Check if this is a clone request (empty userRequest)
+            const isCloneRequest = userRequest === "";
+            if (isCloneRequest) {
+                logWithTimestamp(`📋 CLONE REQUEST DETECTED: Making exact copy of ${appSlug}`);
+            }
+            
             // Check if the target app is a ZAD app
             const { createClient } = await import('@supabase/supabase-js');
             const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
@@ -1636,6 +1842,54 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 logError(`❌ You don't own app '${appSlug}' or it doesn't exist`);
                 await sendFailureNotification("remix-ownership", senderPhone);
                 return false;
+            }
+            
+            // Handle clone request - simply copy the HTML exactly
+            if (isCloneRequest) {
+                logWithTimestamp(`📋 Cloning app ${appSlug} as exact copy`);
+                
+                // Deploy the cloned app
+                const deployResult = await saveCodeToSupabase(
+                    htmlContent,
+                    "clone", // Use "clone" as the coach type
+                    userSlug,
+                    senderPhone,
+                    `clone of ${appSlug}` // Simple clone prompt for storage
+                );
+                
+                if (deployResult?.publicUrl && deployResult?.uuid) {
+                    logWithTimestamp(`✅ Clone deployed successfully: ${deployResult.publicUrl}`);
+                    
+                    // Generate OG image for the clone
+                    try {
+                        const urlParts = deployResult.publicUrl.split('/');
+                        const newAppSlug = urlParts[urlParts.length - 1];
+                        logWithTimestamp(`🖼️ Generating OG image for clone: ${userSlug}/${newAppSlug}`);
+                        await generateOGImage(userSlug, newAppSlug);
+                    } catch (error) {
+                        logWarning(`OG generation failed for clone: ${error instanceof Error ? error.message : String(error)}`);
+                    }
+                    
+                    // Handle social updates for the clone
+                    const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                    const originalAppInfo = await getAppInfoForRemix(appSlug);
+                    if (originalAppInfo) {
+                        await handleRemixSocialUpdates(
+                            appSlug,
+                            originalAppInfo.userSlug,
+                            userSlug,
+                            deployResult.uuid,
+                            "clone" // Use "clone" as the remix prompt
+                        );
+                    }
+                    
+                    await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                    return true;
+                } else {
+                    logError(`❌ Clone deployment failed`);
+                    await sendFailureNotification("deploy", senderPhone);
+                    return false;
+                }
             }
             
             let remixSystemPrompt: string;

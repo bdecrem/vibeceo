@@ -199,9 +199,10 @@ export async function saveCodeToSupabase(
     senderPhone: string | null, 
     originalPrompt: string, 
     adminTableId: string | null = null,
-    skipUuidReplacement: boolean = false
+    skipUuidReplacement: boolean = false,
+    isPublic: boolean = false
 ): Promise<{ appSlug: string | null; publicUrl: string | null; uuid: string | null }> {
-    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}`);
+    logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}, is_public=${isPublic}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
     // For admin pages, use the admin_table_id as the app_slug
@@ -372,6 +373,12 @@ export async function saveCodeToSupabase(
         if (isZadApp || coach === 'zad-remix') {
             data.type = 'ZAD';
             logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
+        }
+        
+        // Set type to PUBLIC for PUBLIC ZAD apps (override ZAD type)
+        if (isPublic && isZadApp) {
+            data.type = 'PUBLIC';
+            logWithTimestamp(`🌐 Setting type to 'PUBLIC' for PUBLIC ZAD app`);
         }
         
         // Set type to GAME if this is a game or game remix

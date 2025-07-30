@@ -1,0 +1,359 @@
+Here's a nostalgic MacPaint-style public drawing app with a gallery wall! It uses ZAD for real-time sharing and includes a mystery button with random effects.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF Paint</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            margin: 20px auto;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        #drawingCanvas {
+            border: 1px solid #6ECBFF;
+            border-radius: 8px;
+            touch-action: none;
+            max-width: 100%;
+            background: white;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 22px;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            min-height: 44px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .mystery-btn {
+            background: #FF4B4B;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 22px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 44px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        #user-status {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .tool-active {
+            background: #FF4B4B;
+        }
+
+        @media (max-width: 600px) {
+            .controls button {
+                width: calc(50% - 5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🎨 WTAF Paint</h1>
+        <div id="user-status">Anonymous Artist: <span id="current-user-label"></span></div>
+
+        <div class="canvas-container">
+            <canvas id="drawingCanvas" width="400" height="400"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="pencilBtn">✏️ Pencil</button>
+            <button id="brushBtn">🖌️ Brush</button>
+            <input type="color" id="colorPicker" value="#000000">
+            <input type="range" id="sizeSlider" min="1" max="50" value="5">
+            <button id="mysteryBtn" class="mystery-btn">🎲 MYSTERY!</button>
+            <button id="saveBtn">💾 Save</button>
+            <button id="clearBtn">🗑️ Clear</button>
+        </div>
+
+        <h2 style="color: #FF4B4B; margin-top: 40px;">🖼️ GALLERY WALL</h2>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let lastX = 0;
+        let lastY = 0;
+
+        // Initialize canvas
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 5;
+
+        // Mystery effects
+        const mysteryEffects = [
+            () => { ctx.filter = 'hue-rotate(90deg)'; },
+            () => { ctx.globalCompositeOperation = 'multiply'; },
+            () => { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,0,0,0.5)'; },
+            () => { ctx.setLineDash([5, 15]); },
+            () => { ctx.filter = 'blur(2px)'; }
+        ];
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = getCoords(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const [x, y] = getCoords(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            
+            if (currentTool === 'brush') {
+                ctx.filter = 'blur(1px)';
+                ctx.globalAlpha = 0.8;
+            } else {
+                ctx.filter = 'none';
+                ctx.globalAlpha = 1;
+            }
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            [lastX, lastY] = [x, y];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            if (e.touches) {
+                return [
+                    (e.touches[0].clientX - rect.left) * scaleX,
+                    (e.touches[0].clientY - rect.top) * scaleY
+                ];
+            }
+            return [
+                (e.clientX - rect.left) * scaleX,
+                (e.clientY - rect.top) * scaleY
+            ];
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Tool selection
+        document.getElementById('pencilBtn').addEventListener('click', () => {
+            currentTool = 'pencil';
+            document.getElementById('pencilBtn').classList.add('tool-active');
+            document.getElementById('brushBtn').classList.remove('tool-active');
+        });
+
+        document.getElementById('brushBtn').addEventListener('click', () => {
+            currentTool = 'brush';
+            document.getElementById('brushBtn').classList.add('tool-active');
+            document.getElementById('pencilBtn').classList.remove('tool-active');
+        });
+
+        // Color and size controls
+        document.getElementById('colorPicker').addEventListener('input', (e) => {
+            ctx.strokeStyle = e.target.value;
+        });
+
+        document.getElementById('sizeSlider').addEventListener('input', (e) => {
+            ctx.lineWidth = e.target.value;
+        });
+
+        // Mystery button
+        document.getElementById('mysteryBtn').addEventListener('click', () => {
+            const effect = mysteryEffects[Math.floor(Math.random() * mysteryEffects.length)];
+            effect();
+        });
+
+        // Clear canvas
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+        });
+
+        // Save drawing
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const artistName = prompt("Sign your masterpiece! (Enter your name):", "Anonymous Artist");
+            if (artistName) {
+                const drawing = {
+                    image: canvas.toDataURL(),
+                    artistName: artistName,
+                    timestamp: new Date().toISOString()
+                };
+                await save('drawing', drawing);
+                loadLatestData();
+            }
+        });
+
+        // Load and display gallery
+        async function loadLatestData() {
+            const drawings = await load('drawing');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            drawings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach(drawing => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `
+                        <img src="${drawing.image}" alt="Drawing">
+                        <p>By: ${drawing.artistName}</p>
+                        <p>Created by: ${drawing.author}</p>
+                    `;
+                    gallery.appendChild(item);
+                });
+        }
+
+        // Initialize public mode and start polling
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        // Initialize on load
+        initPublicMode();
+    </script>
+</body>
+</html>
+```
+
+This creates a fun, nostalgic paint app with:
+
+1. Square canvas (400x400)
+2. Pencil and brush tools
+3. Color picker and thickness slider
+4. Mystery button with 5 random effects:
+   - Hue rotation
+   - Multiply blend mode
+   - Shadow effect
+   - Dashed lines
+   - Blur effect
+5. Gallery wall showing all saved drawings
+6. Real-time updates every 2 seconds
+7. Mobile-friendly design
+8. MacPaint-inspired visual style
+9. Anonymous user support
+10. Persistent data storage using ZAD
+
+The app follows all the required patterns:
+- Uses save()/load() for data persistence
+- Implements loadLatestData() for real-time updates
+- Follows the WEBTOYS design system
+- Mobile-first with proper meta viewport tag
+- Public mode with anonymous users
+- Single HTML file implementation
+
+Users can draw, add mystery effects, save their work with a signature, and see everyone's drawings in the gallery wall below. All data persists and updates in real-time across all users!

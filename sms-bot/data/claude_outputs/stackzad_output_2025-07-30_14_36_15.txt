@@ -1,0 +1,352 @@
+I'll create a moderation page for the artwork images with view and delete functionality. Here's a complete solution:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Artwork Moderation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #ff0066, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff0066, #ff00ff);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 16px;
+            min-height: 44px;
+            transform: skew(-5deg);
+            box-shadow: 4px 4px 0 #ff00ff;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+        }
+
+        button:active {
+            transform: scale(0.98) skew(-5deg);
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .artwork-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .artwork-card {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .artwork-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .artwork-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .artwork-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0066;
+        }
+
+        .artwork-author {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .artwork-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .delete-btn {
+            padding: 8px 16px;
+            background: #ff0066;
+            width: 100%;
+        }
+
+        .stats {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff0066;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        @media (max-width: 600px) {
+            .artwork-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="welcome-screen" class="screen active">
+            <h1>Artwork Moderation</h1>
+            <p>Manage and moderate artwork submissions</p>
+            <button onclick="showNewUserScreen()">New Moderator</button>
+            <button onclick="showReturningUserScreen()">Returning Moderator</button>
+        </div>
+        
+        <div id="new-user-screen" class="screen">
+            <h1>New Moderator</h1>
+            <div id="new-user-info"></div>
+            <button onclick="registerNewUser()">Register & Enter</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="returning-user-screen" class="screen">
+            <h1>Returning Moderator</h1>
+            <select id="user-label-select"></select>
+            <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
+            <button onclick="loginReturningUser()">Login</button>
+            <button onclick="showScreen('welcome-screen')">Back</button>
+        </div>
+        
+        <div id="main-screen" class="screen">
+            <h1>Artwork Moderation Panel</h1>
+            <div id="user-status">Moderator: <span id="current-user-label"></span></div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div id="total-artworks" class="stat-value">0</div>
+                    <div class="stat-label">Total Artworks</div>
+                </div>
+                <div class="stat-item">
+                    <div id="total-artists" class="stat-value">0</div>
+                    <div class="stat-label">Unique Artists</div>
+                </div>
+                <div class="stat-item">
+                    <div id="latest-upload" class="stat-value">-</div>
+                    <div class="stat-label">Latest Upload</div>
+                </div>
+            </div>
+            
+            <div id="artwork-grid" class="artwork-grid">
+                <!-- Artwork cards will be inserted here -->
+            </div>
+            
+            <button onclick="showScreen('welcome-screen')" style="margin-top: 20px;">Exit Moderation</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+
+        // Authentication functions
+        async function generateNewUser() {
+            const slots = await checkAvailableSlots();
+            if (slots.isFull) {
+                alert('Maximum moderators reached!');
+                return false;
+            }
+            
+            const user = await generateUser();
+            if (user?.success) {
+                currentUser = user;
+                document.getElementById('new-user-info').innerHTML = 
+                    `Your ID: ${user.userLabel}<br>Code: ${user.passcode}<br>Save these!`;
+                return true;
+            }
+            return false;
+        }
+
+        async function registerNewUser() {
+            if (!currentUser) return;
+            
+            const result = await registerUser(currentUser.userLabel, currentUser.passcode, currentUser.participantId);
+            if (result?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                enterMainScreen();
+            }
+        }
+
+        async function showNewUserScreen() {
+            showScreen('new-user-screen');
+            await generateNewUser();
+        }
+
+        async function loginReturningUser() {
+            const label = document.getElementById('user-label-select').value;
+            const passcode = document.getElementById('returning-passcode').value;
+            
+            const result = await authenticateUser(label, passcode);
+            if (result?.success) {
+                currentUser = { userLabel: label, passcode, participantId: result.user.participantId };
+                updateZadAuth(label, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert('Invalid credentials!');
+            }
+        }
+
+        async function showReturningUserScreen() {
+            showScreen('returning-user-screen');
+            const slots = await checkAvailableSlots();
+            const select = document.getElementById('user-label-select');
+            select.innerHTML = '<option>Select Moderator</option>';
+            slots.usedLabels.forEach(label => {
+                select.innerHTML += `<option>${label}</option>`;
+            });
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        // Data management functions
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            updateStats(artworks);
+            displayArtworks(artworks);
+        }
+
+        function updateStats(artworks) {
+            document.getElementById('total-artworks').textContent = artworks.length;
+            
+            const uniqueArtists = new Set(artworks.map(a => a.author)).size;
+            document.getElementById('total-artists').textContent = uniqueArtists;
+            
+            if (artworks.length > 0) {
+                const latest = new Date(Math.max(...artworks.map(a => new Date(a.created_at))));
+                document.getElementById('latest-upload').textContent = 
+                    `${latest.getHours()}:${String(latest.getMinutes()).padStart(2, '0')}`;
+            }
+        }
+
+        function displayArtworks(artworks) {
+            const grid = document.getElementById('artwork-grid');
+            grid.innerHTML = artworks
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map(artwork => `
+                    <div class="artwork-card">
+                        <img src="${artwork.image}" alt="${artwork.name}" class="artwork-image">
+                        <div class="artwork-info">
+                            <div>
+                                <div class="artwork-name">${artwork.name}</div>
+                                <div class="artwork-author">by ${artwork.author}</div>
+                                <div class="artwork-date">${new Date(artwork.created_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <button onclick="deleteArtwork(${artwork.id})" class="delete-btn">
+                            Delete Artwork
+                        </button>
+                    </div>
+                `).join('');
+        }
+
+        async function deleteArtwork(id) {
+            if (!confirm('Are you sure you want to delete this artwork?')) return;
+            
+            await save('delete', { recordId: id });
+            loadLatestData();
+        }
+
+        // Polling functions
+        function startPolling() {
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize
+        initAuth();
+    </script>
+</body>
+</html>
+
+This solution provides:
+
+1. **Secure Authentication** - Full moderator login system
+2. **Real-time Updates** - Auto-refreshes every 2 seconds
+3. **Statistics Dashboard** - Shows total artworks, unique artists, latest upload
+4. **Grid Layout** - Responsive grid of artwork cards
+5. **Deletion** - Ability to remove inappropriate content
+6. **Mobile-friendly** - Works on all screen sizes
+7. **WTAF Styling** - Punk/chaotic aesthetic with gradients and transforms
+8. **Full Image Display** - Shows artwork at good size with metadata
+9. **Confirmation** - Asks before deleting
+10. **Sort by Latest** - Most recent uploads appear first
+
+The interface is intuitive and provides all necessary moderation tools while maintaining the WTAF aesthetic.

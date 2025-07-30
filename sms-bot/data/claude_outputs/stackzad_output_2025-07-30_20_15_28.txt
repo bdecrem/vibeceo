@@ -1,0 +1,256 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Blog Reader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #ff0066, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .post-list {
+            margin: 20px 0;
+        }
+
+        .post-card {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .post-title {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: #ff0066;
+        }
+
+        .post-meta {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .post-content {
+            color: #ddd;
+        }
+
+        .post-preview {
+            max-height: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .post-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, #2a2a2a);
+        }
+
+        #post-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        @media (min-width: 600px) {
+            body {
+                padding: 20px;
+            }
+            
+            .app-container {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>The Blog</h1>
+        <div id="post-list" class="post-list">
+            Loading posts...
+        </div>
+    </div>
+
+    <div id="post-modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // For public access
+        async function initPublicMode() {
+            const anonymousId = 'anon_' + Math.random().toString(36).substr(2, 12);
+            const anonymousUser = {
+                userLabel: 'Anonymous Reader',
+                participantId: anonymousId,
+                username: 'Anonymous Reader'
+            };
+            
+            updateZadAuth(anonymousUser.userLabel, anonymousUser.participantId);
+            
+            loadLatestData();
+            startPolling();
+        }
+
+        if (window.currentUser === 'all_users') {
+            document.addEventListener('DOMContentLoaded', initPublicMode);
+        }
+
+        let pollingInterval;
+
+        function startPolling() {
+            loadLatestData();
+            pollingInterval = setInterval(loadLatestData, 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        async function loadLatestData() {
+            const posts = await load('blog_post');
+            
+            // Filter out deleted posts and sort by timestamp descending
+            const validPosts = posts
+                .filter(p => !p.deleted)
+                .sort((a, b) => b.timestamp - a.timestamp);
+
+            // Remove duplicates keeping newest version
+            const uniquePosts = validPosts.reduce((acc, post) => {
+                const existing = acc.find(p => p.title === post.title);
+                if (!existing || post.timestamp > existing.timestamp) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = post;
+                    } else {
+                        acc.push(post);
+                    }
+                }
+                return acc;
+            }, []);
+
+            updateUI(uniquePosts);
+        }
+
+        function updateUI(posts) {
+            const postList = document.getElementById('post-list');
+            postList.innerHTML = posts.map(post => `
+                <div class="post-card" onclick="showPost(${JSON.stringify(post).replace(/"/g, '&quot;')})">
+                    <h2 class="post-title">${post.title || 'Untitled'}</h2>
+                    <div class="post-meta">
+                        Posted by ${post.author} on ${new Date(post.created_at).toLocaleDateString()}
+                    </div>
+                    <div class="post-preview">
+                        ${post.content || ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showPost(post) {
+            const modal = document.getElementById('post-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <h2 class="post-title">${post.title || 'Untitled'}</h2>
+                <div class="post-meta">
+                    Posted by ${post.author} on ${new Date(post.created_at).toLocaleDateString()}
+                </div>
+                <div class="post-content">
+                    ${post.content || ''}
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('post-modal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal if clicking outside content
+        document.getElementById('post-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'post-modal') {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        loadLatestData();
+        startPolling();
+    </script>
+</body>
+</html>
+```

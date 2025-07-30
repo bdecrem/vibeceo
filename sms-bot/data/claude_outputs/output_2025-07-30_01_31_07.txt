@@ -1,0 +1,339 @@
+Here's a retro-style collaborative paint app with a gallery wall that uses ZAD for persistent storage:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF PAINT</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        #paint-canvas {
+            border: 1px solid #6ECBFF;
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6ECBFF;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        select, input {
+            border: 2px solid #6ECBFF;
+            border-radius: 20px;
+            padding: 10px;
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-info {
+            font-size: 16px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            button, select, input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🎨 WTAF PAINT</h1>
+        
+        <div class="canvas-container">
+            <canvas id="paint-canvas" width="400" height="400"></canvas>
+        </div>
+
+        <div class="toolbar">
+            <button id="pencil">✏️ Pencil</button>
+            <button id="brush">🖌️ Brush</button>
+            <button id="mystery">🎲</button>
+            <input type="color" id="color-picker" value="#000000">
+            <select id="thickness">
+                <option value="1">Thin</option>
+                <option value="3" selected>Medium</option>
+                <option value="5">Thick</option>
+                <option value="10">Chunky</option>
+            </select>
+            <button id="undo">↩️ Undo</button>
+            <button id="save">💾 Save</button>
+        </div>
+
+        <h2>🖼️ GALLERY WALL</h2>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let mysteryMode = 'neon';
+        
+        const canvas = document.getElementById('paint-canvas');
+        const ctx = canvas.getContext('2d');
+        const undoStack = [];
+        
+        // Initialize canvas
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveState();
+
+        // Drawing event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Tool selection
+        document.getElementById('pencil').addEventListener('click', () => {
+            currentTool = 'pencil';
+        });
+        
+        document.getElementById('brush').addEventListener('click', () => {
+            currentTool = 'brush';
+        });
+
+        document.getElementById('mystery').addEventListener('click', () => {
+            currentTool = 'mystery';
+            mysteryMode = Math.random() < 0.5 ? 'neon' : 'rainbow';
+        });
+
+        // Undo functionality
+        document.getElementById('undo').addEventListener('click', () => {
+            if (undoStack.length > 1) {
+                undoStack.pop();
+                const lastState = undoStack[undoStack.length - 1];
+                const img = new Image();
+                img.src = lastState;
+                img.onload = () => ctx.drawImage(img, 0, 0);
+            }
+        });
+
+        // Save functionality
+        document.getElementById('save').addEventListener('click', async () => {
+            const name = prompt("Name your masterpiece:", "Untitled");
+            if (name) {
+                const artData = {
+                    name: name,
+                    image: canvas.toDataURL(),
+                    created_at: new Date().toISOString()
+                };
+                await save('artwork', artData);
+                await loadLatestData();
+            }
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+            ctx.lineWidth = document.getElementById('thickness').value;
+            
+            if (currentTool === 'pencil') {
+                ctx.strokeStyle = document.getElementById('color-picker').value;
+                ctx.lineCap = 'round';
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else if (currentTool === 'brush') {
+                ctx.strokeStyle = document.getElementById('color-picker').value;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else if (currentTool === 'mystery') {
+                if (mysteryMode === 'neon') {
+                    ctx.strokeStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = ctx.strokeStyle;
+                } else {
+                    ctx.strokeStyle = `hsl(${(Date.now() / 20) % 360}, 100%, 50%)`;
+                }
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+            ctx.shadowBlur = 0;
+            saveState();
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.type === 'touchstart' ? startDrawing : draw;
+            touch(e);
+        }
+
+        function saveState() {
+            undoStack.push(canvas.toDataURL());
+        }
+
+        // ZAD Integration
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        async function loadLatestData() {
+            const artwork = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            artwork.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach(art => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `
+                        <img src="${art.image}" alt="${art.name}">
+                        <div class="gallery-info">
+                            "${art.name}" by ${art.author}
+                        </div>
+                    `;
+                    gallery.appendChild(item);
+                });
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        // Initialize
+        initPublicMode();
+    </script>
+</body>
+</html>
+```
+
+This creates a fun, collaborative paint app with:
+
+1. Square canvas (400x400)
+2. Basic tools: Pencil and Brush
+3. Mystery button (🎲) that randomly toggles between neon and rainbow effects
+4. Color picker and line thickness selection
+5. Undo functionality
+6. Save feature that prompts for artwork name
+7. Gallery wall showing all saved artwork with creator names
+8. Mobile-friendly design
+9. Real-time updates every 2 seconds
+10. Persistent storage using ZAD
+
+The app follows the WEBTOYS design system with:
+- Yellow borders and purple shadows
+- Sky blue buttons
+- Clean white canvas area
+- 16px+ fonts throughout
+- Touch-friendly controls (44px minimum)
+- Responsive layout
+
+Users can:
+1. Draw with different tools
+2. Change colors and line thickness
+3. Try the mystery effects
+4. Undo mistakes
+5. Save their artwork
+6. See other people's artwork in the gallery
+7. See who created each piece
+
+The gallery automatically updates every 2 seconds to show new artwork from other users.

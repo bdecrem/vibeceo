@@ -1,0 +1,241 @@
+I'll create a moderation page for viewing and deleting images in the wave-wood-deconstructing collection. It will show all saved images with options to delete them.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Wave Wood Image Moderator</title>
+    <style>
+        /* WEBTOYS v1.0 Design System */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .user-status {
+            background: #FFEB63;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .image-card {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .image-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: #6ECBFF;
+            color: white;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            height: 44px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .delete-btn {
+            background: #FF4B4B;
+        }
+
+        .stats {
+            background: #89ECFF;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background: #B6FFB3;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🌊 Wave Wood Image Moderator 🪵</h1>
+        
+        <div class="user-status">
+            Moderating as: <span id="current-user-label"></span>
+        </div>
+
+        <div class="stats">
+            <div id="total-images">Total Images: Loading...</div>
+        </div>
+
+        <div id="image-grid" class="image-grid">
+            <!-- Images will be loaded here -->
+        </div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <h2>No Images Found 🎨</h2>
+            <p>Images that are generated will appear here!</p>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Initialize public mode
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        // Load and display images
+        async function loadLatestData() {
+            const images = await load('wave_wood_images');
+            
+            // Update stats
+            document.getElementById('total-images').textContent = `Total Images: ${images.length}`;
+
+            // Show/hide empty state
+            document.getElementById('empty-state').style.display = 
+                images.length === 0 ? 'block' : 'none';
+
+            // Sort images by creation date (newest first)
+            const sortedImages = images.sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+            );
+
+            const imageGrid = document.getElementById('image-grid');
+            imageGrid.innerHTML = sortedImages.map(image => `
+                <div class="image-card" id="image-${image.id}">
+                    <img src="${image.url}" alt="Generated image" 
+                        onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                    <div class="image-info">
+                        <div>Created by: ${image.author}</div>
+                        <div>Date: ${new Date(image.created_at).toLocaleString()}</div>
+                        <div>Prompt: ${image.prompt || 'No prompt provided'}</div>
+                    </div>
+                    <button onclick="deleteImage(${image.id})" class="delete-btn">
+                        🗑️ Delete Image
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Delete an image
+        async function deleteImage(imageId) {
+            if (confirm('Are you sure you want to delete this image?')) {
+                // Use the update helper to mark image as deleted
+                await save('update_task', {
+                    taskId: imageId,
+                    updates: { deleted: true }
+                });
+                
+                // Remove from UI immediately
+                const imageCard = document.getElementById(`image-${imageId}`);
+                if (imageCard) {
+                    imageCard.style.animation = 'fadeOut 0.3s';
+                    setTimeout(() => imageCard.remove(), 300);
+                }
+                
+                // Refresh data
+                await loadLatestData();
+            }
+        }
+
+        // Start auto-refresh
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        // Initialize the app
+        initPublicMode();
+    </script>
+</body>
+</html>
+
+This moderation page includes:
+
+1. Public mode initialization with anonymous user
+2. Grid display of all images with metadata
+3. Delete functionality for each image
+4. Auto-refresh every 2 seconds
+5. Mobile-first responsive design
+6. Stats showing total image count
+7. Empty state when no images exist
+8. Error handling for broken image links
+9. Confirmation before deletion
+10. WEBTOYS v1.0 design system compliance
+
+The page allows moderators to:
+- View all generated images in a grid
+- See image metadata (creator, date, prompt)
+- Delete inappropriate images
+- Monitor total image count
+- See real-time updates as new images are added
+
+All data operations use the ZAD database functions (save/load) and follow the public mode requirements. The interface is fully responsive and works on mobile devices (375px minimum width).
