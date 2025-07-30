@@ -672,8 +672,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             
             logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
         } else if (appInfo?.type === 'GAME') {
-            // For games, use the game-specific remix approach
-            enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+            // For games, use the game-specific remix approach with JavaScript preservation
+            const { buildGameRemixPrompt } = await import('./stackables-manager.js');
+            enhancedPrompt = buildGameRemixPrompt(userRequest, htmlContent);
             const gameRemixPromptPath = join(__dirname, '..', 'content', 'remix-games-prompt.txt');
             remixSystemPrompt = await readFile(gameRemixPromptPath, 'utf8');
             logWithTimestamp(`🎮 Game remix prompt loaded: ${remixSystemPrompt.length} characters`);
@@ -1678,8 +1679,9 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 
                 logWithTimestamp(`📄 FRESH ZAD GENERATION: Original ZAD builder + two clarifying lines`);
             } else if (isGameApp) {
-                // For games, use the game-specific remix approach
-                enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
+                // For games, use the game-specific remix approach with JavaScript preservation
+                const { buildGameRemixPrompt } = await import('./stackables-manager.js');
+                enhancedPrompt = buildGameRemixPrompt(userRequest, htmlContent);
                 const gameRemixPromptPath = join(__dirname, '..', 'content', 'remix-games-prompt.txt');
                 remixSystemPrompt = await readFile(gameRemixPromptPath, 'utf8');
                 logWithTimestamp(`🎮 Game remix prompt loaded: ${remixSystemPrompt.length} characters`);
