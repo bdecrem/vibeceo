@@ -1980,7 +1980,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       if (hasDegen) {
         helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
         
-        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
+        helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackpublic [public-app-slug] [request] - Create app sharing data with PUBLIC app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
         console.log(`🔍 COMMANDS: Added stack commands to response`);
       } else {
         console.log(`🔍 COMMANDS: Skipping stack commands (user role: ${subscriber?.role})`);
@@ -3876,11 +3876,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
 
     // Handle REMIX command - for coder/degen/admin users only
     if (message.match(/^REMIX(?:\s|$)/i)) {
-      // Check if the command has the required arguments (slug and instruction)
-      if (!message.match(/^REMIX\s+.+\s+.+$/i)) {
+      // Check if the command has at least an app slug
+      if (!message.match(/^REMIX\s+[a-z0-9-]+/i)) {
         await sendSmsResponse(
           from,
-          `❌ REMIX: Please specify an app slug and instructions.\n\nExample: REMIX emerald-eagle-flying make it more colorful\n\nUse INDEX to see your pages.`,
+          `❌ REMIX: Please specify an app slug.\n\nExamples:\n• REMIX emerald-eagle-flying (to clone)\n• REMIX emerald-eagle-flying make it blue (to modify)\n\nUse INDEX to see your pages.`,
           twilioClient
         );
         return;
@@ -3906,21 +3906,21 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         console.log(`✅ User ${normalizedPhoneNumber} has '${subscriber.role}' role, proceeding with REMIX command`);
         
-        // Parse the command: REMIX slug instruction
-        const remixMatch = message.match(/^REMIX\s+([a-z-]+)\s+(.+)$/i);
+        // Parse the command: REMIX slug instruction (or just REMIX slug for cloning)
+        const remixMatch = message.match(/^REMIX\s+([a-z0-9-]+)(?:\s+(.+))?$/i);
         
-        if (!remixMatch || !remixMatch[1] || !remixMatch[2]) {
+        if (!remixMatch || !remixMatch[1]) {
           console.error('Failed to parse REMIX command:', message);
           await sendSmsResponse(
             from,
-            '❌ Invalid REMIX command format. Use: REMIX [app-slug] [instructions]',
+            '❌ Invalid REMIX command format. Use: REMIX [app-slug] [instructions] or REMIX [app-slug] to clone',
             twilioClient
           );
           return;
         }
         
         const targetSlug = remixMatch[1].trim();
-        const instructions = remixMatch[2].trim();
+        const instructions = remixMatch[2] ? remixMatch[2].trim() : ''; // Empty string for clone
         
         const userSlug = subscriber.slug;
         if (!userSlug) {

@@ -1,0 +1,319 @@
+Here's a nostalgic MacPaint-style public painting app with realtime gallery:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>RETRO PAINT</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .toolbar {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 3px 3px 0 #C9C2F9;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        button.active {
+            background: #FF4B4B;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 3px 3px 0 #C9C2F9;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+        }
+
+        .gallery {
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .art-card {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 3px 3px 0 #C9C2F9;
+        }
+
+        .art-card img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .art-info {
+            font-size: 16px;
+            color: #666;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            width: 100px;
+            height: 44px;
+        }
+
+        @media (max-width: 600px) {
+            .canvas-container {
+                max-width: 100%;
+                overflow: hidden;
+            }
+            
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>✨ RETRO PAINT ✨</h1>
+    
+    <div class="toolbar">
+        <button id="pencil" class="active">✏️</button>
+        <button id="brush">🖌️</button>
+        <button id="mystery">🎲</button>
+        <button id="undo">↩️</button>
+        <input type="color" id="color" value="#000000">
+        <input type="range" id="size" min="1" max="50" value="5">
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="canvas" width="400" height="400"></canvas>
+    </div>
+
+    <button id="save">SAVE TO GALLERY</button>
+
+    <h2>🖼️ GALLERY WALL</h2>
+    <div id="gallery" class="gallery"></div>
+
+    <script>
+        // Initialize public mode
+        initPublicMode();
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let mysteryMode = 'neon'; // or 'rainbow'
+        
+        // Drawing history for undo
+        let history = [];
+        saveState();
+
+        // Drawing settings
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Tool buttons
+        document.getElementById('pencil').onclick = () => setTool('pencil');
+        document.getElementById('brush').onclick = () => setTool('brush');
+        document.getElementById('mystery').onclick = toggleMystery;
+        document.getElementById('undo').onclick = undo;
+        document.getElementById('save').onclick = saveArt;
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.toolbar button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tool).classList.add('active');
+        }
+
+        function toggleMystery() {
+            currentTool = 'mystery';
+            mysteryMode = Math.random() < 0.5 ? 'neon' : 'rainbow';
+            document.querySelectorAll('.toolbar button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('mystery').classList.add('active');
+        }
+
+        // Drawing functions
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        canvas.addEventListener('touchend', e => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineWidth = document.getElementById('size').value;
+
+            if (currentTool === 'mystery') {
+                if (mysteryMode === 'neon') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = document.getElementById('color').value;
+                    ctx.strokeStyle = document.getElementById('color').value;
+                } else {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                }
+            } else {
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = document.getElementById('color').value;
+            }
+
+            if (currentTool === 'brush' || currentTool === 'mystery') {
+                ctx.lineWidth = document.getElementById('size').value * 2;
+            }
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+            saveState();
+        }
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+            if (history.length > 10) history.shift();
+        }
+
+        function undo() {
+            if (history.length > 1) {
+                history.pop();
+                const img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        async function saveArt() {
+            const name = prompt("Sign your masterpiece:", "Artist");
+            if (name) {
+                const artData = {
+                    image: canvas.toDataURL(),
+                    artistName: name,
+                    timestamp: new Date().toISOString()
+                };
+                await save('artwork', artData);
+                loadLatestData();
+            }
+        }
+
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            artworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .forEach(art => {
+                    const card = document.createElement('div');
+                    card.className = 'art-card';
+                    card.innerHTML = `
+                        <img src="${art.image}" alt="Artwork">
+                        <div class="art-info">
+                            Created by: ${art.artistName || art.author}
+                        </div>
+                    `;
+                    gallery.appendChild(card);
+                });
+        }
+
+        // Start auto-refresh
+        function startPolling() {
+            setInterval(loadLatestData, 2000);
+        }
+
+        // Initial load
+        loadLatestData();
+        startPolling();
+
+    </script>
+</body>
+</html>

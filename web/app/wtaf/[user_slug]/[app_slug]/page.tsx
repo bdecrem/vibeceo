@@ -144,7 +144,33 @@ setTimeout(function() {
 		
 		// Check if referer is from a wtaf.me internal navigation page
 		const isFromInternalNav = referer ? 
-			internalNavPages.some(page => referer.includes(page)) :
+			internalNavPages.some(page => {
+				// Extract the pathname from the full referer URL
+				try {
+					const refererUrl = new URL(referer);
+					const pathname = refererUrl.pathname;
+					
+					// For exact matches (trending, featured, etc)
+					if (page === pathname) return true;
+					
+					// For /wtaf-landing, check exact match
+					if (page === '/wtaf-landing' && pathname === '/wtaf-landing') return true;
+					
+					// For root path, check exact match
+					if (page === '/' && pathname === '/') return true;
+					
+					// For /creations, match any user's creations page
+					if (page === '/creations' && pathname.match(/^\/[^\/]+$/) && !pathname.startsWith('/wtaf')) return true;
+					
+					// For /wtaf/ homepage specifically (not any wtaf subpage)
+					if (page === '/wtaf/' && pathname === '/wtaf') return true;
+					
+					return false;
+				} catch (e) {
+					// If URL parsing fails, don't show nav
+					return false;
+				}
+			}) :
 			false;
 			
 		const showNavigation = isDemoMode || isFromInternalNav;

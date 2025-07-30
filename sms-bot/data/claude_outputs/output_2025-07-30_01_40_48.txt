@@ -1,0 +1,363 @@
+Here's a nostalgic MacPaint-style public collaborative art app with the requested features:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF Paint</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-align: center;
+            font-size: 24px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        #user-status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            margin-bottom: 20px;
+        }
+
+        #canvas {
+            border: 1px solid #000;
+            background: white;
+            cursor: crosshair;
+            width: 100%;
+            height: auto;
+            max-width: 400px;
+            display: block;
+            margin: 0 auto;
+            touch-action: none;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            height: 44px;
+            cursor: pointer;
+            min-width: 44px;
+        }
+
+        button.active {
+            background: #FF4B4B;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 44px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .artwork {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .artwork img {
+            width: 100%;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .artwork-info {
+            font-size: 16px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="main-screen" class="screen active">
+            <h1>🎨 WTAF Paint</h1>
+            <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+
+            <div class="canvas-container">
+                <canvas id="canvas" width="400" height="400"></canvas>
+            </div>
+
+            <div class="toolbar">
+                <button id="pencil" class="active">✏️</button>
+                <button id="brush">🖌️</button>
+                <button id="mystery">🎲</button>
+                <button id="undo">↩️</button>
+                <button id="save">💾</button>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Color:</label>
+                    <input type="color" id="colorPicker" value="#000000">
+                </div>
+                <div class="control-group">
+                    <label>Size:</label>
+                    <input type="range" id="sizeSlider" min="1" max="50" value="5">
+                </div>
+            </div>
+
+            <div class="gallery" id="gallery"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let mysteryMode = 'neon'; // or 'rainbow'
+        let context;
+        let canvas;
+        let paths = [];
+        let currentPath = [];
+
+        // Initialize canvas and tools
+        window.onload = async function() {
+            canvas = document.getElementById('canvas');
+            context = canvas.getContext('2d');
+            context.lineCap = 'round';
+            context.lineJoin = 'round';
+
+            // Initialize public mode
+            await initPublicMode();
+            
+            // Load existing artwork
+            loadLatestData();
+
+            // Setup event listeners
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointerout', stopDrawing);
+
+            document.getElementById('pencil').onclick = () => setTool('pencil');
+            document.getElementById('brush').onclick = () => setTool('brush');
+            document.getElementById('mystery').onclick = toggleMystery;
+            document.getElementById('undo').onclick = undoLastPath;
+            document.getElementById('save').onclick = saveArtwork;
+
+            // Update active tool buttons
+            document.querySelectorAll('.toolbar button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
+                    if (!['undo', 'save'].includes(this.id)) {
+                        this.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        function setTool(tool) {
+            currentTool = tool;
+        }
+
+        function toggleMystery() {
+            currentTool = 'mystery';
+            mysteryMode = mysteryMode === 'neon' ? 'rainbow' : 'neon';
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            context.beginPath();
+            context.moveTo(x, y);
+            currentPath = [{x, y}];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            currentPath.push({x, y});
+
+            context.strokeStyle = document.getElementById('colorPicker').value;
+            context.lineWidth = document.getElementById('sizeSlider').value;
+
+            if (currentTool === 'mystery') {
+                if (mysteryMode === 'neon') {
+                    context.shadowBlur = 15;
+                    context.shadowColor = context.strokeStyle;
+                    for (let i = 0; i < 3; i++) {
+                        context.beginPath();
+                        context.moveTo(x + Math.random() * 10 - 5, y + Math.random() * 10 - 5);
+                        context.lineTo(x + Math.random() * 10 - 5, y + Math.random() * 10 - 5);
+                        context.stroke();
+                    }
+                    context.shadowBlur = 0;
+                } else {
+                    context.strokeStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                }
+            }
+
+            context.lineTo(x, y);
+            context.stroke();
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            paths.push({
+                points: currentPath,
+                color: document.getElementById('colorPicker').value,
+                size: document.getElementById('sizeSlider').value,
+                tool: currentTool,
+                mysteryMode: currentTool === 'mystery' ? mysteryMode : null
+            });
+        }
+
+        function undoLastPath() {
+            if (paths.length === 0) return;
+            paths.pop();
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            paths.forEach(path => {
+                context.beginPath();
+                context.moveTo(path.points[0].x, path.points[0].y);
+                context.strokeStyle = path.color;
+                context.lineWidth = path.size;
+                
+                if (path.tool === 'mystery') {
+                    if (path.mysteryMode === 'neon') {
+                        context.shadowBlur = 15;
+                        context.shadowColor = path.color;
+                    }
+                }
+
+                path.points.forEach(point => {
+                    context.lineTo(point.x, point.y);
+                });
+                context.stroke();
+                context.shadowBlur = 0;
+            });
+        }
+
+        async function saveArtwork() {
+            const name = prompt("What's your name?", "Artist");
+            if (!name) return;
+
+            const dataUrl = canvas.toDataURL();
+            await save('artwork', {
+                image: dataUrl,
+                artistName: name,
+                timestamp: new Date().toISOString()
+            });
+
+            // Clear canvas after saving
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            paths = [];
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            artworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                   .forEach(artwork => {
+                const div = document.createElement('div');
+                div.className = 'artwork';
+                div.innerHTML = `
+                    <img src="${artwork.image}" alt="Artwork">
+                    <div class="artwork-info">
+                        By: ${artwork.artistName || artwork.author}
+                    </div>
+                `;
+                gallery.appendChild(div);
+            });
+        }
+
+        // Start auto-refresh
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+        startPolling();
+    </script>
+</body>
+</html>

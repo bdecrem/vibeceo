@@ -53,10 +53,31 @@ export function parseStackCommand(input: string): { appSlug: string; userRequest
  * Load HTML content from Supabase (simple template approach)
  * Returns the raw HTML content to use as a template
  */
-export async function loadStackedHTMLContent(userSlug: string, appSlug: string): Promise<string | null> {
+export async function loadStackedHTMLContent(userSlug: string | null, appSlug: string): Promise<string | null> {
     try {
         logWithTimestamp(`📡 Loading HTML content from Supabase`);
         logWithTimestamp(`Looking for app_slug: "${appSlug}"`);
+        
+        // For PUBLIC apps, skip ownership check
+        if (userSlug === null) {
+            logWithTimestamp(`🌐 Loading PUBLIC app (no ownership check)`);
+            
+            // Load PUBLIC app directly
+            const { data: publicApp, error: publicError } = await getSupabaseClient()
+                .from('wtaf_content')
+                .select('html_content')
+                .eq('app_slug', appSlug)
+                .eq('type', 'PUBLIC')
+                .single();
+                
+            if (publicError || !publicApp) {
+                logError(`PUBLIC app not found: ${appSlug}`);
+                return null;
+            }
+            
+            logSuccess(`✅ Loaded PUBLIC app HTML content`);
+            return publicApp.html_content;
+        }
         
         // Get user_id from sms_subscribers table
         const { data: userData, error: userError } = await getSupabaseClient()
@@ -73,21 +94,42 @@ export async function loadStackedHTMLContent(userSlug: string, appSlug: string):
         const userId = userData.id;
         logWithTimestamp(`User ID: "${userId}"`);
         
-        // Load HTML content
-        const { data: appData, error: appError } = await getSupabaseClient()
+        // First try to load as owned app
+        const { data: ownedApp, error: ownedError } = await getSupabaseClient()
             .from('wtaf_content')
             .select('html_content')
             .eq('app_slug', appSlug)
             .eq('user_id', userId)
             .single();
         
-        if (appError || !appData) {
-            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+        if (ownedApp && ownedApp.html_content) {
+            logSuccess(`✅ Owned app HTML content loaded: ${ownedApp.html_content.length} characters`);
+            return ownedApp.html_content;
+        }
+        
+        // If not owned, check if it's a PUBLIC ZAD app
+        logWithTimestamp(`🌐 User doesn't own '${appSlug}' - checking if it's a PUBLIC ZAD app`);
+        
+        const { data: publicApp, error: publicError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('html_content, type')
+            .eq('app_slug', appSlug)
+            .eq('type', 'ZAD')
+            .single();
+        
+        if (publicError || !publicApp || !publicApp.html_content) {
+            logWarning(`App '${appSlug}' not found, not accessible, or not a ZAD app`);
             return null;
         }
         
-        logSuccess(`✅ HTML content loaded: ${appData.html_content ? appData.html_content.length + ' characters' : 'null'}`);
-        return appData.html_content;
+        // Check if it's a PUBLIC ZAD by looking for unlimited user access
+        if (publicApp.html_content.includes('window.currentUser = \'all_users\'')) {
+            logSuccess(`✅ PUBLIC ZAD app HTML content loaded: ${publicApp.html_content.length} characters`);
+            return publicApp.html_content;
+        } else {
+            logWarning(`App '${appSlug}' exists but is not PUBLIC (not accessible)`);
+            return null;
+        }
         
     } catch (error) {
         logError(`Error loading HTML content: ${error instanceof Error ? error.message : String(error)}`);
@@ -820,6 +862,24 @@ export function parseRemixCommand(input: string): { appSlug: string; userRequest
         };
     }
     
+    // Try "wtaf --remix app-slug" format (clone without modifications)
+    match = input.match(/^wtaf\s+--remix\s+([a-z0-9-]+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: "" // Empty request indicates clone
+        };
+    }
+    
+    // Try "--remix app-slug" format (clone without modifications)
+    match = input.match(/^--remix\s+([a-z0-9-]+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: "" // Empty request indicates clone
+        };
+    }
+    
     return null;
 }
 
@@ -959,6 +1019,33 @@ IMPORTANT RULES:
 }
 
 /**
+ * Parse stackpublic command from user input (for PUBLIC ZAD apps)
+ * Extracts source PUBLIC app slug and cleaned user request
+ * Supports both "wtaf --stackpublic" and "--stackpublic" formats
+ */
+export function parseStackPublicCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --stackpublic app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stackpublic\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--stackpublic app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stackpublic\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
  * Parse stackzad command from user input
  * Extracts source ZAD app slug and cleaned user request
  * Supports both "wtaf --stackzad" and "--stackzad" formats
@@ -1009,29 +1096,40 @@ export async function getZadAppUUIDForStackZad(userSlug: string, appSlug: string
         const userId = userData.id;
         logWithTimestamp(`User ID: "${userId}"`);
         
-        // Verify the user owns this ZAD app and get its UUID
-        const { data: appData, error: appError } = await getSupabaseClient()
+        // First, try to find a ZAD app owned by the user
+        const { data: ownedApp, error: ownedError } = await getSupabaseClient()
             .from('wtaf_content')
             .select('app_slug, id, type')
             .eq('app_slug', appSlug)
             .eq('user_id', userId)
             .single();
         
-        if (appError || !appData) {
-            logWarning(`App '${appSlug}' not found or not owned by ${userSlug}`);
+        if (ownedApp && ownedApp.type === 'ZAD') {
+            // User owns this ZAD app
+            const appUuid = ownedApp.id;
+            logWithTimestamp(`🆔 User owns ZAD app - UUID for stackzad: ${appUuid}`);
+            return appUuid;
+        }
+        
+        // If user doesn't own it, check if it's a PUBLIC ZAD app
+        logWithTimestamp(`🌐 User doesn't own '${appSlug}' - checking if it's a PUBLIC ZAD app`);
+        
+        // Check for PUBLIC ZAD apps (type='PUBLIC')
+        const { data: publicApp, error: publicError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id, type')
+            .eq('app_slug', appSlug)
+            .eq('type', 'PUBLIC')
+            .single();
+        
+        if (publicError || !publicApp) {
+            logWarning(`App '${appSlug}' not found or not a PUBLIC app`);
             return null;
         }
         
-        // Verify it's a ZAD app
-        if (appData.type !== 'ZAD') {
-            logWarning(`App '${appSlug}' is not a ZAD app (type: ${appData.type})`);
-            return null;
-        }
-        
-        const appUuid = appData.id;
-        logWithTimestamp(`🆔 ZAD app UUID for stackzad: ${appUuid}`);
-        
-        logSuccess(`✅ ZAD app UUID retrieved for stackzad`);
+        logWithTimestamp(`🌐 Found PUBLIC ZAD app '${appSlug}' - allowing stackzad access`);
+        const appUuid = publicApp.id;
+        logWithTimestamp(`🆔 PUBLIC ZAD app UUID for stackzad: ${appUuid}`);
         return appUuid;
         
     } catch (error) {
@@ -1041,10 +1139,43 @@ export async function getZadAppUUIDForStackZad(userSlug: string, appSlug: string
 }
 
 /**
+ * Get UUID for a PUBLIC app (type='PUBLIC')
+ * For stackpublic commands - only works with PUBLIC apps
+ */
+export async function getPublicAppUUIDForStackPublic(appSlug: string): Promise<string | null> {
+    try {
+        logWithTimestamp(`🌐 Getting PUBLIC app UUID for stackpublic`);
+        logWithTimestamp(`Looking for PUBLIC app: "${appSlug}"`);
+        
+        // Check for PUBLIC app (type='PUBLIC')
+        const { data: publicApp, error: publicError } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('app_slug, id, type')
+            .eq('app_slug', appSlug)
+            .eq('type', 'PUBLIC')
+            .single();
+        
+        if (publicError || !publicApp) {
+            logWarning(`App '${appSlug}' not found or not a PUBLIC app`);
+            return null;
+        }
+        
+        logWithTimestamp(`🌐 Found PUBLIC app '${appSlug}'`);
+        const appUuid = publicApp.id;
+        logWithTimestamp(`🆔 PUBLIC app UUID for stackpublic: ${appUuid}`);
+        return appUuid;
+        
+    } catch (error) {
+        logError(`Error getting PUBLIC app UUID: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
  * Extract APP_ID from HTML content by parsing the hardcoded window.APP_ID assignment
  * This is much simpler and more accurate than database hunting
  */
-function extractAppIdFromHtml(htmlContent: string): string | null {
+export function extractAppIdFromHtml(htmlContent: string): string | null {
     try {
         logWithTimestamp(`🔍 Extracting APP_ID from HTML content`);
         
@@ -1436,7 +1567,7 @@ export async function processStackZadRequest(userSlug: string, stackCommand: str
         if (sourceAppUuid === null) {
             return { 
                 success: false, 
-                error: `You don't own ZAD app '${appSlug}' or it doesn't exist or isn't a ZAD app` 
+                error: `ZAD app '${appSlug}' not found, not accessible, or not a ZAD app. You can only use your own ZAD apps or PUBLIC ZAD apps.` 
             };
         }
         
@@ -1445,7 +1576,7 @@ export async function processStackZadRequest(userSlug: string, stackCommand: str
         if (!htmlContent) {
             return { 
                 success: false, 
-                error: `Could not load HTML content from source ZAD app '${appSlug}'` 
+                error: `Could not load HTML content from ZAD app '${appSlug}'` 
             };
         }
         

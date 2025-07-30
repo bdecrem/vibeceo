@@ -1,0 +1,362 @@
+Here's a retro-style collaborative paint app with mystery features and a shared gallery:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WTAF MacPaint</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-align: center;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        #canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            margin: 20px auto;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            max-width: 400px;
+        }
+
+        canvas {
+            border: 1px solid #000;
+            background: white;
+            touch-action: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            min-height: 44px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            height: 44px;
+            width: 100px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .artwork {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            text-align: center;
+        }
+
+        .artwork img {
+            max-width: 100%;
+            border: 1px solid #000;
+        }
+
+        .artwork p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #666;
+        }
+
+        #user-status {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .tool-active {
+            background: #FF4B4B;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="user-status">Anonymous User: <span id="current-user-label"></span></div>
+        <h1>WTAF MacPaint 1.0</h1>
+        
+        <div id="canvas-container">
+            <canvas id="canvas" width="350" height="350"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="pencil">✏️</button>
+            <button id="brush">🖌️</button>
+            <input type="color" id="color" value="#000000">
+            <input type="range" id="size" min="1" max="50" value="5">
+            <button id="mystery">🎲</button>
+            <button id="undo">↩️</button>
+            <button id="save">SAVE</button>
+        </div>
+
+        <div class="gallery" id="gallery"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isDrawing = false;
+        let currentTool = 'pencil';
+        let mysteryMode = null;
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const history = [];
+        
+        // Initialize canvas with white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveState();
+
+        // Tool buttons
+        document.getElementById('pencil').addEventListener('click', () => setTool('pencil'));
+        document.getElementById('brush').addEventListener('click', () => setTool('brush'));
+        document.getElementById('mystery').addEventListener('click', activateMysteryFeature);
+        document.getElementById('undo').addEventListener('click', undo);
+        document.getElementById('save').addEventListener('click', saveArtwork);
+
+        function setTool(tool) {
+            currentTool = tool;
+            mysteryMode = null;
+            document.querySelectorAll('button').forEach(b => b.classList.remove('tool-active'));
+            document.getElementById(tool).classList.add('tool-active');
+        }
+
+        // Drawing functions
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        // Touch support
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', e => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = document.getElementById('size').value;
+
+            if (mysteryMode) {
+                handleMysteryDraw(x, y);
+            } else {
+                ctx.strokeStyle = document.getElementById('color').value;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            saveState();
+        }
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+            if (history.length > 10) history.shift();
+        }
+
+        function undo() {
+            if (history.length > 1) {
+                history.pop();
+                const img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+
+        const mysteryFeatures = [
+            {name: 'rainbow', draw: (x, y) => {
+                ctx.strokeStyle = `hsl(${(Date.now() / 10) % 360}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }},
+            {name: 'neon', draw: (x, y) => {
+                ctx.strokeStyle = '#0ff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#0ff';
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }},
+            {name: 'sparkle', draw: (x, y) => {
+                const size = Math.random() * 10;
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }},
+            {name: 'pixel', draw: (x, y) => {
+                const size = 10;
+                ctx.fillStyle = document.getElementById('color').value;
+                ctx.fillRect(
+                    Math.floor(x/size) * size,
+                    Math.floor(y/size) * size,
+                    size, size
+                );
+            }},
+            {name: 'spray', draw: (x, y) => {
+                for(let i = 0; i < 20; i++) {
+                    const offsetX = (Math.random() - 0.5) * 20;
+                    const offsetY = (Math.random() - 0.5) * 20;
+                    ctx.fillStyle = document.getElementById('color').value;
+                    ctx.fillRect(x + offsetX, y + offsetY, 1, 1);
+                }
+            }}
+        ];
+
+        function activateMysteryFeature() {
+            mysteryMode = mysteryFeatures[Math.floor(Math.random() * mysteryFeatures.length)];
+            document.querySelectorAll('button').forEach(b => b.classList.remove('tool-active'));
+            document.getElementById('mystery').classList.add('tool-active');
+        }
+
+        function handleMysteryDraw(x, y) {
+            if (mysteryMode) {
+                mysteryMode.draw(x, y);
+            }
+        }
+
+        async function saveArtwork() {
+            const name = prompt("Name your masterpiece:", "Untitled");
+            if (!name) return;
+
+            const artwork = {
+                image: canvas.toDataURL(),
+                name: name,
+                created_at: new Date().toISOString()
+            };
+
+            await save('artwork', artwork);
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            artworks.reverse().forEach(art => {
+                const div = document.createElement('div');
+                div.className = 'artwork';
+                div.innerHTML = `
+                    <img src="${art.image}" alt="${art.name}">
+                    <p>"${art.name}" by ${art.author}</p>
+                    <p>${new Date(art.created_at).toLocaleDateString()}</p>
+                `;
+                gallery.appendChild(div);
+            });
+        }
+
+        // Initialize public mode and start polling
+        async function initPublicMode() {
+            currentUser = await generateAnonymousUser();
+            if (currentUser?.success) {
+                updateZadAuth(currentUser.userLabel, currentUser.participantId);
+                document.getElementById('current-user-label').textContent = currentUser.userLabel;
+                startPolling();
+                loadLatestData();
+            }
+        }
+
+        let pollingInterval;
+        function startPolling() {
+            pollingInterval = setInterval(() => loadLatestData(), 2000);
+        }
+
+        // Initialize the app
+        initPublicMode();
+    </script>
+</body>
+</html>

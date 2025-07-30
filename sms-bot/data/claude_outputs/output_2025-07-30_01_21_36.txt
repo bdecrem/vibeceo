@@ -1,0 +1,374 @@
+Here's a nostalgic MacPaint-style public drawing app with a gallery and mystery features:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>RetroSketch Gallery</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fefef5;
+            margin: 0;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #FF4B4B;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #canvas-container {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        #canvas {
+            border: 1px solid #000;
+            cursor: crosshair;
+            background: white;
+        }
+
+        .toolbar {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            background: #6ECBFF;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            height: 44px;
+            cursor: pointer;
+            min-width: 44px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            height: 44px;
+            width: 150px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            border: 1px solid #000;
+        }
+
+        .gallery-item p {
+            margin: 10px 0;
+            color: #666;
+        }
+
+        #save-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 2px solid #FFD63D;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 #C9C2F9;
+            z-index: 1000;
+        }
+
+        #save-dialog input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #6ECBFF;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>RetroSketch Gallery</h1>
+        <div id="canvas-container">
+            <canvas id="canvas" width="400" height="400"></canvas>
+        </div>
+        
+        <div class="toolbar">
+            <button id="pencil">✏️</button>
+            <button id="brush">🖌️</button>
+            <input type="color" id="color" value="#000000">
+            <input type="range" id="size" min="1" max="50" value="5">
+            <button id="undo">↩️</button>
+            <button id="mystery">🎲</button>
+            <button id="save">SAVE</button>
+        </div>
+
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div id="save-dialog">
+        <h3>Save Your Art</h3>
+        <input type="text" id="artist-name" placeholder="Your name">
+        <button onclick="saveArtwork()">Save</button>
+    </div>
+
+    <script>
+        let currentUser = null;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let tool = 'pencil';
+        let history = [];
+        let currentPath = [];
+
+        // Mystery features
+        const mysteryFeatures = [
+            {name: 'rainbow', color: () => `hsl(${Math.random() * 360}, 100%, 50%)`},
+            {name: 'neon', color: () => '#' + ['FF', '00', 'FF'].sort(() => Math.random() - 0.5).join('')},
+            {name: 'sparkle', size: () => Math.random() * 20 + 5},
+            {name: 'pattern', draw: (x, y) => {
+                const size = parseInt(document.getElementById('size').value);
+                for(let i = 0; i < 360; i += 45) {
+                    ctx.beginPath();
+                    ctx.arc(x + size * Math.cos(i), y + size * Math.sin(i), 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }},
+            {name: 'shadow', shadow: true}
+        ];
+
+        let activeMystery = null;
+
+        // Initialize
+        async function init() {
+            await initPublicMode();
+            setupCanvas();
+            loadLatestData();
+            startPolling();
+        }
+
+        function setupCanvas() {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            saveState();
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (e.type === 'touchstart') {
+                isDrawing = true;
+                currentPath = [{x, y}];
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else if (e.type === 'touchmove' && isDrawing) {
+                currentPath.push({x, y});
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            currentPath = [{x, y}];
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.strokeStyle = activeMystery?.color ? activeMystery.color() : document.getElementById('color').value;
+            ctx.lineWidth = activeMystery?.size ? activeMystery.size() : document.getElementById('size').value;
+
+            if (activeMystery?.shadow) {
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 10;
+            } else {
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
+
+            currentPath.push({x, y});
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            if (activeMystery?.draw) {
+                activeMystery.draw(x, y);
+            }
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                saveState();
+            }
+        }
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+        }
+
+        document.getElementById('undo').addEventListener('click', () => {
+            if (history.length > 1) {
+                history.pop();
+                const img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        });
+
+        document.getElementById('mystery').addEventListener('click', () => {
+            activeMystery = mysteryFeatures[Math.floor(Math.random() * mysteryFeatures.length)];
+            setTimeout(() => {
+                activeMystery = null;
+            }, 10000);
+        });
+
+        document.getElementById('save').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('save-dialog').style.display = 'block';
+        });
+
+        async function saveArtwork() {
+            const artistName = document.getElementById('artist-name').value || 'Anonymous';
+            const imageData = canvas.toDataURL();
+            
+            await save('artwork', {
+                image: imageData,
+                artistName: artistName,
+                timestamp: new Date().toISOString()
+            });
+
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('save-dialog').style.display = 'none';
+            document.getElementById('artist-name').value = '';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            history = [];
+            saveState();
+            
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            const artworks = await load('artwork');
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            artworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                   .forEach(artwork => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="${artwork.image}" alt="Artwork">
+                    <p>By: ${artwork.artistName}</p>
+                    <p>Created by: ${artwork.author}</p>
+                `;
+                gallery.appendChild(item);
+            });
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
+
+This app features:
+
+1. Square 400x400 canvas with retro styling
+2. Basic tools: pencil, brush, color picker, thickness slider
+3. Undo button
+4. Mystery button (🎲) that temporarily activates one of 5 special features:
+   - Rainbow brush
+   - Neon colors
+   - Sparkle effect
+   - Pattern brush
+   - Shadow effect
+5. Save functionality that prompts for artist name
+6. Gallery wall showing all saved artwork with creator info
+7. Mobile-friendly design
+8. Real-time updates (every 2 seconds)
+9. Persistent storage using ZAD
+10. Public anonymous access
+
+The app follows the WEBTOYS design system with the specified colors and styling. All data operations use the ZAD system's save() and load() functions for persistence.
