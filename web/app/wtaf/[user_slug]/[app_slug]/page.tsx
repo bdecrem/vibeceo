@@ -150,6 +150,12 @@ setTimeout(function() {
 					const refererUrl = new URL(referer);
 					const pathname = refererUrl.pathname;
 					
+					// FIRST: Exclude all Webtoy pages (pattern: /user/app-slug)
+					// This prevents navigation bar from showing when clicking links from user-created pages
+					if (pathname.match(/^\/[^\/]+\/[^\/]+$/)) {
+						return false;
+					}
+					
 					// For exact matches (trending, featured, etc)
 					if (page === pathname) return true;
 					
@@ -159,7 +165,7 @@ setTimeout(function() {
 					// For root path, check exact match
 					if (page === '/' && pathname === '/') return true;
 					
-					// For /creations, match any user's creations page
+					// For /creations, match any user's creations page (but not Webtoy pages)
 					if (page === '/creations' && pathname.match(/^\/[^\/]+$/) && !pathname.startsWith('/wtaf')) return true;
 					
 					// For /wtaf/ homepage specifically (not any wtaf subpage)
