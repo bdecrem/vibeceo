@@ -34,6 +34,8 @@ CRITICAL GAME PRESERVATION:
 - NEVER alter collision detection - if it works, preserve the exact logic
 - Canvas/viewport calculations that work must be preserved character-for-character
 - Keep the same game difficulty unless asked to change it
+- **NEVER REPLACE JAVASCRIPT WITH COMMENTS** - Always preserve the complete game code
+- **FOR VISUAL CHANGES (fonts, colors): Only modify CSS, NEVER touch JavaScript**
 
 SMART THINKING RULES:
 1. "Make it harder" → Increase speed/spawn rates, not change controls
@@ -43,10 +45,18 @@ SMART THINKING RULES:
 5. Always preserve what works, only change what's requested
 
 COMMON REMIX PATTERNS:
+- **Font changes**: Only modify CSS font-family properties, never touch JavaScript
+- **Color changes**: Only modify CSS color/background properties, never touch JavaScript  
 - Theme changes: Modify colors, shapes, backgrounds while keeping all mechanics
 - Difficulty adjustments: Tweak timing constants, spawn rates, speed multipliers
 - Visual enhancements: Add particles, effects, animations without touching game logic
 - Simple feature additions: New power-ups, bonus items that extend existing systems
+
+FONT/VISUAL CHANGE EXAMPLES:
+- "Change score font" → Modify `.ui-overlay { font-family: "New Font", sans-serif; }`
+- "Make title bigger" → Modify `.game-title { font-size: 32px; }`
+- "Change colors" → Modify CSS color properties only
+- **NEVER EVER replace `<script>` sections with comments for visual changes**
 
 PROCESS:
 1. Identify the game type and its core mechanics
