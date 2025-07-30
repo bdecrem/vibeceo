@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix muted-squirrel-crossfit change the background color to a yellow to pink gradient
+
+ORIGINAL_REQUEST:REMIX muted-squirrel-crossfit change the background color to a yellow to pink gradient

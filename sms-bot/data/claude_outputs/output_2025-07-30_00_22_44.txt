@@ -1,0 +1,349 @@
+I'll create a mobile-friendly Tetris game with touch and keyboard controls. Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Tetris</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            background: #111;
+            overflow: hidden;
+            touch-action: none;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: auto;
+            background: #000;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+
+        #score {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div class="controls">
+        <div class="btn" id="leftBtn">←</div>
+        <div class="btn" id="rotateBtn">↻</div>
+        <div class="btn" id="downBtn">↓</div>
+        <div class="btn" id="rightBtn">→</div>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game constants
+const COLS = 10;
+const ROWS = 20;
+const BLOCK_SIZE = Math.floor(Math.min(window.innerHeight - 100, window.innerWidth) / COLS);
+const BOARD_WIDTH = BLOCK_SIZE * COLS;
+const BOARD_HEIGHT = BLOCK_SIZE * ROWS;
+
+// Set canvas size
+canvas.width = BOARD_WIDTH;
+canvas.height = BOARD_HEIGHT;
+canvas.style.marginTop = '10px';
+
+// Tetromino shapes
+const SHAPES = [
+    [[1,1,1,1]], // I
+    [[1,1,1],[0,1,0]], // T
+    [[1,1,1],[1,0,0]], // L
+    [[1,1,1],[0,0,1]], // J
+    [[1,1],[1,1]], // O
+    [[1,1,0],[0,1,1]], // S
+    [[0,1,1],[1,1,0]] // Z
+];
+
+const COLORS = [
+    '#00f0f0', // cyan
+    '#f0a000', // orange
+    '#f0f000', // yellow
+    '#a000f0', // purple
+    '#00f000', // green
+    '#f00000', // red
+    '#0000f0'  // blue
+];
+
+// Game state
+let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+let score = 0;
+let currentPiece = null;
+let currentX = 0;
+let currentY = 0;
+let currentColor = '';
+let gameOver = false;
+let dropInterval = 1000;
+let lastDrop = 0;
+
+class Piece {
+    constructor(shape, color) {
+        this.shape = shape;
+        this.color = color;
+    }
+}
+
+function createPiece() {
+    const randomIndex = Math.floor(Math.random() * SHAPES.length);
+    return new Piece(SHAPES[randomIndex], COLORS[randomIndex]);
+}
+
+function drawBlock(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+}
+
+function drawBoard() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    
+    for(let y = 0; y < ROWS; y++) {
+        for(let x = 0; x < COLS; x++) {
+            if(board[y][x]) {
+                drawBlock(x, y, board[y][x]);
+            }
+        }
+    }
+
+    if(currentPiece) {
+        currentPiece.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if(value) {
+                    drawBlock(currentX + x, currentY + y, currentPiece.color);
+                }
+            });
+        });
+    }
+}
+
+function collision(piece, x, y) {
+    for(let row = 0; row < piece.shape.length; row++) {
+        for(let col = 0; col < piece.shape[row].length; col++) {
+            if(piece.shape[row][col]) {
+                const newX = x + col;
+                const newY = y + row;
+                if(newX < 0 || newX >= COLS || newY >= ROWS || 
+                   (newY >= 0 && board[newY][newX])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function merge() {
+    currentPiece.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if(value) {
+                board[currentY + y][currentX + x] = currentPiece.color;
+            }
+        });
+    });
+}
+
+function rotate(piece) {
+    const newShape = piece.shape[0].map((_, i) => 
+        piece.shape.map(row => row[i]).reverse()
+    );
+    return new Piece(newShape, piece.color);
+}
+
+function clearLines() {
+    let linesCleared = 0;
+    
+    for(let y = ROWS - 1; y >= 0; y--) {
+        if(board[y].every(cell => cell !== 0)) {
+            board.splice(y, 1);
+            board.unshift(Array(COLS).fill(0));
+            linesCleared++;
+            y++;
+        }
+    }
+    
+    if(linesCleared > 0) {
+        score += [40, 100, 300, 1200][linesCleared - 1];
+        document.getElementById('score').textContent = `Score: ${score}`;
+        // Increase speed
+        dropInterval = Math.max(100, 1000 - Math.floor(score/500) * 100);
+    }
+}
+
+function newPiece() {
+    currentPiece = createPiece();
+    currentX = Math.floor(COLS/2) - Math.floor(currentPiece.shape[0].length/2);
+    currentY = 0;
+    
+    if(collision(currentPiece, currentX, currentY)) {
+        gameOver = true;
+        alert(`Game Over! Score: ${score}`);
+        board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        score = 0;
+        document.getElementById('score').textContent = 'Score: 0';
+        gameOver = false;
+    }
+}
+
+function drop() {
+    currentY++;
+    if(collision(currentPiece, currentX, currentY)) {
+        currentY--;
+        merge();
+        clearLines();
+        newPiece();
+    }
+}
+
+function move(dir) {
+    currentX += dir;
+    if(collision(currentPiece, currentX, currentY)) {
+        currentX -= dir;
+    }
+}
+
+function rotateCurrentPiece() {
+    const rotated = rotate(currentPiece);
+    if(!collision(rotated, currentX, currentY)) {
+        currentPiece = rotated;
+    }
+}
+
+// Controls
+document.getElementById('leftBtn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    move(-1);
+});
+
+document.getElementById('rightBtn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    move(1);
+});
+
+document.getElementById('downBtn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    drop();
+});
+
+document.getElementById('rotateBtn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    rotateCurrentPiece();
+});
+
+// Keyboard controls
+document.addEventListener('keydown', e => {
+    if(gameOver) return;
+    
+    switch(e.key) {
+        case 'ArrowLeft':
+            move(-1);
+            break;
+        case 'ArrowRight':
+            move(1);
+            break;
+        case 'ArrowDown':
+            drop();
+            break;
+        case 'ArrowUp':
+            rotateCurrentPiece();
+            break;
+    }
+});
+
+// Game loop
+function update(time = 0) {
+    const deltaTime = time - lastDrop;
+    
+    if(deltaTime > dropInterval) {
+        drop();
+        lastDrop = time;
+    }
+    
+    drawBoard();
+    requestAnimationFrame(update);
+}
+
+// Start game
+newPiece();
+update();
+</script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. Mobile-friendly controls with touch buttons
+2. Keyboard support for desktop play
+3. Responsive canvas sizing
+4. Score tracking and display
+5. Progressive difficulty (pieces fall faster as score increases)
+6. Game over detection and restart
+7. All standard Tetris mechanics:
+   - Piece rotation
+   - Line clearing
+   - Collision detection
+   - Score system
+   - All 7 standard tetrominos
+
+Controls:
+- Mobile: Use the on-screen buttons
+  - Left/Right arrows to move
+  - Down arrow to drop faster
+  - Rotate button to rotate piece
+- Desktop: Use keyboard
+  - Left/Right arrows to move
+  - Down arrow to drop faster
+  - Up arrow to rotate
+
+The game automatically adjusts to screen size while maintaining playable proportions. The scoring system follows classic Tetris rules:
+- 1 line = 40 points
+- 2 lines = 100 points
+- 3 lines = 300 points
+- 4 lines = 1200 points
+
+The game speeds up as your score increases, making it progressively more challenging. If you lose, the game will automatically reset after showing your final score.

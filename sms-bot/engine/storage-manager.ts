@@ -374,6 +374,12 @@ export async function saveCodeToSupabase(
             logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ZAD app`);
         }
         
+        // Set type to GAME if this is a game
+        if (coach === 'game') {
+            data.type = 'GAME';
+            logWithTimestamp(`🎮 Setting type to 'GAME' for game app`);
+        }
+        
         let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
             .insert(data)

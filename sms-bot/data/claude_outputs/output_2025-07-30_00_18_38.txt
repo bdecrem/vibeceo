@@ -1,0 +1,429 @@
+I'll create a mobile-friendly Tetris game with touch controls and keyboard support. Here's the complete implementation:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Tetris</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            background: #111;
+            overflow: hidden;
+            touch-action: none;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: #000;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+        
+        .score-display {
+            position: fixed;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+        }
+        
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        #startButton {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="score-display">
+        Score: <span id="score">0</span><br>
+        Level: <span id="level">1</span>
+    </div>
+    <div class="controls">
+        <div class="control-btn" id="leftBtn">←</div>
+        <div class="control-btn" id="rotateBtn">↻</div>
+        <div class="control-btn" id="downBtn">↓</div>
+        <div class="control-btn" id="rightBtn">→</div>
+    </div>
+    <div id="startScreen">
+        <div>TETRIS</div>
+        <button id="startButton">Start Game</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game constants
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        const COLORS = [
+            null,
+            '#FF0D72', // I
+            '#0DC2FF', // J
+            '#0DFF72', // L
+            '#F538FF', // O
+            '#FF8E0D', // S
+            '#FFE138', // T
+            '#3877FF'  // Z
+        ];
+
+        const SHAPES = [
+            [],
+            [[1, 1, 1, 1]], // I
+            [[2, 0, 0], [2, 2, 2]], // J
+            [[0, 0, 3], [3, 3, 3]], // L
+            [[4, 4], [4, 4]], // O
+            [[0, 5, 5], [5, 5, 0]], // S
+            [[0, 6, 0], [6, 6, 6]], // T
+            [[7, 7, 0], [0, 7, 7]]  // Z
+        ];
+
+        // Game state
+        let score = 0;
+        let level = 1;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        let dropCounter = 0;
+        let gameOver = false;
+        let isPlaying = false;
+
+        const player = {
+            pos: {x: 0, y: 0},
+            matrix: null,
+            score: 0
+        };
+
+        const arena = createMatrix(COLS, ROWS);
+
+        function createMatrix(w, h) {
+            const matrix = [];
+            while (h--) {
+                matrix.push(new Array(w).fill(0));
+            }
+            return matrix;
+        }
+
+        function collide(arena, player) {
+            const [m, o] = [player.matrix, player.pos];
+            for (let y = 0; y < m.length; ++y) {
+                for (let x = 0; x < m[y].length; ++x) {
+                    if (m[y][x] !== 0 &&
+                        (arena[y + o.y] &&
+                        arena[y + o.y][x + o.x]) !== 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function merge(arena, player) {
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        arena[y + player.pos.y][x + player.pos.x] = value;
+                    }
+                });
+            });
+        }
+
+        function rotate(matrix, dir) {
+            for (let y = 0; y < matrix.length; ++y) {
+                for (let x = 0; x < y; ++x) {
+                    [
+                        matrix[x][y],
+                        matrix[y][x],
+                    ] = [
+                        matrix[y][x],
+                        matrix[x][y],
+                    ];
+                }
+            }
+            if (dir > 0) {
+                matrix.forEach(row => row.reverse());
+            } else {
+                matrix.reverse();
+            }
+        }
+
+        function playerDrop() {
+            player.pos.y++;
+            if (collide(arena, player)) {
+                player.pos.y--;
+                merge(arena, player);
+                playerReset();
+                arenaSweep();
+                updateScore();
+            }
+            dropCounter = 0;
+        }
+
+        function playerMove(dir) {
+            player.pos.x += dir;
+            if (collide(arena, player)) {
+                player.pos.x -= dir;
+            }
+        }
+
+        function playerRotate(dir) {
+            const pos = player.pos.x;
+            let offset = 1;
+            rotate(player.matrix, dir);
+            while (collide(arena, player)) {
+                player.pos.x += offset;
+                offset = -(offset + (offset > 0 ? 1 : -1));
+                if (offset > player.matrix[0].length) {
+                    rotate(player.matrix, -dir);
+                    player.pos.x = pos;
+                    return;
+                }
+            }
+        }
+
+        function playerReset() {
+            const pieces = 'IJLOSTZ';
+            player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
+            player.pos.y = 0;
+            player.pos.x = (arena[0].length / 2 | 0) -
+                          (player.matrix[0].length / 2 | 0);
+            if (collide(arena, player)) {
+                gameOver = true;
+                isPlaying = false;
+                document.getElementById('startScreen').style.display = 'flex';
+            }
+        }
+
+        function createPiece(type) {
+            const piece = SHAPES[pieces.indexOf(type) + 1];
+            return piece;
+        }
+
+        function arenaSweep() {
+            let rowCount = 1;
+            outer: for (let y = arena.length - 1; y > 0; --y) {
+                for (let x = 0; x < arena[y].length; ++x) {
+                    if (arena[y][x] === 0) {
+                        continue outer;
+                    }
+                }
+                const row = arena.splice(y, 1)[0].fill(0);
+                arena.unshift(row);
+                ++y;
+                score += rowCount * 100;
+                rowCount *= 2;
+                if (score > level * 1000) {
+                    level++;
+                    dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+                }
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawMatrix(arena, {x: 0, y: 0});
+            drawMatrix(player.matrix, player.pos);
+        }
+
+        function drawMatrix(matrix, offset) {
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        ctx.fillStyle = COLORS[value];
+                        ctx.fillRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE,
+                            BLOCK_SIZE,
+                            BLOCK_SIZE
+                        );
+                        ctx.strokeStyle = 'black';
+                        ctx.strokeRect(
+                            (x + offset.x) * BLOCK_SIZE,
+                            (y + offset.y) * BLOCK_SIZE,
+                            BLOCK_SIZE,
+                            BLOCK_SIZE
+                        );
+                    }
+                });
+            });
+        }
+
+        function update(time = 0) {
+            if (!isPlaying) return;
+            
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                playerDrop();
+            }
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function resizeCanvas() {
+            const gameHeight = ROWS * BLOCK_SIZE;
+            const gameWidth = COLS * BLOCK_SIZE;
+            const scale = Math.min(
+                (window.innerHeight - 100) / gameHeight,
+                window.innerWidth / gameWidth
+            );
+            
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+            canvas.style.transform = `scale(${scale})`;
+            canvas.style.transformOrigin = 'top center';
+        }
+
+        // Controls
+        document.getElementById('leftBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            playerMove(-1);
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            playerMove(1);
+        });
+
+        document.getElementById('downBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            playerDrop();
+        });
+
+        document.getElementById('rotateBtn').addEventListener('touchstart', e => {
+            e.preventDefault();
+            playerRotate(1);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', event => {
+            if (!isPlaying) return;
+            
+            switch(event.keyCode) {
+                case 37: // Left
+                    playerMove(-1);
+                    break;
+                case 39: // Right
+                    playerMove(1);
+                    break;
+                case 40: // Down
+                    playerDrop();
+                    break;
+                case 38: // Up
+                    playerRotate(1);
+                    break;
+            }
+        });
+
+        // Start game
+        document.getElementById('startButton').addEventListener('click', () => {
+            document.getElementById('startScreen').style.display = 'none';
+            isPlaying = true;
+            gameOver = false;
+            score = 0;
+            level = 1;
+            dropInterval = 1000;
+            arena.forEach(row => row.fill(0));
+            playerReset();
+            updateScore();
+            update();
+        });
+
+        // Initialize
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        playerReset();
+        draw();
+    </script>
+</body>
+</html>
+```
+
+This implementation includes:
+
+1. Responsive canvas sizing that maintains the correct aspect ratio
+2. Touch controls with buttons for left, right, rotate, and drop
+3. Keyboard support (arrow keys)
+4. Score tracking and leveling system
+5. Increasing difficulty (pieces fall faster as level increases)
+6. Game over detection
+7. Start screen with restart capability
+8. Clean visual design with semi-transparent controls
+
+To play:
+- Use the arrow buttons or keyboard arrows to move pieces
+- Tap the rotate button or up arrow to rotate
+- Tap down or press down arrow for soft drop
+- Clear lines to score points
+- Game speeds up as you level up
+- Game ends if pieces stack to the top
+
+The game is optimized for mobile devices but works equally well on desktop browsers with keyboard controls. The canvas automatically scales to fit the screen while maintaining the correct aspect ratio.

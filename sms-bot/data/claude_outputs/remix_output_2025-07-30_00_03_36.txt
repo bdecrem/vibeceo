@@ -1,0 +1,330 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+        }
+
+        @keyframes neonPulse {
+            0% {
+                color: #fff;
+                text-shadow: 
+                    0 0 7px #fff,
+                    0 0 10px #fff,
+                    0 0 21px #fff,
+                    0 0 42px #0fa,
+                    0 0 82px #0fa,
+                    0 0 92px #0fa,
+                    0 0 102px #0fa,
+                    0 0 151px #0fa;
+            }
+            50% {
+                color: #fff; 
+                text-shadow:
+                    0 0 4px #fff,
+                    0 0 7px #fff,
+                    0 0 11px #fff,
+                    0 0 22px #0fa,
+                    0 0 42px #0fa,
+                    0 0 52px #0fa,
+                    0 0 62px #0fa,
+                    0 0 91px #0fa;
+            }
+            100% {
+                color: #fff;
+                text-shadow: 
+                    0 0 7px #fff,
+                    0 0 10px #fff,
+                    0 0 21px #fff,
+                    0 0 42px #0fa,
+                    0 0 82px #0fa,
+                    0 0 92px #0fa,
+                    0 0 102px #0fa,
+                    0 0 151px #0fa;
+            }
+        }
+
+        .score-overlay {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            color: white;
+            font-size: 48px;
+            font-family: "Courier New", monospace;
+            text-align: center;
+            pointer-events: none;
+            animation: neonPulse 2s infinite;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            animation: neonPulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="score-overlay">
+        <span id="playerScore">0</span> - <span id="aiScore">0</span>
+    </div>
+    <div id="startScreen" class="start-screen">
+        Tap or Press ENTER to Start
+    </div>
+
+    <script>
+        // [Previous JavaScript code remains exactly the same]
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const playerScoreElement = document.getElementById('playerScore');
+        const aiScoreElement = document.getElementById('aiScore');
+
+        // Game state
+        const game = {
+            isPlaying: false,
+            playerScore: 0,
+            aiScore: 0,
+            paddleWidth: 15,
+            paddleHeight: 80,
+            ballSize: 10,
+            ballSpeed: 7,
+            paddleSpeed: 8
+        };
+
+        // Game objects
+        const player = {
+            x: 0,
+            y: 0,
+            dy: 0
+        };
+
+        const ai = {
+            x: 0,
+            y: 0,
+            dy: 0
+        };
+
+        const ball = {
+            x: 0,
+            y: 0,
+            dx: 0,
+            dy: 0,
+            speed: game.ballSpeed
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Update paddle positions
+            player.x = 50;
+            player.y = canvas.height / 2 - game.paddleHeight / 2;
+            
+            ai.x = canvas.width - 50 - game.paddleWidth;
+            ai.y = canvas.height / 2 - game.paddleHeight / 2;
+
+            resetBall();
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * game.ballSpeed;
+            ball.dy = (Math.random() * 2 - 1) * game.ballSpeed;
+        }
+
+        function startGame() {
+            game.isPlaying = true;
+            game.playerScore = 0;
+            game.aiScore = 0;
+            startScreen.style.display = 'none';
+            resetBall();
+            updateScore();
+        }
+
+        function updateScore() {
+            playerScoreElement.textContent = game.playerScore;
+            aiScoreElement.textContent = game.aiScore;
+        }
+
+        // Input handling
+        let touchY = null;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchY = e.touches[0].clientY;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (touchY !== null) {
+                const newY = e.touches[0].clientY;
+                player.dy = (newY - touchY) * 0.5;
+                touchY = newY;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            touchY = null;
+            player.dy = 0;
+        });
+
+        // Keyboard controls
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'Enter' && !game.isPlaying) {
+                startGame();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Click/tap to start
+        canvas.addEventListener('click', () => {
+            if (!game.isPlaying) {
+                startGame();
+            }
+        });
+
+        function update() {
+            if (!game.isPlaying) return;
+
+            // Player paddle movement
+            if (keys['ArrowUp']) {
+                player.dy = -game.paddleSpeed;
+            } else if (keys['ArrowDown']) {
+                player.dy = game.paddleSpeed;
+            } else if (!touchY) {
+                player.dy *= 0.9; // Friction when no input
+            }
+
+            player.y += player.dy;
+            player.y = Math.max(0, Math.min(canvas.height - game.paddleHeight, player.y));
+
+            // AI paddle movement
+            const aiCenter = ai.y + game.paddleHeight / 2;
+            const ballFutureY = ball.y + ball.dy * 10;
+            
+            if (Math.abs(aiCenter - ballFutureY) > 10) {
+                ai.dy = Math.sign(ballFutureY - aiCenter) * game.paddleSpeed * 0.7;
+            } else {
+                ai.dy = 0;
+            }
+
+            ai.y += ai.dy;
+            ai.y = Math.max(0, Math.min(canvas.height - game.paddleHeight, ai.y));
+
+            // Ball movement
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top and bottom
+            if (ball.y <= 0 || ball.y >= canvas.height - game.ballSize) {
+                ball.dy *= -1;
+            }
+
+            // Ball collision with paddles
+            if (ball.dx < 0 && 
+                ball.x <= player.x + game.paddleWidth &&
+                ball.y >= player.y &&
+                ball.y <= player.y + game.paddleHeight) {
+                ball.dx *= -1.1; // Increase speed slightly
+                ball.dy += player.dy * 0.2; // Add some of the paddle's momentum
+            }
+
+            if (ball.dx > 0 &&
+                ball.x >= ai.x - game.ballSize &&
+                ball.y >= ai.y &&
+                ball.y <= ai.y + game.paddleHeight) {
+                ball.dx *= -1.1; // Increase speed slightly
+                ball.dy += ai.dy * 0.2; // Add some of the paddle's momentum
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                game.aiScore++;
+                updateScore();
+                resetBall();
+            } else if (ball.x > canvas.width) {
+                game.playerScore++;
+                updateScore();
+                resetBall();
+            }
+        }
+
+        function render() {
+            // Clear canvas with some transparency to create trail effect
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw paddles
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x, player.y, game.paddleWidth, game.paddleHeight);
+            ctx.fillRect(ai.x, ai.y, game.paddleWidth, game.paddleHeight);
+
+            // Draw ball
+            ctx.fillRect(ball.x, ball.y, game.ballSize, game.ballSize);
+
+            if (!game.isPlaying) {
+                startScreen.style.display = 'block';
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        gameLoop();
+    </script>
+</body>
+</html>
+```

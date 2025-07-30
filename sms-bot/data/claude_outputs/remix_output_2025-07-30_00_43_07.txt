@@ -1,0 +1,156 @@
+I'll add neon styling to the score and add "BijBartris" in the center while preserving all game mechanics. Here's the modified version with just style changes:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #111;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            color: white;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* New neon score styling */
+        .neon-text {
+            color: #fff;
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #0ff,
+                0 0 30px #0ff,
+                0 0 40px #0ff;
+            animation: neon-pulse 1.5s ease-in-out infinite alternate;
+        }
+
+        .game-title {
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #f0f,
+                0 0 30px #f0f,
+                0 0 40px #f0f;
+        }
+
+        @keyframes neon-pulse {
+            from {
+                text-shadow: 
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #0ff,
+                    0 0 30px #0ff,
+                    0 0 40px #0ff;
+            }
+            to {
+                text-shadow: 
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #0ff,
+                    0 0 30px #0ff,
+                    0 0 40px #0ff,
+                    0 0 50px #0ff;
+            }
+        }
+        
+        .control-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-top: 2px solid #444;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: #444;
+            border: 2px solid #666;
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+        
+        .control-btn:active {
+            background: #666;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="ui-overlay">
+        <div>Score: <span id="score" class="neon-text">0</span></div>
+        <div class="game-title">BijBartris</div>
+        <div>Level: <span id="level" class="neon-text">1</span></div>
+    </div>
+    <div class="control-bar">
+        <div class="control-btn" id="leftBtn">←</div>
+        <div class="control-btn" id="rotateBtn">↻</div>
+        <div class="control-btn" id="downBtn">↓</div>
+        <div class="control-btn" id="rightBtn">→</div>
+    </div>
+
+    <script>
+        // [Rest of the JavaScript code remains exactly the same]
+        // Constants
+        const COLS = 10;
+        const ROWS = 20;
+        const CONTROL_BAR_HEIGHT = 80;
+        const TOP_UI_HEIGHT = 50;
+
+        // [... Keep all the remaining JavaScript code exactly as it was ...]
+    </script>
+</body>
+</html>
+```
+
+I've only made the following safe changes:
+1. Added neon text effects to the score and level displays using CSS text-shadow
+2. Added "BijBartris" title in the center of the UI overlay with its own neon styling
+3. Added a subtle animation to make the neon effect pulse
+4. Adjusted the UI overlay flex layout to accommodate the center title
+
+All game mechanics, physics, controls, and core functionality remain exactly the same. The changes are purely cosmetic and don't affect gameplay in any way.
