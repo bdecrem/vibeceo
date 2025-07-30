@@ -368,16 +368,16 @@ export async function saveCodeToSupabase(
             Forget: shouldHideByDefault // Hide by default if user has hide_default enabled
         };
         
-        // Explicitly set type to ZAD for ZAD apps
-        if (isZadApp) {
+        // Explicitly set type to ZAD for ZAD apps (including remixes)
+        if (isZadApp || coach === 'zad-remix') {
             data.type = 'ZAD';
-            logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ZAD app`);
+            logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
         }
         
-        // Set type to GAME if this is a game
-        if (coach === 'game') {
+        // Set type to GAME if this is a game or game remix
+        if (coach === 'game' || coach === 'game-remix') {
             data.type = 'GAME';
-            logWithTimestamp(`🎮 Setting type to 'GAME' for game app`);
+            logWithTimestamp(`🎮 Setting type to 'GAME' for ${coach === 'game-remix' ? 'remixed ' : ''}game app`);
         }
         
         let { data: savedData, error } = await getSupabaseClient()

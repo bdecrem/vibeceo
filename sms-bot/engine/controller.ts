@@ -1618,6 +1618,8 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 .eq('app_slug', appSlug)
                 .single();
             
+            logWithTimestamp(`📊 App lookup for '${appSlug}': type='${appInfo?.type || 'null'}', error=${appError?.message || 'none'}`);
+            
             const isZadApp = appInfo?.type === 'ZAD';
             const isGameApp = appInfo?.type === 'GAME';
             
@@ -1781,8 +1783,14 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 }
             }
             
-            // Deploy remix result
-            const deployResult = await saveCodeToSupabase(code, "remix", userSlug, senderPhone, combinedPromptForStorage);
+            // Deploy remix result - pass type info if remixing a game or ZAD
+            let remixCoach = "remix";
+            if (isGameApp) {
+                remixCoach = "game-remix";
+            } else if (isZadApp) {
+                remixCoach = "zad-remix";
+            }
+            const deployResult = await saveCodeToSupabase(code, remixCoach, userSlug, senderPhone, combinedPromptForStorage);
             if (deployResult.publicUrl) {
                 // Generate OG image
                 try {
