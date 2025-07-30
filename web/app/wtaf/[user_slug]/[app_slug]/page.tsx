@@ -101,7 +101,9 @@ setTimeout(function() {
 	
 	// Update status and user label
 	const userStatus = document.querySelector('#user-status');
-	if (userStatus) userStatus.innerHTML = '🎭 DEMO MODE - Try it out!';
+	if (userStatus) {
+		userStatus.innerHTML = '<span style="background-color: #ff6b6b; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold; display: inline-block;">🎭 DEMO MODE – Real thing works. This? Kinda, sometimes.</span>';
+	}
 	
 	const userLabel = document.querySelector('#current-user-label');
 	if (userLabel) userLabel.textContent = demoUser.userLabel;
