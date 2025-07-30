@@ -1162,8 +1162,8 @@ export default function WebtoysSitePage() {
         
         <div className="examples-container">
           <div className="section-header">
-            <h2 className="section-title">FRESH DIGITAL CHAOS</h2>
-            <p className="section-subtitle">Straight from the minds of digital rebels</p>
+            <h2 className="section-title">THE HALL OF STUFF</h2>
+            <p className="section-subtitle">Featured Webtoys we're not entirely ashamed of.</p>
           </div>
           
           <div className="examples-grid">
@@ -1176,7 +1176,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-label">The prompt:</div>
                 <div className="prompt-text">WTAF Build me a fun sushi bar site</div>
                 <div className="example-actions">
-                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">View Site</a>
+                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1218,7 +1218,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-label">The prompt:</div>
                 <div className="prompt-text">WTAF make a retro paint app like old windows</div>
                 <div className="example-actions">
-                  <a href="/bart/flame-cheetah-accumulating" className="btn-view">Paint!</a>
+                  <a href="/bart/flame-cheetah-accumulating" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1229,26 +1229,30 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Todo App */}
             <div className="example-card">
-              <div className="example-preview app magic-cursor">
-                <div className="app-icon">✅</div>
-                <div className="app-icon">📝</div>
-                <div className="app-icon">🎯</div>
-                <div className="app-icon">⏰</div>
-                <div className="app-icon">🏆</div>
-                <div className="app-icon">💫</div>
+              <div className="example-preview app magic-cursor" style={{
+                backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}>
               </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF I need a todo app that makes productivity feel like a game</div>
+                <div className="prompt-text">WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.</div>
                 <div className="example-actions">
-                  <a href="#" className="btn-view">Try App</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF I need a todo app that makes productivity feel like a game")}>
+                  <a href="/bart/tangerine-bat-tracking" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+          
+          <div className="trending-footer">
+            <Link href="/featured" className="btn-see-more">
+              SEE ALL FEATURED →
+            </Link>
           </div>
         </div>
       </section>
@@ -2363,7 +2367,7 @@ export default function WebtoysSitePage() {
         /* How it Works */
         .how-it-works {
           padding: 6rem 2rem;
-          background: var(--cream);
+          background: linear-gradient(135deg, #E8D5C4 0%, #D9C8BC 40%, #C8D4E0 70%, #D1DCE8 100%); /* Subtle brown to blue gradient */
         }
         
         .steps-container {
