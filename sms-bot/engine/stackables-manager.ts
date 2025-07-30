@@ -903,6 +903,34 @@ export function buildRemixPrompt(userRequest: string, htmlContent: string | null
 }
 
 /**
+ * Build game-specific remix prompt that preserves JavaScript
+ * Creates a remix prompt with explicit instructions to preserve game logic
+ */
+export function buildGameRemixPrompt(userRequest: string, htmlContent: string | null): string {
+    logWithTimestamp(`🎮 Building GAME remix prompt`);
+    logWithTimestamp(`User request: "${userRequest}"`);
+    logWithTimestamp(`HTML content included: ${htmlContent ? 'YES' : 'NO'}`);
+    
+    let prompt = `CRITICAL: This is a GAME remix request. You must preserve ALL JavaScript code exactly as it is.
+
+User request: ${userRequest}
+
+IMPORTANT RULES:
+- If this is a visual change (fonts, colors, UI), ONLY modify CSS
+- NEVER replace <script> sections with comments or placeholders
+- NEVER remove or modify JavaScript game logic
+- Return the complete HTML with ALL original JavaScript preserved character-for-character`;
+    
+    if (htmlContent && htmlContent.trim()) {
+        prompt += `\n\nHTML to use as template:\n\`\`\`html\n${htmlContent}\n\`\`\``;
+    }
+    
+    logWithTimestamp(`Final GAME remix prompt length: ${prompt.length} characters`);
+    
+    return prompt;
+}
+
+/**
  * Parse stackzad command from user input
  * Extracts source ZAD app slug and cleaned user request
  * Supports both "wtaf --stackzad" and "--stackzad" formats
