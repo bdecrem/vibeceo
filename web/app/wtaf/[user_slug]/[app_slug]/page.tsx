@@ -70,10 +70,17 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
         const injectedSearch = '?${safeQueryString}';
         
         // Override location.search getter
-        Object.defineProperty(window.location, 'search', {
-            get: function() { return injectedSearch; },
-            configurable: true
-        });
+        try {
+            Object.defineProperty(window.location, 'search', {
+                get: function() { return injectedSearch; },
+                configurable: true
+            });
+        } catch (e) {
+            // If we can't override location.search, try a different approach
+            console.warn('Could not override location.search, trying alternative approach');
+            // Store the search params globally for the app to use
+            window.INJECTED_SEARCH_PARAMS = injectedSearch;
+        }
         
         // Override URLSearchParams to work with our injected params
         const OriginalURLSearchParams = window.URLSearchParams;

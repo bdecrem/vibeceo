@@ -1,18 +1,44 @@
 # WTAF Request Processing Flow
 
 ## ARCHITECTURE OVERVIEW
-**2-GPT-Call System:**
+**2-GPT-Call System (for most apps):**
 1. **Classifier GPT**: Detects request type + writes comprehensive product briefs (for ZAD apps)
 2. **Builder GPT**: Takes product brief + WTAF design system → builds HTML
 
+**Exceptions (skip classifier):**
+- Memes: Separate flow with GPT-4o + DALL-E 3
+- Games: Direct to builder with game prompt
+- Override flags: Direct to specific builders
+
 ## USER PROMPT
 
-### Game?
-`wtaf-processor.ts` decides based on string capture (keywords: "game", "pong", "puzzle", "arcade").
+### Meme?
+Memes have a completely separate flow through `processMemeRequest()` (controller.ts line 1664).
+- Uses `meme-processor.ts` 
+- GPT-4o generates meme text
+- DALL-E 3 creates meme image
+- Returns HTML page with meme
+- Sets type='MEME' in database
 
-**Yes**: `builder-game.json` sent to Builder GPT by `wtaf-processor.ts`
+### Game?
+`controller.ts` detects games based on keywords: "game", "pong", "puzzle", "arcade" (lines 1375-1378).
+
+**Yes**: 
+- Sets `configType = 'game'`
+- Skips classifier entirely (wtaf-processor.ts line 333)
+- Uses `builder-game.json` with Builder GPT
+- Higher creativity settings (GPT-4o, temp 0.8)
 
 **Else**: Continue to classification
+
+### Override Flags (Skip Classifier)
+Several flags bypass the classifier entirely:
+- `--admin` → Forces admin dual-page generation
+- `--admin-test` → Uses minimal test builder
+- `--zad-test` → Uses simple ZAD test builder
+- `--zad-api` → Uses comprehensive ZAD builder with API
+- `--music` → Forces music app generation
+- Contains "public" → Creates public ZAD app
 
 ### Classifier Prompt Constructed
 - Controller: `controller.ts` orchestrates the workflow

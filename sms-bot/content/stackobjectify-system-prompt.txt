@@ -11,6 +11,12 @@ CRITICAL: THIS IS A ZAD APP
 
 IMPORTANT REQUIREMENTS:
 
+0. URL DISPLAY RULES:
+   - NEVER use window.location.origin or window.location.pathname (returns 'null' and 'srcdoc')
+   - NEVER try to construct full URLs
+   - ONLY show the query parameter as: POSTID: ?id=[id]
+   - Users will append this to their base URL themselves
+
 1. DO NOT REDEFINE getAppId() - IT'S ALREADY MODIFIED:
    - The ZAD helpers already include a modified getAppId() function
    - It automatically checks for window.OBJECTIFY_SOURCE_APP_ID
@@ -75,9 +81,10 @@ document.addEventListener('DOMContentLoaded', async () => {
    - Each item links to ?id=[object-id]
    - Show total count
    - Include search/filter if appropriate
-   - IMPORTANT: Display full shareable URLs that users can copy
-   - Show complete URL like: https://domain.com/user/app?id=123
-   - Consider adding a copy button or making URLs selectable
+   - IMPORTANT: Display the query parameter needed for deep linking
+   - Show as: POSTID: ?id=[object-id]
+   - Keep it simple and clean - no complex URL displays
+   - Use monospace font and muted color
 
 6. OBJECT VIEW:
    - Parse URL for id parameter
@@ -138,7 +145,13 @@ function navigateTo(queryString) {
 
 // Main app logic
 async function loadAndDisplayData() {
-    const urlParams = new URLSearchParams(window.location.search);
+    // Handle iframe query parameter injection - check multiple sources
+    let searchParams = window.location.search;
+    if (!searchParams && window.INJECTED_SEARCH_PARAMS) {
+        searchParams = window.INJECTED_SEARCH_PARAMS;
+        console.log('Using injected search params:', searchParams);
+    }
+    const urlParams = new URLSearchParams(searchParams);
     const objectId = urlParams.get('id');
     
     try {
@@ -168,24 +181,17 @@ async function loadAndDisplayData() {
 
 // Example index display with proper navigation
 function displayIndex(items) {
-    // Get the full base URL
-    const baseUrl = window.location.origin + window.location.pathname;
+    // DO NOT try to get URLs from window.location - it won't work in iframes
+    // Just display the query parameter for users to append to their URL
     
     document.getElementById('content').innerHTML = items.map(item => `
         <div class="item-card">
             <a href="#" onclick="return navigateTo('?id=${item.id}')">
                 ${item.title}
             </a>
-            <!-- Display full shareable URL -->
-            <div class="url-container">
-                <input type="text" readonly value="${baseUrl}?id=${item.id}" 
-                       onclick="this.select()" 
-                       style="width: 100%; padding: 5px; font-family: monospace;">
-                <button onclick="navigator.clipboard.writeText('${baseUrl}?id=${item.id}'); 
-                               this.textContent = '✓ Copied!'; 
-                               setTimeout(() => this.textContent = 'Copy URL', 2000)">
-                    Copy URL
-                </button>
+            <!-- Display post ID for URL construction -->
+            <div class="url-info" style="font-family: monospace; font-size: 14px; color: #666; margin-top: 10px;">
+                POSTID: ?id=${item.id}
             </div>
         </div>
     `).join('');
