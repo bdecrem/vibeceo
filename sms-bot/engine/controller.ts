@@ -1219,6 +1219,7 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 logWarning(`OG generation failed for stackobjectify: ${error instanceof Error ? error.message : String(error)}`);
             }
             
+            const needsEmail = codeWithAppId.includes('[CONTACT_EMAIL]');
             await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
             logWithTimestamp("🎉 STACKOBJECTIFY PROCESSING COMPLETE!");
             logWithTimestamp(`🌐 Index URL: ${deployResult.publicUrl}`);
