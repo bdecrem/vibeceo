@@ -14,7 +14,13 @@ const handleRegister = async (e: React.FormEvent) => {
   e.preventDefault()
   setError(null)
 
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`
+    }
+  })
 
   console.log('REGISTER RESPONSE:', data, error)
 
@@ -23,13 +29,22 @@ const handleRegister = async (e: React.FormEvent) => {
     return
   }
 
-  if (!data.session) {
-    setError('No session returned. You may need to confirm your email.')
-    return
+  // Check if user was created
+  if (data.user) {
+    // If we have a session, email confirmation is disabled
+    if (data.session) {
+      console.log('Session created, redirecting to /link')
+      window.location.href = '/link'
+    } else {
+      // No session means email confirmation is required
+      setError('Registration successful! Please check your email to confirm your account before logging in.')
+      setTimeout(() => {
+        router.push('/login')
+      }, 5000)
+    }
+  } else {
+    setError('Registration failed. Please try again.')
   }
-
-  // If session exists, continue
-  window.location.href = '/link'
 }
 
 

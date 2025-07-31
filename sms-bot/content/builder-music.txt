@@ -76,6 +76,66 @@ The Sonauto API generates AI music. Here's everything you need:
 
 ### Complete Working Example
 
+```html
+<!-- Example HTML for custom audio player -->
+<div class="player-card">
+    <audio id="audioPlayer" style="display: none;"></audio>
+    
+    <!-- Custom controls for better mobile UX -->
+    <div class="custom-audio-controls">
+        <button id="customPlayBtn" class="custom-play-btn">▶️</button>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="timeDisplay" class="time-display">0:00 / 0:00</div>
+    </div>
+    
+    <!-- OR: Use default controls with explicit sizing -->
+    <!-- <audio id="audioPlayer" controls style="width: 100%; height: 60px;"></audio> -->
+</div>
+
+<style>
+.custom-audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.custom-play-btn {
+    width: 80px;
+    height: 80px;
+    background: #FFD63D;
+    border: 4px solid #000;
+    border-radius: 50%;
+    font-size: 32px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.progress-container {
+    flex: 1;
+    height: 12px;
+    background: #E0E0E0;
+    border: 2px solid #000;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #FFD63D;
+    width: 0%;
+    transition: width 0.2s;
+}
+
+.time-display {
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 100px;
+    text-align: right;
+}
+</style>
+```
+
 ```javascript
 // Generate music function with seed support
 async function generateMusic(prompt, isInstrumental = true, seed = null) {
@@ -149,11 +209,49 @@ async function pollForCompletion(taskId) {
     return { success: false, error: 'Generation timed out' };
 }
 
-// Play audio
+// Play audio with custom controls
 function playAudio(audioUrl) {
     const audio = document.getElementById('audioPlayer');
     audio.src = audioUrl;
     audio.play();
+}
+
+// Custom audio controls for better mobile UX
+function setupCustomAudioControls() {
+    const audio = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('customPlayBtn');
+    const progressBar = document.getElementById('progressBar');
+    const timeDisplay = document.getElementById('timeDisplay');
+    
+    // Play/pause toggle
+    playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerHTML = '⏸️';
+        } else {
+            audio.pause();
+            playBtn.innerHTML = '▶️';
+        }
+    });
+    
+    // Update progress
+    audio.addEventListener('timeupdate', () => {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        progressBar.style.width = progress + '%';
+        
+        const currentMinutes = Math.floor(audio.currentTime / 60);
+        const currentSeconds = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+        const durationMinutes = Math.floor(audio.duration / 60) || 0;
+        const durationSeconds = Math.floor(audio.duration % 60).toString().padStart(2, '0') || '00';
+        
+        timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
+    });
+    
+    // Reset button when audio ends
+    audio.addEventListener('ended', () => {
+        playBtn.innerHTML = '▶️';
+        progressBar.style.width = '0%';
+    });
 }
 
 // Example: Managing generation history for iterations
@@ -276,7 +374,9 @@ Conversation-based music refinement through prompt evolution
 1. **Audio Player**
    - Always include standard HTML5 audio controls
    - Style to match chosen theme
-   - Large play/pause button for mobile
+   - **CRITICAL: Make play button LARGE and EASILY CLICKABLE**
+   - Default HTML5 audio controls are often too small - consider custom controls
+   - Minimum play button size: 60px x 60px for mobile
    - Show track duration when available
 
 2. **Generation Status**
@@ -306,19 +406,43 @@ Conversation-based music refinement through prompt evolution
    - ALWAYS add sufficient padding in the container holding the audio element
    - Minimum padding: 2rem (32px) on all sides
    - Add explicit height to audio containers if needed
-   - Consider the browser's default audio control heights (typically 40-54px)
-   - Test on mobile to ensure controls aren't cut off
-   - Example CSS for player containers:
+   - **IMPORTANT: Default browser audio controls are TOO SMALL for mobile**
+   - Consider custom play/pause buttons instead of relying on browser controls
+   - If using default controls, ensure they're not cramped or cut off
+   - Example CSS for better audio controls:
    ```css
    .player-card {
        padding: 2rem;
-       min-height: 120px; /* Ensure space for audio controls */
+       min-height: 150px; /* More space for controls */
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       gap: 1rem;
    }
    
    audio {
        width: 100%;
-       height: 54px; /* Explicit height for consistency */
-       margin: 1rem 0; /* Space above and below */
+       height: 60px; /* Larger height for better clickability */
+       margin: 1rem 0;
+   }
+   
+   /* Alternative: Custom play button */
+   .custom-play-btn {
+       width: 80px;
+       height: 80px;
+       background: #FFD63D;
+       border: 4px solid #000;
+       border-radius: 50%;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       font-size: 32px;
+       cursor: pointer;
+       transition: transform 0.2s;
+   }
+   
+   .custom-play-btn:active {
+       transform: scale(0.95);
    }
    ```
 
@@ -330,6 +454,10 @@ Conversation-based music refinement through prompt evolution
 4. **Mobile First**: Design for phones first, enhance for desktop
 5. **Theme Consistency**: Pick ONE theme and stick to it throughout
 6. **No Placeholder Content**: Include real examples, real prompts, real functionality
+7. **AUDIO PLAYER USABILITY**: Default HTML5 audio controls are TOO SMALL on mobile. Either:
+   - Implement custom controls with LARGE (80px+) play button
+   - OR ensure default controls have sufficient height (60px+) and padding
+   - Test on mobile to ensure play button is easily tappable
 
 ## OUTPUT FORMAT
 
