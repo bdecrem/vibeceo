@@ -405,9 +405,9 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WTAF – Delusional App Generator</title>
-    <meta property="og:title" content="WTAF by AF" />
-    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <title>${topText} ${bottomText} – WEBTOYS Meme Magic</title>
+    <meta property="og:title" content="${topText} ${bottomText}" />
+    <meta property="og:description" content="Made with WEBTOYS — AI nonsense, human approved" />
     <meta property="og:image" content="${ogImageUrl}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -422,51 +422,85 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             box-sizing: border-box;
         }
         
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --blue: #6ECBFF;
+            --red: #FF4B4B;
+            --green-mint: #B6FFB3;
+            --purple-shadow: #C9C2F9;
+            --blue-deep: #4A9FD4;
+            --charcoal: #2A2A2A;
+        }
+        
         body {
-            font-family: 'Arial Black', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--cream);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
         
         .meme-container {
             position: relative;
             width: 100%;
-            max-width: 900px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 0, 128, 0.3);
-            border-radius: 25px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            overflow: hidden;
+            max-width: 800px;
+            background: white;
+            border: 6px solid var(--yellow);
+            border-radius: 2rem;
+            padding: 2.5rem;
+            box-shadow: 0 12px 0 var(--purple-shadow);
             transition: transform 0.3s ease;
+            transform: rotate(-1deg);
         }
         
         .meme-container:hover {
-            transform: scale(1.02);
+            transform: rotate(-1deg) translateY(-5px);
+            box-shadow: 0 16px 0 var(--purple-shadow);
         }
         
         .meme-image-wrapper {
             position: relative;
             width: 100%;
-            margin-bottom: 30px;
+            margin: 0.5rem 0;
+        }
+        
+        /* Meme text styling */
+        .meme-text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-align: center;
+            color: var(--charcoal);
+            margin: 0.5rem auto;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+        
+        .meme-text.top {
+            margin-bottom: 1rem;
+        }
+        
+        .meme-text.bottom {
+            margin-top: 1rem;
         }
         
         .meme-image {
             width: 100%;
             height: auto;
-            min-height: 500px;
-            max-height: 80vh;
-            object-fit: cover;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            position: relative;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            min-height: 400px;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 1.2rem;
+            border: 4px solid var(--charcoal);
+            background: white;
+            box-shadow: inset 0 0 0 2px var(--yellow);
         }
         
 
@@ -481,31 +515,27 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         .action-btn {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 18px 35px;
-            background: linear-gradient(45deg, #ff00ff, #00ffff);
-            color: #000000;
-            border: none;
-            border-radius: 50px;
-            font-family: 'Arial Black', Arial, sans-serif;
+            gap: 10px;
+            padding: 1rem 2.5rem;
+            background: white;
+            color: var(--charcoal);
+            border: 4px solid var(--charcoal);
+            border-radius: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow:
-                0 8px 25px rgba(255, 0, 255, 0.3),
-                0 0 20px rgba(255, 0, 255, 0.2);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 6px 0 var(--charcoal);
             text-decoration: none;
+            transform: rotate(-1deg);
         }
         
         .action-btn:hover:not(:disabled) {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow:
-                0 15px 35px rgba(255, 0, 255, 0.4),
-                0 0 30px rgba(255, 0, 255, 0.3);
+            transform: rotate(-1deg) translateY(-3px);
+            box-shadow: 0 8px 0 var(--charcoal);
         }
         
         .action-btn:disabled {
@@ -515,11 +545,19 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         }
         
         .copy-url-btn {
-            background: linear-gradient(45deg, #00ffff, #0080ff);
+            background: var(--blue);
+            border-color: var(--blue-deep);
+            box-shadow: 0 6px 0 var(--blue-deep);
+        }
+        
+        .copy-url-btn:hover {
+            box-shadow: 0 8px 0 var(--blue-deep);
         }
         
         .download-btn {
-            background: linear-gradient(45deg, #ff00ff, #ff0080);
+            background: var(--red);
+            border-color: var(--charcoal);
+            color: white;
         }
         
         .btn-icon {
@@ -534,19 +572,18 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             position: fixed;
             top: 30px;
             right: 30px;
-            background: linear-gradient(45deg, #ff00ff, #00ffff);
-            color: #000000;
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-family: 'Arial Black', Arial, sans-serif;
+            background: var(--green-mint);
+            color: var(--charcoal);
+            padding: 1rem 1.5rem;
+            border: 3px solid var(--charcoal);
+            border-radius: 2rem;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.9rem;
             z-index: 1000;
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 
-                0 8px 25px rgba(255, 0, 255, 0.3),
+            box-shadow: 0 6px 0 var(--charcoal),
                 0 0 20px rgba(255, 0, 255, 0.2);
             animation: slideInFade 2s ease-out;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
@@ -583,29 +620,81 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             }
         }
         
+        /* Floating emojis */
         .floating-emoji {
             position: fixed;
-            font-size: 30px;
+            font-size: 2rem;
+            opacity: 0.8;
             pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-            z-index: 1000;
+            z-index: 1;
+            animation: float 3s ease-in-out infinite;
+            transition: transform 0.3s ease;
         }
         
         @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
         
-        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
-        .emoji-2 { top: 20%; right: 15%; animation-delay: 1s; }
-        .emoji-3 { bottom: 20%; left: 20%; animation-delay: 2s; }
-        .emoji-4 { bottom: 30%; right: 10%; animation-delay: 3s; }
+        /* Call-to-Text Banner */
+        .cta-text-banner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--blue);
+            color: white;
+            padding: 1rem 1.5rem;
+            border: 3px solid var(--charcoal);
+            border-radius: 2rem;
+            box-shadow: 0 6px 0 var(--charcoal);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+            transform: rotate(-2deg);
+        }
+        
+        .emoji-bounce {
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%) rotate(-2deg); }
+            to { transform: translateX(0) rotate(-2deg); }
+        }
+        
+        /* Prompt Display */
+        .prompt-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.75rem;
+            opacity: 0.5;
+            color: var(--charcoal);
+            transition: opacity 0.3s ease;
+        }
+        
+        .prompt-display:hover {
+            opacity: 0.8;
+        }
         
         @media (max-width: 768px) {
             .meme-container {
                 margin: 10px;
                 padding: 20px;
                 max-width: 100%;
+            }
+            
+            .meme-text {
+                font-size: 1.75rem;
             }
             
             .meme-image {
@@ -640,6 +729,10 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 padding: 15px;
             }
             
+            .meme-text {
+                font-size: 1.5rem;
+            }
+            
             .meme-image {
                 min-height: 350px;
             }
@@ -667,15 +760,18 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         <span class="copied-checkmark">✓</span>
     </div>
 
-    <div class="floating-emoji emoji-1">😂</div>
-    <div class="floating-emoji emoji-2">🔥</div>
-    <div class="floating-emoji emoji-3">💻</div>
-    <div class="floating-emoji emoji-4">🎨</div>
+    <!-- Floating emojis -->
+    <div class="floating-emoji" data-speed="2" style="top: 10%; left: 10%;">🎯</div>
+    <div class="floating-emoji" data-speed="3" style="top: 20%; right: 15%;">✨</div>
+    <div class="floating-emoji" data-speed="1.5" style="top: 70%; left: 5%;">🎨</div>
+    <div class="floating-emoji" data-speed="2.5" style="bottom: 20%; right: 10%;">🚀</div>
     
     <div class="meme-container">
+        <div class="meme-text top">${topText}</div>
         <div class="meme-image-wrapper">
             <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
         </div>
+        <div class="meme-text bottom">${bottomText}</div>
         
         <div class="action-buttons">
             <button class="action-btn copy-url-btn" onclick="handleCopyUrl()">
@@ -683,10 +779,21 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 <span class="btn-text">COPY URL</span>
             </button>
             <button class="action-btn download-btn" onclick="handleDownload()" id="downloadBtn">
-                <span class="btn-icon" id="downloadIcon">📱</span>
+                <span class="btn-icon" id="downloadIcon">💾</span>
                 <span class="btn-text" id="downloadText">SAVE TO DEVICE</span>
             </button>
         </div>
+    </div>
+    
+    <!-- Call-to-Text Banner -->
+    <div class="cta-text-banner">
+        <span class="emoji-bounce">📱</span>
+        <span>Text START to +1-866-330-0015 — your brain in meme form</span>
+    </div>
+    
+    <!-- Prompt Display -->
+    <div class="prompt-display">
+        <small>Generated from: "${topText} ${bottomText}"</small>
     </div>
     
     <script>
@@ -694,6 +801,39 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         window.MEME_URL = ${publicUrl ? `"${publicUrl}"` : 'null'};
         
         let isDownloading = false;
+        
+        // Mouse parallax for floating elements
+        document.addEventListener('mousemove', (e) => {
+            const elements = document.querySelectorAll('.floating-emoji');
+            const { clientX, clientY } = e;
+            
+            elements.forEach((element) => {
+                const speed = element.getAttribute('data-speed') || 2;
+                const x = (window.innerWidth - clientX * speed) / 100;
+                const y = (window.innerHeight - clientY * speed) / 100;
+                
+                element.style.transform = \`translateX(\${x}px) translateY(\${y}px)\`;
+            });
+        });
+        
+        // Easter egg: Click meme 5 times
+        let memeClicks = 0;
+        const memeContainer = document.querySelector('.meme-image-wrapper');
+        memeContainer.addEventListener('click', () => {
+            memeClicks++;
+            if (memeClicks === 5) {
+                alert('🎉 You found the meme secret! Here\\'s a virtual high-five!');
+                document.body.style.animation = 'rainbow 2s ease-in-out';
+                memeClicks = 0;
+            }
+        });
+        
+        // Console easter egg
+        console.log('%c🎉 Hey there, meme explorer!', 
+            'font-size: 24px; color: #FF4B4B; font-weight: bold;');
+        console.log('%cYou found our secret developer hangout. ' + 
+            'While you\\'re here, why not make more memes at webtoys.com?', 
+            'font-size: 14px; color: #6ECBFF;');
 
         // Handle image loading errors
         document.addEventListener('DOMContentLoaded', function() {
@@ -919,6 +1059,11 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 0% { opacity: 1; transform: scale(1) rotate(0deg); }
                 100% { opacity: 0; transform: scale(1.5) rotate(180deg); }
             }
+            
+            @keyframes rainbow {
+                0% { filter: hue-rotate(0deg); }
+                100% { filter: hue-rotate(360deg); }
+            }
         \`;
         document.head.appendChild(style);
     </script>
@@ -949,24 +1094,22 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate meme image" };
         }
 
-        // Step 3: Generate composite meme image
-        const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
-        if (!compositeImageUrl) {
-            return { success: false, error: "Failed to generate composite meme image" };
-        }
+        // Step 3: Skip composite image generation - we're displaying text as HTML now
+        // The DALL-E image is already perfect without text overlay
+        logWithTimestamp(`🎯 Using raw DALL-E image without text overlay`);
 
-        // Step 4: Generate HTML page (compositeImageUrl is already uploaded to Supabase Storage)
-        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug, compositeImageUrl);
+        // Step 4: Generate HTML page with text displayed outside the image
+        const html = generateMemeHTML(memeContent, imageUrl, userSlug, imageUrl);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
+        logWithTimestamp(`🖼️ Image URL: ${imageUrl}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl: compositeImageUrl,
+            imageUrl: imageUrl,
             memeContent
         };
 

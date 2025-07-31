@@ -5,21 +5,22 @@
     "content_max_tokens": 300,
     "content_temperature": 0.8,
     "image_model": "dall-e-3",
-    "image_size": "1024x1024",
-    "image_quality": "standard"
+    "image_size": "1152x768",
+    "image_quality": "hd"
   },
-  "meme_style": {
-    "text_format": "ALL_CAPS",
-    "max_text_length": 7,
-    "font_family": "Arial Black",
-    "text_color": "white",
-    "text_shadow": "black outline",
-    "humor_style": "programming/tech focused, relatable, punchy"
+ "meme_style": {
+    "text_format": "Title Case",
+    "max_text_length": 12,
+    "font_family": "Comic Neue",
+    "text_color": "#FFFFFF",
+    "text_shadow": "2px 2px #000000",
+    "humor_style": "surreal tech humor, zine energy, mild existentialism, remixable weirdness",
+    "visual_style": "cutout cartoon, inspired by South Park, flat bold shapes, simple geometry, comically bad posture"
   },
   "html_template": {
     "title_format": "{topText} {bottomText} - WTAF Meme",
-    "branding": "Generated with WTAF - The AI-powered meme generator",
-    "call_to_action": "Text START to +1-866-330-0015 to make your own memes!",
+    "branding": "Webtoys made this — AI nonsense, human approved",
+    "call_to_action": "Text START to +1-866-330-0015 — we’ll meme your brain",
     "interactive_features": ["floating_emojis", "mouse_sparkles", "hover_effects"]
   }
 } 
