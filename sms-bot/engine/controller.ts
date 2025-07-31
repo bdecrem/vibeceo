@@ -1099,6 +1099,139 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
     }
     
+    // 📄 STACKOBJECTIFY: Check for --stackobjectify flag to create object pages from ZAD data
+    if (userPrompt && (userPrompt.startsWith('--stackobjectify ') || userPrompt.startsWith('wtaf --stackobjectify '))) {
+        logWithTimestamp("📄 STACKOBJECTIFY DETECTED: Processing objectification of ZAD app data");
+        
+        // Import stackobjectify functions dynamically
+        const { checkOperatorRole, processStackObjectifyRequest } = await import('./stackables-manager.js');
+        
+        // Check OPERATOR role first
+        const hasOperatorRole = await checkOperatorRole(userSlug);
+        if (!hasOperatorRole) {
+            logError(`❌ User ${userSlug} does not have OPERATOR role - stackobjectify requires OPERATOR access`);
+            await sendFailureNotification("stackobjectify-permission", senderPhone);
+            return false;
+        }
+        
+        const stackObjectifyResult = await processStackObjectifyRequest(userSlug, userPrompt);
+        
+        if (!stackObjectifyResult.success) {
+            logError(`❌ Stackobjectify error: ${stackObjectifyResult.error}`);
+            await sendFailureNotification("stackobjectify-error", senderPhone);
+            return false;
+        }
+        
+        const { userRequest, sourceAppSlug, sourceAppUuid, enhancedPrompt } = stackObjectifyResult;
+        
+        if (!enhancedPrompt || !sourceAppUuid) {
+            logError(`❌ Stackobjectify processing failed`);
+            await sendFailureNotification("stackobjectify-processing", senderPhone);
+            return false;
+        }
+        
+        // Send directly to Claude with stackobjectify-specific system prompt
+        logWithTimestamp("🚀 Sending stackobjectify request directly to Claude");
+        
+        // Load stackobjectify-specific system prompt
+        const stackobjectifyTemplatePath = join(__dirname, '..', 'content', 'stackobjectify-system-prompt.txt');
+        let stackobjectifySystemPrompt;
+        
+        try {
+            stackobjectifySystemPrompt = await readFile(stackobjectifyTemplatePath, 'utf8');
+            logWithTimestamp(`📄 Stackobjectify system prompt loaded: ${stackobjectifySystemPrompt.length} characters`);
+        } catch (error) {
+            // Fallback to a basic system prompt if template doesn't exist yet
+            stackobjectifySystemPrompt = `You are creating an objectified version of a ZAD app that will display individual data records as standalone pages.
+
+IMPORTANT REQUIREMENTS:
+1. Create TWO types of pages:
+   - An INDEX page that lists all objects from the ZAD data
+   - OBJECT pages that display individual records
+   
+2. The INDEX page should:
+   - Load all data from the source ZAD app using the provided APP_ID
+   - Display a list/grid of all objects with links to individual pages
+   - Have the URL pattern: {user_slug}/{app_slug}-index
+   
+3. The OBJECT pages should:
+   - Accept an object ID in the URL
+   - Load and display that specific object's data
+   - Have the URL pattern: {user_slug}/{app_slug}-index/[object-id]
+   
+4. Both pages should be PUBLIC (no authentication required)
+
+5. Use the same visual style as the source ZAD app where possible
+
+Generate the complete HTML for the INDEX page. The object pages will be handled by the index page's routing logic.`;
+            logWarning(`Using fallback stackobjectify system prompt`);
+        }
+        
+        const config = REQUEST_CONFIGS.creation;
+        const result = await callClaudeDirectly(stackobjectifySystemPrompt, enhancedPrompt, {
+            model: config.builderModel,
+            maxTokens: config.builderMaxTokens,
+            temperature: 0.7
+        });
+        
+        // Continue with normal deployment workflow
+        const outputFile = join(CLAUDE_OUTPUT_DIR, `stackobjectify_output_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '_')}.txt`);
+        await writeFile(outputFile, result, 'utf8');
+        logWithTimestamp(`💾 Stackobjectify output saved to: ${outputFile}`);
+        
+        // Extract code from response
+        const code = extractCodeBlocks(result);
+        if (!code.trim()) {
+            logWarning("No code block found in stackobjectify response.");
+            await sendFailureNotification("no-code", senderPhone);
+            return false;
+        }
+        
+        // Inject the source APP_ID for data access
+        logWithTimestamp(`🔄 Injecting source APP_ID for objectified data access: ${sourceAppUuid}`);
+        
+        // Replace placeholder with actual APP_ID
+        let codeWithAppId = code;
+        if (code.includes('OBJECTIFY_SOURCE_APP_ID')) {
+            codeWithAppId = code.replace(/OBJECTIFY_SOURCE_APP_ID/g, sourceAppUuid);
+        } else {
+            // If no placeholder, inject it after <script> tag
+            codeWithAppId = code.replace(
+                /<script>/,
+                `<script>\n    window.OBJECTIFY_SOURCE_APP_ID = '${sourceAppUuid}';`
+            );
+        }
+        
+        // Deploy stackobjectify result
+        const deployResult = await saveCodeToSupabase(codeWithAppId, coach || "unknown", userSlug, senderPhone, userRequest || "stackobjectify request", null, false);
+        if (deployResult.publicUrl) {
+            // Generate OG image
+            try {
+                const urlParts = deployResult.publicUrl.split('/');
+                const newAppSlug = urlParts[urlParts.length - 1];
+                logWithTimestamp(`🖼️ Generating OG image for stackobjectify: ${userSlug}/${newAppSlug}`);
+                const actualImageUrl = await generateOGImage(userSlug, newAppSlug);
+                if (actualImageUrl) {
+                    await updateOGImageInHTML(userSlug, newAppSlug, actualImageUrl);
+                    logSuccess(`✅ Updated stackobjectify HTML with OG image URL`);
+                }
+            } catch (error) {
+                logWarning(`OG generation failed for stackobjectify: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
+            await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, needsEmail);
+            logWithTimestamp("🎉 STACKOBJECTIFY PROCESSING COMPLETE!");
+            logWithTimestamp(`🌐 Index URL: ${deployResult.publicUrl}`);
+            logWithTimestamp(`📄 Object URLs: ${deployResult.publicUrl}/[object-id]`);
+            logWithTimestamp(`🔗 Source ZAD app: ${sourceAppSlug}`);
+            return true;
+        } else {
+            logError("Failed to deploy stackobjectify content");
+            await sendFailureNotification("database", senderPhone);
+            return false;
+        }
+    }
+    
     // 🧱 STACKABLES: Check for --stack flag to use HTML template approach
     let isStackablesRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stack ') || userPrompt.startsWith('wtaf --stack '))) {

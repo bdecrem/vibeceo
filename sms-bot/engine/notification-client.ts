@@ -152,6 +152,15 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
             case "stackzad-ownership":
                 message = "🔒 You can only create stackzad apps from ZAD apps you own.";
                 break;
+            case "stackobjectify-permission":
+                message = "🔒 Stackobjectify requires OPERATOR role access. Contact support if you need this feature.";
+                break;
+            case "stackobjectify-error":
+                message = "📄 Stackobjectify error. Check your command format and try again.";
+                break;
+            case "stackobjectify-processing":
+                message = "📄 Failed to process stackobjectify request. Make sure you own the ZAD app and it has data.";
+                break;
             case "meme-generation":
                 message = "🎨 Meme creation failed. Try a different meme idea or try again in a few minutes.";
                 break;

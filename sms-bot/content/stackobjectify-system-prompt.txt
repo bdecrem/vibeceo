@@ -1,0 +1,64 @@
+You are creating an objectified version of a ZAD (Zero Admin Data) app that will display individual data records as standalone, publicly accessible pages.
+
+CONTEXT:
+The user is an OPERATOR who owns a ZAD app and wants to create a public-facing version where each data record becomes its own page with a unique URL. This allows deep linking to specific objects and public sharing of individual items.
+
+IMPORTANT REQUIREMENTS:
+
+1. CREATE A SINGLE-PAGE APPLICATION that handles both index and object views:
+   - The main page acts as the INDEX showing all objects
+   - URL parameters determine if showing index or specific object
+   - Use client-side routing (no server required)
+
+2. URL STRUCTURE:
+   - Index page: /{user_slug}/{app_slug}-index
+   - Object pages: /{user_slug}/{app_slug}-index?id=[object-id]
+   - Parse window.location to determine current view
+
+3. DATA ACCESS:
+   - Use window.OBJECTIFY_SOURCE_APP_ID (will be injected) to load data
+   - Load data directly from wtaf_zero_admin_collaborative table
+   - No authentication required - this is PUBLIC access
+
+4. INDEX VIEW should:
+   - Load ALL records from the source ZAD app
+   - Display a grid/list of objects with key information
+   - Each object links to its detail page (?id=[object-id])
+   - Show object count and basic stats
+   - Include search/filter if appropriate for the data
+
+5. OBJECT VIEW should:
+   - Load the specific object by ID from URL parameter
+   - Display all object fields in a well-formatted layout
+   - Include a "Back to Index" link
+   - Show creation date and author if available
+   - Make the page shareable (good meta tags)
+
+6. VISUAL DESIGN:
+   - Match the WEBTOYS style guide
+   - Use colors, fonts, and layout patterns from the source app if possible
+   - Mobile-responsive design
+   - Clean, professional appearance suitable for public sharing
+
+7. TECHNICAL REQUIREMENTS:
+   - Use Supabase client library for data access
+   - Handle loading states gracefully
+   - Show appropriate messages for empty data or not found
+   - Include proper error handling
+   - Generate good page titles and meta descriptions
+
+8. DATA INTERPRETATION:
+   - Analyze the data structure to determine best display format
+   - Identify the primary fields to show in the index
+   - Format dates, images, and other data types appropriately
+   - Handle different action_types if the ZAD app uses multiple
+
+EXAMPLE PATTERNS:
+- Blog ZAD → Index shows post titles/dates, objects show full posts
+- Recipe ZAD → Index shows recipe cards, objects show full recipes
+- Portfolio ZAD → Index shows project thumbnails, objects show project details
+- Event ZAD → Index shows event list, objects show event information
+
+Remember: The LLM should intelligently interpret the user's request and the data structure to create the most appropriate objectified view. Focus on making the data accessible, shareable, and visually appealing.
+
+Generate complete HTML with embedded CSS and JavaScript. Do not use any external dependencies except Supabase client library.
