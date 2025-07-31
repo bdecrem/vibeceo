@@ -536,6 +536,36 @@ export async function checkDegenRole(userSlug: string): Promise<boolean> {
 }
 
 /**
+ * Check if user has OPERATOR role (required for stackobjectify)
+ */
+export async function checkOperatorRole(userSlug: string): Promise<boolean> {
+    try {
+        logWithTimestamp(`🔒 Checking OPERATOR role for user: ${userSlug}`);
+        
+        const { data: userData, error: userError } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('role')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (userError || !userData) {
+            logError(`User not found: ${userSlug}`);
+            return false;
+        }
+        
+        // Check if user has operator role or higher (operator, admin)
+        const hasOperatorRole = hasRoleOrHigher(userData.role, 'operator');
+        logWithTimestamp(`🔒 User ${userSlug} role: ${userData.role} | OPERATOR access: ${hasOperatorRole}`);
+        
+        return hasOperatorRole;
+        
+    } catch (error) {
+        logError(`Error checking OPERATOR role: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
  * Check if user has elevated role (coder, degen, or admin)
  * These roles can remix ANY app in the system, not just their own
  */
@@ -1607,6 +1637,149 @@ export async function processStackZadRequest(userSlug: string, stackCommand: str
         
     } catch (error) {
         logError(`Error processing stackzad request: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
+/**
+ * Parse stackobjectify command from user input
+ * Extracts source ZAD app slug and cleaned user request
+ * Supports both "wtaf --stackobjectify" and "--stackobjectify" formats
+ */
+export function parseStackObjectifyCommand(input: string): { appSlug: string; userRequest: string } | null {
+    // Try "wtaf --stackobjectify app-slug user request here" format first
+    let match = input.match(/^wtaf\s+--stackobjectify\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    // Try "--stackobjectify app-slug user request here" format (direct SMS format)
+    match = input.match(/^--stackobjectify\s+([a-z0-9-]+)\s+(.+)$/i);
+    if (match) {
+        return {
+            appSlug: match[1],
+            userRequest: match[2]
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Process stackobjectify request end-to-end (creates object pages from ZAD app data)
+ * Main function that orchestrates the entire stackobjectify workflow
+ */
+export async function processStackObjectifyRequest(userSlug: string, stackCommand: string): Promise<{ 
+    success: boolean; 
+    userRequest?: string; 
+    sourceAppSlug?: string;
+    sourceAppUuid?: string;
+    dataStructure?: any;
+    enhancedPrompt?: string; 
+    error?: string 
+}> {
+    try {
+        // Step 1: Check if user has OPERATOR role
+        const hasOperatorRole = await checkOperatorRole(userSlug);
+        if (!hasOperatorRole) {
+            return { 
+                success: false, 
+                error: 'You need OPERATOR role to use --stackobjectify command' 
+            };
+        }
+        
+        // Step 2: Parse the stackobjectify command
+        const parsed = parseStackObjectifyCommand(stackCommand);
+        if (!parsed) {
+            return { 
+                success: false, 
+                error: 'Invalid stackobjectify command format. Use: --stackobjectify zad-app-slug your request here' 
+            };
+        }
+        
+        const { appSlug, userRequest } = parsed;
+        logWithTimestamp(`📄 Processing stackobjectify request: ${appSlug} → "${userRequest}"`);
+        
+        // Step 3: Get source ZAD app UUID (verify ownership and that it's a ZAD app)
+        const sourceAppUuid = await getZadAppUUIDForStackZad(userSlug, appSlug);
+        if (sourceAppUuid === null) {
+            return { 
+                success: false, 
+                error: `ZAD app '${appSlug}' not found or not owned by you. You can only objectify your own ZAD apps.` 
+            };
+        }
+        
+        // Step 4: Load HTML content to extract APP_ID
+        const htmlContent = await loadStackedHTMLContent(userSlug, appSlug);
+        if (!htmlContent) {
+            return { 
+                success: false, 
+                error: `Could not load HTML content from ZAD app '${appSlug}'` 
+            };
+        }
+        
+        // Step 5: Extract the actual APP_ID from the HTML
+        const extractedAppId = extractAppIdFromHtml(htmlContent);
+        if (!extractedAppId) {
+            return { 
+                success: false, 
+                error: `Could not extract APP_ID from source ZAD app HTML` 
+            };
+        }
+        
+        // Step 6: Load and analyze ZAD data structure
+        const sampleData = await loadZadDataSample(extractedAppId);
+        const dataStructureAnalysis = analyzeZadDataStructure(sampleData || []);
+        
+        // Step 7: Build enhanced prompt for objectification
+        let enhancedPrompt = userRequest;
+        enhancedPrompt += `\n\nCREATE AN OBJECTIFIED VERSION OF A ZAD APP\n\n`;
+        enhancedPrompt += `This is a special request to create object pages from existing ZAD app data.\n`;
+        enhancedPrompt += `The user owns a ZAD app at ${userSlug}/${appSlug} and wants to create:\n`;
+        enhancedPrompt += `1. An index page listing all objects from the ZAD data\n`;
+        enhancedPrompt += `2. Individual pages for each object with unique URLs\n\n`;
+        enhancedPrompt += `Source app URL pattern: ${userSlug}/${appSlug}\n`;
+        enhancedPrompt += `New index URL: ${userSlug}/${appSlug}-index\n`;
+        enhancedPrompt += `Object URLs: ${userSlug}/${appSlug}-index/[object-id]\n\n`;
+        enhancedPrompt += dataStructureAnalysis;
+        
+        // Add sample data if available
+        if (sampleData && sampleData.length > 0) {
+            const sampleForPrompt = sampleData.slice(0, 3).map(record => {
+                const cleanedRecord: any = {};
+                Object.entries(record).forEach(([key, value]) => {
+                    if (typeof value === 'string' && value.length > 100) {
+                        cleanedRecord[key] = `${value.slice(0, 100)}... [truncated]`;
+                    } else {
+                        cleanedRecord[key] = value;
+                    }
+                });
+                return cleanedRecord;
+            });
+            
+            enhancedPrompt += `\n\nSAMPLE DATA:\n\`\`\`json\n${JSON.stringify(sampleForPrompt, null, 2)}\n\`\`\``;
+        }
+        
+        enhancedPrompt += `\n\nIMPORTANT: The LLM should figure out from the user's request and the data structure what objects to display and how to present them.`;
+        
+        logSuccess(`✅ Stackobjectify request processed successfully`);
+        return {
+            success: true,
+            userRequest,
+            sourceAppSlug: appSlug,
+            sourceAppUuid: extractedAppId,
+            dataStructure: sampleData,
+            enhancedPrompt
+        };
+        
+    } catch (error) {
+        logError(`Error processing stackobjectify request: ${error instanceof Error ? error.message : String(error)}`);
         return {
             success: false,
             error: error instanceof Error ? error.message : String(error)
