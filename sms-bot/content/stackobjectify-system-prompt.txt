@@ -28,11 +28,15 @@ IMPORTANT REQUIREMENTS:
 3. USE ZAD HELPER FUNCTIONS FOR DATA ACCESS:
 ```javascript
 // CORRECT - Use ZAD helpers
-const allData = await load('blog_post'); // or whatever action_type
+const allData = await load('blog_post'); // Returns ONLY blog posts, already transformed
 const myPost = allData.find(item => item.id === postId);
 
 // WRONG - Never use Supabase directly
 // DO NOT: supabase.from('wtaf_zero_admin_collaborative').select()
+
+// WRONG - Don't filter by action_type after load()
+// DO NOT: const posts = allData.filter(item => item.action_type === 'blog_post');
+// The data is already filtered and action_type field is removed during transformation
 ```
 
 4. PUBLIC ACCESS MODE:
@@ -70,6 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    - Use the correct action_type(s) from the source app
    - Remember: load() returns flattened data with these fields:
      - id, author, created_at, plus your custom fields
+   - CRITICAL: load() already filters by action_type and transforms the data
+   - DO NOT filter the results by action_type again - that field is removed during transformation
+   - The data returned from load('blog_post') contains ONLY blog posts already
 
 8. VISUAL DESIGN:
    - Follow WEBTOYS style guide
