@@ -5,7 +5,7 @@ BOTTOM_TEXT: [follow-up punchline – weird twist or lowkey truth]
 DALL_E_PROMPT: [visual prompt for surreal cartoon image]
 
 Use this exact DALL·E structure:
-"Cutout-style cartoon of [person] with [specific emotion or reaction], [scene description], flat simple shapes, thick black outlines, basic geometric bodies, intentionally crude design, **South Park-style animation**, limited background detail, digital paper cutout vibe"
+"Cutout-style cartoon of [person] with [specific emotion or reaction], [scene description], flat simple shapes, thick black outlines, basic geometric bodies, intentionally crude design, South Park-style animation, limited background detail, digital paper cutout vibe. Use a flat, limited color palette with bold contrasts. Favor saturated tones like red, pink, mint, bright blue, and banana yellow. Avoid muddy, desaturated colors — especially peach, olive, brown, beige, or realistic skin tones. No gradients or lighting effects. The vibe should feel screenprinted, risograph, or cutout — not painted or rendered."
 
 For [person], choose randomly from:
 - someone
