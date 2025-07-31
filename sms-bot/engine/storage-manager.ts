@@ -434,6 +434,8 @@ export async function saveCodeToSupabase(
         
         // Check if this is a stackzad app (has SHARED_DATA_UUID)
         const isStackzad = code.includes('window.SHARED_DATA_UUID');
+        // Check if this is a stackobjectify app (has OBJECTIFY_SOURCE_APP_ID)
+        const isStackobjectify = code.includes('window.OBJECTIFY_SOURCE_APP_ID');
         
         // Inject UUID into ZAD helper functions if they were added
         if ((isZadTest || usesZadHelpers || isZadApi || isNaturalZad)) {
@@ -443,6 +445,12 @@ export async function saveCodeToSupabase(
                 code = await injectZadUuidIntoHelpers(code, contentUuid);
                 // Then modify for stackzad to use SHARED_DATA_UUID
                 code = await injectStackzadHelpers(code);
+            } else if (isStackobjectify) {
+                logWithTimestamp(`📄 STACKOBJECTIFY app detected - injecting special objectified data helpers`);
+                // First inject normal UUID
+                code = await injectZadUuidIntoHelpers(code, contentUuid);
+                // Then modify for stackobjectify to use OBJECTIFY_SOURCE_APP_ID
+                code = await injectStackobjectifyHelpers(code);
             } else {
                 logWithTimestamp(`🔗 Injecting UUID ${contentUuid} into ZAD helper functions`);
                 code = await injectZadUuidIntoHelpers(code, contentUuid);
@@ -716,6 +724,49 @@ ${injectionPoint}`);
         
     } catch (error) {
         logError(`🤝 STACKZAD: Failed to inject stackzad helpers: ${error instanceof Error ? error.message : String(error)}`);
+        return html;
+    }
+}
+
+/**
+ * Inject modified ZAD helper functions for stackobjectify apps that use OBJECTIFY_SOURCE_APP_ID
+ */
+async function injectStackobjectifyHelpers(html: string): Promise<string> {
+    try {
+        logWithTimestamp(`📄 STACKOBJECTIFY: Modifying ZAD helper functions to use OBJECTIFY_SOURCE_APP_ID`);
+        
+        // Special getAppId for stackobjectify that checks for OBJECTIFY_SOURCE_APP_ID
+        const stackobjectifyGetAppId = `function getAppId() {
+    // STACKOBJECTIFY: Check if we should use objectified source data
+    if (window.OBJECTIFY_SOURCE_APP_ID) {
+        console.log('📄 STACKOBJECTIFY getAppId() using OBJECTIFY_SOURCE_APP_ID:', window.OBJECTIFY_SOURCE_APP_ID);
+        return window.OBJECTIFY_SOURCE_APP_ID;
+    }
+    // Fallback to normal APP_ID
+    console.log('🆔 ZAD getAppId() called, returning UUID:', window.APP_ID);
+    return window.APP_ID || 'unknown-app';
+}`;
+        
+        // Replace existing getAppId function with stackobjectify version
+        if (html.includes('function getAppId()')) {
+            html = html.replace(
+                /function getAppId\(\) \{[\s\S]*?\n\}/g,
+                stackobjectifyGetAppId
+            );
+            logWithTimestamp(`📄 STACKOBJECTIFY: Replaced getAppId with objectified data version`);
+        } else {
+            // If no getAppId found, inject it
+            const injectionPoint = html.includes('</script>') ? '</script>' : '</body>';
+            html = html.replace(injectionPoint, `
+${stackobjectifyGetAppId}
+${injectionPoint}`);
+            logWithTimestamp(`📄 STACKOBJECTIFY: Added stackobjectify getAppId function`);
+        }
+        
+        return html;
+        
+    } catch (error) {
+        logError(`📄 STACKOBJECTIFY: Failed to inject stackobjectify helpers: ${error instanceof Error ? error.message : String(error)}`);
         return html;
     }
 }
