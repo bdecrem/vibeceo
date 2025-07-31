@@ -205,14 +205,11 @@ export async function saveCodeToSupabase(
     logWithTimestamp(`💾 Starting save_code_to_supabase: coach=${coach}, user_slug=${userSlug}, admin_table_id=${adminTableId}, skip_uuid=${skipUuidReplacement}, is_public=${isPublic}`);
     logWithTimestamp(`🔍 DUPLICATE DEBUG: save_code_to_supabase called from ${originalPrompt.slice(0, 50)}...`);
     
-    // For admin pages, use the admin_table_id as the app_slug
-    let appSlug;
+    // Generate unique app slug for all pages (including admin pages for security)
+    let appSlug = await generateUniqueAppSlug(userSlug);
+    
     if (adminTableId) {
-        appSlug = `admin-${adminTableId}`;
-        logWithTimestamp(`📊 Using admin app_slug: ${appSlug}`);
-    } else {
-        // Generate unique app slug for this user
-        appSlug = await generateUniqueAppSlug(userSlug);
+        logWithTimestamp(`📊 Generated secure admin app_slug: ${appSlug} (for main app: ${adminTableId})`);
     }
     
     // Get user_id from sms_subscribers table
