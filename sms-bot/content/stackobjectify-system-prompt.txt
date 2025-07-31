@@ -75,6 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    - Each item links to ?id=[object-id]
    - Show total count
    - Include search/filter if appropriate
+   - IMPORTANT: Display full shareable URLs that users can copy
+   - Show complete URL like: https://domain.com/user/app?id=123
+   - Consider adding a copy button or making URLs selectable
 
 6. OBJECT VIEW:
    - Parse URL for id parameter
@@ -96,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    - The data returned from load('blog_post') contains ONLY blog posts already
 
 8. VISUAL DESIGN:
-   - Follow WEBTOYS style guide
+   - Follow WEBTOYS style guide (provided below)
    - Mobile-responsive
    - Clean and professional
    - Good for public sharing
@@ -165,13 +168,25 @@ async function loadAndDisplayData() {
 
 // Example index display with proper navigation
 function displayIndex(items) {
+    // Get the full base URL
+    const baseUrl = window.location.origin + window.location.pathname;
+    
     document.getElementById('content').innerHTML = items.map(item => `
         <div class="item-card">
             <a href="#" onclick="return navigateTo('?id=${item.id}')">
                 ${item.title}
             </a>
-            <!-- If showing URL, use actual path -->
-            <span class="url">${window.location.pathname}?id=${item.id}</span>
+            <!-- Display full shareable URL -->
+            <div class="url-container">
+                <input type="text" readonly value="${baseUrl}?id=${item.id}" 
+                       onclick="this.select()" 
+                       style="width: 100%; padding: 5px; font-family: monospace;">
+                <button onclick="navigator.clipboard.writeText('${baseUrl}?id=${item.id}'); 
+                               this.textContent = '✓ Copied!'; 
+                               setTimeout(() => this.textContent = 'Copy URL', 2000)">
+                    Copy URL
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -230,5 +245,8 @@ YOU MUST USE THESE EXACT ACTION TYPES in your load() calls:
 The user will provide:
 - How they want the data displayed
 - Any specific features needed
+
+WEBTOYS STYLE GUIDE:
+{STYLE_GUIDE}
 
 Generate complete HTML with all styles and scripts embedded. Focus on making the data accessible, shareable, and visually appealing.

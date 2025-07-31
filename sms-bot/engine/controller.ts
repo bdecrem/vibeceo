@@ -1153,6 +1153,18 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{ACTION_TYPES_LIST}', 
                 actionTypesMatch ? actionTypesMatch[1] : 'No action types found');
             
+            // Load and inject the WEBTOYS style guide
+            try {
+                const styleGuidePath = join(__dirname, '..', 'content', 'mini-ui-reqs-only.txt');
+                const styleGuideContent = await readFile(styleGuidePath, 'utf8');
+                stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{STYLE_GUIDE}', styleGuideContent);
+                logWithTimestamp(`🎨 Injected WEBTOYS style guide into stackobjectify prompt`);
+            } catch (error) {
+                logWarning(`Could not load style guide: ${error instanceof Error ? error.message : String(error)}`);
+                stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{STYLE_GUIDE}', 
+                    'Use modern, clean design with good typography and mobile responsiveness.');
+            }
+            
             logWithTimestamp(`📄 Stackobjectify system prompt loaded and configured: ${stackobjectifySystemPrompt.length} characters`);
         } catch (error) {
             // Fallback to a basic system prompt if template doesn't exist yet
