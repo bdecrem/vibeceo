@@ -26,7 +26,8 @@ interface PageProps {
 
 export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 	const { user_slug, app_slug } = await params;
-	const { demo } = await searchParams;
+	const allSearchParams = await searchParams;
+	const { demo } = allSearchParams;
 
 	try {
 		// Fetch the WTAF content from Supabase
@@ -44,6 +45,55 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 		}
 
 		let htmlContent = data.html_content;
+
+		// Inject query parameters into iframe context
+		const safeParams: Record<string, string> = {};
+		for (const [key, value] of Object.entries(allSearchParams)) {
+			if (typeof value === 'string') {
+				safeParams[encodeURIComponent(key)] = encodeURIComponent(value);
+			}
+		}
+
+		const queryString = new URLSearchParams(safeParams).toString();
+		
+		if (queryString) {
+			console.log('🔍 Injecting query parameters into iframe:', queryString);
+			
+			// Safely escape the query string for JavaScript
+			const safeQueryString = queryString.replace(/'/g, "\\'");
+			
+			const queryInjection = `<script>
+// Inject query parameters into iframe context
+(function() {
+    try {
+        // Store the injected search string
+        const injectedSearch = '?${safeQueryString}';
+        
+        // Override location.search getter
+        Object.defineProperty(window.location, 'search', {
+            get: function() { return injectedSearch; },
+            configurable: true
+        });
+        
+        // Override URLSearchParams to work with our injected params
+        const OriginalURLSearchParams = window.URLSearchParams;
+        window.URLSearchParams = function(init) {
+            if (!init || init === window.location.search) {
+                return new OriginalURLSearchParams(injectedSearch);
+            }
+            return new OriginalURLSearchParams(init);
+        };
+        
+        console.log('Query parameters injected successfully:', injectedSearch);
+    } catch (e) {
+        console.error('Failed to inject query parameters:', e);
+    }
+})();
+</script>`;
+			
+			// Inject before closing head tag to ensure it runs before app code
+			htmlContent = htmlContent.replace('</head>', queryInjection + '</head>');
+		}
 
 		// If demo=true, modify the HTML to force demo mode
 		if (demo === 'true') {
