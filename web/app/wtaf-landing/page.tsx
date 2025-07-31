@@ -2383,6 +2383,7 @@ export default function WebtoysSitePage() {
         .example-actions {
           display: flex;
           gap: 1rem;
+          margin-top: auto;
         }
         
         .btn-view, .btn-remix {
@@ -2520,6 +2521,8 @@ export default function WebtoysSitePage() {
           box-shadow: 0 10px 0 var(--purple-accent);
           transition: all 0.3s ease;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         
         .trending-card:hover {
