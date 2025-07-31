@@ -1,8 +1,9 @@
 'use client'
 
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
-// If you have generated Supabase types, import them like this:
-// import { Database } from '@/types/supabase'
-// Then use: createBrowserClient<Database>()
+import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createPagesBrowserClient()
+// Get the environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)

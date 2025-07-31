@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import CopiedModal from "@/components/ui/copied-modal"
+import HomepageTruncatedPrompt from "@/components/wtaf/homepage-truncated-prompt"
 
 interface WtafApp {
   id: string
@@ -1174,7 +1175,11 @@ export default function WebtoysSitePage() {
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Build me a fun sushi bar site</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF Build me a fun sushi bar site"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
@@ -1195,7 +1200,11 @@ export default function WebtoysSitePage() {
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Make me a rhyming dictionary</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF Make me a rhyming dictionary"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/matte-quokka-crafting" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make me a rhyming dictionary")}>
@@ -1216,7 +1225,11 @@ export default function WebtoysSitePage() {
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF make a retro paint app like old windows</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF make a retro paint app like old windows"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="https://webtoys.ai/bart/wave-wood-deconstructing" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
@@ -1237,7 +1250,11 @@ export default function WebtoysSitePage() {
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page."
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/tangerine-bat-tracking" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.")}>
@@ -1316,14 +1333,18 @@ export default function WebtoysSitePage() {
             {/* Example 1: Positive Mudpuppy Repairing */}
             <div className="example-card">
               <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-positive-mudpuppy-repairing.png')`,
+                backgroundImage: `url('/wtaf-landing/images/positive-mudpuppy-repairing.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/positive-mudpuppy-repairing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)")}>
@@ -1336,17 +1357,21 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Lilac Vampire Singing */}
             <div className="example-card">
-              <a href="/bart/lilac-vampire-singing" className="example-preview music-gen magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-lilac-vampire-singing.png')`,
+              <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="example-preview music-gen magic-cursor" style={{
+                backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF --music make a music app that lets me describe a song and it then makes that</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF --music make a music app that lets me describe a song and it then makes that"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
-                  <a href="/bart/lilac-vampire-singing" className="btn-view">Try It</a>
+                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF --music make a music app that lets me describe a song and it then makes that")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1358,14 +1383,18 @@ export default function WebtoysSitePage() {
             {/* Example 3: Linen Nutria Supporting */}
             <div className="example-card">
               <a href="/bart/linen-nutria-supporting" className="example-preview tetris-game magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-linen-nutria-supporting.png')`,
+                backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF make a tetris game</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF make a tetris game"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/linen-nutria-supporting" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a tetris game")}>
@@ -1379,14 +1408,18 @@ export default function WebtoysSitePage() {
             {/* Example 4: Apricot Leaf Nose Meditating */}
             <div className="example-card">
               <a href="/bart/apricot-leaf-nose-meditating" className="example-preview breakout-game magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-apricot-leaf-nose-meditating.png')`,
+                backgroundImage: `url('/wtaf-landing/images/apricot-leaf-nose-meditating.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF make a breakout game</div>
+                <HomepageTruncatedPrompt 
+                  prompt="WTAF make a breakout game"
+                  maxLength={120}
+                  className="prompt-text"
+                />
                 <div className="example-actions">
                   <a href="/bart/apricot-leaf-nose-meditating" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a breakout game")}>

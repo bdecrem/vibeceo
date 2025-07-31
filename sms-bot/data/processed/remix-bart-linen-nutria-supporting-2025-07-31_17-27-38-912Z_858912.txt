@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix linen-nutria-supporting give it a fun peach colored background
+
+ORIGINAL_REQUEST:REMIX linen-nutria-supporting give it a fun peach colored background
