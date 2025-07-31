@@ -233,6 +233,9 @@ export async function saveCodeToSupabase(
     let appSlug = await generateUniqueAppSlug(userSlug);
     
     if (adminTableId) {
+        // Add six-digit numerical code to admin slugs for additional security
+        const sixDigitCode = Math.floor(100000 + Math.random() * 900000).toString();
+        appSlug = `${appSlug}-${sixDigitCode}`;
         logWithTimestamp(`📊 Generated secure admin app_slug: ${appSlug} (for main app: ${adminTableId})`);
     }
     
