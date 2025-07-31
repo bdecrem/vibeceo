@@ -234,12 +234,10 @@ export default function FeaturedGalleryPage() {
                       className="prompt-showcase"
                       copyOnClick={true}
                     />
-                    {app.type !== 'ZAD' && (
-                      <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>
-                        <span className="remix-icon">🎨</span>
-                        <span>Remix This</span>
-                      </button>
-                    )}
+                    <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>
+                      <span className="remix-icon">🎨</span>
+                      <span>Remix This</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -571,6 +569,8 @@ export default function FeaturedGalleryPage() {
           transition: all 0.3s ease;
           position: relative;
           animation: cardSlideIn 0.6s ease-out both;
+          display: flex;
+          flex-direction: column;
         }
 
         @keyframes cardSlideIn {
@@ -648,6 +648,9 @@ export default function FeaturedGalleryPage() {
 
         .card-content {
           padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
 
         .creator-info {
@@ -707,6 +710,7 @@ export default function FeaturedGalleryPage() {
           cursor: pointer;
           transition: all 0.3s ease;
           line-height: 1.4;
+          flex: 1;
         }
 
         .prompt-showcase:hover {
@@ -747,6 +751,7 @@ export default function FeaturedGalleryPage() {
           align-items: center;
           gap: 0.5rem;
           margin: 0 auto;
+          margin-top: auto;
         }
 
         .remix-btn:hover {
