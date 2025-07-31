@@ -86,3 +86,6 @@ next-env.d.ts
 /sms-bot/dist
 # Ignore entire tiny folder
 tiny/
+
+# Claude outputs - these contain generated code and shouldn't be in git
+/sms-bot/data/claude_outputs/
