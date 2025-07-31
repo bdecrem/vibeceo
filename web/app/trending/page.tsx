@@ -99,9 +99,6 @@ export default function TrendingPage() {
   }
 
   const getRemixInfo = (app: WtafApp) => {
-    if (app.type === 'ZAD') {
-      return "Born today" // ZADs always show this
-    }
     const totalRemixes = app.total_descendants || app.remix_count || 0
     if (totalRemixes > 0) {
       return `${totalRemixes} ${totalRemixes === 1 ? 'remix' : 'remixes'}`
@@ -279,12 +276,10 @@ export default function TrendingPage() {
                       className="prompt-showcase"
                       copyOnClick={true}
                     />
-                    {app.type !== 'ZAD' && (
-                      <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>
-                        <span className="remix-icon">🎨</span>
-                        <span>Remix This</span>
-                      </button>
-                    )}
+                    <button className="remix-btn" onClick={() => handleRemixClick(app.app_slug)}>
+                      <span className="remix-icon">🎨</span>
+                      <span>Remix This</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -714,6 +709,8 @@ export default function TrendingPage() {
           transition: all 0.3s ease;
           position: relative;
           animation: cardSlideIn 0.6s ease-out both;
+          display: flex;
+          flex-direction: column;
         }
 
         .card-rank {
@@ -805,6 +802,9 @@ export default function TrendingPage() {
 
         .card-content {
           padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
 
         .creator-stats {
@@ -904,6 +904,7 @@ export default function TrendingPage() {
           cursor: pointer;
           transition: all 0.3s ease;
           line-height: 1.4;
+          flex: 1;
         }
 
         .prompt-showcase:hover {
@@ -944,6 +945,7 @@ export default function TrendingPage() {
           align-items: center;
           gap: 0.5rem;
           margin: 0 auto;
+          margin-top: auto;
         }
 
         .remix-btn:hover {
