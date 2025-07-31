@@ -22,8 +22,9 @@ IMPORTANT REQUIREMENTS:
    - URL parameters determine view: ?id=[object-id] for specific objects
    - Client-side routing (no server required)
    - URL structure:
-     - Index: /{user_slug}/{app_slug}-index
-     - Objects: /{user_slug}/{app_slug}-index?id=[object-id]
+     - Index: /{user_slug}/{app_slug}
+     - Objects: /{user_slug}/{app_slug}?id=[object-id]
+     - IMPORTANT: Do NOT add "-index" suffix to URLs - that was just conceptual
 
 3. USE ZAD HELPER FUNCTIONS FOR DATA ACCESS:
 ```javascript
@@ -47,6 +48,19 @@ const myPost = allData.find(item => item.id === postId);
 ```javascript
 // Stackobjectify apps always run in public viewer mode
 document.addEventListener('DOMContentLoaded', async () => {
+    // Override alert globally for stackobjectify apps to prevent load errors
+    const originalAlert = window.alert;
+    window.alert = function(message) {
+        // Only show alerts that aren't about loading failures
+        if (message && typeof message === 'string' && 
+            !message.toLowerCase().includes('load failed') &&
+            !message.toLowerCase().includes('failed to load')) {
+            originalAlert(message);
+        } else {
+            console.warn('Suppressed alert:', message);
+        }
+    };
+    
     // Set visitor mode for ZAD system using updateZadAuth
     updateZadAuth('Visitor', 'public_viewer');
     
@@ -86,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    - Mobile-responsive
    - Clean and professional
    - Good for public sharing
+   - When showing URLs, use window.location.pathname to get the actual app path
+   - Do NOT hardcode URLs with "-index" suffix
 
 9. ERROR HANDLING:
    - Handle empty data gracefully
@@ -104,8 +120,15 @@ window.OBJECTIFY_SOURCE_APP_ID = null; // Will be replaced by system
 function navigateTo(queryString) {
     // For iframes with srcDoc, we need a different approach
     if (window.location.search !== queryString) {
+        // Suppress any alerts during navigation
+        const originalAlert = window.alert;
+        window.alert = function() {}; // Temporarily disable alerts
+        
         window.location.search = queryString;
         // The page will reload, so we don't need to call loadAndDisplayData
+        
+        // Restore alert after a short delay (though page will reload anyway)
+        setTimeout(() => { window.alert = originalAlert; }, 100);
     }
     return false;
 }
@@ -133,7 +156,10 @@ async function loadAndDisplayData() {
         }
     } catch (error) {
         console.error('Error loading data:', error);
-        showError();
+        // Only show error if it's not a navigation-related error
+        if (error && error.message && !error.message.includes('navigation')) {
+            showError();
+        }
     }
 }
 
@@ -144,6 +170,8 @@ function displayIndex(items) {
             <a href="#" onclick="return navigateTo('?id=${item.id}')">
                 ${item.title}
             </a>
+            <!-- If showing URL, use actual path -->
+            <span class="url">${window.location.pathname}?id=${item.id}</span>
         </div>
     `).join('');
 }
@@ -159,6 +187,19 @@ function displayObject(item) {
 
 // Stackobjectify apps always run in public viewer mode
 document.addEventListener('DOMContentLoaded', async () => {
+    // Override alert globally for stackobjectify apps to prevent load errors
+    const originalAlert = window.alert;
+    window.alert = function(message) {
+        // Only show alerts that aren't about loading failures
+        if (message && typeof message === 'string' && 
+            !message.toLowerCase().includes('load failed') &&
+            !message.toLowerCase().includes('failed to load')) {
+            originalAlert(message);
+        } else {
+            console.warn('Suppressed alert:', message);
+        }
+    };
+    
     // Set visitor mode for ZAD system using updateZadAuth
     updateZadAuth('Visitor', 'public_viewer');
     
@@ -173,6 +214,9 @@ CRITICAL REMINDERS:
 - USE ZAD helper functions (load/save)
 - Data comes from window.OBJECTIFY_SOURCE_APP_ID
 - Create a single HTML file with embedded CSS/JS
+- IMPORTANT: This app has its OWN slug (generated randomly like wool-mudpuppy-classifying)
+- Do NOT use the source app's slug in URLs - use window.location.pathname
+- Do NOT add "-index" to any URLs
 
 DATA STRUCTURE INFORMATION:
 {DATA_STRUCTURE_ANALYSIS}

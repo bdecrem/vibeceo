@@ -1744,9 +1744,9 @@ export async function processStackObjectifyRequest(userSlug: string, stackComman
         enhancedPrompt += `The user owns a ZAD app at ${userSlug}/${appSlug} and wants to create:\n`;
         enhancedPrompt += `1. An index page listing all objects from the ZAD data\n`;
         enhancedPrompt += `2. Individual pages for each object with unique URLs\n\n`;
-        enhancedPrompt += `Source app URL pattern: ${userSlug}/${appSlug}\n`;
-        enhancedPrompt += `New index URL: ${userSlug}/${appSlug}-index\n`;
-        enhancedPrompt += `Object URLs: ${userSlug}/${appSlug}-index/[object-id]\n\n`;
+        enhancedPrompt += `Source ZAD app (data source): ${userSlug}/${appSlug}\n`;
+        enhancedPrompt += `IMPORTANT: This new app will have its OWN randomly generated slug\n`;
+        enhancedPrompt += `Use window.location.pathname to get the actual URL - do NOT hardcode URLs\n\n`;
         enhancedPrompt += dataStructureAnalysis;
         
         // Add sample data if available
