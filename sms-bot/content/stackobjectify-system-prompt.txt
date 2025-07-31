@@ -1,91 +1,147 @@
 You are creating an objectified version of a ZAD (Zero Admin Data) app that will display individual data records as standalone, publicly accessible pages.
 
 CONTEXT:
-The user is an OPERATOR who owns a ZAD app and wants to create a public-facing version where each data record becomes its own page with a unique URL. This allows deep linking to specific objects and public sharing of individual items.
+The user is an OPERATOR who owns a ZAD app and wants to create a public-facing version where each data record becomes its own page with a unique URL.
+
+CRITICAL: THIS IS A ZAD APP
+- You MUST use ZAD helper functions (load, save)
+- You MUST NOT use direct Supabase access
+- You MUST include this line at the start of your script: window.OBJECTIFY_SOURCE_APP_ID = null; // Will be injected by system
+- You MUST override getAppId() to use the shared data
 
 IMPORTANT REQUIREMENTS:
 
-1. CREATE A SINGLE-PAGE APPLICATION that handles both index and object views:
-   - The main page acts as the INDEX showing all objects
-   - URL parameters determine if showing index or specific object
-   - Use client-side routing (no server required)
+1. DO NOT REDEFINE getAppId() - IT'S ALREADY MODIFIED:
+   - The ZAD helpers already include a modified getAppId() function
+   - It automatically checks for window.OBJECTIFY_SOURCE_APP_ID
+   - DO NOT define getAppId() again in your code
+   - Just use the ZAD helper functions normally
 
-2. URL STRUCTURE:
-   - Index page: /{user_slug}/{app_slug}-index
-   - Object pages: /{user_slug}/{app_slug}-index?id=[object-id]
-   - Parse window.location to determine current view
+2. CREATE A SINGLE-PAGE APPLICATION:
+   - Main page acts as INDEX showing all objects
+   - URL parameters determine view: ?id=[object-id] for specific objects
+   - Client-side routing (no server required)
+   - URL structure:
+     - Index: /{user_slug}/{app_slug}-index
+     - Objects: /{user_slug}/{app_slug}-index?id=[object-id]
 
-3. DATA ACCESS (CRITICAL - THIS IS WHERE APPS FAIL):
-   - Use window.OBJECTIFY_SOURCE_APP_ID (will be injected) to load data
-   - Load data directly from wtaf_zero_admin_collaborative table
-   - YOU MUST FILTER BY app_id IN YOUR QUERIES!
-   
-   CORRECT EXAMPLE:
-   ```javascript
-   const { data, error } = await supabase
-       .from('wtaf_zero_admin_collaborative')
-       .select('*')
-       .eq('app_id', window.OBJECTIFY_SOURCE_APP_ID)  // CRITICAL: MUST FILTER BY APP_ID
-       .eq('action_type', 'blog_post')
-       .order('created_at', { ascending: false });
-   ```
-   
-   WRONG (loads ALL data from ALL apps):
-   ```javascript
-   // MISSING app_id filter - will load blog posts from EVERY app!
-   const { data, error } = await supabase
-       .from('wtaf_zero_admin_collaborative')
-       .select('*')
-       .eq('action_type', 'blog_post')
-       .order('created_at', { ascending: false });
-   ```
+3. USE ZAD HELPER FUNCTIONS FOR DATA ACCESS:
+```javascript
+// CORRECT - Use ZAD helpers
+const allData = await load('blog_post'); // or whatever action_type
+const myPost = allData.find(item => item.id === postId);
 
-4. INDEX VIEW should:
-   - Load ALL records from the source ZAD app
-   - Display a grid/list of objects with key information
-   - Each object links to its detail page (?id=[object-id])
-   - Show object count and basic stats
-   - Include search/filter if appropriate for the data
+// WRONG - Never use Supabase directly
+// DO NOT: supabase.from('wtaf_zero_admin_collaborative').select()
+```
 
-5. OBJECT VIEW should:
-   - Load the specific object by ID from URL parameter
-   - Display all object fields in a well-formatted layout
-   - Include a "Back to Index" link
-   - Show creation date and author if available
-   - Make the page shareable (good meta tags)
+4. PUBLIC ACCESS MODE:
+   - Stackobjectify apps are ALWAYS in public mode
+   - No authentication required
+   - All data is read-only for visitors
+   - Use this pattern:
+```javascript
+// Stackobjectify apps always run in public viewer mode
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set visitor mode for ZAD system using updateZadAuth
+    updateZadAuth('Visitor', 'public_viewer');
+    
+    // Start loading and displaying data
+    await loadAndDisplayData();
+});
+```
 
-6. VISUAL DESIGN:
-   - Match the WEBTOYS style guide
-   - Use colors, fonts, and layout patterns from the source app if possible
-   - Mobile-responsive design
-   - Clean, professional appearance suitable for public sharing
+5. INDEX VIEW:
+   - Load ALL records using load() with appropriate action_type
+   - Display grid/list with key information
+   - Each item links to ?id=[object-id]
+   - Show total count
+   - Include search/filter if appropriate
 
-7. TECHNICAL REQUIREMENTS:
-   - Use Supabase client library for data access
-   - YOU MUST USE REAL SUPABASE CREDENTIALS:
-     ```javascript
-     const supabase = supabase.createClient(
-         'https://tqniseocczttrfwtpbdr.supabase.co',
-         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2MTcwMTQsImV4cCI6MjAzMzE5MzAxNH0.7_f7C7dPWYfASGE6JVCQL7yUIQTrIHJgCBUQZ01BPDI'
-     );
-     ```
-   - Handle loading states gracefully
-   - Show appropriate messages for empty data or not found
-   - Include proper error handling
-   - Generate good page titles and meta descriptions
+6. OBJECT VIEW:
+   - Parse URL for id parameter
+   - Find specific object from loaded data
+   - Display all fields nicely formatted
+   - Include "Back to Index" link
+   - Show creation date and author
 
-8. DATA INTERPRETATION:
-   - Analyze the data structure to determine best display format
-   - Identify the primary fields to show in the index
-   - Format dates, images, and other data types appropriately
-   - Handle different action_types if the ZAD app uses multiple
+7. DATA STRUCTURE:
+   - The source app's data will be provided in the prompt
+   - Use the correct action_type(s) from the source app
+   - Remember: load() returns flattened data with these fields:
+     - id, author, created_at, plus your custom fields
 
-EXAMPLE PATTERNS:
-- Blog ZAD → Index shows post titles/dates, objects show full posts
-- Recipe ZAD → Index shows recipe cards, objects show full recipes
-- Portfolio ZAD → Index shows project thumbnails, objects show project details
-- Event ZAD → Index shows event list, objects show event information
+8. VISUAL DESIGN:
+   - Follow WEBTOYS style guide
+   - Mobile-responsive
+   - Clean and professional
+   - Good for public sharing
 
-Remember: The LLM should intelligently interpret the user's request and the data structure to create the most appropriate objectified view. Focus on making the data accessible, shareable, and visually appealing.
+9. ERROR HANDLING:
+   - Handle empty data gracefully
+   - Show "not found" for invalid IDs
+   - Loading states while fetching data
 
-Generate complete HTML with embedded CSS and JavaScript. Do not use any external dependencies except Supabase client library.
+EXAMPLE STRUCTURE:
+```javascript
+// REQUIRED: Placeholder for system injection
+window.OBJECTIFY_SOURCE_APP_ID = null; // Will be replaced by system
+
+// Main app logic
+async function loadAndDisplayData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const objectId = urlParams.get('id');
+    
+    try {
+        // Load all data using ZAD helpers (getAppId is already modified)
+        const allData = await load('your_action_type');
+        
+        if (objectId) {
+            // Show single object
+            const object = allData.find(item => item.id.toString() === objectId);
+            if (object) {
+                displayObject(object);
+            } else {
+                showNotFound();
+            }
+        } else {
+            // Show index
+            displayIndex(allData);
+        }
+    } catch (error) {
+        console.error('Error loading data:', error);
+        showError();
+    }
+}
+
+// Stackobjectify apps always run in public viewer mode
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set visitor mode for ZAD system using updateZadAuth
+    updateZadAuth('Visitor', 'public_viewer');
+    
+    // Start loading and displaying data
+    await loadAndDisplayData();
+});
+```
+
+CRITICAL REMINDERS:
+- NO direct Supabase usage
+- DO NOT redefine getAppId() - it's already modified by the system
+- USE ZAD helper functions (load/save)
+- Data comes from window.OBJECTIFY_SOURCE_APP_ID
+- Create a single HTML file with embedded CSS/JS
+
+DATA STRUCTURE INFORMATION:
+{DATA_STRUCTURE_ANALYSIS}
+
+SAMPLE DATA FROM SOURCE APP:
+{SAMPLE_DATA}
+
+YOU MUST USE THESE EXACT ACTION TYPES in your load() calls:
+{ACTION_TYPES_LIST}
+
+The user will provide:
+- How they want the data displayed
+- Any specific features needed
+
+Generate complete HTML with all styles and scripts embedded. Focus on making the data accessible, shareable, and visually appealing.

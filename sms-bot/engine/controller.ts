@@ -1139,7 +1139,21 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         
         try {
             stackobjectifySystemPrompt = await readFile(stackobjectifyTemplatePath, 'utf8');
-            logWithTimestamp(`📄 Stackobjectify system prompt loaded: ${stackobjectifySystemPrompt.length} characters`);
+            
+            // Extract data structure info from the enhanced prompt
+            const dataStructureMatch = enhancedPrompt.match(/DATA STRUCTURE ANALYSIS:([\s\S]*?)(?=\n\nSAMPLE DATA:|$)/);
+            const sampleDataMatch = enhancedPrompt.match(/SAMPLE DATA:\n```json\n([\s\S]*?)```/);
+            const actionTypesMatch = enhancedPrompt.match(/action_type values found: \[(.*?)\]/);
+            
+            // Replace placeholders with actual data
+            stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{DATA_STRUCTURE_ANALYSIS}', 
+                dataStructureMatch ? dataStructureMatch[1].trim() : 'No data structure analysis available');
+            stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{SAMPLE_DATA}', 
+                sampleDataMatch ? `\`\`\`json\n${sampleDataMatch[1]}\`\`\`` : 'No sample data available');
+            stackobjectifySystemPrompt = stackobjectifySystemPrompt.replace('{ACTION_TYPES_LIST}', 
+                actionTypesMatch ? actionTypesMatch[1] : 'No action types found');
+            
+            logWithTimestamp(`📄 Stackobjectify system prompt loaded and configured: ${stackobjectifySystemPrompt.length} characters`);
         } catch (error) {
             // Fallback to a basic system prompt if template doesn't exist yet
             stackobjectifySystemPrompt = `You are creating an objectified version of a ZAD app that will display individual data records as standalone pages.
@@ -1187,19 +1201,36 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
             return false;
         }
         
-        // Inject the source APP_ID for data access
-        logWithTimestamp(`🔄 Injecting source APP_ID for objectified data access: ${sourceAppUuid}`);
+        // Inject the source APP_ID for data access (following stackzad pattern)
+        logWithTimestamp(`🔄 Injecting OBJECTIFY_SOURCE_APP_ID for objectified data access: ${sourceAppUuid}`);
         
-        // Replace placeholder with actual APP_ID
+        // Replace the placeholder with actual UUID
         let codeWithAppId = code;
-        if (code.includes('OBJECTIFY_SOURCE_APP_ID')) {
-            codeWithAppId = code.replace(/OBJECTIFY_SOURCE_APP_ID/g, sourceAppUuid);
-        } else {
-            // If no placeholder, inject it after <script> tag
+        if (code.includes('window.OBJECTIFY_SOURCE_APP_ID = null;')) {
+            // Replace the placeholder
             codeWithAppId = code.replace(
-                /<script>/,
-                `<script>\n    window.OBJECTIFY_SOURCE_APP_ID = '${sourceAppUuid}';`
+                'window.OBJECTIFY_SOURCE_APP_ID = null;',
+                `window.OBJECTIFY_SOURCE_APP_ID = '${sourceAppUuid}';`
             );
+            logSuccess('✅ Replaced OBJECTIFY_SOURCE_APP_ID placeholder with actual UUID');
+        } else if (code.includes('window.OBJECTIFY_SOURCE_APP_ID')) {
+            // If it already has a value, replace it
+            codeWithAppId = code.replace(
+                /window\.OBJECTIFY_SOURCE_APP_ID\s*=\s*['"][^'"]*['"];?/,
+                `window.OBJECTIFY_SOURCE_APP_ID = '${sourceAppUuid}';`
+            );
+            logSuccess('✅ Updated existing OBJECTIFY_SOURCE_APP_ID with actual UUID');
+        } else {
+            // Fallback: inject at start of script tag
+            if (code.includes('<script>')) {
+                codeWithAppId = code.replace(
+                    '<script>',
+                    `<script>\n// STACKOBJECTIFY: Shared data configuration\nwindow.OBJECTIFY_SOURCE_APP_ID = '${sourceAppUuid}';\nconsole.log('📄 STACKOBJECTIFY: Using source data from app:', window.OBJECTIFY_SOURCE_APP_ID);\n`
+                );
+                logWarning('⚠️ No OBJECTIFY_SOURCE_APP_ID placeholder found, injected at script start');
+            } else {
+                logError('❌ Could not find suitable injection point for OBJECTIFY_SOURCE_APP_ID');
+            }
         }
         
         // Deploy stackobjectify result

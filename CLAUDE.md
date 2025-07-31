@@ -110,6 +110,46 @@ When adding features:
 4. Update module interfaces, don't bypass them
 5. Document cross-module dependencies
 
+## CRITICAL: ZAD Apps and Stack Commands
+
+### ZAD APPS NEVER USE DIRECT SUPABASE ACCESS
+**THIS IS NON-NEGOTIABLE. ZAD apps use ONLY these APIs:**
+- `/api/zad/save` - All write operations
+- `/api/zad/load` - All read operations
+
+```javascript
+// ❌ ABSOLUTELY WRONG - NEVER DO THIS IN ZAD APPS
+const supabase = supabase.createClient('url', 'key');
+const { data } = await supabase.from('wtaf_zero_admin_collaborative').select();
+
+// ✅ CORRECT - ZAD apps ONLY use helper functions
+const data = await load('blog_post');  // Uses /api/zad/load internally
+await save('blog_post', { title: 'New Post' }); // Uses /api/zad/save internally
+```
+
+### Stack Commands Pattern for Shared Data
+**When implementing ANY stack command that shares data (stackzad, stackpublic, stackobjectify):**
+
+1. **MUST inject the shared UUID** (e.g., `window.SHARED_DATA_UUID`)
+2. **MUST override getAppId()** to return the shared UUID:
+```javascript
+function getAppId() {
+    if (window.SHARED_DATA_UUID) {
+        return window.SHARED_DATA_UUID;
+    }
+    return window.APP_ID || 'unknown-app';
+}
+```
+3. **NEVER tell LLMs to use Supabase directly**
+4. **ALWAYS use ZAD helper functions**
+
+### UUID Issues Are Unacceptable
+**Before implementing ANY feature involving UUIDs:**
+1. Find an existing working pattern (e.g., stackzad)
+2. Copy that pattern EXACTLY
+3. Do not innovate or "improve" - use what works
+4. Test that the correct UUID is being used
+
 ## Common Violations to Avoid
 
 ### Database Access
@@ -226,6 +266,8 @@ When in doubt:
 - `--stackemail [app-slug] [message]` - Email all app submitters
 - `--remix [app-slug] [request]` - Remix existing app with changes
 - `--stackzad [app-slug] [request]` - Create ZAD app with shared data access
+- `--stackpublic [app-slug] [request]` - Create app using PUBLIC ZAD data
+- `--stackobjectify [app-slug] [request]` - Create object pages from ZAD data (OPERATOR only)
 
 ### App Type Classification
 The system automatically classifies apps into 5 types:
