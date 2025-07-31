@@ -1,7 +1,0 @@
-I'll change only the text content of the h1 element with id="mainTitle" from "WTAChat" to "PARTY Chat":
-
-```html
-<h1 id="mainTitle">PARTY Chat</h1>
-```
-
-This is the only change needed. All other code remains exactly the same.
