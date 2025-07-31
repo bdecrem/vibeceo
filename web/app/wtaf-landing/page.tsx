@@ -1585,6 +1585,8 @@ export default function WebtoysSitePage() {
         html {
           overflow-x: hidden;
           max-width: 100%;
+          min-height: 100%;
+          background: #0A0A0A; /* Dark background to match console */
         }
         
         body {
@@ -1595,6 +1597,7 @@ export default function WebtoysSitePage() {
           overflow-x: hidden;
           max-width: 100%;
           position: relative;
+          min-height: 100vh; /* Ensure body fills viewport */
         }
 
         
