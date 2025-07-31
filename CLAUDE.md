@@ -252,6 +252,15 @@ When in doubt:
 3. Ask: "Which module owns this concern?"
 4. Keep modules focused on their single responsibility
 
+## Git Commit and Push Rules
+
+**NEVER commit or push changes to GitHub unless explicitly requested by the user.**
+- You may stage changes with `git add` for review
+- You may check status with `git status`
+- DO NOT run `git commit` unless the user says "commit" 
+- DO NOT run `git push` unless the user says "push"
+- Wait for explicit user approval before committing or pushing any changes
+
 ## Special Commands & Flags
 
 ### Override Flags (Development/Testing)
