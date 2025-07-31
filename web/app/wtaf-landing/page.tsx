@@ -1108,7 +1108,7 @@ export default function WebtoysSitePage() {
                 <span>• file uploads</span>
                 <span>• real-time sync</span>
                 <span>• your startup idea</span>
-              </span></span>.
+              </span></span>. Read <a href="https://webtoys.ai/bart/grain-adder-weaving" className="blog-link">the blog</a>.
             </p>
             
             <div className="phone-display">
@@ -1870,6 +1870,22 @@ export default function WebtoysSitePage() {
           margin-left: auto;
           margin-right: auto;
         }
+        
+        .blog-link {
+          color: var(--blue-deep);
+          text-decoration: underline;
+          text-decoration-style: dotted;
+          text-underline-offset: 2px;
+          transition: all 0.3s ease;
+          font-weight: 600;
+        }
+        
+        .blog-link:hover {
+          color: var(--blue);
+          text-decoration-style: solid;
+          transform: scale(1.05);
+          display: inline-block;
+        }
 
         /* Hover reveal effect */
         .hover-reveal {
@@ -2270,6 +2286,8 @@ export default function WebtoysSitePage() {
           box-shadow: 0 10px 0 var(--purple-accent);
           transition: all 0.3s ease;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         
         .example-card:hover {
@@ -2338,6 +2356,9 @@ export default function WebtoysSitePage() {
         
         .example-info {
           padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
         
         .prompt-label {
@@ -2356,6 +2377,7 @@ export default function WebtoysSitePage() {
           margin-bottom: 1.5rem;
           line-height: 1.4;
           font-family: system-ui, -apple-system, sans-serif;
+          flex: 1;
         }
         
         .example-actions {
