@@ -1315,7 +1315,7 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Positive Mudpuppy Repairing */}
             <div className="example-card">
-              <a href="/bart/positive-mudpuppy-repairing" className="example-preview music-app magic-cursor" style={{
+              <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
                 backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-positive-mudpuppy-repairing.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -1325,7 +1325,7 @@ export default function WebtoysSitePage() {
                 <div className="prompt-label">The prompt:</div>
                 <div className="prompt-text">WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)</div>
                 <div className="example-actions">
-                  <a href="/bart/positive-mudpuppy-repairing" className="btn-view">Try It</a>
+                  <a href="/bart/positive-mudpuppy-repairing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1355,20 +1355,20 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 3: Copy of Billboard for now */}
+            {/* Example 3: Linen Nutria Supporting */}
             <div className="example-card">
-              <a href="/bart/pixel-collab" className="example-preview billboard2 magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-tangerine-bat-tracking.png')`,
+              <a href="/bart/linen-nutria-supporting" className="example-preview tetris-game magic-cursor" style={{
+                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-linen-nutria-supporting.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Build a collaborative drawing board where everyone can add one pixel at a time</div>
+                <div className="prompt-text">WTAF make a tetris game</div>
                 <div className="example-actions">
-                  <a href="/bart/pixel-collab" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build a collaborative drawing board where everyone can add one pixel at a time")}>
+                  <a href="/bart/linen-nutria-supporting" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a tetris game")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
@@ -1376,20 +1376,20 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 4: Copy of Meme Gen for now */}
+            {/* Example 4: Apricot Leaf Nose Meditating */}
             <div className="example-card">
-              <a href="/bart/quote-snake" className="example-preview game magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-cantaloupe-chorus-kissing.png')`,
+              <a href="/bart/apricot-leaf-nose-meditating" className="example-preview breakout-game magic-cursor" style={{
+                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/bart-apricot-leaf-nose-meditating.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
               </a>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
-                <div className="prompt-text">WTAF Create a retro snake game but the snake leaves inspirational quotes behind</div>
+                <div className="prompt-text">WTAF make a breakout game</div>
                 <div className="example-actions">
-                  <a href="/bart/quote-snake" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF Create a retro snake game but the snake leaves inspirational quotes behind")}>
+                  <a href="/bart/apricot-leaf-nose-meditating" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a breakout game")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
