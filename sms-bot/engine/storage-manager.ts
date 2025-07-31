@@ -188,6 +188,30 @@ async function getUserId(userSlug: string): Promise<string | null> {
 }
 
 /**
+ * Get user role from sms_subscribers table
+ * Used for rate limiting and permission checks
+ */
+export async function getUserRole(userSlug: string): Promise<string | null> {
+    try {
+        const { data, error } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('role')
+            .eq('slug', userSlug)
+            .single();
+            
+        if (error || !data) {
+            logError(`Error finding user role: ${error?.message || 'User not found'}`);
+            return null;
+        }
+        
+        return data.role || null;
+    } catch (error) {
+        logError(`Error getting user role: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
  * Save HTML content to Supabase database
  * Extracted from monitor.py save_code_to_supabase function
  * PARTY TRICK: Email detection happens via HTML content analysis (no extra columns needed)

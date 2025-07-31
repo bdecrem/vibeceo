@@ -1108,7 +1108,7 @@ export default function WebtoysSitePage() {
                 <span>• file uploads</span>
                 <span>• real-time sync</span>
                 <span>• your startup idea</span>
-              </span></span>. Read <a href="https://webtoys.ai/bart/grain-adder-weaving" className="blog-link">the blog</a>.
+              </span></span>. Read <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">the blog</a>.
             </p>
             
             <div className="phone-display">

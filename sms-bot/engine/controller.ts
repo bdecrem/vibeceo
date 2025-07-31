@@ -42,6 +42,118 @@ import { ANTHROPIC_API_KEY } from './shared/config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Rate limiting configuration
+const RATE_LIMITS = {
+    hourly: 10,      // Max apps per hour
+    daily: 20,       // Max apps per day
+    monthly: 100     // Max apps per month
+};
+
+// Special rate limits for DEGEN users (2x regular limits)
+const DEGEN_RATE_LIMITS = {
+    hourly: 20,      // Max apps per hour for DEGEN
+    daily: 40,       // Max apps per day for DEGEN
+    monthly: 200     // Max apps per month for DEGEN
+};
+
+// In-memory rate limit tracking
+// Format: { "phone:hour:2024-01-15-14": 5, "phone:day:2024-01-15": 12, etc }
+const rateLimitCache = new Map<string, number>();
+
+/**
+ * Check if a phone number has exceeded rate limits
+ * Returns true if allowed, false if rate limited
+ */
+async function checkRateLimit(phone: string, userRole?: string): Promise<{ allowed: boolean; message?: string }> {
+    // Special roles get unlimited access
+    if (userRole === 'OPERATOR' || userRole === 'ADMIN') {
+        return { allowed: true };
+    }
+    
+    // Determine which rate limits to use
+    const limits = (userRole === 'DEGEN' || userRole === 'degen') ? DEGEN_RATE_LIMITS : RATE_LIMITS;
+    const roleLabel = (userRole === 'DEGEN' || userRole === 'degen') ? ' (DEGEN)' : '';
+    
+    const now = new Date();
+    const hour = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}-${now.getHours()}`;
+    const day = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+    const month = `${now.getFullYear()}-${now.getMonth()+1}`;
+    
+    // Check hourly limit
+    const hourlyKey = `${phone}:hour:${hour}`;
+    const hourlyCount = (rateLimitCache.get(hourlyKey) || 0) + 1;
+    if (hourlyCount > limits.hourly) {
+        return { 
+            allowed: false, 
+            message: `Rate limit${roleLabel}: You've reached ${limits.hourly} apps this hour. Try again next hour!` 
+        };
+    }
+    
+    // Check daily limit
+    const dailyKey = `${phone}:day:${day}`;
+    const dailyCount = (rateLimitCache.get(dailyKey) || 0) + 1;
+    if (dailyCount > limits.daily) {
+        return { 
+            allowed: false, 
+            message: `Rate limit${roleLabel}: You've reached ${limits.daily} apps today. Try again tomorrow!` 
+        };
+    }
+    
+    // Check monthly limit
+    const monthlyKey = `${phone}:month:${month}`;
+    const monthlyCount = (rateLimitCache.get(monthlyKey) || 0) + 1;
+    if (monthlyCount > limits.monthly) {
+        return { 
+            allowed: false, 
+            message: `Rate limit${roleLabel}: You've reached ${limits.monthly} apps this month. Wow, you're prolific!` 
+        };
+    }
+    
+    // Update counts
+    rateLimitCache.set(hourlyKey, hourlyCount);
+    rateLimitCache.set(dailyKey, dailyCount);
+    rateLimitCache.set(monthlyKey, monthlyCount);
+    
+    // Log rate limit status
+    logWithTimestamp(`📊 Rate limit check for ${phone}${roleLabel}: ${hourlyCount}/${limits.hourly} hourly, ${dailyCount}/${limits.daily} daily`);
+    
+    return { allowed: true };
+}
+
+/**
+ * Clean up old rate limit entries to prevent memory bloat
+ * Runs periodically to remove expired entries
+ */
+function cleanupRateLimitCache() {
+    const now = new Date();
+    const currentHour = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}-${now.getHours()}`;
+    const currentDay = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+    const currentMonth = `${now.getFullYear()}-${now.getMonth()+1}`;
+    
+    let cleaned = 0;
+    for (const [key, _] of rateLimitCache) {
+        const parts = key.split(':');
+        if (parts.length !== 3) continue;
+        
+        const [phone, period, timestamp] = parts;
+        
+        // Remove old entries
+        if ((period === 'hour' && timestamp !== currentHour) ||
+            (period === 'day' && timestamp !== currentDay) ||
+            (period === 'month' && timestamp !== currentMonth)) {
+            rateLimitCache.delete(key);
+            cleaned++;
+        }
+    }
+    
+    if (cleaned > 0) {
+        logWithTimestamp(`🧹 Cleaned up ${cleaned} expired rate limit entries`);
+    }
+}
+
+// Run cleanup every hour
+setInterval(cleanupRateLimitCache, 60 * 60 * 1000);
+
 /**
  * Helper function to determine the next modification number for remix chains
  * Parses "modification 1:", "modification 2:" patterns to find the highest number
@@ -287,6 +399,23 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
     
     // Store the original user input before any processing for database storage
     const originalUserInput = userPrompt;
+    
+    // Check rate limit before expensive operations
+    try {
+        // Import storage manager to get user role
+        const { getUserRole } = await import('./storage-manager.js');
+        const userRole = await getUserRole(userSlug);
+        
+        const rateLimitCheck = await checkRateLimit(senderPhone, userRole);
+        if (!rateLimitCheck.allowed) {
+            logWarning(`⚠️ Rate limit exceeded for ${senderPhone}: ${rateLimitCheck.message}`);
+            await sendConfirmationSms(rateLimitCheck.message || "Rate limit exceeded", senderPhone);
+            return false;
+        }
+    } catch (error) {
+        logError(`Error checking rate limit: ${error}`);
+        // Continue anyway - don't block on rate limit errors
+    }
     
     // Check if this is a PUBLIC ZAD request
     const isPublicZadRequest = userPrompt.toLowerCase().includes('public');

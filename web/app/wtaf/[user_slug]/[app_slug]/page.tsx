@@ -156,10 +156,117 @@ setTimeout(function() {
 		mainScreen.classList.add('active');
 	}
 	
-	// Update status and user label
+	// Create WEBTOYS-style demo mode banner
+	const existingBanner = document.getElementById('demo-mode-banner');
+	if (!existingBanner) {
+		// Add styles
+		const style = document.createElement('style');
+		style.textContent = \`
+			@keyframes slideDown { 
+				from { 
+					transform: translateX(-50%) translateY(-100%); 
+					opacity: 0;
+				} 
+				to { 
+					transform: translateX(-50%) translateY(0); 
+					opacity: 1;
+				} 
+			}
+			#demo-mode-banner {
+				position: fixed;
+				top: 20px;
+				left: 50%;
+				transform: translateX(-50%);
+				background: #FF5722;
+				color: white;
+				padding: 12px 20px;
+				border: 2px solid #000;
+				z-index: 10000;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+				animation: slideDown 0.3s ease-out;
+				max-width: 90%;
+				width: auto;
+				overflow: visible;
+			}
+			#demo-mode-banner .content-wrapper {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 12px;
+				position: relative;
+				padding-right: 35px;
+			}
+			#demo-mode-banner .close-btn {
+				position: absolute;
+				top: 0;
+				right: 0;
+				background: #E53935;
+				border-left: 2px solid #000;
+				border-bottom: 2px solid #000;
+				color: white;
+				font-size: 16px;
+				font-weight: bold;
+				cursor: pointer;
+				padding: 0;
+				line-height: 1;
+				width: 32px;
+				height: 32px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-shadow: none;
+				outline: none;
+			}
+			#demo-mode-banner .close-btn:hover {
+				background: #C62828;
+			}
+			#demo-mode-banner .emoji {
+				font-size: 40px;
+			}
+			#demo-mode-banner span:last-child {
+				font-size: 16px;
+				font-weight: 600;
+			}
+		\`;
+		document.head.appendChild(style);
+		
+		// Create banner
+		const demoBanner = document.createElement('div');
+		demoBanner.id = 'demo-mode-banner';
+		
+		// Create content wrapper
+		const contentWrapper = document.createElement('div');
+		contentWrapper.className = 'content-wrapper';
+		
+		// Create emoji
+		const emoji = document.createElement('span');
+		emoji.className = 'emoji';
+		emoji.textContent = '🤪';
+		
+		// Create text
+		const text = document.createElement('span');
+		text.textContent = 'DEMO MODE – The apps we build (mostly) work. This DEMO thing? Kinda, sometimes.';
+		
+		// Create close button (positioned absolutely in upper right)
+		const closeButton = document.createElement('button');
+		closeButton.className = 'close-btn';
+		closeButton.textContent = '✕';
+		closeButton.onclick = function() { 
+			demoBanner.style.display = 'none'; 
+		};
+		
+		contentWrapper.appendChild(emoji);
+		contentWrapper.appendChild(text);
+		contentWrapper.appendChild(closeButton);
+		demoBanner.appendChild(contentWrapper);
+		
+		document.body.insertBefore(demoBanner, document.body.firstChild);
+	}
+	
+	// Update status and user label if they exist
 	const userStatus = document.querySelector('#user-status');
 	if (userStatus) {
-		userStatus.innerHTML = '<span style="background-color: #ff6b6b; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold; display: inline-block;">🎭 DEMO MODE – Real thing works. This DEMO thing? Kinda, sometimes.</span>';
+		userStatus.style.display = 'none'; // Hide the old status
 	}
 	
 	const userLabel = document.querySelector('#current-user-label');
