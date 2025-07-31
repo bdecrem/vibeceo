@@ -1118,7 +1118,7 @@ export default function WebtoysSitePage() {
                 <div className="sms-pulse-dot"></div>
                 <span className="sms-number">
                   <span className="sms-phone-text">+1-866-330-0015</span>
-                  <span className="sms-try-it">Text us with your web toy request</span>
+                  <span className="sms-try-it">Text your Webtoy request</span>
                 </span>
               </div>
               <div className="sms-examples">
@@ -1140,7 +1140,7 @@ export default function WebtoysSitePage() {
             <div className="cta-section">
               <a href="sms:+18663300015" className="cta-main">
                 <span>📱</span>
-                <span>Text +1-866-330-0015 Now</span>
+                <span>Text +1-866-330-0015 now</span>
               </a>
             </div>
           </div>
@@ -1164,7 +1164,7 @@ export default function WebtoysSitePage() {
         <div className="examples-container">
           <div className="section-header">
             <h2 className="section-title">THE HALL OF STUFF</h2>
-            <p className="section-subtitle">Featured Webtoys we're not entirely ashamed of.</p>
+            <p className="section-subtitle">Featured Webtoys we're not entirely ashamed of</p>
           </div>
           
           <div className="examples-grid">
@@ -1441,10 +1441,12 @@ export default function WebtoysSitePage() {
       
       {/* About Section */}
       <section className="footer-cta">
-        <h2 className="ready-title">Ready to Get Weird?</h2>
+        <h2 className="ready-title">READY TO GET WEIRD?</h2>
         <div className="about-content">
-          <p>Your app ideas are too spicy for traditional development. Text them to +1-866-330-0015 and we'll turn them into reality faster than you can say "technical debt." While others are stuck in sprint planning, you'll be shipping digital mayhem.</p>
-          <p>Warning: Side effects may include uncontrollable creativity and chronic disruption.</p>
+          <p>Your app idea deserves better than a napkin sketch. But also, the light's about to turn green.</p>
+          <p>Text it to +1-866-330-0015 and we'll spin it into a real, working Webtoy — no logins, no code, no gatekeepers. Just pure internet mischief, handcrafted and sent back to your phone.</p>
+          <p>Sushi-themed chat apps? Rhyming to-do lists? A journal that bullies you gently?<br />We don't judge. We just build.</p>
+          <p>⚠️ Side effects may include: compulsive remixing, spontaneous joy, and the sudden realization that you've made five apps before finishing your coffee.</p>
         </div>
       </section>
       
@@ -1452,7 +1454,7 @@ export default function WebtoysSitePage() {
       <footer className="footer">
         <div className="footer-content">
           <p className="footer-copyright">
-            © 2025 WEBTOYS
+            v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
         </div>
       </footer>
