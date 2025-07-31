@@ -15,10 +15,30 @@ IMPORTANT REQUIREMENTS:
    - Object pages: /{user_slug}/{app_slug}-index?id=[object-id]
    - Parse window.location to determine current view
 
-3. DATA ACCESS:
+3. DATA ACCESS (CRITICAL - THIS IS WHERE APPS FAIL):
    - Use window.OBJECTIFY_SOURCE_APP_ID (will be injected) to load data
    - Load data directly from wtaf_zero_admin_collaborative table
-   - No authentication required - this is PUBLIC access
+   - YOU MUST FILTER BY app_id IN YOUR QUERIES!
+   
+   CORRECT EXAMPLE:
+   ```javascript
+   const { data, error } = await supabase
+       .from('wtaf_zero_admin_collaborative')
+       .select('*')
+       .eq('app_id', window.OBJECTIFY_SOURCE_APP_ID)  // CRITICAL: MUST FILTER BY APP_ID
+       .eq('action_type', 'blog_post')
+       .order('created_at', { ascending: false });
+   ```
+   
+   WRONG (loads ALL data from ALL apps):
+   ```javascript
+   // MISSING app_id filter - will load blog posts from EVERY app!
+   const { data, error } = await supabase
+       .from('wtaf_zero_admin_collaborative')
+       .select('*')
+       .eq('action_type', 'blog_post')
+       .order('created_at', { ascending: false });
+   ```
 
 4. INDEX VIEW should:
    - Load ALL records from the source ZAD app
@@ -42,6 +62,13 @@ IMPORTANT REQUIREMENTS:
 
 7. TECHNICAL REQUIREMENTS:
    - Use Supabase client library for data access
+   - YOU MUST USE REAL SUPABASE CREDENTIALS:
+     ```javascript
+     const supabase = supabase.createClient(
+         'https://tqniseocczttrfwtpbdr.supabase.co',
+         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2MTcwMTQsImV4cCI6MjAzMzE5MzAxNH0.7_f7C7dPWYfASGE6JVCQL7yUIQTrIHJgCBUQZ01BPDI'
+     );
+     ```
    - Handle loading states gracefully
    - Show appropriate messages for empty data or not found
    - Include proper error handling
