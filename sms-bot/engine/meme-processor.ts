@@ -20,7 +20,7 @@ import { OpenAI } from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { OPENAI_API_KEY, WEB_APP_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
-import { readFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -141,7 +141,8 @@ export interface MemeContent {
 export interface MemeResult {
     success: boolean;
     html?: string;
-    imageUrl?: string;
+    imageUrl?: string;  // Square version (main display)
+    landscapeImageUrl?: string;  // Landscape version (for previews/OG)
     memeContent?: MemeContent;
     error?: string;
 }
@@ -240,12 +241,12 @@ async function generateMemeImage(imagePrompt: string): Promise<string | null> {
         logWithTimestamp(`🎨 Image prompt: ${imagePrompt}`);
         
         // Add explicit instruction to DALL-E to never include text and add bleed space
-        const noTextPrompt = `${imagePrompt} CRITICAL COMPOSITION RULES: 1) NO text/words/letters anywhere in the image. 2) MUST have empty space at top 25% and bottom 25% of frame - these areas should be simple sky, wall, or plain background. 3) Main subject/character must be in the MIDDLE 50% only, not touching top or bottom edges. 4) Think of it like a movie frame with letterboxing - subject in center, empty space above and below for subtitles.`;
+        const noTextPrompt = `${imagePrompt} STYLE: Environmental photography, 3:2 aspect ratio. Character small within actual room/space that extends to all edges. Like standing back to photograph someone in their real environment. The walls, floor, and ceiling should touch the image borders directly - no frames, no floating panels, no illustrations within illustrations. Character centered with generous headroom and floor space. Think: wide angle lens capturing a real location. Full bleed environmental portrait. The background wall/environment must extend all the way to the edges of the image with no borders or frames. NOT a framed picture, NOT a panel, NOT an illustration mounted on a wall - the entire image IS the room/environment.`;
         
         const response = await getOpenAIClient().images.generate({
             model: "dall-e-3",
             prompt: noTextPrompt,
-            size: "1024x1024",
+            size: "1792x1024",
             quality: "standard",
             n: 1
         });
@@ -257,6 +258,22 @@ async function generateMemeImage(imagePrompt: string): Promise<string | null> {
         }
 
         logSuccess(`✅ Generated meme image: ${imageUrl}`);
+        
+        // Save DALL-E image to disk for debugging
+        try {
+            logWithTimestamp(`💾 Saving DALL-E image to disk...`);
+            const imageResponse = await fetch(imageUrl);
+            const imageBuffer = await imageResponse.arrayBuffer();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const fileName = `dalle-${timestamp}.png`;
+            const filePath = join(__dirname, '..', '..', 'data', 'dalle-images', fileName);
+            
+            await writeFile(filePath, Buffer.from(imageBuffer));
+            logSuccess(`✅ Saved DALL-E image to: ${filePath}`);
+        } catch (saveError) {
+            logWarning(`Failed to save DALL-E image: ${saveError instanceof Error ? saveError.message : String(saveError)}`);
+        }
+        
         return imageUrl;
 
     } catch (error) {
@@ -266,9 +283,10 @@ async function generateMemeImage(imagePrompt: string): Promise<string | null> {
 }
 
 /**
- * Generate composite meme image with text burned in using HTMLCSStoImage
+ * Generate SQUARE composite meme image with text burned in using HTMLCSStoImage
+ * This crops the center square from the 3:2 image
  */
-async function generateCompositeMemeImage(backgroundImageUrl: string, memeContent: MemeContent): Promise<string | null> {
+async function generateSquareCompositeMemeImage(backgroundImageUrl: string, memeContent: MemeContent): Promise<string | null> {
     try {
         logWithTimestamp(`🔥 Creating composite meme with embedded text...`);
         
@@ -310,13 +328,17 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
             position: relative;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
         
         .meme-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
             display: block;
+            /* Crop to center square by scaling up the 3:2 image */
+            transform: scale(1.75);
         }
         
         .meme-text {
@@ -427,13 +449,175 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
 }
 
 /**
+ * Generate LANDSCAPE composite meme image with text burned in using HTMLCSStoImage
+ * This uses the full 3:2 image with text positioned for landscape format
+ */
+async function generateLandscapeCompositeMemeImage(backgroundImageUrl: string, memeContent: MemeContent): Promise<string | null> {
+    try {
+        logWithTimestamp(`🎬 Creating landscape composite meme with embedded text...`);
+        
+        if (!HTMLCSS_USER_ID || !HTMLCSS_API_KEY) {
+            logError("HTMLCSStoImage credentials not found");
+            return backgroundImageUrl; // Fallback to original image
+        }
+
+        const { topText, bottomText } = memeContent;
+        
+        logWithTimestamp(`📝 Landscape meme text - Top: "${topText}", Bottom: "${bottomText}"`);
+        
+        // HTML for landscape 3:2 format
+        const landscapeHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1792, height=1024">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 1792px;
+            height: 1024px;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+            font-family: Impact, "Arial Black", sans-serif;
+            background: white;
+        }
+        
+        .meme-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .meme-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .meme-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Impact, "Arial Black", sans-serif;
+            font-weight: 900;
+            font-size: 120px;
+            line-height: 1;
+            padding: 0 40px;
+            text-transform: lowercase;
+            letter-spacing: -3px;
+            -webkit-text-stroke: 4px black;
+            text-stroke: 4px black;
+            text-shadow: 
+                6px 6px 0 black,
+                -6px 6px 0 black,
+                6px -6px 0 black,
+                -6px -6px 0 black,
+                5px 5px 0 black,
+                -5px 5px 0 black,
+                5px -5px 0 black,
+                -5px -5px 0 black,
+                4px 4px 0 black,
+                -4px 4px 0 black,
+                4px -4px 0 black,
+                -4px -4px 0 black,
+                3px 3px 0 black,
+                -3px 3px 0 black,
+                3px -3px 0 black,
+                -3px -3px 0 black,
+                2px 2px 0 black,
+                -2px 2px 0 black,
+                2px -2px 0 black,
+                -2px -2px 0 black,
+                1px 1px 0 black,
+                -1px 1px 0 black,
+                1px -1px 0 black,
+                -1px -1px 0 black,
+                0 0 15px black,
+                0 0 25px black;
+            z-index: 10;
+        }
+        
+        .top-text {
+            top: 40px;
+        }
+        
+        .bottom-text {
+            bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="meme-image-wrapper">
+        <img src="${backgroundImageUrl}" alt="Meme background" class="meme-image">
+        <div class="meme-text top-text">${topText}</div>
+        <div class="meme-text bottom-text">${bottomText}</div>
+    </div>
+</body>
+</html>`;
+
+        // Create authorization header
+        const auth = Buffer.from(`${HTMLCSS_USER_ID}:${HTMLCSS_API_KEY}`).toString('base64');
+        
+        // Call HTMLCSStoImage API
+        const response = await fetch('https://hcti.io/v1/image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`
+            },
+            body: JSON.stringify({
+                html: landscapeHTML,
+                viewport_width: 1792,
+                viewport_height: 1024,
+                device_scale_factor: 1
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logError(`HTMLCSStoImage API error: ${response.status} - ${errorText}`);
+            return backgroundImageUrl; // Fallback to original image
+        }
+
+        const data = await response.json();
+        logSuccess(`✅ Generated landscape composite meme image: ${data.url}`);
+        
+        // Download the image and upload to Supabase Storage
+        try {
+            const imageBuffer = await downloadImageFromURL(data.url);
+            const fileName = `meme-landscape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
+            const supabaseUrl = await uploadToSupabaseStorage(imageBuffer, fileName);
+            
+            logSuccess(`🎯 Landscape meme image uploaded to Supabase Storage: ${supabaseUrl}`);
+            return supabaseUrl;
+        } catch (uploadError) {
+            logWarning(`⚠️ Failed to upload landscape to Supabase Storage, using HTMLCSStoImage URL: ${uploadError}`);
+            return data.url; // Fallback to original URL
+        }
+
+    } catch (error) {
+        logError(`Failed to generate landscape composite meme image: ${error instanceof Error ? error.message : String(error)}`);
+        return backgroundImageUrl; // Fallback to original image
+    }
+}
+
+/**
  * Generate HTML page for the meme
  */
-function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string): string {
+function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: string, publicUrl?: string, landscapeImageUrl?: string): string {
     const { topText, bottomText, theme } = memeContent;
     
-    // Use the actual meme image URL for OpenGraph (it's already uploaded to Supabase Storage)
-    const ogImageUrl = imageUrl;
+    // Use the landscape version for OpenGraph if available, otherwise use square
+    const ogImageUrl = landscapeImageUrl || imageUrl;
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -444,8 +628,8 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     <meta property="og:title" content="${topText} ${bottomText}" />
     <meta property="og:description" content="Made with WEBTOYS — AI nonsense, human approved" />
     <meta property="og:image" content="${ogImageUrl}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content="1792" />
+    <meta property="og:image:height" content="1024" />
     <meta property="og:url" content="https://wtaf.me/${userSlug}/meme-${topText.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${bottomText.toLowerCase().replace(/[^a-z0-9]/g, '-')}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${topText} ${bottomText}" />
@@ -1104,24 +1288,33 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate meme image" };
         }
 
-        // Step 3: Generate composite meme image with text baked in
-        const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
-        if (!compositeImageUrl) {
-            return { success: false, error: "Failed to generate composite meme image" };
+        // Step 3: Generate BOTH composite meme images with text baked in
+        // Square version for main display
+        const squareImageUrl = await generateSquareCompositeMemeImage(imageUrl, memeContent);
+        if (!squareImageUrl) {
+            return { success: false, error: "Failed to generate square composite meme image" };
+        }
+        
+        // Landscape version for previews/OG
+        const landscapeImageUrl = await generateLandscapeCompositeMemeImage(imageUrl, memeContent);
+        if (!landscapeImageUrl) {
+            logWarning("Failed to generate landscape composite, using square version");
         }
 
-        // Step 4: Generate HTML page (compositeImageUrl has text baked in)
-        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug, compositeImageUrl);
+        // Step 4: Generate HTML page (using square version for display)
+        const html = generateMemeHTML(memeContent, squareImageUrl, userSlug, squareImageUrl, landscapeImageUrl);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
+        logWithTimestamp(`🖼️ Square Image URL: ${squareImageUrl}`);
+        logWithTimestamp(`🎬 Landscape Image URL: ${landscapeImageUrl || 'Not generated'}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl: compositeImageUrl,
+            imageUrl: squareImageUrl,
+            landscapeImageUrl: landscapeImageUrl || squareImageUrl,  // Fallback to square if landscape fails
             memeContent
         };
 
