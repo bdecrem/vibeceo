@@ -281,12 +281,13 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         
         logWithTimestamp(`📝 Composite meme text - Top: "${topText}", Bottom: "${bottomText}"`);
         
-        // Create HTML template for composite meme with text above and below
-        const memeHTML = `
-<!DOCTYPE html>
+        // Start with our working HTML template and strip it down
+        // This ensures perfect consistency with what users see
+        const strippedHTML = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=1024, height=1024">
     <style>
         * {
             margin: 0;
@@ -295,20 +296,20 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         }
         
         body {
-            width: 1152px;
-            height: 768px;
+            width: 1024px;
+            height: 1024px;
             margin: 0;
             padding: 0;
             position: relative;
             overflow: hidden;
             font-family: Impact, "Arial Black", sans-serif;
-            background: #000;
+            background: white;
         }
         
-        .container {
+        .meme-image-wrapper {
+            position: relative;
             width: 100%;
             height: 100%;
-            position: relative;
         }
         
         .meme-image {
@@ -320,20 +321,18 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         
         .meme-text {
             position: absolute;
-            left: 0;
-            right: 0;
+            width: 100%;
             text-align: center;
             color: white;
             font-family: Impact, "Arial Black", sans-serif;
             font-weight: 900;
-            font-size: 80px;
+            font-size: 96px;
             line-height: 1;
-            padding: 0 40px;
-            text-transform: uppercase;
+            padding: 0 20px;
+            text-transform: lowercase;
             letter-spacing: -3px;
-            -webkit-text-stroke: 4px black;
-            text-stroke: 4px black;
-            paint-order: stroke fill;
+            -webkit-text-stroke: 3px black;
+            text-stroke: 3px black;
             text-shadow: 
                 5px 5px 0 black,
                 -5px 5px 0 black,
@@ -355,23 +354,25 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
                 -1px 1px 0 black,
                 1px -1px 0 black,
                 -1px -1px 0 black,
-                0 0 20px rgba(0,0,0,0.8);
+                0 0 10px black,
+                0 0 20px black;
+            z-index: 10;
         }
         
         .top-text {
-            top: 40px;
+            top: 20px;
         }
         
         .bottom-text {
-            bottom: 40px;
+            bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="meme-image-wrapper">
         <img src="${backgroundImageUrl}" alt="Meme background" class="meme-image">
-        <div class="meme-text top-text">${topText || ''}</div>
-        <div class="meme-text bottom-text">${bottomText || ''}</div>
+        <div class="meme-text top-text">${topText}</div>
+        <div class="meme-text bottom-text">${bottomText}</div>
     </div>
 </body>
 </html>`;
@@ -380,7 +381,7 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         const auth = Buffer.from(`${HTMLCSS_USER_ID}:${HTMLCSS_API_KEY}`).toString('base64');
         
         // Log the HTML we're sending
-        logWithTimestamp(`📋 Sending HTML to HTMLCSStoImage API (${memeHTML.length} chars)`);
+        logWithTimestamp(`📋 Sending stripped HTML to HTMLCSStoImage API (${strippedHTML.length} chars)`);
         
         // Call HTMLCSStoImage API
         const response = await fetch('https://hcti.io/v1/image', {
@@ -390,9 +391,9 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
                 'Authorization': `Basic ${auth}`
             },
             body: JSON.stringify({
-                html: memeHTML,
-                viewport_width: 1152,
-                viewport_height: 768,
+                html: strippedHTML,
+                viewport_width: 1024,
+                viewport_height: 1024,
                 device_scale_factor: 1
             })
         });
@@ -514,54 +515,6 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             border: 4px solid var(--charcoal);
             background: white;
             box-shadow: inset 0 0 0 2px var(--yellow);
-        }
-        
-        .meme-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-family: Impact, "Arial Black", sans-serif;
-            font-weight: 900;
-            font-size: 96px;
-            line-height: 1;
-            padding: 0 20px;
-            text-transform: lowercase;
-            letter-spacing: -3px;
-            -webkit-text-stroke: 3px black;
-            text-stroke: 3px black;
-            text-shadow: 
-                5px 5px 0 black,
-                -5px 5px 0 black,
-                5px -5px 0 black,
-                -5px -5px 0 black,
-                4px 4px 0 black,
-                -4px 4px 0 black,
-                4px -4px 0 black,
-                -4px -4px 0 black,
-                3px 3px 0 black,
-                -3px 3px 0 black,
-                3px -3px 0 black,
-                -3px -3px 0 black,
-                2px 2px 0 black,
-                -2px 2px 0 black,
-                2px -2px 0 black,
-                -2px -2px 0 black,
-                1px 1px 0 black,
-                -1px 1px 0 black,
-                1px -1px 0 black,
-                -1px -1px 0 black,
-                0 0 10px black,
-                0 0 20px black;
-            z-index: 10;
-        }
-        
-        .top-text {
-            top: 20px;
-        }
-        
-        .bottom-text {
-            bottom: 20px;
         }
         
         .action-buttons {
@@ -757,10 +710,6 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 max-height: 70vh;
             }
             
-            .meme-text {
-                font-size: 72px;
-            }
-            
             .action-buttons {
                 gap: 15px;
                 flex-direction: column;
@@ -788,13 +737,6 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             
             .meme-image {
                 min-height: 350px;
-            }
-            
-            .meme-text {
-                font-size: 58px;
-                letter-spacing: -2px;
-                -webkit-text-stroke: 2px black;
-                text-stroke: 2px black;
             }
             
             .action-btn {
@@ -827,8 +769,6 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     <div class="meme-container">
         <div class="meme-image-wrapper">
             <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
-            <div class="meme-text top-text">${topText}</div>
-            <div class="meme-text bottom-text">${bottomText}</div>
         </div>
         
         <div class="action-buttons">
@@ -1171,24 +1111,23 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
         }
 
         // Step 3: Generate composite meme image with text baked in
-        // TEMPORARILY COMMENTED OUT - using CSS overlay instead
-        // const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
-        // if (!compositeImageUrl) {
-        //     return { success: false, error: "Failed to generate composite meme image" };
-        // }
+        const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
+        if (!compositeImageUrl) {
+            return { success: false, error: "Failed to generate composite meme image" };
+        }
 
-        // Step 4: Generate HTML page (using original image with CSS text overlay)
-        const html = generateMemeHTML(memeContent, imageUrl, userSlug, imageUrl);
+        // Step 4: Generate HTML page (compositeImageUrl has text baked in)
+        const html = generateMemeHTML(memeContent, compositeImageUrl, userSlug, compositeImageUrl);
         
         logSuccess("🎉 Meme generation complete!");
-        logWithTimestamp(`🖼️ Image URL: ${imageUrl}`);
+        logWithTimestamp(`🖼️ Image URL: ${compositeImageUrl}`);
         logWithTimestamp(`📄 HTML generated (${html.length} characters)`);
         logWithTimestamp("=" + "=".repeat(79));
 
         return {
             success: true,
             html,
-            imageUrl: imageUrl,
+            imageUrl: compositeImageUrl,
             memeContent
         };
 
