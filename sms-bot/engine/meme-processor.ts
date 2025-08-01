@@ -771,6 +771,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
         </div>
         
+        <!-- Commented out action buttons, replaced with tap instruction
         <div class="action-buttons">
             <button class="action-btn copy-url-btn" onclick="handleCopyUrl()">
                 <span class="btn-icon">🔗</span>
@@ -780,6 +781,11 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 <span class="btn-icon" id="downloadIcon">💾</span>
                 <span class="btn-text" id="downloadText">SAVE TO DEVICE</span>
             </button>
+        </div>
+        -->
+        
+        <div style="text-align: center; padding: 1.5rem 0; color: var(--charcoal); font-weight: 600; font-size: 1.1rem;">
+            👉 Tap and hold to save or share
         </div>
     </div>
     
