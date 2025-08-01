@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import CopiedModal from "@/components/ui/copied-modal"
 import HomepageTruncatedPrompt from "@/components/wtaf/homepage-truncated-prompt"
+import { supabase } from '@/lib/supabase'
 
 interface WtafApp {
   id: string
@@ -42,6 +43,40 @@ function DevConsole() {
   const scrollTimerRef = useRef<NodeJS.Timeout>()
   const dragStartY = useRef<number>(0)
   const dragStartHeight = useRef<number>(0)
+  
+  // Auth state
+  const [user, setUser] = useState<any>(null)
+  const [authMode, setAuthMode] = useState<'none' | 'signin' | 'signup'>('none')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+
+  // Check auth status when console opens
+  useEffect(() => {
+    if (isOpen) {
+      checkUser()
+    }
+  }, [isOpen])
+
+  async function checkUser() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      setUser(session.user)
+      setAuthMode('none')
+      addConsoleEntry(`🔐 Authenticated as: ${session.user.email}`, 'success')
+    }
+  }
+
+  function addConsoleEntry(text: string, type: string = 'info') {
+    setConsoleHistory(prev => [...prev, { text, type }])
+    // Auto-scroll to bottom
+    setTimeout(() => {
+      if (consoleOutputRef.current) {
+        consoleOutputRef.current.scrollTop = consoleOutputRef.current.scrollHeight
+      }
+    }, 10)
+  }
 
   // Show handle only when scrolled to bottom
   useEffect(() => {
@@ -171,6 +206,166 @@ function DevConsole() {
     }
   }, [isDragging])
 
+  async function handleSignIn(email: string, password: string) {
+    setAuthError('')
+    setAuthLoading(true)
+    
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    
+    if (error) {
+      setAuthError(error.message)
+      addConsoleEntry(`❌ Auth failed: ${error.message}`, 'error')
+    } else {
+      await checkUser()
+      setEmail('')
+      setPassword('')
+      setAuthMode('none')
+    }
+    setAuthLoading(false)
+  }
+
+  async function handleSignUp(email: string, password: string) {
+    setAuthError('')
+    setAuthLoading(true)
+    
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    
+    if (error) {
+      setAuthError(error.message)
+      addConsoleEntry(`❌ Signup failed: ${error.message}`, 'error')
+      setAuthLoading(false)
+      return
+    }
+
+    if (data.user) {
+      // Create sms_subscriber entry
+      const response = await fetch('/api/auth/create-subscriber', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supabase_id: data.user.id,
+          email: data.user.email
+        })
+      })
+
+      if (!response.ok) {
+        addConsoleEntry('⚠️ Warning: Could not create SMS subscriber entry', 'warning')
+      }
+
+      if (data.session) {
+        await checkUser()
+        setEmail('')
+        setPassword('')
+        setAuthMode('none')
+      } else {
+        addConsoleEntry('📧 Check your email to confirm your account!', 'success')
+        setAuthMode('none')
+      }
+    }
+    setAuthLoading(false)
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setAuthMode('none')
+    addConsoleEntry('👋 Signed out successfully', 'info')
+  }
+
+  async function handleWtafCommand(cmd: string) {
+    addConsoleEntry(`> ${cmd}`, 'command')
+    addConsoleEntry('🚀 Processing WTAF command...', 'info')
+    
+    try {
+      const response = await fetch('/api/wtaf/web-console', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: cmd,
+          user_email: user.email,
+          user_id: user.id
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        // Handle specific error types
+        if (response.status === 429) {
+          addConsoleEntry(`⏱️ ${result.error}`, 'error')
+          if (result.rate_limit) {
+            addConsoleEntry(`Rate limit resets in ${result.rate_limit.reset_in_minutes} minutes`, 'warning')
+          }
+        } else if (response.status === 403) {
+          addConsoleEntry(`🚫 ${result.error}`, 'error')
+          if (result.allowed_commands) {
+            addConsoleEntry(`Your allowed commands: ${result.allowed_commands.join(', ')}`, 'info')
+          }
+          if (result.hint) {
+            addConsoleEntry(`💡 ${result.hint}`, 'info')
+          }
+        } else {
+          addConsoleEntry(`❌ ${result.error || 'Command failed'}`, 'error')
+          if (result.details) {
+            addConsoleEntry(`Details: ${result.details}`, 'error')
+          }
+        }
+      } else {
+        // Success!
+        if (result.success === false) {
+          addConsoleEntry(`❌ ${result.message || 'Command failed'}`, 'error')
+        } else if (result.responses && Array.isArray(result.responses)) {
+          // Process multiple responses from WTAF
+          for (const response of result.responses) {
+            const entryType = response.type === 'error' ? 'error' : 
+                            response.type === 'success' ? 'success' :
+                            response.type === 'url' ? 'success' :
+                            response.type === 'admin_url' ? 'success' :
+                            'info'
+            
+            if (response.url) {
+              // Make URLs clickable
+              const clickableMessage = response.message.replace(
+                response.url,
+                `<a href="${response.url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${response.url}</a>`
+              )
+              addConsoleEntry(clickableMessage, entryType)
+            } else {
+              addConsoleEntry(response.message, entryType)
+            }
+          }
+          
+          // Show main URLs prominently if available
+          if (result.publicUrl) {
+            addConsoleEntry('', 'info') // Add spacing
+            addConsoleEntry('🚀 Your app is live!', 'success')
+            addConsoleEntry(
+              `<a href="${result.publicUrl}" target="_blank" style="color: #4CAF50; font-weight: bold; text-decoration: underline;">${result.publicUrl}</a>`,
+              'success'
+            )
+          }
+          
+          if (result.adminUrl) {
+            addConsoleEntry(
+              `Admin panel: <a href="${result.adminUrl}" target="_blank" style="color: #FFA726; text-decoration: underline;">${result.adminUrl}</a>`,
+              'warning'
+            )
+          }
+        } else if (result.message) {
+          // Fallback for simple message response
+          addConsoleEntry(`✅ ${result.message}`, 'success')
+        }
+        
+        if (result.rate_limit) {
+          addConsoleEntry(`Remaining commands: ${result.rate_limit.remaining}`, 'info')
+        }
+      }
+    } catch (error: any) {
+      addConsoleEntry(`❌ Network error: ${error.message}`, 'error')
+      addConsoleEntry('Please check your connection and try again', 'error')
+    }
+  }
+
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
     let response = ''
@@ -186,7 +381,13 @@ function DevConsole() {
   konami    - Show the sacred code
   stats     - Show site statistics
   clear     - Clear console
-  exit      - Close console`
+  exit      - Close console
+  
+🔐 AUTH COMMANDS:
+  login     - Sign in to your account
+  signup    - Create a new account
+  logout    - Sign out
+  whoami    - Show current user`
         break
       case 'wtaf':
         response = `🧪 WTAF COMMANDS (via SMS):
@@ -295,10 +496,47 @@ Without this, you'll see duplicates everywhere! 🤯`
       case 'exit':
         setIsOpen(false)
         return
+      case 'login':
+        if (user) {
+          response = `Already logged in as ${user.email}. Use "logout" to sign out.`
+        } else {
+          setAuthMode('signin')
+          response = 'Enter your credentials in the form below.'
+        }
+        break
+      case 'signup':
+        if (user) {
+          response = `Already logged in as ${user.email}. Use "logout" to create a new account.`
+        } else {
+          setAuthMode('signup')
+          response = 'Create a new account using the form below.'
+        }
+        break
+      case 'logout':
+        if (user) {
+          handleSignOut()
+          return
+        } else {
+          response = 'Not currently logged in.'
+        }
+        break
+      case 'whoami':
+        if (user) {
+          response = `🔐 Authenticated as: ${user.email}`
+        } else {
+          response = 'Not authenticated. Use "login" or "signup" to get started.'
+        }
+        break
       default:
         // Check if they're trying to use WTAF commands in console
         if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ')) {
-          response = `📱 Nice try! But WTAF commands only work via SMS.\n\nText "${cmd}" to +1-866-330-0015 instead!\n\nType "wtaf" here to see all SMS commands.`
+          if (user) {
+            // Process WTAF command for authenticated users
+            handleWtafCommand(cmd)
+            return
+          } else {
+            response = `🔐 Authentication required to use WTAF commands in console.\n\nUse "login" or "signup" to get started, or text "${cmd}" to +1-866-330-0015 instead!`
+          }
         } else if (lowerCmd) {
           response = `Command not found: "${cmd}". Type "help" for available commands.`
         }
@@ -357,24 +595,84 @@ Without this, you'll see duplicates everywhere! 🤯`
           <div className="console-content">
             <div className="console-output" ref={consoleOutputRef}>
               {consoleHistory.map((item, i) => (
-                <div key={i} className={`console-line ${item.type || ''}`}>
-                  {item.text}
-                </div>
+                <div 
+                  key={i} 
+                  className={`console-line ${item.type || ''}`}
+                  dangerouslySetInnerHTML={{ __html: item.text }}
+                />
               ))}
             </div>
-            <form onSubmit={handleSubmit} className="console-input-form">
-              <span className="console-prompt">&gt; </span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={consoleInput}
-                onChange={(e) => setConsoleInput(e.target.value)}
-                className="console-input"
-                placeholder="Enter command..."
-                autoComplete="off"
-                spellCheck="false"
-              />
-            </form>
+            
+            {/* Auth Forms */}
+            {authMode !== 'none' && (
+              <div className="console-auth-form">
+                <form onSubmit={(e) => {
+                  e.preventDefault()
+                  if (authMode === 'signin') {
+                    handleSignIn(email, password)
+                  } else {
+                    handleSignUp(email, password)
+                  }
+                }}>
+                  <input
+                    type="email"
+                    placeholder="email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="console-auth-input"
+                    required
+                    autoFocus
+                  />
+                  <input
+                    type="password"
+                    placeholder="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="console-auth-input"
+                    required
+                  />
+                  <div className="console-auth-buttons">
+                    <button
+                      type="submit"
+                      disabled={authLoading}
+                      className="console-auth-button"
+                    >
+                      {authLoading ? 'Processing...' : authMode === 'signin' ? 'Sign In' : 'Sign Up'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('none')
+                        setEmail('')
+                        setPassword('')
+                        setAuthError('')
+                      }}
+                      className="console-auth-button cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {authError && <div className="console-auth-error">{authError}</div>}
+                </form>
+              </div>
+            )}
+            
+            {/* Command Input */}
+            {authMode === 'none' && (
+              <form onSubmit={handleSubmit} className="console-input-form">
+                <span className="console-prompt">&gt; </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={consoleInput}
+                  onChange={(e) => setConsoleInput(e.target.value)}
+                  className="console-input"
+                  placeholder="Enter command..."
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -565,6 +863,97 @@ Without this, you'll see duplicates everywhere! 🤯`
 
         .console-input::placeholder {
           color: #666;
+        }
+
+        /* Auth Form Styles */
+        .console-auth-form {
+          padding: 20px 0;
+          border-top: 1px solid #333;
+        }
+
+        .console-auth-input {
+          width: 100%;
+          background: #0a0a0a;
+          border: 1px solid #333;
+          color: #fff;
+          font-family: inherit;
+          font-size: 14px;
+          padding: 8px 12px;
+          margin-bottom: 10px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        .console-auth-input:focus {
+          border-color: #FF4B4B;
+        }
+
+        .console-auth-input::placeholder {
+          color: #666;
+        }
+
+        .console-auth-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        .console-auth-button {
+          flex: 1;
+          background: #FF4B4B;
+          color: #000;
+          border: none;
+          padding: 8px 16px;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .console-auth-button:hover:not(:disabled) {
+          background: #ff6b6b;
+        }
+
+        .console-auth-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .console-auth-button.cancel {
+          background: #333;
+          color: #fff;
+        }
+
+        .console-auth-button.cancel:hover {
+          background: #444;
+        }
+
+        .console-auth-error {
+          color: #ff6b6b;
+          font-size: 12px;
+          margin-top: 10px;
+        }
+
+        .console-line.success {
+          color: #4CAF50;
+        }
+
+        .console-line.error {
+          color: #ff6b6b;
+        }
+
+        .console-line.warning {
+          color: #FFA726;
+        }
+
+        .console-line a {
+          color: inherit;
+          text-decoration: underline;
+        }
+
+        .console-line a:hover {
+          opacity: 0.8;
         }
 
         @media (max-width: 768px) {

@@ -52,6 +52,17 @@ Users can trigger remix functionality through:
   - Maintains multi-user collaborative functionality
   - Preserves ZAD helper functions and API integration
 
+### 6. Memes
+- **App Type**: `MEME`
+- **Method**: **Regenerates entirely** using new prompt
+- **Process**: Calls meme processor with remix instructions
+- **Storage**: Creates new meme with remix metadata
+- **Special Features**:
+  - Uses GPT-4o for new meme text generation
+  - Creates new DALL-E 3 image based on remix request
+  - Tracks original meme in metadata for attribution
+  - Preserves social graph relationships
+
 ## Key Differences
 
 ### HTML-Based Remix (Types 1-4)
@@ -60,11 +71,12 @@ Users can trigger remix functionality through:
 - Faster and more predictable
 - Good for visual/content changes
 
-### Prompt-Based Regeneration (Type 5 - ZAD)
-- Regenerates entire app from combined prompts
+### Prompt-Based Regeneration (Types 5-6 - ZAD & Memes)
+- Regenerates entire app/meme from prompts
 - More flexible for structural changes
-- Maintains prompt lineage for tracking
-- Better for functional modifications
+- ZAD: Maintains prompt lineage for tracking
+- Memes: Creates entirely new content based on remix request
+- Better for functional modifications and creative reinterpretation
 
 ## Technical Implementation
 
@@ -99,17 +111,19 @@ Common failure scenarios:
 - `remix-permission`: User lacks permission to remix
 - `remix-original-prompt`: Can't load original prompt (ZAD only)
 - `remix-unsupported`: Unknown remix command format
+- `meme-generation`: Meme remix generation failed
 
 ## Best Practices
 
 1. **For Visual Changes**: Use standard remix on web/form pages
 2. **For Game Tweaks**: Be specific about what to change (e.g., "make the player move faster")
 3. **For ZAD Apps**: Understand that the entire app will be regenerated
-4. **Attribution**: Always preserved - remixes show original creator
+4. **For Memes**: Provide clear direction for the new meme (e.g., "make it about cats instead")
+5. **Attribution**: Always preserved - remixes show original creator
 
 ## Future Considerations
 
-- Meme remix functionality (currently not implemented)
 - Potential for selective HTML element targeting
 - Version control/rollback capabilities
 - Remix chains visualization
+- Enhanced meme remix with style transfer options

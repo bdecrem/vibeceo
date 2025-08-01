@@ -21,6 +21,11 @@ export default function LinkPage() {
     loadSession()
   }, [router])
 
+  const skipPhoneLinking = () => {
+    // Go directly to dashboard without linking phone
+    router.push('/dashboard')
+  }
+
   const [phone, setPhone] = useState('')
   const [status, setStatus] = useState<'idle' | 'linking' | 'linked' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -93,6 +98,14 @@ export default function LinkPage() {
             disabled={status === 'linking'}
           >
             {status === 'linking' ? 'Linking...' : 'Link Account'}
+          </button>
+          
+          <button
+            type="button"
+            onClick={skipPhoneLinking}
+            className="text-gray-500 underline ml-4"
+          >
+            Skip for now →
           </button>
         </form>
       )}

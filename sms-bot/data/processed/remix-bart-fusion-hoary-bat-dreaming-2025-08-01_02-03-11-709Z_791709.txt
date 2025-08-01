@@ -1,0 +1,5 @@
+SENDER:+16508989508
+USER_SLUG:bart
+REMIX_COMMAND:--remix fusion-hoary-bat-dreaming make it about dogs instead
+
+ORIGINAL_REQUEST:REMIX fusion-hoary-bat-dreaming make it about dogs instead

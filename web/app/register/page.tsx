@@ -31,10 +31,28 @@ const handleRegister = async (e: React.FormEvent) => {
 
   // Check if user was created
   if (data.user) {
+    // Create sms_subscriber entry for web users
+    try {
+      const response = await fetch('/api/auth/create-subscriber', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supabase_id: data.user.id,
+          email: data.user.email
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to create subscriber entry');
+      }
+    } catch (err) {
+      console.error('Error creating subscriber:', err);
+    }
+    
     // If we have a session, email confirmation is disabled
     if (data.session) {
-      console.log('Session created, redirecting to /link')
-      window.location.href = '/link'
+      console.log('Session created, redirecting to dashboard')
+      window.location.href = '/dashboard'
     } else {
       // No session means email confirmation is required
       setError('Registration successful! Please check your email to confirm your account before logging in.')
