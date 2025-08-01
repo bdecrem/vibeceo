@@ -18,4 +18,4 @@ Key requirements:
 - Channel *awkward chaos* over realism
 - Emotions should feel exaggerated or detached: “screaming internally,” “pretending to be okay,” “hovering on the edge,” “dissociating through a spreadsheet”
 - Captions should be punchy, weird, and memeable
-- Visually, keep it flat, weird, and stupid on purpose — think: Slack notifications with legs, to-do lists with eyes, coffee mugs that judge you
+- Visually, keep it flat, weird, and stupid on purpose — think: Slack notifications with legs, to-do lists with eyes, coffee mugs that judge you.
