@@ -84,12 +84,14 @@ export async function GET() {
     for (const app of featuredAppsList) {
       const { data: contentData } = await supabase
         .from('wtaf_content')
-        .select('type')
+        .select('type, landscape_image_url, og_image_url')
         .eq('user_slug', app.user_slug)
         .eq('app_slug', app.app_slug)
         .single()
       
       ;(app as any).type = contentData?.type || 'web'
+      ;(app as any).landscape_image_url = contentData?.landscape_image_url || null
+      ;(app as any).og_image_url = contentData?.og_image_url || null
     }
 
     const totalFeaturedApps = featuredAppsList.length

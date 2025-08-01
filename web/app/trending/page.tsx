@@ -206,30 +206,10 @@ export default function TrendingPage() {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Hero Section */}
-        <section className="trending-hero">
-          <div className="hero-container">
-            <div className="hero-content">
-              <h1 className="hero-title">🔥 Trending Now</h1>
-              <p className="hero-description">
-                The hottest, most talked-about apps burning up the WEBTOYS ecosystem right now. 
-                These are the creations everyone's remixing, sharing, and falling in love with.
-              </p>
-              <div className="stats-row">
-                <div className="stat-item">
-                  <div className="stat-number">{stats.totalTrendingApps}</div>
-                  <div className="stat-label">Trending Apps</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">{stats.totalRemixesThisWeek}</div>
-                  <div className="stat-label">Remixes This Week</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">{stats.appsWithRecentActivity}</div>
-                  <div className="stat-label">Recently Active</div>
-                </div>
-              </div>
-            </div>
+        {/* Header Section */}
+        <section className="trending-header">
+          <div className="header-container">
+            <h1 className="trending-title">TRENDING</h1>
           </div>
         </section>
 
@@ -239,15 +219,14 @@ export default function TrendingPage() {
             <div className="trending-grid">
               {apps.map((app: WtafApp, index: number) => (
                 <div key={app.id} className="trending-card" style={{ animationDelay: `${index * 0.1}s` }}>
-                  <div className="card-rank">#{index + 1 + (currentPage - 1) * limit}</div>
                   <div className="image-container">
                     <img 
-                      src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                       alt={app.app_slug} 
                       className="trending-image" 
                     />
                     <div className="image-overlay">
-                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
+                      <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
                         🚀 Try This App
                       </Link>
                     </div>
@@ -306,19 +285,6 @@ export default function TrendingPage() {
           </section>
         )}
 
-        {/* Call to Action */}
-        <section className="cta-section">
-          <div className="cta-container">
-            <h2 className="cta-title">Want to Create the Next Trending App?</h2>
-            <p className="cta-description">
-              Join thousands of creators who've brought their wildest ideas to life with just a text message.
-            </p>
-            <a href="sms:+18663300015" className="cta-button">
-              <span>📱</span>
-              <span>Text (866) 330-0015 Now</span>
-            </a>
-          </div>
-        </section>
       </main>
 
       <style jsx global>{`
@@ -602,87 +568,41 @@ export default function TrendingPage() {
           margin-top: 90px;
         }
 
-        /* Hero Section */
-        .trending-hero {
-          padding: 4rem 2rem;
-          background: linear-gradient(135deg, var(--orange-soft) 0%, var(--cream) 60%, rgba(255,139,66,0.1) 100%);
+        /* Trending Header Section */
+        .trending-header {
+          padding: 3rem 2rem 2rem;
+          text-align: center;
         }
 
-        .hero-container {
+        .header-container {
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        .hero-content {
-          text-align: center;
-          background: var(--white-pure);
-          border: 6px solid var(--orange);
-          border-radius: 3rem;
-          padding: 3rem 2rem;
-          box-shadow: 0 15px 0 var(--red), 0 30px 80px var(--purple-shadow);
-          position: relative;
-          z-index: 2;
-        }
-
-        .hero-title {
-          font-size: clamp(2.5rem, 6vw, 4.5rem);
-          font-weight: 900;
-          color: var(--orange);
-          margin-bottom: 1.5rem;
+        .trending-title {
+          font-size: clamp(2rem, 4vw, 3.5rem);
+          color: var(--red);
+          margin-bottom: 1rem;
           text-transform: uppercase;
-          letter-spacing: -2px;
+          font-weight: 700;
+          letter-spacing: -1px;
           position: relative;
+          display: inline-block;
+          transform: rotate(-2deg);
         }
 
-        .hero-title::after {
-          content: "⚡";
+        .trending-title::after {
+          content: "🔥";
           position: absolute;
-          top: -30px;
-          right: -50px;
-          font-size: 2.5rem;
+          top: -20px;
+          right: -40px;
+          font-size: 2rem;
           animation: sparkle 2s ease-in-out infinite;
         }
 
         @keyframes sparkle {
           0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
-          50% { opacity: 0.5; transform: scale(1.3) rotate(180deg); }
-        }
-
-        .hero-description {
-          font-size: 1.3rem;
-          color: var(--gray-warm);
-          margin-bottom: 2.5rem;
-          font-weight: 500;
-          max-width: 800px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        .stats-row {
-          display: flex;
-          justify-content: center;
-          gap: 3rem;
-          flex-wrap: wrap;
-        }
-
-        .stat-item {
-          text-align: center;
-        }
-
-        .stat-number {
-          font-size: 2.8rem;
-          font-weight: 900;
-          color: var(--red);
-          display: block;
-          text-shadow: 2px 2px 0 var(--red-soft);
-        }
-
-        .stat-label {
-          font-size: 0.9rem;
-          color: var(--gray-warm);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          font-weight: 600;
+          50% { opacity: 0.5; transform: scale(1.2) rotate(180deg); }
         }
 
         /* Trending Section */
@@ -715,19 +635,6 @@ export default function TrendingPage() {
           flex-direction: column;
         }
 
-        .card-rank {
-          position: absolute;
-          top: 15px;
-          left: 15px;
-          background: var(--red);
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 1.5rem;
-          font-weight: 900;
-          font-size: 1.1rem;
-          z-index: 3;
-          box-shadow: 0 4px 0 var(--red-soft);
-        }
 
         @keyframes cardSlideIn {
           0% {
@@ -973,51 +880,6 @@ export default function TrendingPage() {
           justify-content: center;
         }
 
-        /* Call to Action */
-        .cta-section {
-          padding: 5rem 2rem;
-          background: var(--blue-deep);
-          color: white;
-          text-align: center;
-        }
-
-        .cta-container {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .cta-title {
-          font-size: 3rem;
-          font-weight: 900;
-          margin-bottom: 1.5rem;
-          text-transform: uppercase;
-        }
-
-        .cta-description {
-          font-size: 1.3rem;
-          margin-bottom: 2.5rem;
-          opacity: 0.9;
-        }
-
-        .cta-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 1rem;
-          background: var(--yellow);
-          color: var(--charcoal);
-          padding: 1.5rem 3rem;
-          border-radius: 3rem;
-          font-size: 1.3rem;
-          font-weight: 800;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          box-shadow: 0 8px 0 var(--yellow-soft);
-        }
-
-        .cta-button:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 11px 0 var(--yellow-soft);
-        }
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -1025,17 +887,6 @@ export default function TrendingPage() {
             padding: 1rem;
           }
 
-          .hero-content {
-            padding: 2rem 1.5rem;
-          }
-
-          .stats-row {
-            gap: 2rem;
-          }
-
-          .stat-number {
-            font-size: 2.2rem;
-          }
 
           .trending-grid {
             grid-template-columns: 1fr;
@@ -1049,14 +900,12 @@ export default function TrendingPage() {
             gap: 1rem;
           }
 
-          .cta-title {
-            font-size: 2.2rem;
-          }
         }
 
         @media (max-width: 480px) {
-          .hero-title {
-            font-size: 2.5rem;
+          .trending-title {
+            font-size: 2rem;
+            transform: none !important; /* Disable rotation on mobile */
           }
 
           .trending-card {
@@ -1067,10 +916,6 @@ export default function TrendingPage() {
             padding: 1.5rem;
           }
 
-          .cta-button {
-            padding: 1.2rem 2rem;
-            font-size: 1.1rem;
-          }
         }
       `}</style>
     </>

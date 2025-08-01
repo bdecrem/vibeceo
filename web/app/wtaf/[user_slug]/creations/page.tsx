@@ -310,15 +310,14 @@ export default function CreationsPage() {
               <div className="creations-grid">
                 {pinnedAppsWithSlug.map((app: WtafApp, index: number) => (
                   <div key={app.id} className="creation-card pinned-card" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <div className="pin-badge">📌</div>
                     <div className="image-container">
                       <img 
-                        src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                        src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                         alt={app.app_slug} 
                         className="creation-image" 
                       />
                       <div className="image-overlay">
-                        <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
+                        <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
                           🚀 Try This App
                         </Link>
                       </div>
@@ -364,12 +363,12 @@ export default function CreationsPage() {
                 <div key={app.id} className="creation-card" style={{ animationDelay: `${(index + pinnedAppsWithSlug.length) * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                       alt={app.app_slug} 
                       className="creation-image" 
                     />
                     <div className="image-overlay">
-                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
+                      <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
                         🚀 Try This App
                       </Link>
                     </div>
@@ -423,19 +422,6 @@ export default function CreationsPage() {
           </section>
         )}
 
-        {/* Call to Action */}
-        <section className="cta-section">
-          <div className="cta-container">
-            <h2 className="cta-title">Want to Create Like @{userSlug}?</h2>
-            <p className="cta-description">
-              Join the WEBTOYS community and bring your wildest ideas to life with just a text message.
-            </p>
-            <a href="sms:+18663300015" className="cta-button">
-              <span>📱</span>
-              <span>Text (866) 330-0015 Now</span>
-            </a>
-          </div>
-        </section>
       </main>
 
       <style jsx global>{`
@@ -815,24 +801,7 @@ export default function CreationsPage() {
           box-shadow: 0 12px 0 var(--purple-accent);
         }
 
-        .pin-badge {
-          position: absolute;
-          top: 15px;
-          right: 15px;
-          background: var(--pink);
-          color: white;
-          padding: 0.5rem;
-          border-radius: 50%;
-          font-size: 1.2rem;
-          z-index: 3;
-          box-shadow: 0 4px 0 var(--pink-soft);
-          animation: pin-glow 2s ease-in-out infinite;
-        }
 
-        @keyframes pin-glow {
-          0%, 100% { transform: scale(1) rotate(-10deg); }
-          50% { transform: scale(1.1) rotate(-15deg); }
-        }
 
         @keyframes cardSlideIn {
           0% {
@@ -1057,51 +1026,6 @@ export default function CreationsPage() {
           justify-content: center;
         }
 
-        /* Call to Action */
-        .cta-section {
-          padding: 5rem 2rem;
-          background: var(--blue-deep);
-          color: white;
-          text-align: center;
-        }
-
-        .cta-container {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .cta-title {
-          font-size: 3rem;
-          font-weight: 900;
-          margin-bottom: 1.5rem;
-          text-transform: uppercase;
-        }
-
-        .cta-description {
-          font-size: 1.3rem;
-          margin-bottom: 2.5rem;
-          opacity: 0.9;
-        }
-
-        .cta-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 1rem;
-          background: var(--yellow);
-          color: var(--charcoal);
-          padding: 1.5rem 3rem;
-          border-radius: 3rem;
-          font-size: 1.3rem;
-          font-weight: 800;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          box-shadow: 0 8px 0 var(--yellow-soft);
-        }
-
-        .cta-button:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 11px 0 var(--yellow-soft);
-        }
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -1131,9 +1055,6 @@ export default function CreationsPage() {
             text-align: center;
           }
 
-          .cta-title {
-            font-size: 2.2rem;
-          }
         }
 
         @media (max-width: 480px) {
@@ -1149,10 +1070,6 @@ export default function CreationsPage() {
             padding: 1.5rem;
           }
 
-          .cta-button {
-            padding: 1.2rem 2rem;
-            font-size: 1.1rem;
-          }
 
           .avatar-circle {
             width: 100px;
