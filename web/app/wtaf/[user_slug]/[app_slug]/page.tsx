@@ -33,7 +33,7 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 		// Fetch the WTAF content from Supabase
 		const { data, error } = await supabase
 			.from("wtaf_content")
-			.select("html_content, coach, original_prompt, created_at")
+			.select("html_content, coach, original_prompt, created_at, type")
 			.eq("user_slug", user_slug)
 			.eq("app_slug", app_slug)
 			.eq("status", "published")
@@ -102,9 +102,9 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 			htmlContent = htmlContent.replace('</head>', queryInjection + '</head>');
 		}
 
-		// If demo=true, modify the HTML to force demo mode
-		if (demo === 'true') {
-			console.log('🎭 Demo mode detected, injecting demo override');
+		// If demo=true AND this is a ZAD app, modify the HTML to force demo mode
+		if (demo === 'true' && data.type === 'ZAD') {
+			console.log('🎭 Demo mode detected for ZAD app, injecting demo override');
 			
 			// Inject a simple demo mode override script at the end of the head
 			const demoOverride = `
@@ -288,6 +288,8 @@ setTimeout(function() {
 			htmlContent = htmlContent.replace('</head>', demoOverride + '</head>');
 			
 			console.log('🎭 Demo override injection complete');
+		} else if (demo === 'true' && data.type !== 'ZAD') {
+			console.log('🎭 Demo mode requested but app type is', data.type, '- skipping demo injection');
 		}
 
 		// Check if user came from wtaf.me internal navigation pages vs direct link

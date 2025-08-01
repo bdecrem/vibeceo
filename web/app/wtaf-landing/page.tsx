@@ -46,11 +46,17 @@ function DevConsole() {
   
   // Auth state
   const [user, setUser] = useState<any>(null)
-  const [authMode, setAuthMode] = useState<'none' | 'signin' | 'signup'>('none')
+  const [authMode, setAuthMode] = useState<'none' | 'signin' | 'signup' | 'link'>('none')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
+  
+  // Phone linking state
+  const [linkMode, setLinkMode] = useState<'phone' | 'code'>('phone')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [linkLoading, setLinkLoading] = useState(false)
 
   // Check auth status when console opens
   useEffect(() => {
@@ -78,7 +84,7 @@ function DevConsole() {
     }, 10)
   }
 
-  // Show handle only when scrolled to bottom
+  // Show handle when scrolled to bottom (no delay)
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
@@ -86,25 +92,19 @@ function DevConsole() {
       const isAtBottom = scrollPosition >= scrollHeight - 50 // 50px threshold
       
       if (isAtBottom && !showHandle) {
-        // Clear any existing timer
-        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-        
-        // Show after 1 second delay
-        scrollTimerRef.current = setTimeout(() => {
-          setShowHandle(true)
-        }, 1000)
+        setShowHandle(true) // Show immediately, no delay
       } else if (!isAtBottom) {
-        // Hide immediately when not at bottom
-        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
         setShowHandle(false)
         setIsOpen(false)
       }
     }
 
     window.addEventListener('scroll', handleScroll)
+    // Check initial position
+    handleScroll()
+    
     return () => {
       window.removeEventListener('scroll', handleScroll)
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
     }
   }, [showHandle])
 
@@ -272,6 +272,97 @@ function DevConsole() {
     addConsoleEntry('👋 Signed out successfully', 'info')
   }
 
+  async function handlePhoneLink() {
+    if (!phoneNumber) {
+      setAuthError('Please enter a phone number')
+      return
+    }
+
+    setLinkLoading(true)
+    setAuthError('')
+
+    try {
+      const response = await fetch('/api/auth/link-phone', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          phone_number: phoneNumber,
+          user_id: user.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setAuthError(result.error || 'Failed to send verification code')
+        setLinkLoading(false)
+        return
+      }
+
+      addConsoleEntry('📱 Verification code sent to your phone!', 'success')
+      setLinkMode('code')
+      setLinkLoading(false)
+    } catch (error: any) {
+      setAuthError('Network error. Please try again.')
+      setLinkLoading(false)
+    }
+  }
+
+  async function handleVerifyCode() {
+    if (!verificationCode) {
+      setAuthError('Please enter the verification code')
+      return
+    }
+
+    setLinkLoading(true)
+    setAuthError('')
+
+    try {
+      const response = await fetch('/api/auth/verify-link', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          phone_number: phoneNumber,
+          verification_code: verificationCode,
+          user_id: user.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setAuthError(result.error || 'Invalid verification code')
+        setLinkLoading(false)
+        return
+      }
+
+      if (result.merged) {
+        addConsoleEntry(`✅ Accounts linked! You now have access to:`, 'success')
+        addConsoleEntry(`   • Role: ${result.role}`, 'info')
+        addConsoleEntry(`   • Apps created: ${result.app_count}`, 'info')
+        addConsoleEntry(`   • Your slug: ${result.slug}`, 'info')
+      } else {
+        addConsoleEntry(`✅ Phone number added to your account!`, 'success')
+        addConsoleEntry(`   • You can now use SMS commands`, 'info')
+        addConsoleEntry(`   • Text "WTAF help" to ${phoneNumber} to get started`, 'info')
+      }
+
+      setAuthMode('none')
+      setPhoneNumber('')
+      setVerificationCode('')
+      setLinkLoading(false)
+    } catch (error: any) {
+      setAuthError('Network error. Please try again.')
+      setLinkLoading(false)
+    }
+  }
+
   async function handleWtafCommand(cmd: string) {
     addConsoleEntry(`> ${cmd}`, 'command')
     addConsoleEntry('🚀 Processing WTAF command...', 'info')
@@ -384,6 +475,7 @@ function DevConsole() {
       case 'help':
         response = `🎮 CONSOLE COMMANDS:
   help      - Show this help
+  commands  - Show available WTAF commands for your role
   wtaf      - Show WTAF SMS commands  
   zad       - Show ZAD helper functions
   chaos     - Activate chaos mode
@@ -397,7 +489,8 @@ function DevConsole() {
   login     - Sign in to your account
   signup    - Create a new account
   logout    - Sign out
-  whoami    - Show current user`
+  whoami    - Show current user
+  link      - Link phone number to your account`
         break
       case 'wtaf':
         response = `🧪 WTAF COMMANDS (via SMS):
@@ -537,9 +630,21 @@ Without this, you'll see duplicates everywhere! 🤯`
           response = 'Not authenticated. Use "login" or "signup" to get started.'
         }
         break
+      case 'link':
+        if (!user) {
+          response = '🔐 Please login first to link a phone number.'
+        } else {
+          setAuthMode('link')
+          setLinkMode('phone')
+          setPhoneNumber('')
+          setVerificationCode('')
+          setAuthError('')
+          return
+        }
+        break
       default:
         // Check if they're trying to use WTAF commands in console
-        if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ')) {
+        if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ') || lowerCmd === 'commands') {
           if (user) {
             // Process WTAF command for authenticated users
             handleWtafCommand(cmd)
@@ -614,7 +719,7 @@ Without this, you'll see duplicates everywhere! 🤯`
             </div>
             
             {/* Auth Forms */}
-            {authMode !== 'none' && (
+            {authMode !== 'none' && authMode !== 'link' && (
               <div className="console-auth-form">
                 <form onSubmit={(e) => {
                   e.preventDefault()
@@ -664,6 +769,98 @@ Without this, you'll see duplicates everywhere! 🤯`
                   </div>
                   {authError && <div className="console-auth-error">{authError}</div>}
                 </form>
+              </div>
+            )}
+
+            {/* Phone Linking Form */}
+            {authMode === 'link' && (
+              <div className="console-auth-form">
+                {linkMode === 'phone' ? (
+                  <form onSubmit={(e) => {
+                    e.preventDefault()
+                    handlePhoneLink()
+                  }}>
+                    <div className="console-link-header">
+                      🔗 Link Your SMS Account
+                    </div>
+                    <p className="console-link-info">
+                      Connect your phone number to access WEBTOYS via SMS
+                    </p>
+                    <input
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="console-auth-input"
+                      required
+                      autoFocus
+                    />
+                    <div className="console-auth-buttons">
+                      <button
+                        type="submit"
+                        disabled={linkLoading}
+                        className="console-auth-button"
+                      >
+                        {linkLoading ? 'Sending...' : 'Send Verification Code'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode('none')
+                          setPhoneNumber('')
+                          setAuthError('')
+                        }}
+                        className="console-auth-button cancel"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {authError && <div className="console-auth-error">{authError}</div>}
+                  </form>
+                ) : (
+                  <form onSubmit={(e) => {
+                    e.preventDefault()
+                    handleVerifyCode()
+                  }}>
+                    <div className="console-link-header">
+                      📱 Enter Verification Code
+                    </div>
+                    <p className="console-link-info">
+                      We sent a code to {phoneNumber}
+                    </p>
+                    <input
+                      type="text"
+                      placeholder="123456"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      className="console-auth-input"
+                      maxLength={6}
+                      required
+                      autoFocus
+                    />
+                    <div className="console-auth-buttons">
+                      <button
+                        type="submit"
+                        disabled={linkLoading}
+                        className="console-auth-button"
+                      >
+                        {linkLoading ? 'Verifying...' : 'Verify & Link'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLinkMode('phone')
+                          setVerificationCode('')
+                          setAuthError('')
+                        }}
+                        className="console-auth-button cancel"
+                      >
+                        Back
+                      </button>
+                    </div>
+                    {authError && <div className="console-auth-error">{authError}</div>}
+                  </form>
+                )}
               </div>
             )}
             
@@ -943,6 +1140,20 @@ Without this, you'll see duplicates everywhere! 🤯`
           color: #ff6b6b;
           font-size: 12px;
           margin-top: 10px;
+        }
+
+        .console-link-header {
+          color: #fff;
+          font-size: 16px;
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+
+        .console-link-info {
+          color: #999;
+          font-size: 12px;
+          margin-bottom: 15px;
+          line-height: 1.4;
         }
 
         .console-line.success {

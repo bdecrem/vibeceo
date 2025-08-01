@@ -170,30 +170,10 @@ export default function FeaturedGalleryPage() {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Hero Section */}
-        <section className="gallery-hero">
-          <div className="hero-container">
-            <div className="hero-content">
-              <h1 className="hero-title">Featured Gallery</h1>
-              <p className="hero-description">
-                Our handpicked collection of the most creative, surprising, and delightful 
-                apps born from simple text messages. Each one a small miracle of AI creativity.
-              </p>
-              <div className="stats-row">
-                <div className="stat-item">
-                  <div className="stat-number">{apps.length}</div>
-                  <div className="stat-label">Featured Apps</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">{stats.totalRemixesThisWeek}</div>
-                  <div className="stat-label">Remixes This Week</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">{stats.appsWithRecentActivity}</div>
-                  <div className="stat-label">Recently Active</div>
-                </div>
-              </div>
-            </div>
+        {/* Header Section */}
+        <section className="featured-header">
+          <div className="header-container">
+            <h1 className="featured-title">FEATURED GALLERY</h1>
           </div>
         </section>
 
@@ -205,12 +185,12 @@ export default function FeaturedGalleryPage() {
                 <div key={app.id} className="gallery-card" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                       alt={app.app_slug} 
                       className="gallery-image" 
                     />
                     <div className="image-overlay">
-                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
+                      <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
                         Try This App
                       </Link>
                     </div>
@@ -245,19 +225,6 @@ export default function FeaturedGalleryPage() {
           </div>
         </section>
 
-        {/* Call to Action */}
-        <section className="cta-section">
-          <div className="cta-container">
-            <h2 className="cta-title">Ready to Create Your Own?</h2>
-            <p className="cta-description">
-              Join thousands of creators who've brought their ideas to life with just a text message.
-            </p>
-            <a href="sms:+18663300015" className="cta-button">
-              <span>📱</span>
-              <span>Text (866) 330-0015 Now</span>
-            </a>
-          </div>
-        </section>
       </main>
 
       <style jsx global>{`
@@ -461,39 +428,30 @@ export default function FeaturedGalleryPage() {
           margin-top: 80px;
         }
 
-        /* Hero Section */
-        .gallery-hero {
-          padding: 4rem 2rem;
-          background: linear-gradient(135deg, var(--yellow-soft) 0%, var(--cream) 60%, rgba(108,203,255,0.1) 100%);
+        /* Featured Header Section */
+        .featured-header {
+          padding: 3rem 2rem 2rem;
+          text-align: center;
         }
 
-        .hero-container {
+        .header-container {
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        .hero-content {
-          text-align: center;
-          background: var(--white-pure);
-          border: 6px solid var(--yellow);
-          border-radius: 3rem;
-          padding: 3rem 2rem;
-          box-shadow: 0 12px 0 var(--purple-accent), 0 24px 60px var(--purple-shadow);
-          position: relative;
-          z-index: 2;
-        }
-
-        .hero-title {
-          font-size: clamp(2.5rem, 6vw, 4rem);
-          font-weight: 900;
-          color: var(--blue-deep);
-          margin-bottom: 1.5rem;
+        .featured-title {
+          font-size: clamp(2rem, 4vw, 3.5rem);
+          color: var(--red);
+          margin-bottom: 1rem;
           text-transform: uppercase;
-          letter-spacing: -2px;
+          font-weight: 700;
+          letter-spacing: -1px;
           position: relative;
+          display: inline-block;
+          transform: rotate(-2deg);
         }
 
-        .hero-title::after {
+        .featured-title::after {
           content: "✨";
           position: absolute;
           top: -20px;
@@ -506,37 +464,6 @@ export default function FeaturedGalleryPage() {
           0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
           50% { opacity: 0.5; transform: scale(1.2) rotate(180deg); }
         }
-
-        .hero-description {
-          font-size: 1.3rem;
-          color: var(--gray-warm);
-          margin-bottom: 2.5rem;
-          font-weight: 500;
-          max-width: 700px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        .stats-row {
-          display: flex;
-          justify-content: center;
-          gap: 3rem;
-          flex-wrap: wrap;
-        }
-
-        .stat-item {
-          text-align: center;
-        }
-
-        .stat-number {
-          font-size: 2.5rem;
-          font-weight: 900;
-          color: var(--red);
-          display: block;
-        }
-
-        .stat-label {
-          font-size: 0.9rem;
           color: var(--gray-warm);
           text-transform: uppercase;
           letter-spacing: 1px;
@@ -764,51 +691,6 @@ export default function FeaturedGalleryPage() {
           font-size: 1.2rem;
         }
 
-        /* Call to Action */
-        .cta-section {
-          padding: 5rem 2rem;
-          background: var(--blue-deep);
-          color: white;
-          text-align: center;
-        }
-
-        .cta-container {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .cta-title {
-          font-size: 3rem;
-          font-weight: 900;
-          margin-bottom: 1.5rem;
-          text-transform: uppercase;
-        }
-
-        .cta-description {
-          font-size: 1.3rem;
-          margin-bottom: 2.5rem;
-          opacity: 0.9;
-        }
-
-        .cta-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 1rem;
-          background: var(--yellow);
-          color: var(--charcoal);
-          padding: 1.5rem 3rem;
-          border-radius: 3rem;
-          font-size: 1.3rem;
-          font-weight: 800;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          box-shadow: 0 8px 0 var(--yellow-soft);
-        }
-
-        .cta-button:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 11px 0 var(--yellow-soft);
-        }
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -838,14 +720,12 @@ export default function FeaturedGalleryPage() {
             text-align: center;
           }
 
-          .cta-title {
-            font-size: 2.2rem;
-          }
         }
 
         @media (max-width: 480px) {
-          .hero-title {
-            font-size: 2.5rem;
+          .featured-title {
+            font-size: 2rem;
+            transform: none !important; /* Disable rotation on mobile */
           }
 
           .gallery-card {
@@ -856,10 +736,6 @@ export default function FeaturedGalleryPage() {
             padding: 1.5rem;
           }
 
-          .cta-button {
-            padding: 1.2rem 2rem;
-            font-size: 1.1rem;
-          }
         }
       `}</style>
     </>

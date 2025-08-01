@@ -15,10 +15,10 @@ function getSupabaseClient() {
 
 // Define allowed commands by role
 const ALLOWED_COMMANDS: Record<string, string[]> = {
-  user: ['wtaf', 'meme'],
-  coder: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave'],
-  degen: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave', 'remix'],
-  operator: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave', 'remix', 'public', 'stackzad', 'stackpublic']
+  user: ['wtaf', 'meme', 'commands'],
+  coder: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave', 'commands'],
+  degen: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave', 'remix', 'commands'],
+  operator: ['wtaf', 'meme', 'edit', 'slug', 'index', 'fave', 'remix', 'public', 'stackzad', 'stackpublic', 'commands']
 };
 
 // Commands that are completely forbidden in web console

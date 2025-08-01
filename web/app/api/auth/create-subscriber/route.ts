@@ -43,14 +43,14 @@ export async function POST(req: NextRequest) {
       counter++;
     }
     
-    // Create sms_subscriber entry
+    // Create sms_subscriber entry with 'coder' role for web console signups
     const { data, error } = await supabase
       .from('sms_subscribers')
       .insert({
         supabase_id: supabase_id,
         email: email,
         slug: slug,
-        role: 'user',
+        role: 'coder', // Web console users get coder role by default
         phone_number: '+1555' + Math.floor(1000000 + Math.random() * 9000000), // Unique placeholder since phone is required
         consent_given: true,
         confirmed: true,
