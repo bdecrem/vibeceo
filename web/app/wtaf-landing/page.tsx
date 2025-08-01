@@ -277,9 +277,19 @@ function DevConsole() {
     addConsoleEntry('🚀 Processing WTAF command...', 'info')
     
     try {
+      // Get the current session to include auth token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        addConsoleEntry('❌ Authentication required. Please login first.', 'error')
+        return
+      }
+      
       const response = await fetch('/api/wtaf/web-console', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           command: cmd,
           user_email: user.email,
@@ -1794,10 +1804,10 @@ export default function WebtoysSitePage() {
               </div>
             </div>
             
-            {/* Example 4: Apricot Leaf Nose Meditating */}
+            {/* Example 4: Fern Bumblebee Fishing */}
             <div className="example-card">
-              <a href="/bart/apricot-leaf-nose-meditating" className="example-preview breakout-game magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/apricot-leaf-nose-meditating.png')`,
+              <a href="/bart/fern-bumblebee-fishing" className="example-preview grumpy-cat-meme magic-cursor" style={{
+                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
@@ -1805,13 +1815,13 @@ export default function WebtoysSitePage() {
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
-                  prompt="WTAF make a breakout game"
+                  prompt='MEME make me a "grumpy cat" meme with a graphic of a grumpy cat and text that says "fck that..."'
                   maxLength={120}
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/apricot-leaf-nose-meditating" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a breakout game")}>
+                  <a href="/bart/fern-bumblebee-fishing" className="btn-view">Try It</a>
+                  <button className="btn-remix" onClick={() => handleRemixClick('MEME make me a "grumpy cat" meme with a graphic of a grumpy cat and text that says "fck that..."')}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>

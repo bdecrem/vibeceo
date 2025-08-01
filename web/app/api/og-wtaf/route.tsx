@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'edge'
 
@@ -9,6 +9,23 @@ export async function GET(request: NextRequest) {
     const user_slug = searchParams.get('user') || 'unknown'
     const app_slug = searchParams.get('app') || 'wtaf-app'
     
+    // Call the cached API to check for custom OG images
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+    const apiUrl = `${baseUrl}/api/generate-og-cached?user=${user_slug}&app=${app_slug}`
+    
+    try {
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+      
+      if (data.success && data.image_url) {
+        // Redirect to the custom OG image
+        return NextResponse.redirect(data.image_url)
+      }
+    } catch (e) {
+      console.error('Failed to check cached OG:', e)
+    }
+    
+    // Otherwise, generate the default OG image
     const pageTitle = "Finally, Someone Who Actually Wants to Hear About Your Startup Idea"
     const theme = { bgColor: '#14b8a6', textColor: 'white' } // Teal theme
 

@@ -112,6 +112,19 @@ export async function POST(req: NextRequest) {
     
     const supabase = getSupabaseClient();
     
+    // Verify the user_id matches the authenticated user
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Verify token and ensure user_id matches
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user || user.id !== user_id) {
+      return NextResponse.json({ error: 'Invalid user' }, { status: 403 });
+    }
+    
     // Get user's SMS subscriber info
     const { data: subscriber, error: subError } = await supabase
       .from('sms_subscribers')

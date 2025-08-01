@@ -261,6 +261,19 @@ When in doubt:
 - DO NOT run `git push` unless the user says "push"
 - Wait for explicit user approval before committing or pushing any changes
 
+## Security Exception: Web Console API
+
+The web console API at `/api/wtaf/web-console` is an **approved exception** to the "no direct database access" rule. This exception exists for security reasons:
+
+1. **Why the Exception**: The web API needs to verify user roles and permissions before forwarding commands to the SMS bot
+2. **Security Measures**: 
+   - Uses token validation to ensure users can only act as themselves
+   - Service key is only used after authenticating the user's identity
+   - Rate limiting and command filtering prevent abuse
+3. **Trade-off**: We accept this architectural violation because the alternative (exposing storage-manager over HTTP) would be less secure
+
+This is the only approved location for direct Supabase access outside of storage-manager.ts.
+
 ## Special Commands & Flags
 
 ### Override Flags (Development/Testing)

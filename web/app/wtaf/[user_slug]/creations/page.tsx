@@ -27,6 +27,8 @@ interface WtafApp {
   Fave?: boolean
   Forget?: boolean
   type: string
+  landscape_image_url?: string
+  og_image_url?: string
 }
 
 interface UserStats {
@@ -311,7 +313,7 @@ export default function CreationsPage() {
                     <div className="pin-badge">📌</div>
                     <div className="image-container">
                       <img 
-                        src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                        src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
                         alt={app.app_slug} 
                         className="creation-image" 
                       />
@@ -362,7 +364,7 @@ export default function CreationsPage() {
                 <div key={app.id} className="creation-card" style={{ animationDelay: `${(index + pinnedAppsWithSlug.length) * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
                       alt={app.app_slug} 
                       className="creation-image" 
                     />
