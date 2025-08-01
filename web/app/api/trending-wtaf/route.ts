@@ -39,7 +39,10 @@ export async function GET(request: NextRequest) {
         is_featured,
         is_trending,
         Fave,
-        Forget
+        Forget,
+        landscape_image_url,
+        og_image_url,
+        type
       `)
       .eq('status', 'published')           // Only published apps
       .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps
@@ -100,7 +103,10 @@ export async function GET(request: NextRequest) {
           is_featured,
           is_trending,
           Fave,
-          Forget
+          Forget,
+          landscape_image_url,
+          og_image_url,
+          type
         `)
         .eq('status', 'published')           // Only published apps
         .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps

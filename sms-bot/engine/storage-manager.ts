@@ -380,6 +380,22 @@ export async function saveCodeToSupabase(
             }
         }
 
+        // Determine the app type - MEME takes highest precedence
+        let appType = null;
+        if (coach === 'meme-generator' || coach === 'meme-remix') {
+            appType = 'MEME';
+            logWithTimestamp(`🎨 Setting type to 'MEME' for ${coach === 'meme-remix' ? 'remixed ' : ''}meme app`);
+        } else if (coach === 'game' || coach === 'game-remix') {
+            appType = 'GAME';
+            logWithTimestamp(`🎮 Setting type to 'GAME' for ${coach === 'game-remix' ? 'remixed ' : ''}game app`);
+        } else if (isPublic && isZadApp) {
+            appType = 'PUBLIC';
+            logWithTimestamp(`🌐 Setting type to 'PUBLIC' for PUBLIC ZAD app`);
+        } else if (isZadApp || coach === 'zad-remix') {
+            appType = 'ZAD';
+            logWithTimestamp(`🤝 Setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
+        }
+        
         const data = {
             user_id: userId,
             user_slug: userSlug,
@@ -389,33 +405,12 @@ export async function saveCodeToSupabase(
             original_prompt: originalPrompt,
             html_content: code, // Save initial HTML without UUID replacement
             status: 'published',
-            type: isZadApp ? 'ZAD' : null, // Set type to 'ZAD' if ZAD app detected
+            type: appType,
             Forget: shouldHideByDefault // Hide by default if user has hide_default enabled
         };
         
-        // Explicitly set type to ZAD for ZAD apps (including remixes)
-        if (isZadApp || coach === 'zad-remix') {
-            data.type = 'ZAD';
-            logWithTimestamp(`🤝 Explicitly setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
-        }
+        logWithTimestamp(`📊 FINAL type being saved to database: ${appType} (coach: ${coach})`);
         
-        // Set type to PUBLIC for PUBLIC ZAD apps (override ZAD type)
-        if (isPublic && isZadApp) {
-            data.type = 'PUBLIC';
-            logWithTimestamp(`🌐 Setting type to 'PUBLIC' for PUBLIC ZAD app`);
-        }
-        
-        // Set type to GAME if this is a game or game remix
-        if (coach === 'game' || coach === 'game-remix') {
-            data.type = 'GAME';
-            logWithTimestamp(`🎮 Setting type to 'GAME' for ${coach === 'game-remix' ? 'remixed ' : ''}game app`);
-        }
-        
-        // Set type to MEME if this is a meme or meme remix
-        if (coach === 'meme-generator' || coach === 'meme-remix') {
-            data.type = 'MEME';
-            logWithTimestamp(`🎨 Setting type to 'MEME' for ${coach === 'meme-remix' ? 'remixed ' : ''}meme app`);
-        }
         
         let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')

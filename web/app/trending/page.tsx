@@ -25,6 +25,8 @@ interface WtafApp {
   Fave?: boolean
   Forget?: boolean
   type: string
+  landscape_image_url?: string
+  og_image_url?: string
 }
 
 interface TrendingStats {
@@ -240,7 +242,7 @@ export default function TrendingPage() {
                   <div className="card-rank">#{index + 1 + (currentPage - 1) * limit}</div>
                   <div className="image-container">
                     <img 
-                      src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
+                      src={app.landscape_image_url || app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} 
                       alt={app.app_slug} 
                       className="trending-image" 
                     />

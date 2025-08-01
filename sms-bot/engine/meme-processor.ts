@@ -92,7 +92,7 @@ async function uploadToSupabaseStorage(imageBuffer: ArrayBuffer, fileName: strin
             logWithTimestamp('📦 Creating og-images bucket...');
             const { error: bucketError } = await supabase.storage.createBucket('og-images', {
                 public: true,
-                allowedMimeTypes: ['image/png', 'image/jpeg']
+                allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg']
             });
             
             if (bucketError) {
@@ -104,7 +104,7 @@ async function uploadToSupabaseStorage(imageBuffer: ArrayBuffer, fileName: strin
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('og-images')
             .upload(fileName, imageBuffer, {
-                contentType: 'image/png',
+                contentType: 'image/jpeg',
                 upsert: true // Replace if exists
             });
 
@@ -416,7 +416,7 @@ async function generateSquareCompositeMemeImage(backgroundImageUrl: string, meme
                 html: strippedHTML,
                 viewport_width: 1024,
                 viewport_height: 1024,
-                device_scale_factor: 1
+                device_scale_factor: 2
             })
         });
 
@@ -576,9 +576,8 @@ async function generateLandscapeCompositeMemeImage(backgroundImageUrl: string, m
             },
             body: JSON.stringify({
                 html: landscapeHTML,
-                viewport_width: 1792,
-                viewport_height: 1024,
-                device_scale_factor: 1
+                device_scale: 1  // This reduces from @2X to @1X, cutting size in half
+                // No viewport params - let CSS control size for auto-cropping
             })
         });
 
@@ -594,7 +593,7 @@ async function generateLandscapeCompositeMemeImage(backgroundImageUrl: string, m
         // Download the image and upload to Supabase Storage
         try {
             const imageBuffer = await downloadImageFromURL(data.url);
-            const fileName = `meme-landscape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
+            const fileName = `meme-landscape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`;
             const supabaseUrl = await uploadToSupabaseStorage(imageBuffer, fileName);
             
             logSuccess(`🎯 Landscape meme image uploaded to Supabase Storage: ${supabaseUrl}`);

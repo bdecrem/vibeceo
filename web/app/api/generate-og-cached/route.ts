@@ -348,7 +348,56 @@ export async function GET(request: NextRequest) {
     
     console.log(`🎨 Checking cached OG image for: ${userSlug}/${appSlug}`)
     
-    // 1. Check if we already have this image in Supabase Storage
+    // 1. FIRST CHECK: If og_second_chance exists, use it (for memes and other special cases)
+    const { data: contentData } = await supabase
+      .from('wtaf_content')
+      .select('type, og_image_url, og_second_chance')
+      .eq('user_slug', userSlug)
+      .eq('app_slug', appSlug)
+      .single()
+    
+    console.log(`🔍 Content check for ${userSlug}/${appSlug}: type="${contentData?.type}", og_second_chance="${contentData?.og_second_chance?.substring(0, 80)}...", og_image_url="${contentData?.og_image_url?.substring(0, 80)}..."`)
+    
+    // If og_second_chance exists, always use it (this is our override field)
+    if (contentData?.og_second_chance) {
+      console.log(`🎯 Using og_second_chance image for ${userSlug}/${appSlug}`)
+      return NextResponse.json({
+        success: true,
+        image_url: contentData.og_second_chance,
+        cached: true,
+        from_second_chance: true,
+        user_slug: userSlug,
+        app_slug: appSlug
+      })
+    }
+    
+    // Legacy checks for backwards compatibility
+    if (contentData?.type === 'MEME' && contentData.og_image_url) {
+      console.log(`🎨 Using existing meme OG image for ${userSlug}/${appSlug}`)
+      return NextResponse.json({
+        success: true,
+        image_url: contentData.og_image_url,
+        cached: true,
+        is_meme: true,
+        user_slug: userSlug,
+        app_slug: appSlug
+      })
+    }
+    
+    // ALSO CHECK: If og_image_url contains "meme-" in the filename, it's a meme!
+    if (contentData?.og_image_url && contentData.og_image_url.includes('/meme-')) {
+      console.log(`🎨 Detected meme by URL pattern for ${userSlug}/${appSlug}`)
+      return NextResponse.json({
+        success: true,
+        image_url: contentData.og_image_url,
+        cached: true,
+        is_meme: true,
+        user_slug: userSlug,
+        app_slug: appSlug
+      })
+    }
+    
+    // 2. Check if we already have this image in Supabase Storage
     const { data: existingFile } = await supabase.storage
       .from('og-images')
       .list('', { search: fileName })
@@ -371,7 +420,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔄 Generating new OG image for: ${userSlug}/${appSlug}`)
     
-    // 2. Fetch the real page content from Supabase
+    // 3. Fetch the real page content from Supabase
     const { data: pageData, error: pageError } = await supabase
       .from('wtaf_content')
       .select('html_content, original_prompt, created_at')
@@ -442,14 +491,29 @@ export async function GET(request: NextRequest) {
     console.log(`📤 Uploaded to Supabase Storage: ${supabaseUrl}`)
     
     // 6. Update the wtaf_content record with the cached URL
-    await supabase
+    // ONLY update if there's no existing meme image
+    const { data: existingContent } = await supabase
       .from('wtaf_content')
-      .update({ 
-        og_image_url: supabaseUrl,
-        og_image_cached_at: new Date().toISOString()
-      })
+      .select('og_image_url')
       .eq('user_slug', userSlug)
       .eq('app_slug', appSlug)
+      .single()
+    
+    // Don't overwrite existing meme images
+    if (!existingContent?.og_image_url?.includes('/meme-')) {
+      await supabase
+        .from('wtaf_content')
+        .update({ 
+          og_image_url: supabaseUrl,
+          og_image_cached_at: new Date().toISOString()
+        })
+        .eq('user_slug', userSlug)
+        .eq('app_slug', appSlug)
+      
+      console.log(`✅ Updated og_image_url to: ${supabaseUrl}`)
+    } else {
+      console.log(`⚠️ Skipping update - existing meme image found: ${existingContent.og_image_url}`)
+    }
     
     return NextResponse.json({
       success: true,

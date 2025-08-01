@@ -1930,6 +1930,8 @@ export async function processMemeRequest(processingPath: string, fileData: any, 
                     .update({ 
                         type: 'MEME',
                         html_content: updatedHTML, // Update HTML with correct URL
+                        landscape_image_url: result.landscapeImageUrl || result.imageUrl, // Save landscape URL here too!
+                        og_second_chance: result.imageUrl, // Save square URL for OG
                         submission_data: {
                             meme_text: userPrompt,
                             top_text: result.memeContent?.topText,
@@ -1965,6 +1967,44 @@ export async function processMemeRequest(processingPath: string, fileData: any, 
             }
             
             await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+            
+            // FINAL STEP: Directly update og_image_url in database to ensure it's not overwritten
+            // Wait a bit to ensure any web requests have completed
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            try {
+                const { createClient } = await import('@supabase/supabase-js');
+                const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
+                const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
+                
+                const urlParts = deployResult.publicUrl.split('/');
+                const appSlug = urlParts[urlParts.length - 1];
+                
+                logWithTimestamp(`📊 FINAL UPDATE TARGET: user_slug='${userSlug}', app_slug='${appSlug}'`);
+                logWithTimestamp(`⏱️ Waited 2 seconds before final update to avoid race conditions`);
+                
+                const { error: finalUpdateError } = await supabase
+                    .from('wtaf_content')
+                    .update({ 
+                        og_second_chance: result.imageUrl,
+                        landscape_image_url: result.landscapeImageUrl || result.imageUrl, // Use landscape if available, fallback to square
+                        og_image_cached_at: new Date().toISOString()
+                    })
+                    .eq('user_slug', userSlug)
+                    .eq('app_slug', appSlug);
+                
+                if (!finalUpdateError) {
+                    logSuccess(`✅ FINAL OG UPDATE: Set og_second_chance to meme image: ${result.imageUrl}`);
+                    if (result.landscapeImageUrl) {
+                        logSuccess(`✅ FINAL UPDATE: Set landscape_image_url to: ${result.landscapeImageUrl}`);
+                    }
+                } else {
+                    logWarning(`Failed final OG update to og_second_chance: ${finalUpdateError.message}`);
+                }
+            } catch (error) {
+                logWarning(`Error in final OG update: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            
             logWithTimestamp("=" + "=".repeat(79));
             logWithTimestamp("🎉 MEME PROCESSING COMPLETE!");
             logWithTimestamp(`🌐 Meme URL: ${deployResult.publicUrl}`);

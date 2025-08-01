@@ -148,6 +148,14 @@ The system ensures proper OG meta tags in HTML:
 <meta property="og:image:height" content="630">
 ```
 
+## Special Fields
+
+### og_second_chance Field
+The `og_second_chance` field is a failsafe mechanism for content that generates its own OG images (like memes):
+- **Purpose**: Prevents race conditions where web API overwrites SMS-generated OG images
+- **Priority**: APIs check this field FIRST before any other OG image field
+- **Use case**: Memes write their final image URL here to ensure it's never overwritten
+
 ## Troubleshooting
 
 ### Manual Upload Issues
@@ -173,6 +181,18 @@ The system ensures proper OG meta tags in HTML:
 **"OPENAI_API_KEY not found"**
 - Ensure all required environment variables are set
 - Check for typos in variable names
+
+### OG Images Not Showing in Development
+
+**"Wrong OG image showing on local dev"**
+- Add `NEXT_PUBLIC_APP_URL=http://localhost:3000` to `web/.env.local`
+- Without this, Next.js calls production API instead of local
+- Restart Next.js server after adding environment variable
+
+**"Meme OG images being overwritten"**
+- Memes should write to `og_second_chance` field
+- Web API checks `og_second_chance` first before generating new images
+- This prevents race conditions between SMS bot and web API
 
 ## Best Practices
 

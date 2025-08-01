@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
         last_remixed_at,
         type,
         Fave,
-        Forget
+        Forget,
+        landscape_image_url,
+        og_image_url,
+        user_slug
       `)
       .eq('user_slug', user_slug)
       .eq('status', 'published')
@@ -78,7 +81,10 @@ export async function GET(request: NextRequest) {
           last_remixed_at,
           type,
           Fave,
-          Forget
+          Forget,
+          landscape_image_url,
+          og_image_url,
+          user_slug
         `)
         .eq('user_slug', user_slug)
         .eq('status', 'published')
