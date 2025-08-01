@@ -411,6 +411,12 @@ export async function saveCodeToSupabase(
             logWithTimestamp(`🎮 Setting type to 'GAME' for ${coach === 'game-remix' ? 'remixed ' : ''}game app`);
         }
         
+        // Set type to MEME if this is a meme or meme remix
+        if (coach === 'meme-generator' || coach === 'meme-remix') {
+            data.type = 'MEME';
+            logWithTimestamp(`🎨 Setting type to 'MEME' for ${coach === 'meme-remix' ? 'remixed ' : ''}meme app`);
+        }
+        
         let { data: savedData, error } = await getSupabaseClient()
             .from('wtaf_content')
             .insert(data)
