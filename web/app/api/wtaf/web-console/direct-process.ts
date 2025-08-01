@@ -151,8 +151,7 @@ export async function processWtafDirectly({ command, subscriber, userRole }: Dir
       
       responses.push({
         type: 'url',
-        message: `📱 Your app: ${publicUrl}`,
-        url: publicUrl
+        message: `📱 Your app: ${publicUrl}`
       });
       
       // Check if there's an admin page
@@ -168,8 +167,7 @@ export async function processWtafDirectly({ command, subscriber, userRole }: Dir
           const adminUrl = `https://wtaf.me/${appData.user_slug}/${adminPages[0].app_slug}`;
           responses.push({
             type: 'admin_url',
-            message: `📊 Admin panel: ${adminUrl}`,
-            url: adminUrl
+            message: `📊 Admin panel: ${adminUrl}`
           });
         }
       }
