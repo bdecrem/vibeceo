@@ -899,6 +899,12 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             logWithTimestamp(`🎮 Target app is a GAME - will use game remix approach`);
         }
         
+        // Check if the target app is a meme
+        const isMemeApp = appInfo?.type === 'MEME';
+        if (isMemeApp) {
+            logWithTimestamp(`🎨 Target app is a MEME - will use meme remix approach`);
+        }
+        
         // Load HTML content (includes ownership verification)
         const htmlContent = await loadRemixHTMLContent(userSlug, appSlug);
         if (htmlContent === null) {
@@ -1007,6 +1013,79 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             
             // For games, just use the user request
             combinedPromptForStorage = userRequest || "remix request";
+        } else if (isMemeApp) {
+            // For memes, regenerate with new prompt
+            logWithTimestamp(`🎨 Processing meme remix - will generate new meme based on request`);
+            
+            // Import meme processing function
+            const { processMemeRemix } = await import('./meme-processor.js');
+            
+            // Create meme request with user's remix instructions
+            const memeResult = await processMemeRemix(userRequest, userSlug);
+            
+            if (!memeResult.success || !memeResult.html) {
+                logError(`❌ Meme remix generation failed`);
+                await sendFailureNotification("meme-generation", senderPhone);
+                return false;
+            }
+            
+            // Deploy the remixed meme
+            const deployResult = await saveCodeToSupabase(
+                memeResult.html,
+                "meme-remix",
+                userSlug,
+                senderPhone,
+                `remix of ${appSlug}: ${userRequest}`
+            );
+            
+            if (deployResult?.publicUrl && deployResult?.uuid) {
+                // Update with meme metadata
+                try {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+                    
+                    await supabase
+                        .from('wtaf_content')
+                        .update({ 
+                            type: 'MEME',
+                            submission_data: {
+                                meme_text: userRequest,
+                                top_text: memeResult.memeContent?.topText,
+                                bottom_text: memeResult.memeContent?.bottomText,
+                                theme: memeResult.memeContent?.theme,
+                                image_url: memeResult.imageUrl,
+                                isRemix: true,
+                                originalApp: appSlug
+                            }
+                        })
+                        .eq('uuid', deployResult.uuid);
+                        
+                    logSuccess(`✅ Updated meme remix metadata`);
+                } catch (error) {
+                    logWarning(`Failed to update meme remix metadata: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                
+                // Handle social updates
+                const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                const originalAppInfo = await getAppInfoForRemix(appSlug);
+                if (originalAppInfo) {
+                    await handleRemixSocialUpdates(
+                        appSlug,
+                        originalAppInfo.userSlug,
+                        userSlug,
+                        deployResult.uuid,
+                        userRequest
+                    );
+                }
+                
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                logWithTimestamp("🎉 MEME REMIX PROCESSING COMPLETE!");
+                return true;
+            } else {
+                logError(`❌ Meme remix deployment failed`);
+                await sendFailureNotification("deploy", senderPhone);
+                return false;
+            }
         } else {
             // For regular WTAF apps, use the standard remix approach
             enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -1019,7 +1098,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         }
         
         // Send directly to Claude with appropriate prompt
-        logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : 'standard'} remix request directly to Claude`);
+        logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : isMemeApp ? 'meme' : 'standard'} remix request directly to Claude`);
         const config = REQUEST_CONFIGS.creation;
         
         // For ZAD remixes, try to use maximum possible tokens
@@ -2134,12 +2213,16 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             
             const isZadApp = appInfo?.type === 'ZAD';
             const isGameApp = appInfo?.type === 'GAME';
+            const isMemeApp = appInfo?.type === 'MEME';
             
             if (isZadApp) {
                 logWithTimestamp(`🤝 Target app is a ZAD app - will use ZAD remix approach`);
             }
             if (isGameApp) {
                 logWithTimestamp(`🎮 Target app is a GAME - will use game remix approach`);
+            }
+            if (isMemeApp) {
+                logWithTimestamp(`🎨 Target app is a MEME - will use meme remix approach`);
             }
             
             // Load HTML content (includes ownership verification)
@@ -2250,6 +2333,79 @@ export async function processRemixRequest(processingPath: string, fileData: any,
                 
                 // For games, just use the user request
                 combinedPromptForStorage = userRequest || "remix request";
+            } else if (isMemeApp) {
+                // For memes, regenerate with new prompt
+                logWithTimestamp(`🎨 Processing meme remix - will generate new meme based on request`);
+                
+                // Import meme processing function
+                const { processMemeRemix } = await import('./meme-processor.js');
+                
+                // Create meme request with user's remix instructions
+                const memeResult = await processMemeRemix(userRequest, userSlug);
+                
+                if (!memeResult.success || !memeResult.html) {
+                    logError(`❌ Meme remix generation failed`);
+                    await sendFailureNotification("meme-generation", senderPhone);
+                    return false;
+                }
+                
+                // Deploy the remixed meme
+                const deployResult = await saveCodeToSupabase(
+                    memeResult.html,
+                    "meme-remix",
+                    userSlug,
+                    senderPhone,
+                    `remix of ${appSlug}: ${userRequest}`
+                );
+                
+                if (deployResult?.publicUrl && deployResult?.uuid) {
+                    // Update with meme metadata
+                    try {
+                        const { createClient } = await import('@supabase/supabase-js');
+                        const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+                        
+                        await supabase
+                            .from('wtaf_content')
+                            .update({ 
+                                type: 'MEME',
+                                submission_data: {
+                                    meme_text: userRequest,
+                                    top_text: memeResult.memeContent?.topText,
+                                    bottom_text: memeResult.memeContent?.bottomText,
+                                    theme: memeResult.memeContent?.theme,
+                                    image_url: memeResult.imageUrl,
+                                    isRemix: true,
+                                    originalApp: appSlug
+                                }
+                            })
+                            .eq('uuid', deployResult.uuid);
+                            
+                        logSuccess(`✅ Updated meme remix metadata`);
+                    } catch (error) {
+                        logWarning(`Failed to update meme remix metadata: ${error instanceof Error ? error.message : String(error)}`);
+                    }
+                    
+                    // Handle social updates
+                    const { handleRemixSocialUpdates, getAppInfoForRemix } = await import('./social-manager.js');
+                    const originalAppInfo = await getAppInfoForRemix(appSlug);
+                    if (originalAppInfo) {
+                        await handleRemixSocialUpdates(
+                            appSlug,
+                            originalAppInfo.userSlug,
+                            userSlug,
+                            deployResult.uuid,
+                            userRequest
+                        );
+                    }
+                    
+                    await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                    logWithTimestamp("🎉 MEME REMIX PROCESSING COMPLETE!");
+                    return true;
+                } else {
+                    logError(`❌ Meme remix deployment failed`);
+                    await sendFailureNotification("deploy", senderPhone);
+                    return false;
+                }
             } else {
                 // For regular WTAF apps, use the standard remix approach
                 enhancedPrompt = buildRemixPrompt(userRequest, htmlContent);
@@ -2262,7 +2418,7 @@ export async function processRemixRequest(processingPath: string, fileData: any,
             }
             
             // Send directly to Claude with appropriate prompt
-            logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : 'standard'} remix request directly to Claude`);
+            logWithTimestamp(`🚀 Sending ${isZadApp ? 'ZAD' : isGameApp ? 'game' : isMemeApp ? 'meme' : 'standard'} remix request directly to Claude`);
             const config = REQUEST_CONFIGS.creation;
             const result = await callClaudeDirectly(remixSystemPrompt, enhancedPrompt, {
                 model: config.builderModel,

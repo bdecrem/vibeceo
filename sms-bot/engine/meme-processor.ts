@@ -239,9 +239,12 @@ async function generateMemeImage(imagePrompt: string): Promise<string | null> {
         logWithTimestamp(`🖼️ Generating meme image with DALL-E 3...`);
         logWithTimestamp(`🎨 Image prompt: ${imagePrompt}`);
         
+        // Add explicit instruction to DALL-E to never include text and add bleed space
+        const noTextPrompt = `${imagePrompt} CRITICAL COMPOSITION RULES: 1) NO text/words/letters anywhere in the image. 2) MUST have empty space at top 25% and bottom 25% of frame - these areas should be simple sky, wall, or plain background. 3) Main subject/character must be in the MIDDLE 50% only, not touching top or bottom edges. 4) Think of it like a movie frame with letterboxing - subject in center, empty space above and below for subtitles.`;
+        
         const response = await getOpenAIClient().images.generate({
             model: "dall-e-3",
-            prompt: imagePrompt,
+            prompt: noTextPrompt,
             size: "1024x1024",
             quality: "standard",
             n: 1
@@ -276,7 +279,9 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
 
         const { topText, bottomText } = memeContent;
         
-        // Create HTML template for composite meme
+        logWithTimestamp(`📝 Composite meme text - Top: "${topText}", Bottom: "${bottomText}"`);
+        
+        // Create HTML template for composite meme with text above and below
         const memeHTML = `
 <!DOCTYPE html>
 <html>
@@ -290,63 +295,92 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
         }
         
         body {
-            width: 1024px;
-            height: 1024px;
+            width: 1152px;
+            height: 768px;
+            margin: 0;
+            padding: 0;
             position: relative;
             overflow: hidden;
-            font-family: 'Impact', 'Arial Black', Arial, sans-serif;
+            font-family: Impact, "Arial Black", sans-serif;
+            background: #000;
         }
         
-        .meme-background {
+        .container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .meme-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
+            display: block;
         }
         
         .meme-text {
             position: absolute;
-            width: 100%;
+            left: 0;
+            right: 0;
             text-align: center;
             color: white;
+            font-family: Impact, "Arial Black", sans-serif;
             font-weight: 900;
-            text-shadow: 
-                3px 3px 0px black, 
-                -3px -3px 0px black, 
-                3px -3px 0px black, 
-                -3px 3px 0px black,
-                2px 2px 0px black,
-                -2px -2px 0px black,
-                2px -2px 0px black,
-                -2px 2px 0px black;
-            font-size: 72px;
-            line-height: 1.1;
+            font-size: 80px;
+            line-height: 1;
             padding: 0 40px;
-            letter-spacing: 2px;
             text-transform: uppercase;
-            z-index: 10;
+            letter-spacing: -3px;
+            -webkit-text-stroke: 4px black;
+            text-stroke: 4px black;
+            paint-order: stroke fill;
+            text-shadow: 
+                5px 5px 0 black,
+                -5px 5px 0 black,
+                5px -5px 0 black,
+                -5px -5px 0 black,
+                4px 4px 0 black,
+                -4px 4px 0 black,
+                4px -4px 0 black,
+                -4px -4px 0 black,
+                3px 3px 0 black,
+                -3px 3px 0 black,
+                3px -3px 0 black,
+                -3px -3px 0 black,
+                2px 2px 0 black,
+                -2px 2px 0 black,
+                2px -2px 0 black,
+                -2px -2px 0 black,
+                1px 1px 0 black,
+                -1px 1px 0 black,
+                1px -1px 0 black,
+                -1px -1px 0 black,
+                0 0 20px rgba(0,0,0,0.8);
         }
         
         .top-text {
-            top: 60px;
+            top: 40px;
         }
         
         .bottom-text {
-            bottom: 60px;
+            bottom: 40px;
         }
     </style>
 </head>
 <body>
-    <img src="${backgroundImageUrl}" alt="Meme background" class="meme-background">
-    <div class="meme-text top-text">${topText}</div>
-    <div class="meme-text bottom-text">${bottomText}</div>
+    <div class="container">
+        <img src="${backgroundImageUrl}" alt="Meme background" class="meme-image">
+        <div class="meme-text top-text">${topText || ''}</div>
+        <div class="meme-text bottom-text">${bottomText || ''}</div>
+    </div>
 </body>
 </html>`;
 
         // Create authorization header
         const auth = Buffer.from(`${HTMLCSS_USER_ID}:${HTMLCSS_API_KEY}`).toString('base64');
+        
+        // Log the HTML we're sending
+        logWithTimestamp(`📋 Sending HTML to HTMLCSStoImage API (${memeHTML.length} chars)`);
         
         // Call HTMLCSStoImage API
         const response = await fetch('https://hcti.io/v1/image', {
@@ -357,8 +391,8 @@ async function generateCompositeMemeImage(backgroundImageUrl: string, memeConten
             },
             body: JSON.stringify({
                 html: memeHTML,
-                viewport_width: 1024,
-                viewport_height: 1024,
+                viewport_width: 1152,
+                viewport_height: 768,
                 device_scale_factor: 1
             })
         });
@@ -467,28 +501,7 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
         .meme-image-wrapper {
             position: relative;
             width: 100%;
-            margin: 0.5rem 0;
-        }
-        
-        /* Meme text styling */
-        .meme-text {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 2.5rem;
-            font-weight: 900;
-            text-align: center;
-            color: var(--charcoal);
-            margin: 0.5rem auto;
-            line-height: 1.1;
-            text-transform: uppercase;
-            letter-spacing: -1px;
-        }
-        
-        .meme-text.top {
-            margin-bottom: 1rem;
-        }
-        
-        .meme-text.bottom {
-            margin-top: 1rem;
+            margin-bottom: 2rem;
         }
         
         .meme-image {
@@ -503,7 +516,53 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
             box-shadow: inset 0 0 0 2px var(--yellow);
         }
         
-
+        .meme-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Impact, "Arial Black", sans-serif;
+            font-weight: 900;
+            font-size: 96px;
+            line-height: 1;
+            padding: 0 20px;
+            text-transform: lowercase;
+            letter-spacing: -3px;
+            -webkit-text-stroke: 3px black;
+            text-stroke: 3px black;
+            text-shadow: 
+                5px 5px 0 black,
+                -5px 5px 0 black,
+                5px -5px 0 black,
+                -5px -5px 0 black,
+                4px 4px 0 black,
+                -4px 4px 0 black,
+                4px -4px 0 black,
+                -4px -4px 0 black,
+                3px 3px 0 black,
+                -3px 3px 0 black,
+                3px -3px 0 black,
+                -3px -3px 0 black,
+                2px 2px 0 black,
+                -2px 2px 0 black,
+                2px -2px 0 black,
+                -2px -2px 0 black,
+                1px 1px 0 black,
+                -1px 1px 0 black,
+                1px -1px 0 black,
+                -1px -1px 0 black,
+                0 0 10px black,
+                0 0 20px black;
+            z-index: 10;
+        }
+        
+        .top-text {
+            top: 20px;
+        }
+        
+        .bottom-text {
+            bottom: 20px;
+        }
         
         .action-buttons {
             display: flex;
@@ -693,16 +752,14 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 max-width: 100%;
             }
             
-            .meme-text {
-                font-size: 1.75rem;
-            }
-            
             .meme-image {
                 min-height: 400px;
                 max-height: 70vh;
             }
             
-
+            .meme-text {
+                font-size: 72px;
+            }
             
             .action-buttons {
                 gap: 15px;
@@ -729,15 +786,16 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
                 padding: 15px;
             }
             
-            .meme-text {
-                font-size: 1.5rem;
-            }
-            
             .meme-image {
                 min-height: 350px;
             }
             
-
+            .meme-text {
+                font-size: 58px;
+                letter-spacing: -2px;
+                -webkit-text-stroke: 2px black;
+                text-stroke: 2px black;
+            }
             
             .action-btn {
                 padding: 12px 20px;
@@ -767,11 +825,11 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
     <div class="floating-emoji" data-speed="2.5" style="bottom: 20%; right: 10%;">🚀</div>
     
     <div class="meme-container">
-        <div class="meme-text top">${topText}</div>
         <div class="meme-image-wrapper">
             <img src="${imageUrl}" alt="${theme}" class="meme-image" id="memeImage">
+            <div class="meme-text top-text">${topText}</div>
+            <div class="meme-text bottom-text">${bottomText}</div>
         </div>
-        <div class="meme-text bottom">${bottomText}</div>
         
         <div class="action-buttons">
             <button class="action-btn copy-url-btn" onclick="handleCopyUrl()">
@@ -1072,6 +1130,24 @@ function generateMemeHTML(memeContent: MemeContent, imageUrl: string, userSlug: 
 }
 
 /**
+ * Process meme remix - wrapper for remix functionality
+ */
+export async function processMemeRemix(userIdea: string, userSlug: string): Promise<MemeResult> {
+    // Load default meme configuration for remixes
+    const memeConfigPath = join(__dirname, '..', 'content', 'meme-config.json');
+    const memeConfigContent = await readFile(memeConfigPath, 'utf8');
+    const memeConfig = JSON.parse(memeConfigContent);
+    
+    const config = {
+        model: memeConfig.meme_generation.content_model,
+        maxTokens: memeConfig.meme_generation.content_max_tokens,
+        temperature: memeConfig.meme_generation.content_temperature
+    };
+    
+    return processMemeRequest(userIdea, userSlug, config);
+}
+
+/**
  * Main meme processing function
  */
 export async function processMemeRequest(userIdea: string, userSlug: string, config: MemeConfig): Promise<MemeResult> {
@@ -1094,11 +1170,14 @@ export async function processMemeRequest(userIdea: string, userSlug: string, con
             return { success: false, error: "Failed to generate meme image" };
         }
 
-        // Step 3: Skip composite image generation - we're displaying text as HTML now
-        // The DALL-E image is already perfect without text overlay
-        logWithTimestamp(`🎯 Using raw DALL-E image without text overlay`);
+        // Step 3: Generate composite meme image with text baked in
+        // TEMPORARILY COMMENTED OUT - using CSS overlay instead
+        // const compositeImageUrl = await generateCompositeMemeImage(imageUrl, memeContent);
+        // if (!compositeImageUrl) {
+        //     return { success: false, error: "Failed to generate composite meme image" };
+        // }
 
-        // Step 4: Generate HTML page with text displayed outside the image
+        // Step 4: Generate HTML page (using original image with CSS text overlay)
         const html = generateMemeHTML(memeContent, imageUrl, userSlug, imageUrl);
         
         logSuccess("🎉 Meme generation complete!");
