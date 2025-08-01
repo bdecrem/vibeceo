@@ -1,4 +1,4 @@
-# VibeceO8 Project
+# VibeceO8 Project - WEBTOYS Edition
 
 A multi-service platform for creative app generation and community interaction.
 
