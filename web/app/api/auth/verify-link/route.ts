@@ -22,8 +22,12 @@ function normalizePhoneNumber(phone: string): string {
     cleaned = '1' + cleaned;
   }
   
-  // Add + prefix for E.164 format
-  return '+' + cleaned;
+  // Ensure it starts with +
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  
+  return cleaned;
 }
 
 export async function POST(req: NextRequest) {
@@ -66,61 +70,24 @@ export async function POST(req: NextRequest) {
     // Normalize phone number
     const normalizedPhone = normalizePhoneNumber(phone_number);
     
-    console.log('Looking for phone:', normalizedPhone);
-    
-    // Check verification code - look for ANY record with this phone number first
-    const { data: allPhoneRecords } = await supabase
-      .from('sms_subscribers')
-      .select('*')
-      .eq('phone_number', normalizedPhone);
-      
-    console.log('All records with this phone:', {
-      normalizedPhone,
-      count: allPhoneRecords?.length,
-      records: allPhoneRecords
-    });
-    
-    // Now look for ones with verification codes
-    const { data: phoneRecords, error: phoneError } = await supabase
+    // Check verification code
+    const { data: phoneSubscriber } = await supabase
       .from('sms_subscribers')
       .select('*')
       .eq('phone_number', normalizedPhone)
-      .not('verification_code', 'is', null)
-      .order('created_at', { ascending: false });
-    
-    console.log('Records with verification codes:', { 
-      count: phoneRecords?.length,
-      error: phoneError 
-    });
-    
-    if (!phoneRecords || phoneRecords.length === 0) {
-      return NextResponse.json({ error: 'Phone number not found or no verification pending' }, { status: 404 });
-    }
-    
-    // Find the record with a valid (non-expired) verification code
-    const phoneSubscriber = phoneRecords.find(record => {
-      if (!record.verification_expires) return true; // No expiry set
-      return new Date(record.verification_expires) > new Date();
-    });
+      .single();
     
     if (!phoneSubscriber) {
-      return NextResponse.json({ error: 'Verification code expired' }, { status: 400 });
+      return NextResponse.json({ error: 'Phone number not found' }, { status: 404 });
     }
     
-    // Verify code - ensure both are strings and trimmed
-    const storedCode = String(phoneSubscriber.verification_code).trim();
-    const providedCode = String(verification_code).trim();
-    
-    console.log('Verification check:', {
-      stored: storedCode,
-      provided: providedCode,
-      matches: storedCode === providedCode,
-      storedLength: storedCode.length,
-      providedLength: providedCode.length
-    });
-    
-    if (storedCode !== providedCode) {
+    // Verify code and expiration
+    if (phoneSubscriber.verification_code !== verification_code) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+    }
+    
+    if (phoneSubscriber.verification_expires && new Date(phoneSubscriber.verification_expires) < new Date()) {
+      return NextResponse.json({ error: 'Verification code expired' }, { status: 400 });
     }
     
     // Now handle the linking logic

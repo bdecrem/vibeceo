@@ -24,8 +24,6 @@ interface WtafApp {
   Fave?: boolean
   Forget?: boolean
   type: string
-  og_image_url?: string
-  landscape_image_url?: string
 }
 
 interface FeaturedStats {
