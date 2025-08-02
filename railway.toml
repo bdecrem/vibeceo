@@ -15,12 +15,12 @@ NODE_ENV = "production"
 NEXT_TELEMETRY_DISABLED = "1"
 
 [[services]]
-[services.web]
+[services.vibeceo]
 source = "web/"
-[services.web.build]
+[services.vibeceo.build]
 builder = "NIXPACKS"
 buildCommand = "npm ci && npm run build"
-[services.web.deploy]
+[services.vibeceo.deploy]
 startCommand = "npm start"
 healthcheckPath = "/api/health"
 
@@ -32,3 +32,11 @@ buildCommand = "npm ci && npm run build"
 [services.smsbot.deploy]
 startCommand = "npm start"
 healthcheckPath = "/health"
+
+[services.vibeceo-discord-bot]
+source = "discord-bot/"
+[services.vibeceo-discord-bot.build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+[services.vibeceo-discord-bot.deploy]
+startCommand = "npm start"
