@@ -39,8 +39,12 @@ function normalizePhoneNumber(phone: string): string {
     cleaned = '1' + cleaned;
   }
   
-  // Add + prefix for E.164 format
-  return '+' + cleaned;
+  // Ensure it starts with +
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  
+  return cleaned;
 }
 
 export async function POST(req: NextRequest) {
@@ -98,14 +102,11 @@ export async function POST(req: NextRequest) {
         .eq('phone_number', normalizedPhone);
     } else {
       // Create a new record with pending status
-      // IMPORTANT: Don't set supabase_id yet - that happens after verification
-      const { error: insertError } = await supabase
+      await supabase
         .from('sms_subscribers')
         .insert({
           phone_number: normalizedPhone,
-          supabase_id: null, // Leave null until verified
-          email: null, // Some fields might be required
-          role: 'user', // Default role
+          supabase_id: user_id,
           verification_code: verificationCode,
           verification_expires: expiresAt.toISOString(),
           confirmed: false,
@@ -113,16 +114,6 @@ export async function POST(req: NextRequest) {
           slug: `pending-${Date.now()}`, // Temporary slug
           created_at: new Date().toISOString()
         });
-        
-      if (insertError) {
-        console.error('Failed to create pending record:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create verification record' },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`Created pending record for ${normalizedPhone}`);
     }
     
     // Send SMS verification code
