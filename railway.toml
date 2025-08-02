@@ -23,3 +23,12 @@ buildCommand = "npm ci && npm run build"
 [services.web.deploy]
 startCommand = "npm start"
 healthcheckPath = "/api/health"
+
+[services.smsbot]
+source = "sms-bot/"
+[services.smsbot.build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+[services.smsbot.deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
