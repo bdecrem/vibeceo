@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs-20_x", "npm-9_x"]
+nixPkgs = ["nodejs_20"]
 
-[phases.install]
-cmds = ["npm ci --include=workspace-root --workspaces"]
+[variables]
+NODE_VERSION = "20"
