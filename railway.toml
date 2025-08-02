@@ -1,0 +1,24 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[environments.production]
+[environments.production.variables]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"
+
+[[services]]
+[services.web]
+source = "web/"
+[services.web.build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+[services.web.deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health"

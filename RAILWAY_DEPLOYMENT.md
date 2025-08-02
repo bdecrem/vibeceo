@@ -37,7 +37,7 @@ NEXT_TELEMETRY_DISABLED=1
 - **Build Command**: `npm ci && npm run build`
 - **Start Command**: `npm start`
 - **Health Check**: `/api/health`
-- **Node Version**: 18.x or higher
+- **Node Version**: 20.x or higher (required by dependencies)
 
 ## 🚀 Deployment Steps
 
