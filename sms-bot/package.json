@@ -54,7 +54,7 @@
 		"openai": "^4.100.0",
 		"p-limit": "^6.2.0",
 		"puppeteer": "^24.15.0",
-		"twilio": "^4.19.0",
+		"twilio": "^5.8.0",
 		"unique-names-generator": "^4.7.1"
 	},
 	"devDependencies": {
