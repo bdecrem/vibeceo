@@ -1,5 +1,5 @@
 # Use Node.js base image with Python support
-FROM node:18-bullseye
+FROM node:20-bullseye
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y \
