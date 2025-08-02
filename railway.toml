@@ -19,7 +19,7 @@ NEXT_TELEMETRY_DISABLED = "1"
 source = "web/"
 [services.vibeceo.build]
 builder = "NIXPACKS"
-buildCommand = "npm ci && npm run build"
+buildCommand = "cd .. && npm ci --workspace=web && cd web && npm run build"
 [services.vibeceo.deploy]
 startCommand = "npm start"
 healthcheckPath = "/api/health"
