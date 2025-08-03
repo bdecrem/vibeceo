@@ -57,6 +57,7 @@ function DevConsole() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [linkLoading, setLinkLoading] = useState(false)
+  const [isMergeMode, setIsMergeMode] = useState(false)
 
   // Check auth status when console opens
   useEffect(() => {
@@ -282,7 +283,7 @@ function DevConsole() {
     setAuthError('')
 
     try {
-      const response = await fetch('/api/auth/link-phone', {
+      const response = await fetch('/api/auth/link-phone-v2', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -302,8 +303,25 @@ function DevConsole() {
         return
       }
 
-      addConsoleEntry('📱 Verification code sent to your phone!', 'success')
-      setLinkMode('code')
+      if (result.merge_required) {
+        // PHASE 2: Show merge confirmation
+        addConsoleEntry('⚠️ This phone number is already registered!', 'warning')
+        addConsoleEntry('', 'info')
+        addConsoleEntry(`📱 Phone account: ${result.merge_info.phone_account}`, 'info')
+        addConsoleEntry(`💻 Web account: ${result.merge_info.web_account}`, 'info')
+        addConsoleEntry('', 'info')
+        addConsoleEntry(`✨ ${result.merge_info.message}`, 'info')
+        addConsoleEntry('', 'info')
+        addConsoleEntry('⚡ Type YES to confirm merge, or CANCEL to abort', 'warning')
+        setIsMergeMode(true)
+        setLinkMode('code')
+        setVerificationCode('') // Clear any previous code
+      } else {
+        // PHASE 1: Simple verification
+        addConsoleEntry('📱 Verification code sent to your phone!', 'success')
+        setIsMergeMode(false)
+        setLinkMode('code')
+      }
       setLinkLoading(false)
     } catch (error: any) {
       setAuthError('Network error. Please try again.')
@@ -321,14 +339,13 @@ function DevConsole() {
     setAuthError('')
 
     try {
-      const response = await fetch('/api/auth/verify-link', {
+      const response = await fetch('/api/auth/verify-link-v2', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
-          phone_number: phoneNumber,
           verification_code: verificationCode,
           user_id: user.id
         })
@@ -342,21 +359,26 @@ function DevConsole() {
         return
       }
 
-      if (result.merged) {
-        addConsoleEntry(`✅ Accounts linked! You now have access to:`, 'success')
-        addConsoleEntry(`   • Role: ${result.role}`, 'info')
-        addConsoleEntry(`   • Apps created: ${result.app_count}`, 'info')
-        addConsoleEntry(`   • Your slug: ${result.slug}`, 'info')
+      if (result.cancelled) {
+        // User cancelled merge
+        addConsoleEntry(`❌ ${result.message}`, 'info')
+      } else if (result.merged) {
+        // Successful merge
+        addConsoleEntry(`✅ ${result.message}`, 'success')
+        addConsoleEntry(`📊 Total apps in merged account: ${result.total_apps}`, 'info')
+        addConsoleEntry(`🎉 You can now use both SMS and web!`, 'success')
       } else {
-        addConsoleEntry(`✅ Phone number added to your account!`, 'success')
-        addConsoleEntry(`   • You can now use SMS commands`, 'info')
-        addConsoleEntry(`   • Text "WTAF help" to ${phoneNumber} to get started`, 'info')
+        // Simple phone link (Phase 1)
+        addConsoleEntry(`✅ ${result.message}`, 'success')
+        addConsoleEntry(`📱 You can now use SMS commands!`, 'info')
+        addConsoleEntry(`💬 Text "wtaf help" to +1-866-330-0015 to get started`, 'info')
       }
 
       setAuthMode('none')
       setPhoneNumber('')
       setVerificationCode('')
       setLinkLoading(false)
+      setIsMergeMode(false)
     } catch (error: any) {
       setAuthError('Network error. Please try again.')
       setLinkLoading(false)
@@ -809,6 +831,7 @@ Without this, you'll see duplicates everywhere! 🤯`
                           setAuthMode('none')
                           setPhoneNumber('')
                           setAuthError('')
+                          setIsMergeMode(false)
                         }}
                         className="console-auth-button cancel"
                       >
@@ -823,18 +846,20 @@ Without this, you'll see duplicates everywhere! 🤯`
                     handleVerifyCode()
                   }}>
                     <div className="console-link-header">
-                      📱 Enter Verification Code
+                      {isMergeMode ? '🔄 Confirm Account Merge' : '📱 Enter Verification Code'}
                     </div>
                     <p className="console-link-info">
-                      We sent a code to {phoneNumber}
+                      {isMergeMode 
+                        ? 'Type YES to merge accounts, or anything else to cancel' 
+                        : `We sent a code to ${phoneNumber}`}
                     </p>
                     <input
                       type="text"
-                      placeholder="123456"
+                      placeholder={isMergeMode ? "YES to confirm" : "123456"}
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       className="console-auth-input"
-                      maxLength={6}
+                      maxLength={isMergeMode ? 10 : 6}
                       required
                       autoFocus
                     />
@@ -852,6 +877,7 @@ Without this, you'll see duplicates everywhere! 🤯`
                           setLinkMode('phone')
                           setVerificationCode('')
                           setAuthError('')
+                          setIsMergeMode(false)
                         }}
                         className="console-auth-button cancel"
                       >
