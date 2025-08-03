@@ -44,16 +44,16 @@ const __dirname = dirname(__filename);
 
 // Rate limiting configuration
 const RATE_LIMITS = {
-    hourly: 10,      // Max apps per hour
-    daily: 20,       // Max apps per day
-    monthly: 100     // Max apps per month
+    hourly: 30,      // Max apps per hour
+    daily: 60,       // Max apps per day
+    monthly: 300     // Max apps per month
 };
 
 // Special rate limits for DEGEN users (2x regular limits)
 const DEGEN_RATE_LIMITS = {
-    hourly: 20,      // Max apps per hour for DEGEN
-    daily: 40,       // Max apps per day for DEGEN
-    monthly: 200     // Max apps per month for DEGEN
+    hourly: 60,      // Max apps per hour for DEGEN
+    daily: 120,      // Max apps per day for DEGEN
+    monthly: 600     // Max apps per month for DEGEN
 };
 
 // In-memory rate limit tracking
@@ -2614,6 +2614,312 @@ export async function processRemixRequest(processingPath: string, fileData: any,
     } catch (error) {
         logError(`Remix processing error: ${error instanceof Error ? error.message : String(error)}`);
         await sendFailureNotification("generic", senderPhone);
+        return false;
+    }
+}
+
+/**
+ * Process LINK request workflow
+ * Handles phone number linking for web-authenticated users
+ */
+export async function processLinkRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+    logWithTimestamp("🔗 STARTING LINK PROCESSING WORKFLOW");
+    logWithTimestamp(`📖 Processing link file: ${processingPath}`);
+    
+    const { senderPhone, userSlug } = fileData;
+    
+    try {
+        // Import necessary functions
+        const { createClient } = await import('@supabase/supabase-js');
+        const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
+        const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
+        
+        // First, check if this phone number already exists in our system
+        const { data: existingPhoneAccount, error: phoneError } = await supabase
+            .from('sms_subscribers')
+            .select('*')
+            .eq('phone_number', senderPhone)
+            .single();
+            
+        if (existingPhoneAccount) {
+            logWithTimestamp(`📱 Phone ${senderPhone} already exists in system`);
+            
+            // If this is the same account they're texting from, it means they're trying to link their own phone
+            // This happens when an SMS user creates a web account and tries to link back
+            if (existingPhoneAccount.slug === userSlug) {
+                logWithTimestamp(`📱 User ${userSlug} trying to link their own phone - checking for web account`);
+                
+                // They must have created a web account - find it by looking for an account with no phone
+                const { data: webAccounts } = await supabase
+                    .from('sms_subscribers')
+                    .select('*')
+                    .eq('email', existingPhoneAccount.email)
+                    .is('phone_number', null);
+                    
+                if (!webAccounts || webAccounts.length === 0) {
+                    await sendConfirmationSms(
+                        "You're already using this phone number. To link a web account, first create one at webtoys.org",
+                        senderPhone
+                    );
+                    return true;
+                }
+                
+                // This shouldn't happen in the normal flow, but handle it
+                await sendConfirmationSms(
+                    "This phone is already linked to your account. Login at webtoys.org with your existing credentials.",
+                    senderPhone
+                );
+                return true;
+            }
+            
+            // Case 1: Phone exists WITH an email - REJECT
+            if (existingPhoneAccount.email && !existingPhoneAccount.email.includes('@merged.local')) {
+                logWarning(`Phone ${senderPhone} already linked to email ${existingPhoneAccount.email}`);
+                await sendConfirmationSms(
+                    `This phone is already linked to account ${existingPhoneAccount.email}. ` +
+                    `To use a different account, please login with that email at webtoys.org`,
+                    senderPhone
+                );
+                return true; // Success in handling the request, even though we rejected it
+            }
+            
+            // Case 2: Phone exists WITHOUT email (SMS-only account) - offer to merge
+            logWithTimestamp(`📱 Phone ${senderPhone} exists but has no email - will offer merge`);
+            
+            // Get the web account details
+            const { data: webAccount, error: webError } = await supabase
+                .from('sms_subscribers')
+                .select('*')
+                .eq('slug', userSlug)
+                .single();
+                
+            if (webError || !webAccount || !webAccount.email) {
+                logError(`Web account not found or has no email: ${userSlug}`);
+                await sendConfirmationSms("Error: Your web account was not found. Please login at webtoys.org first.", senderPhone);
+                return false;
+            }
+            
+            // Check which account is older
+            const phoneDate = new Date(existingPhoneAccount.created_at);
+            const webDate = new Date(webAccount.created_at);
+            const olderAccount = phoneDate < webDate ? 'phone' : 'web';
+            
+            // Count apps for both accounts
+            const { count: phoneApps } = await supabase
+                .from('wtaf_content')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_slug', existingPhoneAccount.slug);
+                
+            const { count: webApps } = await supabase
+                .from('wtaf_content')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_slug', webAccount.slug);
+            
+            // Store merge confirmation data
+            const { error: storeError } = await supabase
+                .from('sms_subscribers')
+                .update({
+                    verification_code: 'MERGE_CONFIRM',
+                    verification_expires: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
+                    pending_phone_number: JSON.stringify({
+                        action: 'merge',
+                        phone_account_id: existingPhoneAccount.id,
+                        web_account_id: webAccount.id,
+                        keep_account: olderAccount === 'phone' ? existingPhoneAccount.id : webAccount.id,
+                        phone_slug: existingPhoneAccount.slug,
+                        web_slug: webAccount.slug
+                    })
+                })
+                .eq('id', webAccount.id);
+                
+            if (storeError) {
+                logError(`Failed to store merge confirmation: ${storeError.message}`);
+                await sendConfirmationSms("Error setting up account merge. Please try again.", senderPhone);
+                return false;
+            }
+            
+            // Send merge confirmation message
+            const mergeMessage = 
+                `This phone belongs to SMS account "${existingPhoneAccount.slug}" ` +
+                `(${phoneApps || 0} apps, created ${phoneDate.toLocaleDateString()}). ` +
+                `Your web account is "${webAccount.slug}" (${webApps || 0} apps). ` +
+                `We'll merge everything into the ${olderAccount === 'phone' ? 'SMS' : 'web'} account. ` +
+                `Reply YES to confirm.`;
+                
+            await sendConfirmationSms(mergeMessage, senderPhone);
+            logSuccess(`✅ Sent merge confirmation request to ${senderPhone}`);
+            return true;
+        }
+        
+        // If we get here, this is an SMS user trying to link a web account
+        logWithTimestamp(`📱 SMS user ${userSlug} wants to link a web account`);
+        
+        // The user needs to provide their web account email
+        await sendConfirmationSms(
+            "To link your web account, please text: LINK your-email@example.com",
+            senderPhone
+        );
+        return true;
+        
+    } catch (error) {
+        logError(`Link processing failed: ${error instanceof Error ? error.message : String(error)}`);
+        await sendConfirmationSms("Error processing LINK command. Please try again.", senderPhone);
+        return false;
+    }
+}
+
+/**
+ * Process YES confirmation for account merge
+ */
+export async function processConfirmMergeRequest(processingPath: string, fileData: any, requestInfo: any): Promise<boolean> {
+    logWithTimestamp("✅ STARTING MERGE CONFIRMATION PROCESSING");
+    logWithTimestamp(`📖 Processing confirmation file: ${processingPath}`);
+    
+    const { senderPhone, userSlug } = fileData;
+    
+    try {
+        // Import necessary functions
+        const { createClient } = await import('@supabase/supabase-js');
+        const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = await import('./shared/config.js');
+        const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!);
+        
+        // Find the account with pending merge confirmation
+        const { data: pendingAccount, error: pendingError } = await supabase
+            .from('sms_subscribers')
+            .select('*')
+            .eq('phone_number', senderPhone)
+            .eq('verification_code', 'MERGE_CONFIRM')
+            .single();
+            
+        if (pendingError || !pendingAccount) {
+            logWarning(`No pending merge found for phone ${senderPhone}`);
+            await sendConfirmationSms("No pending account merge found. Use LINK to start the process.", senderPhone);
+            return true;
+        }
+        
+        // Check if confirmation hasn't expired
+        if (new Date(pendingAccount.verification_expires) < new Date()) {
+            logWarning(`Merge confirmation expired for ${senderPhone}`);
+            await sendConfirmationSms("Merge confirmation expired. Please use LINK to try again.", senderPhone);
+            return true;
+        }
+        
+        // Parse the merge data
+        let mergeData;
+        try {
+            mergeData = JSON.parse(pendingAccount.pending_phone_number);
+        } catch (e) {
+            logError(`Failed to parse merge data: ${e}`);
+            await sendConfirmationSms("Error processing merge data. Please try LINK again.", senderPhone);
+            return false;
+        }
+        
+        const { phone_account_id, web_account_id, keep_account, phone_slug, web_slug } = mergeData;
+        
+        // Get both accounts
+        const { data: phoneAccount } = await supabase
+            .from('sms_subscribers')
+            .select('*')
+            .eq('id', phone_account_id)
+            .single();
+            
+        const { data: webAccount } = await supabase
+            .from('sms_subscribers')
+            .select('*')
+            .eq('id', web_account_id)
+            .single();
+            
+        if (!phoneAccount || !webAccount) {
+            logError(`One or both accounts not found for merge`);
+            await sendConfirmationSms("Error: Accounts not found. Please try LINK again.", senderPhone);
+            return false;
+        }
+        
+        // Determine which account to keep and which to delete
+        const keepAccount = keep_account === phone_account_id ? phoneAccount : webAccount;
+        const deleteAccount = keep_account === phone_account_id ? webAccount : phoneAccount;
+        const keepSlug = keep_account === phone_account_id ? phone_slug : web_slug;
+        const deleteSlug = keep_account === phone_account_id ? web_slug : phone_slug;
+        
+        logWithTimestamp(`📱 Merging accounts: keeping ${keepSlug}, deleting ${deleteSlug}`);
+        
+        // Transfer all content from delete account to keep account
+        const { error: transferError } = await supabase
+            .from('wtaf_content')
+            .update({ 
+                user_slug: keepSlug,
+                user_id: keepAccount.id
+            })
+            .eq('user_slug', deleteSlug);
+            
+        if (transferError) {
+            logError(`Failed to transfer content: ${transferError.message}`);
+            await sendConfirmationSms("Error transferring apps. Please contact support.", senderPhone);
+            return false;
+        }
+        
+        // Update the keeper account with merged data
+        const mergedData: any = {
+            phone_number: phoneAccount.phone_number,
+            email: webAccount.email,
+            supabase_id: webAccount.supabase_id,
+            confirmed: true,
+            consent_given: true,
+            // Combine stats
+            apps_created_count: (phoneAccount.apps_created_count || 0) + (webAccount.apps_created_count || 0),
+            total_remix_credits: (phoneAccount.total_remix_credits || 0) + (webAccount.total_remix_credits || 0),
+            follower_count: Math.max(phoneAccount.follower_count || 0, webAccount.follower_count || 0),
+            following_count: Math.max(phoneAccount.following_count || 0, webAccount.following_count || 0),
+            // Clear verification fields
+            verification_code: null,
+            verification_expires: null,
+            pending_phone_number: null,
+            // Use the better role
+            role: webAccount.role || phoneAccount.role || 'coder'
+        };
+        
+        const { error: updateError } = await supabase
+            .from('sms_subscribers')
+            .update(mergedData)
+            .eq('id', keepAccount.id);
+            
+        if (updateError) {
+            logError(`Failed to update keeper account: ${updateError.message}`);
+            await sendConfirmationSms("Error updating account. Please contact support.", senderPhone);
+            return false;
+        }
+        
+        // Delete the other account
+        const { error: deleteError } = await supabase
+            .from('sms_subscribers')
+            .delete()
+            .eq('id', deleteAccount.id);
+            
+        if (deleteError) {
+            logError(`Failed to delete old account: ${deleteError.message}`);
+            // Non-critical, continue anyway
+        }
+        
+        // Get final app count
+        const { count: finalAppCount } = await supabase
+            .from('wtaf_content')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_slug', keepSlug);
+        
+        // Send success message
+        const successMessage = 
+            `✅ Accounts merged successfully!\n` +
+            `Your account: ${keepSlug}\n` +
+            `Total apps: ${finalAppCount || 0}\n` +
+            `You can now use both SMS and web at webtoys.org`;
+            
+        await sendConfirmationSms(successMessage, senderPhone);
+        logSuccess(`✅ Successfully merged accounts for ${senderPhone}`);
+        return true;
+        
+    } catch (error) {
+        logError(`Merge confirmation failed: ${error instanceof Error ? error.message : String(error)}`);
+        await sendConfirmationSms("Error processing merge confirmation. Please try again.", senderPhone);
         return false;
     }
 }
