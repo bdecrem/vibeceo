@@ -7,14 +7,14 @@ WEBTOYS implements rate limiting to prevent abuse and protect against excessive 
 ## Rate Limits by User Type
 
 ### Regular Users (Default)
-- **10 apps per hour**
-- **20 apps per day** 
-- **100 apps per month**
+- **30 apps per hour**
+- **60 apps per day** 
+- **300 apps per month**
 
 ### DEGEN Users
-- **20 apps per hour** (2x regular)
-- **40 apps per day** (2x regular)
-- **200 apps per month** (2x regular)
+- **60 apps per hour** (2x regular)
+- **120 apps per day** (2x regular)
+- **600 apps per month** (2x regular)
 
 ### OPERATOR & ADMIN Users
 - **Unlimited** - no rate limits applied
@@ -53,12 +53,12 @@ Examples:
 When a user hits their rate limit, they receive an SMS notification:
 
 ```
-Rate limit: You've reached 10 apps this hour. Try again next hour!
+Rate limit: You've reached 30 apps this hour. Try again next hour!
 ```
 
 Or for DEGEN users:
 ```
-Rate limit (DEGEN): You've reached 20 apps this hour. Try again next hour!
+Rate limit (DEGEN): You've reached 60 apps this hour. Try again next hour!
 ```
 
 ## Configuration
@@ -68,16 +68,16 @@ Rate limits are defined in `engine/controller.ts`:
 ```javascript
 // Regular user limits
 const RATE_LIMITS = {
-    hourly: 10,
-    daily: 20,
-    monthly: 100
+    hourly: 30,
+    daily: 60,
+    monthly: 300
 };
 
 // DEGEN user limits (2x regular)
 const DEGEN_RATE_LIMITS = {
-    hourly: 20,
-    daily: 40,
-    monthly: 200
+    hourly: 60,
+    daily: 120,
+    monthly: 600
 };
 ```
 
@@ -167,7 +167,19 @@ Monitor logs for:
 2. Rebuild: `npm run build`
 3. Restart server
 
+## Web Console Rate Limits
+
+The web console (`/api/wtaf/web-console`) has separate rate limits:
+
+### Rate Limits by Role (per hour):
+- **user**: 15 requests
+- **coder**: 30 requests
+- **degen**: 60 requests  
+- **operator**: 90 requests
+
+These limits are tracked separately from SMS rate limits and return a 429 status code when exceeded.
+
 ---
 
 **Last Updated:** January 31, 2025
-**Version:** 1.0
+**Version:** 1.1

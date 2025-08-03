@@ -11,7 +11,7 @@
 ### 2. Safe Web Console API
 - Endpoint: `/api/wtaf/web-console`
 - Role-based command restrictions
-- Rate limiting (5-30 commands/hour based on role)
+- Rate limiting (15-90 commands/hour based on role)
 - Forbidden flag filtering (blocks admin commands)
 - Full audit logging
 

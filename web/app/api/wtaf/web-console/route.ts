@@ -36,10 +36,10 @@ const FORBIDDEN_FLAGS = [
 
 // Rate limits by role (per hour)
 const RATE_LIMITS: Record<string, number> = {
-  user: 5,
-  coder: 10,
-  degen: 20,
-  operator: 30
+  user: 15,
+  coder: 30,
+  degen: 60,
+  operator: 90
 };
 
 // In-memory rate limit storage (in production, use Redis or database)
@@ -126,18 +126,53 @@ export async function POST(req: NextRequest) {
     }
     
     // Get user's SMS subscriber info
-    const { data: subscriber, error: subError } = await supabase
+    const userEmail = user.email || user_email; // Use email from auth user or from request body
+    console.log(`[WebConsole] Looking up user - ID: ${user_id}, Email: ${userEmail}`);
+    
+    // First try by supabase_id
+    let { data: subscriber, error: subError } = await supabase
       .from('sms_subscribers')
       .select('*')
       .eq('supabase_id', user_id)
       .single();
       
     if (subError || !subscriber) {
-      return NextResponse.json(
-        { error: 'User not found in SMS subscribers' },
-        { status: 404 }
-      );
+      console.log(`[WebConsole] Not found by supabase_id, trying email: ${userEmail}`);
     }
+      
+    // If not found by supabase_id, try by email (in case of merged accounts)
+    if (subError || !subscriber) {
+      const { data: emailSubscriber, error: emailError } = await supabase
+        .from('sms_subscribers')
+        .select('*')
+        .eq('email', userEmail)
+        .single();
+        
+      if (emailError || !emailSubscriber) {
+        console.log(`[WebConsole] User not found by email either. Error:`, emailError);
+        
+        // Let's also check if there's a subscriber with this email in a different case
+        if (userEmail) {
+          const { data: allEmailMatches, error: searchError } = await supabase
+            .from('sms_subscribers')
+            .select('email, slug, supabase_id')
+            .ilike('email', userEmail)
+            .limit(5);
+            
+          console.log(`[WebConsole] Email search results:`, allEmailMatches || searchError);
+        }
+        
+        return NextResponse.json(
+          { error: 'User not found in SMS subscribers' },
+          { status: 404 }
+        );
+      }
+      
+      subscriber = emailSubscriber;
+    }
+    
+    console.log(`[WebConsole] Found subscriber: ${subscriber.slug} (${subscriber.role})`);
+    
     
     const userRole = subscriber.role || 'user';
     
