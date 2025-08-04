@@ -52,6 +52,7 @@ The SMS bot follows a microservices architecture with strict separation of conce
 - **ALWAYS** use environment variables from `.env` files
 - **ALWAYS** use `process.env.VARIABLE_NAME` for sensitive values
 - Test scripts are NOT exempt from this rule
+- **DO NOT EDIT OR CHANGE OR COPY OR IN ANY OTHER WAY MESS WITH MY SECRETS**
 
 ```javascript
 // ❌ ABSOLUTELY WRONG - NEVER DO THIS
@@ -275,12 +276,12 @@ When in doubt:
 
 ## Git Commit and Push Rules
 
-**NEVER commit or push changes to GitHub unless explicitly requested by the user.**
-- You may stage changes with `git add` for review
+**Claude Code can commit anytime. For PUSHES the user needs to approve those requests.**
+- You may stage changes with `git add`
 - You may check status with `git status`
-- DO NOT run `git commit` unless the user says "commit" 
-- DO NOT run `git push` unless the user says "push"
-- Wait for explicit user approval before committing or pushing any changes
+- You may run `git commit` at any time
+- DO NOT run `git push` unless the user explicitly approves
+- Wait for explicit user approval before pushing any changes
 
 ## Security Exception: Web Console API
 
