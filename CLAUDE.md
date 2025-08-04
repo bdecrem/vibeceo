@@ -45,6 +45,27 @@ The SMS bot follows a microservices architecture with strict separation of conce
 
 ## Strict Rules for Code Agents
 
+### 0. SECURITY: NEVER Hardcode Secrets
+**THIS IS THE #1 RULE - VIOLATING THIS RULE IS UNACCEPTABLE**
+- **NEVER** put API keys, tokens, or secrets directly in code files
+- **NEVER** commit credentials to Git, even in test scripts
+- **ALWAYS** use environment variables from `.env` files
+- **ALWAYS** use `process.env.VARIABLE_NAME` for sensitive values
+- Test scripts are NOT exempt from this rule
+
+```javascript
+// ❌ ABSOLUTELY WRONG - NEVER DO THIS
+const supabaseKey = 'eyJhbGc...actual-key-here...';
+
+// ✅ CORRECT - ALWAYS DO THIS
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+```
+
+If you create test scripts:
+1. Put them in directories covered by .gitignore (`/sms-bot/scripts/`, `/web/scripts/`)
+2. Still use environment variables for all credentials
+3. Include instructions for setting up required env vars
+
 ### 1. NEVER Mix Layers
 - **Controller** handles business logic and orchestration ONLY
 - **Storage Manager** handles ALL database operations - no Supabase calls elsewhere

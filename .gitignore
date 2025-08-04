@@ -89,3 +89,9 @@ tiny/
 
 # Claude outputs - these contain generated code and shouldn't be in git
 /sms-bot/data/claude_outputs/
+
+# Test scripts - often contain hardcoded secrets
+/sms-bot/test-scripts/
+/sms-bot/scripts/
+/web/scripts/
+/discord-bot/scripts/
