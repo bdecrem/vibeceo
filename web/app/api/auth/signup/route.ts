@@ -27,13 +27,19 @@ export async function POST(req: NextRequest) {
     
     if (authError) throw authError;
     
-    // 2. Generate unique slug from email
-    const baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    let slug = baseSlug;
-    let counter = 1;
+    // 2. Generate unique fun slug (like SMS users get)
+    // Import slug generation functions
+    const { generateFunSlug } = await import('@/lib/slug-utils');
     
-    // Check if slug exists and increment if needed
-    while (true) {
+    let slug = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    // Try to generate a unique fun slug
+    while (attempts < maxAttempts) {
+      slug = generateFunSlug();
+      
+      // Check if slug exists
       const { data: existing } = await supabase
         .from('sms_subscribers')
         .select('slug')
@@ -41,8 +47,13 @@ export async function POST(req: NextRequest) {
         .single();
         
       if (!existing) break;
-      slug = `${baseSlug}${counter}`;
-      counter++;
+      attempts++;
+    }
+    
+    // Fallback to email-based slug if we can't find a unique fun slug
+    if (attempts >= maxAttempts) {
+      const baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      slug = `${baseSlug}-${Date.now()}`;
     }
     
     // 3. Create sms_subscriber entry
