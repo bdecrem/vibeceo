@@ -92,6 +92,9 @@ tiny/
 
 # Test scripts - often contain hardcoded secrets
 /sms-bot/test-scripts/
-/sms-bot/scripts/
-/web/scripts/
-/discord-bot/scripts/
+/web/test-scripts/
+/discord-bot/test-scripts/
+# Individual test files that might contain secrets
+/sms-bot/scripts/test-*.js
+/web/scripts/test-*.js
+/discord-bot/scripts/test-*.js
