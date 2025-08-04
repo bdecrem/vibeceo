@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -25,13 +26,20 @@ export async function POST(req: NextRequest) {
     
     const supabase = getSupabaseClient();
     
-    // Generate unique slug from email
-    const baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    let slug = baseSlug;
-    let counter = 1;
+    // Generate unique slug using same pattern as SMS signups (adjective + animal)
+    let slug = '';
+    let attempts = 0;
+    const maxAttempts = 10;
     
-    // Check if slug exists and increment if needed
-    while (true) {
+    // Keep generating until we find a unique slug
+    while (attempts < maxAttempts) {
+      slug = uniqueNamesGenerator({
+        dictionaries: [adjectives, animals],
+        separator: '',
+        style: 'lowerCase'
+      });
+      
+      // Check if slug exists
       const { data: existing } = await supabase
         .from('sms_subscribers')
         .select('slug')
@@ -39,8 +47,23 @@ export async function POST(req: NextRequest) {
         .single();
         
       if (!existing) break;
-      slug = `${baseSlug}${counter}`;
-      counter++;
+      attempts++;
+    }
+    
+    // If we couldn't find a unique slug after 10 attempts, add a number
+    if (attempts >= maxAttempts) {
+      const baseSlug = slug;
+      let counter = 1;
+      while (true) {
+        slug = `${baseSlug}${counter}`;
+        const { data: existing } = await supabase
+          .from('sms_subscribers')
+          .select('slug')
+          .eq('slug', slug)
+          .single();
+        if (!existing) break;
+        counter++;
+      }
     }
     
     // Create sms_subscriber entry with 'coder' role for web console signups
