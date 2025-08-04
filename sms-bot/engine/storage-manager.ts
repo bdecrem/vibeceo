@@ -11,6 +11,9 @@ let supabase: SupabaseClient | null = null;
 function getSupabaseClient(): SupabaseClient {
     if (!supabase) {
         if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+            console.error('Missing Supabase credentials:');
+            console.error('SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Not set');
+            console.error('SUPABASE_SERVICE_KEY:', SUPABASE_SERVICE_KEY ? 'Set' : 'Not set');
             throw new Error("SUPABASE_URL and SUPABASE_SERVICE_KEY are required");
         }
         supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
