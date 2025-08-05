@@ -48,17 +48,59 @@ export async function GET(request: NextRequest) {
 
     console.log(`🎨 Checking OG image for: ${userSlug}/${appSlug}`)
     
-    // 1. FIRST CHECK: If og_second_chance exists, use it (for memes and other special cases)
+    // 1. FIRST CHECK: Get content data including the new override flag
     const { data: contentData } = await supabase
       .from('wtaf_content')
-      .select('type, og_image_url, og_second_chance')
+      .select('type, og_image_url, og_second_chance, og_image_override')
       .eq('user_slug', userSlug)
       .eq('app_slug', appSlug)
       .single()
     
-    console.log(`🔍 Content check for ${userSlug}/${appSlug}: type="${contentData?.type}", og_second_chance="${contentData?.og_second_chance?.substring(0, 80)}..."`)
+    console.log(`🔍 Content check for ${userSlug}/${appSlug}: type="${contentData?.type}", override="${contentData?.og_image_override}", og_second_chance="${contentData?.og_second_chance?.substring(0, 80)}..."`)
     
-    // If og_second_chance exists, always use it (this is our override field)
+    // MEME LOGIC: If it's a meme, use existing meme logic
+    if (contentData?.type === 'MEME') {
+      // First check og_second_chance (primary meme field)
+      if (contentData.og_second_chance) {
+        console.log(`🎯 Using og_second_chance for MEME ${userSlug}/${appSlug}`)
+        return NextResponse.json({
+          success: true,
+          image_url: contentData.og_second_chance,
+          cached: true,
+          from_second_chance: true,
+          is_meme: true,
+          user_slug: userSlug,
+          app_slug: appSlug
+        })
+      }
+      // Fallback to og_image_url for memes
+      if (contentData.og_image_url) {
+        console.log(`🎨 Using og_image_url for MEME ${userSlug}/${appSlug}`)
+        return NextResponse.json({
+          success: true,
+          image_url: contentData.og_image_url,
+          cached: true,
+          is_meme: true,
+          user_slug: userSlug,
+          app_slug: appSlug
+        })
+      }
+    }
+    
+    // OVERRIDE LOGIC: If override flag is true, use custom image from og_image_url
+    if (contentData?.og_image_override === true && contentData.og_image_url) {
+      console.log(`🌟 Using custom override image for ${userSlug}/${appSlug}`)
+      return NextResponse.json({
+        success: true,
+        image_url: contentData.og_image_url,
+        cached: true,
+        custom_override: true,
+        user_slug: userSlug,
+        app_slug: appSlug
+      })
+    }
+    
+    // LEGACY CHECK: If og_second_chance exists (non-meme), use it
     if (contentData?.og_second_chance) {
       console.log(`🎯 Using og_second_chance image for ${userSlug}/${appSlug}`)
       return NextResponse.json({
@@ -66,32 +108,6 @@ export async function GET(request: NextRequest) {
         image_url: contentData.og_second_chance,
         cached: true,
         from_second_chance: true,
-        user_slug: userSlug,
-        app_slug: appSlug
-      })
-    }
-    
-    // For memes - check if it's a MEME type or has meme in the og_image_url
-    if (contentData?.type === 'MEME' && contentData.og_image_url) {
-      console.log(`🎨 Using existing meme OG image for ${userSlug}/${appSlug}`)
-      return NextResponse.json({
-        success: true,
-        image_url: contentData.og_image_url,
-        cached: true,
-        is_meme: true,
-        user_slug: userSlug,
-        app_slug: appSlug
-      })
-    }
-    
-    // ALSO CHECK: If og_image_url contains "meme-" in the filename, it's a meme!
-    if (contentData?.og_image_url && contentData.og_image_url.includes('/meme-')) {
-      console.log(`🎨 Detected meme by URL pattern for ${userSlug}/${appSlug}`)
-      return NextResponse.json({
-        success: true,
-        image_url: contentData.og_image_url,
-        cached: true,
-        is_meme: true,
         user_slug: userSlug,
         app_slug: appSlug
       })
