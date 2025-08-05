@@ -1,22 +1,55 @@
 # OG Image Management
 
-This document covers all aspects of OpenGraph (OG) image management for WEBTOYS apps, including manual uploads and automated generation.
+This document covers all aspects of OpenGraph (OG) image management for WEBTOYS apps.
 
-## Overview
+## Current System (Simplified Type-Based)
 
-WEBTOYS apps can have custom OG images for better social media sharing. There are two main approaches:
+**As of January 2025, we're using a simplified type-based OG image system:**
+
+Each app type gets a standard OG image:
+- **Games** → `/og-types/og-type-game.png`
+- **Web pages** → `/og-types/og-type-web.png`
+- **Music apps** → `/og-types/og-type-music.png`
+- **ZAD/Apps** → `/og-types/og-type-app.png`
+- **Fallback** → `/og-types/og-type-fallback.png` (when no type specified)
+- **Memes** → Continue using their generated images (no change)
+
+### How It Works
+1. The API checks the app's `type` field in the database
+2. Returns the appropriate static OG image URL based on type
+3. Memes still use their DALL-E generated images via `og_second_chance` field
+
+### Updating OG Images
+1. Replace the images in `/web/public/og-types/`
+2. Use the same filenames
+3. All new apps will immediately use the updated images
+4. Consider adding version numbers or cache-busting for updates
+
+### Image Locations
+- **Development**: `/web/public/og-types/`
+- **Production**: Served from the web app's public folder
+
+---
+
+## Previous System (Temporarily Disabled)
+
+The following advanced OG generation system is commented out but preserved for potential future use.
+
+### Overview
+
+WEBTOYS apps could have custom OG images through two approaches:
 
 1. **Manual Upload** - Upload custom images for specific apps
 2. **Automated Generation** - AI-generated images for trending apps
 
-## Manual OG Image Upload
+### Manual OG Image Upload
 
-### How It Works
+#### How It Works
 1. Drop image files in `web/UPLOADS/` with specific naming
 2. Run script to process and upload to Supabase
 3. Database is updated with new OG image URL
 
-### Filename Format
+#### Filename Format
 Files must follow this pattern:
 - `user-app-anything.extension` (with dashes)
 - `user_app_anything.extension` (with underscores)
@@ -25,7 +58,7 @@ Examples:
 - `bart-crimson-rabbit-custom.png` → Updates `bart/crimson-rabbit`
 - `jane_azure_tiger_v2.jpg` → Updates `jane/azure-tiger`
 
-### Commands
+#### Commands
 
 ```bash
 # Process all files in UPLOADS/
@@ -38,27 +71,27 @@ npm run build && node dist/scripts/replace-og-from-upload.js filename.png
 npm run test:og-upload
 ```
 
-### Process Flow
+#### Process Flow
 1. **Parse filename** to extract user_slug and app_slug
 2. **Verify app exists** in wtaf_content table
 3. **Upload image** to Supabase Storage og-images bucket
 4. **Update database** with new og_image_url
 5. **Delete original** file from UPLOADS/
 
-### Requirements
+#### Requirements
 - Image formats: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`
 - App must exist in database
 - Proper environment variables configured
 
-## Automated OG Generation for Trending Apps
+### Automated OG Generation for Trending Apps
 
-### Overview
+#### Overview
 A 3-step pipeline that automatically generates custom OG images for trending apps:
 1. ChatGPT analyzes app HTML and creates custom image
 2. Image is downloaded and uploaded to Supabase
 3. Meta tags are fixed in the HTML
 
-### Commands
+#### Commands
 
 ```bash
 # Process all trending apps
@@ -77,7 +110,7 @@ npm run trending-og-workflow -- --skip-existing
 npm run trending-og-workflow -- --items 2,4,6 --skip-existing --dry-run
 ```
 
-### Process Flow
+#### Process Flow
 
 ```
 Trending API → App List → For Each App:
@@ -91,7 +124,7 @@ Trending API → App List → For Each App:
                    Update DB + Fix Meta Tags
 ```
 
-### Output Example
+#### Output Example
 ```
 ============================================================
 🎯 Processing App #1: bart/jade-jaguar-singing
@@ -106,7 +139,7 @@ Trending API → App List → For Each App:
 🌐 Final URL: https://xyz.supabase.co/storage/v1/object/public/og-images/bart-jade-jaguar-singing.png
 ```
 
-### Performance
+#### Performance
 - Sequential processing with 2-second delays
 - ~15-30 seconds per app
 - Use `--skip-existing` for faster runs
@@ -120,7 +153,7 @@ Required in `.env.local`:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your-service-key
 
-# For automated generation only
+# For automated generation only (currently disabled)
 OPENAI_API_KEY=sk-...              # ChatGPT image generation
 HTMLCSS_USER_ID=...                # HTML-to-image service
 HTMLCSS_API_KEY=...                # HTML-to-image service
@@ -131,6 +164,7 @@ HTMLCSS_API_KEY=...                # HTML-to-image service
 The `wtaf_content` table stores OG image information:
 - `og_image_url` - Full URL to the OG image
 - `og_image_cached_at` - Timestamp of last update
+- `type` - App type (game, web, music, zad, meme)
 
 ## Storage Structure
 
@@ -158,7 +192,19 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 
 ## Troubleshooting
 
-### Manual Upload Issues
+### Type-Based System Issues
+
+**"Wrong OG image showing"**
+- Check the app's `type` field in the database
+- Verify the type images exist in `/web/public/og-types/`
+- Clear browser/social media caches
+
+**"Updated images not showing"**
+- Add cache-busting query parameters
+- Consider versioned filenames
+- Wait for CDN cache to expire
+
+### Manual Upload Issues (When Re-enabled)
 
 **"App not found in database"**
 - Verify app exists with correct user_slug/app_slug
@@ -168,7 +214,7 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 - Check Supabase credentials
 - Verify og-images bucket exists
 
-### Automated Generation Issues
+### Automated Generation Issues (When Re-enabled)
 
 **"Failed to fetch trending apps"**
 - Check internet connection
@@ -205,9 +251,11 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 ## Scripts Location
 
 - Manual upload: `scripts/replace-og-from-upload.ts`
-- Automated generation: `scripts/trending-og-workflow.ts`
-- OG generator: `experiments/chatgpt/generate-og.js`
+- Automated generation: `scripts/trending-og-workflow.ts` (currently disabled)
+- OG generator: `experiments/chatgpt/generate-og.js` (currently disabled)
 - Meta tag fixer: `scripts/fix-og-meta-tags.ts`
+- API endpoint: `web/app/api/generate-og-cached/route.ts`
 
 ---
 *Last Updated: January 2025*
+*Note: Advanced OG generation features are temporarily disabled in favor of type-based system*
