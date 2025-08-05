@@ -4,6 +4,15 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = request.headers.get('host')
   
+  // DEBUG: Log all requests
+  console.log(`[Middleware] Processing: ${pathname}`)
+  
+  // SPECIFIC FIX: Bypass webtoys-logo immediately
+  if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
+    console.log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+  
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
     if (host?.includes('localhost') || host?.includes('ngrok')) {
@@ -21,7 +30,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/featured') ||
       pathname.startsWith('/test-auth') ||
       pathname.startsWith('/test-subscriber') ||
-      pathname.startsWith('/console')) {
+      pathname.startsWith('/console') ||
+      pathname.startsWith('/webtoys-logo')) {
     if (host?.includes('localhost') || host?.includes('ngrok')) {
       console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     }
@@ -47,7 +57,7 @@ export function middleware(request: NextRequest) {
   const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me' || host === 'webtoys.io' || host === 'www.webtoys.io' || host === 'webtoys.ai' || host === 'www.webtoys.ai'
   const isDevEnvironment = host?.includes('localhost') || host?.includes('ngrok')
   const isDevWtafRoute = isDevEnvironment && pathname.startsWith('/wtaf/')
-  const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing' && pathname !== '/wtaf-landing-old' && pathname !== '/featured' && pathname !== '/featured-old' && pathname !== '/trending' && pathname !== '/trending-old' && pathname !== '/creations2' && !pathname.startsWith('/creations-old')
+  const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing' && pathname !== '/wtaf-landing-old' && pathname !== '/featured' && pathname !== '/featured-old' && pathname !== '/trending' && pathname !== '/trending-old' && pathname !== '/creations2' && !pathname.startsWith('/creations-old') && pathname !== '/webtoys-logo'
   
   // Debug logging for WTAF domain routing
   if (isWtafDomain) {
