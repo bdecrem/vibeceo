@@ -1,7 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '../../.env.local' });
 
-const supabaseUrl = 'https://tqniseocczttrfwtpbdr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODg4MjkyMiwiZXhwIjoyMDY0NDU4OTIyfQ.L_NM27cVyq2uGNjtfzffRylBd5zEVOSxupqbYGVQwlc';
+// SECURITY: Use environment variables for sensitive keys
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tqniseocczttrfwtpbdr.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseKey) {
+  console.error('ERROR: SUPABASE_SERVICE_KEY not found in environment variables');
+  console.error('Please add SUPABASE_SERVICE_KEY to your .env.local file');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
