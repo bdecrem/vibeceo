@@ -29,6 +29,7 @@
 		"replace-og-image": "npm run build && node dist/scripts/replace-og-image.js",
 		"replace-og-from-upload": "npm run build && node dist/scripts/replace-og-from-upload.js",
 		"test:og-override": "npm run build && node dist/scripts/test-og-override.js",
+		"generate:og-html": "npm run build && node dist/scripts/generate-og-from-html.js",
 		"test:og-upload": "npm run build && node dist/test-scripts/test-og-upload.js",
 		"fix-og-meta-tags": "npm run build && node dist/scripts/fix-og-meta-tags.js",
 		"trending-og-workflow": "npm run build && node dist/scripts/trending-og-workflow.js",

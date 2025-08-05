@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS - Browser Therapy Session OG Image</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #FFF5E6 0%, #E8F4FF 50%, #FFE8F5 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* Soft grid pattern */
+        .grid-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(147, 197, 253, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(147, 197, 253, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Main content */
+        .content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        /* Emoji sequence */
+        .emoji-sequence {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .emoji-item {
+            font-size: 90px;
+            position: relative;
+            animation: gentleFloat 3s ease-in-out infinite;
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.1));
+        }
+
+        .emoji-item:nth-child(1) { 
+            animation-delay: 0s; 
+            transform: rotate(-5deg);
+        }
+        .emoji-item:nth-child(2) { 
+            animation-delay: 0.5s; 
+            transform: rotate(3deg);
+        }
+        .emoji-item:nth-child(3) { 
+            animation-delay: 1s; 
+            transform: rotate(-3deg);
+        }
+        .emoji-item:nth-child(4) { 
+            animation-delay: 1.5s; 
+            transform: rotate(5deg);
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.05); }
+        }
+
+        /* Arrow between emojis */
+        .arrow {
+            position: absolute;
+            font-size: 40px;
+            color: #93C5FD;
+            opacity: 0.6;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow:nth-child(2) { left: 130px; }
+        .arrow:nth-child(4) { left: 300px; }
+        .arrow:nth-child(6) { left: 470px; }
+
+        /* Main text */
+        .main-text {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-align: center;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            padding: 0 20px;
+            filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.2));
+        }
+
+        /* Decorative elements */
+        .decoration {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.7;
+        }
+
+        .circle-1 {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #93C5FD, #DDD6FE);
+            top: 80px;
+            left: 100px;
+            animation: spin 20s linear infinite;
+        }
+
+        .circle-2 {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #FCA5A5, #FBBF24);
+            bottom: 100px;
+            right: 150px;
+            animation: spin 15s linear infinite reverse;
+        }
+
+        .circle-3 {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #86EFAC, #67E8F9);
+            top: 120px;
+            right: 120px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 0.4; }
+        }
+
+        /* Floating UI elements */
+        .ui-element {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .ui-window {
+            top: 140px;
+            left: 60px;
+            transform: rotate(-8deg);
+            border: 2px solid #93C5FD;
+            color: #3B82F6;
+        }
+
+        .ui-window::before {
+            content: "● ● ●";
+            position: absolute;
+            top: -25px;
+            left: 10px;
+            color: #FCA5A5;
+            font-size: 10px;
+            letter-spacing: 3px;
+        }
+
+        .ui-console {
+            bottom: 130px;
+            right: 80px;
+            transform: rotate(5deg);
+            background: #1E293B;
+            color: #86EFAC;
+            font-family: monospace;
+        }
+
+        .ui-console::before {
+            content: "> ";
+            color: #FBBF24;
+        }
+
+        .ui-alert {
+            top: 160px;
+            right: 200px;
+            transform: rotate(-3deg);
+            border-left: 4px solid #F87171;
+            background: #FEF2F2;
+            color: #DC2626;
+        }
+
+        /* Sparkles */
+        .sparkle {
+            position: absolute;
+            color: #FBBF24;
+            font-size: 24px;
+            animation: sparkleFloat 4s ease-in-out infinite;
+        }
+
+        .sparkle-1 {
+            top: 200px;
+            left: 300px;
+            animation-delay: 0s;
+        }
+
+        .sparkle-2 {
+            bottom: 180px;
+            left: 250px;
+            animation-delay: 1s;
+        }
+
+        .sparkle-3 {
+            top: 250px;
+            right: 280px;
+            animation-delay: 2s;
+        }
+
+        .sparkle-4 {
+            bottom: 200px;
+            right: 350px;
+            animation-delay: 3s;
+        }
+
+        @keyframes sparkleFloat {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg); 
+                opacity: 0.6; 
+            }
+            50% { 
+                transform: scale(1.3) rotate(180deg); 
+                opacity: 1; 
+            }
+        }
+
+        /* Code snippets floating */
+        .code-float {
+            position: absolute;
+            font-family: monospace;
+            font-size: 12px;
+            opacity: 0.3;
+            color: #64748B;
+        }
+
+        .code-1 {
+            top: 80px;
+            left: 400px;
+            transform: rotate(-12deg);
+        }
+
+        .code-2 {
+            bottom: 80px;
+            left: 180px;
+            transform: rotate(8deg);
+        }
+
+        .code-3 {
+            bottom: 100px;
+            right: 400px;
+            transform: rotate(-5deg);
+        }
+
+        /* Heart therapy vibes */
+        .heart {
+            position: absolute;
+            color: #F472B6;
+            font-size: 30px;
+            opacity: 0.4;
+            animation: heartbeat 2s ease-in-out infinite;
+        }
+
+        .heart-1 {
+            top: 100px;
+            right: 350px;
+        }
+
+        .heart-2 {
+            bottom: 160px;
+            left: 120px;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Pills/badges */
+        .badge {
+            position: absolute;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-1 {
+            top: 300px;
+            left: 80px;
+            background: linear-gradient(135deg, #FBBF24, #FB923C);
+            color: white;
+            transform: rotate(-10deg);
+        }
+
+        .badge-2 {
+            top: 280px;
+            right: 100px;
+            background: linear-gradient(135deg, #67E8F9, #3B82F6);
+            color: white;
+            transform: rotate(7deg);
+        }
+
+        .badge-3 {
+            bottom: 250px;
+            left: 380px;
+            background: linear-gradient(135deg, #C084FC, #E879F9);
+            color: white;
+            transform: rotate(-5deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <!-- Decorative circles -->
+    <div class="decoration circle-1"></div>
+    <div class="decoration circle-2"></div>
+    <div class="decoration circle-3"></div>
+    
+    <!-- UI Elements -->
+    <div class="ui-element ui-window">&lt;/therapy&gt;</div>
+    <div class="ui-element ui-console">healing.js</div>
+    <div class="ui-element ui-alert">! Fixed</div>
+    
+    <!-- Code snippets -->
+    <div class="code-float code-1">function heal() {</div>
+    <div class="code-float code-2">console.log('✨');</div>
+    <div class="code-float code-3">return peace;</div>
+    
+    <!-- Hearts for therapy vibes -->
+    <div class="heart heart-1">💜</div>
+    <div class="heart heart-2">💙</div>
+    
+    <!-- Sparkles -->
+    <div class="sparkle sparkle-1">✨</div>
+    <div class="sparkle sparkle-2">⭐</div>
+    <div class="sparkle sparkle-3">✨</div>
+    <div class="sparkle sparkle-4">⭐</div>
+    
+    <!-- Badges -->
+    <div class="badge badge-1">Debug</div>
+    <div class="badge badge-2">Zen Mode</div>
+    <div class="badge badge-3">Fixed</div>
+    
+    <!-- Main content -->
+    <div class="content">
+        <div class="emoji-sequence">
+            <span class="emoji-item">😰</span>
+            <span class="arrow">→</span>
+            <span class="emoji-item">🛠️</span>
+            <span class="arrow">→</span>
+            <span class="emoji-item">🧘</span>
+            <span class="arrow">→</span>
+            <span class="emoji-item">😌</span>
+        </div>
+        
+        <div class="main-text">
+            BROWSER THERAPY SESSION
+        </div>
+    </div>
+</body>
+</html>

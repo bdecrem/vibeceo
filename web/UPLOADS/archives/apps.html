@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apps - OG Image</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Apps palette - sophisticated, techy, modern */
+            --indigo: #4F46E5;
+            --tangerine: #FF8C42;
+            --sage: #87A96B;
+            --dusty-rose: #D4A5A5;
+            --turquoise: #40E0D0;
+            --plum: #9A77A6;
+            --apricot: #FFB68A;
+            --steel-blue: #4682B4;
+            --blush: #FADADD;
+            --cream: #FFF9F5;
+            --charcoal: #2C3E50;
+        }
+
+        body {
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: var(--cream);
+        }
+
+        .card {
+            width: 1200px;
+            height: 630px;
+            position: relative;
+            background: linear-gradient(135deg, #FFF8FC 0%, #F0FFFE 50%, #FFF8F0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* App window gradient mesh */
+        .gradient-mesh {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.5;
+            background: 
+                radial-gradient(circle at 25% 25%, var(--indigo) 0%, transparent 35%),
+                radial-gradient(circle at 75% 25%, var(--tangerine) 0%, transparent 35%),
+                radial-gradient(circle at 75% 75%, var(--turquoise) 0%, transparent 35%),
+                radial-gradient(circle at 25% 75%, var(--sage) 0%, transparent 35%),
+                radial-gradient(circle at 50% 50%, var(--dusty-rose) 0%, transparent 50%);
+            filter: blur(90px);
+        }
+
+        /* App window shapes */
+        .app-windows {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .app-window {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            opacity: 0.3;
+        }
+
+        .app-window-1 {
+            top: 15%;
+            left: 10%;
+            width: 180px;
+            height: 120px;
+            transform: rotate(-5deg);
+            border-top: 20px solid var(--indigo);
+        }
+
+        .app-window-2 {
+            bottom: 20%;
+            right: 12%;
+            width: 200px;
+            height: 140px;
+            transform: rotate(8deg);
+            border-top: 20px solid var(--tangerine);
+        }
+
+        .app-window-3 {
+            top: 45%;
+            right: 25%;
+            width: 160px;
+            height: 110px;
+            transform: rotate(-10deg);
+            border-top: 20px solid var(--turquoise);
+        }
+
+        .app-window-4 {
+            bottom: 35%;
+            left: 20%;
+            width: 140px;
+            height: 100px;
+            transform: rotate(12deg);
+            border-top: 20px solid var(--sage);
+        }
+
+        /* App icons scattered */
+        .app-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .app-icon {
+            position: absolute;
+            font-size: 26px;
+            transform: rotate(var(--rotation));
+            opacity: 0.5;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .app-icon:nth-child(1) { --rotation: -15deg; top: 8%; left: 15%; }
+        .app-icon:nth-child(2) { --rotation: 20deg; top: 12%; left: 38%; }
+        .app-icon:nth-child(3) { --rotation: -25deg; top: 10%; right: 22%; }
+        .app-icon:nth-child(4) { --rotation: 10deg; top: 30%; right: 8%; }
+        .app-icon:nth-child(5) { --rotation: -20deg; bottom: 25%; left: 12%; }
+        .app-icon:nth-child(6) { --rotation: 15deg; bottom: 20%; left: 35%; }
+        .app-icon:nth-child(7) { --rotation: -8deg; bottom: 15%; right: 28%; }
+        .app-icon:nth-child(8) { --rotation: 25deg; bottom: 38%; right: 12%; }
+        .app-icon:nth-child(9) { --rotation: -12deg; top: 48%; left: 10%; }
+        .app-icon:nth-child(10) { --rotation: 18deg; top: 42%; right: 15%; }
+        .app-icon:nth-child(11) { --rotation: -22deg; bottom: 48%; left: 25%; }
+        .app-icon:nth-child(12) { --rotation: 8deg; top: 65%; right: 25%; }
+        .app-icon:nth-child(13) { --rotation: -18deg; top: 25%; left: 8%; }
+        .app-icon:nth-child(14) { --rotation: 22deg; bottom: 35%; right: 20%; }
+        .app-icon:nth-child(15) { --rotation: -10deg; top: 55%; left: 18%; }
+        .app-icon:nth-child(16) { --rotation: 15deg; bottom: 10%; left: 45%; }
+
+        /* Main emoji sequence */
+        .emoji-sequence {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            transform: scale(1.5);
+        }
+
+        .emoji-wrapper {
+            position: relative;
+        }
+
+        .emoji-wrapper:nth-child(1) .emoji { transform: rotate(-10deg); }
+        .emoji-wrapper:nth-child(2) .emoji { transform: rotate(12deg); }
+        .emoji-wrapper:nth-child(3) .emoji { transform: rotate(-8deg); }
+        .emoji-wrapper:nth-child(4) .emoji { transform: rotate(10deg); }
+
+        .emoji {
+            font-size: 85px;
+            position: relative;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+        }
+
+        /* Colorful gradient shadows */
+        .emoji-wrapper:nth-child(1) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--indigo), var(--sage));
+            opacity: 0.3;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(2) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--tangerine), var(--dusty-rose));
+            opacity: 0.3;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(3) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--turquoise), var(--steel-blue));
+            opacity: 0.3;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(4) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--plum), var(--apricot));
+            opacity: 0.3;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        /* Arrows */
+        .arrow {
+            font-size: 45px;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--indigo), var(--tangerine));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Tagline */
+        .tagline {
+            position: absolute;
+            bottom: 65px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1.5deg);
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--indigo);
+            text-shadow: 
+                3px 3px 0 var(--tangerine),
+                6px 6px 0 var(--blush);
+            z-index: 10;
+        }
+
+        /* Notification dots */
+        .notifications {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+        }
+
+        .notification {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--color);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .notification:nth-child(1) { 
+            --color: var(--tangerine); 
+            top: 20%; 
+            left: 28%;
+        }
+        .notification:nth-child(2) { 
+            --color: var(--indigo); 
+            top: 35%; 
+            right: 18%;
+        }
+        .notification:nth-child(3) { 
+            --color: var(--sage); 
+            bottom: 30%; 
+            left: 22%;
+        }
+        .notification:nth-child(4) { 
+            --color: var(--turquoise); 
+            bottom: 25%; 
+            right: 30%;
+        }
+
+        /* Grid dots pattern */
+        .grid-dots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            z-index: 1;
+            background-image: radial-gradient(circle, var(--charcoal) 2px, transparent 2px);
+            background-size: 40px 40px;
+        }
+
+        /* App badges */
+        .badges {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+        }
+
+        .badge {
+            position: absolute;
+            padding: 5px 12px;
+            background: white;
+            border: 3px solid var(--color);
+            color: var(--color);
+            font-weight: 900;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transform: rotate(var(--rotation));
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-1 {
+            --color: var(--indigo);
+            --rotation: -6deg;
+            top: 28%;
+            left: 85px;
+        }
+
+        .badge-2 {
+            --color: var(--tangerine);
+            --rotation: 8deg;
+            bottom: 28%;
+            right: 85px;
+        }
+
+        .badge-3 {
+            --color: var(--turquoise);
+            --rotation: -12deg;
+            top: 22%;
+            right: 150px;
+        }
+
+        /* Swipe gesture indicator */
+        .swipe-gesture {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.3;
+            z-index: 2;
+        }
+
+        .swipe-line {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--tangerine), transparent);
+            border-radius: 2px;
+        }
+
+        .swipe-arrow {
+            font-size: 20px;
+            color: var(--tangerine);
+        }
+
+        /* Corner decorations */
+        .corner {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 4px solid;
+            opacity: 0.25;
+            z-index: 1;
+        }
+
+        .corner-tl {
+            top: 30px;
+            left: 30px;
+            border-color: var(--indigo) transparent transparent var(--indigo);
+            border-radius: 20px 0 0 0;
+        }
+
+        .corner-tr {
+            top: 30px;
+            right: 30px;
+            border-color: var(--tangerine) var(--tangerine) transparent transparent;
+            border-radius: 0 20px 0 0;
+        }
+
+        .corner-bl {
+            bottom: 30px;
+            left: 30px;
+            border-color: transparent transparent var(--turquoise) var(--turquoise);
+            border-radius: 0 0 0 20px;
+        }
+
+        .corner-br {
+            bottom: 30px;
+            right: 30px;
+            border-color: transparent var(--sage) var(--sage) transparent;
+            border-radius: 0 0 20px 0;
+        }
+
+        /* Floating UI elements */
+        .ui-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .toggle {
+            position: absolute;
+            width: 50px;
+            height: 26px;
+            background: var(--indigo);
+            border-radius: 13px;
+            opacity: 0.4;
+            top: 70%;
+            left: 15%;
+            transform: rotate(-8deg);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            right: 2px;
+        }
+
+        .slider {
+            position: absolute;
+            width: 80px;
+            height: 8px;
+            background: linear-gradient(90deg, var(--blush) 0%, var(--tangerine) 60%);
+            border-radius: 4px;
+            opacity: 0.4;
+            top: 35%;
+            right: 20%;
+            transform: rotate(12deg);
+        }
+
+        /* Subtle noise */
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.02;
+            z-index: 50;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0,0,0,.02) 35px, rgba(0,0,0,.02) 70px);
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- Gradient mesh background -->
+        <div class="gradient-mesh"></div>
+
+        <!-- Grid dots pattern -->
+        <div class="grid-dots"></div>
+
+        <!-- App windows -->
+        <div class="app-windows">
+            <div class="app-window app-window-1"></div>
+            <div class="app-window app-window-2"></div>
+            <div class="app-window app-window-3"></div>
+            <div class="app-window app-window-4"></div>
+        </div>
+
+        <!-- App icons -->
+        <div class="app-icons">
+            <div class="app-icon">📝</div>
+            <div class="app-icon">💬</div>
+            <div class="app-icon">☀️</div>
+            <div class="app-icon">📷</div>
+            <div class="app-icon">🗓️</div>
+            <div class="app-icon">🎯</div>
+            <div class="app-icon">📍</div>
+            <div class="app-icon">⏰</div>
+            <div class="app-icon">📊</div>
+            <div class="app-icon">🎨</div>
+            <div class="app-icon">🛒</div>
+            <div class="app-icon">💰</div>
+            <div class="app-icon">📚</div>
+            <div class="app-icon">🏃</div>
+            <div class="app-icon">🍕</div>
+            <div class="app-icon">✈️</div>
+        </div>
+
+        <!-- Notification dots -->
+        <div class="notifications">
+            <div class="notification"></div>
+            <div class="notification"></div>
+            <div class="notification"></div>
+            <div class="notification"></div>
+        </div>
+
+        <!-- UI elements -->
+        <div class="ui-elements">
+            <div class="toggle"></div>
+            <div class="slider"></div>
+        </div>
+
+        <!-- Swipe gesture -->
+        <div class="swipe-gesture">
+            <div class="swipe-line"></div>
+            <div class="swipe-arrow">→</div>
+        </div>
+
+        <!-- App badges -->
+        <div class="badges">
+            <div class="badge badge-1">NEW</div>
+            <div class="badge badge-2">HOT</div>
+            <div class="badge badge-3">PRO</div>
+        </div>
+
+        <!-- Corner decorations -->
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Main emoji sequence -->
+        <div class="emoji-sequence">
+            <div class="emoji-wrapper">
+                <div class="emoji">📱</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">👆</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">✨</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">🎊</div>
+            </div>
+        </div>
+        
+        <div class="tagline">Swipe Right for Chaos</div>
+
+        <!-- Subtle noise overlay -->
+        <div class="noise"></div>
+    </div>
+</body>
+</html>
