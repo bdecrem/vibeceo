@@ -32,21 +32,24 @@ if (!envLoaded) {
   dotenv.config();
 }
 
-// Verify environment variables
+// Verify environment variables - check both old and new naming conventions
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
 console.log('🔧 Environment Check:');
 console.log(`  🔗 SUPABASE_URL: ${process.env.SUPABASE_URL ? 'loaded' : 'MISSING'}`);
-console.log(`  🔑 SUPABASE_SERVICE_KEY: ${process.env.SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
+console.log(`  🔑 SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'loaded' : 'MISSING'}`);
+console.log(`  🔑 SUPABASE_SERVICE_KEY (legacy): ${process.env.SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+if (!process.env.SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Required environment variables missing:');
-  console.error('   SUPABASE_URL and SUPABASE_SERVICE_KEY required');
+  console.error('   SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY) required');
   process.exit(1);
 }
 
 // Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
+  SUPABASE_SERVICE_KEY!
 );
 
 async function testSupabaseConnection() {
