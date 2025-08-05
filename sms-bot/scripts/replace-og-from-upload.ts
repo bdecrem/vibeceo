@@ -163,6 +163,11 @@ async function replaceOGFromUpload(uploadFilename: string) {
     console.log(`🔗 Public URL: ${ogImageUrl}`);
     
     // Update the wtaf_content table with override flag
+    console.log(`📝 Updating database with:`);
+    console.log(`   og_image_url: ${ogImageUrl}`);
+    console.log(`   og_image_override: true`);
+    console.log(`   For: ${userSlug}/${appSlug}`);
+    
     const { data: updateData, error: updateError } = await supabase
       .from('wtaf_content')
       .update({ 
@@ -171,10 +176,15 @@ async function replaceOGFromUpload(uploadFilename: string) {
         og_image_cached_at: new Date().toISOString()
       })
       .eq('user_slug', userSlug)
-      .eq('app_slug', appSlug);
+      .eq('app_slug', appSlug)
+      .select();  // Add select to ensure the update completes
     
     if (updateError) {
       throw new Error(`Failed to update database: ${updateError.message}`);
+    }
+    
+    if (!updateData || updateData.length === 0) {
+      throw new Error('Update appeared to succeed but no rows were affected');
     }
     
     console.log(`✅ Updated OG image for ${userSlug}/${appSlug}`);
