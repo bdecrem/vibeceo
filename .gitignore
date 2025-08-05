@@ -90,6 +90,9 @@ tiny/
 # Claude outputs - these contain generated code and shouldn't be in git
 /sms-bot/data/claude_outputs/
 
+# Processed data files - temporary processing files
+/sms-bot/data/processed/
+
 # Test scripts - often contain hardcoded secrets
 /sms-bot/test-scripts/
 /web/test-scripts/

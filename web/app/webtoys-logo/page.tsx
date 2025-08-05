@@ -4,70 +4,135 @@ import React from "react"
 
 export default function WebtoysLogoPage() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="header-neon">
+      <h1 className="logo-neon">WEBTOYS</h1>
+      <p className="tagline">SHIP FROM YOUR FLIP PHONE</p>
+      
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&display=swap');
-
-        .gradient-bg {
-          background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 25%, #8b0000 50%, #4b0082 75%, #000000 100%);
-          background-size: 400% 400%;
-          animation: gradientShift 12s ease infinite;
+        /* Core WEBTOYS DNA Colors */
+        :root {
+          --cream: #FEFEF5;
+          --yellow: #FFD63D;
+          --yellow-soft: #FFF4CC;
+          --blue: #6ECBFF;
+          --blue-deep: #4A9FD4;
+          --red: #FF4B4B;
+          --red-soft: #FF7A7A;
+          --purple-shadow: #C9C2F940;
+          --purple-accent: #8B7FD4;
+          --green-mint: #B6FFB3;
+          --green-sage: #7FB069;
+          --charcoal: #1A1A1A;
+          --charcoal-deep: #0A0A0A;
+          --charcoal-light: #2A2A2A;
+          --shadow-subtle: 0 2px 8px rgba(0,0,0,0.1);
+          --shadow-strong: 0 4px 16px rgba(0,0,0,0.2);
         }
 
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        /* Neon Header */
+        .header-neon {
+          background: #0A0A0A;
+          padding: 40px 20px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
         }
-
-        .float-element {
+        
+        .header-neon::before {
+          content: '';
           position: absolute;
-          opacity: 0.4;
-          animation: float 6s ease-in-out infinite;
-          pointer-events: none;
-          filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.3));
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: 
+            radial-gradient(circle at 20% 50%, rgba(255, 75, 75, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(110, 203, 255, 0.3) 0%, transparent 50%);
+          animation: pulse-bg 4s ease-in-out infinite;
         }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-20px) rotate(5deg); }
-          66% { transform: translateY(10px) rotate(-3deg); }
+        
+        @keyframes pulse-bg {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
         }
-
-        .logo-text {
-          font-family: 'Space Grotesk', sans-serif;
-          font-size: 5rem;
-          font-weight: 900;
-          color: #ffffff;
-          text-shadow:
-            0 0 10px #ff0080,
-            0 0 20px #ff0080,
-            0 0 30px #ff0080;
+        
+        .logo-neon {
+          font-size: clamp(2.5rem, 8vw, 6rem);
+          font-weight: 800;
           letter-spacing: -2px;
-        }
-
-        .tagline-text {
-          font-size: 1.2rem;
-          color: #ff0080;
-          font-weight: 500;
-          letter-spacing: 3px;
+          margin: 0;
+          color: var(--cream);
           text-transform: uppercase;
-          text-shadow: 0 0 5px #ff0080;
+          position: relative;
+          z-index: 1;
+          cursor: pointer;
+          text-shadow: 
+            0 0 10px var(--red),
+            0 0 20px var(--red),
+            0 0 30px var(--red),
+            0 0 40px var(--red),
+            0 0 70px var(--red),
+            0 0 80px var(--red);
+          animation: neon-flicker 2s infinite alternate;
+        }
+        
+        @keyframes neon-flicker {
+          0%, 100% { 
+            opacity: 1;
+            text-shadow: 
+              0 0 10px var(--red),
+              0 0 20px var(--red),
+              0 0 30px var(--red),
+              0 0 40px var(--red),
+              0 0 70px var(--red),
+              0 0 80px var(--red);
+          }
+          50% { 
+            opacity: 0.9;
+            text-shadow: 
+              0 0 5px var(--red),
+              0 0 10px var(--red),
+              0 0 15px var(--red),
+              0 0 20px var(--red),
+              0 0 35px var(--red),
+              0 0 40px var(--red);
+          }
+        }
+        
+        .tagline {
+          font-size: 1.25rem;
+          color: var(--blue);
+          margin-top: 20px;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+          font-weight: 600;
+          text-shadow: 0 0 10px rgba(110, 203, 255, 0.5);
+          position: relative;
+          z-index: 1;
+        }
+        
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+          .header-neon {
+            padding: 60px 20px;
+            min-height: 33vh;
+          }
+          
+          .logo-neon {
+            font-size: 3rem;
+          }
+          
+          .tagline {
+            font-size: 1rem;
+            letter-spacing: 2px;
+          }
         }
       `}</style>
-
-      <div className="gradient-bg absolute inset-0" />
-
-      {/* Floating Elements */}
-      <div className="float-element text-5xl" style={{ top: '8%', left: '5%', color: 'rgba(255, 255, 255, 0.3)', animationDelay: '0s' }}>💀</div>
-      <div className="float-element text-6xl" style={{ top: '30%', right: '8%', color: 'rgba(255, 255, 0, 0.4)', animationDelay: '2s' }}>⚡</div>
-      <div className="float-element text-6xl" style={{ bottom: '25%', left: '12%', color: 'rgba(255, 69, 0, 0.4)', animationDelay: '4s' }}>🔥</div>
-      <div className="float-element text-5xl" style={{ bottom: '10%', right: '15%', color: 'rgba(192, 192, 192, 0.3)', animationDelay: '1s' }}>⛓️</div>
-
-      <header className="relative z-10 flex min-h-screen flex-col items-center justify-center p-10 text-center">
-        <h1 className="logo-text mb-4">WEBTOYS</h1>
-        <div className="tagline-text">SHIP FROM YOUR FLIP PHONE</div>
-      </header>
     </div>
   )
 }
