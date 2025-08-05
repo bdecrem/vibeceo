@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music - OG Image</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Music palette - deeper, moodier but still playful */
+            --deep-purple: #7B2FBE;
+            --hot-magenta: #FF006E;
+            --electric-teal: #00D9FF;
+            --sunset-orange: #FF6B35;
+            --lavender: #E0AAFF;
+            --mint-fresh: #95FFD4;
+            --golden: #FFB700;
+            --coral: #FF9A8B;
+            --cream: #FFF5F0;
+            --charcoal: #1A1A2E;
+        }
+
+        body {
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: var(--cream);
+        }
+
+        .card {
+            width: 1200px;
+            height: 630px;
+            position: relative;
+            background: linear-gradient(135deg, #FFF0F5 0%, #F5F0FF 50%, #F0FFFA 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Sound wave gradient mesh */
+        .gradient-mesh {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.5;
+            background: 
+                radial-gradient(ellipse at 20% 50%, var(--hot-magenta) 0%, transparent 40%),
+                radial-gradient(ellipse at 80% 50%, var(--electric-teal) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 20%, var(--deep-purple) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, var(--sunset-orange) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, var(--lavender) 0%, transparent 60%);
+            filter: blur(100px);
+        }
+
+        /* Sound wave shapes */
+        .sound-waves {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .wave {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid;
+            opacity: 0.2;
+        }
+
+        .wave-1 {
+            top: 50%;
+            left: 15%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border-color: var(--deep-purple);
+        }
+
+        .wave-2 {
+            top: 50%;
+            left: 15%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border-color: var(--hot-magenta);
+        }
+
+        .wave-3 {
+            top: 50%;
+            left: 15%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-color: var(--electric-teal);
+        }
+
+        .wave-4 {
+            top: 50%;
+            right: 15%;
+            transform: translate(50%, -50%);
+            width: 280px;
+            height: 280px;
+            border-color: var(--sunset-orange);
+        }
+
+        .wave-5 {
+            top: 50%;
+            right: 15%;
+            transform: translate(50%, -50%);
+            width: 220px;
+            height: 220px;
+            border-color: var(--golden);
+        }
+
+        /* Music elements */
+        .music-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .music-element {
+            position: absolute;
+            font-size: 28px;
+            transform: rotate(var(--rotation));
+            opacity: 0.5;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .music-element:nth-child(1) { --rotation: -20deg; top: 10%; left: 12%; }
+        .music-element:nth-child(2) { --rotation: 15deg; top: 15%; left: 35%; }
+        .music-element:nth-child(3) { --rotation: -25deg; top: 12%; right: 20%; }
+        .music-element:nth-child(4) { --rotation: 10deg; top: 28%; right: 12%; }
+        .music-element:nth-child(5) { --rotation: -15deg; bottom: 20%; left: 8%; }
+        .music-element:nth-child(6) { --rotation: 20deg; bottom: 25%; left: 30%; }
+        .music-element:nth-child(7) { --rotation: -10deg; bottom: 18%; right: 25%; }
+        .music-element:nth-child(8) { --rotation: 25deg; bottom: 35%; right: 10%; }
+        .music-element:nth-child(9) { --rotation: -8deg; top: 45%; left: 8%; }
+        .music-element:nth-child(10) { --rotation: 30deg; top: 40%; right: 10%; }
+        .music-element:nth-child(11) { --rotation: -18deg; bottom: 50%; left: 20%; }
+        .music-element:nth-child(12) { --rotation: 12deg; top: 60%; right: 20%; }
+
+        /* Main emoji sequence */
+        .emoji-sequence {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 45px;
+            transform: scale(1.5);
+        }
+
+        .emoji-wrapper {
+            position: relative;
+        }
+
+        .emoji-wrapper:nth-child(1) .emoji { transform: rotate(-12deg); }
+        .emoji-wrapper:nth-child(2) .emoji { transform: rotate(8deg); }
+        .emoji-wrapper:nth-child(3) .emoji { transform: rotate(-6deg); }
+        .emoji-wrapper:nth-child(4) .emoji { transform: rotate(10deg); }
+
+        .emoji {
+            font-size: 85px;
+            position: relative;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Gradient shadows for emojis */
+        .emoji-wrapper:nth-child(1) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--deep-purple), var(--hot-magenta));
+            opacity: 0.4;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(2) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--hot-magenta), var(--electric-teal));
+            opacity: 0.4;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(3) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--electric-teal), var(--sunset-orange));
+            opacity: 0.4;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .emoji-wrapper:nth-child(4) .emoji::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 8px;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--sunset-orange), var(--golden));
+            opacity: 0.4;
+            filter: blur(25px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        /* Arrows */
+        .arrow {
+            font-size: 45px;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--deep-purple), var(--hot-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Tagline */
+        .tagline {
+            position: absolute;
+            bottom: 65px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--deep-purple);
+            text-shadow: 
+                3px 3px 0 var(--hot-magenta),
+                6px 6px 0 var(--lavender);
+            z-index: 10;
+        }
+
+        /* Musical notes floating */
+        .notes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+        }
+
+        .note {
+            position: absolute;
+            font-size: 22px;
+            opacity: 0.6;
+        }
+
+        .note:nth-child(1) { top: 18%; left: 25%; }
+        .note:nth-child(2) { top: 22%; right: 18%; }
+        .note:nth-child(3) { bottom: 28%; left: 15%; }
+        .note:nth-child(4) { bottom: 22%; right: 22%; }
+        .note:nth-child(5) { top: 48%; left: 10%; }
+        .note:nth-child(6) { top: 52%; right: 15%; }
+        .note:nth-child(7) { top: 38%; left: 40%; }
+        .note:nth-child(8) { bottom: 45%; right: 35%; }
+
+        /* Vinyl record decoration */
+        .vinyl {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #000 25%, #333 25%, #333 50%, #000 50%, #000 75%, #333 75%);
+            background-size: 10px 10px;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .vinyl-1 {
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .vinyl-2 {
+            bottom: 30%;
+            right: 10%;
+            width: 80px;
+            height: 80px;
+            transform: rotate(-30deg);
+        }
+
+        /* Equalizer bars */
+        .equalizer {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 2;
+            opacity: 0.3;
+        }
+
+        .bar {
+            width: 12px;
+            background: linear-gradient(to top, var(--hot-magenta), var(--electric-teal));
+            border-radius: 6px;
+        }
+
+        .bar:nth-child(1) { height: 30px; }
+        .bar:nth-child(2) { height: 50px; }
+        .bar:nth-child(3) { height: 40px; }
+        .bar:nth-child(4) { height: 60px; }
+        .bar:nth-child(5) { height: 45px; }
+        .bar:nth-child(6) { height: 55px; }
+        .bar:nth-child(7) { height: 35px; }
+
+        /* Beat badges */
+        .badges {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+        }
+
+        .badge {
+            position: absolute;
+            padding: 6px 14px;
+            background: white;
+            border: 3px solid var(--color);
+            color: var(--color);
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transform: rotate(var(--rotation));
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .badge-1 {
+            --color: var(--deep-purple);
+            --rotation: -8deg;
+            top: 30%;
+            left: 90px;
+        }
+
+        .badge-2 {
+            --color: var(--hot-magenta);
+            --rotation: 6deg;
+            bottom: 30%;
+            right: 90px;
+        }
+
+        .badge-3 {
+            --color: var(--electric-teal);
+            --rotation: -10deg;
+            top: 25%;
+            right: 160px;
+        }
+
+        /* Corner decorations */
+        .corner {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 4px solid;
+            opacity: 0.25;
+            z-index: 1;
+        }
+
+        .corner-tl {
+            top: 30px;
+            left: 30px;
+            border-color: var(--deep-purple) transparent transparent var(--deep-purple);
+            border-radius: 20px 0 0 0;
+        }
+
+        .corner-tr {
+            top: 30px;
+            right: 30px;
+            border-color: var(--hot-magenta) var(--hot-magenta) transparent transparent;
+            border-radius: 0 20px 0 0;
+        }
+
+        .corner-bl {
+            bottom: 30px;
+            left: 30px;
+            border-color: transparent transparent var(--electric-teal) var(--electric-teal);
+            border-radius: 0 0 0 20px;
+        }
+
+        .corner-br {
+            bottom: 30px;
+            right: 30px;
+            border-color: transparent var(--sunset-orange) var(--sunset-orange) transparent;
+            border-radius: 0 0 20px 0;
+        }
+
+        /* Subtle noise */
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.02;
+            z-index: 50;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0,0,0,.02) 35px, rgba(0,0,0,.02) 70px);
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- Gradient mesh background -->
+        <div class="gradient-mesh"></div>
+
+        <!-- Sound waves -->
+        <div class="sound-waves">
+            <div class="wave wave-1"></div>
+            <div class="wave wave-2"></div>
+            <div class="wave wave-3"></div>
+            <div class="wave wave-4"></div>
+            <div class="wave wave-5"></div>
+        </div>
+
+        <!-- Vinyl records -->
+        <div class="vinyl vinyl-1"></div>
+        <div class="vinyl vinyl-2"></div>
+
+        <!-- Music elements -->
+        <div class="music-elements">
+            <div class="music-element">🎵</div>
+            <div class="music-element">🎸</div>
+            <div class="music-element">🎹</div>
+            <div class="music-element">🥁</div>
+            <div class="music-element">🎤</div>
+            <div class="music-element">🎧</div>
+            <div class="music-element">🎺</div>
+            <div class="music-element">🎷</div>
+            <div class="music-element">🎻</div>
+            <div class="music-element">🔊</div>
+            <div class="music-element">💿</div>
+            <div class="music-element">🎶</div>
+        </div>
+
+        <!-- Musical notes -->
+        <div class="notes">
+            <div class="note">♪</div>
+            <div class="note">♫</div>
+            <div class="note">♪</div>
+            <div class="note">♬</div>
+            <div class="note">♪</div>
+            <div class="note">♫</div>
+            <div class="note">♪</div>
+            <div class="note">♬</div>
+        </div>
+
+        <!-- Equalizer bars -->
+        <div class="equalizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
+        <!-- Beat badges -->
+        <div class="badges">
+            <div class="badge badge-1">808</div>
+            <div class="badge badge-2">BPM</div>
+            <div class="badge badge-3">MIX</div>
+        </div>
+
+        <!-- Corner decorations -->
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Main emoji sequence -->
+        <div class="emoji-sequence">
+            <div class="emoji-wrapper">
+                <div class="emoji">🎵</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">🎛️</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">🔊</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="emoji-wrapper">
+                <div class="emoji">🎉</div>
+            </div>
+        </div>
+        
+        <div class="tagline">Bass Heavy Like Your Mood</div>
+
+        <!-- Subtle noise overlay -->
+        <div class="noise"></div>
+    </div>
+</body>
+</html>
