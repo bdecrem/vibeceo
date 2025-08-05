@@ -70,14 +70,14 @@ async function testSupabaseConnection() {
       console.log('  ✅ Created og-images bucket');
     }
     
-    // Test 2: Check wtaf_content table structure
+    // Test 2: Check wtaf_content table structure including override field
     const { data: tableData, error: tableError } = await supabase
       .from('wtaf_content')
-      .select('user_slug, app_slug, og_image_url, og_image_cached_at')
+      .select('user_slug, app_slug, og_image_url, og_image_override, og_image_cached_at')
       .limit(1);
     
     if (tableError) throw new Error(`Failed to query wtaf_content: ${tableError.message}`);
-    console.log(`  📊 wtaf_content table: ACCESSIBLE`);
+    console.log(`  📊 wtaf_content table: ACCESSIBLE (og_image_override field present)`);
     
     // Test 3: Count total records
     const { count, error: countError } = await supabase
@@ -159,11 +159,12 @@ async function replaceOGFromUpload(uploadFilename: string) {
     const ogImageUrl = urlData.publicUrl;
     console.log(`🔗 Public URL: ${ogImageUrl}`);
     
-    // Update the wtaf_content table
+    // Update the wtaf_content table with override flag
     const { data: updateData, error: updateError } = await supabase
       .from('wtaf_content')
       .update({ 
         og_image_url: ogImageUrl,
+        og_image_override: true,  // Set the override flag to true
         og_image_cached_at: new Date().toISOString()
       })
       .eq('user_slug', userSlug)
@@ -174,12 +175,13 @@ async function replaceOGFromUpload(uploadFilename: string) {
     }
     
     console.log(`✅ Updated OG image for ${userSlug}/${appSlug}`);
+    console.log(`🌟 Override flag set to TRUE - this custom image will stick!`);
     console.log(`🌐 New OG URL: ${ogImageUrl}`);
     
     // Verify the update worked
     const { data: verifyData, error: verifyError } = await supabase
       .from('wtaf_content')
-      .select('og_image_url, og_image_cached_at')
+      .select('og_image_url, og_image_override, og_image_cached_at')
       .eq('user_slug', userSlug)
       .eq('app_slug', appSlug)
       .single();
@@ -189,6 +191,7 @@ async function replaceOGFromUpload(uploadFilename: string) {
     } else {
       console.log(`✅ Verification: Database updated successfully`);
       console.log(`   URL: ${verifyData.og_image_url}`);
+      console.log(`   Override: ${verifyData.og_image_override}`);
       console.log(`   Cached at: ${verifyData.og_image_cached_at}`);
     }
     
