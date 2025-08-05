@@ -397,6 +397,10 @@ export async function saveCodeToSupabase(
         } else if (isZadApp || coach === 'zad-remix') {
             appType = 'ZAD';
             logWithTimestamp(`🤝 Setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
+        } else {
+            // Default case: all normal web pages, NEEDS-ADMIN pages, and anything not caught above
+            appType = 'WEB';
+            logWithTimestamp(`🌐 Setting type to 'WEB' for standard web app (coach: ${coach})`);
         }
         
         const data = {
