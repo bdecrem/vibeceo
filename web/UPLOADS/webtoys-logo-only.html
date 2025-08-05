@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS Logo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 25%, #8b0000 50%, #4b0082 75%, #000000 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Elements */
+        .float-element {
+            position: absolute;
+            opacity: 0.4;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.3));
+        }
+
+        .skull {
+            top: 8%;
+            left: 5%;
+            font-size: 3.5rem;
+            color: rgba(255, 255, 255, 0.3);
+            animation-delay: 0s;
+        }
+
+        .lightning {
+            top: 30%;
+            right: 8%;
+            font-size: 4rem;
+            color: rgba(255, 255, 0, 0.4);
+            animation-delay: 2s;
+        }
+
+        .fire {
+            bottom: 25%;
+            left: 12%;
+            font-size: 3.8rem;
+            color: rgba(255, 69, 0, 0.4);
+            animation-delay: 4s;
+        }
+
+        .chains {
+            bottom: 10%;
+            right: 15%;
+            font-size: 3.2rem;
+            color: rgba(192, 192, 192, 0.3);
+            animation-delay: 1s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(5deg); }
+            66% { transform: translateY(10px) rotate(-3deg); }
+        }
+
+        header {
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow:
+                0 0 10px #ff0080,
+                0 0 20px #ff0080,
+                0 0 30px #ff0080;
+            margin-bottom: 15px;
+            letter-spacing: -2px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #ff0080;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #ff0080;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Elements -->
+    <div class="float-element skull">💀</div>
+    <div class="float-element lightning">⚡</div>
+    <div class="float-element fire">🔥</div>
+    <div class="float-element chains">⛓️</div>
+
+    <header>
+        <h1 class="logo">WEBTOYS</h1>
+        <div class="tagline">SHIP FROM YOUR FLIP PHONE</div>
+    </header>
+</body>
+</html>
