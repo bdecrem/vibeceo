@@ -290,8 +290,10 @@ export async function saveCodeToSupabase(
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
         // Skip credential injection for any app using API calls
     } else if (!isNaturalZad) {
-        // Inject Supabase credentials into HTML (only for direct Supabase apps, not natural ZAD)
-        code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+        // SECURITY FIX: Commenting out credential injection to prevent database exposure
+        // All apps should use API endpoints, not direct database access
+        // code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+        logWithTimestamp("🔒 Skipped Supabase credential injection for security");
     }
     
     // Convert Supabase calls to API calls for ZAD API apps OR natural ZAD requests
@@ -546,8 +548,10 @@ export async function saveCodeToFile(
     
     const publicUrl = `${WEB_APP_URL}/lab/${filename}`;
     
-    // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+    // SECURITY FIX: Commenting out credential injection to prevent database exposure
+    // All apps should use API endpoints, not direct database access
+    // code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+    logWithTimestamp("🔒 Skipped Supabase credential injection in save_code_to_file for security");
     
     // Auto-fix common JavaScript issues before deployment
     code = autoFixCommonIssues(code);
