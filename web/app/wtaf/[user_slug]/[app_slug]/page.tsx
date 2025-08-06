@@ -251,7 +251,7 @@ setTimeout(function() {
 					border-bottom: 2px solid #000;
 				}
 				#demo-mode-banner .emoji {
-					font-size: 32px;
+					font-size: 48px;
 				}
 				#demo-mode-banner span:last-child {
 					font-size: 14px;
