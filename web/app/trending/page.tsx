@@ -221,9 +221,10 @@ export default function TrendingPage() {
                 <div key={app.id} className="trending-card" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
+                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                       alt={app.app_slug} 
-                      className="trending-image" 
+                      className="trending-image"
+                      style={app.landscape_image_url ? { objectFit: 'fill' } : {}}
                     />
                     <div className="image-overlay">
                       <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
@@ -665,6 +666,11 @@ export default function TrendingPage() {
           object-fit: cover;
           transition: all 0.3s ease;
           display: block;
+        }
+
+        .trending-image.meme-image {
+          object-fit: fill !important;
+          aspect-ratio: 3 / 2 !important;
         }
 
         .image-overlay {
