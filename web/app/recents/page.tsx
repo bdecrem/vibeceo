@@ -224,17 +224,13 @@ export default function RecentsPage() {
         <section className="trending-header">
           <div className="header-container">
             <h1 className="trending-title">RECENTS {showAll && <span className="all-badge">(ALL)</span>}</h1>
-            <div className="filter-controls">
-              {showAll ? (
+            {showAll && (
+              <div className="filter-controls">
                 <Link href="/recents" className="filter-toggle">
                   👁️ Show Public Only
                 </Link>
-              ) : (
-                <Link href="/recents?all=true" className="filter-toggle">
-                  👻 Show All (Including Hidden)
-                </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
 
