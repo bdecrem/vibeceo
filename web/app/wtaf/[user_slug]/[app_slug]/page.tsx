@@ -227,6 +227,37 @@ setTimeout(function() {
 				font-size: 16px;
 				font-weight: 600;
 			}
+			
+			/* Mobile-specific adjustments */
+			@media (max-width: 480px) {
+				#demo-mode-banner {
+					padding: 16px;
+					max-width: calc(100% - 20px);
+					top: 10px;
+				}
+				#demo-mode-banner .content-wrapper {
+					flex-direction: column;
+					text-align: center;
+					gap: 8px;
+					padding-right: 0;
+					padding-top: 28px;
+				}
+				#demo-mode-banner .close-btn {
+					top: -2px;
+					right: -2px;
+					border-top: 2px solid #000;
+					border-right: 2px solid #000;
+					border-left: 2px solid #000;
+					border-bottom: 2px solid #000;
+				}
+				#demo-mode-banner .emoji {
+					font-size: 32px;
+				}
+				#demo-mode-banner span:last-child {
+					font-size: 14px;
+					line-height: 1.4;
+				}
+			}
 		\`;
 		document.head.appendChild(style);
 		
