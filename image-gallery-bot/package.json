@@ -1,0 +1,25 @@
+{
+  "name": "image-gallery-bot",
+  "version": "1.0.0",
+  "description": "Autonomous image gallery system",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "serve": "node serve.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gallery",
+    "images",
+    "unsplash",
+    "autonomous"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "fs-extra": "^11.2.0",
+    "node-fetch": "^2.7.0",
+    "unsplash-js": "^7.0.19"
+  }
+}

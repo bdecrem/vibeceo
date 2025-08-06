@@ -1,0 +1,14 @@
+# Safari extension build files
+*.safariextz
+*.xar
+build/
+
+# macOS
+.DS_Store
+
+# Personal configuration
+config.json
+.env
+
+# Extension private key
+*.pem
