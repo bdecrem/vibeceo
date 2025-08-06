@@ -205,6 +205,15 @@ export default function RecentsPage() {
       <div className="floating-shape shape3"></div>
       <div className="floating-shape shape4"></div>
       <div className="floating-shape shape5"></div>
+      
+      {/* Floating Eyes - Toggle All Mode */}
+      {!showAll && (
+        <Link href="/recents?all=true" className="floating-eyes-link">
+          <div className="floating-eyes" title="Show All (Including Hidden)">
+            👀
+          </div>
+        </Link>
+      )}
 
       {/* Navigation */}
       <nav className="nav">
@@ -455,6 +464,34 @@ export default function RecentsPage() {
           25% { transform: translate(25px, -25px) rotate(90deg); }
           50% { transform: translate(-20px, 20px) rotate(180deg); }
           75% { transform: translate(30px, 10px) rotate(270deg); }
+        }
+        
+        /* Floating Eyes Button */
+        .floating-eyes-link {
+          position: fixed;
+          top: 50%;
+          right: 2rem;
+          text-decoration: none;
+          z-index: 100;
+          pointer-events: auto;
+        }
+        
+        .floating-eyes {
+          font-size: 2rem;
+          cursor: pointer;
+          animation: float-eyes 4s ease-in-out infinite;
+          transition: all 0.3s ease;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .floating-eyes:hover {
+          transform: scale(1.2);
+          filter: drop-shadow(0 0 15px var(--purple-accent));
+        }
+        
+        @keyframes float-eyes {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
 
         /* Loading and Error States */
