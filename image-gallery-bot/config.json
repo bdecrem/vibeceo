@@ -1,0 +1,14 @@
+{
+  "currentTopic": "minimalist design",
+  "topicQueue": [
+    "vintage cars",
+    "nature photography",
+    "space photography",
+    "architecture",
+    "street art"
+  ],
+  "maxImages": 6,
+  "unsplashAccessKey": "DEMO_KEY_REPLACE_LATER",
+  "galleryTemplate": "modern",
+  "lastRun": "2025-08-03T14:17:41.154Z"
+}

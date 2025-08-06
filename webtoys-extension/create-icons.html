@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>Webtoys Icon Generator</h1>
+    <p>Right-click each canvas and save as PNG with the specified filename</p>
+    
+    <div id="icons"></div>
+    
+    <script>
+        // Create ugly icons at different sizes
+        const sizes = [16, 19, 32, 38, 48, 96, 128, 256, 512];
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Ugly purple background
+            ctx.fillStyle = '#8B008B';
+            ctx.fillRect(0, 0, size, size);
+            
+            // White W letter
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('W', size/2, size/2);
+            
+            // Add to page
+            const div = document.createElement('div');
+            div.style.margin = '10px';
+            div.innerHTML = `<p>${size}x${size} - Save as: ${size <= 38 ? 'toolbar-icon' : 'icon'}-${size}.png</p>`;
+            div.appendChild(canvas);
+            document.getElementById('icons').appendChild(div);
+        });
+    </script>
+</body>
+</html>
