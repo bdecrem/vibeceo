@@ -187,9 +187,10 @@ export default function FeaturedGalleryPage() {
                 <div key={app.id} className="gallery-card" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={app.type === 'MEME' && app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
+                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
                       alt={app.app_slug} 
-                      className="gallery-image" 
+                      className="gallery-image"
+                      style={app.landscape_image_url ? { objectFit: 'fill' } : {}}
                     />
                     <div className="image-overlay">
                       <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
@@ -531,6 +532,10 @@ export default function FeaturedGalleryPage() {
           object-fit: cover;
           transition: all 0.3s ease;
           display: block;
+        }
+
+        :global(.gallery-image.meme-image) {
+          object-fit: fill !important;
         }
 
         .image-overlay {
