@@ -1653,6 +1653,19 @@ export default function WebtoysSitePage() {
         >
           🎨
         </div>
+        
+        {/* Floating Clock - Links to Recents */}
+        <Link href="/recents" className="floating-clock-link">
+          <div 
+            className="floating-emoji emoji-clock" 
+            style={{
+              transform: isMobile === false ? `translate(${mousePosition.x * 0.06}px, ${mousePosition.y * -0.03}px)` : undefined
+            }}
+            title="View Recent Creations"
+          >
+            🕐
+          </div>
+        </Link>
       </div>
 
       {/* Secret Konami Widget */}
@@ -2194,6 +2207,27 @@ export default function WebtoysSitePage() {
           right: 15%;
           animation-duration: 28s;
           animation-delay: 18s;
+        }
+        
+        /* Floating Clock - positioned near lightning bolt */
+        .floating-clock-link {
+          text-decoration: none;
+          pointer-events: auto !important;  /* Override parent's pointer-events: none */
+          z-index: 100;
+        }
+        
+        .emoji-clock {
+          bottom: 20%;  /* Near lightning bolt which is at 15% */
+          left: 15%;    /* Slightly right of lightning bolt at 5% */
+          animation-duration: 25s;
+          animation-delay: 3s;
+          cursor: pointer;
+          pointer-events: auto !important;  /* Make clickable */
+        }
+        
+        .emoji-clock:hover {
+          transform: scale(1.3) rotate(360deg) !important;
+          filter: drop-shadow(0 0 20px var(--yellow));
         }
 
         @keyframes float-emoji {

@@ -27,6 +27,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/link') || 
       pathname.startsWith('/dashboard') ||
       pathname.startsWith('/trending') ||
+      pathname.startsWith('/recents') ||
       pathname.startsWith('/featured') ||
       pathname.startsWith('/test-auth') ||
       pathname.startsWith('/test-subscriber') ||
