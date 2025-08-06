@@ -1653,6 +1653,19 @@ export default function WebtoysSitePage() {
         >
           🎨
         </div>
+        
+        {/* Floating Clock - Links to Recents */}
+        <Link href="/recents" className="floating-clock-link">
+          <div 
+            className="floating-emoji emoji-clock" 
+            style={{
+              transform: isMobile === false ? `translate(${mousePosition.x * 0.06}px, ${mousePosition.y * -0.03}px)` : undefined
+            }}
+            title="View Recent Creations"
+          >
+            🕐
+          </div>
+        </Link>
       </div>
 
       {/* Secret Konami Widget */}
@@ -2194,6 +2207,28 @@ export default function WebtoysSitePage() {
           right: 15%;
           animation-duration: 28s;
           animation-delay: 18s;
+        }
+        
+        /* Floating Clock */
+        .floating-clock-link {
+          position: absolute;
+          z-index: 10;
+          text-decoration: none;
+        }
+        
+        .emoji-clock {
+          top: 20%;
+          left: 8%;
+          animation-duration: 25s;
+          animation-delay: 3s;
+          font-size: 3rem !important;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .emoji-clock:hover {
+          transform: scale(1.3) rotate(360deg) !important;
+          filter: drop-shadow(0 0 20px var(--yellow));
         }
 
         @keyframes float-emoji {
