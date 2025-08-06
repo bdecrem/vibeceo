@@ -2209,21 +2209,17 @@ export default function WebtoysSitePage() {
           animation-delay: 18s;
         }
         
-        /* Floating Clock */
+        /* Floating Clock - positioned near lightning bolt */
         .floating-clock-link {
-          position: absolute;
-          z-index: 10;
           text-decoration: none;
         }
         
         .emoji-clock {
-          top: 85%;
-          left: 8%;
+          bottom: 20%;  /* Near lightning bolt which is at 15% */
+          left: 15%;    /* Slightly right of lightning bolt at 5% */
           animation-duration: 25s;
           animation-delay: 3s;
-          font-size: 3rem !important;
           cursor: pointer;
-          transition: all 0.3s ease;
         }
         
         .emoji-clock:hover {
