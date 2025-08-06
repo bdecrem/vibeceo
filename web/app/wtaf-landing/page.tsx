@@ -2217,7 +2217,7 @@ export default function WebtoysSitePage() {
         }
         
         .emoji-clock {
-          top: 20%;
+          top: 65%;
           left: 8%;
           animation-duration: 25s;
           animation-delay: 3s;
