@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import TruncatedPrompt from "@/components/truncated-prompt"
 import Pagination from "@/components/ui/pagination"
 import CopiedModal from "@/components/ui/copied-modal"
@@ -52,6 +53,9 @@ interface TrendingData {
 }
 
 export default function RecentsPage() {
+  const searchParams = useSearchParams()
+  const showAll = searchParams.get('all') === 'true'
+  
   const [data, setData] = useState<TrendingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -120,7 +124,8 @@ export default function RecentsPage() {
   const fetchTrendingData = useCallback(async (page: number) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/recents-wtaf?page=${page}&limit=${limit}`, {
+      const allParam = showAll ? '&all=true' : ''
+      const response = await fetch(`/api/recents-wtaf?page=${page}&limit=${limit}${allParam}`, {
         cache: 'no-store'
       })
       
@@ -137,7 +142,7 @@ export default function RecentsPage() {
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [limit, showAll])
 
   useEffect(() => {
     // Set page title
@@ -218,7 +223,18 @@ export default function RecentsPage() {
         {/* Header Section */}
         <section className="trending-header">
           <div className="header-container">
-            <h1 className="trending-title">RECENTS</h1>
+            <h1 className="trending-title">RECENTS {showAll && <span className="all-badge">(ALL)</span>}</h1>
+            <div className="filter-controls">
+              {showAll ? (
+                <Link href="/recents" className="filter-toggle">
+                  👁️ Show Public Only
+                </Link>
+              ) : (
+                <Link href="/recents?all=true" className="filter-toggle">
+                  👻 Show All (Including Hidden)
+                </Link>
+              )}
+            </div>
           </div>
         </section>
 
@@ -600,6 +616,37 @@ export default function RecentsPage() {
           right: -40px;
           font-size: 2rem;
           animation: sparkle 2s ease-in-out infinite;
+        }
+
+        .all-badge {
+          font-size: 0.5em;
+          color: var(--purple-accent);
+          font-weight: 600;
+          vertical-align: super;
+        }
+
+        .filter-controls {
+          margin-top: 1.5rem;
+        }
+
+        .filter-toggle {
+          background: var(--white-pure);
+          border: 3px solid var(--purple-accent);
+          color: var(--purple-accent);
+          padding: 0.8rem 1.5rem;
+          border-radius: 2rem;
+          font-weight: 700;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: all 0.3s ease;
+        }
+
+        .filter-toggle:hover {
+          background: var(--purple-accent);
+          color: white;
+          transform: translateY(-2px);
         }
 
         @keyframes sparkle {

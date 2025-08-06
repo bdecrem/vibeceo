@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const includeAll = searchParams.get('all') === 'true'  // Show hidden/forgotten apps if ?all=true
     const offset = (page - 1) * limit
 
     // Validate pagination parameters
@@ -21,9 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 })
     }
 
-    // Get recent apps, ordered by creation date
-    // TEMPORARILY removing Forget filter to debug
-    const { data: recentApps, error: appsError } = await supabase
+    // Build query for recent apps
+    let query = supabase
       .from('wtaf_content')
       .select(`
         id,
@@ -44,8 +44,15 @@ export async function GET(request: NextRequest) {
         og_image_url,
         type
       `)
-      .eq('status', 'published')           // Only published apps
-      // .not('Forget', 'is', true)          // TEMPORARILY DISABLED - Exclude forgotten apps
+      .eq('status', 'published')  // Only published apps
+
+    // Only exclude forgotten apps if not showing all
+    if (!includeAll) {
+      query = query.not('Forget', 'is', true)
+    }
+
+    // Get recent apps, ordered by creation date
+    const { data: recentApps, error: appsError } = await query
       .order('created_at', { ascending: false })  // Most recent first
       .range(offset, offset + limit - 1)
 
@@ -55,11 +62,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination metadata
-    const { count: totalCount, error: countError } = await supabase
+    let countQuery = supabase
       .from('wtaf_content')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published')
-      // .not('Forget', 'is', true)  // TEMPORARILY DISABLED
+    
+    if (!includeAll) {
+      countQuery = countQuery.not('Forget', 'is', true)
+    }
+
+    const { count: totalCount, error: countError } = await countQuery
 
     if (countError) {
       console.error('Error getting total count:', countError)
