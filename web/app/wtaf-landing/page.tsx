@@ -2212,6 +2212,8 @@ export default function WebtoysSitePage() {
         /* Floating Clock - positioned near lightning bolt */
         .floating-clock-link {
           text-decoration: none;
+          pointer-events: auto !important;  /* Override parent's pointer-events: none */
+          z-index: 100;
         }
         
         .emoji-clock {
@@ -2220,6 +2222,7 @@ export default function WebtoysSitePage() {
           animation-duration: 25s;
           animation-delay: 3s;
           cursor: pointer;
+          pointer-events: auto !important;  /* Make clickable */
         }
         
         .emoji-clock:hover {
