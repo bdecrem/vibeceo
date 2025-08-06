@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent apps, ordered by creation date
+    // TEMPORARILY removing Forget filter to debug
     const { data: recentApps, error: appsError } = await supabase
       .from('wtaf_content')
       .select(`
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
         type
       `)
       .eq('status', 'published')           // Only published apps
-      .not('Forget', 'is', true)          // Exclude forgotten apps
+      // .not('Forget', 'is', true)          // TEMPORARILY DISABLED - Exclude forgotten apps
       .order('created_at', { ascending: false })  // Most recent first
       .range(offset, offset + limit - 1)
 
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       .from('wtaf_content')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published')
-      .not('Forget', 'is', true)
+      // .not('Forget', 'is', true)  // TEMPORARILY DISABLED
 
     if (countError) {
       console.error('Error getting total count:', countError)
