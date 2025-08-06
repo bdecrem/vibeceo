@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import TruncatedPrompt from "@/components/truncated-prompt"
@@ -9,6 +9,7 @@ import CopiedModal from "@/components/ui/copied-modal"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 interface WtafApp {
   id: string
@@ -52,7 +53,7 @@ interface TrendingData {
   pagination: PaginationData
 }
 
-export default function RecentsPage() {
+function RecentsPageContent() {
   const searchParams = useSearchParams()
   const showAll = searchParams.get('all') === 'true'
   
@@ -1000,6 +1001,37 @@ export default function RecentsPage() {
 
         }
       `}</style>
+    </>
+  )
+}
+
+export default function RecentsPage() {
+  return (
+    <>
+      <Suspense fallback={
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#FEFEF5'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            background: 'white',
+            padding: '3rem',
+            borderRadius: '2rem',
+            border: '5px solid #FF8C42'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🕐</div>
+            <h3 style={{ fontSize: '1.8rem', color: '#2A2A2A', marginBottom: '1rem', fontWeight: 800 }}>
+              Loading recent apps...
+            </h3>
+          </div>
+        </div>
+      }>
+        <RecentsPageContent />
+      </Suspense>
     </>
   )
 }
