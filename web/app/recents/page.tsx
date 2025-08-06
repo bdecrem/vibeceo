@@ -92,35 +92,27 @@ export default function RecentsPage() {
     const now = new Date()
     const created = new Date(createdAt)
     const diffInMs = now.getTime() - created.getTime()
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+    const diffInSeconds = Math.floor(diffInMs / 1000)
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
     const diffInHours = Math.floor(diffInMinutes / 60)
     const diffInDays = Math.floor(diffInHours / 24)
+    const diffInWeeks = Math.floor(diffInDays / 7)
+    const diffInMonths = Math.floor(diffInDays / 30)
     
-    if (diffInMinutes < 1) return "Just now"
-    if (diffInMinutes < 60) return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`
-    if (diffInHours < 24) {
-      const mins = diffInMinutes % 60
-      if (mins === 0) return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`
-      return `${diffInHours}h ${mins}m ago`
-    }
-    if (diffInDays < 7) {
-      return created.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true 
-      })
-    }
-    return created.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true 
-    })
+    if (diffInSeconds < 60) return "Just now"
+    if (diffInMinutes === 1) return "1 min ago"
+    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`
+    if (diffInHours === 1) return "1 hr ago"
+    if (diffInHours < 24) return `${diffInHours} hrs ago`
+    if (diffInDays === 1) return "1 day ago"
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    if (diffInWeeks === 1) return "1 week ago"
+    if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`
+    if (diffInMonths === 1) return "1 month ago"
+    if (diffInMonths < 12) return `${diffInMonths} months ago`
+    const diffInYears = Math.floor(diffInDays / 365)
+    if (diffInYears === 1) return "1 year ago"
+    return `${diffInYears} years ago`
   }
 
   // Not needed for recents - we always show timestamp
