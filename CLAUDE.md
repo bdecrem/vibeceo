@@ -365,6 +365,43 @@ The system automatically classifies apps into 5 types:
 - Hardcode configuration values
 - Make direct Supabase calls in controller
 
+## CRITICAL: Use Task Tool to Avoid Failure Loops
+
+### When to AUTOMATICALLY use the Task tool:
+- **After 2 failed attempts** at fixing any issue (especially UI/CSS)
+- **When user shows ANY frustration** ("still broken", "doesn't work", "come on", "NO", etc.)
+- **When dealing with:**
+  - Complex CSS positioning/layout problems
+  - Visual appearance issues
+  - Multi-file debugging
+  - Any issue you've tried to fix 2+ times
+
+### Trigger Phrases (use Task tool IMMEDIATELY):
+- "still not working" / "still broken"
+- "that's wrong" / "not right"
+- "try again" / "failed again"
+- Multiple "NO" responses
+- Any swearing or CAPS LOCK frustration
+- "X times" (indicating repeated failures)
+
+### How to Use:
+```
+Task tool with subagent_type: general-purpose
+Include:
+- File path(s) involved
+- What's broken (with screenshots if provided)
+- What you've already tried
+- Exact desired outcome
+```
+
+### Why This is MANDATORY:
+- Prevents endless trial-and-error loops
+- Gets fresh perspective on the problem
+- Respects user's time and patience
+- Task agents can review entire context you might miss
+
+**DO NOT continue trying the same type of fix after 2 failures. Use the Task tool.**
+
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->
 <!-- DO NOT EDIT MANUALLY -->
