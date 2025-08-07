@@ -179,7 +179,7 @@ setTimeout(function() {
 				transform: translateX(-50%);
 				background: #FF5722;
 				color: white;
-				padding: 12px 20px;
+				padding: 12px 50px 12px 20px; /* Extra padding on right for button */
 				border: 2px solid #000;
 				z-index: 10000;
 				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -187,38 +187,46 @@ setTimeout(function() {
 				max-width: 90%;
 				width: auto;
 				overflow: visible;
+				position: relative; /* For absolute positioning of button */
 			}
 			#demo-mode-banner .content-wrapper {
 				display: flex;
 				align-items: center;
 				justify-content: center;
 				gap: 12px;
-				position: relative;
-				padding-right: 35px;
 			}
 			#demo-mode-banner .close-btn {
 				position: absolute;
-				top: 0;
-				right: 0;
-				background: #E53935;
-				border-left: 2px solid #000;
-				border-bottom: 2px solid #000;
+				top: 10px;
+				right: 10px;
+				background: black;
+				border: 2px solid white;
+				border-radius: 50%;
 				color: white;
 				font-size: 16px;
 				font-weight: bold;
 				cursor: pointer;
 				padding: 0;
+				margin: 0;
 				line-height: 1;
-				width: 32px;
-				height: 32px;
-				display: flex;
+				width: 24px !important;
+				height: 24px !important;
+				min-width: 24px;
+				max-width: 24px;
+				min-height: 24px;
+				max-height: 24px;
+				display: flex !important;
 				align-items: center;
 				justify-content: center;
 				text-shadow: none;
 				outline: none;
+				transition: transform 0.1s ease;
+				box-sizing: border-box;
+				flex-shrink: 0;
+				flex-grow: 0;
 			}
 			#demo-mode-banner .close-btn:hover {
-				background: #C62828;
+				transform: scale(1.1);
 			}
 			#demo-mode-banner .emoji {
 				font-size: 40px;
@@ -231,31 +239,49 @@ setTimeout(function() {
 			/* Mobile-specific adjustments */
 			@media (max-width: 480px) {
 				#demo-mode-banner {
-					padding: 16px;
-					max-width: calc(100% - 20px);
-					top: 10px;
+					padding: 20px 20px;
+					max-width: calc(100% - 40px);
+					width: calc(100% - 40px);
+					top: 20px;
+					left: 50%;
+					transform: translateX(-50%);
 				}
 				#demo-mode-banner .content-wrapper {
-					flex-direction: column;
-					text-align: center;
-					gap: 8px;
+					flex-direction: row;
+					align-items: center;
+					text-align: left;
+					gap: 12px;
 					padding-right: 0;
-					padding-top: 28px;
 				}
 				#demo-mode-banner .close-btn {
-					top: -2px;
-					right: -2px;
-					border-top: 2px solid #000;
-					border-right: 2px solid #000;
-					border-left: 2px solid #000;
-					border-bottom: 2px solid #000;
+					/* Clean mobile close button */
+					position: absolute;
+					top: 12px;
+					right: 12px;
+					background: rgba(255, 255, 255, 0.9);
+					border: 2px solid #000;
+					border-radius: 50%;
+					color: #000;
+					width: 28px;
+					height: 28px;
+					font-size: 16px;
+					font-weight: bold;
+					box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+					transform: none;
+				}
+				#demo-mode-banner .close-btn:hover {
+					background: rgba(255, 255, 255, 1);
+					transform: none;
 				}
 				#demo-mode-banner .emoji {
-					font-size: 48px;
+					font-size: 32px;
+					flex-shrink: 0;
 				}
 				#demo-mode-banner span:last-child {
-					font-size: 14px;
-					line-height: 1.4;
+					font-size: 13px;
+					line-height: 1.3;
+					font-weight: 500;
+					padding-right: 30px; /* Space for close button */
 				}
 			}
 		\`;
@@ -288,8 +314,10 @@ setTimeout(function() {
 		
 		contentWrapper.appendChild(emoji);
 		contentWrapper.appendChild(text);
-		contentWrapper.appendChild(closeButton);
+		
+		// Append close button to BANNER, not content wrapper!
 		demoBanner.appendChild(contentWrapper);
+		demoBanner.appendChild(closeButton);
 		
 		document.body.insertBefore(demoBanner, document.body.firstChild);
 	}
