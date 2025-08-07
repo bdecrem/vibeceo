@@ -187,7 +187,7 @@ export default function FeaturedGalleryPage() {
                 <div key={app.id} className="gallery-card" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`)} 
+                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png?t=${Date.now()}`)} 
                       alt={app.app_slug} 
                       className="gallery-image"
                       style={app.landscape_image_url ? { objectFit: 'fill' } : {}}
