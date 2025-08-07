@@ -70,26 +70,45 @@ export async function POST(req: NextRequest) {
     }
     
     // Get current user's record
-    const { data: currentUser } = await supabase
+    console.log(`[LinkPhone] Looking up user with supabase_id: ${user_id}`);
+    const { data: currentUser, error: lookupError } = await supabase
       .from('sms_subscribers')
       .select('*')
       .eq('supabase_id', user_id)
       .single();
       
-    if (!currentUser) {
+    if (!currentUser || lookupError) {
+      console.log(`[LinkPhone] User lookup failed:`, lookupError);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    
+    console.log(`[LinkPhone] Found user: ${currentUser.email}, phone: ${currentUser.phone_number}, slug: ${currentUser.slug}`);
     
     // Normalize phone number
     const normalizedPhone = normalizePhoneNumber(phone_number);
     
     // SIMPLE CHECK 1: Does this user already have a REAL phone (not placeholder)?
-    if (currentUser.phone_number && !currentUser.phone_number.startsWith('+1555')) {
+    // Debug: log the current phone to understand format
+    console.log(`[LinkPhone] Checking if can link. Current phone: "${currentUser.phone_number}", type: ${typeof currentUser.phone_number}`);
+    
+    // Check if it's a fake/placeholder phone number (555 numbers)
+    // ALL fake numbers start with +1555 (followed by any digit 0-9)
+    const isPlaceholderPhone = !currentUser.phone_number || 
+                                currentUser.phone_number.startsWith('+1555');
+    
+    console.log(`[LinkPhone] Phone validation:`);
+    console.log(`  - Current phone: ${currentUser.phone_number}`);
+    console.log(`  - Starts with +1555: ${currentUser.phone_number?.startsWith('+1555')}`);
+    console.log(`  - Is placeholder: ${isPlaceholderPhone}`);
+    
+    if (currentUser.phone_number && !isPlaceholderPhone) {
+      console.log(`[LinkPhone] ERROR: Rejecting because user already has real phone`);
       return NextResponse.json(
         { error: 'You already have a phone number linked to your account' },
         { status: 400 }
       );
     }
+    console.log(`[LinkPhone] SUCCESS: Phone check passed, can proceed with linking`);
     
     // SIMPLE CHECK 2: Does this phone exist anywhere in our system?
     const { data: existingPhone } = await supabase
