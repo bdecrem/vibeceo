@@ -402,6 +402,39 @@ Include:
 
 **DO NOT continue trying the same type of fix after 2 failures. Use the Task tool.**
 
+## Automatic Commits and Testing
+
+### When to Auto-Commit (Without Asking)
+
+Claude Code SHOULD automatically commit at these logical points:
+1. **After completing a feature** - When a requested feature is fully implemented
+2. **After fixing a bug** - When a bug fix is complete and tested
+3. **Before starting new work** - To checkpoint completed work
+4. **After refactoring** - When code structure improvements are done
+5. **Every 3-5 related changes** - To maintain atomic commit history
+
+Example: User says "fix the gallery hover effects" → implement → test → auto-commit
+
+### Smoke Testing System
+
+**Automatic pre-commit testing is enabled:**
+- Tests run automatically before every commit
+- Located in `web/scripts/smoke-test.js`
+- Checks critical paths:
+  - Web server responds
+  - Key pages load (/trending, /featured, /recents)
+  - OG image API works
+  - Demo mode functions
+  - Static assets accessible
+
+**If tests fail:**
+1. Fix the issue immediately
+2. OR inform user and ask if they want to skip with `--no-verify`
+
+**For complex testing needs:**
+- Use `test-runner` sub-agent type with Task tool
+- Example: "Task: Run comprehensive tests on all gallery pages"
+
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->
 <!-- DO NOT EDIT MANUALLY -->
