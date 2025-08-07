@@ -301,6 +301,32 @@ Unless it's VERY clear, inform the user whether they need to:
 - DO NOT run `git push` unless the user explicitly approves
 - Wait for explicit user approval before pushing any changes
 
+## Production Deployment Checklist
+
+**BEFORE pushing code that might break production, check:**
+
+1. **New Dependencies**: If you `import` a new library:
+   - Add it to package.json with `npm install <package>`
+   - Verify it's in the correct package.json (web/ or sms-bot/)
+   - Run `npm run test:smoke` to check for missing dependencies
+
+2. **Environment Variables**: If you add `process.env.NEW_VAR`:
+   - Document it in the relevant .env.example file
+   - Inform user it needs to be set in production (Railway)
+   - Add to critical vars list in smoke tests if critical
+
+3. **Config Changes**: If you modify config.ts or shared/config.ts:
+   - Ensure default values work for production
+   - Check if production override is needed
+
+4. **Database Changes**: If you modify database schema:
+   - Alert user that Supabase migration may be needed
+   - Never assume table structure - verify first
+
+5. **API/Service Changes**: If you add new external service:
+   - Ensure API keys are via environment variables
+   - Document the service setup requirements
+
 ## Security Exception: Web Console API
 
 The web console API at `/api/wtaf/web-console` is an **approved exception** to the "no direct database access" rule. This exception exists for security reasons:
