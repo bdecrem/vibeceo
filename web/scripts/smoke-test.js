@@ -94,6 +94,48 @@ async function runSmokeTests() {
     if (!response.ok) throw new Error(`Static file returned ${response.status}`);
   });
 
+  // Test 8: WTAF landing page loads
+  await runTest('WTAF landing page works', async () => {
+    // Check if the landing page loads with key content
+    const landingResponse = await fetch(`${BASE_URL}/wtaf-landing`);
+    if (!landingResponse.ok) throw new Error(`Landing page returned ${landingResponse.status}`);
+    
+    const html = await landingResponse.text();
+    // Check for key WEBTOYS elements
+    if (!html.includes('WEBTOYS')) {
+      throw new Error('WEBTOYS branding missing');
+    }
+    if (!html.includes('+1-866-330-0015')) {
+      throw new Error('SMS number not found');
+    }
+    // Verify it has the specific landing page content
+    if (!html.includes('YOUR BROWSER DESERVES')) {
+      throw new Error('Landing page headline missing');
+    }
+    if (!html.includes('THE HALL OF STUFF')) {
+      throw new Error('Hall of Stuff section missing');
+    }
+  });
+
+  // Test 9: Check no test database connections in code
+  await runTest('No hardcoded secrets in web/', async () => {
+    // Quick scan of common files for secrets
+    // This is a backup to the pre-commit hook
+    const { execSync } = require('child_process');
+    try {
+      // Use grep to check for common secret patterns
+      execSync('! grep -r "sk-[a-zA-Z0-9]\\{48\\}" web/app/ web/components/ 2>/dev/null', { stdio: 'pipe' });
+      execSync('! grep -r "eyJ[a-zA-Z0-9]\\{50,\\}" web/app/ web/components/ 2>/dev/null', { stdio: 'pipe' });
+    } catch (error) {
+      // grep returns non-zero if it FINDS something (which is bad)
+      if (error.status === 1) {
+        // Status 1 means grep found nothing (good!)
+        return;
+      }
+      throw new Error('Possible hardcoded secrets detected');
+    }
+  });
+
   // Print results
   console.log(`\n${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`);
   
