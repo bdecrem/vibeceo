@@ -522,8 +522,11 @@ function DevConsole() {
 
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
+    const parts = cmd.trim().split(' ')  // Keep parts for commands that need arguments
+    const baseCommand = parts[0].toLowerCase()  // First word for multi-word commands
     let response = ''
 
+    // For exact matches, use the full command
     switch(lowerCmd) {
       case 'help':
         response = `🎮 CONSOLE COMMANDS:
@@ -696,24 +699,25 @@ Without this, you'll see duplicates everywhere! 🤯`
           return
         }
         break
-      case 'reset-password':
-      case 'forgot-password':
-        if (user) {
-          response = `You're already logged in. Sending password reset link to ${user.email}...`
-          handlePasswordReset(user.email)
-        } else {
-          const emailMatch = parts[1]
-          if (emailMatch && emailMatch.includes('@')) {
-            response = `Sending password reset link to ${emailMatch}...`
-            handlePasswordReset(emailMatch)
-          } else {
-            response = '📧 Please provide an email address: reset-password your@email.com'
-          }
-        }
-        break
       default:
+        // Check for reset-password command with optional email
+        if (baseCommand === 'reset-password' || baseCommand === 'forgot-password') {
+          if (user) {
+            response = `You're already logged in. Sending password reset link to ${user.email}...`
+            handlePasswordReset(user.email)
+            return
+          } else {
+            const emailMatch = parts[1]
+            if (emailMatch && emailMatch.includes('@')) {
+              response = `Sending password reset link to ${emailMatch}...`
+              handlePasswordReset(emailMatch)
+              return
+            } else {
+              response = '📧 Please provide an email address: reset-password your@email.com'
+            }
+          }
         // Check if they're trying to use WTAF commands in console
-        if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ') || lowerCmd === 'commands') {
+        } else if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ') || lowerCmd === 'commands') {
           if (user) {
             // Process WTAF command for authenticated users
             handleWtafCommand(cmd)
