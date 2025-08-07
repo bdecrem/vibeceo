@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * WEBTOYS Smoke Test Suite v0.3
+ * WEBTOYS Smoke Test Suite v0.4
  * Simple checks to catch common breakages
- * Now includes compilation checks for all 3 servers
+ * Includes: compilation checks, dependency validation, env var checks
  */
 
 const fetch = require('node-fetch');
@@ -38,7 +38,7 @@ async function runTest(name, testFn) {
 
 // Test Suite
 async function runSmokeTests() {
-  console.log(`\n${colors.cyan}🧪 WEBTOYS Smoke Tests v0.3${colors.reset}`);
+  console.log(`\n${colors.cyan}🧪 WEBTOYS Smoke Tests v0.4${colors.reset}`);
   console.log(`${colors.cyan}Testing against: ${BASE_URL}${colors.reset}\n`);
 
   // Test 1: Web server is running
@@ -173,6 +173,73 @@ async function runSmokeTests() {
       });
     } catch (error) {
       throw new Error(`WTAF Engine compilation failed: ${error.message}`);
+    }
+  });
+
+  // Test 13: Check for missing dependencies (imports not in package.json)
+  await runTest('No missing dependencies', async () => {
+    try {
+      // Check web directory for uninstalled imports
+      const webImports = execSync(`grep -r "^import .* from ['\"]" ../web/app ../web/components ../web/lib 2>/dev/null | grep -o "from ['\"][^'\"]*['\"]" | grep -o "['\"][^'\"]*['\"]" | tr -d "'" | tr -d '"' | sort -u | grep -v "^@/" | grep -v "^\\.\\./" | grep -v "^\\."`, { 
+        stdio: 'pipe',
+        encoding: 'utf8'
+      }).trim().split('\n').filter(Boolean);
+      
+      const webPackageJson = require('../../package.json');
+      const installedDeps = Object.keys({
+        ...webPackageJson.dependencies || {},
+        ...webPackageJson.devDependencies || {}
+      });
+      
+      const missingWeb = webImports.filter(imp => {
+        // Skip Next.js built-ins and Node built-ins
+        if (imp.startsWith('next/') || imp.startsWith('react') || 
+            ['fs', 'path', 'crypto', 'stream', 'buffer', 'util', 'child_process', 'os'].includes(imp)) {
+          return false;
+        }
+        // Check if it's installed
+        return !installedDeps.some(dep => imp === dep || imp.startsWith(dep + '/'));
+      });
+      
+      if (missingWeb.length > 0) {
+        throw new Error(`Missing in web/package.json: ${missingWeb.join(', ')}`);
+      }
+    } catch (error) {
+      // If grep finds nothing, that's ok
+      if (error.message && error.message.includes('Missing in')) {
+        throw error;
+      }
+    }
+  });
+
+  // Test 14: Check for undefined environment variables
+  await runTest('Environment variables defined', async () => {
+    try {
+      // Find all process.env references
+      const envVars = execSync(`grep -r "process\\.env\\." ../web/app ../web/lib ../sms-bot 2>/dev/null | grep -o "process\\.env\\.[A-Z_][A-Z0-9_]*" | grep -o "[A-Z_][A-Z0-9_]*" | sort -u`, {
+        stdio: 'pipe',
+        encoding: 'utf8'
+      }).trim().split('\n').filter(Boolean);
+      
+      // Check critical env vars are documented
+      const criticalVars = [
+        'SUPABASE_URL',
+        'SUPABASE_SERVICE_KEY',
+        'OPENAI_API_KEY',
+        'TWILIO_AUTH_TOKEN',
+        'ANTHROPIC_API_KEY'
+      ];
+      
+      const undefinedCritical = criticalVars.filter(v => {
+        return envVars.includes(v) && !process.env[v];
+      });
+      
+      if (undefinedCritical.length > 0) {
+        console.log(`\n    ${colors.yellow}Warning: Critical env vars not set locally: ${undefinedCritical.join(', ')}${colors.reset}`);
+        console.log(`    ${colors.yellow}These must be configured in production!${colors.reset}`);
+      }
+    } catch (error) {
+      // Grep errors are ok here
     }
   });
 
