@@ -435,6 +435,60 @@ Example: User says "fix the gallery hover effects" → implement → test → au
 - Use `test-runner` sub-agent type with Task tool
 - Example: "Task: Run comprehensive tests on all gallery pages"
 
+### Visual Testing with Puppeteer MCP
+
+**PROACTIVE USE REQUIRED**: Claude Code MUST use Puppeteer MCP to visually verify changes when:
+
+1. **After UI/CSS Changes** - Take screenshots to verify visual appearance
+2. **Testing User-Created Pages** - Navigate to and screenshot generated apps/pages
+3. **Gallery Updates** - Visually verify /trending, /featured, /recents pages
+4. **Form Testing** - Fill and submit forms on created apps
+5. **Mobile Responsiveness** - Test at different viewport sizes
+6. **Before Committing UI Changes** - Screenshot before/after for visual regression
+
+**When to Use Puppeteer Automatically:**
+- User mentions "looks broken", "visual bug", "CSS issue" → Take screenshot
+- After modifying gallery pages → Navigate and verify visually
+- Testing created apps → Navigate to the app URL and interact
+- User shares screenshot of issue → Compare with Puppeteer screenshot
+- After OG image changes → Verify OG images render correctly
+
+**Example Workflow:**
+```javascript
+// After making CSS changes to gallery
+1. Navigate to https://webtoys.ai/trending
+2. Screenshot the page
+3. Check hover states by hovering elements
+4. Test at mobile viewport (390x844)
+5. Verify visual consistency
+```
+
+**Puppeteer Commands to Use:**
+- `mcp__puppeteer__puppeteer_navigate` - Go to pages
+- `mcp__puppeteer__puppeteer_screenshot` - Capture visuals
+- `mcp__puppeteer__puppeteer_click` - Test interactions
+- `mcp__puppeteer__puppeteer_fill` - Test forms
+- `mcp__puppeteer__puppeteer_evaluate` - Check computed styles
+
+**Testing Generated Content:**
+When user creates an app via SMS, automatically:
+1. Navigate to the generated URL
+2. Take a screenshot
+3. Test any interactive elements
+4. Report visual confirmation to user
+
+**Launch Options for Different Scenarios:**
+```javascript
+// Standard testing
+{ "headless": true }
+
+// Visual debugging
+{ "headless": false }
+
+// Mobile testing
+{ "headless": true, "defaultViewport": { "width": 390, "height": 844 } }
+```
+
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->
 <!-- DO NOT EDIT MANUALLY -->
