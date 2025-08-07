@@ -199,7 +199,7 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                       className="gallery-image" 
                     />
                     <div className="image-overlay">
-                      <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">TRY THIS APP</Link>
+                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</Link>
                     </div>
                   </div>
                   <div className="card-content">
@@ -242,7 +242,7 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
                     className="gallery-image" 
                   />
                   <div className="image-overlay">
-                    <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">TRY THIS APP</Link>
+                    <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</Link>
                   </div>
                 </div>
                 <div className="card-content">

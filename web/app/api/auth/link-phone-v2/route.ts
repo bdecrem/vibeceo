@@ -102,6 +102,10 @@ export async function POST(req: NextRequest) {
       // PHASE 2: Phone exists - prepare for merge
       console.log(`[LinkPhone] Phone ${normalizedPhone} already exists for user ${existingPhone.slug}`);
       
+      // Generate a real 6-digit verification code for SMS
+      const verificationCode = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
       // Get app counts for both accounts
       const { count: existingPhoneApps } = await supabase
         .from('wtaf_content')
@@ -118,13 +122,12 @@ export async function POST(req: NextRequest) {
       const webDate = new Date(currentUser.created_at);
       const survivingSlug = phoneDate < webDate ? existingPhone.slug : currentUser.slug;
       
-      // Since our fields are limited, we'll use a special code and store the phone
-      // The merge decision is already made (oldest wins), so we just need to confirm
+      // Store the verification code and phone - we'll detect merge in verify by checking if phone exists elsewhere
       const { error: updateError } = await supabase
         .from('sms_subscribers')
         .update({
-          verification_code: 'MERGE',  // Special 5-character code
-          verification_expires: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          verification_code: verificationCode,  // Real 6-digit code
+          verification_expires: expiresAt.toISOString(),
           pending_phone_number: normalizedPhone
         })
         .eq('id', currentUser.id);
@@ -137,6 +140,42 @@ export async function POST(req: NextRequest) {
         );
       }
       
+      // Send SMS verification code for merge
+      try {
+        const twilioClient = getTwilioClient();
+        const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+        
+        if (!fromNumber) {
+          throw new Error('Missing Twilio phone number');
+        }
+        
+        await twilioClient.messages.create({
+          body: `Your WEBTOYS verification code is: ${verificationCode}\n\nThis will merge your accounts.`,
+          from: fromNumber,
+          to: normalizedPhone
+        });
+        
+        console.log(`[LinkPhone] Sent merge verification code ${verificationCode} to ${normalizedPhone}`);
+        
+      } catch (twilioError: any) {
+        console.error('Failed to send SMS:', twilioError);
+        
+        // Clean up verification data since SMS failed
+        await supabase
+          .from('sms_subscribers')
+          .update({
+            verification_code: null,
+            verification_expires: null,
+            pending_phone_number: null
+          })
+          .eq('id', currentUser.id);
+          
+        return NextResponse.json(
+          { error: 'Failed to send verification code. Please check your phone number.' },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json({
         success: true,
         merge_required: true,
@@ -144,7 +183,7 @@ export async function POST(req: NextRequest) {
           phone_account: `@${existingPhone.slug} (${phoneDate.toLocaleDateString()}, ${existingPhoneApps || 0} apps)`,
           web_account: `@${currentUser.slug} (${webDate.toLocaleDateString()}, ${currentUserApps || 0} apps)`,
           surviving_account: `@${survivingSlug}`,
-          message: `This phone belongs to @${existingPhone.slug}. We'll merge everything into @${survivingSlug} (the older account).`
+          message: `This phone belongs to @${existingPhone.slug}. We'll merge everything into @${survivingSlug} (the older account). Check your SMS for the verification code.`
         }
       });
     }

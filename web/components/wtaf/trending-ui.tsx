@@ -155,7 +155,7 @@ export default function TrendingUI({ apps, stats }: TrendingUIProps) {
                 <div className="image-container">
                   <img src={`https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png`} alt={app.app_slug} className="gallery-image" />
                   <div className="image-overlay">
-                    <a href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">TRY THIS APP</a>
+                    <a href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">TRY THIS APP</a>
                   </div>
                 </div>
                 <div className="card-content">

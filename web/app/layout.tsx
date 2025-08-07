@@ -4,6 +4,7 @@ import "./globals.css"
 import { Inter } from 'next/font/google'
 import { ViewportProvider } from '@/lib/contexts/viewport-context'
 import { CEOProvider } from '@/lib/contexts/ceo-context'
+import AuthHandler from '@/components/AuthHandler'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -41,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={inter.className}>
+        <AuthHandler />
         <ViewportProvider>
           <CEOProvider>
             {children}

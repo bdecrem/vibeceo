@@ -1,0 +1,855 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		790AE43B2E43C89900B34BBB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE43A2E43C89900B34BBB /* AppDelegate.swift */; };
+		790AE43F2E43C89900B34BBB /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 790AE43D2E43C89900B34BBB /* Main.html */; };
+		790AE4412E43C89900B34BBB /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4402E43C89900B34BBB /* Icon.png */; };
+		790AE4432E43C89900B34BBB /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4422E43C89900B34BBB /* Style.css */; };
+		790AE4452E43C89900B34BBB /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4442E43C89900B34BBB /* Script.js */; };
+		790AE4472E43C89900B34BBB /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE4462E43C89900B34BBB /* ViewController.swift */; };
+		790AE44A2E43C89900B34BBB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4482E43C89900B34BBB /* Main.storyboard */; };
+		790AE44C2E43C89B00B34BBB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 790AE44B2E43C89B00B34BBB /* Assets.xcassets */; };
+		790AE4592E43C89B00B34BBB /* WebtoysManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE4582E43C89B00B34BBB /* WebtoysManagerTests.swift */; };
+		790AE4632E43C89B00B34BBB /* WebtoysManagerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE4622E43C89B00B34BBB /* WebtoysManagerUITests.swift */; };
+		790AE4652E43C89B00B34BBB /* WebtoysManagerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE4642E43C89B00B34BBB /* WebtoysManagerUITestsLaunchTests.swift */; };
+		790AE46B2E43C89B00B34BBB /* WebtoysManager Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 790AE46A2E43C89B00B34BBB /* WebtoysManager Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		790AE4702E43C89B00B34BBB /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790AE46F2E43C89B00B34BBB /* SafariWebExtensionHandler.swift */; };
+		790AE48E2E43C89C00B34BBB /* images in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4832E43C89C00B34BBB /* images */; };
+		790AE48F2E43C89C00B34BBB /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4842E43C89C00B34BBB /* popup.html */; };
+		790AE4902E43C89C00B34BBB /* INSTALL.md in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4852E43C89C00B34BBB /* INSTALL.md */; };
+		790AE4912E43C89C00B34BBB /* INSTALL-UPDATED.md in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4862E43C89C00B34BBB /* INSTALL-UPDATED.md */; };
+		790AE4922E43C89C00B34BBB /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4872E43C89C00B34BBB /* README.md */; };
+		790AE4932E43C89C00B34BBB /* styles in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4882E43C89C00B34BBB /* styles */; };
+		790AE4942E43C89C00B34BBB /* scripts in Resources */ = {isa = PBXBuildFile; fileRef = 790AE4892E43C89C00B34BBB /* scripts */; };
+		790AE4952E43C89C00B34BBB /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 790AE48A2E43C89C00B34BBB /* manifest.json */; };
+		790AE4962E43C89C00B34BBB /* LIGHTWEIGHT-INSTALL.md in Resources */ = {isa = PBXBuildFile; fileRef = 790AE48B2E43C89C00B34BBB /* LIGHTWEIGHT-INSTALL.md */; };
+		790AE4972E43C89C00B34BBB /* create-icons.html in Resources */ = {isa = PBXBuildFile; fileRef = 790AE48C2E43C89C00B34BBB /* create-icons.html */; };
+		790AE4982E43C89C00B34BBB /* Webtoys Manager in Resources */ = {isa = PBXBuildFile; fileRef = 790AE48D2E43C89C00B34BBB /* Webtoys Manager */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		790AE4552E43C89B00B34BBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 790AE42F2E43C89900B34BBB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 790AE4362E43C89900B34BBB;
+			remoteInfo = WebtoysManager;
+		};
+		790AE45F2E43C89B00B34BBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 790AE42F2E43C89900B34BBB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 790AE4362E43C89900B34BBB;
+			remoteInfo = WebtoysManager;
+		};
+		790AE46C2E43C89B00B34BBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 790AE42F2E43C89900B34BBB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 790AE4692E43C89B00B34BBB;
+			remoteInfo = "WebtoysManager Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		790AE4782E43C89B00B34BBB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				790AE46B2E43C89B00B34BBB /* WebtoysManager Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		790AE4372E43C89900B34BBB /* WebtoysManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WebtoysManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		790AE43A2E43C89900B34BBB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		790AE43E2E43C89900B34BBB /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		790AE4402E43C89900B34BBB /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		790AE4422E43C89900B34BBB /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		790AE4442E43C89900B34BBB /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		790AE4462E43C89900B34BBB /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		790AE4492E43C89900B34BBB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		790AE44B2E43C89B00B34BBB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		790AE44D2E43C89B00B34BBB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		790AE44E2E43C89B00B34BBB /* WebtoysManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WebtoysManager.entitlements; sourceTree = "<group>"; };
+		790AE44F2E43C89B00B34BBB /* WebtoysManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WebtoysManager.entitlements; sourceTree = "<group>"; };
+		790AE4542E43C89B00B34BBB /* WebtoysManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebtoysManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		790AE4582E43C89B00B34BBB /* WebtoysManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebtoysManagerTests.swift; sourceTree = "<group>"; };
+		790AE45E2E43C89B00B34BBB /* WebtoysManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebtoysManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		790AE4622E43C89B00B34BBB /* WebtoysManagerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebtoysManagerUITests.swift; sourceTree = "<group>"; };
+		790AE4642E43C89B00B34BBB /* WebtoysManagerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebtoysManagerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		790AE46A2E43C89B00B34BBB /* WebtoysManager Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "WebtoysManager Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		790AE46F2E43C89B00B34BBB /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		790AE4712E43C89B00B34BBB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		790AE4722E43C89B00B34BBB /* WebtoysManager_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WebtoysManager_Extension.entitlements; sourceTree = "<group>"; };
+		790AE4832E43C89C00B34BBB /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = "../../../webtoys-extension/images"; sourceTree = "<group>"; };
+		790AE4842E43C89C00B34BBB /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = "../../../webtoys-extension/popup.html"; sourceTree = "<group>"; };
+		790AE4852E43C89C00B34BBB /* INSTALL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = INSTALL.md; path = "../../../webtoys-extension/INSTALL.md"; sourceTree = "<group>"; };
+		790AE4862E43C89C00B34BBB /* INSTALL-UPDATED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "INSTALL-UPDATED.md"; path = "../../../webtoys-extension/INSTALL-UPDATED.md"; sourceTree = "<group>"; };
+		790AE4872E43C89C00B34BBB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = "../../../webtoys-extension/README.md"; sourceTree = "<group>"; };
+		790AE4882E43C89C00B34BBB /* styles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = styles; path = "../../../webtoys-extension/styles"; sourceTree = "<group>"; };
+		790AE4892E43C89C00B34BBB /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scripts; path = "../../../webtoys-extension/scripts"; sourceTree = "<group>"; };
+		790AE48A2E43C89C00B34BBB /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = "../../../webtoys-extension/manifest.json"; sourceTree = "<group>"; };
+		790AE48B2E43C89C00B34BBB /* LIGHTWEIGHT-INSTALL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "LIGHTWEIGHT-INSTALL.md"; path = "../../../webtoys-extension/LIGHTWEIGHT-INSTALL.md"; sourceTree = "<group>"; };
+		790AE48C2E43C89C00B34BBB /* create-icons.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = "create-icons.html"; path = "../../../webtoys-extension/create-icons.html"; sourceTree = "<group>"; };
+		790AE48D2E43C89C00B34BBB /* Webtoys Manager */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Webtoys Manager"; path = "../../../webtoys-extension/Webtoys Manager"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		790AE4342E43C89900B34BBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4512E43C89B00B34BBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE45B2E43C89B00B34BBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4672E43C89B00B34BBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		790AE42E2E43C89900B34BBB = {
+			isa = PBXGroup;
+			children = (
+				790AE4392E43C89900B34BBB /* WebtoysManager */,
+				790AE4572E43C89B00B34BBB /* WebtoysManagerTests */,
+				790AE4612E43C89B00B34BBB /* WebtoysManagerUITests */,
+				790AE46E2E43C89B00B34BBB /* WebtoysManager Extension */,
+				790AE4382E43C89900B34BBB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		790AE4382E43C89900B34BBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				790AE4372E43C89900B34BBB /* WebtoysManager.app */,
+				790AE4542E43C89B00B34BBB /* WebtoysManagerTests.xctest */,
+				790AE45E2E43C89B00B34BBB /* WebtoysManagerUITests.xctest */,
+				790AE46A2E43C89B00B34BBB /* WebtoysManager Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		790AE4392E43C89900B34BBB /* WebtoysManager */ = {
+			isa = PBXGroup;
+			children = (
+				790AE43A2E43C89900B34BBB /* AppDelegate.swift */,
+				790AE4462E43C89900B34BBB /* ViewController.swift */,
+				790AE4482E43C89900B34BBB /* Main.storyboard */,
+				790AE44B2E43C89B00B34BBB /* Assets.xcassets */,
+				790AE44D2E43C89B00B34BBB /* Info.plist */,
+				790AE44E2E43C89B00B34BBB /* WebtoysManager.entitlements */,
+				790AE44F2E43C89B00B34BBB /* WebtoysManager.entitlements */,
+				790AE43C2E43C89900B34BBB /* Resources */,
+			);
+			path = WebtoysManager;
+			sourceTree = "<group>";
+		};
+		790AE43C2E43C89900B34BBB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				790AE43D2E43C89900B34BBB /* Main.html */,
+				790AE4402E43C89900B34BBB /* Icon.png */,
+				790AE4422E43C89900B34BBB /* Style.css */,
+				790AE4442E43C89900B34BBB /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		790AE4572E43C89B00B34BBB /* WebtoysManagerTests */ = {
+			isa = PBXGroup;
+			children = (
+				790AE4582E43C89B00B34BBB /* WebtoysManagerTests.swift */,
+			);
+			path = WebtoysManagerTests;
+			sourceTree = "<group>";
+		};
+		790AE4612E43C89B00B34BBB /* WebtoysManagerUITests */ = {
+			isa = PBXGroup;
+			children = (
+				790AE4622E43C89B00B34BBB /* WebtoysManagerUITests.swift */,
+				790AE4642E43C89B00B34BBB /* WebtoysManagerUITestsLaunchTests.swift */,
+			);
+			path = WebtoysManagerUITests;
+			sourceTree = "<group>";
+		};
+		790AE46E2E43C89B00B34BBB /* WebtoysManager Extension */ = {
+			isa = PBXGroup;
+			children = (
+				790AE4822E43C89C00B34BBB /* Resources */,
+				790AE46F2E43C89B00B34BBB /* SafariWebExtensionHandler.swift */,
+				790AE4712E43C89B00B34BBB /* Info.plist */,
+				790AE4722E43C89B00B34BBB /* WebtoysManager_Extension.entitlements */,
+			);
+			path = "WebtoysManager Extension";
+			sourceTree = "<group>";
+		};
+		790AE4822E43C89C00B34BBB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				790AE4832E43C89C00B34BBB /* images */,
+				790AE4842E43C89C00B34BBB /* popup.html */,
+				790AE4852E43C89C00B34BBB /* INSTALL.md */,
+				790AE4862E43C89C00B34BBB /* INSTALL-UPDATED.md */,
+				790AE4872E43C89C00B34BBB /* README.md */,
+				790AE4882E43C89C00B34BBB /* styles */,
+				790AE4892E43C89C00B34BBB /* scripts */,
+				790AE48A2E43C89C00B34BBB /* manifest.json */,
+				790AE48B2E43C89C00B34BBB /* LIGHTWEIGHT-INSTALL.md */,
+				790AE48C2E43C89C00B34BBB /* create-icons.html */,
+				790AE48D2E43C89C00B34BBB /* Webtoys Manager */,
+			);
+			name = Resources;
+			path = "WebtoysManager Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		790AE4362E43C89900B34BBB /* WebtoysManager */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790AE4792E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManager" */;
+			buildPhases = (
+				790AE4332E43C89900B34BBB /* Sources */,
+				790AE4342E43C89900B34BBB /* Frameworks */,
+				790AE4352E43C89900B34BBB /* Resources */,
+				790AE4782E43C89B00B34BBB /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				790AE46D2E43C89B00B34BBB /* PBXTargetDependency */,
+			);
+			name = WebtoysManager;
+			packageProductDependencies = (
+			);
+			productName = WebtoysManager;
+			productReference = 790AE4372E43C89900B34BBB /* WebtoysManager.app */;
+			productType = "com.apple.product-type.application";
+		};
+		790AE4532E43C89B00B34BBB /* WebtoysManagerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790AE47C2E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManagerTests" */;
+			buildPhases = (
+				790AE4502E43C89B00B34BBB /* Sources */,
+				790AE4512E43C89B00B34BBB /* Frameworks */,
+				790AE4522E43C89B00B34BBB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				790AE4562E43C89B00B34BBB /* PBXTargetDependency */,
+			);
+			name = WebtoysManagerTests;
+			packageProductDependencies = (
+			);
+			productName = WebtoysManagerTests;
+			productReference = 790AE4542E43C89B00B34BBB /* WebtoysManagerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		790AE45D2E43C89B00B34BBB /* WebtoysManagerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790AE47F2E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManagerUITests" */;
+			buildPhases = (
+				790AE45A2E43C89B00B34BBB /* Sources */,
+				790AE45B2E43C89B00B34BBB /* Frameworks */,
+				790AE45C2E43C89B00B34BBB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				790AE4602E43C89B00B34BBB /* PBXTargetDependency */,
+			);
+			name = WebtoysManagerUITests;
+			packageProductDependencies = (
+			);
+			productName = WebtoysManagerUITests;
+			productReference = 790AE45E2E43C89B00B34BBB /* WebtoysManagerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		790AE4692E43C89B00B34BBB /* WebtoysManager Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790AE4752E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManager Extension" */;
+			buildPhases = (
+				790AE4662E43C89B00B34BBB /* Sources */,
+				790AE4672E43C89B00B34BBB /* Frameworks */,
+				790AE4682E43C89B00B34BBB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "WebtoysManager Extension";
+			packageProductDependencies = (
+			);
+			productName = "WebtoysManager Extension";
+			productReference = 790AE46A2E43C89B00B34BBB /* WebtoysManager Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		790AE42F2E43C89900B34BBB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					790AE4362E43C89900B34BBB = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					790AE4532E43C89B00B34BBB = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 790AE4362E43C89900B34BBB;
+					};
+					790AE45D2E43C89B00B34BBB = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 790AE4362E43C89900B34BBB;
+					};
+					790AE4692E43C89B00B34BBB = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = 790AE4322E43C89900B34BBB /* Build configuration list for PBXProject "WebtoysManager" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 790AE42E2E43C89900B34BBB;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 790AE4382E43C89900B34BBB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				790AE4362E43C89900B34BBB /* WebtoysManager */,
+				790AE4532E43C89B00B34BBB /* WebtoysManagerTests */,
+				790AE45D2E43C89B00B34BBB /* WebtoysManagerUITests */,
+				790AE4692E43C89B00B34BBB /* WebtoysManager Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		790AE4352E43C89900B34BBB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4412E43C89900B34BBB /* Icon.png in Resources */,
+				790AE44A2E43C89900B34BBB /* Main.storyboard in Resources */,
+				790AE4452E43C89900B34BBB /* Script.js in Resources */,
+				790AE43F2E43C89900B34BBB /* Main.html in Resources */,
+				790AE44C2E43C89B00B34BBB /* Assets.xcassets in Resources */,
+				790AE4432E43C89900B34BBB /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4522E43C89B00B34BBB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE45C2E43C89B00B34BBB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4682E43C89B00B34BBB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4912E43C89C00B34BBB /* INSTALL-UPDATED.md in Resources */,
+				790AE4942E43C89C00B34BBB /* scripts in Resources */,
+				790AE48E2E43C89C00B34BBB /* images in Resources */,
+				790AE4962E43C89C00B34BBB /* LIGHTWEIGHT-INSTALL.md in Resources */,
+				790AE4922E43C89C00B34BBB /* README.md in Resources */,
+				790AE4952E43C89C00B34BBB /* manifest.json in Resources */,
+				790AE4902E43C89C00B34BBB /* INSTALL.md in Resources */,
+				790AE4932E43C89C00B34BBB /* styles in Resources */,
+				790AE48F2E43C89C00B34BBB /* popup.html in Resources */,
+				790AE4972E43C89C00B34BBB /* create-icons.html in Resources */,
+				790AE4982E43C89C00B34BBB /* Webtoys Manager in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		790AE4332E43C89900B34BBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4472E43C89900B34BBB /* ViewController.swift in Sources */,
+				790AE43B2E43C89900B34BBB /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4502E43C89B00B34BBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4592E43C89B00B34BBB /* WebtoysManagerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE45A2E43C89B00B34BBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4652E43C89B00B34BBB /* WebtoysManagerUITestsLaunchTests.swift in Sources */,
+				790AE4632E43C89B00B34BBB /* WebtoysManagerUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790AE4662E43C89B00B34BBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790AE4702E43C89B00B34BBB /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		790AE4562E43C89B00B34BBB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 790AE4362E43C89900B34BBB /* WebtoysManager */;
+			targetProxy = 790AE4552E43C89B00B34BBB /* PBXContainerItemProxy */;
+		};
+		790AE4602E43C89B00B34BBB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 790AE4362E43C89900B34BBB /* WebtoysManager */;
+			targetProxy = 790AE45F2E43C89B00B34BBB /* PBXContainerItemProxy */;
+		};
+		790AE46D2E43C89B00B34BBB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 790AE4692E43C89B00B34BBB /* WebtoysManager Extension */;
+			targetProxy = 790AE46C2E43C89B00B34BBB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		790AE43D2E43C89900B34BBB /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				790AE43E2E43C89900B34BBB /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		790AE4482E43C89900B34BBB /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				790AE4492E43C89900B34BBB /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		790AE4732E43C89B00B34BBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		790AE4742E43C89B00B34BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		790AE4762E43C89B00B34BBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "WebtoysManager Extension/WebtoysManager_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WebtoysManager Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "WebtoysManager Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManager.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		790AE4772E43C89B00B34BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "WebtoysManager Extension/WebtoysManager_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WebtoysManager Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "WebtoysManager Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManager.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		790AE47A2E43C89B00B34BBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WebtoysManager/WebtoysManager.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WebtoysManager/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WebtoysManager;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManager;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		790AE47B2E43C89B00B34BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WebtoysManager/WebtoysManager.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WebtoysManager/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WebtoysManager;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManager;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		790AE47D2E43C89B00B34BBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManagerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WebtoysManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WebtoysManager";
+			};
+			name = Debug;
+		};
+		790AE47E2E43C89B00B34BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManagerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WebtoysManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WebtoysManager";
+			};
+			name = Release;
+		};
+		790AE4802E43C89B00B34BBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManagerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = WebtoysManager;
+			};
+			name = Debug;
+		};
+		790AE4812E43C89B00B34BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourCompany.WebtoysManagerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = WebtoysManager;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		790AE4322E43C89900B34BBB /* Build configuration list for PBXProject "WebtoysManager" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790AE4732E43C89B00B34BBB /* Debug */,
+				790AE4742E43C89B00B34BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790AE4752E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManager Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790AE4762E43C89B00B34BBB /* Debug */,
+				790AE4772E43C89B00B34BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790AE4792E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManager" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790AE47A2E43C89B00B34BBB /* Debug */,
+				790AE47B2E43C89B00B34BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790AE47C2E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManagerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790AE47D2E43C89B00B34BBB /* Debug */,
+				790AE47E2E43C89B00B34BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790AE47F2E43C89B00B34BBB /* Build configuration list for PBXNativeTarget "WebtoysManagerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790AE4802E43C89B00B34BBB /* Debug */,
+				790AE4812E43C89B00B34BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 790AE42F2E43C89900B34BBB /* Project object */;
+}

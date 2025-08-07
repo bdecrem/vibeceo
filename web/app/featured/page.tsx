@@ -193,7 +193,7 @@ export default function FeaturedGalleryPage() {
                       style={app.landscape_image_url ? { objectFit: 'fill' } : {}}
                     />
                     <div className="image-overlay">
-                      <Link href={`/${app.user_slug}/${app.app_slug}${app.type === 'ZAD' ? '?demo=true' : ''}`} className="try-app-btn">
+                      <Link href={`/${app.user_slug}/${app.app_slug}?demo=true`} className="try-app-btn">
                         Try This App
                       </Link>
                     </div>
