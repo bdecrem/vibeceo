@@ -33,11 +33,17 @@ ON CONFLICT (key) DO NOTHING;
 ### Step 2: Deploy to Railway
 Your new API endpoint (`/api/check-new-users`) needs to be live on Railway. The SendGrid API key is already configured there.
 
-### Step 3: External Cron Setup (I'll do this)
-I'll set up a free external service to ping your API every hour:
-- **URL**: `https://your-railway-app.com/api/check-new-users`
-- **Schedule**: Every hour
-- **Method**: GET
+### Step 3: External Cron Setup (2 minutes)
+1. Go to **https://console.cron-job.org/signup** and create a free account
+2. Click **"Create Cronjob"**
+3. Configure:
+   - **URL**: `https://your-railway-app.com/api/check-new-users` (use your actual Railway URL)
+   - **Request Method**: GET
+   - **Schedule**: Every hour (select "Hourly" from dropdown)
+   - **Job Name**: "WEBTOYS Hourly User Check"
+4. Click **"Create"**
+
+**That's it!** Your system will start running automatically.
 
 ## 🎯 What You'll Get
 
