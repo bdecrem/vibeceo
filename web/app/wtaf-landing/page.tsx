@@ -522,11 +522,9 @@ function DevConsole() {
 
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
-    const parts = cmd.trim().split(' ')
-    const baseCommand = parts[0].toLowerCase()
     let response = ''
 
-    switch(baseCommand) {
+    switch(lowerCmd) {
       case 'help':
         response = `🎮 CONSOLE COMMANDS:
   help      - Show this help
@@ -1867,7 +1865,7 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Sushi Site */}
             <div className="example-card">
-              <a href="/bart/cantaloupe-chorus-kissing" className="example-preview sushi magic-cursor">
+              <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="example-preview sushi magic-cursor">
                 🍣
               </a>
               <div className="example-info">
@@ -1878,7 +1876,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">Try It</a>
+                  <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1889,7 +1887,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Rhyming Dictionary */}
             <div className="example-card">
-              <a href="/bart/matte-quokka-crafting" className="example-preview rhyme-dict magic-cursor" style={{
+              <a href="/bart/matte-quokka-crafting?demo=true" className="example-preview rhyme-dict magic-cursor" style={{
                 backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -1903,7 +1901,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/matte-quokka-crafting" className="btn-view">Try It</a>
+                  <a href="/bart/matte-quokka-crafting?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make me a rhyming dictionary")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1914,7 +1912,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: ZAD Paint */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/wave-wood-deconstructing" className="example-preview paint-app magic-cursor" style={{
+              <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="example-preview paint-app magic-cursor" style={{
                 backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -1928,7 +1926,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing" className="btn-view">Try It</a>
+                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1939,7 +1937,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Todo App */}
             <div className="example-card">
-              <a href="/bart/tangerine-bat-tracking" className="example-preview app magic-cursor" style={{
+              <a href="/bart/tangerine-bat-tracking?demo=true" className="example-preview app magic-cursor" style={{
                 backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -1953,7 +1951,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/tangerine-bat-tracking" className="btn-view">Try It</a>
+                  <a href="/bart/tangerine-bat-tracking?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -2054,7 +2052,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Lilac Vampire Singing */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="example-preview music-gen magic-cursor" style={{
+              <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="example-preview music-gen magic-cursor" style={{
                 backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -2068,7 +2066,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="btn-view">Try It</a>
+                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF --music make a music app that lets me describe a song and it then makes that")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -2079,7 +2077,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: Linen Nutria Supporting */}
             <div className="example-card">
-              <a href="/bart/linen-nutria-supporting" className="example-preview tetris-game magic-cursor" style={{
+              <a href="/bart/linen-nutria-supporting?demo=true" className="example-preview tetris-game magic-cursor" style={{
                 backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -2093,7 +2091,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/linen-nutria-supporting" className="btn-view">Try It</a>
+                  <a href="/bart/linen-nutria-supporting?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a tetris game")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -2104,7 +2102,7 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Fern Bumblebee Fishing */}
             <div className="example-card">
-              <a href="/bart/fern-bumblebee-fishing" className="example-preview grumpy-cat-meme magic-cursor" style={{
+              <a href="/bart/fern-bumblebee-fishing?demo=true" className="example-preview grumpy-cat-meme magic-cursor" style={{
                 backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -2118,7 +2116,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/fern-bumblebee-fishing" className="btn-view">Try It</a>
+                  <a href="/bart/fern-bumblebee-fishing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick('MEME make me a "grumpy cat" meme with a graphic of a grumpy cat and text that says "fck that..."')}>
                     <span>🎨</span>
                     <span>Remix</span>
