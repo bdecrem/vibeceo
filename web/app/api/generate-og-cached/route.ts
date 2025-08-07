@@ -17,20 +17,41 @@ const supabase = createClient(
  * - MEMES continue using their generated images
  * ============================================ */
 
-// Map app types to their OG images
-function getOGImageForType(type: string | null): string {
+// Get variant number (1-10) based on app slug
+function getVariantFromSlug(appSlug: string): number {
+  if (!appSlug || appSlug.length === 0) return 1
+  
+  // Get first character code
+  const firstChar = appSlug[0].toLowerCase()
+  const charCode = firstChar.charCodeAt(0)
+  
+  // Convert to 1-10 range
+  // a=97, z=122, but handle any character
+  let variant = ((charCode - 97) % 10) + 1
+  
+  // Ensure we're in valid range (1-10)
+  if (variant < 1 || variant > 10) {
+    variant = 1
+  }
+  
+  return variant
+}
+
+// Map app types to their OG images with variants
+function getOGImageForType(type: string | null, appSlug: string | null): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theaf.us'
+  const variant = appSlug ? getVariantFromSlug(appSlug) : 1
   
   switch (type?.toLowerCase()) {
     case 'game':
-      return `${baseUrl}/og-types/og-type-game.png`
+      return `${baseUrl}/og-types/og-type-game-${variant}.png`
     case 'web':
-      return `${baseUrl}/og-types/og-type-web.png`
+      return `${baseUrl}/og-types/og-type-web-${variant}.png`
     case 'music':
-      return `${baseUrl}/og-types/og-type-music.png`
+      return `${baseUrl}/og-types/og-type-music-${variant}.png`
     case 'zad':
     case 'app':
-      return `${baseUrl}/og-types/og-type-app.png`
+      return `${baseUrl}/og-types/og-type-app-${variant}.png`
     default:
       return `${baseUrl}/og-types/og-type-fallback.png`
   }
@@ -113,10 +134,11 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // === SIMPLIFIED TYPE-BASED OG SYSTEM ===
-    // Return standard OG image based on app type
-    const ogImageUrl = getOGImageForType(contentData?.type)
-    console.log(`📐 Using type-based OG image for ${userSlug}/${appSlug} (type: ${contentData?.type || 'fallback'})`)
+    // === SIMPLIFIED TYPE-BASED OG SYSTEM WITH VARIANTS ===
+    // Return standard OG image based on app type and slug-based variant
+    const ogImageUrl = getOGImageForType(contentData?.type, appSlug)
+    const variant = getVariantFromSlug(appSlug)
+    console.log(`📐 Using type-based OG image for ${userSlug}/${appSlug} (type: ${contentData?.type || 'fallback'}, variant: ${variant})`)
     
     return NextResponse.json({
       success: true,
