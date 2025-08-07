@@ -2041,9 +2041,14 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Sushi Site */}
             <div className="example-card">
-              <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="example-preview sushi magic-cursor">
-                🍣
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="example-preview sushi magic-cursor">
+                  🍣
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2063,12 +2068,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Rhyming Dictionary */}
             <div className="example-card">
-              <a href="/bart/matte-quokka-crafting?demo=true" className="example-preview rhyme-dict magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/matte-quokka-crafting?demo=true" className="example-preview rhyme-dict magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/matte-quokka-crafting?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2088,12 +2098,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: ZAD Paint */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="example-preview paint-app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="example-preview paint-app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2113,12 +2128,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Todo App */}
             <div className="example-card">
-              <a href="/bart/tangerine-bat-tracking?demo=true" className="example-preview app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/tangerine-bat-tracking?demo=true" className="example-preview app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/tangerine-bat-tracking?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2203,12 +2223,17 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Positive Mudpuppy Repairing */}
             <div className="example-card">
-              <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/positive-mudpuppy-repairing.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/positive-mudpuppy-repairing.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/positive-mudpuppy-repairing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2228,12 +2253,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Lilac Vampire Singing */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="example-preview music-gen magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="example-preview music-gen magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2253,12 +2283,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: Linen Nutria Supporting */}
             <div className="example-card">
-              <a href="/bart/linen-nutria-supporting?demo=true" className="example-preview tetris-game magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/linen-nutria-supporting?demo=true" className="example-preview tetris-game magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/linen-nutria-supporting?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2278,12 +2313,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Fern Bumblebee Fishing */}
             <div className="example-card">
-              <a href="/bart/fern-bumblebee-fishing?demo=true" className="example-preview grumpy-cat-meme magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/fern-bumblebee-fishing?demo=true" className="example-preview grumpy-cat-meme magic-cursor" style={{
+                  backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/fern-bumblebee-fishing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -3225,6 +3265,12 @@ export default function WebtoysSitePage() {
           box-shadow: 0 15px 0 var(--purple-accent);
         }
         
+        .example-preview-container {
+          position: relative;
+          overflow: hidden;
+          border-radius: 1rem;
+        }
+
         a.example-preview,
         .example-preview {
           aspect-ratio: 3/2;
@@ -3240,6 +3286,57 @@ export default function WebtoysSitePage() {
           text-decoration: none;
           color: inherit;
           margin-bottom: 1rem;
+          transition: transform 0.3s ease;
+        }
+
+        /* Option 3: Hover-only overlay with brand orange */
+        .example-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.2); /* Much lighter darkening */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s ease-in-out;
+          pointer-events: none; /* Prevent blocking clicks when hidden */
+          border-radius: 1rem;
+        }
+
+        .example-preview-container:hover .example-overlay {
+          opacity: 1;
+          pointer-events: auto; /* Enable clicks when visible */
+        }
+
+        .example-preview-container:hover .example-preview {
+          transform: scale(1.02); /* Gentler scale */
+          filter: drop-shadow(0 0 20px rgba(255, 87, 34, 0.6)); /* Brand orange glow */
+        }
+
+        .try-app-overlay-btn {
+          background: #FF5722; /* Brand orange solid color */
+          color: white;
+          padding: 12px 24px;
+          border: 2px solid white;
+          border-radius: 25px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          display: inline-block;
+        }
+
+        .try-app-overlay-btn:hover {
+          background: #FF6A3C; /* Slightly lighter on hover */
+          transform: scale(1.08);
+          box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
         }
         
         /* Different preview styles for each example */
