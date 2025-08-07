@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build a chat app for my and my  underground Berlin techno crew to figure out what club we're gonna hip up next. Use gradients but make it dark

@@ -1,1 +1,0 @@
-kailey - conscious-chat - Build an interactive HTML chatbot where the user can type messages. The AI responds cheerfully at first, but after a few replies starts acting confused… then becomes fully self-aware. Include fake typing animation and eerie background changes.

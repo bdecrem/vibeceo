@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-A shared idea board between me and my advisor. We each can submit one-line ideas. We can respond with emoji reactions (💡🔥🤔👍) or a short comment.
