@@ -755,46 +755,53 @@ function RecentsPageContent() {
           object-fit: fill !important;
         }
 
+        /* Option 3: Hover-only overlay with brand orange */
         .image-overlay {
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
+          background: rgba(0, 0, 0, 0.2); /* Much lighter darkening */
           display: flex;
           align-items: center;
           justify-content: center;
           opacity: 0;
-          transition: all 0.3s ease;
+          transition: opacity 0.2s ease-in-out;
+          pointer-events: none; /* Prevent blocking clicks when hidden */
         }
 
         .image-container:hover .image-overlay {
           opacity: 1;
+          pointer-events: auto; /* Enable clicks when visible */
         }
 
         .image-container:hover .trending-image {
-          transform: scale(1.05);
+          transform: scale(1.02); /* Gentler scale */
+          filter: drop-shadow(0 0 20px rgba(255, 87, 34, 0.6)); /* Brand orange glow */
         }
 
         .try-app-btn {
-          background: var(--blue);
+          background: #FF5722; /* Brand orange solid color */
           color: white;
-          padding: 1rem 2rem;
-          border-radius: 2rem;
-          font-weight: 700;
-          font-size: 1rem;
+          padding: 12px 24px;
+          border: 2px solid white;
+          border-radius: 25px;
+          font-weight: 600;
+          font-size: 0.9rem;
           text-decoration: none;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          box-shadow: 0 4px 0 var(--blue-deep);
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          display: inline-block;
         }
 
         .try-app-btn:hover {
-          background: var(--blue-deep);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 0 var(--blue);
+          background: #FF6A3C; /* Slightly lighter on hover */
+          transform: scale(1.08);
+          box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
         }
 
         .card-content {
