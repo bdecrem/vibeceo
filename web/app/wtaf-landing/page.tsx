@@ -440,9 +440,105 @@ function DevConsole() {
     }
   }
 
+  // Parse SMS bot responses into structured console output
+  function parseSmsResponse(response: string): Array<{message: string, type: string, url?: string}> {
+    const entries: Array<{message: string, type: string, url?: string}> = []
+    const lines = response.split('\n')
+    
+    // Detect different response patterns
+    if (response.includes('Your pages:') || response.includes('Your creations:')) {
+      // INDEX command - parse numbered list
+      entries.push({message: '📚 Your creations:', type: 'info'})
+      
+      for (const line of lines) {
+        const pageMatch = line.match(/^\d+\.\s+(.+?)(?:\s+\((.+?)\))?(?:\s+★)?$/)
+        if (pageMatch) {
+          const [, slug, status] = pageMatch
+          const isFavorite = line.includes('★')
+          const isHidden = status === 'hidden'
+          
+          let message = `  ${line.trim()}`
+          if (slug && !isHidden) {
+            // Make it a clickable link
+            const url = `https://wtaf.me/${user?.slug || 'user'}/${slug}`
+            message = `  <a href="${url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${line.trim()}</a>`
+          }
+          entries.push({message, type: isHidden ? 'warning' : 'info'})
+        }
+      }
+    } else if (response.includes('Index page set to:') || response.includes('Homepage set to:')) {
+      // INDEX SET response
+      entries.push({message: `✅ ${response}`, type: 'success'})
+    } else if (response.includes('marked as favorite') || response.includes('removed from favorites')) {
+      // FAVE response
+      entries.push({message: `⭐ ${response}`, type: 'success'})
+    } else if (response.includes('hidden') || response.includes('unhidden')) {
+      // HIDE/UNHIDE response
+      entries.push({message: `👁️ ${response}`, type: 'success'})
+    } else if (response.includes('HIDE-DEFAULT') || response.includes('Auto-hide')) {
+      // HIDE-DEFAULT response
+      entries.push({message: `⚙️ ${response}`, type: 'success'})
+    } else if (response.includes('Your slug is now:') || response.includes('URL changed to:')) {
+      // SLUG change response
+      const slugMatch = response.match(/Your slug is now: (\S+)/)
+      if (slugMatch) {
+        entries.push({message: `✅ ${response}`, type: 'success'})
+        const newUrl = `https://wtaf.me/${slugMatch[1]}`
+        entries.push({
+          message: `Your new URL: <a href="${newUrl}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${newUrl}</a>`,
+          type: 'info'
+        })
+      } else {
+        entries.push({message: `✅ ${response}`, type: 'success'})
+      }
+    } else if (response.includes('Available commands:')) {
+      // COMMANDS response - format nicely
+      const sections = response.split(/\n\n/)
+      for (const section of sections) {
+        if (section.includes('COMMANDS:')) {
+          // Section header
+          entries.push({message: '', type: 'info'}) // spacing
+          entries.push({message: section.split('\n')[0], type: 'info'})
+        } else {
+          // Command list
+          const commands = section.split('\n').filter(line => line.trim())
+          for (const cmd of commands) {
+            if (cmd.startsWith('•') || cmd.startsWith('-')) {
+              entries.push({message: `  ${cmd}`, type: 'info'})
+            } else if (!cmd.includes('Available commands')) {
+              entries.push({message: cmd, type: 'info'})
+            }
+          }
+        }
+      }
+    } else if (response.includes('Your app:') && response.includes('https://')) {
+      // App creation success - already handled by existing logic
+      return []
+    } else {
+      // Default: split by newlines and display
+      for (const line of lines) {
+        if (line.trim()) {
+          // Detect URLs in the response and make them clickable
+          const urlRegex = /(https?:\/\/[^\s]+)/g
+          const lineWithLinks = line.replace(urlRegex, '<a href="$1" target="_blank" style="color: #4CAF50; text-decoration: underline;">$1</a>')
+          
+          // Determine type based on content
+          const type = line.includes('Error') || line.includes('failed') ? 'error' :
+                      line.includes('✅') || line.includes('Success') ? 'success' :
+                      line.includes('⚠️') || line.includes('Warning') ? 'warning' :
+                      'info'
+          
+          entries.push({message: lineWithLinks, type})
+        }
+      }
+    }
+    
+    return entries
+  }
+
   async function handleWtafCommand(cmd: string) {
     addConsoleEntry(`> ${cmd}`, 'command')
-    addConsoleEntry('🚀 Processing WTAF command...', 'info')
+    addConsoleEntry('🚀 Processing command...', 'info')
     
     try {
       // Get the current session to include auth token
@@ -495,21 +591,43 @@ function DevConsole() {
         } else if (result.responses && Array.isArray(result.responses)) {
           // Process multiple responses from WTAF
           for (const response of result.responses) {
-            const entryType = response.type === 'error' ? 'error' : 
-                            response.type === 'success' ? 'success' :
-                            response.type === 'url' ? 'success' :
-                            response.type === 'admin_url' ? 'success' :
-                            'info'
-            
-            if (response.url) {
-              // Make URLs clickable
-              const clickableMessage = response.message.replace(
-                response.url,
-                `<a href="${response.url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${response.url}</a>`
-              )
-              addConsoleEntry(clickableMessage, entryType)
-            } else {
-              addConsoleEntry(response.message, entryType)
+            // Check if this is a raw text response that needs parsing
+            if (typeof response === 'string') {
+              // Raw SMS bot response - parse it
+              const parsed = parseSmsResponse(response)
+              for (const entry of parsed) {
+                addConsoleEntry(entry.message, entry.type as any)
+              }
+            } else if (response.message) {
+              // Already structured response
+              const entryType = response.type === 'error' ? 'error' : 
+                              response.type === 'success' ? 'success' :
+                              response.type === 'url' ? 'success' :
+                              response.type === 'admin_url' ? 'success' :
+                              'info'
+              
+              // First check if this is a raw SMS response that needs parsing
+              if (response.type === 'info' && !response.url) {
+                // Might be a raw SMS response wrapped in an object
+                const parsed = parseSmsResponse(response.message)
+                if (parsed.length > 0) {
+                  for (const entry of parsed) {
+                    addConsoleEntry(entry.message, entry.type as any)
+                  }
+                } else {
+                  // No special parsing needed
+                  addConsoleEntry(response.message, entryType)
+                }
+              } else if (response.url) {
+                // Make URLs clickable
+                const clickableMessage = response.message.replace(
+                  response.url,
+                  `<a href="${response.url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${response.url}</a>`
+                )
+                addConsoleEntry(clickableMessage, entryType)
+              } else {
+                addConsoleEntry(response.message, entryType)
+              }
             }
           }
           
@@ -740,17 +858,46 @@ Without this, you'll see duplicates everywhere! 🤯`
               response = '📧 Please provide an email address: reset-password your@email.com'
             }
           }
-        // Check if they're trying to use WTAF commands in console
-        } else if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ') || lowerCmd === 'commands') {
+        // Check if they're trying to use SMS bot commands
+        } else if (
+          // Creation commands
+          lowerCmd.startsWith('wtaf ') || 
+          lowerCmd.startsWith('meme ') || 
+          lowerCmd.startsWith('edit ') ||
+          // User management commands
+          lowerCmd.startsWith('slug ') || 
+          lowerCmd === 'index' || 
+          lowerCmd.startsWith('index ') ||
+          lowerCmd.startsWith('fave ') || 
+          lowerCmd.startsWith('forget ') ||
+          lowerCmd.startsWith('hide ') || 
+          lowerCmd.startsWith('unhide ') ||
+          lowerCmd.startsWith('hide-default ') ||
+          // Stack commands
+          lowerCmd.startsWith('--stack') ||
+          lowerCmd.startsWith('remix ') ||
+          lowerCmd.startsWith('public ') ||
+          // Info commands
+          lowerCmd === 'commands' ||
+          lowerCmd === 'start' ||
+          lowerCmd === 'stop'
+        ) {
           if (user) {
-            // Process WTAF command for authenticated users
+            // Forward command to SMS bot for processing
             handleWtafCommand(cmd)
             return
           } else {
-            response = `🔐 Authentication required to use WTAF commands in console.\n\nUse "login" or "signup" to get started, or text "${cmd}" to +1-866-330-0015 instead!`
+            response = `🔐 Authentication required to use SMS commands in console.\n\nUse "login" or "signup" to get started, or text "${cmd}" to +1-866-330-0015 instead!`
           }
         } else if (lowerCmd) {
-          response = `Command not found: "${cmd}". Type "help" for available commands.`
+          // Unrecognized command - could still try forwarding to SMS bot
+          if (user) {
+            // Forward unknown commands to SMS bot - it might understand them
+            handleWtafCommand(cmd)
+            return
+          } else {
+            response = `Command not found: "${cmd}". Type "help" for available commands.`
+          }
         }
     }
 
