@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * WEBTOYS Smoke Test Suite v0.2
+ * WEBTOYS Smoke Test Suite v0.3
  * Simple checks to catch common breakages
+ * Now includes compilation checks for all 3 servers
  */
 
 const fetch = require('node-fetch');
@@ -37,7 +38,7 @@ async function runTest(name, testFn) {
 
 // Test Suite
 async function runSmokeTests() {
-  console.log(`\n${colors.cyan}🧪 WEBTOYS Smoke Tests v0.2${colors.reset}`);
+  console.log(`\n${colors.cyan}🧪 WEBTOYS Smoke Tests v0.3${colors.reset}`);
   console.log(`${colors.cyan}Testing against: ${BASE_URL}${colors.reset}\n`);
 
   // Test 1: Web server is running
@@ -133,6 +134,45 @@ async function runSmokeTests() {
         return;
       }
       throw new Error('Possible hardcoded secrets detected');
+    }
+  });
+
+  // Test 10: Web server (port 3000) compiles
+  await runTest('Web server compiles (port 3000)', async () => {
+    try {
+      // Quick TypeScript check for web directory
+      execSync('cd ../web && npx tsc --noEmit --skipLibCheck', { 
+        stdio: 'pipe',
+        timeout: 30000 // 30 second timeout
+      });
+    } catch (error) {
+      throw new Error(`Web server compilation failed: ${error.message}`);
+    }
+  });
+
+  // Test 11: SMS bot listener (port 3030) compiles
+  await runTest('SMS bot compiles (port 3030)', async () => {
+    try {
+      // Quick TypeScript check for sms-bot directory
+      execSync('cd ../sms-bot && npx tsc --noEmit --skipLibCheck', { 
+        stdio: 'pipe',
+        timeout: 30000 // 30 second timeout
+      });
+    } catch (error) {
+      throw new Error(`SMS bot compilation failed: ${error.message}`);
+    }
+  });
+
+  // Test 12: WTAF Engine compiles
+  await runTest('WTAF Engine compiles', async () => {
+    try {
+      // Quick TypeScript check for engine directory
+      execSync('cd ../sms-bot/engine && npx tsc --noEmit --skipLibCheck', { 
+        stdio: 'pipe',
+        timeout: 30000 // 30 second timeout
+      });
+    } catch (error) {
+      throw new Error(`WTAF Engine compilation failed: ${error.message}`);
     }
   });
 
