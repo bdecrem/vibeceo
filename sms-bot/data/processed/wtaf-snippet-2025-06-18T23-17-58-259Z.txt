@@ -1,3 +1,0 @@
-SENDER:+14155056910
-USER_SLUG:lighteagle
-make a pong-style browser game

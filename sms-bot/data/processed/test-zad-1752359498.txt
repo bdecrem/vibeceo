@@ -1,3 +1,0 @@
-SENDER:+1234567890
-USER_SLUG:bart_test
---zad-test make me a journal app
