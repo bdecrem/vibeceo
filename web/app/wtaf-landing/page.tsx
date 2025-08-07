@@ -338,7 +338,7 @@ function DevConsole() {
       }
 
       if (result.merge_required) {
-        // PHASE 2: Show merge confirmation - NOW REQUIRES SMS CODE
+        // PHASE 2: Show merge confirmation
         addConsoleEntry('⚠️ This phone number is already registered!', 'warning')
         addConsoleEntry('', 'info')
         addConsoleEntry(`📱 Phone account: ${result.merge_info.phone_account}`, 'info')
@@ -346,7 +346,7 @@ function DevConsole() {
         addConsoleEntry('', 'info')
         addConsoleEntry(`✨ ${result.merge_info.message}`, 'info')
         addConsoleEntry('', 'info')
-        addConsoleEntry('📲 Enter the 6-digit verification code from your SMS', 'warning')
+        addConsoleEntry('⚡ Type YES to confirm merge, or CANCEL to abort', 'warning')
         setIsMergeMode(true)
         setLinkMode('code')
         setVerificationCode('') // Clear any previous code
@@ -365,7 +365,31 @@ function DevConsole() {
 
   async function handleVerifyCode() {
     if (!verificationCode) {
-      setAuthError('Please enter the verification code')
+      setAuthError('Please enter the verification code or YES/CANCEL')
+      return
+    }
+
+    // Check if this is a merge confirmation (YES/CANCEL) or verification code
+    if (isMergeMode) {
+      const answer = verificationCode.toUpperCase().trim()
+      if (answer === 'CANCEL') {
+        // User cancelled merge
+        addConsoleEntry('❌ Merge cancelled', 'info')
+        setAuthMode('none')
+        setPhoneNumber('')
+        setVerificationCode('')
+        setLinkLoading(false)
+        setIsMergeMode(false)
+        return
+      } else if (answer !== 'YES') {
+        setAuthError('Please type YES to confirm merge, or CANCEL to abort')
+        return
+      }
+      // If YES, proceed to send verification code
+      addConsoleEntry('📲 Sending verification code to your phone...', 'info')
+      setVerificationCode('') // Clear YES
+      setIsMergeMode(false) // Switch to verification mode
+      // Now show the input for actual code
       return
     }
 
@@ -900,16 +924,17 @@ Without this, you'll see duplicates everywhere! 🤯`
                       {isMergeMode ? '🔄 Confirm Account Merge' : '📱 Enter Verification Code'}
                     </div>
                     <p className="console-link-info">
-                      {`We sent a verification code to ${phoneNumber}`}
-                      {isMergeMode && ' - Enter it to merge accounts'}
+                      {isMergeMode 
+                        ? 'Type YES to merge accounts, or CANCEL to abort' 
+                        : `We sent a verification code to ${phoneNumber}`}
                     </p>
                     <input
                       type="text"
-                      placeholder="123456"
+                      placeholder={isMergeMode ? "YES to confirm" : "123456"}
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       className="console-auth-input"
-                      maxLength={6}
+                      maxLength={isMergeMode ? 10 : 6}
                       required
                       autoFocus
                     />
