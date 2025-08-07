@@ -507,7 +507,7 @@ export async function generateMetadata({ params }: PageProps) {
 			title,
 			description: "Vibecoded chaos, shipped via SMS.",
 			openGraph: {
-				title: "WTAF by AF",
+				title: "SHIP FROM YOUR FLIP PHONE",
 				description: "Vibecoded chaos, shipped via SMS.",
 				url: pageUrl,
 				images: [
@@ -522,7 +522,7 @@ export async function generateMetadata({ params }: PageProps) {
 			},
 			twitter: {
 				card: 'summary_large_image',
-				title: "WTAF by AF",
+				title: "SHIP FROM YOUR FLIP PHONE",
 				description: "Vibecoded chaos, shipped via SMS.",
 				images: [ogImageUrl],
 			},
