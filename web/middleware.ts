@@ -32,7 +32,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/test-auth') ||
       pathname.startsWith('/test-subscriber') ||
       pathname.startsWith('/console') ||
-      pathname.startsWith('/webtoys-logo')) {
+      pathname.startsWith('/webtoys-logo') ||
+      pathname.startsWith('/reset-password')) {
     if (host?.includes('localhost') || host?.includes('ngrok')) {
       console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     }

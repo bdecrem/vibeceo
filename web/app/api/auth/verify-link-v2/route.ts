@@ -59,34 +59,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No phone number pending verification' }, { status: 400 });
     }
     
-    // Check if this is a merge confirmation (special case)
-    if (currentUser.verification_code === 'MERGE') {
-      // PHASE 2: Handle merge confirmation
-      if (verification_code.toUpperCase() !== 'YES') {
-        // User didn't confirm - cancel the operation
-        await supabase
-          .from('sms_subscribers')
-          .update({
-            verification_code: null,
-            verification_expires: null,
-            pending_phone_number: null
-          })
-          .eq('id', currentUser.id);
-          
-        return NextResponse.json({ 
-          success: false,
-          cancelled: true,
-          message: 'Account merge cancelled' 
-        });
+    // Check if this is a merge operation (phone already exists for another user)
+    const { data: existingPhone } = await supabase
+      .from('sms_subscribers')
+      .select('*')
+      .eq('phone_number', currentUser.pending_phone_number)
+      .neq('id', currentUser.id)  // Exclude current user
+      .single();
+    
+    const isMerge = !!existingPhone;
+    
+    if (isMerge) {
+      // Verify the code matches
+      if (verification_code !== currentUser.verification_code) {
+        return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
       }
       
-      // Get the phone account that we're merging with
-      const phoneNumber = currentUser.pending_phone_number;
-      const { data: phoneAccount } = await supabase
-        .from('sms_subscribers')
-        .select('*')
-        .eq('phone_number', phoneNumber)
-        .single();
+      // Use the existing phone account we found
+      const phoneAccount = existingPhone;
         
       if (!phoneAccount) {
         return NextResponse.json({ error: 'Phone account not found' }, { status: 404 });
@@ -133,7 +123,7 @@ export async function POST(req: NextRequest) {
       
       // If web account is surviving, it needs the phone number
       if (survivingId === currentUser.id) {
-        updates.phone_number = phoneNumber;
+        updates.phone_number = currentUser.pending_phone_number;
       }
       
       // If phone account is surviving, it needs the supabase_id and email

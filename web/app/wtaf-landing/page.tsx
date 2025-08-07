@@ -273,6 +273,40 @@ function DevConsole() {
     addConsoleEntry('👋 Signed out successfully', 'info')
   }
 
+  async function handlePasswordReset(email: string) {
+    try {
+      // Due to Supabase bug with localhost, we'll use base URL and handle redirect client-side
+      let redirectUrl: string
+      
+      if (window.location.hostname === 'localhost') {
+        const port = window.location.port || '3000'
+        // Just use base URL for localhost - AuthHandler will redirect to /reset-password
+        redirectUrl = `http://localhost:${port}`
+      } else if (window.location.hostname.includes('webtoys.ai')) {
+        redirectUrl = 'https://webtoys.ai/reset-password'
+      } else if (window.location.hostname.includes('wtaf.me')) {
+        redirectUrl = 'https://wtaf.me/reset-password'
+      } else if (window.location.hostname.includes('webtoys.io')) {
+        redirectUrl = 'https://webtoys.io/reset-password'
+      } else {
+        redirectUrl = `${window.location.origin}/reset-password`
+      }
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      })
+      
+      if (error) {
+        addConsoleEntry(`❌ Failed to send reset email: ${error.message}`, 'error')
+      } else {
+        addConsoleEntry(`✅ Password reset link sent to ${email}. Check your inbox!`, 'success')
+        addConsoleEntry(`📝 After clicking the link, you'll be redirected to the password reset page.`, 'info')
+      }
+    } catch (err) {
+      addConsoleEntry(`❌ Error: ${err}`, 'error')
+    }
+  }
+
   async function handlePhoneLink() {
     if (!phoneNumber) {
       setAuthError('Please enter a phone number')
@@ -304,7 +338,7 @@ function DevConsole() {
       }
 
       if (result.merge_required) {
-        // PHASE 2: Show merge confirmation
+        // PHASE 2: Show merge confirmation - NOW REQUIRES SMS CODE
         addConsoleEntry('⚠️ This phone number is already registered!', 'warning')
         addConsoleEntry('', 'info')
         addConsoleEntry(`📱 Phone account: ${result.merge_info.phone_account}`, 'info')
@@ -312,7 +346,7 @@ function DevConsole() {
         addConsoleEntry('', 'info')
         addConsoleEntry(`✨ ${result.merge_info.message}`, 'info')
         addConsoleEntry('', 'info')
-        addConsoleEntry('⚡ Type YES to confirm merge, or CANCEL to abort', 'warning')
+        addConsoleEntry('📲 Enter the 6-digit verification code from your SMS', 'warning')
         setIsMergeMode(true)
         setLinkMode('code')
         setVerificationCode('') // Clear any previous code
@@ -359,10 +393,7 @@ function DevConsole() {
         return
       }
 
-      if (result.cancelled) {
-        // User cancelled merge
-        addConsoleEntry(`❌ ${result.message}`, 'info')
-      } else if (result.merged) {
+      if (result.merged) {
         // Successful merge
         addConsoleEntry(`✅ ${result.message}`, 'success')
         addConsoleEntry(`📊 Total apps in merged account: ${result.total_apps}`, 'info')
@@ -491,9 +522,11 @@ function DevConsole() {
 
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
+    const parts = cmd.trim().split(' ')
+    const baseCommand = parts[0].toLowerCase()
     let response = ''
 
-    switch(lowerCmd) {
+    switch(baseCommand) {
       case 'help':
         response = `🎮 CONSOLE COMMANDS:
   help      - Show this help
@@ -508,11 +541,12 @@ function DevConsole() {
   exit      - Close console
   
 🔐 AUTH COMMANDS:
-  login     - Sign in to your account
-  signup    - Create a new account
-  logout    - Sign out
-  whoami    - Show current user
-  link      - Link phone number to your account`
+  login          - Sign in to your account
+  signup         - Create a new account
+  logout         - Sign out
+  whoami         - Show current user
+  link           - Link phone number to your account
+  reset-password - Send password reset email`
         break
       case 'wtaf':
         response = `🧪 WTAF COMMANDS (via SMS):
@@ -662,6 +696,21 @@ Without this, you'll see duplicates everywhere! 🤯`
           setVerificationCode('')
           setAuthError('')
           return
+        }
+        break
+      case 'reset-password':
+      case 'forgot-password':
+        if (user) {
+          response = `You're already logged in. Sending password reset link to ${user.email}...`
+          handlePasswordReset(user.email)
+        } else {
+          const emailMatch = parts[1]
+          if (emailMatch && emailMatch.includes('@')) {
+            response = `Sending password reset link to ${emailMatch}...`
+            handlePasswordReset(emailMatch)
+          } else {
+            response = '📧 Please provide an email address: reset-password your@email.com'
+          }
         }
         break
       default:
@@ -849,17 +898,16 @@ Without this, you'll see duplicates everywhere! 🤯`
                       {isMergeMode ? '🔄 Confirm Account Merge' : '📱 Enter Verification Code'}
                     </div>
                     <p className="console-link-info">
-                      {isMergeMode 
-                        ? 'Type YES to merge accounts, or anything else to cancel' 
-                        : `We sent a code to ${phoneNumber}`}
+                      {`We sent a verification code to ${phoneNumber}`}
+                      {isMergeMode && ' - Enter it to merge accounts'}
                     </p>
                     <input
                       type="text"
-                      placeholder={isMergeMode ? "YES to confirm" : "123456"}
+                      placeholder="123456"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       className="console-auth-input"
-                      maxLength={isMergeMode ? 10 : 6}
+                      maxLength={6}
                       required
                       autoFocus
                     />
