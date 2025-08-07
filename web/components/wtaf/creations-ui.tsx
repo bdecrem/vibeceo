@@ -730,58 +730,60 @@ export default function CreationsUI({ apps, userStats, userSlug }: CreationsUIPr
           background: rgba(0, 0, 0, 0.2);
         }
 
+        /* Option 3: Hover-only overlay with brand orange */
         .image-overlay {
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
+          background: rgba(0, 0, 0, 0.2); /* Much lighter darkening */
           display: flex;
           align-items: center;
           justify-content: center;
           opacity: 0;
-          transition: all 0.3s ease;
+          transition: opacity 0.2s ease-in-out;
           border-radius: 15px;
+          pointer-events: none; /* Prevent blocking clicks when hidden */
         }
 
         .image-container:hover .image-overlay {
           opacity: 1;
+          pointer-events: auto; /* Enable clicks when visible */
         }
 
         .image-container:hover .gallery-image {
-          transform: scale(1.05);
-          filter: drop-shadow(0 0 30px rgba(0, 255, 102, 0.8));
+          transform: scale(1.02); /* Gentler scale */
+          filter: drop-shadow(0 0 20px rgba(255, 87, 34, 0.6)); /* Brand orange glow */
         }
 
         .image-container:hover {
-          border-color: rgba(0, 255, 102, 0.7);
+          border-color: rgba(255, 87, 34, 0.5); /* Brand orange border */
         }
 
         .try-app-btn {
-          padding: 15px 30px;
-          background: linear-gradient(45deg, #00ff66, #9900ff);
+          padding: 12px 24px;
+          background: #FF5722; /* Brand orange solid color */
           color: #ffffff;
-          border: none;
-          border-radius: 50px;
+          border: 2px solid #ffffff;
+          border-radius: 25px;
           font-family: 'Space Grotesk', sans-serif;
-          font-weight: 700;
-          font-size: 1rem;
+          font-weight: 600;
+          font-size: 0.9rem;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
           cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow:
-            0 8px 25px rgba(0, 255, 102, 0.3),
-            0 0 20px rgba(0, 255, 102, 0.2);
-          text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          text-decoration: none;
+          display: inline-block;
         }
 
         .try-app-btn:hover {
-          transform: scale(1.05);
-          box-shadow:
-            0 12px 35px rgba(0, 255, 102, 0.4),
-            0 0 30px rgba(0, 255, 102, 0.3);
+          transform: scale(1.08);
+          background: #FF6A3C; /* Slightly lighter on hover */
+          box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
         }
 
         .card-content {

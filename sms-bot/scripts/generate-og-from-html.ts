@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -129,22 +129,148 @@ async function generateOGImage(htmlFilePath: string, outputFileName?: string) {
   }
 }
 
+async function processFolder(folderPath: string) {
+  try {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log('📂 Processing folder for OG images');
+    console.log(`${'='.repeat(60)}\n`);
+    
+    // Resolve the folder path
+    let fullFolderPath: string;
+    if (path.isAbsolute(folderPath)) {
+      fullFolderPath = folderPath;
+    } else if (folderPath.startsWith('web/')) {
+      fullFolderPath = path.join(__dirname, '../../..', folderPath);
+    } else {
+      fullFolderPath = path.join(__dirname, '../..', folderPath);
+    }
+    
+    console.log(`📁 Reading folder: ${fullFolderPath}`);
+    
+    // Check if path exists and is a directory
+    const stats = await fs.stat(fullFolderPath);
+    if (!stats.isDirectory()) {
+      throw new Error(`Path is not a directory: ${fullFolderPath}`);
+    }
+    
+    // Get all files in the folder
+    const files = await fs.readdir(fullFolderPath);
+    const htmlFiles = files.filter(file => 
+      file.endsWith('.html') || file.endsWith('.htm')
+    );
+    
+    if (htmlFiles.length === 0) {
+      console.log('⚠️  No HTML files found in the specified folder');
+      return;
+    }
+    
+    console.log(`Found ${htmlFiles.length} HTML files to process:\n`);
+    htmlFiles.forEach((file, index) => {
+      console.log(`  ${index + 1}. ${file}`);
+    });
+    
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 Starting batch processing...');
+    console.log('='.repeat(60));
+    
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let i = 0; i < htmlFiles.length; i++) {
+      const file = htmlFiles[i];
+      const filePath = path.join(fullFolderPath, file);
+      
+      console.log(`\n[${i + 1}/${htmlFiles.length}] Processing: ${file}`);
+      console.log('-'.repeat(40));
+      
+      try {
+        const result = await generateOGImage(filePath);
+        results.push({ file, success: true, ...result });
+        successCount++;
+        console.log(`✅ Success: ${file}`);
+      } catch (error: any) {
+        results.push({ file, success: false, error: error.message });
+        failCount++;
+        console.log(`❌ Failed: ${file} - ${error.message}`);
+      }
+      
+      // Add a small delay between API calls to avoid rate limiting
+      if (i < htmlFiles.length - 1) {
+        console.log('⏳ Waiting 2 seconds before next image...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    // Print summary
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 Batch Processing Summary');
+    console.log('='.repeat(60));
+    console.log(`✅ Successful: ${successCount}/${htmlFiles.length}`);
+    console.log(`❌ Failed: ${failCount}/${htmlFiles.length}`);
+    
+    if (failCount > 0) {
+      console.log('\n❌ Failed files:');
+      results
+        .filter(r => !r.success)
+        .forEach(r => console.log(`  - ${r.file}: ${r.error}`));
+    }
+    
+    console.log('\n🎉 Batch processing complete!');
+    
+    return results;
+    
+  } catch (error: any) {
+    console.error('❌ Error processing folder:', error.message);
+    throw error;
+  }
+}
+
 // CLI usage
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
   console.log('Usage:');
-  console.log('  npm run generate:og-html <html-file-path> [output-name]');
+  console.log('  npm run generate:og-html <html-file-path|folder-path> [output-name]');
   console.log('');
   console.log('Examples:');
   console.log('  npm run generate:og-html web/UPLOADS/games.html');
   console.log('  npm run generate:og-html web/UPLOADS/games.html custom-games-og.png');
+  console.log('  npm run generate:og-html web/UPLOADS/  # Process all HTML files in folder');
   console.log('');
-  console.log('The generated image will be saved to web/UPLOADS/');
+  console.log('The generated images will be saved to web/UPLOADS/');
+  console.log('When processing a folder, each file gets its own og-<filename>.png');
   process.exit(1);
 }
 
-const [htmlPath, outputName] = args;
-generateOGImage(htmlPath, outputName).catch(console.error);
+const [inputPath, outputName] = args;
+
+// Check if input is a directory or file
+(async () => {
+  try {
+    // Resolve the path first
+    let fullPath: string;
+    if (path.isAbsolute(inputPath)) {
+      fullPath = inputPath;
+    } else if (inputPath.startsWith('web/')) {
+      fullPath = path.join(__dirname, '../../..', inputPath);
+    } else {
+      fullPath = path.join(__dirname, '../..', inputPath);
+    }
+    
+    const stats = await fs.stat(fullPath).catch(() => null);
+    
+    if (stats && stats.isDirectory()) {
+      // Process folder
+      await processFolder(inputPath);
+    } else {
+      // Process single file
+      await generateOGImage(inputPath, outputName);
+    }
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+})();
 
 export { generateOGImage };
