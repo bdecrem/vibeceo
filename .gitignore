@@ -99,5 +99,9 @@ tiny/
 /discord-bot/test-scripts/
 # Individual test files that might contain secrets
 /sms-bot/scripts/test-*.js
+/web/scripts/test-*.js
 /web/scripts/test/
 /discord-bot/scripts/test-*.js
+# Root level test scripts (should never be here)
+/test-*.js
+/test-*.ts
