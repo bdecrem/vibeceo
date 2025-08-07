@@ -26,26 +26,28 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
 const CHECK_INTERVAL_HOURS = 1; // How far back to look
 
+import fs from 'fs';
+import path from 'path';
+
+// Local file to track last check time
+const STATE_FILE = path.join(process.cwd(), '.last-user-check');
+
 async function getLastCheckTime() {
     try {
-        // Try to get the last check time from our state table
-        const { data, error } = await supabase
-            .from('notification_state')
-            .select('last_checked_at')
-            .eq('id', 'new-users-check')
-            .single();
-        
-        if (error || !data) {
-            // If no record exists, check the last hour
-            console.log('No previous check found, checking last hour');
-            const oneHourAgo = new Date();
-            oneHourAgo.setHours(oneHourAgo.getHours() - CHECK_INTERVAL_HOURS);
-            return oneHourAgo.toISOString();
+        // Try to read the last check time from local file
+        if (fs.existsSync(STATE_FILE)) {
+            const lastCheck = fs.readFileSync(STATE_FILE, 'utf8').trim();
+            console.log('Last check found in local file:', lastCheck);
+            return lastCheck;
         }
         
-        return data.last_checked_at;
+        // If no file exists, check the last hour
+        console.log('No previous check found, checking last hour');
+        const oneHourAgo = new Date();
+        oneHourAgo.setHours(oneHourAgo.getHours() - CHECK_INTERVAL_HOURS);
+        return oneHourAgo.toISOString();
     } catch (error) {
-        console.error('Error getting last check time:', error);
+        console.error('Error reading last check time:', error);
         // Fallback to last hour
         const oneHourAgo = new Date();
         oneHourAgo.setHours(oneHourAgo.getHours() - CHECK_INTERVAL_HOURS);
@@ -55,20 +57,9 @@ async function getLastCheckTime() {
 
 async function updateLastCheckTime(timestamp) {
     try {
-        // Try to update existing record
-        const { error: updateError } = await supabase
-            .from('notification_state')
-            .upsert({
-                id: 'new-users-check',
-                last_checked_at: timestamp,
-                updated_at: new Date().toISOString()
-            });
-        
-        if (updateError) {
-            console.error('Error updating last check time:', updateError);
-        } else {
-            console.log('✅ Updated last check time to:', timestamp);
-        }
+        // Write the timestamp to local file
+        fs.writeFileSync(STATE_FILE, timestamp, 'utf8');
+        console.log('✅ Updated last check time to:', timestamp);
     } catch (error) {
         console.error('Error updating last check time:', error);
     }
