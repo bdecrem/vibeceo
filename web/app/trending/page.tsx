@@ -221,7 +221,7 @@ export default function TrendingPage() {
                 <div key={app.id} className="trending-card" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className="image-container">
                     <img 
-                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png?t=${Date.now()}`)} 
+                      src={app.landscape_image_url ? app.landscape_image_url : (app.og_image_url || `https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/${app.user_slug}-${app.app_slug}.png?v=${new Date().getTime()}`)} 
                       alt={app.app_slug} 
                       className="trending-image"
                       style={app.landscape_image_url ? { objectFit: 'fill' } : {}}
