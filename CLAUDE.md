@@ -28,12 +28,14 @@ Our CRUD/social apps feature:
 
 ### Website Structure
 - **Main Site**: AdvisorsFoundry (parent directory)
-- **WEBTOYS**: Subdirectory using middleware/routing
-- **Key Pages**:
-  - Homepage: `/web/wtaf-landing`
-  - `/trending` - Popular creations
-  - `/featured` - Curated content
-  - User pages: "Creations" (user homepages)
+- **WEBTOYS.ai Website** (as of August 6, 2025): 
+  - **Important**: "The website" refers to the Webtoys.ai website specifically, NOT everything in the web/ folder
+  - **Homepage**: `/web/wtaf-landing`
+  - **Gallery Pages**:
+    - `/recents` - Most recent creations
+    - `/trending` - Popular creations
+    - `/featured` - Curated content
+  - **User Pages**: "Creations" (user homepages)
 
 ## Project Architecture Overview
 
@@ -273,6 +275,22 @@ When in doubt:
 2. Use the existing module's interface
 3. Ask: "Which module owns this concern?"
 4. Keep modules focused on their single responsibility
+
+## Server Management and Deployment Rules
+
+### Claude Code MUST Have User Permission For:
+- **Starting, stopping, or restarting ANY server** (web server on port 3000, SMS listener on port 3030, Webtoys Engine)
+- **Running build commands** (`npm run build`, etc.)
+- **Pushing code to GitHub** (commits are allowed without permission)
+- Always ask for explicit user approval before any of these actions
+
+### After Making Changes:
+Unless it's VERY clear, inform the user whether they need to:
+1. **Rebuild code** (which code specifically)
+2. **Restart a server** (specify which one):
+   - Web server (port 3000) - for changes to web/ directory
+   - SMS listener (port 3030) - for changes to sms-bot/
+   - Webtoys Engine - for changes to sms-bot/engine/
 
 ## Git Commit and Push Rules
 
