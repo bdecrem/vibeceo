@@ -87,6 +87,9 @@ next-env.d.ts
 # Ignore entire tiny folder
 tiny/
 
+# SMS Bot experiments folder - contains test files with potential secrets
+/sms-bot/experiments/
+
 # Claude outputs - these contain generated code and shouldn't be in git
 /sms-bot/data/claude_outputs/
 
