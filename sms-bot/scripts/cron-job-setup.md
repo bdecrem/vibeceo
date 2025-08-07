@@ -1,20 +1,8 @@
 # Setting Up Hourly New User Notifications
 
-## Manual Setup (for Supabase)
+## How It Works
 
-1. **Create the notification_state table** in Supabase SQL Editor:
-```sql
-CREATE TABLE IF NOT EXISTS notification_state (
-    id TEXT PRIMARY KEY,
-    last_checked_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    metadata JSONB DEFAULT '{}'::jsonb
-);
-
-INSERT INTO notification_state (id, last_checked_at)
-VALUES ('new-users-check', NOW())
-ON CONFLICT (id) DO NOTHING;
-```
+The script uses a simple local file (`.last-user-check`) to track when it last ran. No database table needed!
 
 ## Railway Deployment (Automatic Cron)
 

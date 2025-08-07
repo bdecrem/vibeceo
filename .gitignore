@@ -108,3 +108,7 @@ tiny/
 # Root level test scripts (should never be here)
 /test-*.js
 /test-*.ts
+
+# Local state files for scripts
+.last-user-check
+/sms-bot/scripts/.last-user-check
