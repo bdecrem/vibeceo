@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Check if we're on a Webtoys page
     if (tab.url && (tab.url.includes('webtoys.ai') || tab.url.includes('localhost') || 
-        tab.url.includes('wtaf.me') || tab.url.includes('advisorsfoundry.ai') || 
-        tab.url.includes('theaf-web.ngrok.io'))) {
+        tab.url.includes('127.0.0.1') || tab.url.includes('wtaf.me') || 
+        tab.url.includes('advisorsfoundry.ai') || tab.url.includes('theaf-web.ngrok.io'))) {
         
         // Send message to content script to get page info
         chrome.tabs.sendMessage(tab.id, { action: 'getPageInfo' }, async (response) => {
