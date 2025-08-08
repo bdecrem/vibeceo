@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Hourly check for new WEBTOYS users
- * Sends email notification when new users sign up
+ * 4x daily check for new WEBTOYS apps
+ * Sends email notification when new apps are created (excludes apps by 'bart')
  */
 
 import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
-import { formatNewUsersEmail } from './email-templates.js';
+import { formatNewWebtoysEmail } from './webtoys-email-templates.js';
 
 // Load environment variables - use the same path as working sendgrid.ts
 const isProduction = process.env.NODE_ENV === 'production';
@@ -34,13 +34,13 @@ sgMail.setApiKey(apiKey);
 
 // Configuration
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
-const CHECK_INTERVAL_HOURS = 1; // How far back to look
+const CHECK_INTERVAL_HOURS = 6; // 4 times daily = every 6 hours
 
 import fs from 'fs';
 import path from 'path';
 
 // Local file to track last check time
-const STATE_FILE = path.join(process.cwd(), '.last-user-check');
+const STATE_FILE = path.join(process.cwd(), '.last-webtoys-check');
 
 async function getLastCheckTime() {
     try {
@@ -51,17 +51,17 @@ async function getLastCheckTime() {
             return lastCheck;
         }
         
-        // If no file exists, check the last hour
-        console.log('No previous check found, checking last hour');
-        const oneHourAgo = new Date();
-        oneHourAgo.setHours(oneHourAgo.getHours() - CHECK_INTERVAL_HOURS);
-        return oneHourAgo.toISOString();
+        // If no file exists, check the last 6 hours
+        console.log('No previous check found, checking last 6 hours');
+        const sixHoursAgo = new Date();
+        sixHoursAgo.setHours(sixHoursAgo.getHours() - CHECK_INTERVAL_HOURS);
+        return sixHoursAgo.toISOString();
     } catch (error) {
         console.error('Error reading last check time:', error);
-        // Fallback to last hour
-        const oneHourAgo = new Date();
-        oneHourAgo.setHours(oneHourAgo.getHours() - CHECK_INTERVAL_HOURS);
-        return oneHourAgo.toISOString();
+        // Fallback to last 6 hours
+        const sixHoursAgo = new Date();
+        sixHoursAgo.setHours(sixHoursAgo.getHours() - CHECK_INTERVAL_HOURS);
+        return sixHoursAgo.toISOString();
     }
 }
 
@@ -75,47 +75,48 @@ async function updateLastCheckTime(timestamp) {
     }
 }
 
-async function getNewUsers(sinceTimestamp) {
+async function getNewApps(sinceTimestamp) {
     try {
-        const { data: newUsers, error } = await supabase
-            .from('sms_subscribers')
-            .select('id, phone_number, slug, created_at, role')
+        const { data: newApps, error } = await supabase
+            .from('wtaf_content')
+            .select('id, user_slug, app_slug, created_at, type, original_prompt')
             .gt('created_at', sinceTimestamp)
+            .neq('user_slug', 'bart')  // EXCLUDE apps created by 'bart'
             .order('created_at', { ascending: true });
         
         if (error) {
-            console.error('Error fetching new users:', error);
+            console.error('Error fetching new apps:', error);
             return [];
         }
         
-        return newUsers || [];
+        return newApps || [];
     } catch (error) {
-        console.error('Error fetching new users:', error);
+        console.error('Error fetching new apps:', error);
         return [];
     }
 }
 
-async function getTotalUserCount() {
+async function getTotalAppCount() {
     try {
         const { count, error } = await supabase
-            .from('sms_subscribers')
+            .from('wtaf_content')
             .select('*', { count: 'exact', head: true });
         
         if (error) {
-            console.error('Error getting total user count:', error);
+            console.error('Error getting total app count:', error);
             return null;
         }
         
         return count;
     } catch (error) {
-        console.error('Error getting total user count:', error);
+        console.error('Error getting total app count:', error);
         return null;
     }
 }
 
-async function sendNotificationEmail(newUsers, totalCount, checkPeriod) {
+async function sendNotificationEmail(newApps, totalCount, checkPeriod) {
     try {
-        const emailContent = formatNewUsersEmail(newUsers, totalCount, checkPeriod);
+        const emailContent = formatNewWebtoysEmail(newApps, totalCount, checkPeriod);
         
         const msg = {
             to: ADMIN_EMAIL,
@@ -135,7 +136,7 @@ async function sendNotificationEmail(newUsers, totalCount, checkPeriod) {
 }
 
 async function main() {
-    console.log('🔍 Checking for new WEBTOYS users...');
+    console.log('🔍 Checking for new WEBTOYS apps...');
     console.log('Current time:', new Date().toISOString());
     
     try {
@@ -143,20 +144,20 @@ async function main() {
         const lastCheckTime = await getLastCheckTime();
         console.log('Last check was at:', lastCheckTime);
         
-        // Get new users since last check
-        const newUsers = await getNewUsers(lastCheckTime);
+        // Get new apps since last check (excluding bart's apps)
+        const newApps = await getNewApps(lastCheckTime);
         
-        if (newUsers.length === 0) {
-            console.log('No new users since last check');
+        if (newApps.length === 0) {
+            console.log('No new apps since last check (excluding apps by bart)');
             // Still update the check time
             await updateLastCheckTime(new Date().toISOString());
             return;
         }
         
-        console.log(`Found ${newUsers.length} new user(s)!`);
+        console.log(`Found ${newApps.length} new app(s)! (excluding apps by bart)`);
         
-        // Get total user count for context
-        const totalCount = await getTotalUserCount();
+        // Get total app count for context
+        const totalCount = await getTotalAppCount();
         
         // Calculate the check period for the email
         const checkPeriod = {
@@ -165,7 +166,7 @@ async function main() {
         };
         
         // Send notification email
-        const emailSent = await sendNotificationEmail(newUsers, totalCount, checkPeriod);
+        const emailSent = await sendNotificationEmail(newApps, totalCount, checkPeriod);
         
         if (emailSent) {
             console.log('✅ Notification email sent successfully');
@@ -176,8 +177,8 @@ async function main() {
         
         // Log summary
         console.log('\n📊 Summary:');
-        console.log(`  - New users: ${newUsers.length}`);
-        console.log(`  - Total users: ${totalCount || 'unknown'}`);
+        console.log(`  - New apps: ${newApps.length}`);
+        console.log(`  - Total apps: ${totalCount || 'unknown'}`);
         console.log(`  - Email sent: ${emailSent ? 'Yes' : 'No'}`);
         
     } catch (error) {
