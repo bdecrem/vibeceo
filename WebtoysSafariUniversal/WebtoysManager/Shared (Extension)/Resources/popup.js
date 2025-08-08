@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Control elements
     const featuredToggle = document.getElementById('featuredToggle');
     const trendingToggle = document.getElementById('trendingToggle');
-    const forgetToggle = document.getElementById('forgetToggle');
     const hotnessUpBtn = document.getElementById('hotnessUp');
     const hotnessDownBtn = document.getElementById('hotnessDown');
     
@@ -154,9 +153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         trendingStatusEl.textContent = data.is_trending ? '✓' : '✗';
         trendingStatusEl.className = `stat-value ${data.is_trending ? 'active' : 'inactive'}`;
         
-        // Forget status (Hidden)
-        forgetToggle.checked = data.Forget || false;
-        
         // Hotness value (default to 0 if not set)
         const hotness = data.hotness || 0;
         hotnessValueEl.textContent = hotness;
@@ -213,11 +209,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Trending toggle handler
     trendingToggle.addEventListener('change', async () => {
         await updatePageState({ is_trending: trendingToggle.checked });
-    });
-    
-    // Forget toggle handler
-    forgetToggle.addEventListener('change', async () => {
-        await updatePageState({ Forget: forgetToggle.checked });
     });
     
     // Hotness controls

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       // Fetch current status
       const { data, error } = await supabase
         .from('wtaf_content')
-        .select('is_featured, is_trending, hotness')
+        .select('is_featured, is_trending, hotness, Forget')
         .eq('user_slug', userSlug)
         .eq('app_slug', appSlug)
         .single();
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ 
         success: true,
-        data: data || { is_featured: false, is_trending: false, hotness: 0 }
+        data: data || { is_featured: false, is_trending: false, hotness: 0, Forget: false }
       });
 
     } else if (action === 'update') {
@@ -51,12 +51,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Only allow updating specific fields
-      const allowedFields = ['is_featured', 'is_trending', 'hotness'];
+      const allowedFields = ['is_featured', 'is_trending', 'hotness', 'Forget'];
       const filteredUpdates: any = {};
       
       for (const field of allowedFields) {
         if (field in updates) {
-          if ((field === 'is_featured' || field === 'is_trending') && typeof updates[field] === 'boolean') {
+          if ((field === 'is_featured' || field === 'is_trending' || field === 'Forget') && typeof updates[field] === 'boolean') {
             filteredUpdates[field] = updates[field];
           } else if (field === 'hotness' && typeof updates[field] === 'number' && updates[field] >= 0) {
             filteredUpdates[field] = updates[field];
