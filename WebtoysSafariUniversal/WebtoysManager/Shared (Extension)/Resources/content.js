@@ -19,18 +19,9 @@ function getAppSlug() {
         return { special: 'recents', description: 'Recent Creations' };
     }
     
-    // Check for 3-part URL pattern (/wtaf/user/app)
-    const threePartMatch = pathname.match(/^\/wtaf\/([^\/]+)\/([^\/]+)$/);
-    if (threePartMatch) {
-        return {
-            userSlug: threePartMatch[1],
-            appSlug: threePartMatch[2]
-        };
-    }
-    
     // Check for user homepage pattern (single slug)
     const userMatch = pathname.match(/^\/([^\/]+)$/);
-    if (userMatch && !['login', 'signup', 'api', 'admin', 'wtaf'].includes(userMatch[1])) {
+    if (userMatch && !['login', 'signup', 'api', 'admin'].includes(userMatch[1])) {
         return {
             userSlug: userMatch[1],
             special: 'user-homepage',
@@ -38,9 +29,9 @@ function getAppSlug() {
         };
     }
     
-    // Check for regular user/app pattern (2-part)
+    // Check for regular user/app pattern
     const match = pathname.match(/^\/([^\/]+)\/([^\/]+)$/);
-    if (match && match[1] !== 'wtaf') {
+    if (match) {
         return {
             userSlug: match[1],
             appSlug: match[2]

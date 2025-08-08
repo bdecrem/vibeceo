@@ -11,9 +11,9 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // Get featured apps - first try apps explicitly marked as featured
+    // Get featured apps directly from wtaf_content table (not from view which may be cached)
     const { data: featuredApps, error: featuredError } = await supabase
-      .from('trending_apps_7d')
+      .from('wtaf_content')
       .select(`
         id,
         app_slug,
@@ -23,15 +23,18 @@ export async function GET() {
         remix_count,
         total_descendants,
         last_remixed_at,
-        recent_remixes,
         is_remix,
         parent_app_id,
         is_featured,
+        featured_at,
         Fave,
-        Forget
+        Forget,
+        type,
+        landscape_image_url,
+        og_image_url
       `)
       .eq('is_featured', true)  // Only featured apps
-      .order('created_at', { ascending: false })  // Most recent first
+      .order('featured_at', { ascending: false })  // Most recently featured first
       .limit(20)
 
     if (featuredError) {
@@ -80,19 +83,7 @@ export async function GET() {
     // Filter out forgotten apps in JavaScript
     const featuredAppsList = (allApps || []).filter((app: any) => !app.Forget)
 
-    // Get type data for each app
-    for (const app of featuredAppsList) {
-      const { data: contentData } = await supabase
-        .from('wtaf_content')
-        .select('type, landscape_image_url, og_image_url')
-        .eq('user_slug', app.user_slug)
-        .eq('app_slug', app.app_slug)
-        .single()
-      
-      ;(app as any).type = contentData?.type || 'web'
-      ;(app as any).landscape_image_url = contentData?.landscape_image_url || null
-      ;(app as any).og_image_url = contentData?.og_image_url || null
-    }
+    // No need to fetch type data separately - we already have it from the main query
 
     const totalFeaturedApps = featuredAppsList.length
     const totalRemixes = featuredAppsList.reduce((sum: number, app: any) => sum + (app.total_descendants || 0), 0)
