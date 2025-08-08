@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,24 +32,25 @@ if (!envLoaded) {
   dotenv.config();
 }
 
-// Verify environment variables - check both old and new naming conventions
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+// Verify environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 console.log('🔧 Environment Check:');
-console.log(`  🔗 SUPABASE_URL: ${process.env.SUPABASE_URL ? 'loaded' : 'MISSING'}`);
-console.log(`  🔑 SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'loaded' : 'MISSING'}`);
-console.log(`  🔑 SUPABASE_SERVICE_KEY (legacy): ${process.env.SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
+console.log(`  🔗 SUPABASE_URL: ${SUPABASE_URL ? 'loaded' : 'MISSING'}`);
+console.log(`  🔑 SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
 
-if (!process.env.SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Required environment variables missing:');
-  console.error('   SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY) required');
+  console.error('   SUPABASE_URL and SUPABASE_SERVICE_KEY required');
+  console.error('   Please ensure .env.local file exists with these variables');
   process.exit(1);
 }
 
 // Initialize Supabase
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  SUPABASE_SERVICE_KEY!
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY
 );
 
 async function testSupabaseConnection() {
