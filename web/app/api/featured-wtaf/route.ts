@@ -35,8 +35,7 @@ export async function GET() {
         status
       `)
       .eq('is_featured', true)  // Only featured apps
-      .eq('status', 'published')  // Only published apps
-      .is('Forget', null)  // Exclude forgotten apps at query level
+      .not('Forget', 'is', true)  // Exclude only explicitly forgotten apps
       .order('featured_at', { ascending: false })  // Most recently featured first
       .limit(20)
 
