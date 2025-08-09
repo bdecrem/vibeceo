@@ -94,9 +94,16 @@ async function createFeatureBranch(issueId, description) {
   const branchName = `auto-fix/issue-${issueId}-${description.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}`;
   
   try {
-    // Ensure we're on main branch and up to date
-    await execAsync('git checkout main', { cwd: PROJECT_ROOT });
-    await execAsync('git pull origin main', { cwd: PROJECT_ROOT });
+    // Get current branch
+    const { stdout: currentBranch } = await execAsync('git branch --show-current', { cwd: PROJECT_ROOT });
+    const baseBranch = currentBranch.trim() || 'agenttest';
+    
+    // Ensure we're on the base branch and up to date
+    await execAsync(`git checkout ${baseBranch}`, { cwd: PROJECT_ROOT });
+    await execAsync(`git pull origin ${baseBranch}`, { cwd: PROJECT_ROOT }).catch(() => {
+      // If pull fails (e.g., no upstream), continue anyway
+      console.log('Could not pull latest changes, continuing with local branch');
+    });
     
     // Create new branch
     await execAsync(`git checkout -b ${branchName}`, { cwd: PROJECT_ROOT });
@@ -161,13 +168,13 @@ Important: Follow the CLAUDE.md rules strictly. Use the architecture as defined.
 Please implement the fix now.`;
 
   try {
-    // Write prompt to temp file
+    // Write prompt to temp file to avoid shell escaping issues
     const tempFile = path.join('/tmp', `fix-${Date.now()}.txt`);
     await fs.writeFile(tempFile, prompt);
 
-    // Execute Claude Code
+    // Execute Claude Code using file input
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && claude code --no-interaction "${prompt}"`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | claude --print`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
