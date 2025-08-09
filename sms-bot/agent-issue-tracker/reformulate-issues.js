@@ -124,22 +124,42 @@ Format your response as JSON:
 `;
 
   try {
-    // Create a temporary file with the prompt
+    // Create a temporary file with the prompt to avoid shell escaping issues
     const tempFile = path.join('/tmp', `issue-${Date.now()}.txt`);
     await fs.writeFile(tempFile, prompt);
 
-    // Use Claude via command line
+    // Use Claude via command line, reading from file to avoid escaping issues
     const { stdout } = await execAsync(
-      `claude code --no-interaction --json "${prompt}"`,
+      `cat "${tempFile}" | claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
     // Clean up temp file
     await fs.unlink(tempFile).catch(() => {});
 
-    // Parse Claude's response
-    const response = JSON.parse(stdout);
-    return response;
+    // Parse Claude's response wrapper
+    const claudeResponse = JSON.parse(stdout);
+    
+    // Extract the actual result from Claude's response
+    if (claudeResponse.result) {
+      // Try to parse the JSON from Claude's text response
+      try {
+        // Claude's result field contains the text response, which should be JSON
+        const jsonMatch = claudeResponse.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.error('Error parsing Claude result as JSON:', parseError);
+      }
+    }
+    
+    // Fallback if parsing fails
+    return {
+      reformulated: issue.idea,
+      confidence: 'low',
+      needs_clarification: 'Could not parse AI response'
+    };
   } catch (error) {
     console.error('Error calling Claude:', error);
     return {
