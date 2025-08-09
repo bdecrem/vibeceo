@@ -193,8 +193,24 @@ function generateOGImage(genreName, variant = null) {
     return { html, config };
 }
 
+function readLogoAsBase64() {
+    try {
+        const logoPath = path.join(__dirname, 'webtoys-logo.png');
+        if (!fs.existsSync(logoPath)) {
+            console.warn(`${colors.yellow}Warning: Logo file not found at ${logoPath}, using fallback text${colors.reset}`);
+            return null;
+        }
+        const logoBuffer = fs.readFileSync(logoPath);
+        return `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch (error) {
+        console.warn(`${colors.yellow}Warning: Failed to read logo file, using fallback text: ${error.message}${colors.reset}`);
+        return null;
+    }
+}
+
 function generateHTML(config) {
     const genre = genres[config.genre];
+    const logoBase64 = readLogoAsBase64();
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -323,6 +339,92 @@ function generateHTML(config) {
             0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
             50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
         }
+
+        .webtoys-logo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-burst {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #FFCC00 0%, #FF6600 50%, #FF0000 100%);
+            opacity: 0.9;
+        }
+
+        .logo-burst::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            background: conic-gradient(from 0deg, transparent, #FFFF00, transparent, #FFAA00, transparent, #FF0000, transparent);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .logo-image {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 204, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo-image img {
+            width: 160px;
+            height: 160px;
+            object-fit: contain;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .logo-image .fallback-text {
+            font-size: 64px;
+            font-weight: 900;
+            color: #FF6600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .crack-lines {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .crack-line {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(255, 255, 0, 0.8), transparent);
+            transform-origin: bottom center;
+        }
+
+        .crack-line:nth-child(1) { height: 60px; top: -30px; left: 50%; transform: translateX(-50%) rotate(0deg); }
+        .crack-line:nth-child(2) { height: 45px; top: -15px; left: 70%; transform: translateX(-50%) rotate(30deg); }
+        .crack-line:nth-child(3) { height: 50px; top: -10px; right: 15px; transform: translateX(-50%) rotate(60deg); }
+        .crack-line:nth-child(4) { height: 40px; top: 30%; right: -15px; transform: translateX(-50%) rotate(90deg); }
+        .crack-line:nth-child(5) { height: 45px; bottom: -15px; right: 15px; transform: translateX(-50%) rotate(120deg); }
+        .crack-line:nth-child(6) { height: 55px; bottom: -25px; left: 70%; transform: translateX(-50%) rotate(150deg); }
+        .crack-line:nth-child(7) { height: 50px; bottom: -20px; left: 30%; transform: translateX(-50%) rotate(180deg); }
+        .crack-line:nth-child(8) { height: 35px; top: 30%; left: -15px; transform: translateX(-50%) rotate(210deg); }
     </style>
 </head>
 <body>
@@ -355,6 +457,27 @@ function generateHTML(config) {
         
         <div class="main-text">
             ${config.text}
+        </div>
+
+        <!-- WEBTOYS Logo -->
+        <div class="webtoys-logo">
+            <div class="crack-lines">
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+                <div class="crack-line"></div>
+            </div>
+            <div class="logo-burst"></div>
+            <div class="logo-image">
+                ${logoBase64 ? 
+                    `<img src="${logoBase64}" alt="WEBTOYS Logo" />` : 
+                    `<div class="fallback-text">WT</div>`
+                }
+            </div>
         </div>
     </div>
 </body>
