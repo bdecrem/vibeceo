@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS - Ship from your flip phone</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Core WEBTOYS DNA Colors - Bold & Fun */
+        :root {
+            --cream: #FEFEF5;
+            --yellow: #FFD63D;
+            --yellow-soft: #FFF4CC;
+            --blue: #6ECBFF;
+            --blue-deep: #4A9FD4;
+            --red: #FF4B4B;
+            --red-soft: #FF7A7A;
+            --purple-shadow: #C9C2F940;
+            --purple-accent: #8B7FD4;
+            --green-mint: #B6FFB3;
+            --green-sage: #7FB069;
+            --charcoal: #1A1A1A;
+            --charcoal-deep: #0A0A0A;
+            --charcoal-light: #2A2A2A;
+            --shadow-subtle: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-strong: 0 4px 16px rgba(0,0,0,0.2);
+            --white-pure: #FFFFFF;
+            --gray-warm: #666666;
+        }
+        
+        html {
+            overflow-x: hidden;
+            max-width: 100%;
+            min-height: 100%;
+            background: var(--charcoal-deep);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.6;
+            overflow-x: hidden;
+            max-width: 100%;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* NEON HEADER - Keep it BIG and FUN */
+        .header-neon {
+            background: var(--charcoal-deep);
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .header-neon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 75, 75, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(110, 203, 255, 0.3) 0%, transparent 50%);
+            animation: pulse-bg 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-bg {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* NEON LOGO - Keep it BRIGHT and FLICKERY */
+        .logo-neon {
+            font-size: clamp(3rem, 10vw, 7rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin: 0;
+            color: var(--cream);
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
+            /* Multi-layer crisp text shadows using Yellow accent */
+            text-shadow: 
+                0 0 2px var(--yellow),
+                0 0 4px var(--yellow),
+                0 0 8px var(--yellow),
+                0 0 12px var(--red),
+                0 0 20px var(--red),
+                0 0 30px var(--red),
+                0 0 40px var(--red);
+            animation: neon-flicker-choreographed 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Choreographed neon flicker - more intentional timing */
+        @keyframes neon-flicker-choreographed {
+            0%, 85%, 100% { 
+                opacity: 1;
+                text-shadow: 
+                    0 0 2px var(--yellow),
+                    0 0 4px var(--yellow),
+                    0 0 8px var(--yellow),
+                    0 0 12px var(--red),
+                    0 0 20px var(--red),
+                    0 0 30px var(--red),
+                    0 0 40px var(--red);
+            }
+            88%, 92% { 
+                opacity: 0.4;
+                text-shadow: 
+                    0 0 1px var(--yellow),
+                    0 0 2px var(--yellow),
+                    0 0 4px var(--red),
+                    0 0 6px var(--red);
+            }
+            90% { 
+                opacity: 1;
+            }
+        }
+        
+        .tagline {
+            font-size: 1.4rem;
+            color: var(--blue);
+            margin-top: 24px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 600;
+            text-shadow: 
+                0 0 3px rgba(110, 203, 255, 0.8),
+                0 0 6px rgba(110, 203, 255, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* FLOATING EMOJIS - Choreographed paths with parallax */
+        .floating-emojis {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .floating-emoji {
+            position: absolute;
+            font-size: 3rem;
+            pointer-events: none;
+            animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* Choreographed emoji paths - each follows a figure-8 or spiral */
+        .emoji-1 {
+            top: 15%;
+            left: 10%;
+            animation: float-spiral 30s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 0s;
+        }
+        
+        .emoji-2 {
+            top: 60%;
+            right: 15%;
+            animation: float-figure8 25s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 3s;
+        }
+        
+        .emoji-3 {
+            top: 35%;
+            left: 75%;
+            animation: float-wave 32s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 6s;
+        }
+        
+        .emoji-5 {
+            bottom: 25%;
+            left: 20%;
+            animation: float-orbit 28s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 9s;
+        }
+        
+        .emoji-6 {
+            top: 80%;
+            right: 30%;
+            animation: float-spiral 35s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 12s;
+        }
+        
+        .emoji-clock {
+            top: 10%;
+            right: 20%;
+            animation: float-pendulum 20s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            animation-delay: 2s;
+            font-size: 2.5rem;
+        }
+        
+        /* Choreographed animation paths */
+        @keyframes float-spiral {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.6; }
+            25% { transform: translate(40px, -60px) rotate(90deg) scale(1.1); opacity: 1; }
+            50% { transform: translate(-20px, -40px) rotate(180deg) scale(0.9); opacity: 0.8; }
+            75% { transform: translate(-60px, 40px) rotate(270deg) scale(1.05); opacity: 0.9; }
+            100% { transform: translate(0, 0) rotate(360deg) scale(1); opacity: 0.6; }
+        }
+        
+        @keyframes float-figure8 {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0.7; }
+            12.5% { transform: translate(30px, -40px) rotate(45deg); opacity: 1; }
+            25% { transform: translate(0, -60px) rotate(90deg); opacity: 0.8; }
+            37.5% { transform: translate(-30px, -40px) rotate(135deg); opacity: 0.9; }
+            50% { transform: translate(0, 0) rotate(180deg); opacity: 0.7; }
+            62.5% { transform: translate(30px, 40px) rotate(225deg); opacity: 1; }
+            75% { transform: translate(0, 60px) rotate(270deg); opacity: 0.8; }
+            87.5% { transform: translate(-30px, 40px) rotate(315deg); opacity: 0.9; }
+            100% { transform: translate(0, 0) rotate(360deg); opacity: 0.7; }
+        }
+        
+        @keyframes float-wave {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0.6; }
+            25% { transform: translate(-50px, 30px) rotate(90deg); opacity: 1; }
+            50% { transform: translate(0, -30px) rotate(180deg); opacity: 0.8; }
+            75% { transform: translate(50px, 20px) rotate(270deg); opacity: 0.9; }
+            100% { transform: translate(0, 0) rotate(360deg); opacity: 0.6; }
+        }
+        
+        @keyframes float-orbit {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0.7; }
+            25% { transform: translate(45px, -45px) rotate(90deg); opacity: 1; }
+            50% { transform: translate(0, -90px) rotate(180deg); opacity: 0.8; }
+            75% { transform: translate(-45px, -45px) rotate(270deg); opacity: 0.9; }
+            100% { transform: translate(0, 0) rotate(360deg); opacity: 0.7; }
+        }
+        
+        @keyframes float-pendulum {
+            0%, 100% { transform: translate(0, 0) rotate(-15deg); opacity: 0.8; }
+            50% { transform: translate(-40px, 30px) rotate(15deg); opacity: 1; }
+        }
+        
+        /* Clock hover with dramatic effect */
+        .emoji-clock:hover {
+            transform: scale(1.4) rotate(720deg) !important;
+            filter: drop-shadow(0 0 25px var(--yellow));
+            animation-duration: 2s !important;
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* HERO SECTION - Keep dramatic sizing */
+        .hero-container {
+            background: var(--cream);
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(255, 214, 61, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(182, 255, 179, 0.1) 0%, transparent 50%);
+            animation: blob-move-sync 40s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+        }
+        
+        @keyframes blob-move-sync {
+            0%, 100% { 
+                background: 
+                    radial-gradient(circle at 30% 40%, rgba(255, 214, 61, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 60%, rgba(182, 255, 179, 0.1) 0%, transparent 50%);
+            }
+            25% { 
+                background: 
+                    radial-gradient(circle at 60% 30%, rgba(255, 214, 61, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 70%, rgba(182, 255, 179, 0.15) 0%, transparent 50%);
+            }
+            50% { 
+                background: 
+                    radial-gradient(circle at 70% 60%, rgba(255, 214, 61, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 30% 40%, rgba(182, 255, 179, 0.1) 0%, transparent 50%);
+            }
+            75% { 
+                background: 
+                    radial-gradient(circle at 40% 70%, rgba(255, 214, 61, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 30%, rgba(182, 255, 179, 0.15) 0%, transparent 50%);
+            }
+        }
+        
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            color: var(--red);
+            transform: rotate(-2deg);
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 0 var(--charcoal-light);
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            color: var(--gray-warm);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* PHONE MOCKUP - Keep the fun tilt and improve mobile */
+        .phone-display {
+            background: var(--charcoal);
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 
+                0 12px 0 var(--purple-accent), 
+                0 24px 60px var(--purple-shadow),
+                0 0 0 3px var(--charcoal-light);
+            max-width: 600px;
+            margin: 0 auto 60px;
+            transform: rotate(-1deg);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .phone-display:hover {
+            transform: rotate(0deg) scale(1.02) translateY(-8px);
+            box-shadow: 
+                0 20px 0 var(--purple-accent), 
+                0 32px 80px var(--purple-shadow),
+                0 0 0 3px var(--purple-accent);
+        }
+        
+        .sms-header {
+            background: var(--blue);
+            color: var(--white-pure);
+            padding: 12px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            position: relative;
+        }
+        
+        .sms-phone-emoji {
+            font-size: 2rem;
+            transform: rotate(-15deg);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-15deg);
+        }
+        
+        /* SMS BUBBLES - Tighter spacing, better mobile */
+        .sms-bubble {
+            background: var(--blue);
+            color: var(--white-pure);
+            padding: 12px 18px;
+            border-radius: 18px 18px 4px 18px;
+            margin: 8px 0;
+            max-width: 85%;
+            margin-left: auto;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            animation: bubble-in-sync 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation-fill-mode: both;
+            box-shadow: 0 2px 8px rgba(110, 203, 255, 0.3);
+        }
+        
+        .sms-bubble:nth-child(2) { animation-delay: 0.1s; }
+        .sms-bubble:nth-child(3) { animation-delay: 0.2s; }
+        .sms-bubble:nth-child(4) { animation-delay: 0.3s; }
+        .sms-bubble:nth-child(5) { animation-delay: 0.4s; }
+        
+        @keyframes bubble-in-sync {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .sms-response {
+            background: var(--yellow);
+            color: var(--charcoal);
+            padding: 16px 20px;
+            border-radius: 18px 18px 18px 4px;
+            margin: 16px 0 8px 0;
+            max-width: 90%;
+            font-weight: 600;
+            animation: bubble-in-sync 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation-delay: 0.5s;
+            animation-fill-mode: both;
+            box-shadow: 0 4px 12px rgba(255, 214, 61, 0.4);
+            font-size: 1rem;
+        }
+        
+        /* SECTION HEADERS - Keep the slanted fun */
+        .section-title {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 800;
+            margin: 80px 0 16px 0;
+            text-align: center;
+            color: var(--charcoal);
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            position: relative;
+            display: inline-block;
+            transform: rotate(-2deg);
+            width: 100%;
+        }
+        
+        .section-title::after {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -40px;
+            font-size: 2rem;
+            animation: sparkle-sync 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+        }
+        
+        @keyframes sparkle-sync {
+            0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+            33% { opacity: 0.7; transform: scale(1.3) rotate(120deg); }
+            66% { opacity: 0.5; transform: scale(0.8) rotate(240deg); }
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--gray-warm);
+            text-align: center;
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* EXAMPLE CARDS - Keep slant, improve shadows to match rotation */
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            margin-bottom: 80px;
+        }
+        
+        .example-card {
+            background: var(--white-pure);
+            border-radius: 16px;
+            padding: 32px 24px;
+            /* Shadow adjusted for -2deg rotation */
+            box-shadow: 
+                2px 10px 0 var(--purple-accent),
+                4px 20px 40px var(--purple-shadow);
+            border: 3px solid var(--charcoal);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: rotate(-2deg);
+            position: relative;
+        }
+        
+        .example-card:hover {
+            transform: rotate(-2deg) translateY(-8px) scale(1.02);
+            box-shadow: 
+                3px 18px 0 var(--purple-accent),
+                6px 28px 50px var(--purple-shadow);
+        }
+        
+        .example-emoji {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+        
+        .example-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--charcoal);
+            margin-bottom: 12px;
+        }
+        
+        .example-description {
+            color: var(--gray-warm);
+            line-height: 1.6;
+        }
+        
+        /* TRENDING SECTION */
+        .trending-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+        
+        .trending-card {
+            background: var(--white-pure);
+            border-radius: 12px;
+            padding: 24px;
+            border: 2px solid var(--charcoal);
+            box-shadow: 
+                2px 8px 0 var(--purple-accent),
+                4px 16px 32px var(--purple-shadow);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: rotate(-2deg);
+        }
+        
+        .trending-card:hover {
+            transform: rotate(-2deg) translateY(-8px) scale(1.02);
+            box-shadow: 
+                3px 12px 0 var(--purple-accent),
+                6px 20px 40px var(--purple-shadow);
+        }
+        
+        .trending-title {
+            font-weight: 700;
+            color: var(--charcoal);
+            margin-bottom: 8px;
+        }
+        
+        .trending-description {
+            color: var(--gray-warm);
+            font-size: 0.9rem;
+        }
+        
+        /* GET STARTED SECTION - Keep it energetic */
+        .get-started {
+            background: var(--charcoal);
+            color: var(--cream);
+            padding: 80px 40px;
+            text-align: center;
+            margin: 80px -20px 0 -20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .get-started::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255, 75, 75, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(110, 203, 255, 0.2) 0%, transparent 50%);
+            animation: pulse-bg 4s ease-in-out infinite;
+        }
+        
+        .cta-title {
+            font-size: clamp(2rem, 6vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+            transform: rotate(-1deg);
+            display: inline-block;
+        }
+        
+        .phone-number {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 800;
+            color: var(--yellow);
+            margin: 32px 0;
+            letter-spacing: 2px;
+            text-shadow: 
+                0 0 5px rgba(255, 214, 61, 0.8),
+                0 0 10px rgba(255, 214, 61, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .steps-list {
+            list-style: none;
+            max-width: 600px;
+            margin: 40px auto 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-item {
+            background: var(--charcoal-light);
+            padding: 20px;
+            margin: 16px 0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transform: rotate(-1deg);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .step-item:hover {
+            transform: rotate(0deg) translateY(-4px);
+            background: var(--purple-accent);
+            color: var(--white-pure);
+        }
+        
+        .step-number {
+            background: var(--yellow);
+            color: var(--charcoal);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .step-item:hover .step-number {
+            transform: scale(1.2) rotate(360deg);
+        }
+        
+        /* MOBILE RESPONSIVE - Fix mobile without killing the fun */
+        @media (max-width: 768px) {
+            .header-neon {
+                min-height: 80vh; /* Shorter on mobile */
+                padding: 40px 16px;
+            }
+            
+            .hero-container {
+                padding: 60px 20px;
+            }
+            
+            .phone-display {
+                margin: 0 auto 40px;
+                max-width: 100%;
+            }
+            
+            .sms-bubble {
+                font-size: 0.9rem;
+                padding: 10px 16px;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .trending-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .get-started {
+                margin: 60px -16px 0 -16px;
+                padding: 60px 20px;
+            }
+            
+            .main-content {
+                padding: 0 16px;
+            }
+            
+            /* Keep floating emojis on mobile but smaller */
+            .floating-emoji {
+                font-size: 2rem;
+            }
+            
+            .emoji-clock {
+                font-size: 1.8rem;
+            }
+            
+            /* Reduce rotation on mobile for better readability */
+            .section-title,
+            .hero-title,
+            .cta-title {
+                transform: rotate(-1deg);
+            }
+            
+            .example-card,
+            .trending-card {
+                transform: rotate(-1deg);
+            }
+            
+            .phone-display {
+                transform: rotate(-0.5deg);
+            }
+        }
+        
+        /* MICRO-INTERACTIONS - Add pressed states */
+        .example-card:active {
+            transform: rotate(-2deg) translateY(-4px) scale(0.98);
+        }
+        
+        .trending-card:active {
+            transform: rotate(-2deg) translateY(-4px) scale(0.98);
+        }
+        
+        .phone-display:active {
+            transform: rotate(0deg) scale(1.01) translateY(-4px);
+        }
+        
+        /* Loading placeholder animations */
+        @keyframes content-loading {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .loading-placeholder {
+            animation: content-loading 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis with Choreographed Paths -->
+    <div class="floating-emojis">
+        <div class="floating-emoji emoji-1">🚀</div>
+        <div class="floating-emoji emoji-2">📱</div>
+        <div class="floating-emoji emoji-3">✨</div>
+        <div class="floating-emoji emoji-5">🎮</div>
+        <div class="floating-emoji emoji-6">🎨</div>
+        <div class="floating-emoji emoji-clock">⏰</div>
+    </div>
+
+    <!-- Neon Header -->
+    <header class="header-neon">
+        <h1 class="logo-neon">WEBTOYS</h1>
+        <p class="tagline">Ship from your flip phone</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-container">
+            <h2 class="hero-title">THE HALL OF STUFF</h2>
+            <p class="hero-subtitle">Text us your wildest app idea. We'll build it in seconds. No code, no signup, no BS.</p>
+            
+            <!-- Phone Mockup -->
+            <div class="phone-display">
+                <div class="sms-header">
+                    <span class="sms-phone-emoji">📱</span>
+                    SMS with WEBTOYS
+                </div>
+                <div class="sms-bubble">make me a todo app</div>
+                <div class="sms-bubble">but make it cyberpunk</div>
+                <div class="sms-bubble">with neon effects</div>
+                <div class="sms-response">✨ BOOM! Your cyberpunk todo app is live:<br>wtaf.me/alex/neon-tasks</div>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section>
+            <h2 class="section-title">What can you build?</h2>
+            <p class="section-subtitle">Literally anything. Our AI doesn't judge your weird ideas.</p>
+            
+            <div class="examples-grid">
+                <div class="example-card">
+                    <span class="example-emoji">🎮</span>
+                    <h3 class="example-title">GAMES</h3>
+                    <p class="example-description">Snake, Tetris, or your own weird mini-game. Text us the rules and we'll make it happen.</p>
+                </div>
+                
+                <div class="example-card">
+                    <span class="example-emoji">📊</span>
+                    <h3 class="example-title">APPS</h3>
+                    <p class="example-description">Todo lists, calculators, random generators. If you can text it, we can build it.</p>
+                </div>
+                
+                <div class="example-card">
+                    <span class="example-emoji">🎨</span>
+                    <h3 class="example-title">MEMES</h3>
+                    <p class="example-description">Cursed image generators, random quote machines, whatever makes you laugh.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Section -->
+        <section>
+            <h2 class="section-title">What people are building</h2>
+            <p class="section-subtitle">Fresh from the text-to-app factory</p>
+            
+            <div class="trending-grid">
+                <div class="trending-card">
+                    <h4 class="trending-title">Existential Crisis Generator</h4>
+                    <p class="trending-description">Click a button, get an existential question. Built by someone at 3am.</p>
+                </div>
+                
+                <div class="trending-card">
+                    <h4 class="trending-title">Pizza Topping Randomizer</h4>
+                    <p class="trending-description">Can't decide on pizza? Let chaos choose. Surprisingly popular.</p>
+                </div>
+                
+                <div class="trending-card">
+                    <h4 class="trending-title">Compliment Machine</h4>
+                    <p class="trending-description">Generates oddly specific compliments. "You organize your bookmarks like a pro."</p>
+                </div>
+                
+                <div class="trending-card">
+                    <h4 class="trending-title">Procrastination Timer</h4>
+                    <p class="trending-description">Counts down how long you've been avoiding work. Brutally honest.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Get Started Section -->
+        <section class="get-started">
+            <h2 class="cta-title">Ready to ship something weird?</h2>
+            <div class="phone-number">📱 (866) 330-0015</div>
+            
+            <ol class="steps-list">
+                <li class="step-item">
+                    <span class="step-number">1</span>
+                    Text your app idea to our number
+                </li>
+                <li class="step-item">
+                    <span class="step-number">2</span>
+                    Wait like 30 seconds (grab a coffee)
+                </li>
+                <li class="step-item">
+                    <span class="step-number">3</span>
+                    Get a live URL to your new creation
+                </li>
+            </ol>
+        </section>
+    </div>
+
+    <script>
+        // Interactive step hover effects
+        document.querySelectorAll('.step-item').forEach(step => {
+            step.addEventListener('mouseenter', function() {
+                const number = this.querySelector('.step-number');
+                if (number) {
+                    number.style.transform = 'scale(1.2) rotate(360deg)';
+                }
+            });
+            
+            step.addEventListener('mouseleave', function() {
+                const number = this.querySelector('.step-number');
+                if (number) {
+                    number.style.transform = 'scale(1) rotate(0deg)';
+                }
+            });
+        });
+
+        // Clock emoji special interaction
+        document.querySelector('.emoji-clock').addEventListener('click', function() {
+            this.style.animationDuration = '2s';
+            this.style.transform = 'scale(1.5) rotate(1080deg)';
+            this.style.filter = 'drop-shadow(0 0 30px var(--yellow))';
+            
+            setTimeout(() => {
+                this.style.animationDuration = '20s';
+                this.style.transform = '';
+                this.style.filter = '';
+            }, 2000);
+        });
+
+        // Add loading states for future dynamic content
+        function showLoading(element) {
+            element.classList.add('loading-placeholder');
+        }
+
+        function hideLoading(element) {
+            element.classList.remove('loading-placeholder');
+        }
+    </script>
+</body>
+</html>
