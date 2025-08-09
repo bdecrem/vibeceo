@@ -9,6 +9,8 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Load .env.local first, fallback to .env
 dotenv.config({ path: '../.env.local' });
@@ -156,12 +158,18 @@ async function createPullRequest(issue, issueId, branchName) {
     await execAsync(`git checkout ${branchName}`, { cwd: PROJECT_ROOT });
     await execAsync(`git push -u origin ${branchName}`, { cwd: PROJECT_ROOT });
 
-    // Create PR using gh CLI
+    // Create PR using gh CLI with body from file to avoid escaping issues
     console.log(`  📝 Creating pull request...`);
+    const tempFile = path.join('/tmp', `pr-body-${Date.now()}.md`);
+    await fs.writeFile(tempFile, body);
+    
     const { stdout } = await execAsync(
-      `gh pr create --title "${title}" --body "${body}" --base main --head ${branchName}`,
+      `gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
       { cwd: PROJECT_ROOT }
     );
+    
+    // Clean up temp file
+    await fs.unlink(tempFile).catch(() => {});
 
     // Extract PR URL from output
     const prUrlMatch = stdout.match(/https:\/\/github\.com\/[^\s]+/);

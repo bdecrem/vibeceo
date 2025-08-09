@@ -170,6 +170,61 @@
             color: #1565c0;
         }
 
+        .badge-new {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-reformulated {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .badge-fixing {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+
+        .badge-fixed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-pr-created {
+            background: #e0f2f1;
+            color: #00695c;
+        }
+
+        .badge-failed {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status-timeline {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .status-step {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .status-step.completed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-step.current {
+            background: #fff3e0;
+            color: #ef6c00;
+            font-weight: 600;
+        }
+
         .reactions {
             display: flex;
             gap: 10px;
@@ -393,6 +448,22 @@
                 const status = data.status || 'new';
                 const category = data.category || 'triage';
                 
+                // Determine status progression
+                const statusSteps = [
+                    { name: 'Submitted', completed: true },
+                    { name: 'Analyzed', completed: !!data.reformulated },
+                    { name: 'Fixing', completed: status === 'fixing' || status === 'fixed' || status === 'pr-created' },
+                    { name: 'Fixed', completed: status === 'fixed' || status === 'pr-created' },
+                    { name: 'PR Created', completed: status === 'pr-created' }
+                ];
+                
+                const statusBadgeClass = status === 'pr-created' ? 'badge-pr-created' : 
+                                        status === 'fixed' ? 'badge-fixed' :
+                                        status === 'fixing' ? 'badge-fixing' :
+                                        status === 'reformulated' ? 'badge-reformulated' :
+                                        status.includes('failed') ? 'badge-failed' :
+                                        'badge-new';
+                
                 return `
                     <div class="issue-item">
                         <div class="issue-header">
@@ -400,10 +471,20 @@
                         </div>
                         <div class="issue-meta">
                             <span class="badge badge-${category}">${category}</span>
-                            <span class="badge badge-status">${status}</span>
+                            <span class="badge ${statusBadgeClass}">${status.replace('-', ' ')}</span>
                             <span>by ${escapeHtml(data.author || 'Anonymous')}</span>
                             <span>${formatDate(data.timestamp)}</span>
                         </div>
+                        
+                        <div class="status-timeline">
+                            ${statusSteps.map((step, idx) => {
+                                const isCurrentStep = step.completed && !statusSteps[idx + 1]?.completed;
+                                return `<span class="status-step ${step.completed ? (isCurrentStep ? 'current' : 'completed') : ''}">
+                                    ${step.name}
+                                </span>`;
+                            }).join('')}
+                        </div>
+                        
                         ${data.reformulated ? `
                             <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
                                 <strong>AI Analysis:</strong> ${escapeHtml(data.reformulated)}
@@ -411,8 +492,11 @@
                             </div>
                         ` : ''}
                         ${data.pr_url ? `
-                            <div style="margin-top: 10px;">
-                                <a href="${data.pr_url}" target="_blank" style="color: #667eea;">View Pull Request →</a>
+                            <div style="margin-top: 10px; padding: 10px; background: #e0f2f1; border-radius: 4px;">
+                                <strong>🎉 Pull Request Created!</strong><br>
+                                <a href="${data.pr_url}" target="_blank" style="color: #00695c; font-weight: 600;">
+                                    View Pull Request #${data.pr_url.split('/').pop()} →
+                                </a>
                             </div>
                         ` : ''}
                         <div class="reactions">
