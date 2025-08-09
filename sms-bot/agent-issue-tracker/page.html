@@ -260,7 +260,7 @@
 
     <script>
         // ZAD Configuration
-        window.APP_ID = 'turquoise-rabbit-exploring';
+        window.APP_ID = '83218c2e-281e-4265-a95f-1d3f763870d4';
         
         // ZAD Helper Functions (injected by WEBTOYS)
         async function save(actionType, data, participantData = null) {
@@ -271,7 +271,7 @@
                 localStorage.setItem('participant_id', participantId);
             }
 
-            const response = await fetch('/api/zad/save', {
+            const response = await fetch('https://webtoys.ai/api/zad/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -286,17 +286,39 @@
         }
 
         async function load(actionType, filters = {}) {
-            const response = await fetch('/api/zad/load', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            try {
+                // Build query parameters for GET request
+                const params = new URLSearchParams({
                     app_id: window.APP_ID,
-                    action_type: actionType,
-                    filters: filters
-                })
-            });
-            const result = await response.json();
-            return result.data || [];
+                    action_type: actionType
+                });
+                
+                // Add any additional filters
+                if (filters.participant_id) {
+                    params.append('participant_id', filters.participant_id);
+                }
+                
+                const url = `https://webtoys.ai/api/zad/load?${params.toString()}`;
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('API response:', result);
+                
+                // The API returns an array directly, not wrapped in { data: [] }
+                return Array.isArray(result) ? result : (result.data || []);
+            } catch (error) {
+                console.error('Load function error:', error);
+                throw error;
+            }
         }
 
         // Application Functions
@@ -340,16 +362,21 @@
 
         async function loadIssues() {
             try {
+                console.log('Loading issues for app:', window.APP_ID);
                 const issues = await load('issue');
+                console.log('Loaded issues:', issues);
                 displayIssues(issues);
             } catch (error) {
+                console.error('Error loading issues:', error);
                 document.getElementById('issueList').innerHTML = 
-                    '<div class="error">Failed to load issues</div>';
+                    '<div class="error">Failed to load issues: ' + error.message + '</div>';
             }
         }
 
         function displayIssues(issues) {
             const container = document.getElementById('issueList');
+            
+            console.log('Displaying issues:', issues?.length || 0);
             
             if (!issues || issues.length === 0) {
                 container.innerHTML = '<div class="loading">No issues yet. Be the first to submit one!</div>';
@@ -358,6 +385,8 @@
 
             // Sort by timestamp, newest first
             issues.sort((a, b) => (b.content_data?.timestamp || 0) - (a.content_data?.timestamp || 0));
+            
+            console.log('First issue data:', issues[0]);
 
             container.innerHTML = issues.slice(0, 20).map(issue => {
                 const data = issue.content_data || {};
@@ -440,10 +469,13 @@
         }
 
         // Load issues on page load
-        loadIssues();
-        
-        // Refresh issues every 30 seconds
-        setInterval(loadIssues, 30000);
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, fetching issues...');
+            loadIssues();
+            
+            // Refresh issues every 30 seconds
+            setInterval(loadIssues, 30000);
+        });
     </script>
 </body>
 </html>
