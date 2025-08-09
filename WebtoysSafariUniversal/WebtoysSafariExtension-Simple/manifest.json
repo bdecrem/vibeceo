@@ -33,6 +33,7 @@
       "*://127.0.0.1/*",
       "*://theaf-web.ngrok.io/*",
       "*://wtaf.me/*",
+      "*://www.wtaf.me/*",
       "*://webtoys.ai/*",
       "*://www.webtoys.ai/*",
       "*://advisorsfoundry.ai/*",
