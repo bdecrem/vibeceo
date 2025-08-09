@@ -112,3 +112,4 @@ tiny/
 # Local state files for scripts
 .last-user-check
 /sms-bot/scripts/.last-user-check
+/sms-bot/scripts/.last-webtoys-check
