@@ -113,3 +113,6 @@ tiny/
 .last-user-check
 /sms-bot/scripts/.last-user-check
 /sms-bot/scripts/.last-webtoys-check
+
+# Temporary/experimental uploads folder
+/web/UPLOADS/
