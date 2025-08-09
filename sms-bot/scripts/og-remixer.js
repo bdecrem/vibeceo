@@ -253,51 +253,50 @@ function generateHTML(config) {
             width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10;
         }
 
-        .emoji-sequence {
-            display: flex;
-            gap: 40px;
-            margin-bottom: 50px;
-            position: relative;
+        .emoji-decorations {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
 
         .emoji-item {
-            font-size: 90px;
-            position: relative;
-            animation: gentleFloat 3s ease-in-out infinite;
-            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.1));
-        }
-
-        .emoji-item:nth-child(1) { animation-delay: 0s; transform: rotate(-5deg); }
-        .emoji-item:nth-child(2) { animation-delay: 0.5s; transform: rotate(3deg); }
-        .emoji-item:nth-child(3) { animation-delay: 1s; transform: rotate(-3deg); }
-        .emoji-item:nth-child(4) { animation-delay: 1.5s; transform: rotate(5deg); }
-
-        @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-15px) scale(1.05); }
-        }
-
-        .arrow {
             position: absolute;
-            font-size: 40px;
-            color: ${config.colors.text[1]};
-            opacity: 0.6;
-            top: 50%;
-            transform: translateY(-50%);
+            font-size: 95px;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
         }
 
-        .arrow:nth-child(2) { left: 130px; }
-        .arrow:nth-child(4) { left: 300px; }
-        .arrow:nth-child(6) { left: 470px; }
+        /* Organic, asymmetrical emoji placement - like scattered confetti */
+        .emoji-item:nth-child(1) { 
+            top: 95px; 
+            left: 180px; 
+            transform: rotate(-15deg); 
+        }
+        .emoji-item:nth-child(2) { 
+            top: 140px; 
+            right: 160px; 
+            transform: rotate(22deg); 
+        }
+        .emoji-item:nth-child(3) { 
+            bottom: 120px; 
+            left: 140px; 
+            transform: rotate(-8deg); 
+        }
+        .emoji-item:nth-child(4) { 
+            bottom: 180px; 
+            right: 280px; 
+            transform: rotate(12deg); 
+        }
 
         .main-text {
-            font-size: 56px;
+            font-size: 72px;
             font-weight: 800;
             letter-spacing: -1px;
             text-align: center;
@@ -306,14 +305,10 @@ function generateHTML(config) {
             -webkit-text-fill-color: transparent;
             background-clip: text;
             position: relative;
-            padding: 0 20px;
+            padding: 0 40px;
             filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.2));
-        }
-
-        .decoration {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.2;
+            max-width: 800px;
+            line-height: 1.1;
         }
 
         .badge {
@@ -332,12 +327,7 @@ function generateHTML(config) {
             position: absolute;
             font-size: 24px;
             color: ${config.colors.text[1]};
-            animation: sparkleFloat 4s ease-in-out infinite;
-        }
-
-        @keyframes sparkleFloat {
-            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
-            50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+            opacity: 0.8;
         }
 
         .webtoys-logo {
@@ -353,125 +343,125 @@ function generateHTML(config) {
 
         .logo-burst {
             position: absolute;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #FFCC00 0%, #FF6600 50%, #FF0000 100%);
-            opacity: 0.9;
-        }
-
-        .logo-burst::before {
-            content: '';
-            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 220px;
             height: 220px;
-            background: conic-gradient(from 0deg, transparent, #FFFF00, transparent, #FFAA00, transparent, #FF0000, transparent);
+            background: radial-gradient(circle at center,
+                rgba(255, 255, 200, 0.4) 0%,
+                rgba(255, 235, 0, 0.3) 25%,
+                rgba(255, 235, 0, 0.15) 50%,
+                transparent 75%
+            );
             border-radius: 50%;
             z-index: -1;
-            opacity: 0.6;
+            opacity: 0.85;
+        }
+
+        .glow-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle,
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 200, 0.2) 40%,
+                transparent 70%
+            );
+            border-radius: 50%;
+            z-index: -1;
         }
 
         .logo-image {
             position: relative;
-            width: 180px;
-            height: 180px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 204, 0, 0.6);
+            width: 170px;
+            height: 170px;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            z-index: 10;
         }
 
         .logo-image img {
-            width: 160px;
-            height: 160px;
+            width: 170px;
+            height: 170px;
             object-fit: contain;
-            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+            filter: drop-shadow(0 0 20px rgba(255, 235, 0, 0.4)) 
+                    drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))
+                    saturate(1.1) contrast(1.1);
         }
 
         .logo-image .fallback-text {
             font-size: 64px;
             font-weight: 900;
-            color: #FF6600;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            color: #FFD63D;
+            text-shadow: 0 0 20px rgba(255, 235, 0, 0.4), 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
         .crack-lines {
             position: absolute;
-            width: 240px;
-            height: 240px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            z-index: -2;
+            overflow: hidden;
         }
 
-        .crack-line {
+        .crack {
             position: absolute;
-            width: 2px;
-            background: linear-gradient(to bottom, rgba(255, 255, 0, 0.8), transparent);
-            transform-origin: bottom center;
+            background: linear-gradient(var(--angle, 45deg), 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 100%);
+            transform-origin: center;
         }
 
-        .crack-line:nth-child(1) { height: 60px; top: -30px; left: 50%; transform: translateX(-50%) rotate(0deg); }
-        .crack-line:nth-child(2) { height: 45px; top: -15px; left: 70%; transform: translateX(-50%) rotate(30deg); }
-        .crack-line:nth-child(3) { height: 50px; top: -10px; right: 15px; transform: translateX(-50%) rotate(60deg); }
-        .crack-line:nth-child(4) { height: 40px; top: 30%; right: -15px; transform: translateX(-50%) rotate(90deg); }
-        .crack-line:nth-child(5) { height: 45px; bottom: -15px; right: 15px; transform: translateX(-50%) rotate(120deg); }
-        .crack-line:nth-child(6) { height: 55px; bottom: -25px; left: 70%; transform: translateX(-50%) rotate(150deg); }
-        .crack-line:nth-child(7) { height: 50px; bottom: -20px; left: 30%; transform: translateX(-50%) rotate(180deg); }
-        .crack-line:nth-child(8) { height: 35px; top: 30%; left: -15px; transform: translateX(-50%) rotate(210deg); }
+        .crack:nth-child(1) { width: 1px; height: 120px; top: 10%; left: 50%; transform: translateX(-50%) rotate(45deg); }
+        .crack:nth-child(2) { width: 1px; height: 100px; top: 15%; right: 15%; transform: rotate(-30deg); }
+        .crack:nth-child(3) { width: 1px; height: 90px; bottom: 15%; left: 20%; transform: rotate(120deg); }
+        .crack:nth-child(4) { width: 1px; height: 110px; bottom: 10%; right: 25%; transform: rotate(-60deg); }
     </style>
 </head>
 <body>
     <div class="grid-bg"></div>
     
-    <!-- Decorative circles -->
-    <div class="decoration" style="width: 120px; height: 120px; top: 80px; left: 100px; background: linear-gradient(135deg, ${config.colors.text[0]}, ${config.colors.text[1]})"></div>
-    <div class="decoration" style="width: 80px; height: 80px; bottom: 100px; right: 150px; background: linear-gradient(135deg, ${config.colors.text[1]}, ${config.colors.text[2 % config.colors.text.length]})"></div>
-    <div class="decoration" style="width: 60px; height: 60px; top: 120px; right: 120px; background: linear-gradient(135deg, ${config.colors.text[2 % config.colors.text.length]}, ${config.colors.text[0]})"></div>
+    <!-- Badges - positioned to avoid text overlap -->
+    <div class="badge" style="top: 60px; left: 80px; transform: rotate(-10deg); background: linear-gradient(135deg, ${config.colors.text[0]}, ${config.colors.text[1]})">${config.badges[0]}</div>
+    <div class="badge" style="top: 80px; right: 100px; transform: rotate(7deg); background: linear-gradient(135deg, ${config.colors.text[1]}, ${config.colors.text[2 % config.colors.text.length]})">${config.badges[1]}</div>
+    <div class="badge" style="bottom: 80px; left: 120px; transform: rotate(-5deg); background: linear-gradient(135deg, ${config.colors.text[2 % config.colors.text.length]}, ${config.colors.text[0]})">${config.badges[2]}</div>
     
-    <!-- Badges -->
-    <div class="badge" style="top: 300px; left: 80px; transform: rotate(-10deg); background: linear-gradient(135deg, ${config.colors.text[0]}, ${config.colors.text[1]})">${config.badges[0]}</div>
-    <div class="badge" style="top: 280px; right: 100px; transform: rotate(7deg); background: linear-gradient(135deg, ${config.colors.text[1]}, ${config.colors.text[2 % config.colors.text.length]})">${config.badges[1]}</div>
-    <div class="badge" style="bottom: 250px; left: 380px; transform: rotate(-5deg); background: linear-gradient(135deg, ${config.colors.text[2 % config.colors.text.length]}, ${config.colors.text[0]})">${config.badges[2]}</div>
+    <!-- Sparkles - positioned to avoid text and logo areas -->
+    <div class="sparkle" style="top: 140px; left: 220px;">✨</div>
+    <div class="sparkle" style="bottom: 120px; left: 180px;">⭐</div>
+    <div class="sparkle" style="top: 180px; right: 220px;">✨</div>
+    <div class="sparkle" style="bottom: 160px; right: 420px;">⭐</div>
     
-    <!-- Sparkles -->
-    <div class="sparkle" style="top: 200px; left: 300px; animation-delay: 0s">✨</div>
-    <div class="sparkle" style="bottom: 180px; left: 250px; animation-delay: 1s">⭐</div>
-    <div class="sparkle" style="top: 250px; right: 280px; animation-delay: 2s">✨</div>
-    <div class="sparkle" style="bottom: 200px; right: 350px; animation-delay: 3s">⭐</div>
+    <!-- Emoji decorations in corners -->
+    <div class="emoji-decorations">
+        ${config.emojis.map(emoji => `<span class="emoji-item">${emoji}</span>`).join('')}
+    </div>
     
-    <!-- Main content -->
+    <!-- Main content - perfectly centered -->
     <div class="content">
-        <div class="emoji-sequence">
-            ${config.emojis.map((emoji, i) => 
-                `<span class="emoji-item">${emoji}</span>
-                ${i < config.emojis.length - 1 ? '<span class="arrow">→</span>' : ''}`
-            ).join('')}
-        </div>
-        
         <div class="main-text">
             ${config.text}
         </div>
 
         <!-- WEBTOYS Logo -->
         <div class="webtoys-logo">
-            <div class="crack-lines">
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-                <div class="crack-line"></div>
-            </div>
             <div class="logo-burst"></div>
+            <div class="glow-core"></div>
+            <div class="crack-lines">
+                <div class="crack"></div>
+                <div class="crack"></div>
+                <div class="crack"></div>
+                <div class="crack"></div>
+            </div>
             <div class="logo-image">
                 ${logoBase64 ? 
                     `<img src="${logoBase64}" alt="WEBTOYS Logo" />` : 
