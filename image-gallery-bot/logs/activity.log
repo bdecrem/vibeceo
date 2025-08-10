@@ -1,0 +1,84 @@
+{"timestamp":"2025-08-03T13:50:59.055Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"INFO","message":"Configuration loaded","currentTopic":"nature photography","queueLength":4}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"WARNING","message":"Using demo mode - no real API calls will be made"}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"INFO","message":"Processing topic: \"nature photography\""}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"INFO","message":"Searching for images: \"nature photography\"","count":6}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"SUCCESS","message":"Demo mode: Generated 6 placeholder images"}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"INFO","message":"Downloading image 1: demo-1754229059059-0"}
+{"timestamp":"2025-08-03T13:50:59.059Z","level":"INFO","message":"Starting batch download of 6 images for topic: nature photography"}
+{"timestamp":"2025-08-03T13:50:59.060Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-0-demo-1754229059059-0-1754229059059.jpg"}
+{"timestamp":"2025-08-03T13:51:00.062Z","level":"INFO","message":"Downloading image 2: demo-1754229059059-1"}
+{"timestamp":"2025-08-03T13:51:00.064Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-1-demo-1754229059059-1-1754229060061.jpg"}
+{"timestamp":"2025-08-03T13:51:01.064Z","level":"INFO","message":"Downloading image 3: demo-1754229059059-2"}
+{"timestamp":"2025-08-03T13:51:01.065Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-2-demo-1754229059059-2-1754229061064.jpg"}
+{"timestamp":"2025-08-03T13:51:02.067Z","level":"INFO","message":"Downloading image 4: demo-1754229059059-3"}
+{"timestamp":"2025-08-03T13:51:02.068Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-3-demo-1754229059059-3-1754229062067.jpg"}
+{"timestamp":"2025-08-03T13:51:03.071Z","level":"INFO","message":"Downloading image 5: demo-1754229059059-4"}
+{"timestamp":"2025-08-03T13:51:03.072Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-4-demo-1754229059059-4-1754229063070.jpg"}
+{"timestamp":"2025-08-03T13:51:04.074Z","level":"INFO","message":"Downloading image 6: demo-1754229059059-5"}
+{"timestamp":"2025-08-03T13:51:04.076Z","level":"SUCCESS","message":"Saved placeholder metadata: nature-photography-5-demo-1754229059059-5-1754229064074.jpg"}
+{"timestamp":"2025-08-03T13:51:04.076Z","level":"SUCCESS","message":"Batch download completed: 6 succeeded, 0 failed"}
+{"timestamp":"2025-08-03T13:51:04.077Z","level":"INFO","message":"Generating gallery: nature-photography-1754229064076.html","topic":"nature photography","imageCount":6,"template":"modern"}
+{"timestamp":"2025-08-03T13:51:04.120Z","level":"SUCCESS","message":"Gallery generated: nature-photography-1754229064076.html","size":9576,"path":"/Users/bartbart/Documents/VibeCEO8/image-gallery-bot/galleries/nature-photography-1754229064076.html"}
+{"timestamp":"2025-08-03T13:51:04.121Z","level":"SUCCESS","message":"Generated gallery index page"}
+{"timestamp":"2025-08-03T13:51:04.121Z","level":"INFO","message":"Topic rotated","newTopic":"architecture","queueLength":4}
+{"timestamp":"2025-08-03T13:51:04.121Z","level":"INFO","message":"Configuration saved"}
+{"timestamp":"2025-08-03T13:51:52.869Z","level":"INFO","message":"Configuration loaded","currentTopic":"architecture","queueLength":4}
+{"timestamp":"2025-08-03T13:52:04.616Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"INFO","message":"Configuration loaded","currentTopic":"architecture","queueLength":5}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"WARNING","message":"Using demo mode - no real API calls will be made"}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"INFO","message":"Processing topic: \"architecture\""}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"INFO","message":"Searching for images: \"architecture\"","count":6}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"SUCCESS","message":"Demo mode: Generated 6 placeholder images"}
+{"timestamp":"2025-08-03T13:52:04.620Z","level":"INFO","message":"Downloading image 1: demo-1754229124619-0"}
+{"timestamp":"2025-08-03T13:52:04.619Z","level":"INFO","message":"Starting batch download of 6 images for topic: architecture"}
+{"timestamp":"2025-08-03T13:52:04.620Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-0-demo-1754229124619-0-1754229124620.jpg"}
+{"timestamp":"2025-08-03T13:52:05.621Z","level":"INFO","message":"Downloading image 2: demo-1754229124619-1"}
+{"timestamp":"2025-08-03T13:52:05.622Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-1-demo-1754229124619-1-1754229125621.jpg"}
+{"timestamp":"2025-08-03T13:52:06.623Z","level":"INFO","message":"Downloading image 3: demo-1754229124619-2"}
+{"timestamp":"2025-08-03T13:52:06.624Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-2-demo-1754229124619-2-1754229126623.jpg"}
+{"timestamp":"2025-08-03T13:52:07.626Z","level":"INFO","message":"Downloading image 4: demo-1754229124619-3"}
+{"timestamp":"2025-08-03T13:52:07.627Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-3-demo-1754229124619-3-1754229127625.jpg"}
+{"timestamp":"2025-08-03T13:52:08.629Z","level":"INFO","message":"Downloading image 5: demo-1754229124619-4"}
+{"timestamp":"2025-08-03T13:52:08.630Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-4-demo-1754229124619-4-1754229128629.jpg"}
+{"timestamp":"2025-08-03T13:52:09.632Z","level":"INFO","message":"Downloading image 6: demo-1754229124619-5"}
+{"timestamp":"2025-08-03T13:52:09.634Z","level":"SUCCESS","message":"Saved placeholder metadata: architecture-5-demo-1754229124619-5-1754229129632.jpg"}
+{"timestamp":"2025-08-03T13:52:09.634Z","level":"SUCCESS","message":"Batch download completed: 6 succeeded, 0 failed"}
+{"timestamp":"2025-08-03T13:52:09.635Z","level":"INFO","message":"Generating gallery: architecture-1754229129635.html","topic":"architecture","imageCount":6,"template":"modern"}
+{"timestamp":"2025-08-03T13:52:09.664Z","level":"SUCCESS","message":"Gallery generated: architecture-1754229129635.html","size":9444,"path":"/Users/bartbart/Documents/VibeCEO8/image-gallery-bot/galleries/architecture-1754229129635.html"}
+{"timestamp":"2025-08-03T13:52:09.665Z","level":"SUCCESS","message":"Generated gallery index page"}
+{"timestamp":"2025-08-03T13:52:09.665Z","level":"INFO","message":"Topic rotated","newTopic":"street art","queueLength":5}
+{"timestamp":"2025-08-03T13:52:09.665Z","level":"INFO","message":"Configuration saved"}
+{"timestamp":"2025-08-03T14:11:16.815Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:11:41.896Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:12:11.634Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:15:38.535Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:16:11.291Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:17:09.369Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:17:21.640Z","level":"ERROR","message":"Failed to load configuration","errorMessage":"The \"path\" argument must be of type string. Received undefined","errorStack":"TypeError [ERR_INVALID_ARG_TYPE]: The \"path\" argument must be of type string. Received undefined\n    at Object.join (node:path:1263:7)\n    at ImageGalleryBot.loadConfig (/Users/bartbart/Documents/VibeCEO8/image-gallery-bot/src/main.js:20:28)\n    at async test (/Users/bartbart/Documents/VibeCEO8/image-gallery-bot/test-run.js:8:3)"}
+{"timestamp":"2025-08-03T14:17:34.741Z","level":"INFO","message":"=== Starting Image Gallery Bot ==="}
+{"timestamp":"2025-08-03T14:17:34.744Z","level":"INFO","message":"Loaded API key from .env.local"}
+{"timestamp":"2025-08-03T14:17:34.744Z","level":"INFO","message":"Configuration loaded","currentTopic":"street art","queueLength":5,"hasApiKey":true}
+{"timestamp":"2025-08-03T14:17:34.745Z","level":"INFO","message":"Processing topic: \"street art\""}
+{"timestamp":"2025-08-03T14:17:34.745Z","level":"INFO","message":"Searching for images: \"street art\"","count":6}
+{"timestamp":"2025-08-03T14:17:34.745Z","level":"INFO","message":"Initializing Unsplash API with key","keyLength":43,"keyPrefix":"1cZ-..."}
+{"timestamp":"2025-08-03T14:17:35.497Z","level":"SUCCESS","message":"Found 6 images for \"street art\""}
+{"timestamp":"2025-08-03T14:17:35.498Z","level":"INFO","message":"Starting batch download of 6 images for topic: street art"}
+{"timestamp":"2025-08-03T14:17:35.498Z","level":"INFO","message":"Downloading image 1: 7pq_V5KGHCc"}
+{"timestamp":"2025-08-03T14:17:35.667Z","level":"SUCCESS","message":"Downloaded: street-art-0-7pq_V5KGHCc-1754230655498.jpg","size":246931}
+{"timestamp":"2025-08-03T14:17:36.670Z","level":"INFO","message":"Downloading image 2: jF946mh5QrA"}
+{"timestamp":"2025-08-03T14:17:36.744Z","level":"SUCCESS","message":"Downloaded: street-art-1-jF946mh5QrA-1754230656670.jpg","size":159403}
+{"timestamp":"2025-08-03T14:17:37.747Z","level":"INFO","message":"Downloading image 3: Zf2Y3O5s4UQ"}
+{"timestamp":"2025-08-03T14:17:37.821Z","level":"SUCCESS","message":"Downloaded: street-art-2-Zf2Y3O5s4UQ-1754230657747.jpg","size":232138}
+{"timestamp":"2025-08-03T14:17:38.826Z","level":"INFO","message":"Downloading image 4: IM9MTmfrOl4"}
+{"timestamp":"2025-08-03T14:17:38.957Z","level":"SUCCESS","message":"Downloaded: street-art-3-IM9MTmfrOl4-1754230658826.jpg","size":240217}
+{"timestamp":"2025-08-03T14:17:39.960Z","level":"INFO","message":"Downloading image 5: FMiUpNn7w9o"}
+{"timestamp":"2025-08-03T14:17:40.032Z","level":"SUCCESS","message":"Downloaded: street-art-4-FMiUpNn7w9o-1754230659960.jpg","size":162799}
+{"timestamp":"2025-08-03T14:17:41.036Z","level":"INFO","message":"Downloading image 6: Hd2GuGB3ps0"}
+{"timestamp":"2025-08-03T14:17:41.112Z","level":"SUCCESS","message":"Downloaded: street-art-5-Hd2GuGB3ps0-1754230661036.jpg","size":202719}
+{"timestamp":"2025-08-03T14:17:41.113Z","level":"SUCCESS","message":"Batch download completed: 6 succeeded, 0 failed"}
+{"timestamp":"2025-08-03T14:17:41.113Z","level":"INFO","message":"Generating gallery: street-art-1754230661113.html","topic":"street art","imageCount":6,"template":"modern"}
+{"timestamp":"2025-08-03T14:17:41.153Z","level":"SUCCESS","message":"Gallery generated: street-art-1754230661113.html","size":9369,"path":"/Users/bartbart/Documents/VibeCEO8/image-gallery-bot/galleries/street-art-1754230661113.html"}
+{"timestamp":"2025-08-03T14:17:41.154Z","level":"SUCCESS","message":"Generated gallery index page"}
+{"timestamp":"2025-08-03T14:17:41.154Z","level":"INFO","message":"Topic rotated","newTopic":"minimalist design","queueLength":5}
+{"timestamp":"2025-08-03T14:17:41.154Z","level":"INFO","message":"Configuration saved"}

@@ -1,0 +1,26 @@
+# Autonomous Decision Log
+
+This file tracks decisions made by Claude Code while running autonomously.
+Each entry should include:
+- Timestamp
+- Situation/Problem
+- Analysis
+- Decision made
+- Outcome
+- Any code changes
+
+---
+
+## Example Entry Format:
+
+### [2025-08-03 14:30:00] Gallery Creation Failed
+**Situation**: Main.js threw error "Cannot read property 'length' of undefined"
+**Analysis**: The topicQueue in config.json was null instead of an array
+**Decision**: Initialize topicQueue with default topics
+**Action**: Updated config.json with default topic array
+**Outcome**: Gallery creation resumed successfully
+**Code Changes**: None - configuration fix only
+
+---
+
+## Decision Log Begins Below:

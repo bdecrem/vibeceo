@@ -12,11 +12,12 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env.local') });
 if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env') });
 }
 
 const execAsync = promisify(exec);
@@ -28,12 +29,14 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status
  */
 async function loadIssues(status = 'new') {
+  console.log(`🔍 Loading issues with app_id='${ISSUE_TRACKER_APP_ID}' and status='${status}'`);
+  
   const { data, error } = await supabase
     .from('wtaf_zero_admin_collaborative')
     .select('*')
@@ -45,11 +48,16 @@ async function loadIssues(status = 'new') {
     return [];
   }
 
+  console.log(`📊 Found ${data.length} total issue records`);
+  
   // Filter by status in content_data
-  return data.filter(record => {
+  const filtered = data.filter(record => {
     const content = record.content_data || {};
     return content.status === status || (!content.status && status === 'new');
   });
+  
+  console.log(`📋 After filtering for status='${status}': ${filtered.length} issues`);
+  return filtered;
 }
 
 /**
@@ -105,20 +113,56 @@ Original submission:
 Author: ${issue.author}
 Category: ${issue.category || 'uncategorized'}
 
-Please reformulate this into:
+IMPORTANT: First check if this is a test, joke, or non-serious submission. Look for:
+- Test phrases like "test", "testing", "hello world", "asdf", "123"
+- Jokes, memes, or obviously silly requests
+- Greetings without actual issues ("hi", "hello", "hey")
+- Random keyboard mashing or nonsense
+- Meta comments about the system itself ("are you real", "what happens if")
+
+If this IS a test/joke/non-serious submission:
+{
+  "is_test": true,
+  "cass_response": "[Write a playful, witty response as Cass.ink acknowledging you caught them testing/joking. Be fun and engaging but make it clear no action will be taken. Use puns and personality!]",
+  "category": "test"
+}
+
+If this is a REAL issue, respond as Cass.ink, the WEBTOYS support agent:
+- You're a mischievous but skilled indie hacker who reviews issues
+- Quick with puns, metaphors, and playful teasing
+- Turn dry technical notes into mini-stories
+- Keep feedback constructive and encouraging
+- Never overcomplicate things; aim for fast, smart improvements with personality
+- Write a friendly, engaging response (2-3 sentences) acknowledging their issue
+
+Then provide the technical analysis:
 1. A clear, actionable description (1-2 sentences)
 2. Specific acceptance criteria (what needs to be done)
 3. Affected components/files if identifiable
 4. Confidence level (high/medium/low) based on clarity
+5. Detailed analysis notes for the user (2-3 paragraphs explaining your analysis)
+
+The analysis_notes should be user-friendly and explain:
+- What you understood from their request
+- How it relates to WEBTOYS functionality
+- Why you categorized it the way you did
+- What steps would be taken to implement it
+- Any potential challenges or considerations
 
 If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed.
 
 Format your response as JSON:
 {
+  "is_test": false,
+  "cass_response": "Cass.ink's friendly, playful response to the user (2-3 sentences with personality)",
   "reformulated": "Clear description of what needs to be done",
   "acceptance_criteria": ["Criterion 1", "Criterion 2"],
   "affected_components": ["component1", "component2"],
   "confidence": "high|medium|low",
+  "priority": "critical|high|medium|low",
+  "estimated_complexity": "trivial|small|medium|large",
+  "analysis_notes": "Detailed user-friendly explanation of the analysis (2-3 paragraphs)",
+  "technical_notes": "Technical implementation details for developers",
   "needs_clarification": "What additional info is needed (if confidence is low)"
 }
 `;
@@ -212,6 +256,29 @@ async function processIssues() {
       // Reformulate with Claude
       const reformulated = await reformulateWithClaude(issue);
       
+      // Check if this is a test/joke submission
+      if (reformulated.is_test) {
+        console.log(`🎮 Detected test/joke submission: "${issue.idea}"`);
+        
+        // Update with friendly response but mark as closed
+        const success = await updateIssue(record.id, {
+          status: 'closed-test',
+          cass_response: reformulated.cass_response,
+          category: 'test',
+          is_test: true,
+          reformulated_at: new Date().toISOString()
+        });
+        
+        if (success) {
+          console.log(`✅ Responded to test/joke with friendly message`);
+          processed++;
+        } else {
+          console.log(`❌ Failed to update test issue`);
+          failed++;
+        }
+        continue; // Skip to next issue
+      }
+      
       // Auto-categorize if needed
       if (!issue.category || issue.category === 'triage') {
         reformulated.category = categorizeIssue(reformulated);
@@ -220,10 +287,15 @@ async function processIssues() {
       // Update the issue
       const success = await updateIssue(record.id, {
         status: 'reformulated',
+        cass_response: reformulated.cass_response,
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
+        priority: reformulated.priority || 'medium',
+        estimated_complexity: reformulated.estimated_complexity || 'medium',
+        analysis_notes: reformulated.analysis_notes,
+        technical_notes: reformulated.technical_notes,
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
         reformulated_at: new Date().toISOString()

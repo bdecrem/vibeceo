@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>architecture - Image Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 20px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 300;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.2em;
+            font-weight: 300;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .image-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            background: #1a1a1a;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-info {
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover .image-info {
+            transform: translateY(0);
+        }
+
+        .image-description {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+
+        .image-credit {
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .image-credit a {
+            color: #4a9eff;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .image-credit a:hover {
+            color: #7ab8ff;
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            border-top: 1px solid #333;
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            cursor: pointer;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 3em;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .close-lightbox:hover {
+            transform: rotate(90deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .gallery { grid-template-columns: 1fr; gap: 20px; }
+            .container { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>architecture</h1>
+            <p class="subtitle">A curated collection of 6 images</p>
+        </header>
+
+        <div class="gallery">
+            
+        <div class="image-card" data-index="0">
+            <img src="https://via.placeholder.com/800x600?text=architecture%201" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 1</a>
+                </p>
+            </div>
+        </div>
+        <div class="image-card" data-index="1">
+            <img src="https://via.placeholder.com/800x600?text=architecture%202" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 2</a>
+                </p>
+            </div>
+        </div>
+        <div class="image-card" data-index="2">
+            <img src="https://via.placeholder.com/800x600?text=architecture%203" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 3</a>
+                </p>
+            </div>
+        </div>
+        <div class="image-card" data-index="3">
+            <img src="https://via.placeholder.com/800x600?text=architecture%204" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 4</a>
+                </p>
+            </div>
+        </div>
+        <div class="image-card" data-index="4">
+            <img src="https://via.placeholder.com/800x600?text=architecture%205" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 5</a>
+                </p>
+            </div>
+        </div>
+        <div class="image-card" data-index="5">
+            <img src="https://via.placeholder.com/800x600?text=architecture%206" alt="Demo image for architecture" loading="lazy">
+            <div class="image-info">
+                <p class="image-description">Demo image for architecture</p>
+                <p class="image-credit">
+                    Photo by <a href="https://unsplash.com" target="_blank" rel="noopener">Demo User 6</a>
+                </p>
+            </div>
+        </div>
+        </div>
+
+        <footer>
+            <p>Images sourced from <a href="https://unsplash.com" target="_blank" style="color: #4a9eff;">Unsplash</a></p>
+            <p class="timestamp">Generated on 8/3/2025, 6:52:09 AM</p>
+        </footer>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <span class="close-lightbox">&times;</span>
+        <img src="" alt="">
+    </div>
+
+    <script>
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = lightbox.querySelector('img');
+        const closeBtn = lightbox.querySelector('.close-lightbox');
+
+        document.querySelectorAll('.image-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const imgSrc = this.querySelector('img').src;
+                const imgAlt = this.querySelector('img').alt;
+                lightboxImg.src = imgSrc;
+                lightboxImg.alt = imgAlt;
+                lightbox.classList.add('active');
+            });
+        });
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+        }
+
+        lightbox.addEventListener('click', closeLightbox);
+        closeBtn.addEventListener('click', closeLightbox);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+    </script>
+</body>
+</html>
