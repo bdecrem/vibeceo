@@ -560,6 +560,11 @@
             <h2>Submit New Issue</h2>
             <div id="submitForm">
                 <div class="form-group">
+                    <label for="idea">Description</label>
+                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
+                </div>
+
+                <div class="form-group">
                     <label for="author">Your Name (optional)</label>
                     <input type="text" id="author" placeholder="Anonymous" />
                 </div>
@@ -573,11 +578,6 @@
                         <option value="enhancement">Enhancement</option>
                         <option value="documentation">Documentation</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="idea">Description</label>
-                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
                 </div>
 
                 <button onclick="submitIssue()">Submit Issue</button>
