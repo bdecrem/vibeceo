@@ -14,11 +14,7 @@ else
     # Add our new cron jobs
     echo "" >> /tmp/current_cron
     echo "# WEBTOYS Issue Tracker Agent - Reformulation every 2 hours" >> /tmp/current_cron
-    echo "0 */2 * * * cd /Users/bartbart/Documents/VibeCEO8/sms-bot/agent-issue-tracker && PROJECT_ROOT=/Users/bartbart/Documents/VibeCEO8/sms-bot ISSUE_TRACKER_APP_ID=83218c2e-281e-4265-a95f-1d3f763870d4 /opt/homebrew/bin/node monitor.js --reformulate >> logs/monitor.log 2>&1" >> /tmp/current_cron
-    
-    # Optional: Add full pipeline with auto-fix (commented out by default)
-    echo "# Uncomment below to enable auto-fix pipeline every 4 hours:" >> /tmp/current_cron
-    echo "# 0 */4 * * * cd /Users/bartbart/Documents/VibeCEO8/sms-bot/agent-issue-tracker && PROJECT_ROOT=/Users/bartbart/Documents/VibeCEO8/sms-bot ISSUE_TRACKER_APP_ID=83218c2e-281e-4265-a95f-1d3f763870d4 ENABLE_AUTO_FIX=true /opt/homebrew/bin/node monitor.js >> logs/auto-fix.log 2>&1" >> /tmp/current_cron
+    echo "*/5 * * * * cd /Users/bartbart/Documents/VibeCEO8/sms-bot/agent-issue-tracker && ENABLE_AUTO_FIX=true PROJECT_ROOT=/Users/bartbart/Documents/VibeCEO8/sms-bot /opt/homebrew/bin/node monitor.js >> /tmp/issue-tracker.log 2>&1" >> /tmp/current_cron
     
     # Install the new crontab
     crontab /tmp/current_cron
