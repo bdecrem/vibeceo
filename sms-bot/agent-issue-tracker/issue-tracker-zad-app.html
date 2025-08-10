@@ -369,40 +369,97 @@
 
         .status-timeline {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 0.85rem;
+            align-items: center;
+            margin-top: 15px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            position: relative;
+        }
+        
+        .status-timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: var(--gray-warm);
+            opacity: 0.3;
+            z-index: 0;
         }
 
         .status-step {
-            padding: 6px 12px;
-            border-radius: 15px;
-            background: var(--cream);
-            color: var(--gray-warm);
-            border: 2px solid var(--gray-warm);
+            flex: 1;
+            text-align: center;
+            padding: 4px 8px;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.8rem;
             text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+        
+        .status-step::before {
+            content: '○';
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+            transition: all 0.3s ease;
         }
 
         .status-step.completed {
-            background: var(--green-mint);
             color: var(--charcoal);
-            border-color: var(--charcoal);
+            font-weight: 700;
+        }
+        
+        .status-step.completed::before {
+            content: '●';
+            color: var(--green-sage);
         }
 
         .status-step.current {
-            background: var(--yellow);
             color: var(--charcoal);
-            border-color: var(--charcoal);
             font-weight: 700;
             animation: pulse 2s infinite;
         }
         
+        .status-step.current::before {
+            content: '◉';
+            color: var(--yellow);
+            font-size: 1.4rem;
+        }
+        
+        .status-step.blocked {
+            color: var(--red);
+            font-weight: 700;
+        }
+        
+        .status-step.blocked::before {
+            content: '✕';
+            color: var(--red);
+        }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .status-timeline {
+                padding: 4px;
+            }
+            
+            .status-step {
+                font-size: 0.6rem;
+                padding: 2px 4px;
+            }
+            
+            .status-step::before {
+                font-size: 0.9rem;
+            }
         }
 
         .reactions {
@@ -878,21 +935,42 @@
                 
                 // Enhanced status progression for all flows
                 let statusSteps;
-                if (['closed', 'wontfix'].includes(status)) {
-                    // Closed/wontfix workflow
+                if (status === 'closed') {
+                    // Closed workflow (for tests/jokes)
                     statusSteps = [
-                        { name: 'Submitted', completed: true },
-                        { name: 'Analyzed', completed: !!data.reformulated },
-                        { name: 'Closed', completed: true }
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: 'completed' },
+                        { name: 'Closed', state: 'blocked', subtext: 'Test/Joke' }
+                    ];
+                } else if (status === 'wontfix') {
+                    // Won't fix workflow (for offensive/invalid)
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: 'completed' },
+                        { name: 'Rejected', state: 'blocked', subtext: 'Won\'t Fix' }
+                    ];
+                } else if (status.includes('failed')) {
+                    // Failed workflow
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: data.reformulated ? 'completed' : 'current' },
+                        { name: 'Fixing', state: 'blocked', subtext: 'Failed' },
+                        { name: 'Fixed', state: 'pending' },
+                        { name: 'PR Created', state: 'pending' }
                     ];
                 } else {
                     // Normal workflow
+                    const isAnalyzed = !!data.reformulated;
+                    const isFixing = ['fixing', 'fixed', 'pr-created'].includes(status);
+                    const isFixed = ['fixed', 'pr-created'].includes(status);
+                    const isPRCreated = status === 'pr-created';
+                    
                     statusSteps = [
-                        { name: 'Submitted', completed: true },
-                        { name: 'Analyzed', completed: !!data.reformulated },
-                        { name: 'Fixing', completed: status === 'fixing' || status === 'fixed' || status === 'pr-created' },
-                        { name: 'Fixed', completed: status === 'fixed' || status === 'pr-created' },
-                        { name: 'PR Created', completed: status === 'pr-created' }
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: isAnalyzed ? 'completed' : (status === 'new' ? 'current' : 'completed') },
+                        { name: 'Fixing', state: isFixing ? (status === 'fixing' ? 'current' : 'completed') : 'pending' },
+                        { name: 'Fixed', state: isFixed ? (status === 'fixed' && !isPRCreated ? 'current' : 'completed') : 'pending' },
+                        { name: 'PR Created', state: isPRCreated ? 'completed' : 'pending' }
                     ];
                 }
                 
@@ -919,10 +997,11 @@
                         </div>
                         
                         <div class="status-timeline">
-                            ${statusSteps.map((step, idx) => {
-                                const isCurrentStep = step.completed && !statusSteps[idx + 1]?.completed;
-                                return `<span class="status-step ${step.completed ? (isCurrentStep ? 'current' : 'completed') : ''}">
+                            ${statusSteps.map((step) => {
+                                const className = step.state === 'pending' ? '' : step.state;
+                                return `<span class="status-step ${className}">
                                     ${step.name}
+                                    ${step.subtext ? `<br><small style="font-size: 0.6rem; opacity: 0.8;">${step.subtext}</small>` : ''}
                                 </span>`;
                             }).join('')}
                         </div>
