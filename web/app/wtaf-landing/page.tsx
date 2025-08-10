@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import CopiedModal from "@/components/ui/copied-modal"
 import HomepageTruncatedPrompt from "@/components/wtaf/homepage-truncated-prompt"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { supabase } from '@/lib/supabase'
 
 interface WtafApp {
@@ -1569,6 +1570,9 @@ export default function WebtoysSitePage() {
 
   return (
     <>
+      {/* Theme Toggle */}
+      <ThemeToggle style="floating" />
+      
       {/* Floating Emojis with Parallax */}
       <div className="floating-emojis">
         <div 
@@ -2065,6 +2069,9 @@ export default function WebtoysSitePage() {
         <div className="footer-content">
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
+          </p>
+          <p className="footer-copyright">
+            © 2025 WEBTOYS. All rights reserved.
           </p>
         </div>
       </footer>

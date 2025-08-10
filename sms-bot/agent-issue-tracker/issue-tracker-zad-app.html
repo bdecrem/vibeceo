@@ -685,12 +685,11 @@
                 <button class="filter-btn" onclick="filterIssues('in-progress')">In Progress</button>
                 <button class="filter-btn has-pr" onclick="filterIssues('with-pr')">With PR</button>
                 <button class="filter-btn" onclick="filterIssues('closed')">Closed</button>
-                <button class="filter-btn" onclick="filterIssues('tests')">Tests/Jokes</button>
             </div>
             <div id="issueStats" class="issue-stats">
                 <div class="stat-item">
                     <div class="stat-value" id="totalCount">0</div>
-                    <div class="stat-label">Total Issues</div>
+                    <div class="stat-label" id="totalLabel">Total Issues</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="newCount">0</div>
@@ -905,6 +904,17 @@
             });
             event?.target?.classList.add('active');
             
+            // Update label based on filter
+            const filterLabels = {
+                'all': 'Total Issues',
+                'open': 'Open Issues',
+                'in-progress': 'In Progress',
+                'with-pr': 'Issues with PR',
+                'closed': 'Closed Issues'
+            };
+            
+            document.getElementById('totalLabel').textContent = filterLabels[filter] || 'Total Issues';
+            
             // Apply filter
             switch(filter) {
                 case 'open':
@@ -931,14 +941,7 @@
                 case 'closed':
                     filteredIssues = allIssues.filter(issue => {
                         const status = issue.content_data?.status || 'new';
-                        return status === 'pr-created' || status === 'closed' || status === 'resolved';
-                    });
-                    break;
-                    
-                case 'tests':
-                    filteredIssues = allIssues.filter(issue => {
-                        const status = issue.content_data?.status || 'new';
-                        return status === 'closed-test' || issue.content_data?.is_test;
+                        return status === 'pr-created' || status === 'closed' || status === 'resolved' || status === 'closed-test';
                     });
                     break;
                     
@@ -1112,8 +1115,8 @@
                         ${data.reformulated ? `
                             <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
                                 <strong>📋 Technical Analysis:</strong> ${escapeHtml(data.reformulated)}
-                                ${data.confidence ? `<span class="badge" style="margin-left: 10px;">Confidence: ${data.confidence}</span>` : ''}
-                                ${data.priority ? `<span class="badge" style="margin-left: 5px;">Priority: ${data.priority}</span>` : ''}
+                                ${data.confidence ? `<div style="margin-top: 8px; font-size: 0.9em;"><strong style="color: var(--blue-deep);">Confidence:</strong> <span style="color: var(--charcoal); font-weight: 600;">${data.confidence}</span></div>` : ''}
+                                ${data.priority ? `<div style="font-size: 0.9em;"><strong style="color: var(--blue-deep);">Priority:</strong> <span style="color: var(--charcoal); font-weight: 600;">${data.priority}</span></div>` : ''}
                             </div>
                         ` : ''}
                         ${data.pr_url ? `
