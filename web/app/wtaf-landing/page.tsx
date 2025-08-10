@@ -2064,7 +2064,7 @@ export default function WebtoysSitePage() {
       <footer className="footer">
         <div className="footer-content">
           <p className="footer-copyright">
-            v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
+            v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>. <a href="https://wtaf.me/bart/issue-tracker" className="issue-link">Report Issues</a>.
           </p>
         </div>
       </footer>
@@ -2529,6 +2529,21 @@ export default function WebtoysSitePage() {
         }
         
         .blog-link:hover {
+          color: var(--blue);
+          text-decoration-style: solid;
+          transform: scale(1.05);
+          display: inline-block;
+        }
+        
+        .issue-link {
+          color: var(--blue-deep);
+          text-decoration: underline;
+          text-decoration-style: dotted;
+          text-underline-offset: 2px;
+          transition: all 0.3s ease;
+        }
+        
+        .issue-link:hover {
           color: var(--blue);
           text-decoration-style: solid;
           transform: scale(1.05);
