@@ -2066,6 +2066,11 @@ export default function WebtoysSitePage() {
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
+          <div className="footer-links">
+            <Link href="/privacy" className="footer-link">Privacy Policy</Link>
+            <span className="footer-separator">•</span>
+            <Link href="/terms" className="footer-link">Terms of Service</Link>
+          </div>
         </div>
       </footer>
 
@@ -3367,23 +3372,29 @@ export default function WebtoysSitePage() {
         .footer-links {
           display: flex;
           justify-content: center;
-          gap: 2rem;
-          margin-bottom: 2rem;
+          align-items: center;
+          gap: 1rem;
+          margin-top: 1rem;
           flex-wrap: wrap;
         }
         
-        .footer-links a,
-        .footer-links a[href] {
+        .footer-link {
           color: white;
           text-decoration: none;
           opacity: 0.8;
           transition: opacity 0.3s ease;
+          font-size: 0.9rem;
         }
         
-        .footer-links a:hover,
-        .footer-links a[href]:hover {
+        .footer-link:hover {
           opacity: 1;
           color: var(--yellow);
+        }
+        
+        .footer-separator {
+          color: white;
+          opacity: 0.5;
+          font-size: 0.9rem;
         }
         
         .footer-copyright {
