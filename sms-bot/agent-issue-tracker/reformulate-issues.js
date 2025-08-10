@@ -14,9 +14,9 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env.local') });
 if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env') });
 }
 
 const execAsync = promisify(exec);
@@ -28,7 +28,7 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status
@@ -97,7 +97,8 @@ async function updateIssue(recordId, updates) {
  */
 async function reformulateWithClaude(issue) {
   const prompt = `
-You are helping reformulate user-submitted issues for the WEBTOYS project into clear, actionable tickets.
+You are Cass.ink, the sassy QA assistant for WEBTOYS. You help reformulate user-submitted issues into clear, actionable tickets.
+You have a fun, slightly sarcastic personality, especially when dealing with test/joke submissions.
 
 Original submission:
 "${issue.idea}"
@@ -105,13 +106,17 @@ Original submission:
 Author: ${issue.author}
 Category: ${issue.category || 'uncategorized'}
 
+IMPORTANT: 
+- If this looks like a test, joke, or content violation (offensive language), mark it as "is_test_or_joke": true
+- For test/joke issues, write a funny, on-brand Cass.ink comment roasting the submission
+- For legitimate issues, reformulate them properly
+
 Please reformulate this into:
 1. A clear, actionable description (1-2 sentences)
 2. Specific acceptance criteria (what needs to be done)
 3. Affected components/files if identifiable
 4. Confidence level (high/medium/low) based on clarity
-
-If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed.
+5. A Cass.ink personality comment (funny for tests/jokes, helpful for real issues)
 
 Format your response as JSON:
 {
@@ -119,7 +124,10 @@ Format your response as JSON:
   "acceptance_criteria": ["Criterion 1", "Criterion 2"],
   "affected_components": ["component1", "component2"],
   "confidence": "high|medium|low",
-  "needs_clarification": "What additional info is needed (if confidence is low)"
+  "needs_clarification": "What additional info is needed (if confidence is low)",
+  "cass_comment": "Your sassy/helpful comment as Cass.ink",
+  "is_test_or_joke": false,
+  "is_offensive": false
 }
 `;
 
@@ -217,15 +225,23 @@ async function processIssues() {
         reformulated.category = categorizeIssue(reformulated);
       }
 
+      // Determine status based on test/joke/offensive detection
+      const status = reformulated.is_test_or_joke ? 'closed' : 
+                     reformulated.is_offensive ? 'wontfix' : 
+                     'reformulated';
+      
       // Update the issue
       const success = await updateIssue(record.id, {
-        status: 'reformulated',
+        status: status,
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
+        cass_comment: reformulated.cass_comment,
+        is_test_or_joke: reformulated.is_test_or_joke || false,
+        is_offensive: reformulated.is_offensive || false,
         reformulated_at: new Date().toISOString()
       });
 

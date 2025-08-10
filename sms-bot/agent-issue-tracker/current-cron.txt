@@ -1,0 +1,1 @@
+*/5 * * * * ENABLE_AUTO_FIX=true PROJECT_ROOT=/Users/bartbart/Documents/VibeCEO8/sms-bot /opt/homebrew/bin/node monitor.js >> /tmp/issue-tracker.log 2>&1
