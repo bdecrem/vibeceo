@@ -14,9 +14,9 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env.local') });
 if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env') });
 }
 
 const execAsync = promisify(exec);
@@ -28,7 +28,7 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status

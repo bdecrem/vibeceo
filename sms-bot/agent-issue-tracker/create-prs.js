@@ -13,9 +13,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 // Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env.local') });
 if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.join(process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot', '.env') });
 }
 
 const execAsync = promisify(exec);
@@ -26,8 +26,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartbart/Documents/VibeCEO8/sms-bot';
 
 /**
  * Load fixed issues ready for PR creation
