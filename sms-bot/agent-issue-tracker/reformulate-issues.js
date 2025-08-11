@@ -240,7 +240,8 @@ async function processIssues() {
 
   for (const record of newIssues) {
     const issue = record.content_data;
-    console.log(`\n🔍 Processing issue #${record.id}: "${issue.idea}"`);
+    const issueNumber = issue.issue_number || record.id; // Use stored issue number
+    console.log(`\n🔍 Processing issue #${issueNumber}: "${issue.idea}"`);
 
     try {
       // Reformulate with Claude
