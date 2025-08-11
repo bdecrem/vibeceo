@@ -272,6 +272,24 @@
             background: var(--blue);
             color: var(--charcoal);
         }
+        
+        .badge-closed {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .badge-wont-fix {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .badge-duplicate {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
 
         .status-timeline {
             display: flex;
@@ -647,6 +665,9 @@
                                         status === 'fixed' ? 'badge-fixed' :
                                         status === 'fixing' ? 'badge-fixing' :
                                         status === 'reformulated' ? 'badge-reformulated' :
+                                        status === 'closed' ? 'badge-closed' :
+                                        status === 'wont-fix' ? 'badge-wont-fix' :
+                                        status === 'duplicate' ? 'badge-duplicate' :
                                         status.includes('failed') ? 'badge-failed' :
                                         'badge-new';
                 
