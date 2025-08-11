@@ -11,6 +11,7 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { promises as fs } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +78,17 @@ async function checkGitStatus() {
  * Main monitor function
  */
 async function monitor() {
+  // Check for lock file to prevent concurrent runs
+  const lockFile = path.join(__dirname, '.monitor.lock');
+  try {
+    await fs.access(lockFile);
+    console.log('⚠️  Another instance is already running (lock file exists)');
+    process.exit(0);
+  } catch {
+    // No lock file, create one
+    await fs.writeFile(lockFile, `${process.pid}\n${new Date().toISOString()}`);
+  }
+
   console.log('🎯 WEBTOYS Issue Tracker Monitor');
   console.log(`📅 Started at: ${new Date().toISOString()}`);
   console.log(`📁 Working directory: ${process.cwd()}`);
@@ -143,7 +155,12 @@ async function monitor() {
 
   } catch (error) {
     console.error('\n💥 Pipeline failed:', error.message);
+    // Clean up lock file on error
+    await fs.unlink(lockFile).catch(() => {});
     process.exit(1);
+  } finally {
+    // Always clean up lock file
+    await fs.unlink(lockFile).catch(() => {});
   }
 }
 
