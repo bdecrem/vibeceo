@@ -46,7 +46,9 @@
   "permissions": ["storage", "activeTab"],
   
   "host_permissions": [
-    "https://tqniseocczttrfwtpbdr.supabase.co/*"
+    "https://tqniseocczttrfwtpbdr.supabase.co/*",
+    "http://localhost:*/*",
+    "https://localhost:*/*"
   ],
   
   "content_security_policy": {
