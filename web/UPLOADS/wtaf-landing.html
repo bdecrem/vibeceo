@@ -577,6 +577,11 @@
             .hero-title {
                 font-size: 2rem;
             }
+            
+            .easter-egg-footer {
+                padding: 1.5rem 1rem;
+                font-size: 1rem;
+            }
         }
 
         /* Prompt Display */
@@ -618,6 +623,27 @@
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
+        }
+
+        /* Easter Egg Footer */
+        .easter-egg-footer {
+            position: relative;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            color: #8CFFDA;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid rgba(140, 255, 218, 0.2);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .easter-egg-footer:hover {
+            opacity: 1;
+            color: #00FFC6;
+            transform: scale(1.02);
         }
     </style>
 </head>
@@ -826,5 +852,10 @@
         `;
         document.head.appendChild(style);
     </script>
+
+    <!-- Easter Egg: That's all folks -->
+    <div class="easter-egg-footer">
+        That's all folks! ✨
+    </div>
 </body>
 </html>
