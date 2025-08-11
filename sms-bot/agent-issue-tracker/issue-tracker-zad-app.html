@@ -345,6 +345,28 @@
         .badge-fixing {
             background: var(--yellow-soft);
             color: var(--charcoal);
+            animation: fixing-pulse 2s infinite;
+            position: relative;
+        }
+        
+        .badge-fixing::after {
+            content: '⚙️';
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes fixing-pulse {
+            0% { background: var(--yellow-soft); }
+            50% { background: var(--yellow); }
+            100% { background: var(--yellow-soft); }
+        }
+        
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
         }
 
         .badge-fixed {
@@ -429,6 +451,21 @@
             content: '◉';
             color: var(--yellow);
             font-size: 1.4rem;
+        }
+        
+        .status-step.current.fixing {
+            animation: fixing-step-pulse 1.5s infinite;
+        }
+        
+        .status-step.current.fixing::before {
+            content: '⚙️';
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes fixing-step-pulse {
+            0% { transform: scale(1); color: var(--charcoal); }
+            50% { transform: scale(1.1); color: var(--yellow); }
+            100% { transform: scale(1); color: var(--charcoal); }
         }
         
         .status-step.blocked {
@@ -999,7 +1036,8 @@
                         <div class="status-timeline">
                             ${statusSteps.map((step) => {
                                 const className = step.state === 'pending' ? '' : step.state;
-                                return `<span class="status-step ${className}">
+                                const fixingClass = (step.name === 'Fixing' && step.state === 'current') ? ' fixing' : '';
+                                return `<span class="status-step ${className}${fixingClass}">
                                     ${step.name}
                                     ${step.subtext ? `<br><small style="font-size: 0.6rem; opacity: 0.8;">${step.subtext}</small>` : ''}
                                 </span>`;
