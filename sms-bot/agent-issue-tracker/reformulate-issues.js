@@ -12,11 +12,26 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+const result = dotenv.config({ path: envPath, override: true });
+
+if (result.error) {
+  console.error('Error loading .env.local:', result.error);
+  process.exit(1);
+}
+
+// Verify we got the right values
+if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'your_supabase_url_here') {
+  console.error('Error: Invalid SUPABASE_URL in', envPath);
+  console.error('Make sure sms-bot/.env.local exists and contains valid SUPABASE_URL');
+  process.exit(1);
 }
 
 const execAsync = promisify(exec);
@@ -129,9 +144,13 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     // Use Claude via command line, reading from file to avoid escaping issues
+    // Pass environment variables including ANTHROPIC_API_KEY
     const { stdout } = await execAsync(
       `cat "${tempFile}" | claude --print --output-format json`,
-      { maxBuffer: 1024 * 1024 * 10 }
+      { 
+        maxBuffer: 1024 * 1024 * 10,
+        env: { ...process.env }  // Pass all env vars including ANTHROPIC_API_KEY
+      }
     );
 
     // Clean up temp file
