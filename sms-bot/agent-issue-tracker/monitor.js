@@ -12,14 +12,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+dotenv.config({ path: envPath, override: true });
 
 const execAsync = promisify(exec);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Run a specific agent script
@@ -31,7 +32,7 @@ async function runAgent(scriptName, description) {
 
   try {
     const scriptPath = path.join(__dirname, scriptName);
-    const { stdout, stderr } = await execAsync(`node ${scriptPath}`, {
+    const { stdout, stderr } = await execAsync(`/usr/local/bin/node ${scriptPath}`, {
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       timeout: 600000 // 10 minute timeout per agent
     });

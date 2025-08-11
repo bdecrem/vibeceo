@@ -2066,6 +2066,9 @@ export default function WebtoysSitePage() {
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
+          <p className="footer-copyright">
+            © {new Date().getFullYear()} WEBTOYS. All rights reserved.
+          </p>
         </div>
       </footer>
 

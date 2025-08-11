@@ -31,7 +31,67 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: var(--cream);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .container {
+                max-width: 100%;
+                margin: 0;
+            }
+            
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .issue-item {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .badge {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+                margin: 2px;
+            }
+            
+            .status-timeline {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            
+            .status-step {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
+            
+            .reaction-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+                margin: 2px;
+            }
+            
+            .issue-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .issue-meta {
+                flex-wrap: wrap;
+                gap: 5px;
+                font-size: 0.8rem;
+            }
         }
 
         .container {
@@ -152,8 +212,41 @@
         }
 
         .issue-list {
-            max-height: 500px;
-            overflow-y: auto;
+            /* Natural flow - no height restrictions or separate scrolling */
+        }
+        
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .pagination-controls button {
+            padding: 10px 20px;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        
+        .pagination-info {
+            color: var(--gray-warm);
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .pagination-controls {
+                gap: 8px;
+            }
+            
+            .pagination-controls button {
+                padding: 8px 12px;
+                font-size: 12px;
+                min-width: 60px;
+            }
         }
 
         .issue-item {
@@ -275,40 +368,140 @@
 
         .status-timeline {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 0.85rem;
+            align-items: center;
+            margin-top: 15px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            position: relative;
+        }
+        
+        .status-timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: var(--gray-warm);
+            opacity: 0.3;
+            z-index: 0;
         }
 
         .status-step {
-            padding: 6px 12px;
-            border-radius: 15px;
-            background: var(--cream);
-            color: var(--gray-warm);
-            border: 2px solid var(--gray-warm);
+            flex: 1;
+            text-align: center;
+            padding: 4px 8px;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.8rem;
             text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+        
+        .status-step::before {
+            content: '○';
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+            transition: all 0.3s ease;
         }
 
         .status-step.completed {
-            background: var(--green-mint);
             color: var(--charcoal);
-            border-color: var(--charcoal);
+            font-weight: 700;
+        }
+        
+        .status-step.completed::before {
+            content: '●';
+            color: var(--green-sage);
         }
 
         .status-step.current {
-            background: var(--yellow);
             color: var(--charcoal);
-            border-color: var(--charcoal);
             font-weight: 700;
             animation: pulse 2s infinite;
         }
         
+        .status-step.current::before {
+            content: '◉';
+            color: var(--yellow);
+            font-size: 1.4rem;
+        }
+        
+        .status-step.blocked {
+            color: var(--red);
+            font-weight: 700;
+        }
+        
+        .status-step.blocked::before {
+            content: '✕';
+            color: var(--red);
+        }
+        
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0.7);
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(255, 214, 61, 0);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0);
+            }
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .status-indicator.green {
+            background: #00FF00;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+        
+        .status-indicator.yellow-pulse {
+            background: var(--yellow);
+            animation: pulse-indicator 1.5s infinite;
+        }
+        
+        @keyframes pulse-indicator {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0.7);
+                transform: scale(1);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 214, 61, 0);
+                transform: scale(1.2);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0);
+                transform: scale(1);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .status-timeline {
+                padding: 4px;
+            }
+            
+            .status-step {
+                font-size: 0.6rem;
+                padding: 2px 4px;
+            }
+            
+            .status-step::before {
+                font-size: 0.9rem;
+            }
         }
 
         .reactions {
@@ -375,6 +568,116 @@
             font-weight: 600;
             font-size: 18px;
         }
+        
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .filter-btn {
+            background: var(--cream);
+            color: var(--charcoal);
+            border: 2px solid var(--charcoal);
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 2px 2px 0px var(--charcoal);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-btn:hover {
+            background: var(--yellow-soft);
+            transform: translateY(-2px);
+            box-shadow: 3px 4px 0px var(--charcoal);
+        }
+        
+        .filter-btn.active {
+            background: var(--blue);
+            color: var(--charcoal);
+            font-weight: 700;
+        }
+        
+        .issue-number {
+            font-weight: 800;
+            color: var(--purple-accent);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 0px var(--purple-shadow);
+        }
+        
+        .confidence-priority {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--yellow-soft);
+            border-radius: 10px;
+            border: 2px solid var(--charcoal);
+        }
+        
+        .confidence-priority strong {
+            color: var(--charcoal);
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .cass-comment {
+            margin-top: 15px;
+            padding: 15px;
+            background: var(--blue);
+            border-radius: 15px;
+            border: 3px solid var(--blue-deep);
+            box-shadow: 2px 2px 0px var(--blue-deep);
+        }
+        
+        .cass-comment strong {
+            color: var(--charcoal);
+            font-weight: 800;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            /* Remove all rotation and hover effects on mobile for stability */
+            .card {
+                transform: none !important;
+                transition: none !important;
+            }
+            
+            .card:nth-child(even) {
+                transform: none !important;
+            }
+            
+            .card:hover {
+                transform: none !important;
+            }
+            
+            .issue-item {
+                transform: none !important;
+                transition: box-shadow 0.3s ease !important;
+            }
+            
+            .issue-item:nth-child(even) {
+                transform: none !important;
+            }
+            
+            .issue-item:nth-child(3n) {
+                transform: none !important;
+            }
+            
+            .issue-item:hover {
+                transform: none !important;
+                box-shadow: 5px 8px 0px var(--purple-shadow) !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -387,6 +690,11 @@
         <div class="card">
             <h2>Submit New Issue</h2>
             <div id="submitForm">
+                <div class="form-group">
+                    <label for="idea">Description</label>
+                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
+                </div>
+
                 <div class="form-group">
                     <label for="author">Your Name (optional)</label>
                     <input type="text" id="author" placeholder="Anonymous" />
@@ -403,11 +711,6 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="idea">Description</label>
-                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
-                </div>
-
                 <button onclick="submitIssue()">Submit Issue</button>
             </div>
 
@@ -415,16 +718,44 @@
         </div>
 
         <div class="card">
-            <h2>Recent Issues</h2>
+            <h2>Issues</h2>
+            
+            <!-- Filter Controls -->
+            <div class="filter-controls" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <button class="filter-btn active" onclick="setFilter('all')" data-filter="all">All Issues</button>
+                <button class="filter-btn" onclick="setFilter('active')" data-filter="active">Active</button>
+                <button class="filter-btn" onclick="setFilter('resolved')" data-filter="resolved">Resolved</button>
+                <button class="filter-btn" onclick="setFilter('new')" data-filter="new">New</button>
+                <button class="filter-btn" onclick="setFilter('fixing')" data-filter="fixing">In Progress</button>
+                <button class="filter-btn" onclick="setFilter('closed')" data-filter="closed">Closed</button>
+            </div>
+            
             <div id="issueList" class="issue-list">
                 <div class="loading">Loading issues...</div>
             </div>
+        </div>
+        
+        <!-- Pagination Controls - Now outside the card -->
+        <div class="pagination-controls" id="paginationControls" style="display: none; margin-top: 20px; margin-bottom: 30px;">
+            <button onclick="changePage(-1)" id="prevBtn">← Previous</button>
+            <div class="pagination-info" id="paginationInfo">Page 1 of 1</div>
+            <button onclick="changePage(1)" id="nextBtn">Next →</button>
         </div>
     </div>
 
     <script>
         // ZAD Configuration
         window.APP_ID = '83218c2e-281e-4265-a95f-1d3f763870d4';
+        
+        // Pagination state
+        let currentPage = 1;
+        let issuesPerPage = 10;
+        let allIssues = [];
+        let filteredIssues = [];
+        let currentFilter = 'all';
+        
+        // Content filtering - offensive words to hide
+        const OFFENSIVE_WORDS = ['fuck', 'shit', 'damn', 'asshole', 'bitch', 'bastard', 'crap'];
         
         // ZAD Helper Functions (injected by WEBTOYS)
         async function save(actionType, data, participantData = null) {
@@ -496,11 +827,15 @@
                 return;
             }
 
+            // Get the next issue number
+            const issueNumber = await getNextIssueNumber();
+            
             const issueData = {
                 idea: idea,
                 author: author,
                 category: category,
                 status: 'new',
+                issue_number: issueNumber, // Store the sequential issue number
                 comments: [],
                 reactions: {
                     '👍': 0,
@@ -529,7 +864,14 @@
                 console.log('Loading issues for app:', window.APP_ID);
                 const issues = await load('issue');
                 console.log('Loaded issues:', issues);
-                displayIssues(issues);
+                
+                // Store all issues globally and apply content filtering
+                allIssues = filterOffensiveContent(issues);
+                applyFilter(currentFilter);
+                
+                // Apply the current filter to display issues
+                applyFilter(currentFilter);
+                
             } catch (error) {
                 console.error('Error loading issues:', error);
                 document.getElementById('issueList').innerHTML = 
@@ -537,44 +879,222 @@
             }
         }
 
-        function displayIssues(issues) {
+        // Content filtering function
+        function filterOffensiveContent(issues) {
+            return issues.filter(issue => {
+                const data = issue.content_data || {};
+                const text = (data.idea || '').toLowerCase();
+                return !OFFENSIVE_WORDS.some(word => text.includes(word));
+            });
+        }
+        
+        // Filter issues by status
+        function applyFilter(filter) {
+            currentFilter = filter;
+            
+            // Update filter button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Filter issues based on status
+            switch (filter) {
+                case 'active':
+                    filteredIssues = allIssues.filter(issue => {
+                        const status = issue.content_data?.status || 'new';
+                        return ['new', 'reformulated', 'fixing'].includes(status);
+                    });
+                    break;
+                case 'resolved':
+                    filteredIssues = allIssues.filter(issue => {
+                        const status = issue.content_data?.status || 'new';
+                        return ['fixed', 'pr-created'].includes(status);
+                    });
+                    break;
+                case 'closed':
+                    filteredIssues = allIssues.filter(issue => {
+                        const status = issue.content_data?.status || 'new';
+                        return ['closed', 'wontfix'].includes(status);
+                    });
+                    break;
+                case 'new':
+                    filteredIssues = allIssues.filter(issue => {
+                        const status = issue.content_data?.status || 'new';
+                        return status === 'new';
+                    });
+                    break;
+                case 'fixing':
+                    filteredIssues = allIssues.filter(issue => {
+                        const status = issue.content_data?.status || 'new';
+                        return status === 'fixing';
+                    });
+                    break;
+                default:
+                    filteredIssues = [...allIssues];
+            }
+            
+            // Reset to page 1 and display
+            currentPage = 1;
+            displayFilteredIssues();
+        }
+        
+        // Set filter function called by buttons
+        function setFilter(filter) {
+            applyFilter(filter);
+        }
+        
+        // Pagination functions
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredIssues.length / issuesPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                displayFilteredIssues();
+            }
+        }
+        
+        // Generate issue number - use stored number or create sequential one
+        function generateIssueNumber(issue) {
+            // First check if we have a stored issue number
+            if (issue.content_data && issue.content_data.issue_number) {
+                return `#${issue.content_data.issue_number}`;
+            }
+            
+            // For legacy issues without stored numbers - generate from UUID
+            if (issue && issue.id) {
+                const idStr = String(issue.id);
+                const hash = idStr.replace(/-/g, '');
+                const num = parseInt(hash.substr(0, 8), 16) % 9999 + 100;
+                return `#${num}`;
+            }
+            
+            return '#---';
+        }
+        
+        // Get next issue number starting from 101
+        async function getNextIssueNumber() {
+            try {
+                // Load all issues to find the highest number
+                const allIssues = await load('issue');
+                let maxNumber = 100; // Start from 100, so first issue is 101
+                
+                allIssues.forEach(issue => {
+                    if (issue.content_data?.issue_number) {
+                        maxNumber = Math.max(maxNumber, issue.content_data.issue_number);
+                    }
+                });
+                
+                return maxNumber + 1;
+            } catch (error) {
+                console.error('Error getting next issue number:', error);
+                // Fallback to timestamp-based if error
+                return 101 + (Date.now() % 1000);
+            }
+        }
+        
+        // Updated display function with pagination and issue numbers
+        function displayFilteredIssues() {
             const container = document.getElementById('issueList');
+            const paginationControls = document.getElementById('paginationControls');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
             
-            console.log('Displaying issues:', issues?.length || 0);
+            console.log('Displaying filtered issues:', filteredIssues?.length || 0);
             
-            if (!issues || issues.length === 0) {
-                container.innerHTML = '<div class="loading">No issues yet. Be the first to submit one!</div>';
+            if (!filteredIssues || filteredIssues.length === 0) {
+                container.innerHTML = '<div class="loading">No issues match the current filter.</div>';
+                paginationControls.style.display = 'none';
                 return;
             }
 
             // Sort by timestamp, newest first
-            issues.sort((a, b) => (b.content_data?.timestamp || 0) - (a.content_data?.timestamp || 0));
+            filteredIssues.sort((a, b) => (b.content_data?.timestamp || 0) - (a.content_data?.timestamp || 0));
             
-            console.log('First issue data:', issues[0]);
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredIssues.length / issuesPerPage);
+            const startIndex = (currentPage - 1) * issuesPerPage;
+            const endIndex = Math.min(startIndex + issuesPerPage, filteredIssues.length);
+            const currentIssues = filteredIssues.slice(startIndex, endIndex);
+            
+            // Update pagination controls
+            paginationControls.style.display = totalPages > 1 ? 'flex' : 'none';
+            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredIssues.length} issues)`;
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
 
-            container.innerHTML = issues.slice(0, 20).map(issue => {
+            container.innerHTML = currentIssues.map(issue => {
                 const data = issue.content_data || {};
                 const status = data.status || 'new';
                 const category = data.category || 'triage';
+                const issueNumber = generateIssueNumber(issue);
                 
-                // Determine status progression
-                const statusSteps = [
-                    { name: 'Submitted', completed: true },
-                    { name: 'Analyzed', completed: !!data.reformulated },
-                    { name: 'Fixing', completed: status === 'fixing' || status === 'fixed' || status === 'pr-created' },
-                    { name: 'Fixed', completed: status === 'fixed' || status === 'pr-created' },
-                    { name: 'PR Created', completed: status === 'pr-created' }
-                ];
+                // Enhanced status progression for all flows
+                let statusSteps;
+                if (status === 'closed' || status === 'wontfix') {
+                    // Closed workflow - only show indicator on CURRENT status
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: 'completed' },
+                        { name: 'Closed', state: 'completed', showIndicator: 'green' }
+                    ];
+                } else if (status.includes('failed')) {
+                    // Failed workflow - only show indicator on CURRENT status
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: data.reformulated ? 'completed' : 'current', 
+                          showIndicator: data.reformulated ? null : 'yellow-pulse',
+                          displayName: data.reformulated ? 'Analyzed' : 'Analyzing' },
+                        { name: 'Failed', state: 'blocked', showIndicator: 'red' },
+                        { name: 'Fixed', state: 'pending' },
+                        { name: 'PR Created', state: 'pending' }
+                    ];
+                } else {
+                    // Normal workflow - only show indicator on CURRENT active step
+                    const isNew = status === 'new';  // Just submitted, not yet processing
+                    const isAnalyzing = status === 'analyzing';  // Actually being processed
+                    const isAnalyzed = status === 'reformulated' || status === 'fixing' || status === 'fixed' || status === 'pr-creating' || status === 'pr-created';
+                    const isFixing = status === 'fixing';
+                    const isFixed = status === 'fixed' || status === 'pr-creating' || status === 'pr-created';
+                    const isPRCreating = status === 'pr-creating';
+                    const isPRCreated = status === 'pr-created';
+                    
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { 
+                            name: isAnalyzing ? 'Analyzing' : 'Analyzed',
+                            state: isAnalyzing ? 'current' : 'completed',
+                            showIndicator: isAnalyzing ? 'yellow-pulse' : null
+                        },
+                        { 
+                            name: isFixing ? 'Fixing' : 'Fixed',
+                            state: isFixing ? 'current' : (isFixed ? 'completed' : 'pending'),
+                            showIndicator: isFixing ? 'yellow-pulse' : null
+                        },
+                        { 
+                            name: isPRCreating ? 'Creating PR' : (isPRCreated ? 'PR Created' : 'PR Pending'),
+                            state: isPRCreating ? 'current' : (isPRCreated ? 'completed' : 'pending'),
+                            showIndicator: isPRCreating ? 'yellow-pulse' : (isPRCreated ? 'green' : null)
+                        }
+                    ];
+                }
                 
                 const statusBadgeClass = status === 'pr-created' ? 'badge-pr-created' : 
                                         status === 'fixed' ? 'badge-fixed' :
                                         status === 'fixing' ? 'badge-fixing' :
                                         status === 'reformulated' ? 'badge-reformulated' :
+                                        status === 'closed' ? 'badge-failed' :
+                                        status === 'wontfix' ? 'badge-failed' :
                                         status.includes('failed') ? 'badge-failed' :
                                         'badge-new';
                 
                 return `
                     <div class="issue-item">
+                        <div class="issue-number">${issueNumber}</div>
                         <div class="issue-header">
                             <div class="issue-title">${escapeHtml(data.idea || 'No description')}</div>
                         </div>
@@ -586,10 +1106,16 @@
                         </div>
                         
                         <div class="status-timeline">
-                            ${statusSteps.map((step, idx) => {
-                                const isCurrentStep = step.completed && !statusSteps[idx + 1]?.completed;
-                                return `<span class="status-step ${step.completed ? (isCurrentStep ? 'current' : 'completed') : ''}">
-                                    ${step.name}
+                            ${statusSteps.map((step) => {
+                                const className = step.state === 'pending' ? '' : step.state;
+                                let indicator = '';
+                                if (step.showIndicator === 'green') {
+                                    indicator = '<span class="status-indicator green"></span>';
+                                } else if (step.showIndicator === 'yellow-pulse') {
+                                    indicator = '<span class="status-indicator yellow-pulse"></span>';
+                                }
+                                return `<span class="status-step ${className}">
+                                    ${indicator}${step.displayName || step.name}
                                 </span>`;
                             }).join('')}
                         </div>
@@ -597,9 +1123,22 @@
                         ${data.reformulated ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--purple-shadow); border-radius: 15px; border: 2px solid var(--purple-accent);">
                                 <strong style="color: var(--charcoal);">🤖 AI Analysis:</strong> <span style="color: var(--charcoal);">${escapeHtml(data.reformulated)}</span>
-                                ${data.confidence ? `<span class="badge" style="margin-left: 10px;">Confidence: ${data.confidence}</span>` : ''}
                             </div>
                         ` : ''}
+                        
+                        ${data.confidence || data.priority ? `
+                            <div class="confidence-priority">
+                                ${data.confidence ? `<strong>Confidence: ${data.confidence}</strong>` : ''}
+                                ${data.priority ? `<strong>Priority: ${data.priority}</strong>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.ash_comment ? `
+                            <div class="cass-comment">
+                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.ash_comment)}
+                            </div>
+                        ` : ''}
+                        
                         ${data.pr_url ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--green-mint); border-radius: 15px; border: 3px solid var(--green-sage); box-shadow: 2px 2px 0px var(--green-sage);">
                                 <strong style="color: var(--charcoal);">🎉 Pull Request Created!</strong><br>
@@ -608,6 +1147,7 @@
                                 </a>
                             </div>
                         ` : ''}
+                        
                         <div class="reactions">
                             <button class="reaction-btn" onclick="addReaction('${issue.id}', '👍')">
                                 👍 ${data.reactions?.['👍'] || 0}
@@ -623,11 +1163,51 @@
                 `;
             }).join('');
         }
+        
+        // Legacy function for backward compatibility
+        function displayIssues(issues) {
+            allIssues = filterOffensiveContent(issues);
+            applyFilter(currentFilter);
+        }
 
-        async function addReaction(issueId, emoji) {
-            // This would need the update functionality in the ZAD API
-            // For now, just show a message
-            showMessage('Reaction feature coming soon!', 'success');
+async function addReaction(issueId, emoji) {
+            try {
+                // Find the issue in our local array
+                const issueIndex = allIssues.findIndex(issue => issue.id === issueId);
+                if (issueIndex === -1) {
+                    showMessage('Issue not found', 'error');
+                    return;
+                }
+                
+                const issue = allIssues[issueIndex];
+                const data = issue.content_data || {};
+                const reactions = data.reactions || { '👍': 0, '🔥': 0, '❤️': 0 };
+                
+                // Increment the reaction count
+                reactions[emoji] = (reactions[emoji] || 0) + 1;
+                
+                // Update the issue with new reaction data
+                const updatedData = {
+                    ...data,
+                    reactions: reactions,
+                    updated_at: new Date().toISOString()
+                };
+                
+                // Save via ZAD API - we'll need to update the whole record
+                // Since we can't easily update existing records, we'll show optimistic UI update
+                allIssues[issueIndex].content_data.reactions = reactions;
+                
+                // Show updated display immediately
+                displayFilteredIssues();
+                
+                showMessage(`Added ${emoji} reaction!`, 'success');
+                
+                // In a real implementation, you would call an update API here
+                // For now, reactions will reset on page reload
+                
+            } catch (error) {
+                showMessage('Failed to add reaction: ' + error.message, 'error');
+            }
         }
 
         function showMessage(text, type) {
