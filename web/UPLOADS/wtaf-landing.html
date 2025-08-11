@@ -619,6 +619,25 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+
+        /* Easter Egg Footer */
+        .easter-egg-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            color: #8CFFDA;
+            opacity: 0.7;
+            font-style: italic;
+            transition: all 0.3s ease;
+        }
+
+        .easter-egg-footer:hover {
+            opacity: 1;
+            transform: scale(1.05);
+            color: #00FFC6;
+        }
     </style>
 </head>
 <body>
@@ -720,6 +739,11 @@
                 <div style="margin-top: 2rem;">
                     <a href="https://wtaf.me/bart/satin-horse-storytelling" class="faq-link">FAQ</a>
                 </div>
+            </div>
+            
+            <!-- Easter Egg -->
+            <div class="easter-egg-footer">
+                That's all folks
             </div>
         </section>
     </main>
