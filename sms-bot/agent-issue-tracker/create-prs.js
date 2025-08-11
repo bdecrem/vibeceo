@@ -168,9 +168,12 @@ async function createPullRequest(issue, issueId, branchName) {
   const body = generatePRDescription(issue, issueId);
 
   try {
-    // First, push the branch to remote
+    // First, push the branch to remote using gh's git credential helper
     console.log(`  📤 Pushing branch ${branchName} to remote...`);
     await execAsync(`git checkout ${branchName}`, { cwd: PROJECT_ROOT });
+    
+    // Set git to use gh's credentials for this push
+    await execAsync(`git config credential.helper "!gh auth git-credential"`, { cwd: PROJECT_ROOT });
     await execAsync(`git push -u origin ${branchName}`, { cwd: PROJECT_ROOT });
 
     // Create PR using gh CLI with body from file to avoid escaping issues
@@ -257,6 +260,12 @@ async function processPullRequests() {
         if (!issue.branch_name) {
           throw new Error('No branch name found for fixed issue');
         }
+
+        // Update status to 'pr-creating'
+        await updateIssue(record.id, {
+          status: 'pr-creating',
+          pr_creation_started_at: new Date().toISOString()
+        });
 
         // Create the PR
         const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name);

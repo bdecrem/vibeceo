@@ -827,11 +827,15 @@
                 return;
             }
 
+            // Get the next issue number
+            const issueNumber = await getNextIssueNumber();
+            
             const issueData = {
                 idea: idea,
                 author: author,
                 category: category,
                 status: 'new',
+                issue_number: issueNumber, // Store the sequential issue number
                 comments: [],
                 reactions: {
                     '👍': 0,
@@ -863,6 +867,9 @@
                 
                 // Store all issues globally and apply content filtering
                 allIssues = filterOffensiveContent(issues);
+                applyFilter(currentFilter);
+                
+                // Apply the current filter to display issues
                 applyFilter(currentFilter);
                 
             } catch (error) {
@@ -950,24 +957,43 @@
             }
         }
         
-        // Generate issue number from ID
+        // Generate issue number - use stored number or create sequential one
         function generateIssueNumber(issue) {
-            // Convert UUID to a shorter issue number
+            // First check if we have a stored issue number
+            if (issue.content_data && issue.content_data.issue_number) {
+                return `#${issue.content_data.issue_number}`;
+            }
+            
+            // For legacy issues without stored numbers - generate from UUID
             if (issue && issue.id) {
-                // Ensure issue.id is a string before calling replace()
                 const idStr = String(issue.id);
                 const hash = idStr.replace(/-/g, '');
-                const num = parseInt(hash.substr(0, 8), 16) % 9999 + 100; // Keep it between 100-9999
+                const num = parseInt(hash.substr(0, 8), 16) % 9999 + 100;
                 return `#${num}`;
             }
-            // Fallback for issues without proper ID
-            if (issue && issue.created_at) {
-                // Use timestamp as backup ID
-                const timestamp = new Date(issue.created_at).getTime();
-                const num = (timestamp % 9999) + 100;
-                return `#${num}`;
+            
+            return '#---';
+        }
+        
+        // Get next issue number starting from 101
+        async function getNextIssueNumber() {
+            try {
+                // Load all issues to find the highest number
+                const allIssues = await load('issue');
+                let maxNumber = 100; // Start from 100, so first issue is 101
+                
+                allIssues.forEach(issue => {
+                    if (issue.content_data?.issue_number) {
+                        maxNumber = Math.max(maxNumber, issue.content_data.issue_number);
+                    }
+                });
+                
+                return maxNumber + 1;
+            } catch (error) {
+                console.error('Error getting next issue number:', error);
+                // Fallback to timestamp-based if error
+                return 101 + (Date.now() % 1000);
             }
-            return '#000';
         }
         
         // Updated display function with pagination and issue numbers
@@ -1029,10 +1055,12 @@
                     ];
                 } else {
                     // Normal workflow - only show indicator on CURRENT active step
-                    const isAnalyzing = status === 'new';
-                    const isAnalyzed = status === 'reformulated' || status === 'fixing' || status === 'fixed' || status === 'pr-created';
+                    const isNew = status === 'new';  // Just submitted, not yet processing
+                    const isAnalyzing = status === 'analyzing';  // Actually being processed
+                    const isAnalyzed = status === 'reformulated' || status === 'fixing' || status === 'fixed' || status === 'pr-creating' || status === 'pr-created';
                     const isFixing = status === 'fixing';
-                    const isFixed = status === 'fixed' || status === 'pr-created';
+                    const isFixed = status === 'fixed' || status === 'pr-creating' || status === 'pr-created';
+                    const isPRCreating = status === 'pr-creating';
                     const isPRCreated = status === 'pr-created';
                     
                     statusSteps = [
@@ -1048,9 +1076,9 @@
                             showIndicator: isFixing ? 'yellow-pulse' : null
                         },
                         { 
-                            name: 'PR Created',
-                            state: isPRCreated ? 'completed' : 'pending',
-                            showIndicator: isPRCreated ? 'green' : null
+                            name: isPRCreating ? 'Creating PR' : (isPRCreated ? 'PR Created' : 'PR Pending'),
+                            state: isPRCreating ? 'current' : (isPRCreated ? 'completed' : 'pending'),
+                            showIndicator: isPRCreating ? 'yellow-pulse' : (isPRCreated ? 'green' : null)
                         }
                     ];
                 }
