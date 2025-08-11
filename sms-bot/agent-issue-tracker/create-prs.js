@@ -137,7 +137,8 @@ async function updateIssueWithPR(recordId, prUrl, prNumber) {
 /**
  * Generate PR description from issue data
  */
-function generatePRDescription(issue, issueId) {
+function generatePRDescription(issue, issueId, issueNumber) {
+  const displayNumber = issueNumber || issueId;
   const sections = [];
 
   sections.push('## Summary');
@@ -161,7 +162,7 @@ function generatePRDescription(issue, issueId) {
   }
 
   sections.push('## Issue Details');
-  sections.push(`- **Issue ID**: #${issueId}`);
+  sections.push(`- **Issue**: #${displayNumber}`);
   sections.push(`- **Category**: ${issue.category}`);
   sections.push(`- **Author**: ${issue.author}`);
   sections.push(`- **Confidence**: ${issue.confidence}`);
@@ -195,9 +196,9 @@ function generatePRDescription(issue, issueId) {
 /**
  * Create a GitHub PR using gh CLI
  */
-async function createPullRequest(issue, issueId, branchName) {
+async function createPullRequest(issue, issueId, branchName, issueNumber) {
   const title = `fix: ${issue.reformulated.substring(0, 80)}`;
-  const body = generatePRDescription(issue, issueId);
+  const body = generatePRDescription(issue, issueId, issueNumber);
 
   try {
     // First, push the branch to remote using gh's git credential helper
@@ -262,7 +263,7 @@ async function addPRLabels(prNumber, issue) {
     );
     return true;
   } catch (error) {
-    console.error('Error adding labels:', error);
+    console.log('Warning: Could not add labels (labels may not exist in repo)');
     return false;
   }
 }
@@ -286,7 +287,8 @@ async function processPullRequests() {
 
     for (const record of issues) {
       const issue = record.content_data;
-      console.log(`\n🎯 Creating PR for issue #${record.id}: "${issue.reformulated}"`);
+      const issueNumber = issue.issue_number || record.id; // Use stored issue number
+      console.log(`\n🎯 Creating PR for issue #${issueNumber}: "${issue.reformulated}"`);
 
       try {
         if (!issue.branch_name) {
@@ -300,7 +302,7 @@ async function processPullRequests() {
         });
 
         // Create the PR
-        const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name);
+        const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name, issueNumber);
 
         if (!prUrl) {
           throw new Error('Failed to create PR - no URL returned');

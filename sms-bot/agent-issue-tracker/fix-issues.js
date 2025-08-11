@@ -105,8 +105,10 @@ async function updateIssueStatus(recordId, status, additionalData = {}) {
 /**
  * Create a feature branch for the issue
  */
-async function createFeatureBranch(issueId, description) {
-  const branchName = `auto-fix/issue-${issueId}-${description.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}`;
+async function createFeatureBranch(issueId, description, issueNumber) {
+  // Use the user-facing issue number in branch name if available
+  const displayNumber = issueNumber || issueId;
+  const branchName = `auto-fix/issue-${displayNumber}-${description.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}`;
   
   try {
     // Get current branch
@@ -221,10 +223,11 @@ Please implement the fix now.`;
 /**
  * Commit changes
  */
-async function commitChanges(issue, issueId) {
+async function commitChanges(issue, issueId, issueNumber) {
+  const displayNumber = issueNumber || issueId;
   const commitMessage = `fix: ${issue.reformulated}
 
-Issue #${issueId}
+Issue #${displayNumber}
 Category: ${issue.category}
 Confidence: ${issue.confidence}
 
@@ -256,14 +259,15 @@ async function processIssues() {
 
     for (const record of issues) {
       const issue = record.content_data;
-      console.log(`\n🔨 Attempting to fix issue #${record.id}: "${issue.reformulated}"`);
+      const issueNumber = issue.issue_number || record.id; // Use stored issue number or fallback to ID
+      console.log(`\n🔨 Attempting to fix issue #${issueNumber}: "${issue.reformulated}"`);
 
       // Update status to in-progress
       await updateIssueStatus(record.id, 'fixing');
 
       try {
         // Create feature branch
-        const branchName = await createFeatureBranch(record.id, issue.reformulated);
+        const branchName = await createFeatureBranch(record.id, issue.reformulated, issueNumber);
         console.log(`  📌 Created branch: ${branchName}`);
 
         // Implement the fix
@@ -286,7 +290,7 @@ async function processIssues() {
 
         // Commit changes
         console.log(`  💾 Committing changes...`);
-        const committed = await commitChanges(issue, record.id);
+        const committed = await commitChanges(issue, record.id, issueNumber);
 
         if (!committed) {
           throw new Error('Failed to commit changes');
