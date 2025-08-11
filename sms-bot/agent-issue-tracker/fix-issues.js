@@ -189,7 +189,7 @@ Please implement the fix now.`;
 
     // Execute Claude Code using file input with bypassed permissions for automation
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
