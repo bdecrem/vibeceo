@@ -11,11 +11,26 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+const result = dotenv.config({ path: envPath, override: true });
+
+if (result.error) {
+  console.error('Error loading .env.local:', result.error);
+  process.exit(1);
+}
+
+// Verify we got the right values
+if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'your_supabase_url_here') {
+  console.error('Error: Invalid SUPABASE_URL in', envPath);
+  console.error('Make sure sms-bot/.env.local exists and contains valid SUPABASE_URL');
+  process.exit(1);
 }
 
 const execAsync = promisify(exec);
@@ -27,7 +42,7 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load fixed issues ready for PR creation
@@ -51,6 +66,38 @@ async function loadFixedIssues() {
            content.ready_for_pr === true &&
            !content.pr_url;
   });
+}
+
+/**
+ * Update an issue's status and data
+ */
+async function updateIssue(recordId, updates) {
+  const { data: current, error: fetchError } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('*')
+    .eq('id', recordId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching issue:', fetchError);
+    return false;
+  }
+
+  const updatedContent = {
+    ...current.content_data,
+    ...updates,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error: updateError } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .update({ 
+      content_data: updatedContent,
+      updated_at: new Date()
+    })
+    .eq('id', recordId);
+
+  return !updateError;
 }
 
 /**
@@ -90,7 +137,8 @@ async function updateIssueWithPR(recordId, prUrl, prNumber) {
 /**
  * Generate PR description from issue data
  */
-function generatePRDescription(issue, issueId) {
+function generatePRDescription(issue, issueId, issueNumber) {
+  const displayNumber = issueNumber || issueId;
   const sections = [];
 
   sections.push('## Summary');
@@ -114,7 +162,7 @@ function generatePRDescription(issue, issueId) {
   }
 
   sections.push('## Issue Details');
-  sections.push(`- **Issue ID**: #${issueId}`);
+  sections.push(`- **Issue**: #${displayNumber}`);
   sections.push(`- **Category**: ${issue.category}`);
   sections.push(`- **Author**: ${issue.author}`);
   sections.push(`- **Confidence**: ${issue.confidence}`);
@@ -148,14 +196,17 @@ function generatePRDescription(issue, issueId) {
 /**
  * Create a GitHub PR using gh CLI
  */
-async function createPullRequest(issue, issueId, branchName) {
+async function createPullRequest(issue, issueId, branchName, issueNumber) {
   const title = `fix: ${issue.reformulated.substring(0, 80)}`;
-  const body = generatePRDescription(issue, issueId);
+  const body = generatePRDescription(issue, issueId, issueNumber);
 
   try {
-    // First, push the branch to remote
+    // First, push the branch to remote using gh's git credential helper
     console.log(`  📤 Pushing branch ${branchName} to remote...`);
     await execAsync(`git checkout ${branchName}`, { cwd: PROJECT_ROOT });
+    
+    // Set git to use gh's credentials for this push
+    await execAsync(`git config credential.helper "!gh auth git-credential"`, { cwd: PROJECT_ROOT });
     await execAsync(`git push -u origin ${branchName}`, { cwd: PROJECT_ROOT });
 
     // Create PR using gh CLI with body from file to avoid escaping issues
@@ -164,7 +215,7 @@ async function createPullRequest(issue, issueId, branchName) {
     await fs.writeFile(tempFile, body);
     
     const { stdout } = await execAsync(
-      `gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
+      `/opt/homebrew/bin/gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
       { cwd: PROJECT_ROOT }
     );
     
@@ -207,12 +258,12 @@ async function addPRLabels(prNumber, issue) {
 
   try {
     await execAsync(
-      `gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
+      `/opt/homebrew/bin/gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
       { cwd: PROJECT_ROOT }
     );
     return true;
   } catch (error) {
-    console.error('Error adding labels:', error);
+    console.log('Warning: Could not add labels (labels may not exist in repo)');
     return false;
   }
 }
@@ -236,15 +287,22 @@ async function processPullRequests() {
 
     for (const record of issues) {
       const issue = record.content_data;
-      console.log(`\n🎯 Creating PR for issue #${record.id}: "${issue.reformulated}"`);
+      const issueNumber = issue.issue_number || record.id; // Use stored issue number
+      console.log(`\n🎯 Creating PR for issue #${issueNumber}: "${issue.reformulated}"`);
 
       try {
         if (!issue.branch_name) {
           throw new Error('No branch name found for fixed issue');
         }
 
+        // Update status to 'pr-creating'
+        await updateIssue(record.id, {
+          status: 'pr-creating',
+          pr_creation_started_at: new Date().toISOString()
+        });
+
         // Create the PR
-        const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name);
+        const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name, issueNumber);
 
         if (!prUrl) {
           throw new Error('Failed to create PR - no URL returned');
@@ -267,7 +325,7 @@ async function processPullRequests() {
           const comment = `### Community Discussion\n\n${issue.comments.map(c => `- ${c}`).join('\n')}`;
           try {
             await execAsync(
-              `gh pr comment ${prNumber} --body "${comment}"`,
+              `/opt/homebrew/bin/gh pr comment ${prNumber} --body "${comment}"`,
               { cwd: PROJECT_ROOT }
             );
           } catch (commentError) {
@@ -309,7 +367,7 @@ async function processPullRequests() {
     console.log(`\n📋 Checking all auto-generated PRs...`);
     try {
       const { stdout: prList } = await execAsync(
-        `gh pr list --label "auto-generated" --state open --json number,title,url`,
+        `/opt/homebrew/bin/gh pr list --label "auto-generated" --state open --json number,title,url`,
         { cwd: PROJECT_ROOT }
       );
       

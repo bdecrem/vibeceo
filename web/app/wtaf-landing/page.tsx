@@ -2066,6 +2066,9 @@ export default function WebtoysSitePage() {
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
+          <p className="easter-egg">
+            That's all folks
+          </p>
         </div>
       </footer>
 
@@ -3389,6 +3392,19 @@ export default function WebtoysSitePage() {
         .footer-copyright {
           opacity: 0.6;
           font-size: 0.9rem;
+        }
+        
+        .easter-egg {
+          opacity: 0.3;
+          font-size: 0.75rem;
+          color: var(--gray-warm);
+          margin-top: 0.5rem;
+          font-style: italic;
+          transition: opacity 0.3s ease;
+        }
+        
+        .easter-egg:hover {
+          opacity: 0.8;
         }
         
         /* Easter egg cursor */

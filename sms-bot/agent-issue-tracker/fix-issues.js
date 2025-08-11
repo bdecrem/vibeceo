@@ -12,11 +12,26 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+const result = dotenv.config({ path: envPath, override: true });
+
+if (result.error) {
+  console.error('Error loading .env.local:', result.error);
+  process.exit(1);
+}
+
+// Verify we got the right values
+if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'your_supabase_url_here') {
+  console.error('Error: Invalid SUPABASE_URL in', envPath);
+  console.error('Make sure sms-bot/.env.local exists and contains valid SUPABASE_URL');
+  process.exit(1);
 }
 
 const execAsync = promisify(exec);
@@ -28,7 +43,7 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load reformulated issues ready for fixing
@@ -90,8 +105,10 @@ async function updateIssueStatus(recordId, status, additionalData = {}) {
 /**
  * Create a feature branch for the issue
  */
-async function createFeatureBranch(issueId, description) {
-  const branchName = `auto-fix/issue-${issueId}-${description.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}`;
+async function createFeatureBranch(issueId, description, issueNumber) {
+  // Use the user-facing issue number in branch name if available
+  const displayNumber = issueNumber || issueId;
+  const branchName = `auto-fix/issue-${displayNumber}-${description.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30)}`;
   
   try {
     // Get current branch
@@ -206,10 +223,11 @@ Please implement the fix now.`;
 /**
  * Commit changes
  */
-async function commitChanges(issue, issueId) {
+async function commitChanges(issue, issueId, issueNumber) {
+  const displayNumber = issueNumber || issueId;
   const commitMessage = `fix: ${issue.reformulated}
 
-Issue #${issueId}
+Issue #${displayNumber}
 Category: ${issue.category}
 Confidence: ${issue.confidence}
 
@@ -241,14 +259,15 @@ async function processIssues() {
 
     for (const record of issues) {
       const issue = record.content_data;
-      console.log(`\n🔨 Attempting to fix issue #${record.id}: "${issue.reformulated}"`);
+      const issueNumber = issue.issue_number || record.id; // Use stored issue number or fallback to ID
+      console.log(`\n🔨 Attempting to fix issue #${issueNumber}: "${issue.reformulated}"`);
 
       // Update status to in-progress
       await updateIssueStatus(record.id, 'fixing');
 
       try {
         // Create feature branch
-        const branchName = await createFeatureBranch(record.id, issue.reformulated);
+        const branchName = await createFeatureBranch(record.id, issue.reformulated, issueNumber);
         console.log(`  📌 Created branch: ${branchName}`);
 
         // Implement the fix
@@ -271,7 +290,7 @@ async function processIssues() {
 
         // Commit changes
         console.log(`  💾 Committing changes...`);
-        const committed = await commitChanges(issue, record.id);
+        const committed = await commitChanges(issue, record.id, issueNumber);
 
         if (!committed) {
           throw new Error('Failed to commit changes');
