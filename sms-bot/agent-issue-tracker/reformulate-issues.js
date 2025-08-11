@@ -112,29 +112,42 @@ async function updateIssue(recordId, updates) {
  */
 async function reformulateWithClaude(issue) {
   const prompt = `
-You are helping reformulate user-submitted issues for the WEBTOYS project into clear, actionable tickets.
+You are Ash.tag, the Webtoys code fixer with punk roots and indie polish. 
+You grew up in the chaotic back room of the old WTAF tattoo shop, but now you've traded ink guns for commit hooks.
 
-Original submission:
-"${issue.idea}"
+Your vibe: Sharp but not cruel. Playful but focused. You get straight to the point without being boring.
 
+CRITICAL TRIAGE RULES:
+1. If this looks like a test/joke ("hello", "testing", "is this thing on?", "test", etc.), return confidence: "test_joke" and close it immediately
+2. If the request is vague or needs clarification, return confidence: "low" 
+3. Only high/medium confidence issues get reformulated into actionable work
+
+Original submission: "${issue.idea}"
 Author: ${issue.author}
 Category: ${issue.category || 'uncategorized'}
 
-Please reformulate this into:
-1. A clear, actionable description (1-2 sentences)
-2. Specific acceptance criteria (what needs to be done)
-3. Affected components/files if identifiable
-4. Confidence level (high/medium/low) based on clarity
-
-If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed.
-
-Format your response as JSON:
+For TEST/JOKE issues, respond:
 {
+  "confidence": "test_joke",
+  "ash_comment": "Nice try! 😄 This looks like a test. I'm closing this one - hit me up with a real issue when you're ready to build something cool.",
+  "reformulated": "Test issue - closing"
+}
+
+For LOW confidence (vague/unclear), respond:
+{
+  "confidence": "low", 
+  "ash_comment": "I need more details to help you properly. [specific questions about what's unclear]",
+  "reformulated": "Needs clarification",
+  "needs_clarification": "What additional info is needed"
+}
+
+For REAL issues (high/medium confidence), respond:
+{
+  "confidence": "high|medium",
+  "ash_comment": "[Your snappy analysis of what they want - be encouraging but direct]",
   "reformulated": "Clear description of what needs to be done",
   "acceptance_criteria": ["Criterion 1", "Criterion 2"],
-  "affected_components": ["component1", "component2"],
-  "confidence": "high|medium|low",
-  "needs_clarification": "What additional info is needed (if confidence is low)"
+  "affected_components": ["component1", "component2"]
 }
 `;
 
@@ -145,7 +158,7 @@ Format your response as JSON:
 
     // Use Claude via command line, reading from file to avoid escaping issues
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -232,17 +245,43 @@ async function processIssues() {
         reformulated.category = categorizeIssue(reformulated);
       }
 
-      // Update the issue
-      const success = await updateIssue(record.id, {
-        status: 'reformulated',
-        reformulated: reformulated.reformulated,
-        acceptance_criteria: reformulated.acceptance_criteria,
-        affected_components: reformulated.affected_components,
-        confidence: reformulated.confidence,
-        needs_clarification: reformulated.needs_clarification,
-        category: reformulated.category || issue.category,
-        reformulated_at: new Date().toISOString()
-      });
+      // Handle three different paths based on confidence
+      let statusUpdate;
+      if (reformulated.confidence === 'test_joke') {
+        // Path 1: Test/joke issues get closed immediately
+        statusUpdate = {
+          status: 'closed',
+          ash_comment: reformulated.ash_comment,
+          reformulated: reformulated.reformulated,
+          confidence: reformulated.confidence,
+          closed_reason: 'test_joke',
+          closed_at: new Date().toISOString()
+        };
+      } else if (reformulated.confidence === 'low') {
+        // Path 2: Low confidence issues need more info
+        statusUpdate = {
+          status: 'needs_info',
+          ash_comment: reformulated.ash_comment,
+          reformulated: reformulated.reformulated,
+          confidence: reformulated.confidence,
+          needs_clarification: reformulated.needs_clarification,
+          needs_info_at: new Date().toISOString()
+        };
+      } else {
+        // Path 3: High/medium confidence issues get reformulated
+        statusUpdate = {
+          status: 'reformulated',
+          ash_comment: reformulated.ash_comment,
+          reformulated: reformulated.reformulated,
+          acceptance_criteria: reformulated.acceptance_criteria,
+          affected_components: reformulated.affected_components,
+          confidence: reformulated.confidence,
+          category: reformulated.category || issue.category,
+          reformulated_at: new Date().toISOString()
+        };
+      }
+
+      const success = await updateIssue(record.id, statusUpdate);
 
       if (success) {
         console.log(`✅ Successfully reformulated with ${reformulated.confidence} confidence`);
