@@ -12,14 +12,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+dotenv.config({ path: envPath, override: true });
 
 const execAsync = promisify(exec);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Run a specific agent script
