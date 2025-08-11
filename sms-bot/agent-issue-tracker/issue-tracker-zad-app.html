@@ -272,6 +272,24 @@
             background: var(--blue);
             color: var(--charcoal);
         }
+        
+        .badge-closed {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .badge-wont-fix {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .badge-duplicate {
+            background: var(--gray-warm);
+            color: white;
+            opacity: 0.8;
+        }
 
         .status-timeline {
             display: flex;
@@ -306,9 +324,55 @@
         }
         
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% { 
+                transform: scale(1);
+                background: var(--yellow);
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0.7);
+            }
+            50% { 
+                transform: scale(1.05);
+                background: #FFE57F;
+                box-shadow: 0 0 0 10px rgba(255, 214, 61, 0);
+            }
+            100% { 
+                transform: scale(1);
+                background: var(--yellow);
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0);
+            }
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .status-indicator.green {
+            background: #00FF00;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+        
+        .status-indicator.yellow-pulse {
+            background: var(--yellow);
+            animation: pulse-indicator 1.5s infinite;
+        }
+        
+        @keyframes pulse-indicator {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0.7);
+                transform: scale(1);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 214, 61, 0);
+                transform: scale(1.2);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0);
+                transform: scale(1);
+            }
         }
 
         .reactions {
@@ -557,19 +621,53 @@
                 const status = data.status || 'new';
                 const category = data.category || 'triage';
                 
-                // Determine status progression
+                // Determine status progression and current state
+                const isAnalyzing = status === 'reformulated' || status === 'reformulating';
+                const isFixing = status === 'fixing';
+                const isClosed = status === 'closed' || status === 'wont-fix' || status === 'duplicate';
+                
                 const statusSteps = [
-                    { name: 'Submitted', completed: true },
-                    { name: 'Analyzed', completed: !!data.reformulated },
-                    { name: 'Fixing', completed: status === 'fixing' || status === 'fixed' || status === 'pr-created' },
-                    { name: 'Fixed', completed: status === 'fixed' || status === 'pr-created' },
-                    { name: 'PR Created', completed: status === 'pr-created' }
+                    { 
+                        name: 'Submitted', 
+                        completed: true,
+                        current: status === 'new'
+                    },
+                    { 
+                        name: 'Analyzing', 
+                        completed: !!data.reformulated || isClosed,
+                        current: isAnalyzing,
+                        showAs: data.reformulated ? 'Analyzed' : (isAnalyzing ? 'Analyzing' : 'Analyzing')
+                    },
+                    { 
+                        name: 'Fixing', 
+                        completed: status === 'fixed' || status === 'pr-created',
+                        current: isFixing,
+                        showAs: (status === 'fixed' || status === 'pr-created') ? 'Fixed' : 'Fixing',
+                        skip: isClosed
+                    },
+                    { 
+                        name: 'PR Created', 
+                        completed: status === 'pr-created',
+                        skip: isClosed
+                    }
                 ];
+                
+                // Add closed status if applicable
+                if (isClosed) {
+                    statusSteps.push({
+                        name: 'Closed',
+                        completed: true,
+                        current: false
+                    });
+                }
                 
                 const statusBadgeClass = status === 'pr-created' ? 'badge-pr-created' : 
                                         status === 'fixed' ? 'badge-fixed' :
                                         status === 'fixing' ? 'badge-fixing' :
                                         status === 'reformulated' ? 'badge-reformulated' :
+                                        status === 'closed' ? 'badge-closed' :
+                                        status === 'wont-fix' ? 'badge-wont-fix' :
+                                        status === 'duplicate' ? 'badge-duplicate' :
                                         status.includes('failed') ? 'badge-failed' :
                                         'badge-new';
                 
@@ -586,10 +684,23 @@
                         </div>
                         
                         <div class="status-timeline">
-                            ${statusSteps.map((step, idx) => {
-                                const isCurrentStep = step.completed && !statusSteps[idx + 1]?.completed;
-                                return `<span class="status-step ${step.completed ? (isCurrentStep ? 'current' : 'completed') : ''}">
-                                    ${step.name}
+                            ${statusSteps.filter(step => !step.skip).map((step, idx) => {
+                                const displayName = step.showAs || step.name;
+                                let indicator = '';
+                                let stepClass = '';
+                                
+                                if (step.current) {
+                                    // Currently in progress - pulsing yellow
+                                    indicator = '<span class="status-indicator yellow-pulse"></span>';
+                                    stepClass = 'current';
+                                } else if (step.completed) {
+                                    // Completed - green dot
+                                    indicator = '<span class="status-indicator green"></span>';
+                                    stepClass = 'completed';
+                                }
+                                
+                                return `<span class="status-step ${stepClass}">
+                                    ${indicator}${displayName}
                                 </span>`;
                             }).join('')}
                         </div>
