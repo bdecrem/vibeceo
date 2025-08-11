@@ -117,8 +117,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function fetchPageState() {
         if (!currentPageData || !stored.authToken || !stored.apiUrl) return;
         
+        // Get the effective URL (might have been updated to HTTPS)
+        const currentStored = await chrome.storage.local.get(['apiUrl']);
+        const effectiveUrl = currentStored.apiUrl || stored.apiUrl;
+        
         try {
-            const response = await fetch(`${stored.apiUrl}/api/wtaf/extension`, {
+            const response = await fetch(`${effectiveUrl}/api/wtaf/extension`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -175,8 +179,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function updatePageState(updates) {
         if (!currentPageData || !stored.authToken || !stored.apiUrl) return;
         
+        // Get the effective URL (might have been updated to HTTPS)
+        const currentStored = await chrome.storage.local.get(['apiUrl']);
+        const effectiveUrl = currentStored.apiUrl || stored.apiUrl;
+        
         try {
-            const response = await fetch(`${stored.apiUrl}/api/wtaf/extension`, {
+            const response = await fetch(`${effectiveUrl}/api/wtaf/extension`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -235,12 +243,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Save configuration
     saveButton.addEventListener('click', async () => {
-        const apiUrl = apiUrlInput.value.trim();
+        let apiUrl = apiUrlInput.value.trim();
         const authToken = authTokenInput.value.trim();
         
         if (!apiUrl || !authToken) {
             showStatus('Please enter both API URL and auth token', 'error');
             return;
+        }
+        
+        // Auto-fix: Add http:// if no protocol specified
+        if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+            apiUrl = 'http://' + apiUrl;
+            apiUrlInput.value = apiUrl;  // Update input to show the fixed URL
         }
         
         // Remove trailing slash from URL if present
@@ -270,24 +284,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         showStatus('Testing connection...', 'info');
         
-        try {
-            // Test the connection by calling the GET endpoint
-            const response = await fetch(`${stored.apiUrl}/api/wtaf/extension`, {
-                headers: {
-                    'Authorization': `Bearer ${stored.authToken}`
+        // Try HTTPS first for Safari extension compatibility
+        const urlsToTry = [];
+        if (stored.apiUrl.startsWith('http://localhost')) {
+            const httpsUrl = stored.apiUrl.replace('http://', 'https://');
+            urlsToTry.push(httpsUrl, stored.apiUrl);
+        } else {
+            urlsToTry.push(stored.apiUrl);
+        }
+        
+        for (let i = 0; i < urlsToTry.length; i++) {
+            const testUrl = urlsToTry[i];
+            try {
+                // Test the connection by calling the GET endpoint
+                const response = await fetch(`${testUrl}/api/wtaf/extension`, {
+                    headers: {
+                        'Authorization': `Bearer ${stored.authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    showStatus('Connection successful!', 'success');
+                    // If HTTPS worked and it wasn't the original URL, update the stored URL
+                    if (testUrl !== stored.apiUrl && testUrl.startsWith('https://')) {
+                        await chrome.storage.local.set({ apiUrl: testUrl });
+                        apiUrlInput.value = testUrl;
+                        showStatus('Connection successful! Updated to HTTPS.', 'success');
+                    }
+                    return;
+                } else {
+                    const error = await response.text();
+                    console.error(`Connection test failed for ${testUrl}:`, error);
+                    if (i === urlsToTry.length - 1) {
+                        showStatus(`Connection failed: ${response.status}`, 'error');
+                    }
                 }
-            });
-            
-            if (response.ok) {
-                showStatus('Connection successful!', 'success');
-            } else {
-                const error = await response.text();
-                showStatus(`Connection failed: ${response.status}`, 'error');
-                console.error('Connection test failed:', error);
+            } catch (error) {
+                console.error(`Connection test error for ${testUrl}:`, error);
+                if (i === urlsToTry.length - 1) {
+                    showStatus('Connection failed: ' + error.message, 'error');
+                }
             }
-        } catch (error) {
-            showStatus('Connection failed: ' + error.message, 'error');
-            console.error('Connection test error:', error);
         }
     });
     

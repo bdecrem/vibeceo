@@ -48,7 +48,9 @@
   "host_permissions": [
     "https://tqniseocczttrfwtpbdr.supabase.co/*",
     "http://localhost:*/*",
-    "https://localhost:*/*"
+    "https://localhost:*/*",
+    "http://127.0.0.1:*/*",
+    "https://127.0.0.1:*/*"
   ],
   
   "content_security_policy": {
