@@ -11,11 +11,26 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+const result = dotenv.config({ path: envPath, override: true });
+
+if (result.error) {
+  console.error('Error loading .env.local:', result.error);
+  process.exit(1);
+}
+
+// Verify we got the right values
+if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'your_supabase_url_here') {
+  console.error('Error: Invalid SUPABASE_URL in', envPath);
+  console.error('Make sure sms-bot/.env.local exists and contains valid SUPABASE_URL');
+  process.exit(1);
 }
 
 const execAsync = promisify(exec);
@@ -27,7 +42,7 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load fixed issues ready for PR creation
@@ -153,9 +168,12 @@ async function createPullRequest(issue, issueId, branchName) {
   const body = generatePRDescription(issue, issueId);
 
   try {
-    // First, push the branch to remote
+    // First, push the branch to remote using gh's git credential helper
     console.log(`  📤 Pushing branch ${branchName} to remote...`);
     await execAsync(`git checkout ${branchName}`, { cwd: PROJECT_ROOT });
+    
+    // Set git to use gh's credentials for this push
+    await execAsync(`git config credential.helper "!gh auth git-credential"`, { cwd: PROJECT_ROOT });
     await execAsync(`git push -u origin ${branchName}`, { cwd: PROJECT_ROOT });
 
     // Create PR using gh CLI with body from file to avoid escaping issues
@@ -164,7 +182,7 @@ async function createPullRequest(issue, issueId, branchName) {
     await fs.writeFile(tempFile, body);
     
     const { stdout } = await execAsync(
-      `gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
+      `/opt/homebrew/bin/gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
       { cwd: PROJECT_ROOT }
     );
     
@@ -207,7 +225,7 @@ async function addPRLabels(prNumber, issue) {
 
   try {
     await execAsync(
-      `gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
+      `/opt/homebrew/bin/gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
       { cwd: PROJECT_ROOT }
     );
     return true;
@@ -243,6 +261,12 @@ async function processPullRequests() {
           throw new Error('No branch name found for fixed issue');
         }
 
+        // Update status to 'pr-creating'
+        await updateIssue(record.id, {
+          status: 'pr-creating',
+          pr_creation_started_at: new Date().toISOString()
+        });
+
         // Create the PR
         const { prUrl, prNumber } = await createPullRequest(issue, record.id, issue.branch_name);
 
@@ -267,7 +291,7 @@ async function processPullRequests() {
           const comment = `### Community Discussion\n\n${issue.comments.map(c => `- ${c}`).join('\n')}`;
           try {
             await execAsync(
-              `gh pr comment ${prNumber} --body "${comment}"`,
+              `/opt/homebrew/bin/gh pr comment ${prNumber} --body "${comment}"`,
               { cwd: PROJECT_ROOT }
             );
           } catch (commentError) {
@@ -309,7 +333,7 @@ async function processPullRequests() {
     console.log(`\n📋 Checking all auto-generated PRs...`);
     try {
       const { stdout: prList } = await execAsync(
-        `gh pr list --label "auto-generated" --state open --json number,title,url`,
+        `/opt/homebrew/bin/gh pr list --label "auto-generated" --state open --json number,title,url`,
         { cwd: PROJECT_ROOT }
       );
       

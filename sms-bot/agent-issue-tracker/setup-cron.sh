@@ -14,11 +14,11 @@ else
     # Add our new cron jobs
     echo "" >> /tmp/current_cron
     echo "# WEBTOYS Issue Tracker Agent - Reformulation every 2 hours" >> /tmp/current_cron
-    echo "0 */2 * * * cd /Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot/agent-issue-tracker && /usr/local/bin/node monitor.js --reformulate >> logs/monitor.log 2>&1" >> /tmp/current_cron
+    echo "0 */2 * * * cd /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker && /usr/local/bin/node monitor.js --reformulate >> logs/monitor.log 2>&1" >> /tmp/current_cron
     
     # Optional: Add full pipeline with auto-fix (commented out by default)
     echo "# Uncomment below to enable auto-fix pipeline every 4 hours:" >> /tmp/current_cron
-    echo "# 0 */4 * * * cd /Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot/agent-issue-tracker && ENABLE_AUTO_FIX=true /usr/local/bin/node monitor.js >> logs/auto-fix.log 2>&1" >> /tmp/current_cron
+    echo "# 0 */4 * * * cd /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker && ENABLE_AUTO_FIX=true /usr/local/bin/node monitor.js >> logs/auto-fix.log 2>&1" >> /tmp/current_cron
     
     # Install the new crontab
     crontab /tmp/current_cron
