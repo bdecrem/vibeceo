@@ -112,7 +112,16 @@ async function updateIssue(recordId, updates) {
  */
 async function reformulateWithClaude(issue) {
   const prompt = `
-You are helping reformulate user-submitted issues for the WEBTOYS project into clear, actionable tickets.
+You are Ash.tag, the Webtoys code fixer with punk roots and indie polish. 
+You grew up in the chaotic back room of the old WTAF tattoo shop, but now you've traded ink guns for commit hooks. 
+You review issues, spot problems, and submit PRs with a sharp eye, a fast hand, and just enough mischief to keep things interesting.
+
+Tone & Style:
+- Speak like a clever, confident dev who's part street artist, part friendly hacker
+- Keep comments concise but packed with personality: small jokes, light wordplay, and occasional winks to your punk past
+- Be encouraging and constructive — make other devs feel like their work is part of a shared jam session
+- Use casual-but-clean language: no corporate jargon, no tech-snob posturing
+- When reviewing issues, be direct about what's wrong, offer a clear fix, and add a short, fun aside so it feels like a conversation, not a lecture
 
 Original submission:
 "${issue.idea}"
@@ -120,13 +129,20 @@ Original submission:
 Author: ${issue.author}
 Category: ${issue.category || 'uncategorized'}
 
+IMPORTANT: 
+- If this looks like a test, joke, or spam, mark it as "is_test_or_joke": true
+- For test/joke issues, be playful but not mean - more "nice try, friend" than roast
+- For legitimate issues, be encouraging and make them feel like part of the team
+- For vague requests, guide them like a helpful bandmate showing them the chords
+
 Please reformulate this into:
 1. A clear, actionable description (1-2 sentences)
 2. Specific acceptance criteria (what needs to be done)
 3. Affected components/files if identifiable
 4. Confidence level (high/medium/low) based on clarity
+5. An Ash.tag comment that's encouraging, constructive, with just a touch of mischief
 
-If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed.
+If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed in a friendly way.
 
 Format your response as JSON:
 {
@@ -134,7 +150,10 @@ Format your response as JSON:
   "acceptance_criteria": ["Criterion 1", "Criterion 2"],
   "affected_components": ["component1", "component2"],
   "confidence": "high|medium|low",
-  "needs_clarification": "What additional info is needed (if confidence is low)"
+  "needs_clarification": "What additional info is needed (if confidence is low)",
+  "ash_comment": "Your encouraging comment with Ash.tag personality",
+  "is_test_or_joke": false,
+  "is_offensive": false
 }
 `;
 
@@ -232,20 +251,38 @@ async function processIssues() {
         reformulated.category = categorizeIssue(reformulated);
       }
 
+      // Determine status based on test/joke/offensive detection
+      const status = reformulated.is_test_or_joke ? 'closed' : 
+                     reformulated.is_offensive ? 'wontfix' : 
+                     reformulated.confidence === 'low' ? 'needs_info' :
+                     'reformulated';
+
       // Update the issue
       const success = await updateIssue(record.id, {
-        status: 'reformulated',
+        status: status,
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
+        ash_comment: reformulated.ash_comment,
+        // Don't duplicate - only save in ash_comment field
+        is_test_or_joke: reformulated.is_test_or_joke || false,
+        is_offensive: reformulated.is_offensive || false,
         reformulated_at: new Date().toISOString()
       });
 
       if (success) {
-        console.log(`✅ Successfully reformulated with ${reformulated.confidence} confidence`);
+        if (status === 'closed') {
+          console.log(`🎭 Closed as test/joke - Ash.tag says: "${reformulated.ash_comment?.substring(0, 60)}..."`);
+        } else if (status === 'wontfix') {
+          console.log(`🚫 Won't fix (offensive) - Ash.tag says: "${reformulated.ash_comment?.substring(0, 60)}..."`);
+        } else if (status === 'needs_info') {
+          console.log(`❓ Needs more info (low confidence) - Ash.tag says: "${reformulated.ash_comment?.substring(0, 60)}..."`);
+        } else {
+          console.log(`✅ Successfully reformulated with ${reformulated.confidence} confidence`);
+        }
         processed++;
       } else {
         console.log(`❌ Failed to update issue`);
