@@ -69,6 +69,38 @@ async function loadFixedIssues() {
 }
 
 /**
+ * Update an issue's status and data
+ */
+async function updateIssue(recordId, updates) {
+  const { data: current, error: fetchError } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('*')
+    .eq('id', recordId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching issue:', fetchError);
+    return false;
+  }
+
+  const updatedContent = {
+    ...current.content_data,
+    ...updates,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error: updateError } = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .update({ 
+      content_data: updatedContent,
+      updated_at: new Date()
+    })
+    .eq('id', recordId);
+
+  return !updateError;
+}
+
+/**
  * Update issue with PR information
  */
 async function updateIssueWithPR(recordId, prUrl, prNumber) {

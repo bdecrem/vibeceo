@@ -250,14 +250,28 @@
         }
 
         .issue-item {
-            padding: 20px;
+            padding: 24px;
             border-left: 6px solid var(--blue);
-            margin-bottom: 15px;
-            background: white;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 3px 3px 0px var(--purple-shadow);
+            margin-bottom: 18px;
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
+            border-radius: 22px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08), 3px 3px 0px var(--purple-shadow);
             transform: rotate(-0.3deg);
+            border: 1px solid rgba(42, 42, 42, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .issue-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--blue), var(--green-mint), var(--yellow));
+            opacity: 0.7;
         }
         
         .issue-item:nth-child(even) {
@@ -284,9 +298,12 @@
         }
 
         .issue-title {
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: var(--charcoal);
             flex: 1;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            margin-top: 8px;
         }
 
         .issue-meta {
@@ -361,6 +378,16 @@
             color: white;
         }
         
+        .badge-closed {
+            background: var(--gray-warm);
+            color: white;
+        }
+        
+        .badge-needs-info {
+            background: var(--orange);
+            color: var(--charcoal);
+        }
+        
         .badge-documentation {
             background: var(--blue);
             color: var(--charcoal);
@@ -370,64 +397,38 @@
             display: flex;
             align-items: center;
             margin-top: 15px;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.5);
+            padding: 20px 10px;
+            background: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
             position: relative;
-        }
-        
-        .status-timeline::before {
-            content: '';
-            position: absolute;
-            left: 20px;
-            right: 20px;
-            height: 3px;
-            background: var(--gray-warm);
-            opacity: 0.3;
-            z-index: 0;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(42, 42, 42, 0.1);
         }
 
         .status-step {
             flex: 1;
-            text-align: center;
-            padding: 4px 8px;
-            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
             position: relative;
-            z-index: 1;
-            color: #999;
-            transition: all 0.3s ease;
+            z-index: 2;
+            color: var(--gray-warm);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .status-step::before {
-            content: '○';
-            display: block;
-            font-size: 1.2rem;
-            margin-bottom: 2px;
-            transition: all 0.3s ease;
-        }
-
         .status-step.completed {
-            color: var(--charcoal);
-            font-weight: 700;
-        }
-        
-        .status-step.completed::before {
-            content: '●';
             color: var(--green-sage);
+            font-weight: 700;
         }
 
         .status-step.current {
             color: var(--charcoal);
-            font-weight: 700;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-step.current::before {
-            content: '◉';
-            color: var(--yellow);
-            font-size: 1.4rem;
+            font-weight: 800;
+            transform: scale(1.05);
         }
         
         .status-step.blocked {
@@ -435,9 +436,9 @@
             font-weight: 700;
         }
         
-        .status-step.blocked::before {
-            content: '✕';
-            color: var(--red);
+        .status-step.pending {
+            color: #ccc;
+            font-weight: 500;
         }
         
         @keyframes pulse {
@@ -455,52 +456,149 @@
             }
         }
         
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
+        .status-circle {
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            margin-right: 5px;
-            vertical-align: middle;
+            margin-bottom: 8px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid;
         }
         
-        .status-indicator.green {
-            background: #00FF00;
-            box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        .status-circle.completed {
+            background: var(--green-sage);
+            border-color: var(--green-sage);
+            box-shadow: 0 0 0 4px rgba(127, 176, 105, 0.2), 
+                        0 2px 8px rgba(127, 176, 105, 0.4);
         }
         
-        .status-indicator.yellow-pulse {
+        .status-circle.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        
+        .status-circle.current {
             background: var(--yellow);
-            animation: pulse-indicator 1.5s infinite;
+            border-color: var(--yellow);
+            animation: pulse-circle 2s infinite;
+            box-shadow: 0 0 0 4px rgba(255, 214, 61, 0.3);
         }
         
-        @keyframes pulse-indicator {
+        .status-circle.current::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--charcoal);
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+        
+        .status-circle.pending {
+            background: transparent;
+            border-color: #ddd;
+            box-shadow: none;
+        }
+        
+        .status-circle.blocked {
+            background: var(--red);
+            border-color: var(--red);
+            box-shadow: 0 0 0 4px rgba(255, 75, 75, 0.2);
+        }
+        
+        .status-circle.blocked::after {
+            content: '✗';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        
+        @keyframes pulse-circle {
             0% {
-                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0.7);
+                box-shadow: 0 0 0 4px rgba(255, 214, 61, 0.3);
                 transform: scale(1);
             }
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 214, 61, 0);
-                transform: scale(1.2);
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 214, 61, 0.1);
+                transform: scale(1.05);
             }
             100% {
-                box-shadow: 0 0 0 0 rgba(255, 214, 61, 0);
+                box-shadow: 0 0 0 4px rgba(255, 214, 61, 0.3);
                 transform: scale(1);
             }
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        /* Connection lines between status circles */
+        .status-step:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent 24px, #ddd 24px, #ddd calc(100% - 24px), transparent calc(100% - 24px));
+            z-index: 1;
+        }
+        
+        .status-step.completed:not(:last-child)::before {
+            background: linear-gradient(to right, transparent 24px, var(--green-sage) 24px, var(--green-sage) calc(100% - 24px), transparent calc(100% - 24px));
+        }
+        
+        .status-step.current:not(:last-child)::before {
+            background: linear-gradient(to right, transparent 24px, var(--yellow) 24px, #ddd calc(50%), #ddd calc(100% - 24px), transparent calc(100% - 24px));
         }
         
         @media (max-width: 768px) {
             .status-timeline {
-                padding: 4px;
+                padding: 15px 5px;
             }
             
             .status-step {
-                font-size: 0.6rem;
-                padding: 2px 4px;
+                font-size: 0.55rem;
+                padding: 4px 2px;
             }
             
-            .status-step::before {
-                font-size: 0.9rem;
+            .status-circle {
+                width: 20px;
+                height: 20px;
+                margin-bottom: 6px;
+            }
+            
+            .status-circle.completed::after,
+            .status-circle.blocked::after {
+                font-size: 10px;
+            }
+            
+            .status-step:not(:last-child)::before {
+                top: 10px;
+                background: linear-gradient(to right, transparent 20px, #ddd 20px, #ddd calc(100% - 20px), transparent calc(100% - 20px));
+            }
+            
+            .status-step.completed:not(:last-child)::before {
+                background: linear-gradient(to right, transparent 20px, var(--green-sage) 20px, var(--green-sage) calc(100% - 20px), transparent calc(100% - 20px));
+            }
+            
+            .status-step.current:not(:last-child)::before {
+                background: linear-gradient(to right, transparent 20px, var(--yellow) 20px, #ddd calc(50%), #ddd calc(100% - 20px), transparent calc(100% - 20px));
             }
         }
 
@@ -531,6 +629,33 @@
         .reaction-btn:active {
             transform: translateY(0px);
             box-shadow: 1px 1px 0px var(--charcoal);
+        }
+        
+        .reaction-btn.upvote {
+            color: var(--green-sage);
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .reaction-btn.downvote {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .reaction-btn.upvote:hover {
+            background: var(--green-mint);
+            color: var(--charcoal);
+        }
+        
+        .reaction-btn.downvote:hover {
+            background: var(--red-soft);
+            color: var(--charcoal);
+        }
+        
+        .vote-count {
+            font-weight: 800;
+            margin-left: 4px;
         }
 
         .loading {
@@ -605,11 +730,17 @@
         }
         
         .issue-number {
-            font-weight: 800;
+            font-weight: 900;
             color: var(--purple-accent);
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-            text-shadow: 1px 1px 0px var(--purple-shadow);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 0px var(--purple-shadow);
+            display: inline-block;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, var(--purple-shadow), #E6E6FA);
+            border-radius: 12px;
+            border: 2px solid var(--purple-accent);
+            box-shadow: 2px 2px 0px var(--purple-accent);
         }
         
         .confidence-priority {
@@ -628,16 +759,44 @@
         
         .cass-comment {
             margin-top: 15px;
-            padding: 15px;
-            background: var(--blue);
-            border-radius: 15px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--blue) 0%, #87CEEB 100%);
+            border-radius: 18px;
             border: 3px solid var(--blue-deep);
-            box-shadow: 2px 2px 0px var(--blue-deep);
+            box-shadow: 0 4px 12px rgba(74, 159, 212, 0.3), 2px 2px 0px var(--blue-deep);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cass-comment::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--yellow), var(--green-mint), var(--purple-shadow));
+            animation: rainbow-shimmer 3s linear infinite;
+        }
+        
+        @keyframes rainbow-shimmer {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
         }
         
         .cass-comment strong {
             color: var(--charcoal);
             font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+        }
+        
+        .cass-comment::after {
+            content: '💭';
+            position: absolute;
+            top: -5px;
+            right: 10px;
+            font-size: 24px;
+            opacity: 0.6;
         }
         
         @media (max-width: 768px) {
@@ -867,7 +1026,10 @@
                 
                 // Store all issues globally and apply content filtering
                 allIssues = filterOffensiveContent(issues);
-                applyFilter(currentFilter);
+                
+                // Load votes and update counts
+                await loadVotes();
+                updateVoteCounts();
                 
                 // Apply the current filter to display issues
                 applyFilter(currentFilter);
@@ -1035,12 +1197,36 @@
                 
                 // Enhanced status progression for all flows
                 let statusSteps;
-                if (status === 'closed' || status === 'wontfix') {
-                    // Closed workflow - only show indicator on CURRENT status
+                if (status === 'closed') {
+                    // Check if it's a test/joke closure
+                    if (data.closed_reason === 'test_joke') {
+                        // Test/joke workflow - goes straight from Analyzed to Closed
+                        statusSteps = [
+                            { name: 'Submitted', state: 'completed' },
+                            { name: 'Analyzed', state: 'completed' },
+                            { name: 'Closed', state: 'completed', showIndicator: 'green' }
+                        ];
+                    } else {
+                        // Normal closed workflow
+                        statusSteps = [
+                            { name: 'Submitted', state: 'completed' },
+                            { name: 'Analyzed', state: 'completed' },
+                            { name: 'Closed', state: 'completed', showIndicator: 'green' }
+                        ];
+                    }
+                } else if (status === 'needs_info') {
+                    // Needs more information workflow
                     statusSteps = [
                         { name: 'Submitted', state: 'completed' },
                         { name: 'Analyzed', state: 'completed' },
-                        { name: 'Closed', state: 'completed', showIndicator: 'green' }
+                        { name: 'Needs Info', state: 'current', showIndicator: 'yellow-pulse' }
+                    ];
+                } else if (status === 'wontfix') {
+                    // Won't fix workflow
+                    statusSteps = [
+                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Analyzed', state: 'completed' },
+                        { name: "Won't Fix", state: 'completed', showIndicator: 'red' }
                     ];
                 } else if (status.includes('failed')) {
                     // Failed workflow - only show indicator on CURRENT status
@@ -1064,10 +1250,10 @@
                     const isPRCreated = status === 'pr-created';
                     
                     statusSteps = [
-                        { name: 'Submitted', state: 'completed' },
+                        { name: 'Submitted', state: 'completed', showIndicator: isNew ? 'green' : null },
                         { 
-                            name: isAnalyzing ? 'Analyzing' : 'Analyzed',
-                            state: isAnalyzing ? 'current' : 'completed',
+                            name: isAnalyzing ? 'Analyzing' : (isAnalyzed ? 'Analyzed' : 'Analysis Pending'),
+                            state: isAnalyzing ? 'current' : (isAnalyzed ? 'completed' : 'pending'),
                             showIndicator: isAnalyzing ? 'yellow-pulse' : null
                         },
                         { 
@@ -1087,7 +1273,8 @@
                                         status === 'fixed' ? 'badge-fixed' :
                                         status === 'fixing' ? 'badge-fixing' :
                                         status === 'reformulated' ? 'badge-reformulated' :
-                                        status === 'closed' ? 'badge-failed' :
+                                        status === 'closed' ? 'badge-closed' :
+                                        status === 'needs_info' ? 'badge-needs-info' :
                                         status === 'wontfix' ? 'badge-failed' :
                                         status.includes('failed') ? 'badge-failed' :
                                         'badge-new';
@@ -1107,16 +1294,12 @@
                         
                         <div class="status-timeline">
                             ${statusSteps.map((step) => {
-                                const className = step.state === 'pending' ? '' : step.state;
-                                let indicator = '';
-                                if (step.showIndicator === 'green') {
-                                    indicator = '<span class="status-indicator green"></span>';
-                                } else if (step.showIndicator === 'yellow-pulse') {
-                                    indicator = '<span class="status-indicator yellow-pulse"></span>';
-                                }
-                                return `<span class="status-step ${className}">
-                                    ${indicator}${step.displayName || step.name}
-                                </span>`;
+                                const className = step.state || 'pending';
+                                const circleClass = step.state || 'pending';
+                                return `<div class="status-step ${className}">
+                                    <div class="status-circle ${circleClass}"></div>
+                                    <span>${step.displayName || step.name}</span>
+                                </div>`;
                             }).join('')}
                         </div>
                         
@@ -1133,9 +1316,39 @@
                             </div>
                         ` : ''}
                         
+                        ${data.ai_analysis ? `
+                            <div class="cass-comment">
+                                <strong>🎸 Ash.tag:</strong> ${escapeHtml(data.ai_analysis)}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.ash_comment ? `
+                            <div class="cass-comment">
+                                <strong>💭 Ash.tag says:</strong> ${escapeHtml(data.ash_comment)}
+                            </div>
+                        ` : ''}
+                        
                         ${data.cass_comment ? `
                             <div class="cass-comment">
-                                <strong>💬 Cass.ink Agent:</strong> ${escapeHtml(data.cass_comment)}
+                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.cass_comment)}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.cassink_comment ? `
+                            <div class="cass-comment">
+                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.cassink_comment)}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.agent_comment ? `
+                            <div class="cass-comment">
+                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.agent_comment)}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.analysis_comment ? `
+                            <div class="cass-comment">
+                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.analysis_comment)}
                             </div>
                         ` : ''}
                         
@@ -1148,15 +1361,12 @@
                             </div>
                         ` : ''}
                         
-                        <div class="reactions">
-                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '👍')">
-                                👍 ${data.reactions?.['👍'] || 0}
+                        <div class="reactions" data-issue-id="${issue.id}">
+                            <button class="reaction-btn upvote" onclick="toggleVote('${issue.id}', 'upvote')">
+                                ▲ <span class="vote-count">${data.upvotes || 0}</span>
                             </button>
-                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '🔥')">
-                                🔥 ${data.reactions?.['🔥'] || 0}
-                            </button>
-                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '❤️')">
-                                ❤️ ${data.reactions?.['❤️'] || 0}
+                            <button class="reaction-btn downvote" onclick="toggleVote('${issue.id}', 'downvote')">
+                                ▼ <span class="vote-count">${data.downvotes || 0}</span>
                             </button>
                         </div>
                     </div>
@@ -1170,44 +1380,108 @@
             applyFilter(currentFilter);
         }
 
-async function addReaction(issueId, emoji) {
+        // Store all votes globally
+        let allVotes = [];
+        
+        // Toggle vote (upvote or downvote)
+        async function toggleVote(issueId, voteType) {
             try {
-                // Find the issue in our local array
-                const issueIndex = allIssues.findIndex(issue => issue.id === issueId);
-                if (issueIndex === -1) {
-                    showMessage('Issue not found', 'error');
-                    return;
+                const participantId = localStorage.getItem('participant_id') || 
+                                    'anon_' + Math.random().toString(36).substr(2, 9);
+                
+                // Store participant ID if new
+                if (!localStorage.getItem('participant_id')) {
+                    localStorage.setItem('participant_id', participantId);
                 }
                 
-                const issue = allIssues[issueIndex];
-                const data = issue.content_data || {};
-                const reactions = data.reactions || { '👍': 0, '🔥': 0, '❤️': 0 };
+                // Check if user already voted on this issue
+                const existingVote = allVotes.find(v => 
+                    v.content_data?.issue_id === issueId && 
+                    v.content_data?.voter === participantId
+                );
                 
-                // Increment the reaction count
-                reactions[emoji] = (reactions[emoji] || 0) + 1;
+                let newVoteType;
+                if (existingVote && existingVote.content_data?.vote_type === voteType) {
+                    // Same vote - remove it (toggle off)
+                    newVoteType = 'none';
+                } else {
+                    // New vote or different vote
+                    newVoteType = voteType;
+                }
                 
-                // Update the issue with new reaction data
-                const updatedData = {
-                    ...data,
-                    reactions: reactions,
-                    updated_at: new Date().toISOString()
-                };
+                // Save the vote
+                await save('vote', {
+                    issue_id: issueId,
+                    voter: participantId,
+                    vote_type: newVoteType,
+                    timestamp: Date.now()
+                });
                 
-                // Save via ZAD API - we'll need to update the whole record
-                // Since we can't easily update existing records, we'll show optimistic UI update
-                allIssues[issueIndex].content_data.reactions = reactions;
+                // Reload votes and update display
+                await loadVotes();
+                updateVoteCounts();
                 
-                // Show updated display immediately
-                displayFilteredIssues();
-                
-                showMessage(`Added ${emoji} reaction!`, 'success');
-                
-                // In a real implementation, you would call an update API here
-                // For now, reactions will reset on page reload
+                showMessage(
+                    newVoteType === 'none' ? 'Vote removed' : `Issue ${voteType}d!`, 
+                    'success'
+                );
                 
             } catch (error) {
-                showMessage('Failed to add reaction: ' + error.message, 'error');
+                showMessage('Failed to save vote: ' + error.message, 'error');
             }
+        }
+        
+        // Load all votes from backend
+        async function loadVotes() {
+            try {
+                allVotes = await load('vote');
+                console.log('Loaded votes:', allVotes.length);
+            } catch (error) {
+                console.error('Error loading votes:', error);
+                allVotes = [];
+            }
+        }
+        
+        // Update vote counts for all issues
+        function updateVoteCounts() {
+            // Get latest vote per user per issue
+            const votesByUserIssue = {};
+            allVotes.forEach(vote => {
+                const data = vote.content_data || {};
+                const key = `${data.voter}-${data.issue_id}`;
+                
+                // Keep only the latest vote from each user for each issue
+                if (!votesByUserIssue[key] || 
+                    data.timestamp > votesByUserIssue[key].timestamp) {
+                    votesByUserIssue[key] = data;
+                }
+            });
+            
+            // Count votes per issue
+            const voteCounts = {};
+            Object.values(votesByUserIssue).forEach(vote => {
+                if (vote.vote_type && vote.vote_type !== 'none') {
+                    if (!voteCounts[vote.issue_id]) {
+                        voteCounts[vote.issue_id] = { upvotes: 0, downvotes: 0 };
+                    }
+                    if (vote.vote_type === 'upvote') {
+                        voteCounts[vote.issue_id].upvotes++;
+                    } else if (vote.vote_type === 'downvote') {
+                        voteCounts[vote.issue_id].downvotes++;
+                    }
+                }
+            });
+            
+            // Update the allIssues array with vote counts
+            allIssues.forEach(issue => {
+                const counts = voteCounts[issue.id] || { upvotes: 0, downvotes: 0 };
+                issue.content_data = issue.content_data || {};
+                issue.content_data.upvotes = counts.upvotes;
+                issue.content_data.downvotes = counts.downvotes;
+            });
+            
+            // Refresh display
+            displayFilteredIssues();
         }
 
         function showMessage(text, type) {
