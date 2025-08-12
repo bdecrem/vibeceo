@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix solar-walkingstick-surfing change the color behind the controls to red and use a nice font for Score and Level, and put BijBartris as the game title, beween the score and the level
-
-ORIGINAL_REQUEST:REMIX solar-walkingstick-surfing change the color behind the controls to red and use a nice font for Score and Level, and put BijBartris as the game title, beween the score and the level

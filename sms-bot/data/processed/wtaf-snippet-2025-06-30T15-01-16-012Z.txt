@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-create a hello world page

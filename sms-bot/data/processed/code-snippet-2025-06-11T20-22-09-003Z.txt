@@ -1,2 +1,0 @@
-SENDER:+16508989508
-kailey - create-profile - Build a friendly HTML page where users can create their own About Me profile. Include fields for name, bio, favorite food, favorite music, and a favorite quote. Make it save to our Supabase database and show a confirmation when submitted.

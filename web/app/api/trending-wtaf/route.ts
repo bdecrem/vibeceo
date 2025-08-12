@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     }
 
     // TEMPORARY OVERRIDE: Manual curation only - comment out to restore algorithmic trending
-    // Step 1: Get manually marked trending apps with remixes, ordered by total remix count
-    const { data: remixedApps, error: remixError } = await supabase
+    // Get ALL manually marked trending apps, ordered by total remix count then recency
+    const { data: trendingApps, error: trendingError } = await supabase
       .from('wtaf_content')
       .select(`
         id,
@@ -44,110 +44,24 @@ export async function GET(request: NextRequest) {
         og_image_url,
         type
       `)
-      .eq('status', 'published')           // Only published apps
       .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps
-      .gt('total_descendants', 0)          // Only apps with total descendants
-      .order('total_descendants', { ascending: false })  // Most descendants first
+      .not('Forget', 'is', true)           // Exclude only explicitly forgotten apps (not null or false)
+      .order('total_descendants', { ascending: false, nullsFirst: false })  // Most descendants first, nulls last
       .order('created_at', { ascending: false })          // Recency as tiebreaker
       .range(offset, offset + limit - 1)
 
-    /* ORIGINAL ALGORITHMIC LOGIC - Uncomment to restore automatic trending
-    // Step 1: Get apps with remixes, ordered by total remix count
-    const { data: remixedApps, error: remixError } = await supabase
-      .from('trending_apps_7d')
-      .select(`
-        id,
-        app_slug,
-        user_slug,
-        original_prompt,
-        created_at,
-        remix_count,
-        total_descendants,
-        last_remixed_at,
-        recent_remixes,
-        is_remix,
-        parent_app_id,
-        is_featured,
-        Fave,
-        Forget
-      `)
-      .gt('total_descendants', 0)  // Only apps with total descendants
-      .order('total_descendants', { ascending: false })  // Most descendants first
-      .order('recent_remixes', { ascending: false })  // Recent activity as tiebreaker
-      .range(offset, offset + limit - 1)
-    */
-
-    if (remixError) {
-      console.error('Error fetching remixed apps:', remixError)
+    if (trendingError) {
+      console.error('Error fetching trending apps:', trendingError)
       return NextResponse.json({ error: 'Failed to fetch trending apps' }, { status: 500 })
     }
 
-    let allApps = remixedApps || []
-
-    // Step 2: If we have less than requested limit, backfill with recent trending apps
-    if (allApps.length < limit) {
-      const remainingLimit = limit - allApps.length
-      const { data: recentApps, error: recentError } = await supabase
-        .from('wtaf_content')
-        .select(`
-          id,
-          app_slug,
-          user_slug,
-          original_prompt,
-          created_at,
-          remix_count,
-          total_descendants,
-          last_remixed_at,
-          is_remix,
-          parent_app_id,
-          is_featured,
-          is_trending,
-          Fave,
-          Forget,
-          landscape_image_url,
-          og_image_url,
-          type
-        `)
-        .eq('status', 'published')           // Only published apps
-        .eq('is_trending', true)             // OVERRIDE: Only manually marked trending apps
-        .eq('total_descendants', 0)          // Only apps with no descendants
-        .order('created_at', { ascending: false })  // Most recent first
-        .range(0, remainingLimit - 1)       // Fill remaining slots
-
-      /* ORIGINAL STEP 2 LOGIC - Uncomment to restore automatic backfill
-      const { data: recentApps, error: recentError } = await supabase
-        .from('trending_apps_7d')
-        .select(`
-          id,
-          app_slug,
-          user_slug,
-          original_prompt,
-          created_at,
-          remix_count,
-          total_descendants,
-          last_remixed_at,
-          recent_remixes,
-          is_remix,
-          parent_app_id,
-          is_featured,
-          Fave,
-          Forget
-        `)
-        .eq('total_descendants', 0)  // Only apps with no descendants
-        .order('created_at', { ascending: false })  // Most recent first
-        .range(0, remainingLimit - 1)  // Fill remaining slots
-      */
-
-      if (!recentError && recentApps) {
-        allApps = [...allApps, ...recentApps]
-      }
-    }
+    // No backfill, no filtering - just use what we got from the query
+    const allApps = trendingApps || []
 
     // Get total count for pagination metadata
     const { count: totalCount, error: countError } = await supabase
       .from('wtaf_content')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'published')
       .eq('is_trending', true)
       .not('Forget', 'is', true)
 
@@ -162,14 +76,14 @@ export async function GET(request: NextRequest) {
       console.error('Error getting total count:', countError)
     }
 
-    // Filter out forgotten apps in JavaScript and add default type
-    const trendingApps = (allApps || [])
-      .filter((app: any) => !app.Forget)
-      .map((app: any) => ({ ...app, type: 'web' })) // Default type for trending apps
+    // No additional filtering needed - already filtered in query
+    // Just ensure type field exists (for backwards compatibility)
+    const finalApps = (allApps || [])
+      .map((app: any) => ({ ...app, type: app.type || 'web' })) // Default type if missing
 
-    const totalTrendingApps = trendingApps.length
-    const totalRemixesThisWeek = trendingApps.reduce((sum: number, app: any) => sum + (app.total_descendants || 0), 0)
-    const appsWithRecentActivity = trendingApps.filter((app: any) => (app.total_descendants || 0) > 0).length
+    const totalTrendingApps = finalApps.length
+    const totalRemixesThisWeek = finalApps.reduce((sum: number, app: any) => sum + (app.total_descendants || 0), 0)
+    const appsWithRecentActivity = finalApps.filter((app: any) => (app.total_descendants || 0) > 0).length
 
     /* ORIGINAL STATS LOGIC - Uncomment to restore recent_remixes calculations
     const totalRemixesThisWeek = trendingApps.reduce((sum: number, app: any) => sum + (app.recent_remixes || 0), 0)
@@ -177,7 +91,7 @@ export async function GET(request: NextRequest) {
     */
 
     return NextResponse.json({
-      apps: trendingApps,
+      apps: finalApps,
       stats: {
         totalTrendingApps,
         totalRemixesThisWeek,

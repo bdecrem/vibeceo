@@ -69,5 +69,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/bdecrem/vibeceo.git"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "qrcode-terminal": "^0.12.0"
   }
 }

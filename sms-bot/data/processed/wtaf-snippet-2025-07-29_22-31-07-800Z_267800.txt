@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make me a 2048 game

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBTOYS Issue Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .issue-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .issue-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .issue-item:hover {
+            transform: translateX(5px);
+        }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .issue-title {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .issue-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-bug {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .badge-feature {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-enhancement {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .badge-triage {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-status {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .reactions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .reaction-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reaction-btn:hover {
+            background: #f0f0f0;
+            transform: scale(1.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐛 WEBTOYS Issue Tracker</h1>
+            <p class="subtitle">Report bugs and request features for the WEBTOYS platform</p>
+        </header>
+
+        <div class="card">
+            <h2>Submit New Issue</h2>
+            <div id="submitForm">
+                <div class="form-group">
+                    <label for="author">Your Name (optional)</label>
+                    <input type="text" id="author" placeholder="Anonymous" />
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="triage">Needs Triage</option>
+                        <option value="bug">Bug Report</option>
+                        <option value="feature">Feature Request</option>
+                        <option value="enhancement">Enhancement</option>
+                        <option value="documentation">Documentation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="idea">Description</label>
+                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
+                </div>
+
+                <button onclick="submitIssue()">Submit Issue</button>
+            </div>
+
+            <div id="message"></div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Issues</h2>
+            <div id="issueList" class="issue-list">
+                <div class="loading">Loading issues...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ZAD Configuration
+        window.APP_ID = 'turquoise-rabbit-exploring';
+        
+        // ZAD Helper Functions (injected by WEBTOYS)
+        async function save(actionType, data, participantData = null) {
+            const participantId = localStorage.getItem('participant_id') || 
+                                 'user_' + Math.random().toString(36).substr(2, 9);
+            
+            if (!localStorage.getItem('participant_id')) {
+                localStorage.setItem('participant_id', participantId);
+            }
+
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: participantId,
+                    action_type: actionType,
+                    content_data: data,
+                    participant_data: participantData
+                })
+            });
+            return response.json();
+        }
+
+        async function load(actionType, filters = {}) {
+            const response = await fetch('/api/zad/load', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    action_type: actionType,
+                    filters: filters
+                })
+            });
+            const result = await response.json();
+            return result.data || [];
+        }
+
+        // Application Functions
+        async function submitIssue() {
+            const author = document.getElementById('author').value || 'Anonymous';
+            const category = document.getElementById('category').value;
+            const idea = document.getElementById('idea').value;
+
+            if (!idea.trim()) {
+                showMessage('Please describe your issue or feature request', 'error');
+                return;
+            }
+
+            const issueData = {
+                idea: idea,
+                author: author,
+                category: category,
+                status: 'new',
+                comments: [],
+                reactions: {
+                    '👍': 0,
+                    '🔥': 0,
+                    '❤️': 0
+                },
+                timestamp: Date.now()
+            };
+
+            try {
+                const result = await save('issue', issueData);
+                if (result.success) {
+                    showMessage('Issue submitted successfully! It will be reviewed by our automated system.', 'success');
+                    document.getElementById('idea').value = '';
+                    loadIssues(); // Refresh the list
+                } else {
+                    showMessage('Failed to submit issue. Please try again.', 'error');
+                }
+            } catch (error) {
+                showMessage('Error submitting issue: ' + error.message, 'error');
+            }
+        }
+
+        async function loadIssues() {
+            try {
+                const issues = await load('issue');
+                displayIssues(issues);
+            } catch (error) {
+                document.getElementById('issueList').innerHTML = 
+                    '<div class="error">Failed to load issues</div>';
+            }
+        }
+
+        function displayIssues(issues) {
+            const container = document.getElementById('issueList');
+            
+            if (!issues || issues.length === 0) {
+                container.innerHTML = '<div class="loading">No issues yet. Be the first to submit one!</div>';
+                return;
+            }
+
+            // Sort by timestamp, newest first
+            issues.sort((a, b) => (b.content_data?.timestamp || 0) - (a.content_data?.timestamp || 0));
+
+            container.innerHTML = issues.slice(0, 20).map(issue => {
+                const data = issue.content_data || {};
+                const status = data.status || 'new';
+                const category = data.category || 'triage';
+                
+                return `
+                    <div class="issue-item">
+                        <div class="issue-header">
+                            <div class="issue-title">${escapeHtml(data.idea || 'No description')}</div>
+                        </div>
+                        <div class="issue-meta">
+                            <span class="badge badge-${category}">${category}</span>
+                            <span class="badge badge-status">${status}</span>
+                            <span>by ${escapeHtml(data.author || 'Anonymous')}</span>
+                            <span>${formatDate(data.timestamp)}</span>
+                        </div>
+                        ${data.reformulated ? `
+                            <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                                <strong>AI Analysis:</strong> ${escapeHtml(data.reformulated)}
+                                ${data.confidence ? `<span class="badge" style="margin-left: 10px;">Confidence: ${data.confidence}</span>` : ''}
+                            </div>
+                        ` : ''}
+                        ${data.pr_url ? `
+                            <div style="margin-top: 10px;">
+                                <a href="${data.pr_url}" target="_blank" style="color: #667eea;">View Pull Request →</a>
+                            </div>
+                        ` : ''}
+                        <div class="reactions">
+                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '👍')">
+                                👍 ${data.reactions?.['👍'] || 0}
+                            </button>
+                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '🔥')">
+                                🔥 ${data.reactions?.['🔥'] || 0}
+                            </button>
+                            <button class="reaction-btn" onclick="addReaction('${issue.id}', '❤️')">
+                                ❤️ ${data.reactions?.['❤️'] || 0}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function addReaction(issueId, emoji) {
+            // This would need the update functionality in the ZAD API
+            // For now, just show a message
+            showMessage('Reaction feature coming soon!', 'success');
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = type;
+            messageDiv.textContent = text;
+            setTimeout(() => {
+                messageDiv.className = '';
+                messageDiv.textContent = '';
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 3600000) {
+                return Math.floor(diff / 60000) + ' min ago';
+            } else if (diff < 86400000) {
+                return Math.floor(diff / 3600000) + ' hours ago';
+            } else {
+                return Math.floor(diff / 86400000) + ' days ago';
+            }
+        }
+
+        // Load issues on page load
+        loadIssues();
+        
+        // Refresh issues every 30 seconds
+        setInterval(loadIssues, 30000);
+    </script>
+</body>
+</html>
