@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-an app for a hipster coffee shop on Sunset Boulevard that has a fully working contact us form

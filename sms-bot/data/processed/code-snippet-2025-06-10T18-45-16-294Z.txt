@@ -1,1 +1,0 @@
-create a new script that sends an SMS with the exact message "This is my custom message" to +16508989508 using our Twilio setup

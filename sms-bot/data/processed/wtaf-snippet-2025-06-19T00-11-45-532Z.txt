@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build me a page that says Hi Ivan - on a gradient background

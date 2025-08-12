@@ -5,10 +5,11 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 // Load environment variables
+dotenv.config({ path: '.env.local' });
+
+// Get directory name for file operations
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const envPath = path.resolve(__dirname, '../.env.local');
-dotenv.config({ path: envPath });
 
 function logWithTimestamp(message: string): void {
   console.log(`[DEGEN ${new Date().toISOString()}] ${message}`);

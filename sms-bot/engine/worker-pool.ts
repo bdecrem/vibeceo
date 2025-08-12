@@ -281,7 +281,7 @@ class Worker {
         const requestInfo = determineRequestType(fileData.userPrompt, task.processingPath);
 
         // Import processing functions dynamically to avoid circular dependencies
-        const { processWtafRequest, processEditRequest, processRemixRequest, processMemeRequest } = await import('./controller.js');
+        const { processWtafRequest, processEditRequest, processRemixRequest, processMemeRequest, processLinkRequest, processConfirmMergeRequest } = await import('./controller.js');
 
         // Process based on request type
         if (requestInfo.type === 'wtaf' || requestInfo.type === 'code') {
@@ -292,6 +292,10 @@ class Worker {
             await processRemixRequest(task.processingPath, fileData, requestInfo);
         } else if (requestInfo.type === 'meme') {
             await processMemeRequest(task.processingPath, fileData, requestInfo);
+        } else if (requestInfo.type === 'link') {
+            await processLinkRequest(task.processingPath, fileData, requestInfo);
+        } else if (requestInfo.type === 'confirm-merge') {
+            await processConfirmMergeRequest(task.processingPath, fileData, requestInfo);
         } else {
             throw new Error(`Unknown request type: ${requestInfo.type}`);
         }

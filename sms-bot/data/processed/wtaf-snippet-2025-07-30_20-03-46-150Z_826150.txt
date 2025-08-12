@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---stackzad subtle-cardinal-harvesting create a public read-only Blog-style URL where all the posts are listed and users can click on them to read the posts (no comments, reactions or anything where the viewer creates/posts)
