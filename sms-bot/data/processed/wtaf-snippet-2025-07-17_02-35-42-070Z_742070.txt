@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a hello world generator app, like this: each time I tap it creates a new hello world page, and when I save it it adds it to my collection of saved hello world pages

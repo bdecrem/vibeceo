@@ -1,8 +1,0 @@
-SENDER:+16508989508
-rohan - crossword - Create an HTML+JavaScript page with a FULLY INTERACTIVE crossword puzzle with a 9x9 grid. Include:
-- Empty cells for users to type in letters
-- Clues for across and down words 
-- Black cells where needed
-- Validation to check if answers are correct
-- A way to reset or get hints
-Make sure it's completely functional and ready to play!

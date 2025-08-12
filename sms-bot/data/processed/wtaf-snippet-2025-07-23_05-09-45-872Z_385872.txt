@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build me a collaborative image gallery app where people can describe images they want to generate and they are all displayed in one gallery

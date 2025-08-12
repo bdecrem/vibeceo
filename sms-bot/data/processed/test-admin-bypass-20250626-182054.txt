@@ -1,5 +1,0 @@
-SENDER_PHONE: +15551234567
-USER_SLUG: testuser
-USER_PROMPT: wtaf --admin test admin override bypass
-COACH: default
-TIMESTAMP: 2025-06-27T01:20:54.000Z

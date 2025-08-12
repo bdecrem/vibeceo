@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---admin make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page. Make it punk and weird

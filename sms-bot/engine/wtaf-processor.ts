@@ -46,6 +46,19 @@ async function withTimeout<T>(
     return Promise.race([promise, timeoutPromise]);
 }
 
+/**
+ * Clean HTML response by removing any content after closing </html> tag
+ * This prevents AI models from adding explanatory text after the HTML
+ */
+function cleanHTMLResponse(html: string): string {
+    const htmlEndIndex = html.lastIndexOf('</html>');
+    if (htmlEndIndex !== -1) {
+        // Return everything up to and including </html>
+        return html.substring(0, htmlEndIndex + 7).trim();
+    }
+    return html;
+}
+
 // Configuration interfaces for type safety
 export interface ClassifierConfig {
     classifierModel: string;
@@ -722,6 +735,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         //     logWithTimestamp(`✅ Post-processing complete: ${originalLength} → ${processedLength} chars`);
         // }
         
+        // Clean HTML to remove any commentary after </html>
+        result = cleanHTMLResponse(result);
+        
         return result;
     } catch (error) {
         logWarning(`Primary model ${config.model} failed, trying fallbacks: ${error instanceof Error ? error.message : String(error)}`);
@@ -812,6 +828,9 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                 //     const processedLength = fallbackResult.length;
                 //     logWithTimestamp(`✅ Post-processing complete: ${originalLength} → ${processedLength} chars`);
                 // }
+                
+                // Clean HTML to remove any commentary after </html>
+                fallbackResult = cleanHTMLResponse(fallbackResult);
                 
                 return fallbackResult;
             } catch (fallbackError) {

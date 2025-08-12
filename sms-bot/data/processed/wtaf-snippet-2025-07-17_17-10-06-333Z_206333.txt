@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a chat app for me and my friends. Give it a colorful gradient background

@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build me a collaborative task manager where team members can create tasks, assign them to each other (make sure to use the ACTUAL user handles the app generates!), and mark them complete. include user authentication.
