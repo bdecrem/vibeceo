@@ -263,6 +263,11 @@
             color: var(--charcoal);
         }
 
+        .badge-answered {
+            background: var(--blue);
+            color: var(--charcoal);
+        }
+
         .badge-failed {
             background: var(--red);
             color: white;
@@ -557,8 +562,14 @@
                 const status = data.status || 'new';
                 const category = data.category || 'triage';
                 
-                // Determine status progression
-                const statusSteps = [
+                // Check if this was a support question
+                const isSupportQuestion = status === 'answered' || category.startsWith('support-');
+                
+                // Determine status progression (different for support questions)
+                const statusSteps = isSupportQuestion ? [
+                    { name: 'Question Asked', completed: true },
+                    { name: 'Answered by Ash.tag', completed: status === 'answered' }
+                ] : [
                     { name: 'Submitted', completed: true },
                     { name: 'Analyzed', completed: !!data.reformulated },
                     { name: 'Fixing', completed: status === 'fixing' || status === 'fixed' || status === 'pr-created' },
@@ -566,7 +577,8 @@
                     { name: 'PR Created', completed: status === 'pr-created' }
                 ];
                 
-                const statusBadgeClass = status === 'pr-created' ? 'badge-pr-created' : 
+                const statusBadgeClass = status === 'answered' ? 'badge-answered' :
+                                        status === 'pr-created' ? 'badge-pr-created' : 
                                         status === 'fixed' ? 'badge-fixed' :
                                         status === 'fixing' ? 'badge-fixing' :
                                         status === 'reformulated' ? 'badge-reformulated' :
@@ -594,7 +606,14 @@
                             }).join('')}
                         </div>
                         
-                        ${data.reformulated ? `
+                        ${data.answer ? `
+                            <div style="margin-top: 15px; padding: 15px; background: var(--blue); border-radius: 15px; border: 2px solid var(--blue-deep);">
+                                <strong style="color: var(--charcoal);">💬 Ash.tag's Answer:</strong><br>
+                                <span style="color: var(--charcoal);">${escapeHtml(data.answer)}</span>
+                                ${data.ash_comment ? `<br><br><em style="color: var(--charcoal); font-weight: 600;">"${escapeHtml(data.ash_comment)}"</em>` : ''}
+                                ${data.followup_action ? `<br><br><strong>Next Step:</strong> ${escapeHtml(data.followup_action)}` : ''}
+                            </div>
+                        ` : data.reformulated ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--purple-shadow); border-radius: 15px; border: 2px solid var(--purple-accent);">
                                 <strong style="color: var(--charcoal);">🤖 AI Analysis:</strong> <span style="color: var(--charcoal);">${escapeHtml(data.reformulated)}</span>
                                 ${data.confidence ? `<span class="badge" style="margin-left: 10px;">Confidence: ${data.confidence}</span>` : ''}
