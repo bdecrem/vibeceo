@@ -1022,7 +1022,7 @@
 
     <script>
         // ZAD Configuration
-        window.APP_ID = '83218c2e-281e-4265-a95f-1d3f763870d4';
+        window.APP_ID = 'webtoys-issue-tracker';
         
         // Superpower mode detection
         const urlParams = new URLSearchParams(window.location.search);
@@ -1112,7 +1112,8 @@
                 localStorage.setItem('participant_id', participantId);
             }
 
-            const response = await fetch('https://webtoys.ai/api/zad/save', {
+            // Use relative URL - works correctly in srcDoc iframes
+            const response = await fetch('/api/zad/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1139,7 +1140,8 @@
                     params.append('participant_id', filters.participant_id);
                 }
                 
-                const url = `https://webtoys.ai/api/zad/load?${params.toString()}`;
+                // Use relative URL for API calls (works in srcDoc iframes)
+                const url = `/api/zad/load?${params.toString()}`;
                 console.log('Fetching from:', url);
                 
                 const response = await fetch(url, {
