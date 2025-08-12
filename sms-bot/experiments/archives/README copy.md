@@ -40,7 +40,7 @@ node dist/experiments/test-prompt.js
 🎯 Building: "a simple voting app for choosing pizza toppings"
 🆔 App ID: test3
 🤖 Sending request to GPT-4...
-✅ Success!
+✅ Huge success!
 📁 HTML file saved as: a-simple-voting-app-for-choosing-pizza-toppings-2025-01-07T10-30-15-123Z.html
 🆔 App ID: test3 (all users will share this instance)
 ```
