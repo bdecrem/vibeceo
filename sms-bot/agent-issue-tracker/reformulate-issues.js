@@ -334,6 +334,137 @@ function categorizeIssue(reformulated) {
 }
 
 /**
+ * Use Claude as Ash.tag to provide detailed conversational responses to admin reopened issues
+ */
+async function generateConversationalResponse(issue) {
+  const adminComments = issue.admin_comments || [];
+  const latestComment = adminComments[adminComments.length - 1];
+  const previousAnalysis = issue.reformulated || issue.idea;
+  const confidence = issue.confidence || 'low';
+  
+  const prompt = `
+You are Ash.tag - the friendly punk-roots agent for WEBTOYS Issue Tracker. An admin has reopened this issue, and you need to provide a DETAILED, HELPFUL response explaining exactly what's blocking progress and how to move forward.
+
+## Issue Context
+Original request: "${issue.idea}"
+Author: ${issue.author}
+Previous AI analysis: "${previousAnalysis}"
+Current confidence level: ${confidence}
+Admin's latest comment: "${latestComment ? latestComment.text : 'Admin reopened issue without comment'}"
+
+## Current Status
+The issue was previously marked as "${confidence} confidence" and needs more information or clarification.
+
+## Your Task
+Provide a DETAILED response that explains:
+1. WHY the confidence is low (specific technical blockers)
+2. What SPECIFIC information is needed to move forward
+3. Clarifying questions about the request
+4. Concrete suggestions for how to improve the issue description
+5. What would make this actionable for the development team
+
+## Response Style
+- Be conversational and helpful, not robotic
+- Use your punk-roots personality but stay professional
+- Be SPECIFIC and TECHNICAL, not vague
+- Ask pointed questions that will help clarify the requirements
+- Provide actionable feedback the admin can act on
+
+Format your response as JSON:
+{
+  "detailed_response": "Your comprehensive explanation of what's blocking progress and what's needed (3-5 sentences)",
+  "technical_blockers": ["Specific blocker 1", "Specific blocker 2", "Specific blocker 3"],
+  "clarifying_questions": ["Question 1", "Question 2", "Question 3"],
+  "suggestions": ["Suggestion 1", "Suggestion 2"],
+  "ash_personality": "Your signature punk-roots comment about the situation (1 sentence)"
+}
+`;
+
+  try {
+    const tempFile = path.join('/tmp', `conversation-${Date.now()}.txt`);
+    await fs.writeFile(tempFile, prompt);
+
+    const { stdout } = await execAsync(
+      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      { maxBuffer: 1024 * 1024 * 10 }
+    );
+
+    await fs.unlink(tempFile).catch(() => {});
+
+    const claudeResponse = JSON.parse(stdout);
+    
+    if (claudeResponse.result) {
+      try {
+        const jsonMatch = claudeResponse.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.error('Error parsing Claude result as JSON:', parseError);
+      }
+    }
+    
+    return {
+      detailed_response: "I couldn't analyze this issue properly right now. Let me know what specific functionality you need and I'll help clarify the requirements.",
+      technical_blockers: ["AI analysis system temporarily unavailable"],
+      clarifying_questions: ["What specific functionality are you looking for?", "Are there any similar features I can reference?"],
+      suggestions: ["Provide more detail about the expected behavior", "Include examples or mockups if available"],
+      ash_personality: "Even punk agents have off days - hit me with more details and I'll get this sorted."
+    };
+  } catch (error) {
+    console.error('Error calling Claude for conversation:', error);
+    return {
+      detailed_response: "I'm having technical difficulties analyzing this issue. The core problem seems to be insufficient detail in the original request.",
+      technical_blockers: ["AI system error: " + error.message],
+      clarifying_questions: ["Can you provide more specific requirements?", "What's the expected behavior?"],
+      suggestions: ["Add more technical detail", "Provide use case examples"],
+      ash_personality: "Technical glitches happen - let's debug this together.",
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Check if an issue has been reopened by an admin
+ */
+function isAdminReopenedIssue(issue) {
+  const data = issue.content_data || {};
+  
+  // Priority: Check if conversation was explicitly triggered by admin action
+  if (data.trigger_conversation === true) {
+    return true;
+  }
+  
+  // Secondary: Check if issue has admin comments AND was recently moved to admin_discussion status
+  if (!data.admin_comments || data.admin_comments.length === 0) {
+    return false;
+  }
+  
+  // Check for status that indicates admin discussion needed
+  const status = data.status || 'new';
+  if (status === 'admin_discussion') {
+    return true;
+  }
+  
+  const wasProcessed = data.reformulated || data.ash_comment;
+  
+  // If it has admin comments and is now in NEW or NEEDS_INFO status after being processed
+  if ((status === 'new' || status === 'needs_info') && wasProcessed) {
+    return true;
+  }
+  
+  // Also check if the latest admin comment is recent (within last hour) and status suggests reopening
+  const latestComment = data.admin_comments[data.admin_comments.length - 1];
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  
+  if (latestComment && new Date(latestComment.timestamp).getTime() > oneHourAgo) {
+    return ['new', 'needs_info', 'reformulated', 'admin_discussion'].includes(status);
+  }
+  
+  return false;
+}
+
+/**
  * Main processing function
  */
 async function processIssues() {
@@ -343,9 +474,75 @@ async function processIssues() {
   // Load new issues
   const newIssues = await loadIssues('new');
   console.log(`📥 Found ${newIssues.length} new issues to process`);
+  
+  // Also check for admin-reopened issues that need conversational responses
+  const allIssues = await supabase
+    .from('wtaf_zero_admin_collaborative')
+    .select('*')
+    .eq('app_id', ISSUE_TRACKER_APP_ID)
+    .eq('action_type', 'issue');
+    
+  const adminReopenedIssues = allIssues.data?.filter(record => isAdminReopenedIssue(record)) || [];
+  
+  console.log(`🔄 Found ${adminReopenedIssues.length} admin-reopened issues needing conversation`);
 
   let processed = 0;
   let failed = 0;
+
+  // Process admin-reopened issues first (priority handling)
+  for (const record of adminReopenedIssues) {
+    const issue = record.content_data;
+    console.log(`\n💬 Processing admin-reopened issue #${record.id}: "${issue.idea}"`);
+
+    try {
+      const conversationResponse = await generateConversationalResponse(issue);
+      
+      // Create a comprehensive agent response
+      let agentResponse = conversationResponse.detailed_response;
+      
+      if (conversationResponse.technical_blockers && conversationResponse.technical_blockers.length > 0) {
+        agentResponse += `\n\n**Technical Blockers:**\n${conversationResponse.technical_blockers.map(b => `• ${b}`).join('\n')}`;
+      }
+      
+      if (conversationResponse.clarifying_questions && conversationResponse.clarifying_questions.length > 0) {
+        agentResponse += `\n\n**Questions to clarify:**\n${conversationResponse.clarifying_questions.map(q => `• ${q}`).join('\n')}`;
+      }
+      
+      if (conversationResponse.suggestions && conversationResponse.suggestions.length > 0) {
+        agentResponse += `\n\n**Suggestions:**\n${conversationResponse.suggestions.map(s => `• ${s}`).join('\n')}`;
+      }
+      
+      // Update the issue with the conversational response
+      const success = await updateIssue(record.id, {
+        status: 'admin_discussion',
+        agent_response: agentResponse,
+        agent_response_timestamp: new Date().toISOString(),
+        ash_comment: conversationResponse.ash_personality,
+        technical_blockers: conversationResponse.technical_blockers,
+        clarifying_questions: conversationResponse.clarifying_questions,
+        suggestions: conversationResponse.suggestions,
+        last_conversation_at: new Date().toISOString(),
+        // Clear the trigger flag to prevent reprocessing
+        trigger_conversation: false,
+        conversation_completed_at: new Date().toISOString()
+      });
+      
+      if (success) {
+        console.log(`✅ Admin conversation response generated`);
+        console.log(`   Response: ${conversationResponse.detailed_response.substring(0, 100)}...`);
+        processed++;
+      } else {
+        console.log(`❌ Failed to save conversation response`);
+        failed++;
+      }
+      
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    } catch (error) {
+      console.error(`❌ Error processing admin conversation:`, error);
+      failed++;
+    }
+  }
 
   for (const record of newIssues) {
     const issue = record.content_data;
