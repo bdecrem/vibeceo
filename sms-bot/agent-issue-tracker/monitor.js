@@ -78,6 +78,9 @@ async function checkGitStatus() {
  * Main monitor function
  */
 async function monitor() {
+  // CRITICAL: Change to script directory - MUST be first line for cron compatibility
+  process.chdir(__dirname);
+  
   // Check for lock file to prevent concurrent runs
   const lockFile = path.join(__dirname, '.monitor.lock');
   try {
