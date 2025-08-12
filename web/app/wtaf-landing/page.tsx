@@ -57,6 +57,7 @@ function DevConsole() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [linkLoading, setLinkLoading] = useState(false)
+  const [isMergeMode, setIsMergeMode] = useState(false)
 
   // Check auth status when console opens
   useEffect(() => {
@@ -272,6 +273,40 @@ function DevConsole() {
     addConsoleEntry('👋 Signed out successfully', 'info')
   }
 
+  async function handlePasswordReset(email: string) {
+    try {
+      // Due to Supabase bug with localhost, we'll use base URL and handle redirect client-side
+      let redirectUrl: string
+      
+      if (window.location.hostname === 'localhost') {
+        const port = window.location.port || '3000'
+        // Just use base URL for localhost - AuthHandler will redirect to /reset-password
+        redirectUrl = `http://localhost:${port}`
+      } else if (window.location.hostname.includes('webtoys.ai')) {
+        redirectUrl = 'https://webtoys.ai/reset-password'
+      } else if (window.location.hostname.includes('wtaf.me')) {
+        redirectUrl = 'https://wtaf.me/reset-password'
+      } else if (window.location.hostname.includes('webtoys.io')) {
+        redirectUrl = 'https://webtoys.io/reset-password'
+      } else {
+        redirectUrl = `${window.location.origin}/reset-password`
+      }
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      })
+      
+      if (error) {
+        addConsoleEntry(`❌ Failed to send reset email: ${error.message}`, 'error')
+      } else {
+        addConsoleEntry(`✅ Password reset link sent to ${email}. Check your inbox!`, 'success')
+        addConsoleEntry(`📝 After clicking the link, you'll be redirected to the password reset page.`, 'info')
+      }
+    } catch (err) {
+      addConsoleEntry(`❌ Error: ${err}`, 'error')
+    }
+  }
+
   async function handlePhoneLink() {
     if (!phoneNumber) {
       setAuthError('Please enter a phone number')
@@ -282,7 +317,7 @@ function DevConsole() {
     setAuthError('')
 
     try {
-      const response = await fetch('/api/auth/link-phone', {
+      const response = await fetch('/api/auth/link-phone-v2', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -302,8 +337,25 @@ function DevConsole() {
         return
       }
 
-      addConsoleEntry('📱 Verification code sent to your phone!', 'success')
-      setLinkMode('code')
+      if (result.merge_required) {
+        // PHASE 2: Show merge confirmation
+        addConsoleEntry('⚠️ This phone number is already registered!', 'warning')
+        addConsoleEntry('', 'info')
+        addConsoleEntry(`📱 Phone account: ${result.merge_info.phone_account}`, 'info')
+        addConsoleEntry(`💻 Web account: ${result.merge_info.web_account}`, 'info')
+        addConsoleEntry('', 'info')
+        addConsoleEntry(`✨ ${result.merge_info.message}`, 'info')
+        addConsoleEntry('', 'info')
+        addConsoleEntry('⚡ Type YES to confirm merge, or CANCEL to abort', 'warning')
+        setIsMergeMode(true)
+        setLinkMode('code')
+        setVerificationCode('') // Clear any previous code
+      } else {
+        // PHASE 1: Simple verification
+        addConsoleEntry('📱 Verification code sent to your phone!', 'success')
+        setIsMergeMode(false)
+        setLinkMode('code')
+      }
       setLinkLoading(false)
     } catch (error: any) {
       setAuthError('Network error. Please try again.')
@@ -313,7 +365,31 @@ function DevConsole() {
 
   async function handleVerifyCode() {
     if (!verificationCode) {
-      setAuthError('Please enter the verification code')
+      setAuthError('Please enter the verification code or YES/CANCEL')
+      return
+    }
+
+    // Check if this is a merge confirmation (YES/CANCEL) or verification code
+    if (isMergeMode) {
+      const answer = verificationCode.toUpperCase().trim()
+      if (answer === 'CANCEL') {
+        // User cancelled merge
+        addConsoleEntry('❌ Merge cancelled', 'info')
+        setAuthMode('none')
+        setPhoneNumber('')
+        setVerificationCode('')
+        setLinkLoading(false)
+        setIsMergeMode(false)
+        return
+      } else if (answer !== 'YES') {
+        setAuthError('Please type YES to confirm merge, or CANCEL to abort')
+        return
+      }
+      // If YES, proceed to send verification code
+      addConsoleEntry('📲 Sending verification code to your phone...', 'info')
+      setVerificationCode('') // Clear YES
+      setIsMergeMode(false) // Switch to verification mode
+      // Now show the input for actual code
       return
     }
 
@@ -321,14 +397,13 @@ function DevConsole() {
     setAuthError('')
 
     try {
-      const response = await fetch('/api/auth/verify-link', {
+      const response = await fetch('/api/auth/verify-link-v2', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
-          phone_number: phoneNumber,
           verification_code: verificationCode,
           user_id: user.id
         })
@@ -343,29 +418,127 @@ function DevConsole() {
       }
 
       if (result.merged) {
-        addConsoleEntry(`✅ Accounts linked! You now have access to:`, 'success')
-        addConsoleEntry(`   • Role: ${result.role}`, 'info')
-        addConsoleEntry(`   • Apps created: ${result.app_count}`, 'info')
-        addConsoleEntry(`   • Your slug: ${result.slug}`, 'info')
+        // Successful merge
+        addConsoleEntry(`✅ ${result.message}`, 'success')
+        addConsoleEntry(`📊 Total apps in merged account: ${result.total_apps}`, 'info')
+        addConsoleEntry(`🎉 You can now use both SMS and web!`, 'success')
       } else {
-        addConsoleEntry(`✅ Phone number added to your account!`, 'success')
-        addConsoleEntry(`   • You can now use SMS commands`, 'info')
-        addConsoleEntry(`   • Text "WTAF help" to ${phoneNumber} to get started`, 'info')
+        // Simple phone link (Phase 1)
+        addConsoleEntry(`✅ ${result.message}`, 'success')
+        addConsoleEntry(`📱 You can now use SMS commands!`, 'info')
+        addConsoleEntry(`💬 Text "wtaf help" to +1-866-330-0015 to get started`, 'info')
       }
 
       setAuthMode('none')
       setPhoneNumber('')
       setVerificationCode('')
       setLinkLoading(false)
+      setIsMergeMode(false)
     } catch (error: any) {
       setAuthError('Network error. Please try again.')
       setLinkLoading(false)
     }
   }
 
+  // Parse SMS bot responses into structured console output
+  function parseSmsResponse(response: string): Array<{message: string, type: string, url?: string}> {
+    const entries: Array<{message: string, type: string, url?: string}> = []
+    const lines = response.split('\n')
+    
+    // Detect different response patterns
+    if (response.includes('Your pages:') || response.includes('Your creations:')) {
+      // INDEX command - parse numbered list
+      entries.push({message: '📚 Your creations:', type: 'info'})
+      
+      for (const line of lines) {
+        const pageMatch = line.match(/^\d+\.\s+(.+?)(?:\s+\((.+?)\))?(?:\s+★)?$/)
+        if (pageMatch) {
+          const [, slug, status] = pageMatch
+          const isFavorite = line.includes('★')
+          const isHidden = status === 'hidden'
+          
+          let message = `  ${line.trim()}`
+          if (slug && !isHidden) {
+            // Make it a clickable link
+            const url = `https://wtaf.me/${user?.slug || 'user'}/${slug}`
+            message = `  <a href="${url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${line.trim()}</a>`
+          }
+          entries.push({message, type: isHidden ? 'warning' : 'info'})
+        }
+      }
+    } else if (response.includes('Index page set to:') || response.includes('Homepage set to:')) {
+      // INDEX SET response
+      entries.push({message: `✅ ${response}`, type: 'success'})
+    } else if (response.includes('marked as favorite') || response.includes('removed from favorites')) {
+      // FAVE response
+      entries.push({message: `⭐ ${response}`, type: 'success'})
+    } else if (response.includes('hidden') || response.includes('unhidden')) {
+      // HIDE/UNHIDE response
+      entries.push({message: `👁️ ${response}`, type: 'success'})
+    } else if (response.includes('HIDE-DEFAULT') || response.includes('Auto-hide')) {
+      // HIDE-DEFAULT response
+      entries.push({message: `⚙️ ${response}`, type: 'success'})
+    } else if (response.includes('Your slug is now:') || response.includes('URL changed to:')) {
+      // SLUG change response
+      const slugMatch = response.match(/Your slug is now: (\S+)/)
+      if (slugMatch) {
+        entries.push({message: `✅ ${response}`, type: 'success'})
+        const newUrl = `https://wtaf.me/${slugMatch[1]}`
+        entries.push({
+          message: `Your new URL: <a href="${newUrl}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${newUrl}</a>`,
+          type: 'info'
+        })
+      } else {
+        entries.push({message: `✅ ${response}`, type: 'success'})
+      }
+    } else if (response.includes('Available commands:')) {
+      // COMMANDS response - format nicely
+      const sections = response.split(/\n\n/)
+      for (const section of sections) {
+        if (section.includes('COMMANDS:')) {
+          // Section header
+          entries.push({message: '', type: 'info'}) // spacing
+          entries.push({message: section.split('\n')[0], type: 'info'})
+        } else {
+          // Command list
+          const commands = section.split('\n').filter(line => line.trim())
+          for (const cmd of commands) {
+            if (cmd.startsWith('•') || cmd.startsWith('-')) {
+              entries.push({message: `  ${cmd}`, type: 'info'})
+            } else if (!cmd.includes('Available commands')) {
+              entries.push({message: cmd, type: 'info'})
+            }
+          }
+        }
+      }
+    } else if (response.includes('Your app:') && response.includes('https://')) {
+      // App creation success - already handled by existing logic
+      return []
+    } else {
+      // Default: split by newlines and display
+      for (const line of lines) {
+        if (line.trim()) {
+          // Detect URLs in the response and make them clickable
+          const urlRegex = /(https?:\/\/[^\s]+)/g
+          const lineWithLinks = line.replace(urlRegex, '<a href="$1" target="_blank" style="color: #4CAF50; text-decoration: underline;">$1</a>')
+          
+          // Determine type based on content
+          const type = line.includes('Error') || line.includes('failed') ? 'error' :
+                      line.includes('✅') || line.includes('Success') ? 'success' :
+                      line.includes('⚠️') || line.includes('Warning') ? 'warning' :
+                      'info'
+          
+          entries.push({message: lineWithLinks, type})
+        }
+      }
+    }
+    
+    return entries
+  }
+
   async function handleWtafCommand(cmd: string) {
     addConsoleEntry(`> ${cmd}`, 'command')
-    addConsoleEntry('🚀 Processing WTAF command...', 'info')
+    addConsoleEntry('🚀 Processing command...', 'info')
     
     try {
       // Get the current session to include auth token
@@ -418,21 +591,43 @@ function DevConsole() {
         } else if (result.responses && Array.isArray(result.responses)) {
           // Process multiple responses from WTAF
           for (const response of result.responses) {
-            const entryType = response.type === 'error' ? 'error' : 
-                            response.type === 'success' ? 'success' :
-                            response.type === 'url' ? 'success' :
-                            response.type === 'admin_url' ? 'success' :
-                            'info'
-            
-            if (response.url) {
-              // Make URLs clickable
-              const clickableMessage = response.message.replace(
-                response.url,
-                `<a href="${response.url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${response.url}</a>`
-              )
-              addConsoleEntry(clickableMessage, entryType)
-            } else {
-              addConsoleEntry(response.message, entryType)
+            // Check if this is a raw text response that needs parsing
+            if (typeof response === 'string') {
+              // Raw SMS bot response - parse it
+              const parsed = parseSmsResponse(response)
+              for (const entry of parsed) {
+                addConsoleEntry(entry.message, entry.type as any)
+              }
+            } else if (response.message) {
+              // Already structured response
+              const entryType = response.type === 'error' ? 'error' : 
+                              response.type === 'success' ? 'success' :
+                              response.type === 'url' ? 'success' :
+                              response.type === 'admin_url' ? 'success' :
+                              'info'
+              
+              // First check if this is a raw SMS response that needs parsing
+              if (response.type === 'info' && !response.url) {
+                // Might be a raw SMS response wrapped in an object
+                const parsed = parseSmsResponse(response.message)
+                if (parsed.length > 0) {
+                  for (const entry of parsed) {
+                    addConsoleEntry(entry.message, entry.type as any)
+                  }
+                } else {
+                  // No special parsing needed
+                  addConsoleEntry(response.message, entryType)
+                }
+              } else if (response.url) {
+                // Make URLs clickable
+                const clickableMessage = response.message.replace(
+                  response.url,
+                  `<a href="${response.url}" target="_blank" style="color: #4CAF50; text-decoration: underline;">${response.url}</a>`
+                )
+                addConsoleEntry(clickableMessage, entryType)
+              } else {
+                addConsoleEntry(response.message, entryType)
+              }
             }
           }
           
@@ -469,8 +664,11 @@ function DevConsole() {
 
   const handleCommand = (cmd: string) => {
     const lowerCmd = cmd.toLowerCase().trim()
+    const parts = cmd.trim().split(' ')  // Keep parts for commands that need arguments
+    const baseCommand = parts[0].toLowerCase()  // First word for multi-word commands
     let response = ''
 
+    // For exact matches, use the full command
     switch(lowerCmd) {
       case 'help':
         response = `🎮 CONSOLE COMMANDS:
@@ -486,11 +684,12 @@ function DevConsole() {
   exit      - Close console
   
 🔐 AUTH COMMANDS:
-  login     - Sign in to your account
-  signup    - Create a new account
-  logout    - Sign out
-  whoami    - Show current user
-  link      - Link phone number to your account`
+  login          - Sign in to your account
+  signup         - Create a new account
+  logout         - Sign out
+  whoami         - Show current user
+  link           - Link phone number to your account
+  reset-password - Send password reset email`
         break
       case 'wtaf':
         response = `🧪 WTAF COMMANDS (via SMS):
@@ -643,17 +842,62 @@ Without this, you'll see duplicates everywhere! 🤯`
         }
         break
       default:
-        // Check if they're trying to use WTAF commands in console
-        if (lowerCmd.startsWith('wtaf ') || lowerCmd.startsWith('slug ') || lowerCmd.startsWith('edit ') || lowerCmd.startsWith('meme ') || lowerCmd === 'commands') {
+        // Check for reset-password command with optional email
+        if (baseCommand === 'reset-password' || baseCommand === 'forgot-password') {
           if (user) {
-            // Process WTAF command for authenticated users
+            response = `You're already logged in. Sending password reset link to ${user.email}...`
+            handlePasswordReset(user.email)
+            return
+          } else {
+            const emailMatch = parts[1]
+            if (emailMatch && emailMatch.includes('@')) {
+              response = `Sending password reset link to ${emailMatch}...`
+              handlePasswordReset(emailMatch)
+              return
+            } else {
+              response = '📧 Please provide an email address: reset-password your@email.com'
+            }
+          }
+        // Check if they're trying to use SMS bot commands
+        } else if (
+          // Creation commands
+          lowerCmd.startsWith('wtaf ') || 
+          lowerCmd.startsWith('meme ') || 
+          lowerCmd.startsWith('edit ') ||
+          // User management commands
+          lowerCmd.startsWith('slug ') || 
+          lowerCmd === 'index' || 
+          lowerCmd.startsWith('index ') ||
+          lowerCmd.startsWith('fave ') || 
+          lowerCmd.startsWith('forget ') ||
+          lowerCmd.startsWith('hide ') || 
+          lowerCmd.startsWith('unhide ') ||
+          lowerCmd.startsWith('hide-default ') ||
+          // Stack commands
+          lowerCmd.startsWith('--stack') ||
+          lowerCmd.startsWith('remix ') ||
+          lowerCmd.startsWith('public ') ||
+          // Info commands
+          lowerCmd === 'commands' ||
+          lowerCmd === 'start' ||
+          lowerCmd === 'stop'
+        ) {
+          if (user) {
+            // Forward command to SMS bot for processing
             handleWtafCommand(cmd)
             return
           } else {
-            response = `🔐 Authentication required to use WTAF commands in console.\n\nUse "login" or "signup" to get started, or text "${cmd}" to +1-866-330-0015 instead!`
+            response = `🔐 Authentication required to use SMS commands in console.\n\nUse "login" or "signup" to get started, or text "${cmd}" to +1-866-330-0015 instead!`
           }
         } else if (lowerCmd) {
-          response = `Command not found: "${cmd}". Type "help" for available commands.`
+          // Unrecognized command - could still try forwarding to SMS bot
+          if (user) {
+            // Forward unknown commands to SMS bot - it might understand them
+            handleWtafCommand(cmd)
+            return
+          } else {
+            response = `Command not found: "${cmd}". Type "help" for available commands.`
+          }
         }
     }
 
@@ -809,6 +1053,7 @@ Without this, you'll see duplicates everywhere! 🤯`
                           setAuthMode('none')
                           setPhoneNumber('')
                           setAuthError('')
+                          setIsMergeMode(false)
                         }}
                         className="console-auth-button cancel"
                       >
@@ -823,18 +1068,20 @@ Without this, you'll see duplicates everywhere! 🤯`
                     handleVerifyCode()
                   }}>
                     <div className="console-link-header">
-                      📱 Enter Verification Code
+                      {isMergeMode ? '🔄 Confirm Account Merge' : '📱 Enter Verification Code'}
                     </div>
                     <p className="console-link-info">
-                      We sent a code to {phoneNumber}
+                      {isMergeMode 
+                        ? 'Type YES to merge accounts, or CANCEL to abort' 
+                        : `We sent a verification code to ${phoneNumber}`}
                     </p>
                     <input
                       type="text"
-                      placeholder="123456"
+                      placeholder={isMergeMode ? "YES to confirm" : "123456"}
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       className="console-auth-input"
-                      maxLength={6}
+                      maxLength={isMergeMode ? 10 : 6}
                       required
                       autoFocus
                     />
@@ -852,6 +1099,7 @@ Without this, you'll see duplicates everywhere! 🤯`
                           setLinkMode('phone')
                           setVerificationCode('')
                           setAuthError('')
+                          setIsMergeMode(false)
                         }}
                         className="console-auth-button cancel"
                       >
@@ -1627,6 +1875,19 @@ export default function WebtoysSitePage() {
         >
           🎨
         </div>
+        
+        {/* Floating Clock - Links to Recents */}
+        <Link href="/recents" className="floating-clock-link">
+          <div 
+            className="floating-emoji emoji-clock" 
+            style={{
+              transform: isMobile === false ? `translate(${mousePosition.x * 0.06}px, ${mousePosition.y * -0.03}px)` : undefined
+            }}
+            title="View Recent Creations"
+          >
+            🕐
+          </div>
+        </Link>
       </div>
 
       {/* Secret Konami Widget */}
@@ -1780,9 +2041,14 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Sushi Site */}
             <div className="example-card">
-              <a href="/bart/cantaloupe-chorus-kissing" className="example-preview sushi magic-cursor">
-                🍣
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="example-preview sushi magic-cursor">
+                  🍣
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1791,7 +2057,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/cantaloupe-chorus-kissing" className="btn-view">Try It</a>
+                  <a href="/bart/cantaloupe-chorus-kissing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Build me a fun sushi bar site")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1802,12 +2068,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Rhyming Dictionary */}
             <div className="example-card">
-              <a href="/bart/matte-quokka-crafting" className="example-preview rhyme-dict magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/matte-quokka-crafting?demo=true" className="example-preview rhyme-dict magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/matte-quokka-crafting.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/matte-quokka-crafting?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1816,7 +2087,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/matte-quokka-crafting" className="btn-view">Try It</a>
+                  <a href="/bart/matte-quokka-crafting?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make me a rhyming dictionary")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1827,12 +2098,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: ZAD Paint */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/wave-wood-deconstructing" className="example-preview paint-app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="example-preview paint-app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/demo-paint-od96qt40.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1841,7 +2117,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing" className="btn-view">Try It</a>
+                  <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1852,12 +2128,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Todo App */}
             <div className="example-card">
-              <a href="/bart/tangerine-bat-tracking" className="example-preview app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/tangerine-bat-tracking?demo=true" className="example-preview app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/tangerine-bat-tracking.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/tangerine-bat-tracking?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1866,7 +2147,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/tangerine-bat-tracking" className="btn-view">Try It</a>
+                  <a href="/bart/tangerine-bat-tracking?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF Make a crazy punk hello world style page and what it does is it flashes messages that people have typed into the admin page. So it's like a billboard page.")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1942,12 +2223,17 @@ export default function WebtoysSitePage() {
           <div className="examples-grid">
             {/* Example 1: Positive Mudpuppy Repairing */}
             <div className="example-card">
-              <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/positive-mudpuppy-repairing.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/positive-mudpuppy-repairing?demo=true" className="example-preview music-app magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/positive-mudpuppy-repairing.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/positive-mudpuppy-repairing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1967,12 +2253,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 2: Lilac Vampire Singing */}
             <div className="example-card">
-              <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="example-preview music-gen magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="example-preview music-gen magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/ocean-softshell-roaming.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -1981,7 +2272,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming" className="btn-view">Try It</a>
+                  <a href="https://webtoys.ai/bart/ocean-softshell-roaming?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF --music make a music app that lets me describe a song and it then makes that")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -1992,12 +2283,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 3: Linen Nutria Supporting */}
             <div className="example-card">
-              <a href="/bart/linen-nutria-supporting" className="example-preview tetris-game magic-cursor" style={{
-                backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/linen-nutria-supporting?demo=true" className="example-preview tetris-game magic-cursor" style={{
+                  backgroundImage: `url('/wtaf-landing/images/linen-nutria-supporting.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/linen-nutria-supporting?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2006,7 +2302,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/linen-nutria-supporting" className="btn-view">Try It</a>
+                  <a href="/bart/linen-nutria-supporting?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a tetris game")}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -2017,12 +2313,17 @@ export default function WebtoysSitePage() {
             
             {/* Example 4: Fern Bumblebee Fishing */}
             <div className="example-card">
-              <a href="/bart/fern-bumblebee-fishing" className="example-preview grumpy-cat-meme magic-cursor" style={{
-                backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-              </a>
+              <div className="example-preview-container">
+                <a href="/bart/fern-bumblebee-fishing?demo=true" className="example-preview grumpy-cat-meme magic-cursor" style={{
+                  backgroundImage: `url('https://tqniseocczttrfwtpbdr.supabase.co/storage/v1/object/public/og-images/meme-landscape-1754080730035-zooa4clp2.jpg')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}>
+                </a>
+                <div className="example-overlay">
+                  <a href="/bart/fern-bumblebee-fishing?demo=true" className="try-app-overlay-btn">TRY THIS APP</a>
+                </div>
+              </div>
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
@@ -2031,7 +2332,7 @@ export default function WebtoysSitePage() {
                   className="prompt-text"
                 />
                 <div className="example-actions">
-                  <a href="/bart/fern-bumblebee-fishing" className="btn-view">Try It</a>
+                  <a href="/bart/fern-bumblebee-fishing?demo=true" className="btn-view">Try It</a>
                   <button className="btn-remix" onClick={() => handleRemixClick('MEME make me a "grumpy cat" meme with a graphic of a grumpy cat and text that says "fck that..."')}>
                     <span>🎨</span>
                     <span>Remix</span>
@@ -2065,6 +2366,9 @@ export default function WebtoysSitePage() {
         <div className="footer-content">
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
+          </p>
+          <p className="footer-copyright-notice">
+            © 2024 WEBTOYS
           </p>
         </div>
       </footer>
@@ -2168,6 +2472,27 @@ export default function WebtoysSitePage() {
           right: 15%;
           animation-duration: 28s;
           animation-delay: 18s;
+        }
+        
+        /* Floating Clock - positioned near lightning bolt */
+        .floating-clock-link {
+          text-decoration: none;
+          pointer-events: auto !important;  /* Override parent's pointer-events: none */
+          z-index: 100;
+        }
+        
+        .emoji-clock {
+          bottom: 20%;  /* Near lightning bolt which is at 15% */
+          left: 15%;    /* Slightly right of lightning bolt at 5% */
+          animation-duration: 25s;
+          animation-delay: 3s;
+          cursor: pointer;
+          pointer-events: auto !important;  /* Make clickable */
+        }
+        
+        .emoji-clock:hover {
+          transform: scale(1.3) rotate(360deg) !important;
+          filter: drop-shadow(0 0 20px var(--yellow));
         }
 
         @keyframes float-emoji {
@@ -2943,6 +3268,12 @@ export default function WebtoysSitePage() {
           box-shadow: 0 15px 0 var(--purple-accent);
         }
         
+        .example-preview-container {
+          position: relative;
+          overflow: hidden;
+          border-radius: 1rem;
+        }
+
         a.example-preview,
         .example-preview {
           aspect-ratio: 3/2;
@@ -2958,6 +3289,57 @@ export default function WebtoysSitePage() {
           text-decoration: none;
           color: inherit;
           margin-bottom: 1rem;
+          transition: transform 0.3s ease;
+        }
+
+        /* Option 3: Hover-only overlay with brand orange */
+        .example-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.2); /* Much lighter darkening */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s ease-in-out;
+          pointer-events: none; /* Prevent blocking clicks when hidden */
+          border-radius: 1rem;
+        }
+
+        .example-preview-container:hover .example-overlay {
+          opacity: 1;
+          pointer-events: auto; /* Enable clicks when visible */
+        }
+
+        .example-preview-container:hover .example-preview {
+          transform: scale(1.02); /* Gentler scale */
+          filter: drop-shadow(0 0 20px rgba(255, 87, 34, 0.6)); /* Brand orange glow */
+        }
+
+        .try-app-overlay-btn {
+          background: #FF5722; /* Brand orange solid color */
+          color: white;
+          padding: 12px 24px;
+          border: 2px solid white;
+          border-radius: 25px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          display: inline-block;
+        }
+
+        .try-app-overlay-btn:hover {
+          background: #FF6A3C; /* Slightly lighter on hover */
+          transform: scale(1.08);
+          box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
         }
         
         /* Different preview styles for each example */
@@ -3389,6 +3771,14 @@ export default function WebtoysSitePage() {
         .footer-copyright {
           opacity: 0.6;
           font-size: 0.9rem;
+        }
+        
+        .footer-copyright-notice {
+          opacity: 0.5;
+          font-size: 0.8rem;
+          margin-top: 1rem;
+          color: var(--cream);
+          letter-spacing: 0.5px;
         }
         
         /* Easter egg cursor */

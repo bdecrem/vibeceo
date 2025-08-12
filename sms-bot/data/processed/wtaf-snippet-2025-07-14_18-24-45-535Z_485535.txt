@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---zad-api make a simple habit tracker app for me where I first set my goals and then track them

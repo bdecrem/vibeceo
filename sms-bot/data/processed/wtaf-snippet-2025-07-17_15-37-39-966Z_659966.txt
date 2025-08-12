@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a "people tracker"/journal type app where I can enter a list of people I want to show WTAF.me to, and then when I talk to them I can check off that I spoke with them and enter the notes I took on the call. KEEP IT SIMPLE: don't try to load in contacts or use functions or variables that have not been defined - I will just enter names myself. Have the CONTACTED? And ADD NOTE buttons LOOK COOL and PUNK, not like it's for a secretary. And add buttons to view everyone, people you've contacted, or people still to be contacted.

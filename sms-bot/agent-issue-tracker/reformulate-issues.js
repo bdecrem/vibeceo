@@ -128,9 +128,9 @@ Format your response as JSON:
     const tempFile = path.join('/tmp', `issue-${Date.now()}.txt`);
     await fs.writeFile(tempFile, prompt);
 
-    // Use Claude via command line, reading from file to avoid escaping issues
+    // Use Claude via command line with FULL PATH for cron compatibility
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | claude --print --output-format json`,
+      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 

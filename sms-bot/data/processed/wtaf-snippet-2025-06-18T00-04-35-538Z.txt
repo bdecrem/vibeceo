@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build an app with a techno club in Berlin vibe but that actually says: Party Tonight at 6pm At Senior Center in Palo Alto, with a simple signup form (name, email)

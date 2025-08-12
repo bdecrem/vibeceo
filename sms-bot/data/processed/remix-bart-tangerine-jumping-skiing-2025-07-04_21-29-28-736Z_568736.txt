@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix tangerine-jumping-skiing make the title ANEW Gen2H
-
-ORIGINAL_REQUEST:REMIX tangerine-jumping-skiing make the title ANEW Gen2H

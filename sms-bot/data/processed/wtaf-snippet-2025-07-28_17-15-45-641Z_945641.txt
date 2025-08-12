@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make me a simple but WORKING sudoku game
