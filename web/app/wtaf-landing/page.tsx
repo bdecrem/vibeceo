@@ -2364,6 +2364,10 @@ export default function WebtoysSitePage() {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
+          <div className="footer-links">
+            <a href="https://webtoys.ai/bart/satin-horse-storytelling" className="footer-nav-link">FAQ</a>
+            <Link href="/webtoys-issue-tracker" className="footer-nav-link">Issue Tracker</Link>
+          </div>
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
@@ -3765,9 +3769,22 @@ export default function WebtoysSitePage() {
           color: var(--yellow);
         }
         
+        .footer-nav-link {
+          font-weight: 500;
+          padding: 0.5rem 0;
+          border-radius: 4px;
+          transition: all 0.3s ease;
+        }
+        
+        .footer-nav-link:hover {
+          transform: translateY(-1px);
+          text-shadow: 0 0 8px rgba(255, 214, 61, 0.5);
+        }
+        
         .footer-copyright {
           opacity: 0.6;
           font-size: 0.9rem;
+          margin-top: 1rem;
         }
         
         /* Easter egg cursor */
@@ -4163,6 +4180,17 @@ export default function WebtoysSitePage() {
             padding: 0.6rem 1rem;
             font-size: 1rem;
             gap: 0;
+          }
+          
+          .footer-links {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+          }
+          
+          .footer-nav-link {
+            font-size: 0.9rem;
+            padding: 0.4rem 0;
           }
           
           .cta-main span:first-child {
