@@ -11,15 +11,17 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { promises as fs } from 'fs';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+dotenv.config({ path: envPath, override: true });
 
 const execAsync = promisify(exec);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Run a specific agent script
@@ -31,7 +33,7 @@ async function runAgent(scriptName, description) {
 
   try {
     const scriptPath = path.join(__dirname, scriptName);
-    const { stdout, stderr } = await execAsync(`node ${scriptPath}`, {
+    const { stdout, stderr } = await execAsync(`/usr/local/bin/node ${scriptPath}`, {
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       timeout: 600000 // 10 minute timeout per agent
     });
@@ -76,6 +78,17 @@ async function checkGitStatus() {
  * Main monitor function
  */
 async function monitor() {
+  // Check for lock file to prevent concurrent runs
+  const lockFile = path.join(__dirname, '.monitor.lock');
+  try {
+    await fs.access(lockFile);
+    console.log('⚠️  Another instance is already running (lock file exists)');
+    process.exit(0);
+  } catch {
+    // No lock file, create one
+    await fs.writeFile(lockFile, `${process.pid}\n${new Date().toISOString()}`);
+  }
+
   console.log('🎯 WEBTOYS Issue Tracker Monitor');
   console.log(`📅 Started at: ${new Date().toISOString()}`);
   console.log(`📁 Working directory: ${process.cwd()}`);
@@ -142,7 +155,12 @@ async function monitor() {
 
   } catch (error) {
     console.error('\n💥 Pipeline failed:', error.message);
+    // Clean up lock file on error
+    await fs.unlink(lockFile).catch(() => {});
     process.exit(1);
+  } finally {
+    // Always clean up lock file
+    await fs.unlink(lockFile).catch(() => {});
   }
 }
 
