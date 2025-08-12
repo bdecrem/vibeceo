@@ -2364,6 +2364,9 @@ export default function WebtoysSitePage() {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
+          <div className="footer-links">
+            <Link href="/webtoys-issue-tracker">Report Issues</Link>
+          </div>
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
