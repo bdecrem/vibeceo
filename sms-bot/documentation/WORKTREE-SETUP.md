@@ -84,6 +84,7 @@ git worktree list
 - Changes in a worktree don't affect other worktrees or the main repo
 - The worktree directory is separate from the main repo
 - Always use `cleanup-worktree.sh` to properly remove a worktree (it securely removes .env files)
+- **Dev-reroute automatically uses the correct port:** The dev-reroute script reads the `SMS_PORT` environment variable to send commands to the correct SMS bot instance
 
 ## Troubleshooting
 
