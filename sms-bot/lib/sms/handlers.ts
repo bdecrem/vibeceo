@@ -1876,10 +1876,14 @@ ${response}`;
           const response = `🎨 MEME generator ready!
 
 Try stuff like:
-→ meme when you code for 8 hours and forget to save
-→ meme debugging all day and fixing it in one line
+→ MEME when you code for 8 hours and forget to save
+→ MEME debugging all day and fixing it in one line
+→ MEME when the build works on your machine but not production
+→ MEME trying to explain your code after 6 months
 
-We'll turn your meme ideas into actual memes with images and text overlay.`;
+We'll turn your meme ideas into actual memes with AI-generated images and text overlay. You'll get a link in about 30 seconds!
+
+💡 Pro tip: Be specific and descriptive for better results.`;
           
           await sendSmsResponse(
             from,
@@ -1896,7 +1900,26 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         if (!memeContent) {
           await sendSmsResponse(
             from,
-            `❌ MEME: Please provide a meme idea after MEME command.\nExamples:\nMEME when you code for 8 hours and forget to save\nMEME debugging all day and fixing it in one line`,
+            `❌ MEME: Please provide a meme idea after MEME command.\n\nExamples:\n→ MEME when you code for 8 hours and forget to save\n→ MEME debugging all day and fixing it in one line\n→ MEME when the build works on your machine but not production\n→ MEME trying to explain your code after 6 months\n\nTip: Type just "MEME" for more help!`,
+            twilioClient
+          );
+          return;
+        }
+        
+        // Additional validation for meme content
+        if (memeContent.length < 10) {
+          await sendSmsResponse(
+            from,
+            `❌ MEME: Please provide a more detailed meme idea (at least 10 characters).\n\nGood examples:\n→ MEME when you code for 8 hours and forget to save\n→ MEME debugging all day and fixing it in one line\n\nTip: Describe the situation or feeling you want to meme-ify!`,
+            twilioClient
+          );
+          return;
+        }
+        
+        if (memeContent.length > 200) {
+          await sendSmsResponse(
+            from,
+            `❌ MEME: Meme idea too long (${memeContent.length} chars). Please keep it under 200 characters for best results.\n\nTip: Focus on the core feeling or situation you want to capture!`,
             twilioClient
           );
           return;
@@ -1978,7 +2001,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasDegen = ${hasDegen} (role: ${subscriber?.role})`);
       
       if (hasDegen) {
-        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with AI images and text overlay (e.g. MEME when you code for 8 hours and forget to save)';
         
         helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackpublic [public-app-slug] [request] - Create app sharing data with PUBLIC app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
         console.log(`🔍 COMMANDS: Added stack commands to response`);
