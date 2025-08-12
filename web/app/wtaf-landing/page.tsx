@@ -2367,6 +2367,9 @@ export default function WebtoysSitePage() {
           <p className="footer-copyright">
             v0.1 — some Webtoys work, most are chaos. <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">Blog explains</a>.
           </p>
+          <p className="footer-copyright-notice">
+            © 2025 WEBTOYS. All rights reserved.
+          </p>
         </div>
       </footer>
 
@@ -3770,6 +3773,14 @@ export default function WebtoysSitePage() {
           font-size: 0.9rem;
         }
         
+        .footer-copyright-notice {
+          opacity: 0.7;
+          font-size: 0.85rem;
+          margin-top: 0.5rem;
+          font-weight: 500;
+          color: var(--cream);
+        }
+        
         /* Easter egg cursor */
         .magic-cursor {
           cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><text y="28" font-size="28">✨</text></svg>'), auto;
@@ -4156,6 +4167,11 @@ export default function WebtoysSitePage() {
             transform: translateY(-1px);
             box-shadow: 0 5px 0 var(--orange), 0 8px 20px rgba(0, 0, 0, 0.2);
           }
+          
+          .footer-copyright-notice {
+            font-size: 0.8rem;
+            margin-top: 0.4rem;
+          }
         }
         
         @media (max-width: 480px) {
@@ -4184,6 +4200,11 @@ export default function WebtoysSitePage() {
           .phone-large:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 0 var(--orange), 0 6px 15px rgba(0, 0, 0, 0.18);
+          }
+          
+          .footer-copyright-notice {
+            font-size: 0.75rem;
+            margin-top: 0.3rem;
           }
         }
       `}</style>
