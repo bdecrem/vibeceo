@@ -117,6 +117,7 @@ If you must use one machine:
 ### 5. Issue Statuses
 - `new` → Just submitted by user
 - `reformulated` → Clarified by AI, ready for fixing
+- `admin_discussion` → Admin and agent are discussing the issue
 - `needs_info` → Low confidence, needs human review
 - `closed` → Test/joke submission
 - `wontfix` → Offensive or inappropriate
@@ -188,6 +189,66 @@ ENABLE_AUTO_FIX=true node monitor.js --all
 tail -f monitor.log
 ```
 
+## Superpower Mode (Admin Features)
+
+### Overview
+The issue tracker has a **Superpower Mode** for admins to manage issues directly from the web interface. Access it by adding `?superpower=true` to the URL.
+
+### Features
+1. **Comment System** - Add admin comments visible to all users
+2. **Hide/Unhide Issues** - Hide inappropriate issues from regular viewers
+3. **Status Management** - Change issue status directly
+4. **Priority Setting** - Set issue priority (low/medium/high/critical)
+5. **Delete Issues** - Permanently remove issues
+
+### Admin-Agent Conversation System
+When admins reopen issues or add comments, the agent provides detailed responses:
+
+1. **Triggering Conversations**:
+   - Add a comment to a low-confidence issue
+   - Change status to `admin_discussion` or `new` after agent processing
+   - Agent responds within 2 minutes with detailed analysis
+
+2. **Agent Responses Include**:
+   - **Technical Blockers** - Specific reasons why confidence is low
+   - **Clarifying Questions** - What information is needed
+   - **Suggestions** - How to improve the issue description
+   - **Next Steps** - Clear path forward
+
+3. **Conversation Flow**:
+   - Admin adds comment → Sets `trigger_conversation` flag
+   - Agent detects flag → Generates detailed response
+   - Response stored in `agent_response` field
+   - Admin can continue conversation by adding more comments
+
+### Implementation Details
+
+**Frontend (issue-tracker-zad-app.html)**:
+- Superpower controls only visible when authenticated
+- Comments persist in `admin_comments` array
+- Agent responses display with purple gradient styling
+- Hidden issues filtered for regular viewers
+
+**Backend (reformulate-issues.js)**:
+- `isAdminReopenedIssue()` - Detects admin interventions
+- `generateConversationalResponse()` - Creates detailed AI responses
+- Processes admin-reopened issues with priority
+- Clears `trigger_conversation` flag after processing
+
+**API Endpoints**:
+- `/api/wtaf/issue-tracker-admin` - Direct admin actions (no auth)
+- `/api/wtaf/issue-tracker` - Authenticated superpower actions
+
+### Testing Superpower Mode
+```bash
+# For local development, set auth in localStorage:
+localStorage.setItem('webtoysAuthToken', 'Bearer your-token');
+localStorage.setItem('webtoysApiUrl', 'https://webtoys.ai');
+
+# Access superpower mode:
+https://webtoys.ai/bart/issue-tracker?superpower=true
+```
+
 ## NEVER FORGET
 
 **This system runs every 2 minutes and switches git branches!**
@@ -195,3 +256,4 @@ tail -f monitor.log
 - The cron fixes are critical - don't remove them
 - Test locally before letting cron take over
 - Push fixes to main branch so agent machines get them
+- Admin comments trigger agent conversations automatically
