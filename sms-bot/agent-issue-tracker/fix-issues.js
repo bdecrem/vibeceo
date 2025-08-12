@@ -12,11 +12,26 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
-if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local from sms-bot directory (parent of agent-issue-tracker)
+// IMPORTANT: Use override:true to replace any shell environment variables
+const envPath = path.resolve(__dirname, '..', '.env.local');
+const result = dotenv.config({ path: envPath, override: true });
+
+if (result.error) {
+  console.error('Error loading .env.local:', result.error);
+  process.exit(1);
+}
+
+// Verify we got the right values
+if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'your_supabase_url_here') {
+  console.error('Error: Invalid SUPABASE_URL in', envPath);
+  console.error('Make sure sms-bot/.env.local exists and contains valid SUPABASE_URL');
+  process.exit(1);
 }
 
 const execAsync = promisify(exec);
@@ -28,7 +43,7 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load reformulated issues ready for fixing
@@ -172,9 +187,9 @@ Please implement the fix now.`;
     const tempFile = path.join('/tmp', `fix-${Date.now()}.txt`);
     await fs.writeFile(tempFile, prompt);
 
-    // Execute Claude Code using file input with bypassed permissions for automation
+    // Execute Claude Code using FULL PATH for cron compatibility
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
