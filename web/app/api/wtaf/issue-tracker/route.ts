@@ -115,12 +115,24 @@ async function addComment(issueId: string, comment: string, user: AuthenticatedU
         throw new Error('Issue not found');
     }
     
+    // Get existing comments array or create new one
+    const existingComments = issue.content_data.admin_comments || [];
+    
+    // Add new comment to the array
+    const newComment = {
+        id: Date.now().toString(),
+        text: comment,
+        author: user.email,
+        authorRole: user.role,
+        timestamp: new Date().toISOString()
+    };
+    
     // Add comment to the issue
     const updatedData = {
         ...issue.content_data,
-        superpower_comment: comment,
-        superpower_comment_by: user.email,
-        superpower_comment_at: new Date().toISOString()
+        admin_comments: [...existingComments, newComment],
+        last_comment_at: new Date().toISOString(),
+        last_comment_by: user.email
     };
     
     const { error: updateError } = await supabase
@@ -134,7 +146,7 @@ async function addComment(issueId: string, comment: string, user: AuthenticatedU
         throw new Error('Failed to add comment');
     }
     
-    return { success: true, comment };
+    return { success: true, comment: newComment };
 }
 
 // Handle setting triage priority

@@ -566,12 +566,19 @@ setTimeout(function() {
 													// Fallback to localStorage for development
 													const storedToken = localStorage.getItem('webtoysAuthToken');
 													const storedUrl = localStorage.getItem('webtoysApiUrl');
+													const localTest = localStorage.getItem('webtoysLocalTest');
 													
 													if (storedToken && storedUrl) {
 														console.log('🔌 Auth found in localStorage fallback');
 														authData.isAuthenticated = true;
 														authData.authToken = storedToken;
 														authData.apiUrl = storedUrl;
+													} else if (localTest === 'true') {
+														// For local testing, auto-authenticate
+														console.log('🔌 Local test mode - auto-authenticating');
+														authData.isAuthenticated = true;
+														authData.authToken = 'test-token-local-dev';
+														authData.apiUrl = 'http://localhost:3000';
 													} else {
 														console.log('🔌 No auth found in localStorage fallback');
 													}
@@ -606,7 +613,86 @@ setTimeout(function() {
 						overflow: "hidden"
 					}}>
 						<iframe
-							srcDoc={htmlContent}
+							srcDoc={app_slug === 'issue-tracker' ? 
+								(() => {
+									let html = htmlContent.replace(
+										"window.APP_ID = 'webtoys-issue-tracker';",
+										"window.APP_ID = '83218c2e-281e-4265-a95f-1d3f763870d4';"
+									);
+									
+									// Add filtering and admin comments display
+									const issueEnhancements = `<script>
+// Filter hidden issues and display admin comments
+(function() {
+    console.log('🔧 Installing issue tracker enhancements...');
+    
+    // Wait for functions to be defined
+    setTimeout(() => {
+        // Override filterOffensiveContent to also filter hidden issues
+        const originalFilter = window.filterOffensiveContent;
+        if (originalFilter) {
+            window.filterOffensiveContent = function(issues) {
+                let filtered = originalFilter(issues);
+                
+                // Also filter out hidden/deleted issues for non-superpower users
+                if (!window.isSuperpowerMode && Array.isArray(filtered)) {
+                    const beforeCount = filtered.length;
+                    filtered = filtered.filter(issue => {
+                        return !issue.content_data?.hidden && !issue.content_data?.deleted;
+                    });
+                    const hiddenCount = beforeCount - filtered.length;
+                    if (hiddenCount > 0) {
+                        console.log('🚫 Filtered out ' + hiddenCount + ' hidden/deleted issues');
+                    }
+                }
+                return filtered;
+            };
+            console.log('✅ Hidden issue filter installed');
+        }
+        
+        // Override applyFilter to inject admin comments
+        const originalApplyFilter = window.applyFilter;
+        if (originalApplyFilter) {
+            window.applyFilter = function(filter) {
+                originalApplyFilter.call(this, filter);
+                
+                // After the filter is applied, inject admin comments
+                setTimeout(() => {
+                    const issueElements = document.querySelectorAll('.issue-item');
+                    issueElements.forEach((element, index) => {
+                        // Find the corresponding issue data
+                        if (window.allIssues && window.allIssues[index]) {
+                            const issue = window.allIssues[index];
+                            if (issue.content_data?.admin_comments && issue.content_data.admin_comments.length > 0) {
+                                // Check if comments already added
+                                if (!element.querySelector('.admin-comment')) {
+                                    const commentsHtml = issue.content_data.admin_comments.map(comment => 
+                                        '<div class="admin-comment" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; border-radius: 10px; margin: 10px 15px; font-size: 14px;">' +
+                                        '<div style="font-weight: bold; margin-bottom: 5px;">⚡ Admin Comment (' + new Date(comment.timestamp).toLocaleDateString() + ')</div>' +
+                                        '<div>' + comment.text + '</div>' +
+                                        '</div>'
+                                    ).join('');
+                                    
+                                    // Insert after the issue content
+                                    element.insertAdjacentHTML('beforeend', commentsHtml);
+                                    console.log('💬 Added admin comment to issue #' + (index + 1));
+                                }
+                            }
+                        }
+                    });
+                }, 100);
+            };
+            console.log('✅ Admin comments injector installed');
+        }
+    }, 500); // Wait for page to load
+})();
+</script>`;
+									
+									// Inject enhancements before </head>
+									html = html.replace('</head>', issueEnhancements + '</head>');
+									return html;
+								})()
+								: htmlContent}
 							sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
 							style={{
 								width: "100%",

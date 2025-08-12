@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Issue Tracker Superpower Enhancer</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .bookmarklet {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .code {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Issue Tracker Superpower Enhancer</h1>
+    
+    <h2>Option 1: Bookmarklet (Easy)</h2>
+    <p>Drag this button to your bookmarks bar:</p>
+    <a class="bookmarklet" href="javascript:(function(){
+        const issues = window.allIssues || [];
+        const sections = document.querySelectorAll('.superpower-actions');
+        
+        sections.forEach((section, index) => {
+            if (index >= issues.length) return;
+            const issue = issues[index];
+            
+            section.innerHTML = `
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; color: white;'>
+                    <div style='font-weight: bold; margin-bottom: 10px; text-align: center;'>⚡ SUPERPOWER ACTIONS</div>
+                    <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;'>
+                        <div>
+                            <label style='display: block; font-size: 12px; margin-bottom: 5px;'>Status:</label>
+                            <select onchange='updateStatus(&quot;${issue.id}&quot;, this.value)' style='width: 100%; padding: 5px; border-radius: 5px; color: black;'>
+                                <option value='new' ${issue.content_data.status === 'new' ? 'selected' : ''}>New</option>
+                                <option value='reformulated' ${issue.content_data.status === 'reformulated' ? 'selected' : ''}>Reformulated</option>
+                                <option value='fixing' ${issue.content_data.status === 'fixing' ? 'selected' : ''}>Fixing</option>
+                                <option value='pr-created' ${issue.content_data.status === 'pr-created' ? 'selected' : ''}>PR Created</option>
+                                <option value='closed' ${issue.content_data.status === 'closed' ? 'selected' : ''}>Closed</option>
+                                <option value='answered' ${issue.content_data.status === 'answered' ? 'selected' : ''}>Answered</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style='display: block; font-size: 12px; margin-bottom: 5px;'>Priority:</label>
+                            <select onchange='updatePriority(&quot;${issue.id}&quot;, this.value)' style='width: 100%; padding: 5px; border-radius: 5px; color: black;'>
+                                <option value=''>None</option>
+                                <option value='critical' ${issue.content_data.priority === 'critical' ? 'selected' : ''}>🔴 Critical</option>
+                                <option value='high' ${issue.content_data.priority === 'high' ? 'selected' : ''}>🟠 High</option>
+                                <option value='medium' ${issue.content_data.priority === 'medium' ? 'selected' : ''}>🟡 Medium</option>
+                                <option value='low' ${issue.content_data.priority === 'low' ? 'selected' : ''}>🟢 Low</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style='display: block; font-size: 12px; margin-bottom: 5px;'>Actions:</label>
+                            <button onclick='hideIssue(&quot;${issue.id}&quot;)' style='padding: 5px 10px; border-radius: 5px; background: #ff6b6b; color: white; border: none; cursor: pointer;'>
+                                ${issue.content_data.hidden ? '👁️ Unhide' : '🚫 Hide'}
+                            </button>
+                        </div>
+                        <div>
+                            <label style='display: block; font-size: 12px; margin-bottom: 5px;'>Remove:</label>
+                            <button onclick='deleteIssue(&quot;${issue.id}&quot;)' style='padding: 5px 10px; border-radius: 5px; background: #ff4757; color: white; border: none; cursor: pointer;'>
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        window.updateStatus = async function(id, status) {
+            const res = await fetch('/api/wtaf/issue-tracker-admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'updateField', issueId: id, field: 'status', value: status})
+            });
+            if (res.ok) { alert('Status updated!'); location.reload(); }
+        };
+        
+        window.updatePriority = async function(id, priority) {
+            const res = await fetch('/api/wtaf/issue-tracker-admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'updateField', issueId: id, field: 'priority', value: priority})
+            });
+            if (res.ok) { alert('Priority updated!'); location.reload(); }
+        };
+        
+        window.hideIssue = async function(id) {
+            const issue = window.allIssues.find(i => i.id === id);
+            const hidden = !issue.content_data.hidden;
+            const res = await fetch('/api/wtaf/issue-tracker-admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'updateField', issueId: id, field: 'hidden', value: hidden})
+            });
+            if (res.ok) { alert(hidden ? 'Issue hidden!' : 'Issue unhidden!'); location.reload(); }
+        };
+        
+        window.deleteIssue = async function(id) {
+            if (!confirm('Delete this issue?')) return;
+            const res = await fetch('/api/wtaf/issue-tracker-admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'delete', issueId: id})
+            });
+            if (res.ok) { alert('Issue deleted!'); location.reload(); }
+        };
+    })();">⚡ Enhance Superpowers</a>
+    
+    <h2>Option 2: Console Command</h2>
+    <p>Or paste this in the browser console while on the issue tracker page:</p>
+    <div class="code">
+        <pre>// Enhance superpower controls
+const issues = window.allIssues || [];
+const sections = document.querySelectorAll('.superpower-actions');
+
+sections.forEach((section, index) => {
+    if (index >= issues.length) return;
+    const issue = issues[index];
+    
+    section.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    section.style.padding = '15px';
+    section.style.borderRadius = '10px';
+    section.style.color = 'white';
+    
+    section.innerHTML = `
+        <div style='font-weight: bold; margin-bottom: 10px; text-align: center;'>⚡ ENHANCED SUPERPOWER ACTIONS</div>
+        <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+            <select onchange='console.log("Status:", this.value)' style='padding: 5px; border-radius: 5px; color: black;'>
+                <option>Change Status...</option>
+                <option value='closed'>Close Issue</option>
+                <option value='fixing'>Mark as Fixing</option>
+                <option value='answered'>Mark as Answered</option>
+            </select>
+            <select onchange='console.log("Priority:", this.value)' style='padding: 5px; border-radius: 5px; color: black;'>
+                <option>Set Priority...</option>
+                <option value='critical'>🔴 Critical</option>
+                <option value='high'>🟠 High</option>
+                <option value='medium'>🟡 Medium</option>
+                <option value='low'>🟢 Low</option>
+            </select>
+            <button style='padding: 5px; background: #ff6b6b; color: white; border: none; border-radius: 5px;'>🚫 Hide Issue</button>
+            <button style='padding: 5px; background: #ff4757; color: white; border: none; border-radius: 5px;'>🗑️ Delete Issue</button>
+        </div>
+    `;
+});
+
+console.log('✅ Superpower controls enhanced!');</pre>
+    </div>
+    
+    <h2>How to Use:</h2>
+    <ol>
+        <li>Go to your issue tracker: <a href="http://localhost:3000/api/wtaf/raw?user=bart&slug=issue-tracker&superpower=true" target="_blank">Open Issue Tracker</a></li>
+        <li>Either click the bookmarklet or paste the console code</li>
+        <li>The yellow SUPERPOWER ACTIONS boxes will be replaced with enhanced purple controls</li>
+    </ol>
+</body>
+</html>
