@@ -96,6 +96,83 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
         console.error('Failed to inject query parameters:', e);
     }
 })();
+
+// Superpower Mode Authentication Bridge
+// This runs in the iframe and requests auth from the parent window
+(function() {
+    // Request authentication from parent window if superpower mode is detected
+    const urlParams = new URLSearchParams(window.location.search);
+    const isSuperpowerMode = urlParams.get('superpower') === 'true';
+    
+    if (isSuperpowerMode) {
+        console.log('🔌 Superpower mode detected in iframe, setting up auth bridge');
+        
+        // Store auth data when received from parent
+        window.SUPERPOWER_AUTH = {
+            isAuthenticated: false,
+            authToken: null,
+            apiUrl: null,
+            pending: true
+        };
+        
+        // Listen for auth data from parent window
+        window.addEventListener('message', function(event) {
+            // Validate origin for security (allow localhost for development)
+            if (event.origin !== window.location.origin && 
+                !event.origin.startsWith('http://localhost:') &&
+                !event.origin.startsWith('https://localhost:')) {
+                console.warn('🚨 Ignoring message from untrusted origin:', event.origin);
+                return;
+            }
+            
+            if (event.data && event.data.type === 'SUPERPOWER_AUTH_RESPONSE') {
+                console.log('🔌 Received auth response from parent:', event.data);
+                
+                window.SUPERPOWER_AUTH = {
+                    isAuthenticated: event.data.isAuthenticated,
+                    authToken: event.data.authToken,
+                    apiUrl: event.data.apiUrl,
+                    pending: false
+                };
+                
+                // Trigger auth check in the app if the function exists
+                if (typeof window.onSuperpowerAuthReceived === 'function') {
+                    window.onSuperpowerAuthReceived(window.SUPERPOWER_AUTH);
+                }
+                
+                // Dispatch custom event for any listeners
+                window.dispatchEvent(new CustomEvent('superpowerAuthReceived', {
+                    detail: window.SUPERPOWER_AUTH
+                }));
+            }
+        });
+        
+        // Request auth from parent window
+        function requestAuthFromParent() {
+            if (window.parent && window.parent !== window) {
+                console.log('🔌 Requesting auth from parent window');
+                window.parent.postMessage({
+                    type: 'SUPERPOWER_AUTH_REQUEST',
+                    origin: window.location.origin
+                }, '*');
+            } else {
+                console.log('🔌 No parent window, iframe might be top-level');
+                window.SUPERPOWER_AUTH.pending = false;
+            }
+        }
+        
+        // Request auth after a short delay to ensure parent is ready
+        setTimeout(requestAuthFromParent, 100);
+        
+        // Fallback: request again after longer delay if still pending
+        setTimeout(function() {
+            if (window.SUPERPOWER_AUTH.pending) {
+                console.log('🔌 Auth still pending, retrying request');
+                requestAuthFromParent();
+            }
+        }, 1000);
+    }
+})();
 </script>`;
 			
 			// Inject before closing head tag to ensure it runs before app code
@@ -432,30 +509,118 @@ setTimeout(function() {
 				</>
 			);
 		} else {
-			// Direct link - clean iframe only
+			// Direct link - clean iframe only with superpower auth bridge
 			return (
-				<div style={{
-					width: "100%",
-					height: "100vh",
-					margin: 0,
-					padding: 0,
-					overflow: "hidden"
-				}}>
-					<iframe
-						srcDoc={htmlContent}
-						sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-						style={{
-							width: "100%",
-							height: "100%",
-							border: "none",
-							backgroundColor: "white",
-							display: "block"
+				<>
+					{/* Superpower Mode Authentication Bridge Script */}
+					<script
+						dangerouslySetInnerHTML={{
+							__html: `
+								// Parent window auth bridge for Superpower Mode
+								(function() {
+									console.log('🔌 Parent window auth bridge loaded');
+									
+									// Listen for auth requests from iframe
+									window.addEventListener('message', async function(event) {
+										// Validate origin for security
+										if (event.origin !== window.location.origin && 
+											!event.origin.startsWith('http://localhost:') &&
+											!event.origin.startsWith('https://localhost:')) {
+											console.warn('🚨 Ignoring message from untrusted origin:', event.origin);
+											return;
+										}
+										
+										if (event.data && event.data.type === 'SUPERPOWER_AUTH_REQUEST') {
+											console.log('🔌 Received auth request from iframe');
+											
+											let authData = {
+												type: 'SUPERPOWER_AUTH_RESPONSE',
+												isAuthenticated: false,
+												authToken: null,
+												apiUrl: null
+											};
+											
+											try {
+												// Check if Chrome extension API is available
+												if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+													console.log('🔌 Chrome storage API available, checking for auth...');
+													
+													// Use Promise wrapper for chrome.storage.local.get
+													const result = await new Promise((resolve) => {
+														chrome.storage.local.get(['authToken', 'apiUrl'], (data) => {
+															resolve(data);
+														});
+													});
+													
+													if (result.authToken && result.apiUrl) {
+														console.log('🔌 Auth found in chrome.storage.local');
+														authData.isAuthenticated = true;
+														authData.authToken = result.authToken;
+														authData.apiUrl = result.apiUrl;
+													} else {
+														console.log('🔌 No auth found in chrome.storage.local');
+													}
+												} else {
+													console.log('🔌 Chrome storage API not available, checking localStorage fallback...');
+													
+													// Fallback to localStorage for development
+													const storedToken = localStorage.getItem('webtoysAuthToken');
+													const storedUrl = localStorage.getItem('webtoysApiUrl');
+													
+													if (storedToken && storedUrl) {
+														console.log('🔌 Auth found in localStorage fallback');
+														authData.isAuthenticated = true;
+														authData.authToken = storedToken;
+														authData.apiUrl = storedUrl;
+													} else {
+														console.log('🔌 No auth found in localStorage fallback');
+													}
+												}
+											} catch (error) {
+												console.error('🔌 Error checking auth:', error);
+											}
+											
+											console.log('🔌 Sending auth response to iframe:', authData);
+											
+											// Send auth response back to iframe
+											const iframe = document.querySelector('iframe');
+											if (iframe && iframe.contentWindow) {
+												iframe.contentWindow.postMessage(authData, '*');
+											} else {
+												console.warn('🔌 Could not find iframe to send auth response');
+											}
+										}
+									});
+									
+									console.log('🔌 Parent window auth bridge ready');
+								})();
+							`
 						}}
-						loading="eager"
-						title={`WTAF App: ${app_slug} by ${user_slug}`}
-						allowFullScreen
 					/>
-				</div>
+					
+					<div style={{
+						width: "100%",
+						height: "100vh",
+						margin: 0,
+						padding: 0,
+						overflow: "hidden"
+					}}>
+						<iframe
+							srcDoc={htmlContent}
+							sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+							style={{
+								width: "100%",
+								height: "100%",
+								border: "none",
+								backgroundColor: "white",
+								display: "block"
+							}}
+							loading="eager"
+							title={`WTAF App: ${app_slug} by ${user_slug}`}
+							allowFullScreen
+						/>
+					</div>
+				</>
 			);
 		}
 	} catch (error) {
