@@ -40,8 +40,18 @@
                 padding: 5px;
             }
             
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .webtoys-logo-img {
+                height: 80px;
+            }
+            
             h1 {
-                font-size: 1.8rem;
+                font-size: 2rem;
             }
             
             .container {
@@ -100,16 +110,59 @@
         }
 
         header {
-            text-align: center;
             color: var(--charcoal);
-            margin-bottom: 30px;
+            margin-bottom: 50px;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 32px;
+            padding: 32px 0;
+        }
+
+        .logo-wrapper {
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .logo-wrapper:hover {
+            transform: translateY(-8px) scale(1.05) rotate(-3deg);
+        }
+
+        .webtoys-logo-img {
+            height: 100px;
+            width: auto;
+            transition: all 0.4s ease;
+            filter: brightness(1.05) saturate(1.1);
+        }
+
+        .webtoys-logo-img:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1) saturate(1.2);
+        }
+        
+        .title-section {
+            flex: 1;
+            text-align: center;
+            min-width: 300px;
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin-bottom: 10px;
-            text-shadow: 3px 3px 0px var(--yellow), 6px 6px 0px var(--yellow-soft);
-            font-weight: 900;
+            color: #FF4B4B;
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+            line-height: 1;
+            display: inline-block;
+        }
+        
+        h1:hover {
+            transform: rotate(-1deg) scale(1.02);
         }
         
         h2 {
@@ -1099,10 +1152,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>🐛 WEBTOYS Issue Tracker</h1>
-            <p class="subtitle">Report bugs and request features for the WEBTOYS platform</p>
-            <div id="superpowerIndicator" style="display: none; margin-top: 15px; padding: 10px; background: var(--yellow); border: 3px solid var(--charcoal); border-radius: 15px; font-weight: 700; text-align: center; box-shadow: 3px 3px 0px var(--charcoal);">
-                ⚡ SUPERPOWER MODE ENABLED
+            <div class="logo-wrapper" onclick="window.location.href='https://webtoys.ai'">
+                <img src="https://webtoys.ai/webtoys-simple-logo.png" alt="WEBTOYS" class="webtoys-logo-img">
+            </div>
+            <div class="title-section">
+                <h1>Issue Tracker</h1>
+                <p class="subtitle">Report bugs and request features for the WEBTOYS platform</p>
+            </div>
+            <div id="superpowerIndicator" style="display: none; position: absolute; top: 10px; right: 10px; padding: 10px; background: var(--yellow); border: 3px solid var(--charcoal); border-radius: 15px; font-weight: 700; text-align: center; box-shadow: 3px 3px 0px var(--charcoal);">
+                ⚡ SUPERPOWER MODE
             </div>
         </header>
 
