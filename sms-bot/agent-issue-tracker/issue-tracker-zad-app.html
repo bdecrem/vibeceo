@@ -662,6 +662,116 @@
             font-weight: 800;
             margin-left: 4px;
         }
+        
+        /* Superpower Controls */
+        .superpower-controls {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--yellow) 0%, #FFE066 100%);
+            border: 3px solid var(--charcoal);
+            border-radius: 15px;
+            box-shadow: 3px 3px 0px var(--charcoal);
+            display: none; /* Hidden by default, shown when authenticated */
+        }
+        
+        .superpower-controls.authenticated {
+            display: block;
+        }
+        
+        .superpower-title {
+            font-weight: 800;
+            color: var(--charcoal);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+        
+        .superpower-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .superpower-btn {
+            background: var(--blue);
+            color: var(--charcoal);
+            border: 2px solid var(--charcoal);
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 2px 2px 0px var(--charcoal);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .superpower-btn:hover {
+            background: var(--green-mint);
+            transform: translateY(-2px);
+            box-shadow: 3px 4px 0px var(--charcoal);
+        }
+        
+        .superpower-btn:active {
+            transform: translateY(0px);
+            box-shadow: 1px 1px 0px var(--charcoal);
+        }
+        
+        .superpower-btn.close {
+            background: var(--red-soft);
+        }
+        
+        .superpower-btn.triage {
+            background: var(--purple-shadow);
+        }
+        
+        .superpower-btn.comment {
+            background: var(--green-mint);
+        }
+        
+        .quick-comment {
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .quick-comment.show {
+            display: block;
+        }
+        
+        .quick-comment textarea {
+            width: 100%;
+            min-height: 80px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .quick-comment .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .superpower-loading {
+            display: none;
+            color: var(--charcoal);
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .superpower-actions {
+                gap: 5px;
+            }
+            
+            .superpower-btn {
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+        }
 
         .loading {
             text-align: center;
@@ -849,6 +959,9 @@
         <header>
             <h1>🐛 WEBTOYS Issue Tracker</h1>
             <p class="subtitle">Report bugs and request features for the WEBTOYS platform</p>
+            <div id="superpowerIndicator" style="display: none; margin-top: 15px; padding: 10px; background: var(--yellow); border: 3px solid var(--charcoal); border-radius: 15px; font-weight: 700; text-align: center; box-shadow: 3px 3px 0px var(--charcoal);">
+                ⚡ SUPERPOWER MODE ENABLED
+            </div>
         </header>
 
         <div class="card">
@@ -911,6 +1024,13 @@
         // ZAD Configuration
         window.APP_ID = '83218c2e-281e-4265-a95f-1d3f763870d4';
         
+        // Superpower mode detection
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSuperpowerMode = urlParams.get('superpower') === 'true';
+        let isAuthenticated = false;
+        let authToken = null;
+        let apiUrl = null;
+        
         // Pagination state
         let currentPage = 1;
         let issuesPerPage = 10;
@@ -920,6 +1040,68 @@
         
         // Content filtering - offensive words to hide
         const OFFENSIVE_WORDS = ['fuck', 'shit', 'damn', 'asshole', 'bitch', 'bastard', 'crap'];
+        
+        // Superpower Mode Functions
+        async function checkExtensionAuth() {
+            if (!isSuperpowerMode) return false;
+            
+            try {
+                // Check if we're in Safari and can access the extension
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    const result = await new Promise((resolve) => {
+                        chrome.storage.sync.get(['authToken', 'apiUrl'], (data) => {
+                            resolve(data);
+                        });
+                    });
+                    
+                    if (result.authToken && result.apiUrl) {
+                        authToken = result.authToken;
+                        apiUrl = result.apiUrl;
+                        isAuthenticated = true;
+                        return true;
+                    }
+                }
+                
+                // Fallback: Check localStorage for auth (development mode)
+                const storedToken = localStorage.getItem('webtoysAuthToken');
+                const storedUrl = localStorage.getItem('webtoysApiUrl');
+                if (storedToken && storedUrl) {
+                    authToken = storedToken;
+                    apiUrl = storedUrl;
+                    isAuthenticated = true;
+                    return true;
+                }
+                
+                return false;
+            } catch (error) {
+                console.log('Extension auth check failed:', error);
+                return false;
+            }
+        }
+        
+        async function callSuperpowerAPI(action, data) {
+            if (!isAuthenticated || !authToken || !apiUrl) {
+                throw new Error('Not authenticated for superpower actions');
+            }
+            
+            const response = await fetch(`${apiUrl}/api/wtaf/issue-tracker`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authToken
+                },
+                body: JSON.stringify({
+                    action: action,
+                    ...data
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            return response.json();
+        }
         
         // ZAD Helper Functions (injected by WEBTOYS)
         async function save(actionType, data, participantData = null) {
@@ -1353,6 +1535,8 @@
                                 ▼ <span class="vote-count">${data.downvotes || 0}</span>
                             </button>
                         </div>
+                        
+                        ${generateSuperpowerControls(issue)}
                     </div>
                 `;
             }).join('');
@@ -1499,9 +1683,152 @@
             }
         }
 
+        // Generate superpower controls HTML
+        function generateSuperpowerControls(issue) {
+            if (!isSuperpowerMode || !isAuthenticated) {
+                return '';
+            }
+            
+            const data = issue.content_data || {};
+            const status = data.status || 'new';
+            const issueId = issue.id;
+            
+            return `
+                <div class="superpower-controls ${isAuthenticated ? 'authenticated' : ''}">
+                    <div class="superpower-title">⚡ Superpower Actions</div>
+                    
+                    <div class="superpower-actions">
+                        <button class="superpower-btn close" onclick="quickClose('${issueId}')">
+                            Close Issue
+                        </button>
+                        <button class="superpower-btn triage" onclick="triageIssue('${issueId}')">
+                            Set Priority
+                        </button>
+                        <button class="superpower-btn comment" onclick="toggleQuickComment('${issueId}')">
+                            Add Comment
+                        </button>
+                    </div>
+                    
+                    <div class="quick-comment" id="comment-${issueId}">
+                        <textarea id="comment-text-${issueId}" placeholder="Add your superpower comment..."></textarea>
+                        <div class="actions">
+                            <button class="superpower-btn" onclick="submitComment('${issueId}')">Submit</button>
+                            <button class="superpower-btn" onclick="cancelComment('${issueId}')">Cancel</button>
+                        </div>
+                    </div>
+                    
+                    <div class="superpower-loading" id="loading-${issueId}">
+                        Processing superpower action...
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Superpower Action Functions
+        async function quickClose(issueId) {
+            await performSuperpowerAction(issueId, 'updateStatus', { status: 'closed' }, 'Issue closed');
+        }
+        
+        async function triageIssue(issueId) {
+            const priority = prompt('Set priority (low, medium, high, critical):');
+            if (priority && ['low', 'medium', 'high', 'critical'].includes(priority.toLowerCase())) {
+                await performSuperpowerAction(issueId, 'setTriage', { priority: priority.toLowerCase() }, `Priority set to ${priority}`);
+            } else if (priority !== null) {
+                showMessage('Invalid priority. Please use: low, medium, high, or critical', 'error');
+            }
+        }
+        
+        function toggleQuickComment(issueId) {
+            const commentBox = document.getElementById(`comment-${issueId}`);
+            const isVisible = commentBox.classList.contains('show');
+            
+            if (isVisible) {
+                commentBox.classList.remove('show');
+            } else {
+                commentBox.classList.add('show');
+                document.getElementById(`comment-text-${issueId}`).focus();
+            }
+        }
+        
+        async function submitComment(issueId) {
+            const commentText = document.getElementById(`comment-text-${issueId}`).value.trim();
+            
+            if (!commentText) {
+                showMessage('Please enter a comment', 'error');
+                return;
+            }
+            
+            await performSuperpowerAction(issueId, 'addComment', { comment: commentText }, 'Comment added');
+            
+            // Clear and hide comment box
+            document.getElementById(`comment-text-${issueId}`).value = '';
+            document.getElementById(`comment-${issueId}`).classList.remove('show');
+        }
+        
+        function cancelComment(issueId) {
+            document.getElementById(`comment-text-${issueId}`).value = '';
+            document.getElementById(`comment-${issueId}`).classList.remove('show');
+        }
+        
+        // Generic function to perform superpower actions
+        async function performSuperpowerAction(issueId, action, data, successMessage) {
+            const loadingElement = document.getElementById(`loading-${issueId}`);
+            
+            try {
+                // Show loading
+                loadingElement.style.display = 'block';
+                
+                // Call the API
+                const result = await callSuperpowerAPI(action, {
+                    issueId: issueId,
+                    data: data
+                });
+                
+                if (result.success) {
+                    showMessage(successMessage, 'success');
+                    // Refresh the issues to show updated data
+                    await loadIssues();
+                } else {
+                    showMessage('Action failed: ' + (result.error || 'Unknown error'), 'error');
+                }
+                
+            } catch (error) {
+                console.error('Superpower action error:', error);
+                showMessage('Failed to perform action: ' + error.message, 'error');
+            } finally {
+                // Hide loading
+                loadingElement.style.display = 'none';
+            }
+        }
+        
+        // Initialize superpower mode
+        async function initializeSuperpowerMode() {
+            if (isSuperpowerMode) {
+                console.log('Superpower mode detected, checking authentication...');
+                const authenticated = await checkExtensionAuth();
+                
+                if (authenticated) {
+                    console.log('Authentication successful');
+                    document.getElementById('superpowerIndicator').style.display = 'block';
+                    document.getElementById('superpowerIndicator').textContent = '⚡ SUPERPOWER MODE - AUTHENTICATED';
+                    document.getElementById('superpowerIndicator').style.background = 'var(--green-mint)';
+                } else {
+                    console.log('Authentication failed');
+                    document.getElementById('superpowerIndicator').style.display = 'block';
+                    document.getElementById('superpowerIndicator').textContent = '⚡ SUPERPOWER MODE - NOT AUTHENTICATED';
+                    document.getElementById('superpowerIndicator').style.background = 'var(--red-soft)';
+                }
+            }
+        }
+        
         // Load issues on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, fetching issues...');
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Page loaded, initializing...');
+            
+            // Initialize superpower mode first
+            await initializeSuperpowerMode();
+            
+            // Then load issues
             loadIssues();
             
             // Refresh issues every 30 seconds
