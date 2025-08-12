@@ -1,3 +1,0 @@
-SENDER:whatsapp:+16508989508
-USER_SLUG:bart
-build a hello world page on a bright red background

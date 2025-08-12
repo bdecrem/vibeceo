@@ -87,5 +87,32 @@ next-env.d.ts
 # Ignore entire tiny folder
 tiny/
 
+# SMS Bot experiments folder - contains test files with potential secrets
+/sms-bot/experiments/
+
 # Claude outputs - these contain generated code and shouldn't be in git
 /sms-bot/data/claude_outputs/
+
+# Processed data files - temporary processing files
+/sms-bot/data/processed/
+
+# Test scripts - often contain hardcoded secrets
+/sms-bot/test-scripts/
+/web/test-scripts/
+/discord-bot/test-scripts/
+# Individual test files that might contain secrets
+/sms-bot/scripts/test-*.js
+/web/scripts/test-*.js
+/web/scripts/test/
+/discord-bot/scripts/test-*.js
+# Root level test scripts (should never be here)
+/test-*.js
+/test-*.ts
+
+# Local state files for scripts
+.last-user-check
+/sms-bot/scripts/.last-user-check
+/sms-bot/scripts/.last-webtoys-check
+
+# Temporary/experimental uploads folder
+/web/UPLOADS/

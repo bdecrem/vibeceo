@@ -1,2 +1,0 @@
-SENDER:+16508989508
-Write an HTML page where a chatbot named Kailey slowly becomes self-aware while the user types into her chat. Starts warm, ends eerie.

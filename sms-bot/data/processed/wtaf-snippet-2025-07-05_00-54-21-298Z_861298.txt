@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build me simple app that says Hello Jimmy on a yellow background

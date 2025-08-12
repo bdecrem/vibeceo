@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix bronze-wolf-singing change the background color to yellow
-
-ORIGINAL_REQUEST:REMIX bronze-wolf-singing change the background color to yellow

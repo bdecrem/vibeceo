@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a ZAD journaling app that first asks me what my goals are, then, it always offers a suggestion for my next journal entry based on either my goals and/or my most recent journal entry. use the generateText helper functions (but do NOT poll more than once each time an entry is created or the page is loaded)
