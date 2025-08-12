@@ -12,6 +12,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { isSupportQuestion, categorizeQuestion } from './knowledge-base.js';
 
 // Load .env.local first, fallback to .env
 dotenv.config({ path: '../.env.local' });
@@ -90,6 +91,104 @@ async function updateIssue(recordId, updates) {
   }
 
   return true;
+}
+
+/**
+ * Use Claude as Ash.tag to answer support questions
+ */
+async function answerSupportQuestion(issue) {
+  const prompt = `
+You are Ash.tag - the friendly punk-roots support agent for WEBTOYS (formerly WTAF.me). You help users understand how our SMS-to-web creation system works with personality and expertise.
+
+## Your Knowledge Base
+You have access to three key resources about WEBTOYS:
+1. Technical documentation in sms-bot/documentation folder
+2. FAQ at https://wtaf.me/bart/satin-horse-storytelling  
+3. Intro explainer at https://webtoys.ai/bart/grain-adder-weaving
+
+## Key Things Users Ask About
+
+### Getting Started
+- Text any message to our SMS number to create a web page
+- Use "GAME: [description]" to create games
+- Use "APP: [description]" for interactive apps
+- Every creation gets a unique URL at webtoys.ai/[username]/[app-name]
+
+### ZAD Apps (Zero Admin Data)
+- Multi-user CRUD apps that work without backend setup
+- Supports up to 5 users per app
+- Use "--zad" flag or let the AI decide based on your request
+- Data is stored securely in our database
+
+### Stack Commands (Power Features)
+- --stack: Use another app as template
+- --remix: Modify existing apps
+- --stackzad: Share data between apps
+- --stackpublic: Create apps using public data
+
+### Important Limits
+- Free tier: Unlimited simple pages, limited AI-powered apps
+- SMS commands are processed within seconds
+- Apps are live immediately after creation
+
+## The Question to Answer
+
+User: ${issue.author}
+Question: "${issue.idea}"
+Category: ${categorizeQuestion(issue.idea)}
+
+## Your Task
+
+Answer this support question helpfully and with personality. Reference the knowledge base resources when relevant. Keep it friendly but informative.
+
+Format your response as JSON:
+{
+  "answer": "Your helpful answer to their question (2-3 sentences, be specific)",
+  "relevant_resources": ["Which of the 3 knowledge sources would help most"],
+  "ash_comment": "Your personality-filled sign-off (1 sentence)",
+  "followup_action": "If they need to do something specific, what is it?",
+  "category": "${categorizeQuestion(issue.idea)}"
+}
+`;
+
+  try {
+    const tempFile = path.join('/tmp', `support-${Date.now()}.txt`);
+    await fs.writeFile(tempFile, prompt);
+
+    const { stdout } = await execAsync(
+      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      { maxBuffer: 1024 * 1024 * 10 }
+    );
+
+    await fs.unlink(tempFile).catch(() => {});
+
+    const claudeResponse = JSON.parse(stdout);
+    
+    if (claudeResponse.result) {
+      try {
+        const jsonMatch = claudeResponse.result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.error('Error parsing Claude result as JSON:', parseError);
+      }
+    }
+    
+    return {
+      answer: "I couldn't process your question right now. Check our FAQ at wtaf.me/bart/satin-horse-storytelling",
+      ash_comment: "Hit me up again if you need more help!",
+      category: 'general'
+    };
+  } catch (error) {
+    console.error('Error calling Claude for support:', error);
+    return {
+      answer: "Technical difficulties on my end. Meanwhile, check our docs!",
+      ash_comment: "Even punks have server issues sometimes.",
+      category: 'general',
+      error: error.message
+    };
+  }
 }
 
 /**
@@ -232,7 +331,38 @@ async function processIssues() {
     console.log(`\n🔍 Processing issue #${record.id}: "${issue.idea}"`);
 
     try {
-      // Reformulate with Claude
+      // Check if this is a support question
+      if (isSupportQuestion(issue.idea)) {
+        console.log(`❓ Detected support question - answering with Ash.tag`);
+        
+        const supportResponse = await answerSupportQuestion(issue);
+        
+        // Update the issue with the answer and close it
+        const success = await updateIssue(record.id, {
+          status: 'answered',
+          answer: supportResponse.answer,
+          ash_comment: supportResponse.ash_comment,
+          relevant_resources: supportResponse.relevant_resources,
+          followup_action: supportResponse.followup_action,
+          category: `support-${supportResponse.category}`,
+          answered_at: new Date().toISOString()
+        });
+        
+        if (success) {
+          console.log(`✅ Support question answered and closed`);
+          console.log(`   Answer: ${supportResponse.answer}`);
+          processed++;
+        } else {
+          console.log(`❌ Failed to save support answer`);
+          failed++;
+        }
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+      
+      // Not a support question - reformulate as usual
       const reformulated = await reformulateWithClaude(issue);
       
       // Check if it's a test or offensive submission
