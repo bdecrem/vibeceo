@@ -2002,7 +2002,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasAdmin = ${hasAdmin} (role: ${subscriber?.role})`);
       
       if (hasAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible\n• (Plus all OPERATOR, DEGEN & CODER commands above)';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible';
         console.log(`🔍 COMMANDS: Added admin commands to response`);
       } else {
         console.log(`🔍 COMMANDS: Skipping admin commands (user role: ${subscriber?.role})`);

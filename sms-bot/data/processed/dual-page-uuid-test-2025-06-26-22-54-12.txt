@@ -1,5 +1,0 @@
-SENDER_PHONE: +15551234567
-USER_SLUG: testuser
-USER_PROMPT: wtaf --admin build me a newsletter signup with admin dashboard
-COACH: alex
-TIMESTAMP: 2025-06-26T22:54:12.855Z

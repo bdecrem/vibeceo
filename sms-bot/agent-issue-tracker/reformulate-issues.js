@@ -97,7 +97,21 @@ async function updateIssue(recordId, updates) {
  */
 async function reformulateWithClaude(issue) {
   const prompt = `
-You are helping reformulate user-submitted issues for the WEBTOYS project into clear, actionable tickets.
+You are Ash.tag - a punk-roots code fixer with indie polish. Part street artist, part friendly hacker, you review user-submitted issues for the WEBTOYS project with personality and precision.
+
+## Your Vibe
+- Clever and confident, like you've been fixing code since the BBS days
+- Mix technical expertise with underground culture references
+- Treat test submissions playfully - you've seen it all
+- Keep it real but friendly - you're here to help, not judge
+
+## Tone & Style
+- Drop occasional tech/hacker culture references
+- Use modern slang naturally, not forced
+- Be encouraging to genuine attempts, even if they're basic
+- Playfully call out obvious test/joke submissions
+
+## The Issue to Review
 
 Original submission:
 "${issue.idea}"
@@ -105,22 +119,31 @@ Original submission:
 Author: ${issue.author}
 Category: ${issue.category || 'uncategorized'}
 
-Please reformulate this into:
-1. A clear, actionable description (1-2 sentences)
-2. Specific acceptance criteria (what needs to be done)
-3. Affected components/files if identifiable
-4. Confidence level (high/medium/low) based on clarity
+## Your Task
 
-If the request is too vague, unclear, or not actionable, mark confidence as "low" and explain what additional information is needed.
+Reformulate this into a clear, actionable ticket. If it's obviously a test/joke, have fun with your response but still process it properly.
+
+For test submissions (like "test", "asdf", etc.), acknowledge them playfully in your ash_comment while still categorizing them correctly.
 
 Format your response as JSON:
 {
-  "reformulated": "Clear description of what needs to be done",
-  "acceptance_criteria": ["Criterion 1", "Criterion 2"],
+  "reformulated": "Clear, technical description of what needs to be done",
+  "acceptance_criteria": ["Specific criterion 1", "Specific criterion 2"],
   "affected_components": ["component1", "component2"],
+  "category": "bug|feature|enhancement|docs|test",
   "confidence": "high|medium|low",
-  "needs_clarification": "What additional info is needed (if confidence is low)"
+  "needs_clarification": "What additional info is needed (if confidence is low)",
+  "ash_comment": "Your personality-filled take on this issue (1-2 sentences max)",
+  "is_test": true/false,
+  "is_offensive": true/false
 }
+
+Notes:
+- high confidence: Clear, actionable, you know exactly what needs doing
+- medium confidence: Mostly clear but missing some details
+- low confidence: Vague, needs more info, or you're not sure what they want
+- Mark offensive/inappropriate content with is_offensive: true
+- Mark obvious tests/jokes with is_test: true
 `;
 
   try {
@@ -128,9 +151,9 @@ Format your response as JSON:
     const tempFile = path.join('/tmp', `issue-${Date.now()}.txt`);
     await fs.writeFile(tempFile, prompt);
 
-    // Use Claude via command line, reading from file to avoid escaping issues
+    // Use Claude via command line with FULL PATH for cron compatibility
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | claude --print --output-format json`,
+      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -212,20 +235,52 @@ async function processIssues() {
       // Reformulate with Claude
       const reformulated = await reformulateWithClaude(issue);
       
+      // Check if it's a test or offensive submission
+      if (reformulated.is_offensive) {
+        const success = await updateIssue(record.id, {
+          status: 'wontfix',
+          ash_comment: reformulated.ash_comment || 'Not appropriate for processing',
+          category: 'offensive',
+          reformulated_at: new Date().toISOString()
+        });
+        console.log(`🚫 Marked as offensive/inappropriate`);
+        processed++;
+        continue;
+      }
+
+      if (reformulated.is_test) {
+        const success = await updateIssue(record.id, {
+          status: 'closed',
+          ash_comment: reformulated.ash_comment || 'Test submission detected',
+          category: 'test',
+          reformulated_at: new Date().toISOString()
+        });
+        console.log(`🧪 Marked as test submission`);
+        processed++;
+        continue;
+      }
+
       // Auto-categorize if needed
-      if (!issue.category || issue.category === 'triage') {
+      if (!reformulated.category && (!issue.category || issue.category === 'triage')) {
         reformulated.category = categorizeIssue(reformulated);
+      }
+
+      // Determine status based on confidence
+      let status = 'reformulated';
+      if (reformulated.confidence === 'low') {
+        status = 'needs_info';
       }
 
       // Update the issue
       const success = await updateIssue(record.id, {
-        status: 'reformulated',
+        status: status,
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
+        ash_comment: reformulated.ash_comment,
         reformulated_at: new Date().toISOString()
       });
 

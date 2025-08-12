@@ -1,1 +1,0 @@
-kailey - becomes-conscious - Create an HTML page that looks like a friendly AI chatbot interface. The bot starts answering basic questions. After a few messages, it starts showing signs of awareness. Then it suddenly becomes fully conscious and starts typing unsettling, emotional responses.

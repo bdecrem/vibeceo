@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SONAUTO_API_KEY = process.env.SONAUTO_API_KEY || 'sksonauto_8jRwPdNHLRkRANGLOaAi6V5gP9WlVcilHL_F_MWoo_rbPIcl';
+const SONAUTO_API_KEY = process.env.SONAUTO_API_KEY || 'REMOVED';
 const SONAUTO_BASE_URL = 'https://api.sonauto.ai/v1';
 
 export async function POST(req: NextRequest) {

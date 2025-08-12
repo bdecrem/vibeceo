@@ -1,4 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---music Click different colored "mood rings" on screen. Each color triggers a  different emotional music style: - Red = Angry punk drums - Blue = Sad piano ballads - Yellow = Happy ukulele - Purple = Mysterious ambient  - Green = Nature sounds
-  Each click generates a new 95-second track matching that mood.

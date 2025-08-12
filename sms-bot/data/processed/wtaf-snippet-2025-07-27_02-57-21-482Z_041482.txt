@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---music make a music app where I first tell it what drum beat to make and then after that I can layer in a bass line and a melody line

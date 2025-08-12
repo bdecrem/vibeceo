@@ -1,0 +1,19 @@
+{
+  "daily": {
+    "2025-08-08": {
+      "requests": 3,
+      "estimatedTokens": 24576,
+      "estimatedCost": 0.16220159999999997,
+      "models": {
+        "claude-3-5-sonnet-20241022": 3
+      }
+    }
+  },
+  "cumulative": {
+    "totalTokens": 24576,
+    "totalRequests": 3,
+    "totalCost": 0.16220159999999997
+  },
+  "sessions": [],
+  "lastUpdated": "2025-08-08T14:39:52.442Z"
+}

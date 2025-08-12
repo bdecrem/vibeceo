@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a community brick wall where each person adds one sentence. Display each message on a colored brick stacked in a wall.

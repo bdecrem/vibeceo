@@ -1,23 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { startSmsBot } from '../lib/sms/bot.js';
-
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Load environment variables from .env.local
+// Load environment variables in development
 if (!isProduction) {
-  const envPath = path.resolve(__dirname, '../../.env.local');
-  console.log('Loading environment from:', envPath);
-  const result = dotenv.config({ path: envPath });
+  const result = dotenv.config({ path: '.env.local' });
   if (result.error) {
-    console.error('Error loading .env.local:', result.error);
+    console.error('Error loading .env.local file:', result.error);
     process.exit(1);
   }
 }

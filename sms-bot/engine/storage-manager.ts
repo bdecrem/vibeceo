@@ -11,6 +11,9 @@ let supabase: SupabaseClient | null = null;
 function getSupabaseClient(): SupabaseClient {
     if (!supabase) {
         if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+            console.error('Missing Supabase credentials:');
+            console.error('SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Not set');
+            console.error('SUPABASE_SERVICE_KEY:', SUPABASE_SERVICE_KEY ? 'Set' : 'Not set');
             throw new Error("SUPABASE_URL and SUPABASE_SERVICE_KEY are required");
         }
         supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -287,8 +290,10 @@ export async function saveCodeToSupabase(
         logWithTimestamp("🔗 API-based app detected: Skipping Supabase credentials injection");
         // Skip credential injection for any app using API calls
     } else if (!isNaturalZad) {
-        // Inject Supabase credentials into HTML (only for direct Supabase apps, not natural ZAD)
-        code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+        // SECURITY FIX: Commenting out credential injection to prevent database exposure
+        // All apps should use API endpoints, not direct database access
+        // code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+        logWithTimestamp("🔒 Skipped Supabase credential injection for security");
     }
     
     // Convert Supabase calls to API calls for ZAD API apps OR natural ZAD requests
@@ -394,6 +399,10 @@ export async function saveCodeToSupabase(
         } else if (isZadApp || coach === 'zad-remix') {
             appType = 'ZAD';
             logWithTimestamp(`🤝 Setting type to 'ZAD' for ${coach === 'zad-remix' ? 'remixed ' : ''}ZAD app`);
+        } else {
+            // Default case: all normal web pages, NEEDS-ADMIN pages, and anything not caught above
+            appType = 'WEB';
+            logWithTimestamp(`🌐 Setting type to 'WEB' for standard web app (coach: ${coach})`);
         }
         
         const data = {
@@ -539,8 +548,10 @@ export async function saveCodeToFile(
     
     const publicUrl = `${WEB_APP_URL}/lab/${filename}`;
     
-    // Inject Supabase credentials into HTML
-    code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+    // SECURITY FIX: Commenting out credential injection to prevent database exposure
+    // All apps should use API endpoints, not direct database access
+    // code = injectSupabaseCredentials(code, SUPABASE_URL || '', SUPABASE_ANON_KEY);
+    logWithTimestamp("🔒 Skipped Supabase credential injection in save_code_to_file for security");
     
     // Auto-fix common JavaScript issues before deployment
     code = autoFixCommonIssues(code);
