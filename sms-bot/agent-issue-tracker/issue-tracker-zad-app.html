@@ -2,14 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WEBTOYS Issue Tracker</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
         :root {
-            --cream: #FEFEF5;
+            /* WEBTOYS BRAND COLORS - BOLD AND CONFIDENT */
+            --cream: #fefdf8;
+            --cream-dark: #f8f6f0;
+            --charcoal: #2d3748;
+            --charcoal-light: #4a5568;
+            
+            /* HERO RED BRAND COLOR */
+            --webtoys-red: #ff3333;
+            --webtoys-red-glow: rgba(255, 51, 51, 0.4);
+            --webtoys-red-light: #ffe6e6;
+            
+            /* NEON RED FOR TEXT SHADOW */
+            --red: #FF4B4B;
+            
+            /* PUNCHY ACCENT COLORS */
+            --electric-blue: #00aaff;
+            --electric-blue-light: #e6f7ff;
+            --hot-pink: #ff1493;
+            --hot-pink-light: #ffe6f4;
+            --lime-green: #32cd32;
+            --lime-green-light: #f0fff0;
+            --sunshine-yellow: #ffd700;
+            --sunshine-yellow-light: #fffacd;
+            --purple-magic: #8a2be2;
+            --orange-blast: #ff6347;
+            
+            /* BOLD GRADIENTS */
+            --hero-gradient: linear-gradient(135deg, var(--webtoys-red) 0%, #ff6b6b 100%);
+            --button-gradient: linear-gradient(135deg, var(--electric-blue) 0%, #0088cc 100%);
+            --card-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            
+            /* LEGACY COMPATIBILITY */
             --yellow: #FFD63D;
             --blue: #6ECBFF;
-            --red: #FF4B4B;
             --green-mint: #B6FFB3;
             --purple-shadow: #C9C2F9;
             --yellow-soft: #FFF4CC;
@@ -17,8 +49,16 @@
             --red-soft: #FF7A7A;
             --purple-accent: #8B7FD4;
             --green-sage: #7FB069;
-            --charcoal: #2A2A2A;
             --gray-warm: #6B6B6B;
+            
+            /* SPACING */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
         }
 
         * {
@@ -27,17 +67,151 @@
             box-sizing: border-box;
         }
 
+        html {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* PLAYFUL FLOATING EMOJIS WITH PERSONALITY */
+        @keyframes playfulFloat {
+            0%, 100% { 
+                transform: translateY(0px) scale(1); 
+                opacity: 0.35; 
+            }
+            33% { 
+                transform: translateY(-20px) scale(1.1); 
+                opacity: 0.5; 
+            }
+            66% { 
+                transform: translateY(-10px) scale(0.9); 
+                opacity: 0.4; 
+            }
+        }
+
+        @keyframes heroGlow {
+            0%, 100% { 
+                filter: drop-shadow(0 4px 16px var(--webtoys-red-glow));
+                transform: scale(1);
+            }
+            50% { 
+                filter: drop-shadow(0 8px 24px var(--webtoys-red-glow));
+                transform: scale(1.02);
+            }
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--cream);
+            background-image: 
+                radial-gradient(circle at 85% 15%, rgba(255, 51, 51, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(0, 170, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 40%, rgba(255, 20, 147, 0.04) 0%, transparent 50%);
             min-height: 100vh;
-            padding: 10px;
+            padding: var(--space-md);
+            line-height: 1.6;
+            color: var(--charcoal);
+            overflow-x: hidden;
+            position: relative;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        /* FLOATING EMOJIS - SUBTLE BACKGROUND DECORATION */
+        @media (min-width: 769px) {
+            body::before {
+                content: '🚀';
+                position: fixed;
+                top: 15%;
+                left: 10%;
+                pointer-events: none;
+                z-index: 1;
+                font-size: clamp(1.2rem, 2.5vw, 2rem);
+                animation: playfulFloat 8s ease-in-out infinite;
+                opacity: 0.3;
+            }
+            
+            body::after {
+                content: '🔧';
+                position: fixed;
+                top: 25%;
+                right: 8%;
+                pointer-events: none;
+                z-index: 1;
+                font-size: clamp(1.1rem, 2.2vw, 1.8rem);
+                animation: playfulFloat 10s ease-in-out infinite 2s;
+                opacity: 0.25;
+            }
+            
+            .container::before {
+                content: '✨';
+                position: fixed;
+                bottom: 30%;
+                left: 5%;
+                pointer-events: none;
+                z-index: 1;
+                font-size: clamp(1rem, 2vw, 1.6rem);
+                animation: playfulFloat 12s ease-in-out infinite 4s;
+                opacity: 0.2;
+            }
+            
+            .container::after {
+                content: '🎮';
+                position: fixed;
+                bottom: 20%;
+                right: 12%;
+                pointer-events: none;
+                z-index: 1;
+                font-size: clamp(1.3rem, 2.3vw, 1.9rem);
+                animation: playfulFloat 9s ease-in-out infinite 1s;
+                opacity: 0.28;
+            }
         }
 
         /* Mobile optimizations */
+        /* STATUS INDICATORS */
+        .superpower-indicator {
+            margin-top: var(--space-lg);
+            padding: var(--space-lg) var(--space-xl);
+            background: var(--button-gradient);
+            border: 2px solid var(--electric-blue);
+            border-radius: 16px;
+            font-weight: 800;
+            text-align: center;
+            box-shadow: 
+                0 8px 24px rgba(0, 170, 255, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: heroGlow 2s ease-in-out infinite;
+        }
+
+        .superpower-indicator.not-authenticated {
+            background: var(--webtoys-red-light);
+            border-color: var(--webtoys-red);
+            color: var(--webtoys-red);
+            animation: none;
+        }
+
+        /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
             body {
-                padding: 5px;
+                padding: 8px;
+                margin: 0;
+            }
+            
+            .container {
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
             }
             
             header {
@@ -47,11 +221,41 @@
             }
             
             .webtoys-logo-img {
-                height: 80px;
+                height: 120px;
             }
             
             h1 {
-                font-size: 2rem;
+                font-size: clamp(2rem, 8vw, 3rem);
+            }
+            
+            h2 {
+                font-size: clamp(1.3rem, 4vw, 1.8rem);
+            }
+            
+            .webtoys-logo-img {
+                height: 180px;
+            }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .title-section {
+                width: 100%;
+            }
+            
+            button {
+                padding: 14px 28px;
+                font-size: 15px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .vibecoding-tagline {
+                font-size: 0.85rem;
             }
             
             .container {
@@ -60,13 +264,12 @@
             }
             
             .card {
-                padding: 15px;
-                margin-bottom: 15px;
+                padding: var(--space-lg);
+                margin-bottom: var(--space-lg);
             }
             
             .issue-item {
-                padding: 15px;
-                margin-bottom: 10px;
+                padding: var(--space-lg);
             }
             
             .badge {
@@ -105,34 +308,83 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
         }
 
+        /* FLOATING HEADER ELEMENTS */
         header {
             color: var(--charcoal);
-            margin-bottom: 50px;
+            margin-bottom: var(--space-3xl);
             position: relative;
             z-index: 10;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 32px;
-            padding: 32px 0;
+            gap: var(--space-xl);
+            padding: var(--space-xl) 0;
+        }
+
+        .logo-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .logo-wrapper {
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: bounceIn 0.8s ease-out;
+        }
+        
+        .title-section {
+            flex: 1;
+            text-align: center;
+            min-width: 300px;
+        }
+        
+        .subtitle-section {
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo-wrapper:hover {
+            transform: translateY(-8px) scale(1.05);
+        }
+
+        /* HERO LOGO - CLEAN AND BOLD */
+        .webtoys-logo-img {
+            height: 280px;
+            width: auto;
+            transition: all 0.4s ease;
+            filter: brightness(1.05) saturate(1.1);
+        }
+
+        .webtoys-logo-img:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1) saturate(1.2);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .logo-wrapper {
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: bounceIn 0.8s ease-out;
         }
         
         .logo-wrapper:hover {
-            transform: translateY(-8px) scale(1.05) rotate(-3deg);
+            transform: translateY(-8px) scale(1.05);
         }
 
         .webtoys-logo-img {
-            height: 100px;
+            height: 280px;
             width: auto;
             transition: all 0.4s ease;
             filter: brightness(1.05) saturate(1.1);
@@ -149,27 +401,66 @@
             min-width: 300px;
         }
 
+        /* CLEAN RED HEADLINE - SIMPLE LIKE HOMEPAGE */
         h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            color: #FF4B4B;
+            font-size: clamp(2.5rem, 8vw, 6rem);
             font-weight: 800;
-            letter-spacing: -1px;
+            letter-spacing: -2px;
+            margin: 0;
+            color: var(--red);
             text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
             transform: rotate(-2deg);
             line-height: 1;
             display: inline-block;
         }
-        
+
         h1:hover {
             transform: rotate(-1deg) scale(1.02);
         }
         
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--charcoal);
+            margin-top: var(--space-md);
+            font-weight: 600;
+            animation: bounceIn 0.6s ease-out 0.4s both;
+        }
+
+        .vibecoding-tagline {
+            display: block;
+            font-size: 1rem;
+            color: var(--electric-blue);
+            margin-top: var(--space-sm);
+            font-weight: 700;
+            animation: bounceIn 0.6s ease-out 0.6s both;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* PUNCHY SECTION HEADERS */
         h2 {
             color: var(--charcoal);
-            text-shadow: 2px 2px 0px var(--yellow-soft);
             font-weight: 800;
-            margin-bottom: 15px;
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            margin-bottom: var(--space-xl);
+            letter-spacing: -0.02em;
+            position: relative;
+            /* transform: rotate(-1deg); */
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--hero-gradient);
+            border-radius: 4px;
+            /* transform: rotate(2deg); */
         }
 
         .subtitle {
@@ -177,107 +468,170 @@
             opacity: 0.9;
         }
 
+        /* PLAYFUL CARDS WITH PERSONALITY */
         .card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+            background: var(--card-gradient);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 4px 16px rgba(255, 51, 51, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
         }
 
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--hero-gradient);
+            border-radius: 24px 24px 0 0;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.15),
+                0 8px 24px rgba(255, 51, 51, 0.1);
+            border-color: var(--webtoys-red-glow);
+        }
+
+        /* REFINED FORM ELEMENTS */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: var(--space-xl);
+            position: relative;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: var(--space-sm);
             font-weight: 700;
             color: var(--charcoal);
+            font-size: 15px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 14px;
+            letter-spacing: 0.5px;
         }
 
         input, textarea, select {
             width: 100%;
-            padding: 12px;
-            border: 3px solid var(--charcoal);
-            border-radius: 15px;
+            padding: 18px 24px;
+            border: 3px solid var(--electric-blue-light);
+            border-radius: 16px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: var(--yellow-soft);
-            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--charcoal);
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
         }
 
         input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: var(--blue);
-            background: white;
-            transform: scale(1.02);
-            box-shadow: 0 0 0 3px var(--blue-deep);
+            border-color: var(--electric-blue);
+            box-shadow: 
+                0 0 0 4px rgba(0, 170, 255, 0.2),
+                0 8px 24px rgba(0, 170, 255, 0.15);
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(45, 55, 72, 0.5);
         }
 
         textarea {
             min-height: 120px;
             resize: vertical;
+            font-family: 'Inter', sans-serif;
         }
 
+        /* BOLD BUTTONS WITH BOUNCE */
         button {
-            background: var(--blue);
-            color: var(--charcoal);
-            border: 3px solid var(--charcoal);
-            padding: 16px 32px;
-            border-radius: 25px;
-            font-size: 18px;
+            background: var(--button-gradient);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 16px;
+            font-size: 17px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 4px 4px 0px var(--charcoal);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 
+                0 8px 24px rgba(0, 170, 255, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.1);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
         }
 
         button:hover {
-            transform: translateY(-3px) translateX(-3px);
-            box-shadow: 7px 7px 0px var(--charcoal);
-            background: var(--yellow);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 16px 40px rgba(0, 170, 255, 0.4),
+                0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
         button:active {
-            transform: translateY(1px) translateX(1px);
-            box-shadow: 2px 2px 0px var(--charcoal);
+            transform: translateY(-1px) scale(0.98);
+            animation: bounceIn 0.3s ease-out;
         }
 
         button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        button:disabled:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba(65, 153, 225, 0.2);
         }
 
         .issue-list {
             /* Natural flow - no height restrictions or separate scrolling */
         }
         
+        /* PAGINATION */
         .pagination-controls {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
+            gap: var(--space-md);
+            margin: var(--space-xl) 0;
         }
         
         .pagination-controls button {
-            padding: 10px 20px;
+            padding: 8px 16px;
             font-size: 14px;
-            min-width: 80px;
         }
         
         .pagination-info {
-            color: var(--gray-warm);
-            font-weight: 600;
+            color: var(--charcoal-light);
+            font-weight: 500;
             font-size: 14px;
-            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -292,42 +646,44 @@
             }
         }
 
+        /* CLEAN ISSUE ITEMS */
         .issue-item {
-            padding: 24px;
-            border-left: 6px solid var(--blue);
-            margin-bottom: 18px;
-            background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
-            border-radius: 22px;
-            transition: box-shadow 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08), 3px 3px 0px var(--purple-shadow);
-            border: 1px solid rgba(42, 42, 42, 0.05);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-lg);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(65, 153, 225, 0.1);
+            transition: all 0.3s ease;
             position: relative;
-            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         
         .issue-item::before {
             content: '';
             position: absolute;
-            top: 0;
             left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--blue), var(--green-mint), var(--yellow));
-            opacity: 0.7;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--electric-blue);
+            border-radius: 12px 0 0 12px;
         }
         
-        .issue-item:nth-child(even) {
-            border-left-color: var(--green-mint);
-            box-shadow: 3px 3px 0px var(--yellow-soft);
+        .issue-item:nth-child(even)::before {
+            background: var(--lime-green);
         }
         
-        .issue-item:nth-child(3n) {
-            border-left-color: var(--red);
-            box-shadow: 3px 3px 0px var(--red-soft);
+        .issue-item:nth-child(3n)::before {
+            background: var(--sunshine-yellow);
         }
 
         .issue-item:hover {
-            box-shadow: 5px 8px 0px var(--purple-shadow);
+            transform: translateY(-4px);
+            border-color: var(--electric-blue);
+            box-shadow: 
+                0 12px 36px rgba(0, 0, 0, 0.12),
+                0 6px 18px rgba(0, 170, 255, 0.15);
         }
 
         .issue-header {
@@ -338,12 +694,10 @@
         }
 
         .issue-title {
-            font-weight: 700;
+            font-weight: 600;
             color: var(--charcoal);
-            flex: 1;
             font-size: 1.1rem;
-            line-height: 1.4;
-            margin-top: 8px;
+            line-height: 1.5;
         }
 
         .issue-meta {
@@ -353,34 +707,46 @@
             color: #666;
         }
 
+        /* REFINED BADGES */
         .badge {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            border: 2px solid var(--charcoal);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .badge:hover {
+            transform: scale(1.05);
         }
 
         .badge-bug {
-            background: var(--red-soft);
-            color: var(--charcoal);
+            background: var(--webtoys-red-light);
+            border-color: var(--webtoys-red);
+            color: var(--webtoys-red);
+            font-weight: 800;
         }
 
         .badge-feature {
-            background: var(--green-mint);
-            color: var(--charcoal);
+            background: var(--lime-green-light);
+            border-color: var(--lime-green);
+            color: var(--lime-green);
+            font-weight: 800;
         }
 
         .badge-enhancement {
-            background: var(--yellow);
-            color: var(--charcoal);
+            background: var(--sunshine-yellow-light);
+            border-color: var(--sunshine-yellow);
+            color: #b8860b;
+            font-weight: 800;
         }
 
         .badge-triage {
-            background: var(--purple-shadow);
-            color: var(--charcoal);
+            background: #f3e8ff;
+            border-color: var(--purple-magic);
+            color: var(--purple-magic);
+            font-weight: 800;
         }
 
         .badge-status {
@@ -394,48 +760,73 @@
         }
 
         .badge-reformulated {
-            background: var(--yellow);
-            color: var(--charcoal);
-        }
-
-        .badge-fixing {
-            background: var(--yellow-soft);
-            color: var(--charcoal);
+            background: #ffe6e6;
+            border-color: var(--orange-blast);
+            color: var(--orange-blast);
+            font-weight: 800;
         }
 
         .badge-fixed {
-            background: var(--green-mint);
-            color: var(--charcoal);
+            background: var(--lime-green-light);
+            border-color: var(--lime-green);
+            color: var(--lime-green);
+            font-weight: 800;
+        }
+
+        .badge-new {
+            background: var(--electric-blue-light);
+            border-color: var(--electric-blue);
+            color: var(--electric-blue);
+            font-weight: 800;
+        }
+
+        .badge-fixing {
+            background: var(--sunshine-yellow-light);
+            border-color: var(--sunshine-yellow);
+            color: #b8860b;
+            font-weight: 800;
         }
 
         .badge-pr-created {
-            background: var(--green-sage);
-            color: var(--charcoal);
+            background: var(--lime-green-light);
+            border-color: var(--lime-green);
+            color: var(--lime-green);
+            font-weight: 800;
         }
 
         .badge-failed {
-            background: var(--red);
-            color: white;
+            background: var(--webtoys-red-light);
+            border-color: var(--webtoys-red);
+            color: var(--webtoys-red);
+            font-weight: 800;
         }
         
         .badge-closed {
-            background: var(--gray-warm);
-            color: white;
+            background: #f5f5f5;
+            border-color: var(--charcoal-light);
+            color: var(--charcoal-light);
+            font-weight: 800;
         }
         
         .badge-answered {
-            background: var(--blue);
-            color: var(--charcoal);
+            background: var(--electric-blue-light);
+            border-color: var(--electric-blue);
+            color: var(--electric-blue);
+            font-weight: 800;
         }
         
         .badge-needs-info {
-            background: var(--orange);
-            color: var(--charcoal);
+            background: #ffe6e6;
+            border-color: var(--orange-blast);
+            color: var(--orange-blast);
+            font-weight: 800;
         }
         
         .badge-admin-discussion {
-            background: var(--purple-shadow);
-            color: var(--charcoal);
+            background: #f3e8ff;
+            border-color: var(--purple-magic);
+            color: var(--purple-magic);
+            font-weight: 800;
             animation: gentle-pulse 2s infinite;
         }
         
@@ -445,8 +836,10 @@
         }
         
         .badge-documentation {
-            background: var(--blue);
-            color: var(--charcoal);
+            background: var(--electric-blue-light);
+            border-color: var(--electric-blue);
+            color: var(--electric-blue);
+            font-weight: 800;
         }
 
         .status-timeline {
@@ -658,60 +1051,34 @@
             }
         }
 
+        /* REACTIONS */
         .reactions {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
         }
 
         .reaction-btn {
-            background: var(--yellow-soft);
-            border: 2px solid var(--charcoal);
-            padding: 8px 15px;
-            border-radius: 25px;
+            background: white;
+            border: 1.5px solid rgba(65, 153, 225, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             font-weight: 600;
-            font-size: 14px;
-            box-shadow: 2px 2px 0px var(--charcoal);
+            font-size: 13px;
+            color: var(--charcoal);
         }
 
         .reaction-btn:hover {
-            background: var(--green-mint);
-            transform: translateY(-2px) scale(1.1);
-            box-shadow: 3px 5px 0px var(--charcoal);
+            border-color: var(--electric-blue);
+            transform: translateY(-1px);
+            background: var(--electric-blue-light);
         }
 
-        .reaction-btn:active {
-            transform: translateY(0px);
-            box-shadow: 1px 1px 0px var(--charcoal);
-        }
-        
-        .reaction-btn.upvote {
-            color: var(--green-sage);
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
-        .reaction-btn.downvote {
-            color: var(--red);
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
-        .reaction-btn.upvote:hover {
-            background: var(--green-mint);
-            color: var(--charcoal);
-        }
-        
-        .reaction-btn.downvote:hover {
-            background: var(--red-soft);
-            color: var(--charcoal);
-        }
-        
         .vote-count {
-            font-weight: 800;
-            margin-left: 4px;
+            font-weight: 700;
+            margin-left: 2px;
         }
         
         /* Superpower Controls */
@@ -910,30 +1277,46 @@
 
         .loading {
             text-align: center;
-            padding: 20px;
-            color: #666;
+            padding: var(--space-xl);
+            color: var(--electric-blue);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .loading::before {
+            content: '🚀 ';
+            animation: bounceIn 1s ease-in-out infinite;
         }
 
         .error {
-            background: var(--red-soft);
-            color: var(--charcoal);
-            padding: 15px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            border: 3px solid var(--red);
-            font-weight: 600;
-            box-shadow: 3px 3px 0px var(--red);
+            background: var(--webtoys-red-light);
+            color: var(--webtoys-red);
+            padding: var(--space-lg) var(--space-xl);
+            border-radius: 16px;
+            margin-bottom: var(--space-lg);
+            border: 2px solid var(--webtoys-red);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .error::before {
+            content: '🚨 ';
         }
 
         .success {
-            background: var(--green-mint);
-            color: var(--charcoal);
-            padding: 15px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            border: 3px solid var(--green-sage);
-            font-weight: 600;
-            box-shadow: 3px 3px 0px var(--green-sage);
+            background: var(--lime-green-light);
+            color: var(--lime-green);
+            padding: var(--space-lg) var(--space-xl);
+            border-radius: 16px;
+            margin-bottom: var(--space-lg);
+            border: 2px solid var(--lime-green);
+            font-weight: 700;
+            font-size: 16px;
+            animation: bounceIn 0.5s ease-out;
+        }
+
+        .success::before {
+            content: '🎉 ';
         }
 
         .loading {
@@ -944,53 +1327,87 @@
             font-size: 18px;
         }
         
+        /* FILTER CONTROLS */
         .filter-controls {
             display: flex;
-            gap: 10px;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
             flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 20px;
+            padding: var(--space-lg);
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(65, 153, 225, 0.1);
         }
         
         .filter-btn {
-            background: var(--cream);
+            background: rgba(255, 255, 255, 0.9);
             color: var(--charcoal);
-            border: 2px solid var(--charcoal);
-            padding: 8px 16px;
-            border-radius: 15px;
+            border: 2px solid var(--electric-blue-light);
+            padding: 14px 24px;
+            border-radius: 12px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 2px 2px 0px var(--charcoal);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-btn::before {
+            content: '✨';
+            position: absolute;
+            top: 50%;
+            left: -20px;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: all 0.3s ease;
         }
         
         .filter-btn:hover {
-            background: var(--yellow-soft);
-            transform: translateY(-2px);
-            box-shadow: 3px 4px 0px var(--charcoal);
+            background: var(--electric-blue-light);
+            transform: translateY(-3px);
+            border-color: var(--electric-blue);
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.2);
+        }
+
+        .filter-btn:hover::before {
+            left: 8px;
+            opacity: 1;
         }
         
         .filter-btn.active {
-            background: var(--blue);
-            color: var(--charcoal);
-            font-weight: 700;
+            background: var(--electric-blue);
+            color: white;
+            border-color: var(--electric-blue);
+            box-shadow: 0 6px 16px rgba(0, 170, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .filter-btn.active::before {
+            content: '🎯';
+            left: 8px;
+            opacity: 1;
         }
         
         .issue-number {
-            font-weight: 900;
-            color: var(--purple-accent);
-            font-size: 1.3rem;
-            margin-bottom: 8px;
-            text-shadow: 2px 2px 0px var(--purple-shadow);
+            font-weight: 800;
+            color: var(--electric-blue);
+            font-size: 1.2rem;
+            margin-bottom: var(--space-md);
             display: inline-block;
-            padding: 4px 12px;
-            background: linear-gradient(135deg, var(--purple-shadow), #E6E6FA);
+            padding: 8px 16px;
+            background: var(--electric-blue-light);
+            border: 2px solid var(--electric-blue);
             border-radius: 12px;
-            border: 2px solid var(--purple-accent);
-            box-shadow: 2px 2px 0px var(--purple-accent);
+            /* transform: rotate(-2deg); */
+            transition: all 0.3s ease;
+        }
+
+        .issue-number:hover {
+            transform: scale(1.05);
         }
         
         .confidence-priority {
@@ -1110,57 +1527,35 @@
         }
         
         @media (max-width: 768px) {
+            .filter-controls {
+                padding: var(--space-md);
+                gap: var(--space-sm);
+            }
+            
             .filter-btn {
-                padding: 6px 12px;
-                font-size: 12px;
+                padding: 10px 16px;
+                font-size: 13px;
             }
             
-            /* Remove all rotation and hover effects on mobile for stability */
-            .card {
-                transform: none !important;
-                transition: none !important;
-            }
-            
-            .card:nth-child(even) {
-                transform: none !important;
-            }
-            
-            .card:hover {
-                transform: none !important;
-            }
-            
-            .issue-item {
-                transform: none !important;
-                transition: box-shadow 0.3s ease !important;
-            }
-            
-            .issue-item:nth-child(even) {
-                transform: none !important;
-            }
-            
-            .issue-item:nth-child(3n) {
-                transform: none !important;
-            }
-            
-            .issue-item:hover {
-                transform: none !important;
-                box-shadow: 5px 8px 0px var(--purple-shadow) !important;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo-wrapper" onclick="window.location.href='https://webtoys.ai'">
-                <img src="https://webtoys.ai/webtoys-simple-logo.png" alt="WEBTOYS" class="webtoys-logo-img">
+            <div class="logo-title-wrapper">
+                <div class="logo-wrapper" onclick="window.location.href='https://webtoys.ai'">
+                    <img src="/webtoys-simple-logo.png" alt="WEBTOYS" class="webtoys-logo-img">
+                </div>
+                <div class="title-section">
+                    <h1>WEBTOYS FIXIT BOARD</h1>
+                </div>
             </div>
-            <div class="title-section">
-                <h1>Issue Tracker</h1>
-                <p class="subtitle">Report bugs and request features for the WEBTOYS platform</p>
+            <div class="subtitle-section">
+                <p class="subtitle">Drop your bugs, float your feature dreams. I'll reply in minutes, and if you're lucky, I'll send you a shiny PR. — Ash.tag 🐛</p>
             </div>
-            <div id="superpowerIndicator" style="display: none; position: absolute; top: 10px; right: 10px; padding: 10px; background: var(--yellow); border: 3px solid var(--charcoal); border-radius: 15px; font-weight: 700; text-align: center; box-shadow: 3px 3px 0px var(--charcoal);">
-                ⚡ SUPERPOWER MODE
+            <div id="superpowerIndicator" class="superpower-indicator not-authenticated" style="display: none;">
+                ⚡ SUPERPOWER MODE - NOT AUTHENTICATED
             </div>
         </header>
 
@@ -1168,49 +1563,48 @@
             <h2>Submit New Issue</h2>
             <div id="submitForm">
                 <div class="form-group">
-                    <label for="idea">Description</label>
-                    <textarea id="idea" placeholder="Describe the issue or feature request in detail..." required></textarea>
+                    <label for="idea">What's broken? 🔨</label>
+                    <textarea id="idea" placeholder="Tell us what's bugging you or what cool feature you're dreaming of..." required></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="author">Your Name (optional)</label>
-                    <input type="text" id="author" placeholder="Anonymous" />
+                    <label for="author">Your Name (or superhero alias) 🦸</label>
+                    <input type="text" id="author" placeholder="Anonymous Hero" />
                 </div>
 
                 <div class="form-group">
-                    <label for="category">Category</label>
+                    <label for="category">What kind of chaos? 🎦</label>
                     <select id="category">
-                        <option value="triage">Needs Triage</option>
-                        <option value="bug">Bug Report</option>
-                        <option value="feature">Feature Request</option>
-                        <option value="enhancement">Enhancement</option>
-                        <option value="documentation">Documentation</option>
+                        <option value="triage">🔍 Needs Investigation</option>
+                        <option value="bug">🐛 Bug Hunt</option>
+                        <option value="feature">✨ Feature Magic</option>
+                        <option value="enhancement">🚀 Make It Better</option>
+                        <option value="documentation">📚 Docs Drama</option>
                     </select>
                 </div>
 
-                <button onclick="submitIssue()">Submit Issue</button>
+                <button onclick="submitIssue()">🚀 Ship This Issue</button>
             </div>
 
             <div id="message"></div>
         </div>
 
-        <div class="card">
-            <h2>Issues</h2>
-            
-            <!-- Filter Controls -->
-            <div class="filter-controls" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <button class="filter-btn active" onclick="setFilter('all')" data-filter="all">All Issues</button>
-                <button class="filter-btn" onclick="setFilter('active')" data-filter="active">Active</button>
-                <button class="filter-btn" onclick="setFilter('admin_discussion')" data-filter="admin_discussion">Admin Discussion</button>
-                <button class="filter-btn" onclick="setFilter('resolved')" data-filter="resolved">Resolved</button>
-                <button class="filter-btn" onclick="setFilter('new')" data-filter="new">New</button>
-                <button class="filter-btn" onclick="setFilter('fixing')" data-filter="fixing">In Progress</button>
-                <button class="filter-btn" onclick="setFilter('closed')" data-filter="closed">Closed</button>
-            </div>
-            
-            <div id="issueList" class="issue-list">
-                <div class="loading">Loading issues...</div>
-            </div>
+        <!-- Issues Section Header -->
+        <h2 style="color: var(--charcoal); font-weight: 800; margin-bottom: var(--space-lg); text-align: center; font-size: clamp(1.8rem, 4vw, 2.5rem);">Issues</h2>
+        
+        <!-- Filter Controls -->
+        <div class="filter-controls" style="margin-bottom: var(--space-xl); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <button class="filter-btn active" onclick="setFilter('all')" data-filter="all">All Issues</button>
+            <button class="filter-btn" onclick="setFilter('active')" data-filter="active">Active</button>
+            <button class="filter-btn" onclick="setFilter('admin_discussion')" data-filter="admin_discussion">Admin Discussion</button>
+            <button class="filter-btn" onclick="setFilter('resolved')" data-filter="resolved">Resolved</button>
+            <button class="filter-btn" onclick="setFilter('new')" data-filter="new">New</button>
+            <button class="filter-btn" onclick="setFilter('fixing')" data-filter="fixing">In Progress</button>
+            <button class="filter-btn" onclick="setFilter('closed')" data-filter="closed">Closed</button>
+        </div>
+        
+        <div id="issueList" class="issue-list">
+            <div class="loading">Loading issues...</div>
         </div>
         
         <!-- Pagination Controls - Now outside the card -->
@@ -1723,11 +2117,11 @@
                         ${data.answer ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--blue); border-radius: 15px; border: 2px solid var(--blue-deep);">
                                 <strong style="color: var(--charcoal);">💬 Support Answer:</strong><br>
-                                <span style="color: var(--charcoal);">${escapeHtml(data.answer)}</span>
+                                <span style="color: var(--charcoal);">${createTruncatedText(data.answer)}</span>
                             </div>
                         ` : data.reformulated ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--purple-shadow); border-radius: 15px; border: 2px solid var(--purple-accent);">
-                                <strong style="color: var(--charcoal);">🤖 AI Analysis:</strong> <span style="color: var(--charcoal);">${escapeHtml(data.reformulated)}</span>
+                                <strong style="color: var(--charcoal);">🤖 AI Analysis:</strong> <span style="color: var(--charcoal);">${createTruncatedText(data.reformulated)}</span>
                             </div>
                         ` : ''}
                         
@@ -1740,19 +2134,19 @@
                         
                         ${data.ai_analysis ? `
                             <div class="cass-comment">
-                                <strong>🎸 Ash.tag:</strong> ${escapeHtml(data.ai_analysis)}
+                                <strong>🎸 Ash.tag:</strong> ${createTruncatedText(data.ai_analysis)}
                             </div>
                         ` : ''}
                         
                         ${data.ash_comment ? `
                             <div class="cass-comment">
-                                <strong>💭 Ash.tag says:</strong> ${escapeHtml(data.ash_comment)}
+                                <strong>💭 Ash.tag says:</strong> ${createTruncatedText(data.ash_comment)}
                             </div>
                         ` : ''}
                         
                         ${data.cass_comment ? `
                             <div class="cass-comment">
-                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.cass_comment)}
+                                <strong>💬 Ash.tag:</strong> ${createTruncatedText(data.cass_comment)}
                             </div>
                         ` : ''}
                         
@@ -1936,6 +2330,55 @@
             return div.innerHTML;
         }
 
+        // Create truncated text with Read More/Less functionality
+        function createTruncatedText(text, maxLines = 10) {
+            if (!text) return '';
+            
+            const words = text.split(/\s+/);
+            const lines = text.split('\n');
+            
+            // Check if truncation is needed (10 lines OR 50 words)
+            if (lines.length <= maxLines && words.length <= 50) {
+                return escapeHtml(text);
+            }
+            
+            // Truncate by whichever limit is reached first
+            let truncated;
+            if (words.length > 50) {
+                // Truncate by words
+                truncated = words.slice(0, 50).join(' ');
+            } else {
+                // Truncate by lines
+                truncated = lines.slice(0, maxLines).join('\n');
+            }
+            
+            const fullText = text;
+            const uniqueId = 'text-' + Math.random().toString(36).substr(2, 9);
+            
+            return `
+                <span id="${uniqueId}-truncated">
+                    ${escapeHtml(truncated)}
+                    <a href="#" onclick="expandText('${uniqueId}'); return false;" style="color: var(--electric-blue); font-weight: 600; margin-left: 10px;">... Read More</a>
+                </span>
+                <span id="${uniqueId}-full" style="display: none;">
+                    ${escapeHtml(fullText)}
+                    <a href="#" onclick="collapseText('${uniqueId}'); return false;" style="color: var(--electric-blue); font-weight: 600; margin-left: 10px;">Show Less</a>
+                </span>
+            `;
+        }
+
+        // Expand text to show full content
+        function expandText(id) {
+            document.getElementById(id + '-truncated').style.display = 'none';
+            document.getElementById(id + '-full').style.display = 'inline';
+        }
+
+        // Collapse text to show truncated version
+        function collapseText(id) {
+            document.getElementById(id + '-truncated').style.display = 'inline';
+            document.getElementById(id + '-full').style.display = 'none';
+        }
+
         function formatDate(timestamp) {
             if (!timestamp) return '';
             const date = new Date(timestamp);
@@ -1954,8 +2397,8 @@
         function formatAgentResponse(responseText) {
             if (!responseText) return '';
             
-            // Escape HTML first
-            let formatted = escapeHtml(responseText);
+            // Use truncation with Read More (10 lines or 50 words)
+            let formatted = createTruncatedText(responseText, 10);
             
             // Convert markdown-style formatting to HTML
             formatted = formatted
@@ -1991,7 +2434,7 @@
                                 ${comment.authorRole ? `<span style="background: var(--purple-shadow); padding: 2px 6px; border-radius: 5px; margin-left: 5px; font-size: 10px; text-transform: uppercase;">${escapeHtml(comment.authorRole)}</span>` : ''}
                                 • ${formatDate(comment.timestamp)}
                             </div>
-                            <div style="color: var(--charcoal);">${escapeHtml(comment.text)}</div>
+                            <div style="color: var(--charcoal);">${createTruncatedText(comment.text)}</div>
                         </div>
                     `).join('')}
                 </div>
