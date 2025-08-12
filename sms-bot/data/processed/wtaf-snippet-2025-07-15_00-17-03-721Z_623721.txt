@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build me a simple journal app where I can add entries with titles like "Today's thoughts" and descriptions, and handle errors gracefully when saving fails

@@ -5,15 +5,18 @@ import * as dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables from .env.local
-// When compiled, this runs from dist/engine/shared/, so we need to go up 3 levels to reach sms-bot/
-const envPath = join(__dirname, '..', '..', '..', '.env.local');
-dotenv.config({ path: envPath });
+// Load environment variables from current working directory
+// Look for .env.local file (standard for local development)
+const result = dotenv.config({ path: '.env.local' });
 
 // Debug logging for environment loading
-console.log(`🔧 Loading .env from: ${envPath}`);
+console.log(`🔧 Working directory: ${process.cwd()}`);
+console.log(`🔧 Dotenv result:`, result.error ? `ERROR: ${result.error.message}` : 'Success');
+console.log(`🔧 Looking for .env files in: ${process.cwd()}`);
 console.log(`🔧 OPENAI_API_KEY loaded: ${process.env.OPENAI_API_KEY ? 'YES' : 'NO'}`);
 console.log(`🔧 ANTHROPIC_API_KEY loaded: ${process.env.ANTHROPIC_API_KEY ? 'YES' : 'NO'}`);
+console.log(`🔧 SUPABASE_URL loaded: ${process.env.SUPABASE_URL ? 'YES' : 'NO'}`);
+console.log(`🔧 SUPABASE_SERVICE_KEY loaded: ${process.env.SUPABASE_SERVICE_KEY ? 'YES' : 'NO'}`);
 
 // Type definitions
 export interface Coach {

@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build an app where I can post ideas and my friend reacts to them. Make it bright and colorful

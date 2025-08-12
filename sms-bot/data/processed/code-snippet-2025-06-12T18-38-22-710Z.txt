@@ -1,2 +1,0 @@
-SENDER:+16508989508
-Build a full HTML5 page styled like a cyberpunk UI. At the center, include a single input box that asks: “What do you see?” When the user types and presses Enter, show a dramatic full-screen animated response in Venus’s voice that interprets their vision as an omen. Use bold colors, a dark gradient background, and add subtle glitch animations with inline CSS.

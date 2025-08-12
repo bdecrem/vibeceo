@@ -232,8 +232,8 @@ async function saveToHistory(command: string, success: boolean): Promise<void> {
 async function testConnection(): Promise<boolean> {
     try {
         const response = await fetch(`${SMS_BOT_URL}/health`, { 
-            method: 'GET',
-            timeout: 5000
+            method: 'GET'
+            // timeout: 5000 // Note: timeout not supported in node-fetch
         });
         return response.ok;
     } catch (error) {

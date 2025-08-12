@@ -1,1 +1,0 @@
-send an SMS saying 'Test message 123' to +16508989508

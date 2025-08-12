@@ -1,3 +1,0 @@
-SENDER:+15558037911
-USER_SLUG:bartdecrem11
-make a hello world page
