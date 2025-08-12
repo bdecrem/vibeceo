@@ -1045,36 +1045,75 @@
         async function checkExtensionAuth() {
             if (!isSuperpowerMode) return false;
             
+            console.log('🔍 Checking extension auth via postMessage bridge...');
+            
             try {
-                // Check if we're in Safari and can access the extension
-                if (typeof chrome !== 'undefined' && chrome.storage) {
-                    const result = await new Promise((resolve) => {
-                        chrome.storage.sync.get(['authToken', 'apiUrl'], (data) => {
-                            resolve(data);
+                // Check if we already have auth data from the bridge
+                if (window.SUPERPOWER_AUTH) {
+                    if (!window.SUPERPOWER_AUTH.pending) {
+                        // Auth check is complete
+                        if (window.SUPERPOWER_AUTH.isAuthenticated) {
+                            authToken = window.SUPERPOWER_AUTH.authToken;
+                            apiUrl = window.SUPERPOWER_AUTH.apiUrl;
+                            isAuthenticated = true;
+                            console.log('🔑 Auth success via postMessage bridge');
+                            return true;
+                        } else {
+                            console.log('🔒 Auth failed via postMessage bridge');
+                            return false;
+                        }
+                    } else {
+                        // Auth is still pending, wait for it
+                        console.log('⏳ Auth check pending, waiting for response...');
+                        return new Promise((resolve) => {
+                            // Set up listener for auth response
+                            const listener = (event) => {
+                                if (event.detail && event.detail.isAuthenticated !== undefined) {
+                                    window.removeEventListener('superpowerAuthReceived', listener);
+                                    
+                                    if (event.detail.isAuthenticated) {
+                                        authToken = event.detail.authToken;
+                                        apiUrl = event.detail.apiUrl;
+                                        isAuthenticated = true;
+                                        console.log('🔑 Auth success after wait');
+                                        resolve(true);
+                                    } else {
+                                        console.log('🔒 Auth failed after wait');
+                                        resolve(false);
+                                    }
+                                }
+                            };
+                            
+                            window.addEventListener('superpowerAuthReceived', listener);
+                            
+                            // Timeout after 5 seconds
+                            setTimeout(() => {
+                                window.removeEventListener('superpowerAuthReceived', listener);
+                                console.log('⏰ Auth check timeout');
+                                resolve(false);
+                            }, 5000);
                         });
-                    });
+                    }
+                } else {
+                    // No bridge setup, try direct fallback methods
+                    console.log('🔄 No postMessage bridge, trying fallback methods...');
                     
-                    if (result.authToken && result.apiUrl) {
-                        authToken = result.authToken;
-                        apiUrl = result.apiUrl;
+                    // Fallback: Check localStorage for auth (development mode)
+                    const storedToken = localStorage.getItem('webtoysAuthToken');
+                    const storedUrl = localStorage.getItem('webtoysApiUrl');
+                    if (storedToken && storedUrl) {
+                        authToken = storedToken;
+                        apiUrl = storedUrl;
                         isAuthenticated = true;
+                        console.log('🔑 Auth success via localStorage fallback');
                         return true;
                     }
+                    
+                    console.log('🔒 No auth found in fallback methods');
+                    return false;
                 }
-                
-                // Fallback: Check localStorage for auth (development mode)
-                const storedToken = localStorage.getItem('webtoysAuthToken');
-                const storedUrl = localStorage.getItem('webtoysApiUrl');
-                if (storedToken && storedUrl) {
-                    authToken = storedToken;
-                    apiUrl = storedUrl;
-                    isAuthenticated = true;
-                    return true;
-                }
-                
-                return false;
             } catch (error) {
-                console.log('Extension auth check failed:', error);
+                console.error('🚨 Extension auth check failed:', error);
                 return false;
             }
         }
@@ -1806,28 +1845,41 @@
         // Initialize superpower mode
         async function initializeSuperpowerMode() {
             if (isSuperpowerMode) {
-                console.log('Superpower mode detected, checking authentication...');
+                console.log('⚡ Superpower mode detected, checking authentication...');
+                
+                // Show initial loading state
+                document.getElementById('superpowerIndicator').style.display = 'block';
+                document.getElementById('superpowerIndicator').textContent = '⚡ SUPERPOWER MODE - CHECKING AUTH...';
+                document.getElementById('superpowerIndicator').style.background = 'var(--yellow)';
+                
                 const authenticated = await checkExtensionAuth();
                 
                 if (authenticated) {
-                    console.log('Authentication successful');
-                    document.getElementById('superpowerIndicator').style.display = 'block';
+                    console.log('✅ Authentication successful');
                     document.getElementById('superpowerIndicator').textContent = '⚡ SUPERPOWER MODE - AUTHENTICATED';
                     document.getElementById('superpowerIndicator').style.background = 'var(--green-mint)';
+                    document.getElementById('superpowerIndicator').style.color = 'var(--charcoal)';
                 } else {
-                    console.log('Authentication failed');
-                    document.getElementById('superpowerIndicator').style.display = 'block';
+                    console.log('❌ Authentication failed');
                     document.getElementById('superpowerIndicator').textContent = '⚡ SUPERPOWER MODE - NOT AUTHENTICATED';
                     document.getElementById('superpowerIndicator').style.background = 'var(--red-soft)';
+                    document.getElementById('superpowerIndicator').style.color = 'var(--charcoal)';
                 }
             }
         }
         
+        // Set up callback for when auth is received via postMessage
+        window.onSuperpowerAuthReceived = function(authData) {
+            console.log('🔄 Auth data received via postMessage, re-initializing...');
+            // Re-run the auth check now that we have data
+            initializeSuperpowerMode();
+        };
+        
         // Load issues on page load
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Page loaded, initializing...');
+            console.log('📱 Page loaded, initializing...');
             
-            // Initialize superpower mode first
+            // Initialize superpower mode first (this will wait for auth if needed)
             await initializeSuperpowerMode();
             
             // Then load issues
