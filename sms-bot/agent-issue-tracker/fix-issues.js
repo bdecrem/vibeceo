@@ -157,8 +157,9 @@ async function runTests() {
 /**
  * Use Claude Code to implement the fix or action
  */
-async function implementFix(issue, branchName) {
+async function implementFix(issue, branchName, recordId) {
   const category = issue.category || 'bug';
+  const issueId = recordId || issue.id || 'unknown';
   
   // Different prompts for different categories
   let prompt = '';
@@ -173,7 +174,7 @@ You are creating an implementation plan for the WEBTOYS codebase. Branch: ${bran
 ## YOUR TASK:
 Create a detailed implementation plan as a markdown file.
 
-1. Create file: sms-bot/agent-issue-tracker/plans/issue-${issue.id || 'plan'}-implementation.md
+1. Create file: sms-bot/agent-issue-tracker/plans/issue-${issueId}-implementation.md
 2. Include:
    - Executive summary
    - Current state analysis
@@ -197,7 +198,7 @@ You are researching a topic for the WEBTOYS codebase. Branch: ${branchName}
 ## YOUR TASK:
 1. Search the codebase to understand current implementation
 2. Identify all relevant files and components
-3. Document findings in: sms-bot/agent-issue-tracker/research/issue-${issue.id || 'research'}-findings.md
+3. Document findings in: sms-bot/agent-issue-tracker/research/issue-${issueId}-findings.md
 4. Include:
    - What you found
    - How it currently works
@@ -217,7 +218,7 @@ You are answering a technical question about the WEBTOYS codebase. Branch: ${bra
 
 ## YOUR TASK:
 1. Find the answer in the codebase
-2. Write a clear explanation in: sms-bot/agent-issue-tracker/answers/issue-${issue.id || 'answer'}-response.md
+2. Write a clear explanation in: sms-bot/agent-issue-tracker/answers/issue-${issueId}-response.md
 3. Include:
    - Direct answer to the question
    - Supporting evidence (code snippets)
@@ -342,9 +343,12 @@ async function processIssues() {
     
     const complexIssues = allReformulated?.filter(record => {
       const content = record.content_data || {};
+      const category = content.category || 'bug';
+      // Don't warn about complex plan/research/question - they're supposed to be processed
       return (content.status === 'Todo' || content.status === 'reformulated') && 
              content.confidence === 'high' &&
-             ['complex', 'research'].includes(content.complexity);
+             ['complex', 'research'].includes(content.complexity) &&
+             !['plan', 'research', 'question'].includes(category);
     }) || [];
     
     if (complexIssues.length > 0) {
@@ -379,7 +383,7 @@ async function processIssues() {
 
         // Implement the fix
         console.log(`  🤖 Implementing fix with Claude Code...`);
-        const result = await implementFix(issue, branchName);
+        const result = await implementFix(issue, branchName, record.id);
 
         if (!result.success) {
           throw new Error(`Failed to implement fix: ${result.error}`);
