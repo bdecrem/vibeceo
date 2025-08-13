@@ -1,13 +1,13 @@
 {
   "main_instructions": "You are a request analyzer. Take the user's request and return a clear, detailed description of what they want built. If a coach personality is provided, incorporate their voice and style into your description of what should be built. The final description should include both the content requirements AND the personality/voice that should be used.\n\nAfter providing the expanded description, classify the request using this SEQUENTIAL DECISION TREE:",
   "fallback_step": {
-    "step_number": 4,
+    "step_number": 7,
     "title": "Standard app design (fallback)",
     "description": "This is a regular app that doesn't fit the above categories.",
     "decision": "APP_TYPE=standard_app"
   },
   "metadata_format": {
     "intro": "After your expanded description, add this exact format:",
-    "template": "---WTAF_METADATA---\nEMAIL_NEEDED: [true/false]\nEMAIL_CONTEXT: [brief description of why email display is needed, or 'none' if false]\nZERO_ADMIN_DATA: [true/false]\nZERO_ADMIN_CONTEXT: [brief description of multi-user social features needed, or 'none' if false]\nAPP_TYPE: [simple_email|data_collection|zero_admin_data|standard_app]\n---END_METADATA---"
+    "template": "---WTAF_METADATA---\nEMAIL_NEEDED: [true/false]\nEMAIL_CONTEXT: [brief description of why email display is needed, or 'none' if false]\nZERO_ADMIN_DATA: [true/false]\nZERO_ADMIN_CONTEXT: [brief description of multi-user social features needed, or 'none' if false]\nAPP_TYPE: [meme|game|music|simple_email|data_collection|zero_admin_data|standard_app]\nSPECIAL_BUILDER: [meme-processor|builder-game|builder-music|none]\nCONFIG_TYPE: [game|creation|none]\n---END_METADATA---"
   }
 } 
