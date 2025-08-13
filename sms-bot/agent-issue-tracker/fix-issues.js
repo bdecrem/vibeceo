@@ -378,8 +378,10 @@ async function processIssues() {
         // Only create new branch for actual fixes
         if (!['plan', 'research', 'question'].includes(category)) {
           branchName = await createFeatureBranch(record.id, issue.reformulated);
+          console.log(`  📌 Created branch: ${branchName}`);
+        } else {
+          console.log(`  📌 Staying on branch: ${branchName} (no branch switch for ${category})`);
         }
-        console.log(`  📌 Created branch: ${branchName}`);
 
         // Implement the fix
         console.log(`  🤖 Implementing fix with Claude Code...`);
