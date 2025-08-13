@@ -26,7 +26,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
 
 /**
@@ -44,10 +44,11 @@ async function loadFixedIssues() {
     return [];
   }
 
-  // Filter for fixed issues ready for PR
+  // Filter for Done issues ready for PR creation
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === 'fixed' && 
+    // Support both old 'fixed' and new 'Done' status
+    return (content.status === 'Done' || content.status === 'fixed') && 
            content.ready_for_pr === true &&
            !content.pr_url;
   });
@@ -70,7 +71,7 @@ async function updateIssueWithPR(recordId, prUrl, prNumber) {
 
   const updatedContent = {
     ...current.content_data,
-    status: 'pr-created',
+    status: 'Done', // Keep as Done since PR is created
     pr_url: prUrl,
     pr_number: prNumber,
     pr_created_at: new Date().toISOString()

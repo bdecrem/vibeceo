@@ -27,7 +27,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
 
 /**
@@ -45,11 +45,11 @@ async function loadFixableIssues() {
     return [];
   }
 
-  // Filter for high-confidence reformulated issues
+  // Filter for high-confidence Todo issues
   // Now also considering complexity - only auto-fix simple/medium issues
   return data.filter(record => {
     const content = record.content_data || {};
-    const isFixable = content.status === 'reformulated' && 
+    const isFixable = (content.status === 'Todo' || content.status === 'reformulated') && 
                      content.confidence === 'high' &&
                      !content.skip_auto_fix;
     
@@ -193,7 +193,7 @@ Please implement the fix now.`;
 
     // Execute Claude Code using FULL PATH for cron compatibility
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /opt/homebrew/bin/claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
@@ -264,7 +264,7 @@ async function processIssues() {
     
     const complexIssues = allReformulated?.filter(record => {
       const content = record.content_data || {};
-      return content.status === 'reformulated' && 
+      return (content.status === 'Todo' || content.status === 'reformulated') && 
              content.confidence === 'high' &&
              ['complex', 'research'].includes(content.complexity);
     }) || [];
@@ -283,8 +283,8 @@ async function processIssues() {
       const issue = record.content_data;
       console.log(`\n🔨 Attempting to fix issue #${record.id}: "${issue.reformulated}"`);
 
-      // Update status to in-progress
-      await updateIssueStatus(record.id, 'fixing');
+      // Update status to In Progress
+      await updateIssueStatus(record.id, 'In Progress');
 
       try {
         // Create feature branch
@@ -317,8 +317,8 @@ async function processIssues() {
           throw new Error('Failed to commit changes');
         }
 
-        // Update issue status
-        await updateIssueStatus(record.id, 'fixed', {
+        // Update issue status to Done (PR created)
+        await updateIssueStatus(record.id, 'Done', {
           branch_name: branchName,
           files_changed: result.filesChanged,
           test_result: testResult.output,
@@ -330,8 +330,8 @@ async function processIssues() {
       } catch (error) {
         console.error(`  ❌ Failed to fix:`, error.message);
         
-        // Update issue with error
-        await updateIssueStatus(record.id, 'fix-failed', {
+        // Update issue with error - back to Todo
+        await updateIssueStatus(record.id, 'Todo', {
           error: error.message,
           needs_manual_fix: true
         });
@@ -367,8 +367,8 @@ async function processIssues() {
     .eq('action_type', 'issue');
 
   const stats = {
-    fixed: summary?.filter(r => r.content_data?.status === 'fixed').length || 0,
-    failed: summary?.filter(r => r.content_data?.status === 'fix-failed').length || 0,
+    fixed: summary?.filter(r => r.content_data?.status === 'Done').length || 0,
+    failed: summary?.filter(r => r.content_data?.status === 'Todo' && r.content_data?.needs_manual_fix).length || 0,
     pending: summary?.filter(r => r.content_data?.status === 'reformulated').length || 0
   };
 

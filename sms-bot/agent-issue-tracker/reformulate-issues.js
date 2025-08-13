@@ -29,12 +29,12 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status
  */
-async function loadIssues(status = 'new') {
+async function loadIssues(status = 'Backlog') {
   const { data, error } = await supabase
     .from('wtaf_zero_admin_collaborative')
     .select('*')
@@ -49,7 +49,11 @@ async function loadIssues(status = 'new') {
   // Filter by status in content_data
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === status || (!content.status && status === 'new');
+    // Handle both old 'new' status and new 'Backlog' status for compatibility
+    if (status === 'Backlog') {
+      return content.status === 'Backlog' || content.status === 'new' || !content.status;
+    }
+    return content.status === status;
   });
 }
 
@@ -177,7 +181,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -282,7 +286,7 @@ Notes:
 
     // Use Claude via command line with FULL PATH for cron compatibility
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -394,7 +398,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -457,8 +461,8 @@ function isAdminReopenedIssue(issue) {
   
   const wasProcessed = data.reformulated || data.ash_comment;
   
-  // If it has admin comments and is now in NEW or NEEDS_INFO status after being processed
-  if ((status === 'new' || status === 'needs_info') && wasProcessed) {
+  // If it has admin comments and is now in Backlog or Needs Info status after being processed
+  if ((status === 'Backlog' || status === 'Needs Info' || status === 'new' || status === 'needs_info') && wasProcessed) {
     return true;
   }
   
@@ -467,7 +471,7 @@ function isAdminReopenedIssue(issue) {
   const oneHourAgo = Date.now() - (60 * 60 * 1000);
   
   if (latestComment && new Date(latestComment.timestamp).getTime() > oneHourAgo) {
-    return ['new', 'needs_info', 'reformulated', 'admin_discussion'].includes(status);
+    return ['Backlog', 'Needs Info', 'Todo', 'new', 'needs_info', 'reformulated', 'admin_discussion'].includes(status);
   }
   
   return false;
@@ -480,8 +484,8 @@ async function processIssues() {
   console.log('🤖 Issue Reformulation Agent starting...');
   console.log(`📅 ${new Date().toISOString()}`);
   
-  // Load new issues
-  const newIssues = await loadIssues('new');
+  // Load new issues (Backlog status)
+  const newIssues = await loadIssues('Backlog');
   console.log(`📥 Found ${newIssues.length} new issues to process`);
   
   // Also check for admin-reopened issues that need conversational responses
@@ -522,8 +526,9 @@ async function processIssues() {
       }
       
       // Update the issue with the conversational response
+      // Set to 'Needs Info' to prevent re-processing loop
       const success = await updateIssue(record.id, {
-        status: 'admin_discussion',
+        status: 'Needs Info',
         agent_response: agentResponse,
         agent_response_timestamp: new Date().toISOString(),
         ash_comment: conversationResponse.ash_personality,
@@ -566,7 +571,7 @@ async function processIssues() {
         
         // Update the issue with the answer and close it
         const success = await updateIssue(record.id, {
-          status: 'answered',
+          status: 'Done',
           answer: supportResponse.answer,
           ash_comment: supportResponse.ash_comment,
           relevant_resources: supportResponse.relevant_resources,
@@ -595,7 +600,7 @@ async function processIssues() {
       // Check if it's a test or offensive submission
       if (reformulated.is_offensive) {
         const success = await updateIssue(record.id, {
-          status: 'wontfix',
+          status: 'Canceled',
           ash_comment: reformulated.ash_comment || 'Not appropriate for processing',
           category: 'offensive',
           reformulated_at: new Date().toISOString()
@@ -607,7 +612,7 @@ async function processIssues() {
 
       if (reformulated.is_test) {
         const success = await updateIssue(record.id, {
-          status: 'closed',
+          status: 'Canceled',
           ash_comment: reformulated.ash_comment || 'Test submission detected',
           category: 'test',
           reformulated_at: new Date().toISOString()
@@ -623,9 +628,9 @@ async function processIssues() {
       }
 
       // Determine status based on confidence and complexity
-      let status = 'reformulated';
+      let status = 'Todo';
       if (reformulated.confidence === 'low') {
-        status = 'needs_info';
+        status = 'Needs Info';
       }
       
       // Only auto-fix simple and medium complexity issues with high confidence
@@ -663,7 +668,7 @@ async function processIssues() {
       
       // Mark as needing manual review
       await updateIssue(record.id, {
-        status: 'error',
+        status: 'Needs Info',
         error: error.message,
         needs_manual_review: true
       });
