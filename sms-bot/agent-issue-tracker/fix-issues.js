@@ -46,11 +46,18 @@ async function loadFixableIssues() {
   }
 
   // Filter for high-confidence reformulated issues
+  // Now also considering complexity - only auto-fix simple/medium issues
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === 'reformulated' && 
-           content.confidence === 'high' &&
-           !content.skip_auto_fix;
+    const isFixable = content.status === 'reformulated' && 
+                     content.confidence === 'high' &&
+                     !content.skip_auto_fix;
+    
+    // Skip complex and research issues from auto-fix
+    const complexity = content.complexity || 'medium';
+    const isSimpleEnough = ['simple', 'medium'].includes(complexity);
+    
+    return isFixable && isSimpleEnough;
   });
 }
 
@@ -144,26 +151,38 @@ async function runTests() {
  * Use Claude Code to implement the fix
  */
 async function implementFix(issue, branchName) {
+  // Use ORIGINAL REQUEST as primary context, reformulation as supplementary
   const prompt = `
 You are fixing an issue in the WEBTOYS codebase. You are currently on branch: ${branchName}
 
-Issue to fix:
+## ORIGINAL USER REQUEST (THIS IS WHAT THEY ACTUALLY WANT):
+"${issue.original_request || issue.idea}"
+
+## AI Analysis & Context:
 ${issue.reformulated}
 
-Acceptance Criteria:
+${issue.implementation_notes ? `## Implementation Notes:
+${issue.implementation_notes}` : ''}
+
+## Acceptance Criteria:
 ${issue.acceptance_criteria?.join('\n') || 'None specified'}
 
-Affected Components:
+## Affected Components:
 ${issue.affected_components?.join(', ') || 'To be determined'}
 
-Instructions:
-1. Analyze the codebase to understand the issue
-2. Implement the necessary changes
-3. Ensure changes follow existing code patterns
-4. Add appropriate error handling
-5. Do NOT commit the changes (that will be handled separately)
+## Issue Complexity: ${issue.complexity || 'medium'}
+${issue.complexity === 'complex' ? 'This is a complex issue. Take time to understand the architecture before making changes.' : ''}
+${issue.complexity === 'research' ? 'This requires investigation. Start by exploring the codebase to understand the current implementation.' : ''}
 
-Important: Follow the CLAUDE.md rules strictly. Use the architecture as defined.
+## Instructions:
+1. READ THE ORIGINAL USER REQUEST CAREFULLY - that's what needs to be solved
+2. Use the AI analysis as helpful context, but prioritize the user's actual request
+3. ${issue.complexity === 'complex' || issue.complexity === 'research' ? 'Create a plan first, then implement step by step' : 'Implement the necessary changes'}
+4. Ensure changes follow existing code patterns and CLAUDE.md rules
+5. Add appropriate error handling
+6. Do NOT commit the changes (that will be handled separately)
+
+Important: The user's ORIGINAL REQUEST is the source of truth. The reformulation is just to help clarify, not replace their intent.
 
 Please implement the fix now.`;
 
@@ -236,8 +255,29 @@ async function processIssues() {
   const { stdout: originalBranch } = await execAsync('git branch --show-current', { cwd: PROJECT_ROOT });
   
   try {
+    // First, let's check for complex issues that are being skipped
+    const { data: allReformulated } = await supabase
+      .from('wtaf_zero_admin_collaborative')
+      .select('*')
+      .eq('app_id', ISSUE_TRACKER_APP_ID)
+      .eq('action_type', 'issue');
+    
+    const complexIssues = allReformulated?.filter(record => {
+      const content = record.content_data || {};
+      return content.status === 'reformulated' && 
+             content.confidence === 'high' &&
+             ['complex', 'research'].includes(content.complexity);
+    }) || [];
+    
+    if (complexIssues.length > 0) {
+      console.log(`⚠️  Skipping ${complexIssues.length} complex/research issues that need manual review:`);
+      complexIssues.forEach(record => {
+        console.log(`   - #${record.id}: ${record.content_data.reformulated} (${record.content_data.complexity})`);
+      });
+    }
+    
     const issues = await loadFixableIssues();
-    console.log(`📥 Found ${issues.length} high-confidence issues to fix`);
+    console.log(`📥 Found ${issues.length} simple/medium high-confidence issues to auto-fix`);
 
     for (const record of issues) {
       const issue = record.content_data;

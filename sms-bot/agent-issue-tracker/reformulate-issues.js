@@ -245,6 +245,12 @@ Reformulate this into a clear, actionable ticket. If it's obviously a test/joke,
 
 For test submissions (like "test", "asdf", etc.), acknowledge them playfully in your ash_comment while still categorizing them correctly.
 
+IMPORTANT: Assess the complexity of this issue to determine the right approach:
+- simple: Can be fixed with straightforward code changes in 1-2 files
+- medium: Requires changes across 3-5 files or moderate refactoring
+- complex: Needs architectural changes, new systems, or touches many files
+- research: Requires investigation, exploration, or unclear scope
+
 Format your response as JSON:
 {
   "reformulated": "Clear, technical description of what needs to be done",
@@ -252,10 +258,12 @@ Format your response as JSON:
   "affected_components": ["component1", "component2"],
   "category": "bug|feature|enhancement|docs|test",
   "confidence": "high|medium|low",
+  "complexity": "simple|medium|complex|research",
   "needs_clarification": "What additional info is needed (if confidence is low)",
   "ash_comment": "Your personality-filled take on this issue (1-2 sentences max)",
   "is_test": true/false,
-  "is_offensive": true/false
+  "is_offensive": true/false,
+  "implementation_notes": "Brief technical notes about HOW to implement this (for complex issues)"
 }
 
 Notes:
@@ -264,6 +272,7 @@ Notes:
 - low confidence: Vague, needs more info, or you're not sure what they want
 - Mark offensive/inappropriate content with is_offensive: true
 - Mark obvious tests/jokes with is_test: true
+- For complex issues, include implementation_notes with technical approach
 `;
 
   try {
@@ -613,22 +622,30 @@ async function processIssues() {
         reformulated.category = categorizeIssue(reformulated);
       }
 
-      // Determine status based on confidence
+      // Determine status based on confidence and complexity
       let status = 'reformulated';
       if (reformulated.confidence === 'low') {
         status = 'needs_info';
       }
+      
+      // Only auto-fix simple and medium complexity issues with high confidence
+      const shouldAutoFix = reformulated.confidence === 'high' && 
+                           ['simple', 'medium'].includes(reformulated.complexity);
 
-      // Update the issue
+      // Update the issue - PRESERVE THE ORIGINAL REQUEST
       const success = await updateIssue(record.id, {
         status: status,
+        original_request: issue.idea, // PRESERVE ORIGINAL USER REQUEST
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
+        complexity: reformulated.complexity || 'medium',
+        implementation_notes: reformulated.implementation_notes,
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
         ash_comment: reformulated.ash_comment,
+        skip_auto_fix: !shouldAutoFix, // Skip auto-fix for complex/research issues
         reformulated_at: new Date().toISOString()
       });
 
