@@ -368,8 +368,13 @@ async function processIssues() {
       await updateIssueStatus(record.id, 'In Progress');
 
       try {
-        // Create feature branch
-        const branchName = await createFeatureBranch(record.id, issue.reformulated);
+        // For plan/research/question, stay on current branch to avoid losing work
+        let branchName = originalBranch.trim();
+        
+        // Only create new branch for actual fixes
+        if (!['plan', 'research', 'question'].includes(category)) {
+          branchName = await createFeatureBranch(record.id, issue.reformulated);
+        }
         console.log(`  📌 Created branch: ${branchName}`);
 
         // Implement the fix
