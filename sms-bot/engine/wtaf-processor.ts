@@ -327,10 +327,14 @@ APP_TYPE: zero_admin_data`;
                         else if (content.includes('APP_TYPE: music') || 
                                  content.includes('APP_TYPE=music') || 
                                  content.includes('MUSIC_DETECTED')) {
-                            logWithTimestamp("🎵 MUSIC detected by classifier - adding MUSIC_MARKER");
-                            // Add the MUSIC_MARKER that triggers music builder
-                            expandedPrompt = cleanedInput + ' MUSIC_MARKER';
-                            // This triggers the exact same music processing path
+                            logWithTimestamp("🎵 MUSIC detected by classifier - formatting for music builder");
+                            // Format as MUSIC_APP_REQUEST to trigger music builder
+                            expandedPrompt = `MUSIC_APP_REQUEST: ${cleanedInput}
+
+EMAIL_NEEDED: false
+IS_ZAD: false
+NEEDS_ADMIN: false`;
+                            // This triggers the music builder selection logic
                         }
                         // STEP 4: Check if classifier detected a ZAD request (existing logic)
                         else if (content.includes('ZERO_ADMIN_DATA: true')) {
@@ -515,8 +519,8 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         logWithTimestamp(`🎨 Using .txt comprehensive ZAD builder for: ${userRequest.slice(0, 50)}...`);
     } else if (userPrompt.includes('MUSIC_APP_REQUEST:')) {
         logWithTimestamp(`🎵 MUSIC_APP_REQUEST detected - using music app builder`);
-        // Extract the user request from the music app request
-        const requestMatch = userPrompt.match(/MUSIC_APP_REQUEST:\s*(.+)/);
+        // Extract the user request from the music app request (handle multi-line content)
+        const requestMatch = userPrompt.match(/MUSIC_APP_REQUEST:\s*([^\n]+)/);
         if (!requestMatch) {
             throw new Error("MUSIC_APP_REQUEST detected but no content found - parsing error");
         }
