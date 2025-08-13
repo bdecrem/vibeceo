@@ -1,0 +1,50 @@
+{
+  "classification_type": "music",
+  "step_title": "MUSIC App Detection",
+  "step_description": "Check if the user wants to create a music or audio application",
+  "description": "Music apps are applications focused on audio playback, music creation, playlists, or sound experiences. Look for requests involving songs, audio players, or music-related functionality.",
+  
+  "good_examples": [
+    "make a music player",
+    "create a playlist app",
+    "build a song player",
+    "audio streaming app",
+    "DJ mixing app",
+    "spotify-like player",
+    "soundboard app",
+    "beat maker",
+    "piano keyboard app",
+    "music visualizer"
+  ],
+  
+  "bad_examples": [
+    "music blog",
+    "band website",
+    "concert ticket app",
+    "music theory quiz",
+    "album review site"
+  ],
+  
+  "key_indicators": [
+    "Contains 'music player' or 'audio player'",
+    "Mentions 'playlist' in music context",
+    "References 'song' or 'track' playback",
+    "Asks for audio streaming",
+    "Mentions DJ or mixing functionality",
+    "References music apps like Spotify",
+    "Requests sound or beat creation",
+    "Asks for music visualization"
+  ],
+  
+  "decision_logic": {
+    "if_yes": "MUSIC_DETECTED: This is a music/audio app request.\n\nRoute to music app builder for audio-focused functionality.\n\nAPP_TYPE: music",
+    "if_no": "NOT_A_MUSIC_APP: This is not a music app request.\n\nContinue to next classification step."
+  },
+  
+  "metadata_output": {
+    "APP_TYPE": "music",
+    "SPECIAL_BUILDER": "builder-music",
+    "BUILDER_FILE": "builder-music.txt",
+    "MUSIC_MARKER": "true"
+  }
+}

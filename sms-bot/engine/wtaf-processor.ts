@@ -302,8 +302,32 @@ APP_TYPE: zero_admin_data`;
                     logWithTimestamp(content || "No content");
                     logWithTimestamp("=" + "=".repeat(80));
                     if (content) {
-                        // STEP 1: Check if classifier detected a ZAD request
-                        if (content.includes('ZERO_ADMIN_DATA: true')) {
+                        // NEW V2 ROUTING: Check for special app types first (meme, game, music)
+                        
+                        // STEP 1: Check if classifier detected a MEME
+                        if (content.includes('APP_TYPE: meme')) {
+                            logWithTimestamp("🎨 MEME detected by classifier - signaling to bypass to meme processor");
+                            // Return a special marker that controller.ts will recognize
+                            expandedPrompt = `MEME_BYPASS_SIGNAL: ${cleanedInput}`;
+                            // This will be caught by controller.ts and routed to processMemeRequest()
+                        }
+                        // STEP 2: Check if classifier detected a GAME
+                        else if (content.includes('APP_TYPE: game')) {
+                            logWithTimestamp("🎮 GAME detected by classifier - using game configuration");
+                            // Return the expanded content but preserve game detection
+                            // The controller.ts will still use game config based on isGameRequest flag
+                            expandedPrompt = content.trim();
+                            // Game processing will happen normally with higher temperature
+                        }
+                        // STEP 3: Check if classifier detected a MUSIC app
+                        else if (content.includes('APP_TYPE: music')) {
+                            logWithTimestamp("🎵 MUSIC detected by classifier - adding MUSIC_MARKER");
+                            // Add the MUSIC_MARKER that triggers music builder
+                            expandedPrompt = cleanedInput + ' MUSIC_MARKER';
+                            // This triggers the exact same music processing path
+                        }
+                        // STEP 4: Check if classifier detected a ZAD request (existing logic)
+                        else if (content.includes('ZERO_ADMIN_DATA: true')) {
                             logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                             
                             // Check if PUBLIC mode is requested (contains "public" keyword)
@@ -318,7 +342,7 @@ APP_TYPE: zero_admin_data`;
                                 logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
                             }
                         }
-                        // STEP 2: Check if classifier detected admin need (APP_TYPE: data_collection)
+                        // STEP 5: Check if classifier detected admin need (APP_TYPE: data_collection)
                         else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
                             logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
                             expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
@@ -326,7 +350,7 @@ APP_TYPE: zero_admin_data`;
 ${content.trim()}`;
                             logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
                         }
-                        // STEP 3: Normal expanded prompt
+                        // STEP 6: Normal expanded prompt (standard apps and simple_email)
                         else {
                             expandedPrompt = content.trim();
                             logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);

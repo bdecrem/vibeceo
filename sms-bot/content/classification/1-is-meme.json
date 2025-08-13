@@ -1,0 +1,44 @@
+{
+  "classification_type": "meme",
+  "step_title": "MEME Detection",
+  "step_description": "Check if the user wants to create a meme",
+  "description": "Memes are image + text combinations for humor or commentary. Look for requests to create funny images with overlaid text, popular meme formats, or image-based jokes.",
+  
+  "good_examples": [
+    "make a meme about debugging code",
+    "create a drake meme about coffee vs tea",
+    "meme: when your code works on the first try",
+    "funny image with text about monday mornings",
+    "distracted boyfriend meme about switching frameworks",
+    "generate a meme about AI taking over",
+    "success kid meme about deployment working"
+  ],
+  
+  "bad_examples": [
+    "create a funny website",
+    "make a joke app",
+    "build a humor blog",
+    "design a comic strip viewer",
+    "make an image gallery"
+  ],
+  
+  "key_indicators": [
+    "Contains word 'meme'",
+    "References specific meme formats (drake, distracted boyfriend, etc)",
+    "Requests 'funny image with text'",
+    "Asks for image + caption combination",
+    "Mentions meme-specific language"
+  ],
+  
+  "decision_logic": {
+    "if_yes": "MEME_DETECTED: This is a meme generation request.\n\nRoute to meme processor for GPT-4o text generation and DALL-E 3 image creation.\n\nAPP_TYPE: meme",
+    "if_no": "NOT_A_MEME: This is not a meme request.\n\nContinue to next classification step."
+  },
+  
+  "metadata_output": {
+    "APP_TYPE": "meme",
+    "SPECIAL_BUILDER": "meme-processor",
+    "SKIP_STANDARD_BUILDER": "true",
+    "DATABASE_TYPE": "MEME"
+  }
+}
