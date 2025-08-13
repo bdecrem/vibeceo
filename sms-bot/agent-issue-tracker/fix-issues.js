@@ -45,10 +45,17 @@ async function loadFixableIssues() {
     return [];
   }
 
-  // Filter for high-confidence Todo issues
-  // Now also considering complexity - only auto-fix simple/medium issues
+  // Filter for issues ready to process
   return data.filter(record => {
     const content = record.content_data || {};
+    const category = content.category || 'bug';
+    
+    // Plan/Research/Question categories should be processed when status is Todo
+    if (['plan', 'research', 'question'].includes(category)) {
+      return content.status === 'Todo' && !content.skip_auto_fix;
+    }
+    
+    // Regular fixes: high-confidence Todo issues
     const isFixable = (content.status === 'Todo' || content.status === 'reformulated') && 
                      content.confidence === 'high' &&
                      !content.skip_auto_fix;
@@ -148,11 +155,81 @@ async function runTests() {
 }
 
 /**
- * Use Claude Code to implement the fix
+ * Use Claude Code to implement the fix or action
  */
 async function implementFix(issue, branchName) {
-  // Use ORIGINAL REQUEST as primary context, reformulation as supplementary
-  const prompt = `
+  const category = issue.category || 'bug';
+  
+  // Different prompts for different categories
+  let prompt = '';
+  
+  if (category === 'plan') {
+    prompt = `
+You are creating an implementation plan for the WEBTOYS codebase. Branch: ${branchName}
+
+## USER REQUEST:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+Create a detailed implementation plan as a markdown file.
+
+1. Create file: sms-bot/agent-issue-tracker/plans/issue-${issue.id || 'plan'}-implementation.md
+2. Include:
+   - Executive summary
+   - Current state analysis
+   - Proposed architecture/solution
+   - Step-by-step implementation tasks (numbered)
+   - File paths and components affected
+   - Testing strategy
+   - Rollback plan
+   - Timeline estimate
+3. Make it actionable - each step should be a potential ticket
+
+Write the plan now.`;
+    
+  } else if (category === 'research') {
+    prompt = `
+You are researching a topic for the WEBTOYS codebase. Branch: ${branchName}
+
+## RESEARCH QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Search the codebase to understand current implementation
+2. Identify all relevant files and components
+3. Document findings in: sms-bot/agent-issue-tracker/research/issue-${issue.id || 'research'}-findings.md
+4. Include:
+   - What you found
+   - How it currently works
+   - Problems identified
+   - Recommendations
+   - Code examples
+5. Be thorough - check multiple files, trace the data flow
+
+Research and document your findings now.`;
+    
+  } else if (category === 'question') {
+    prompt = `
+You are answering a technical question about the WEBTOYS codebase. Branch: ${branchName}
+
+## QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Find the answer in the codebase
+2. Write a clear explanation in: sms-bot/agent-issue-tracker/answers/issue-${issue.id || 'answer'}-response.md
+3. Include:
+   - Direct answer to the question
+   - Supporting evidence (code snippets)
+   - File references
+   - Examples if applicable
+4. Be accurate and cite your sources
+
+Answer the question now.`;
+    
+  } else {
+    // Original fix implementation for bugs/features/enhancements
+    prompt = `
 You are fixing an issue in the WEBTOYS codebase. You are currently on branch: ${branchName}
 
 ## ORIGINAL USER REQUEST (THIS IS WHAT THEY ACTUALLY WANT):
@@ -185,6 +262,7 @@ ${issue.complexity === 'research' ? 'This requires investigation. Start by explo
 Important: The user's ORIGINAL REQUEST is the source of truth. The reformulation is just to help clarify, not replace their intent.
 
 Please implement the fix now.`;
+  }
 
   try {
     // Write prompt to temp file to avoid shell escaping issues
@@ -281,7 +359,10 @@ async function processIssues() {
 
     for (const record of issues) {
       const issue = record.content_data;
-      console.log(`\n🔨 Attempting to fix issue #${record.id}: "${issue.reformulated}"`);
+      const category = issue.category || 'bug';
+      const actionType = ['plan', 'research', 'question'].includes(category) ? category : 'fix';
+      
+      console.log(`\n🔨 Processing ${actionType} request #${record.id}: "${issue.original_request || issue.reformulated}"`);
 
       // Update status to In Progress
       await updateIssueStatus(record.id, 'In Progress');

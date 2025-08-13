@@ -662,10 +662,8 @@ async function processIssues() {
         status = 'Needs Info';
       }
       
-      // Special handling for plan/research/question categories
-      if (['plan', 'research', 'question'].includes(reformulated.category || issue.category)) {
-        status = 'Done'; // Plan is complete once generated
-      }
+      // Plan/research/question categories go to Todo for Claude Code to process
+      // They'll be marked Done after Claude Code creates the actual files
       
       // Only auto-fix simple and medium complexity issues with high confidence
       // Never auto-fix plan/research/question requests
