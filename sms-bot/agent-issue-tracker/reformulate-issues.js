@@ -246,7 +246,28 @@ Category: ${issue.category || 'uncategorized'}
 ## Your Task
 
 ${issue.category === 'plan' ? `
-IMPORTANT: The user specifically requested a PLAN, not implementation. Generate a detailed, step-by-step implementation plan with concrete tasks, milestones, and technical approach. Break it down into actionable items that could become individual tickets.
+CRITICAL: User selected "Create a Plan" - they want a DETAILED IMPLEMENTATION PLAN, not a description!
+
+You MUST generate a comprehensive step-by-step plan in the implementation_plan field with:
+1. Numbered steps (at least 5-10 concrete tasks)
+2. Technical details for each step
+3. File paths and components to modify
+4. Testing approach
+5. Migration strategy if needed
+
+Example format for implementation_plan:
+"1. Analyze current classifier in sms-bot/engine/classifier-builder.ts
+2. Document all decision points and routing logic
+3. Create interface AppTypeResolver in new file resolver-interface.ts
+4. Implement GameResolver class extending AppTypeResolver
+5. Implement ZADResolver class for Zero Admin Data apps
+6. Create ResolverRegistry to manage all resolvers
+7. Refactor classifier to use registry pattern
+8. Add unit tests for each resolver
+9. Test with existing app submissions
+10. Update documentation"
+
+DO NOT just rephrase the request - provide ACTIONABLE STEPS!
 ` : `
 Reformulate this into a clear, actionable ticket. If it's obviously a test/joke, have fun with your response but still process it properly.
 `}
