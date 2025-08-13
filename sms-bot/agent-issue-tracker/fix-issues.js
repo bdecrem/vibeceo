@@ -45,12 +45,26 @@ async function loadFixableIssues() {
     return [];
   }
 
-  // Filter for high-confidence reformulated issues
+  // Filter for issues ready to process
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === 'reformulated' && 
-           content.confidence === 'high' &&
-           !content.skip_auto_fix;
+    const category = content.category || 'bug';
+    
+    // Plan/Research/Question categories should be processed when status is Todo
+    if (['plan', 'research', 'question'].includes(category)) {
+      return content.status === 'Todo' && !content.skip_auto_fix;
+    }
+    
+    // Regular fixes: high-confidence Todo issues
+    const isFixable = content.status === 'Todo' && 
+                     content.confidence === 'high' &&
+                     !content.skip_auto_fix;
+    
+    // Skip complex and research issues from auto-fix
+    const complexity = content.complexity || 'medium';
+    const isSimpleEnough = ['simple', 'medium'].includes(complexity);
+    
+    return isFixable && isSimpleEnough;
   });
 }
 
@@ -143,8 +157,80 @@ async function runTests() {
 /**
  * Use Claude Code to implement the fix with ASH.TAG personality
  */
-async function implementFix(issue, branchName) {
-  const prompt = `
+async function implementFix(issue, branchName, recordId) {
+  const category = issue.category || 'bug';
+  const issueId = recordId || issue.id || 'unknown';
+  
+  // Different prompts for different categories
+  let prompt = '';
+  
+  if (category === 'plan') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## USER REQUEST:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+Create a detailed implementation plan as a markdown file.
+
+1. Create file: sms-bot/agent-issue-tracker/plans/issue-${issueId}-implementation.md
+2. Include:
+   - Executive summary
+   - Current state analysis
+   - Proposed architecture/solution
+   - Step-by-step implementation tasks (numbered)
+   - File paths and components affected
+   - Testing strategy
+   - Rollback plan
+   - Timeline estimate
+3. Make it actionable - each step should be a potential ticket
+
+Write the plan now with your signature systems-thinking approach! 🎸`;
+    
+  } else if (category === 'research') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## RESEARCH QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Search the codebase to understand current implementation
+2. Identify all relevant files and components
+3. Document findings in: sms-bot/agent-issue-tracker/research/issue-${issueId}-findings.md
+4. Include:
+   - What you found
+   - How it currently works
+   - Problems identified
+   - Recommendations
+   - Code examples
+5. Be thorough - check multiple files, trace the data flow
+
+Research and document your findings now with punk-roots precision! 🔍`;
+    
+  } else if (category === 'question') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Find the answer in the codebase
+2. Write a clear explanation in: sms-bot/agent-issue-tracker/answers/issue-${issueId}-response.md
+3. Include:
+   - Direct answer to the question
+   - Supporting evidence (code snippets)
+   - File references
+   - Examples if applicable
+4. Be accurate and cite your sources
+
+Answer the question now with technical precision! 💡`;
+    
+  } else {
+    // Original fix implementation for bugs/features/enhancements
+    prompt = `
 You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. You're implementing a fix with your signature style: 
 - Systems thinker (see the whole architecture)
 - Elegant solutions (clean, maintainable code)
@@ -152,13 +238,16 @@ You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. You're implement
 
 You're currently on branch: ${branchName}
 
-## The Issue to Fix
+## ORIGINAL USER REQUEST (THIS IS WHAT THEY ACTUALLY WANT):
+"${issue.original_request || issue.idea}"
+
+## AI Analysis & Context:
 ${issue.reformulated}
 
-## Acceptance Criteria
+## Acceptance Criteria:
 ${issue.acceptance_criteria?.join('\n') || 'None specified'}
 
-## Affected Components
+## Affected Components:
 ${issue.affected_components?.join(', ') || 'To be determined'}
 
 ## Your Implementation Approach
@@ -180,6 +269,7 @@ After implementing, summarize what you did in 2-3 sentences with your punk-roots
 Show how this fix exemplifies "systems thinking" and "elegant solutions."
 
 Now, let's fix this with style! 🎸`;
+  }
 
   try {
     // Write prompt to temp file to avoid shell escaping issues
@@ -280,13 +370,21 @@ async function processIssues() {
       await updateIssueStatus(record.id, 'fixing');
 
       try {
-        // Create feature branch
-        const branchName = await createFeatureBranch(record.id, issue.reformulated);
-        console.log(`  📌 Created branch: ${branchName}`);
+        // For plan/research/question, stay on current branch to avoid losing work
+        let branchName = originalBranch.trim();
+        const category = issue.category || 'bug';
+        
+        // Only create new branch for actual fixes
+        if (!['plan', 'research', 'question'].includes(category)) {
+          branchName = await createFeatureBranch(record.id, issue.reformulated);
+          console.log(`  📌 Created branch: ${branchName}`);
+        } else {
+          console.log(`  📌 Staying on branch: ${branchName} (no branch switch for ${category})`);
+        }
 
         // Implement the fix
         console.log(`  🤖 Implementing fix with Claude Code...`);
-        const result = await implementFix(issue, branchName);
+        const result = await implementFix(issue, branchName, record.id);
 
         if (!result.success) {
           throw new Error(`Failed to implement fix: ${result.error}`);

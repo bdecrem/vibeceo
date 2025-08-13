@@ -29,7 +29,7 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status
@@ -49,7 +49,11 @@ async function loadIssues(status = 'new') {
   // Filter by status in content_data
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === status || (!content.status && status === 'new');
+    // Handle both 'new' and 'Backlog' as new issues (Backlog is the Linear-style status)
+    if (status === 'new') {
+      return content.status === 'new' || content.status === 'Backlog' || !content.status;
+    }
+    return content.status === status;
   });
 }
 
@@ -245,17 +249,25 @@ Reformulate this into a clear, actionable ticket. If it's obviously a test/joke,
 
 For test submissions (like "test", "asdf", etc.), acknowledge them playfully in your ash_comment while still categorizing them correctly.
 
+IMPORTANT: Assess the complexity of this issue to determine the right approach:
+- simple: Can be fixed with straightforward code changes in 1-2 files
+- medium: Requires changes across 3-5 files or moderate refactoring
+- complex: Needs architectural changes, new systems, or touches many files
+- research: Requires investigation, exploration, or unclear scope
+
 Format your response as JSON:
 {
   "reformulated": "Clear, technical description of what needs to be done",
   "acceptance_criteria": ["Specific criterion 1", "Specific criterion 2"],
   "affected_components": ["component1", "component2"],
-  "category": "bug|feature|enhancement|docs|test",
+  "category": "bug|feature|enhancement|docs|test|plan|research|question",
   "confidence": "high|medium|low",
+  "complexity": "simple|medium|complex|research",
   "needs_clarification": "What additional info is needed (if confidence is low)",
   "ash_comment": "Your personality-filled take on this issue (1-2 sentences max)",
   "is_test": true/false,
-  "is_offensive": true/false
+  "is_offensive": true/false,
+  "implementation_notes": "Brief technical notes about HOW to implement this (for complex issues)"
 }
 
 Notes:
@@ -264,6 +276,7 @@ Notes:
 - low confidence: Vague, needs more info, or you're not sure what they want
 - Mark offensive/inappropriate content with is_offensive: true
 - Mark obvious tests/jokes with is_test: true
+- For complex issues, include implementation_notes with technical approach
 `;
 
   try {
@@ -613,19 +626,23 @@ async function processIssues() {
         reformulated.category = categorizeIssue(reformulated);
       }
 
-      // Determine status based on confidence
-      let status = 'reformulated';
+      // Determine status based on confidence and complexity
+      let status = 'Todo';
       if (reformulated.confidence === 'low') {
-        status = 'needs_info';
+        status = 'Needs Info';
       }
 
-      // Update the issue
+      // Update the issue - PRESERVE THE ORIGINAL REQUEST
       const success = await updateIssue(record.id, {
         status: status,
+        original_request: issue.idea, // PRESERVE ORIGINAL USER REQUEST
         reformulated: reformulated.reformulated,
         acceptance_criteria: reformulated.acceptance_criteria,
         affected_components: reformulated.affected_components,
         confidence: reformulated.confidence,
+        complexity: reformulated.complexity || 'medium',
+        implementation_notes: reformulated.implementation_notes,
+        implementation_plan: reformulated.implementation_plan, // Save the plan if generated
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
         ash_comment: reformulated.ash_comment,
