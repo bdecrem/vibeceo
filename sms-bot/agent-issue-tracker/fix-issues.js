@@ -419,15 +419,44 @@ async function processIssues() {
           throw new Error('Failed to commit changes');
         }
 
+        // For plan/research/question, capture the content and create GitHub link
+        let planContent = null;
+        let githubLink = null;
+        
+        if (['plan', 'research', 'question'].includes(category)) {
+          // Read the created file to get content
+          const fileName = category === 'plan' ? `plans/issue-${record.id}-implementation.md` :
+                          category === 'research' ? `research/issue-${record.id}-findings.md` :
+                          `answers/issue-${record.id}-response.md`;
+          
+          try {
+            // In ES modules, use import.meta.url to get current directory
+            const currentDir = path.dirname(new URL(import.meta.url).pathname);
+            planContent = await fs.readFile(path.join(currentDir, fileName), 'utf-8');
+            
+            // Get the last commit hash
+            const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: PROJECT_ROOT });
+            
+            // Create GitHub link to the file
+            githubLink = `https://github.com/bdecrem/vibeceo/blob/${commitHash.trim()}/sms-bot/agent-issue-tracker/${fileName}`;
+            
+            console.log(`  📄 Plan saved: ${githubLink}`);
+          } catch (readError) {
+            console.error('Could not read plan file:', readError);
+          }
+        }
+
         // Update issue status with ASH.TAG's explanation
-        await updateIssueStatus(record.id, 'fixed', {
+        await updateIssueStatus(record.id, 'Done', {
           branch_name: branchName,
           files_changed: result.filesChanged,
           test_result: testResult.output,
-          ready_for_pr: true,
+          ready_for_pr: !['plan', 'research', 'question'].includes(category),
           ash_explanation: result.ashExplanation,
           technical_summary: result.technicalSummary,
           claude_full_output: result.output.substring(0, 10000), // Store first 10k chars
+          plan_content: planContent,
+          github_link: githubLink,
           fix_completed_at: new Date().toISOString()
         });
 
@@ -436,8 +465,8 @@ async function processIssues() {
       } catch (error) {
         console.error(`  ❌ Failed to fix:`, error.message);
         
-        // Update issue with error
-        await updateIssueStatus(record.id, 'fix-failed', {
+        // Update issue with error - back to Todo
+        await updateIssueStatus(record.id, 'Todo', {
           error: error.message,
           needs_manual_fix: true
         });
@@ -473,9 +502,9 @@ async function processIssues() {
     .eq('action_type', 'issue');
 
   const stats = {
-    fixed: summary?.filter(r => r.content_data?.status === 'fixed').length || 0,
-    failed: summary?.filter(r => r.content_data?.status === 'fix-failed').length || 0,
-    pending: summary?.filter(r => r.content_data?.status === 'reformulated').length || 0
+    fixed: summary?.filter(r => r.content_data?.status === 'Done').length || 0,
+    failed: summary?.filter(r => r.content_data?.status === 'Todo' && r.content_data?.needs_manual_fix).length || 0,
+    pending: summary?.filter(r => r.content_data?.status === 'Todo' && !r.content_data?.needs_manual_fix).length || 0
   };
 
   console.log(`\n📊 Fix Summary:`);
