@@ -2181,6 +2181,18 @@
                             </div>
                         ` : ''}
                         
+                        ${data.plan_content ? `
+                            <div class="plan-content" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 15px; border: 2px solid #0ea5e9;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <strong style="font-size: 18px;">📋 Implementation Plan</strong>
+                                    ${data.github_link ? `<a href="${data.github_link}" target="_blank" style="background: #333; color: white; padding: 5px 15px; border-radius: 20px; text-decoration: none; font-size: 14px;">View on GitHub →</a>` : ''}
+                                </div>
+                                <div class="markdown-content" style="background: white; padding: 15px; border-radius: 10px; max-height: 600px; overflow-y: auto; font-family: monospace; white-space: pre-wrap;">
+                                    ${data.plan_content}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
                         ${data.pr_url ? `
                             <div style="margin-top: 15px; padding: 15px; background: var(--green-mint); border-radius: 15px; border: 3px solid var(--green-sage); box-shadow: 2px 2px 0px var(--green-sage);">
                                 <strong style="color: var(--charcoal);">🎉 Pull Request Created!</strong><br>

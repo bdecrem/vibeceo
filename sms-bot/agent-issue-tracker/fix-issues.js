@@ -408,13 +408,41 @@ async function processIssues() {
         if (!committed) {
           throw new Error('Failed to commit changes');
         }
+        
+        // For plan/research/question, capture the content and create GitHub link
+        let planContent = null;
+        let githubLink = null;
+        
+        if (['plan', 'research', 'question'].includes(category)) {
+          // Read the created file to get content
+          const fileName = category === 'plan' ? `plans/issue-${record.id}-implementation.md` :
+                          category === 'research' ? `research/issue-${record.id}-findings.md` :
+                          `answers/issue-${record.id}-response.md`;
+          
+          try {
+            planContent = await fs.readFile(path.join(__dirname, fileName), 'utf-8');
+            
+            // Get the last commit hash
+            const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: PROJECT_ROOT });
+            
+            // Create GitHub link to the file
+            githubLink = `https://github.com/bdecrem/vibeceo/blob/${commitHash.trim()}/sms-bot/agent-issue-tracker/${fileName}`;
+            
+            console.log(`  📄 Plan saved: ${githubLink}`);
+          } catch (readError) {
+            console.error('Could not read plan file:', readError);
+          }
+        }
 
-        // Update issue status to Done (PR created)
+        // Update issue status to Done with plan content
         await updateIssueStatus(record.id, 'Done', {
           branch_name: branchName,
           files_changed: result.filesChanged,
           test_result: testResult.output,
-          ready_for_pr: true
+          ready_for_pr: !['plan', 'research', 'question'].includes(category),
+          plan_content: planContent,
+          github_link: githubLink,
+          [`${category}_completed_at`]: new Date().toISOString()
         });
 
         console.log(`  ✅ Successfully fixed and committed`);
