@@ -2119,10 +2119,6 @@
                                 <strong style="color: var(--charcoal);">💬 Support Answer:</strong><br>
                                 <span style="color: var(--charcoal);">${createTruncatedText(data.answer)}</span>
                             </div>
-                        ` : data.reformulated ? `
-                            <div style="margin-top: 15px; padding: 15px; background: var(--purple-shadow); border-radius: 15px; border: 2px solid var(--purple-accent);">
-                                <strong style="color: var(--charcoal);">🤖 AI Analysis:</strong> <span style="color: var(--charcoal);">${createTruncatedText(data.reformulated)}</span>
-                            </div>
                         ` : ''}
                         
                         ${data.confidence || data.priority ? `
@@ -2132,23 +2128,33 @@
                             </div>
                         ` : ''}
                         
-                        ${data.ash_comment || data.ai_analysis || data.cass_comment || data.cassink_comment || data.agent_comment || data.analysis_comment ? `
-                            <div class="ash-comment">
-                                <strong>💭 Ash.tag says:</strong> ${createTruncatedText(data.ash_comment || data.ai_analysis || data.cass_comment || data.cassink_comment || data.agent_comment || data.analysis_comment)}
-                            </div>
-                        ` : ''}
-                        
-                        ${data.ash_explanation ? `
-                            <div class="ash-comment" style="background: linear-gradient(135deg, var(--green-mint) 0%, #98FB98 100%); border-color: var(--green-deep);">
-                                <strong>🎸 Ash.tag's Fix:</strong> ${createTruncatedText(data.ash_explanation)}
-                                ${data.technical_summary ? `
-                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(255,255,255,0.3);">
-                                        <strong>Technical Details:</strong>
-                                        <pre style="white-space: pre-wrap; font-size: 12px; margin: 5px 0;">${escapeHtml(data.technical_summary)}</pre>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        ` : ''}
+                        ${
+                            // UNIFIED ASH.TAG VOICE - Show the most relevant content
+                            data.ash_explanation ? `
+                                <div class="ash-comment" style="background: linear-gradient(135deg, var(--green-mint) 0%, #98FB98 100%); border-color: var(--green-deep);">
+                                    <strong>🎸 Ash.tag Fixed This:</strong> ${createTruncatedText(data.ash_explanation)}
+                                    ${data.technical_summary ? `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(255,255,255,0.3);">
+                                            <strong>Technical Details:</strong>
+                                            <pre style="white-space: pre-wrap; font-size: 12px; margin: 5px 0;">${escapeHtml(data.technical_summary)}</pre>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : data.ash_comment ? `
+                                <div class="ash-comment">
+                                    <strong>🎸 Ash.tag:</strong> ${createTruncatedText(data.ash_comment)}
+                                    ${data.reformulated && data.status !== 'Canceled' && data.status !== 'closed' ? `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(255,255,255,0.3);">
+                                            <strong>Technical Analysis:</strong> ${createTruncatedText(data.reformulated)}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : data.reformulated ? `
+                                <div class="ash-comment">
+                                    <strong>🎸 Ash.tag's Analysis:</strong> ${createTruncatedText(data.reformulated)}
+                                </div>
+                            ` : ''
+                        }
                         
                         ${data.agent_response ? `
                             <div class="agent-response">
