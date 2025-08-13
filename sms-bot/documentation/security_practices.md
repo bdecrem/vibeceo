@@ -2,6 +2,8 @@
 
 This document outlines the security practices and architectural decisions made to protect user data and system integrity in the WEBTOYS (formerly WTAF.me) platform.
 
+> **📋 Security Audit**: A comprehensive security audit was conducted on August 5, 2025. See [security-audit-2025-08.md](./security-audit-2025-08.md) for full details. **Result: PASSED** - No critical vulnerabilities found, one potential issue fixed.
+
 ## Table of Contents
 - [General Security Principles](#general-security-principles)
 - [Web Console Authentication](#web-console-authentication)

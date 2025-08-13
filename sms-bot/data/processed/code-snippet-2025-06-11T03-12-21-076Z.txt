@@ -1,1 +1,0 @@
-kailey - about-me-page - Create a friendly HTML page called “About Me Generator.” Let the user fill in their name, a short bio, and favorite things (food, music, quote). When they click “Generate My Page,” show a styled personal page using their info. Include a nice font, background color options, and a “Copy My Link” button.

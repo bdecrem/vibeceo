@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-wtaf Make me a simple PAINT app with a nostalgic "MacPaint" vibe that has a pencil, brush, color and thickness selection, and a Gallery Wall that shows who created each shared piece. make the canvas square public

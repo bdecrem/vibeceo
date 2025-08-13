@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build an AWESOME Hello World app. Not words other than Hello World.

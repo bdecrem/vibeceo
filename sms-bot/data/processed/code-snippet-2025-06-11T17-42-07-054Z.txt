@@ -1,2 +1,0 @@
-SENDER:+16508989508
-venus - thought-sorter - Build a calming page where a user can type worries into a box, press "sort," and see their thoughts reclassified by logic level.

@@ -1,2 +1,0 @@
-write a script and execute it. the script should send me a text at +16508989508 that says Hello World 
-  Domination?

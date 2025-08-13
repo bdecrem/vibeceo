@@ -1,13 +1,15 @@
 {
 	"name": "vibeceo8",
 	"version": "1.0.0",
+	"description": "",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"test": "playwright test"
+		"test": "playwright test",
+		"test:smoke": "node scripts/smoke-test.js"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",
@@ -32,6 +34,7 @@
 		"tailwind-merge": "^2.6.0",
 		"tailwindcss-animate": "^1.0.7",
 		"twilio": "^5.8.0",
+		"unique-names-generator": "^4.7.1",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {
@@ -58,6 +61,5 @@
 	},
 	"keywords": [],
 	"author": "",
-	"license": "ISC",
-	"description": ""
+	"license": "ISC"
 }

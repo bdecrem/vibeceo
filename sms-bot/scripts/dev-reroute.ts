@@ -36,7 +36,8 @@ const __dirname = dirname(__filename);
 const SMS_BOT_ROOT = dirname(__dirname); // Go up one level from scripts/ to sms-bot/
 
 // SMS bot configuration
-const SMS_BOT_URL = 'http://localhost:3030';
+const SMS_PORT = process.env.SMS_PORT || process.env.PORT || '3030';
+const SMS_BOT_URL = `http://localhost:${SMS_PORT}`;
 const DEV_WEBHOOK_ENDPOINT = '/dev/webhook'; // Captures responses
 const SMS_WEBHOOK_ENDPOINT = '/sms/webhook'; // Regular SMS endpoint
 
@@ -232,8 +233,8 @@ async function saveToHistory(command: string, success: boolean): Promise<void> {
 async function testConnection(): Promise<boolean> {
     try {
         const response = await fetch(`${SMS_BOT_URL}/health`, { 
-            method: 'GET',
-            timeout: 5000
+            method: 'GET'
+            // timeout: 5000 // Note: timeout not supported in node-fetch
         });
         return response.ok;
     } catch (error) {
@@ -362,7 +363,7 @@ Troubleshooting:
 async function startInteractiveShell(): Promise<void> {
     console.log("=" + "=".repeat(79));
     console.log("🔄 DEV REROUTE INTERACTIVE SHELL - ENHANCED");
-    console.log("📡 Sends HTTP requests to SMS bot on port 3030");
+    console.log(`📡 Sends HTTP requests to SMS bot on port ${SMS_PORT}`);
     console.log("🎯 Captures responses in terminal + optional SMS delivery");
     console.log("=" + "=".repeat(79));
 

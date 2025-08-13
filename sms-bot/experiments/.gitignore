@@ -1,8 +1,0 @@
-# Generated HTML files
-*.html
-
-# Test counter file
-.test-counter
- 
-# Debug files
-debug-*.html 

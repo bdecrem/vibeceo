@@ -252,6 +252,26 @@ export function determineRequestType(userPrompt: string, filename?: string): { t
             };
         }
         
+        // Check if this is a LINK command
+        if (userPrompt && userPrompt.trim().toUpperCase() === 'LINK') {
+            return {
+                type: 'link',
+                slug: null,
+                coach: 'default',
+                cleanPrompt: 'LINK'
+            };
+        }
+        
+        // Check if this is a YES confirmation (for merge)
+        if (userPrompt && userPrompt.trim().toUpperCase() === 'YES') {
+            return {
+                type: 'confirm-merge',
+                slug: null,
+                coach: 'default',
+                cleanPrompt: 'YES'
+            };
+        }
+        
         // Check if raw prompt starts with 'CODE:' or 'CODE ' (case insensitive)
         const isCodeCommand = userPrompt.trim().toUpperCase().startsWith('CODE:') || 
                              userPrompt.trim().toUpperCase().startsWith('CODE ');
