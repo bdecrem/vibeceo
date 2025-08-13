@@ -38,6 +38,67 @@ git commit -m "fix: Restore critical cron compatibility fixes"
 git push origin main  # Push to main so agent machine gets the fixes
 ```
 
+## 🛑 CRITICAL: Branch Switching and Data Loss Prevention
+
+### The Problem
+The auto-fix agent (`fix-issues.js`) creates new Git branches for each issue it fixes:
+- **Bug/Feature/Enhancement** issues → Creates `auto-fix/issue-XXX-*` branch
+- This **DESTROYS UNCOMMITTED WORK** when it switches branches
+- You lose all changes that weren't committed
+- This happens automatically every 2 minutes if cron is running!
+
+### Branch Protection for Safe Categories
+These categories **DO NOT** switch branches (safe for uncommitted work):
+- **plan** - Creates implementation plans
+- **research** - Researches codebase questions  
+- **question** - Answers technical questions
+
+These stay on the current branch because they create documentation, not code changes.
+
+### The STOP-AUTOFIX.txt Solution
+
+**To protect your work while coding:**
+
+1. **Create STOP-AUTOFIX.txt** in the agent-issue-tracker folder:
+```bash
+echo "AUTOFIX IS DISABLED" > STOP-AUTOFIX.txt
+```
+
+2. **When this file exists:**
+- fix-issues.js checks for it at startup
+- If found, exits immediately with "⛔ AUTOFIX IS DISABLED"
+- NO branch switching occurs
+- Your uncommitted work is safe
+
+3. **To temporarily enable for testing:**
+```bash
+# Method 1: Rename (recommended)
+mv STOP-AUTOFIX.txt STOP-AUTOFIX.txt.backup
+node fix-issues.js
+mv STOP-AUTOFIX.txt.backup STOP-AUTOFIX.txt
+
+# Method 2: Delete and recreate
+rm STOP-AUTOFIX.txt
+node fix-issues.js
+echo "AUTOFIX IS DISABLED" > STOP-AUTOFIX.txt
+```
+
+4. **Safe testing with commits:**
+```bash
+# This commits your work first, making it safe
+git add -A && git commit -m "WIP: Save work before testing" && \
+rm STOP-AUTOFIX.txt && \
+node reformulate-issues.js && node fix-issues.js; \
+git checkout WEDpm && \
+echo "AUTOFIX IS DISABLED" > STOP-AUTOFIX.txt
+```
+
+### Best Practices
+- **While actively developing**: Keep STOP-AUTOFIX.txt present
+- **Before testing**: Either commit your work OR ensure it's a plan/research/question
+- **After testing**: Restore STOP-AUTOFIX.txt immediately
+- **On agent machines**: Never use STOP-AUTOFIX.txt (let it run freely)
+
 ## Project Overview
 
 This is an automated issue tracking and fixing system that:
