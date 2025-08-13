@@ -245,7 +245,11 @@ Category: ${issue.category || 'uncategorized'}
 
 ## Your Task
 
+${issue.category === 'plan' ? `
+IMPORTANT: The user specifically requested a PLAN, not implementation. Generate a detailed, step-by-step implementation plan with concrete tasks, milestones, and technical approach. Break it down into actionable items that could become individual tickets.
+` : `
 Reformulate this into a clear, actionable ticket. If it's obviously a test/joke, have fun with your response but still process it properly.
+`}
 
 For test submissions (like "test", "asdf", etc.), acknowledge them playfully in your ash_comment while still categorizing them correctly.
 
@@ -260,14 +264,15 @@ Format your response as JSON:
   "reformulated": "Clear, technical description of what needs to be done",
   "acceptance_criteria": ["Specific criterion 1", "Specific criterion 2"],
   "affected_components": ["component1", "component2"],
-  "category": "bug|feature|enhancement|docs|test",
+  "category": "bug|feature|enhancement|docs|test|plan|research|question",
   "confidence": "high|medium|low",
   "complexity": "simple|medium|complex|research",
   "needs_clarification": "What additional info is needed (if confidence is low)",
   "ash_comment": "Your personality-filled take on this issue (1-2 sentences max)",
   "is_test": true/false,
   "is_offensive": true/false,
-  "implementation_notes": "Brief technical notes about HOW to implement this (for complex issues)"
+  "implementation_notes": "Brief technical notes about HOW to implement this (for complex issues)",
+  "implementation_plan": "For 'plan' category: Detailed step-by-step implementation plan with concrete tasks"
 }
 
 Notes:
@@ -448,23 +453,26 @@ function isAdminReopenedIssue(issue) {
     return true;
   }
   
-  // Secondary: Check if issue has admin comments AND was recently moved to admin_discussion status
+  // If we already responded (conversation completed), don't reprocess
+  if (data.conversation_completed_at || data.agent_response_timestamp) {
+    // Check if admin added NEW comments after our response
+    const lastResponseTime = new Date(data.agent_response_timestamp || data.conversation_completed_at).getTime();
+    const adminComments = data.admin_comments || [];
+    const hasNewComments = adminComments.some(comment => 
+      new Date(comment.timestamp).getTime() > lastResponseTime
+    );
+    
+    // Only reprocess if there are new admin comments
+    return hasNewComments;
+  }
+  
+  // Don't process if no admin comments
   if (!data.admin_comments || data.admin_comments.length === 0) {
     return false;
   }
   
-  // Check for status that indicates admin discussion needed
-  const status = data.status || 'new';
-  if (status === 'admin_discussion') {
-    return true;
-  }
-  
-  const wasProcessed = data.reformulated || data.ash_comment;
-  
-  // If it has admin comments and is now in Backlog or Needs Info status after being processed
-  if ((status === 'Backlog' || status === 'Needs Info' || status === 'new' || status === 'needs_info') && wasProcessed) {
-    return true;
-  }
+  // Never reprocess these legacy statuses that already have responses
+  return false;
   
   // Also check if the latest admin comment is recent (within last hour) and status suggests reopening
   const latestComment = data.admin_comments[data.admin_comments.length - 1];
@@ -633,9 +641,16 @@ async function processIssues() {
         status = 'Needs Info';
       }
       
+      // Special handling for plan/research/question categories
+      if (['plan', 'research', 'question'].includes(reformulated.category || issue.category)) {
+        status = 'Done'; // Plan is complete once generated
+      }
+      
       // Only auto-fix simple and medium complexity issues with high confidence
+      // Never auto-fix plan/research/question requests
       const shouldAutoFix = reformulated.confidence === 'high' && 
-                           ['simple', 'medium'].includes(reformulated.complexity);
+                           ['simple', 'medium'].includes(reformulated.complexity) &&
+                           !['plan', 'research', 'question'].includes(reformulated.category || issue.category);
 
       // Update the issue - PRESERVE THE ORIGINAL REQUEST
       const success = await updateIssue(record.id, {
@@ -647,6 +662,7 @@ async function processIssues() {
         confidence: reformulated.confidence,
         complexity: reformulated.complexity || 'medium',
         implementation_notes: reformulated.implementation_notes,
+        implementation_plan: reformulated.implementation_plan, // Save the plan if generated
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
         ash_comment: reformulated.ash_comment,
