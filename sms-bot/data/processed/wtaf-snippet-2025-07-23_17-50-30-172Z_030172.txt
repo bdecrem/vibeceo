@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a zad app  that lets a group of users choose from a list of 9 ascii "critters" and then adds their selection to a shared wall. The ASCII ART should look like this: 5-7 lines each. Each character should have a distinct personality and be easy to recognize. Use clean spacing and expressive symbols. Example characters: a mischievous cat, a shy ghost, a curious frog. Make sure the face is expressive and the character has charm.

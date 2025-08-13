@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix turquoise-rabbit-exploring exact copy
-
-ORIGINAL_REQUEST:REMIX turquoise-rabbit-exploring exact copy

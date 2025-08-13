@@ -1,3 +1,0 @@
-write and execute a script that send a 
-  message saying "Hello World" using our Twilio integration to
-  +1650-898-9508

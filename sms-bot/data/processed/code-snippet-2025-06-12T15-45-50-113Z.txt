@@ -1,2 +1,0 @@
-SENDER:+16508989508
-rohan - gpt-caller - Write an HTML+JavaScript page with a form that lets the user ask a question. Use the OpenAI API (GPT-4) to get the answer and display it below the form.

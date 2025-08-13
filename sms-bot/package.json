@@ -1,7 +1,7 @@
 {
 	"name": "vibeceo-sms-bot",
 	"version": "1.0.0",
-	"description": "SMS bot for VibeCEO",
+	"description": "SMS bot for VibeCEO - Deployment test August 4, 2025",
 	"main": "dist/src/index.js",
 	"type": "module",
 	"scripts": {
@@ -28,6 +28,8 @@
 		"dev:reroute:v2": "npm run build && node dist/scripts/dev-reroute-v2.js",
 		"replace-og-image": "npm run build && node dist/scripts/replace-og-image.js",
 		"replace-og-from-upload": "npm run build && node dist/scripts/replace-og-from-upload.js",
+		"test:og-override": "npm run build && node dist/scripts/test-og-override.js",
+		"generate:og-html": "npm run build && node dist/scripts/generate-og-from-html.js",
 		"test:og-upload": "npm run build && node dist/test-scripts/test-og-upload.js",
 		"fix-og-meta-tags": "npm run build && node dist/scripts/fix-og-meta-tags.js",
 		"trending-og-workflow": "npm run build && node dist/scripts/trending-og-workflow.js",
@@ -50,7 +52,6 @@
 		"ioredis": "^5.6.0",
 		"luxon": "^3.6.1",
 		"multer": "^2.0.1",
-		"node-fetch": "^2.7.0",
 		"openai": "^4.100.0",
 		"p-limit": "^6.2.0",
 		"puppeteer": "^24.15.0",
@@ -63,6 +64,8 @@
 		"@types/luxon": "^3.6.2",
 		"@types/node": "^20.11.0",
 		"@types/node-fetch": "^2.6.11",
+		"cheerio": "^1.1.2",
+		"node-fetch": "^3.3.2",
 		"nodemon": "^3.0.1",
 		"rimraf": "^6.0.1",
 		"typescript": "^5.3.3"

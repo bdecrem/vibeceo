@@ -175,4 +175,66 @@ export async function sendFailureNotification(errorType = "generic", senderPhone
         logError(`Error sending failure notification: ${error instanceof Error ? error.message : String(error)}`);
         return false;
     }
+}
+
+/**
+ * Send waitlist approval notification
+ * Notify users when they've been approved from the waitlist
+ */
+export async function sendWaitlistApprovalNotification(phoneNumber: string): Promise<boolean> {
+    try {
+        const message = `🎉 Great news! You've been approved from the waitlist!\n\nText START now to complete your registration and begin using all our features at The Foundry.\n\nWelcome aboard! 🚀`;
+        
+        await sendConfirmationSms(message, phoneNumber);
+        logSuccess(`Sent waitlist approval notification to ${phoneNumber}`);
+        return true;
+    } catch (error) {
+        logError(`Error sending waitlist approval notification: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
+ * Send waitlist position update notification
+ * Notify users of their current position when it changes significantly
+ */
+export async function sendWaitlistPositionUpdate(phoneNumber: string, newPosition: number): Promise<boolean> {
+    try {
+        const message = `📋 Waitlist Update: You've moved up to position #${newPosition}!\n\nWe're making progress expanding capacity. Thanks for your patience! 🙏\n\nText WAITLIST anytime to check your current position.`;
+        
+        await sendConfirmationSms(message, phoneNumber);
+        logSuccess(`Sent waitlist position update to ${phoneNumber} (position ${newPosition})`);
+        return true;
+    } catch (error) {
+        logError(`Error sending waitlist position update: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+
+/**
+ * Batch notify approved users from waitlist
+ * Helper function for admin operations
+ */
+export async function notifyApprovedUsers(phoneNumbers: string[]): Promise<{ success: boolean; notified: string[]; errors: string[] }> {
+    const notified: string[] = [];
+    const errors: string[] = [];
+    
+    for (const phoneNumber of phoneNumbers) {
+        try {
+            const success = await sendWaitlistApprovalNotification(phoneNumber);
+            if (success) {
+                notified.push(phoneNumber);
+            } else {
+                errors.push(`${phoneNumber}: Failed to send notification`);
+            }
+        } catch (error) {
+            errors.push(`${phoneNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    
+    return {
+        success: errors.length === 0,
+        notified,
+        errors
+    };
 } 

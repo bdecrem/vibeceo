@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build an app where people can sign up for my party next Friday at 7pm at the Eiffel Tower

@@ -31,7 +31,7 @@ async function runAgent(scriptName, description) {
 
   try {
     const scriptPath = path.join(__dirname, scriptName);
-    const { stdout, stderr } = await execAsync(`node ${scriptPath}`, {
+    const { stdout, stderr } = await execAsync(`/usr/local/bin/node ${scriptPath}`, {
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       timeout: 600000 // 10 minute timeout per agent
     });
@@ -76,9 +76,20 @@ async function checkGitStatus() {
  * Main monitor function
  */
 async function monitor() {
+  // CRITICAL: Change to script directory - MUST be first line for cron compatibility
+  process.chdir(__dirname);
+  
   console.log('🎯 WEBTOYS Issue Tracker Monitor');
   console.log(`📅 Started at: ${new Date().toISOString()}`);
   console.log(`📁 Working directory: ${process.cwd()}`);
+
+  // Pull latest changes from GitHub (for dedicated agent machines)
+  try {
+    console.log('📥 Pulling latest changes from GitHub...');
+    await execAsync('git pull origin main');
+  } catch (pullError) {
+    console.log('⚠️  Could not pull from GitHub (may have local changes)');
+  }
 
   const startTime = Date.now();
   const results = {

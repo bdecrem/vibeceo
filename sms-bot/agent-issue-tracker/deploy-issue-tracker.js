@@ -34,13 +34,10 @@ async function deployIssueTracker() {
     // Configuration
     const userSlug = 'bart'; // Your user slug
     const appSlug = 'issue-tracker'; // New app slug
-    const appId = uuidv4(); // Generate new UUID for the app
+    const appId = '83218c2e-281e-4265-a95f-1d3f763870d4'; // Use the existing issue tracker app ID
     
-    // Update the HTML with the correct app ID
-    const updatedHtml = html.replace(
-      "window.APP_ID = 'turquoise-rabbit-exploring';",
-      `window.APP_ID = '${appId}';`
-    );
+    // HTML already has correct APP_ID, no need to replace
+    const updatedHtml = html;
     
     // Check if app already exists
     const { data: existing, error: checkError } = await supabase

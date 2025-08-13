@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a simple to do list style tracker app where I can enter people to talk to and then check them off. Make the page gorgeous with a gradient background. Don't have a big ugly submit button on mobile- make it cool and minimal but a little punk

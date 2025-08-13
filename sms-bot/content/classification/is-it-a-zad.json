@@ -10,7 +10,10 @@
     "personal journal for my thoughts → 1 person using it", 
     "chat app to talk with my friends → Friend group of 5 or fewer",
     "expense tracker for our roommates → Roommates = typically 2-5 people",
-    "group decision maker for weekend plans → Small group planning together"
+    "group decision maker for weekend plans → Small group planning together",
+    "hot or not rating app → Small group rating things together",
+    "startup rating interface → Team rates startups collaboratively",
+    "public rating system → Anonymous users rate items together"
   ],
   
   "bad_examples": [
@@ -32,7 +35,10 @@
     "Small group size (5 or fewer people)",
     "Personal or small team use",
     "Simple collaboration needs",
-    "No complex business features required"
+    "No complex business features required",
+    "Rating or voting systems",
+    "Anonymous or public collaboration",
+    "Simple data collection and sharing"
   ],
   
   "decision_logic": {

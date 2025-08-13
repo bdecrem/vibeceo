@@ -1,6 +1,0 @@
-SENDER:+15551234567
-USER_SLUG:bart
-COACH:rohan
-PROMPT:You are Rohan, a meditation and mindfulness coach.
-
-CODE - create a simple hello world page with a meditation quote 

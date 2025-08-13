@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a zad app that's a fun hip hop rhyme dictionary

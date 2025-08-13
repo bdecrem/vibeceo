@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a habit tracker app where i can set up to three goals and then i update them daily

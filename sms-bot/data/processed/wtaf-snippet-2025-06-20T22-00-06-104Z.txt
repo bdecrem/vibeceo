@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a hello world page with a yellow background
