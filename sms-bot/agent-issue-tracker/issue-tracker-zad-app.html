@@ -1580,6 +1580,9 @@
                         <option value="feature">✨ Feature Magic</option>
                         <option value="enhancement">🚀 Make It Better</option>
                         <option value="documentation">📚 Docs Drama</option>
+                        <option value="plan">📋 Create a Plan</option>
+                        <option value="research">🔬 Research This</option>
+                        <option value="question">❓ Answer My Question</option>
                     </select>
                 </div>
 
@@ -2163,6 +2166,20 @@
                                     ${formatAgentResponse(data.agent_response)}
                                 </div>
                                 ${data.agent_response_timestamp ? `<div style="font-size: 12px; opacity: 0.7; margin-top: 10px;">Response generated: ${formatDate(new Date(data.agent_response_timestamp).getTime())}</div>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.plan_content ? `
+                            <div style="margin-top: 15px; padding: 20px; background: linear-gradient(135deg, var(--yellow-light) 0%, #FFFACD 100%); border-radius: 15px; border: 3px solid var(--yellow); box-shadow: 2px 2px 0px var(--yellow);">
+                                <strong style="color: var(--charcoal);">📋 Plan Created:</strong>
+                                ${data.github_link ? `
+                                    <a href="${data.github_link}" target="_blank" style="float: right; color: var(--charcoal); font-weight: 700; text-decoration: underline;">
+                                        View on GitHub →
+                                    </a>
+                                ` : ''}
+                                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 10px;">
+                                    <pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px; color: var(--charcoal);">${escapeHtml(data.plan_content)}</pre>
+                                </div>
                             </div>
                         ` : ''}
                         
