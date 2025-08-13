@@ -1,0 +1,4 @@
+AUTOFIX IS DISABLED
+
+To re-enable:
+rm STOP-AUTOFIX.txt
