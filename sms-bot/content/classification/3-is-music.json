@@ -2,10 +2,17 @@
   "classification_type": "music",
   "step_title": "MUSIC/SONG Generation Detection",
   "step_description": "Check if the user wants to create AI-generated music using Sonauto",
-  "description": "Music apps use the Sonauto API to generate AI songs. Look for requests to create, generate, write, or make songs/music/beats/tracks. These apps let users generate full 1:35 songs with AI based on prompts, lyrics, or musical styles.",
+  "description": "Music apps use the Sonauto API to generate AI songs and create music experiences. These include song generators, playlist builders, beat machines, mood radios, remix tools, and interactive music toys. Look for ANY request involving music creation, generation, or interactive music experiences.",
   
   "good_examples": [
     "make me a song that sounds like Taylor Swift",
+    "create a playlist for studying",
+    "build a beat machine",
+    "make a mood radio with different vibes",
+    "create a remix tool",
+    "build a music toybox",
+    "make an iterative playlist builder",
+    "generate workout music",
     "create a song about summer vacation",
     "write me a rap song",
     "generate a country music track",
@@ -18,8 +25,9 @@
     "write a song in the style of The Beatles",
     "generate lo-fi study music",
     "make party music",
-    "create a workout playlist generator",
-    "build a song creator app"
+    "build a song creator app",
+    "create a music layer mixer",
+    "make a BPM-based beat generator"
   ],
   
   "bad_examples": [
@@ -33,6 +41,12 @@
   ],
   
   "key_indicators": [
+    "Contains 'song', 'music', 'beat', 'track', or 'playlist'",
+    "Mentions playlist creation or curation",
+    "References beat machines or music layers",
+    "Asks for mood-based music generation",
+    "Requests remix or variation tools",
+    "Wants interactive music experiences",
     "Contains 'song' or 'music' with creation verbs (make, create, generate, write, compose)",
     "Mentions specific music genres or artists to emulate",
     "Requests AI-generated music or songs",
@@ -40,7 +54,8 @@
     "Wants instrumental or vocal tracks",
     "References Sonauto or AI music generation",
     "Requests custom music for specific purposes (birthday, business, mood)",
-    "Mentions song extension or remixing"
+    "Mentions BPM, tempo, or music parameters",
+    "Asks for music toys or interactive sound"
   ],
   
   "decision_logic": {
