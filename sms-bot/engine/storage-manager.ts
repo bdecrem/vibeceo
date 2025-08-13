@@ -1610,3 +1610,320 @@ export async function convertSupabaseToApiCalls(html: string): Promise<string> {
         return html;
     }
 }
+
+/**
+ * Waitlist system functions
+ */
+
+/**
+ * Get the current number of active users
+ */
+export async function getActiveUserCount(): Promise<number> {
+    try {
+        const { data, error } = await getSupabaseClient()
+            .from('sms_subscribers')
+            .select('id', { count: 'exact' })
+            .eq('consent_given', true)
+            .eq('unsubscribed', false)
+            .eq('confirmed', true);
+        
+        if (error) {
+            logError(`Error getting active user count: ${error.message}`);
+            return 0;
+        }
+        
+        return data?.length || 0;
+    } catch (error) {
+        logError(`Error in getActiveUserCount: ${error instanceof Error ? error.message : String(error)}`);
+        return 0;
+    }
+}
+
+/**
+ * Add a user to the waitlist
+ */
+export async function addToWaitlist(phoneNumber: string): Promise<{ success: boolean; position?: number; error?: string }> {
+    try {
+        // Normalize the phone number first
+        const normalizePhoneNumber = (phone: string): string => {
+            let digitsOnly = phone.replace(/\D/g, '');
+            
+            if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+                return `+${digitsOnly}`;
+            } else if (digitsOnly.length === 10) {
+                return `+1${digitsOnly}`;
+            } else {
+                if (phone.startsWith('+')) {
+                    return phone;
+                } else if (phone.startsWith('1') && phone.length > 10) {
+                    return `+${phone}`;
+                }
+                return phone;
+            }
+        };
+        
+        const normalizedNumber = normalizePhoneNumber(phoneNumber);
+        
+        // Check if user is already on waitlist
+        const { data: existingEntry, error: checkError } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .select('*')
+            .eq('phone_number', normalizedNumber)
+            .single();
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+            logError(`Error checking existing waitlist entry: ${checkError.message}`);
+            return { success: false, error: checkError.message };
+        }
+        
+        if (existingEntry) {
+            // User already on waitlist, return their current position
+            const position = await getWaitlistPosition(normalizedNumber);
+            return { success: true, position: position || 0 };
+        }
+        
+        // Add to waitlist
+        const { error } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .insert({
+                phone_number: normalizedNumber,
+                status: 'waiting',
+                created_at: new Date().toISOString()
+            });
+        
+        if (error) {
+            logError(`Error adding to waitlist: ${error.message}`);
+            return { success: false, error: error.message };
+        }
+        
+        // Get the position in waitlist
+        const position = await getWaitlistPosition(normalizedNumber);
+        
+        logSuccess(`Added ${normalizedNumber} to waitlist at position ${position}`);
+        return { success: true, position: position || 0 };
+        
+    } catch (error) {
+        logError(`Error in addToWaitlist: ${error instanceof Error ? error.message : String(error)}`);
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+/**
+ * Get position in waitlist for a phone number
+ */
+export async function getWaitlistPosition(phoneNumber: string): Promise<number | null> {
+    try {
+        const normalizePhoneNumber = (phone: string): string => {
+            let digitsOnly = phone.replace(/\D/g, '');
+            
+            if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+                return `+${digitsOnly}`;
+            } else if (digitsOnly.length === 10) {
+                return `+1${digitsOnly}`;
+            } else {
+                if (phone.startsWith('+')) {
+                    return phone;
+                } else if (phone.startsWith('1') && phone.length > 10) {
+                    return `+${phone}`;
+                }
+                return phone;
+            }
+        };
+        
+        const normalizedNumber = normalizePhoneNumber(phoneNumber);
+        
+        // Get the user's entry to find their creation time
+        const { data: userEntry, error: userError } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .select('created_at')
+            .eq('phone_number', normalizedNumber)
+            .eq('status', 'waiting')
+            .single();
+        
+        if (userError || !userEntry) {
+            return null;
+        }
+        
+        // Count how many people are ahead of them (created before them)
+        const { data, error } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .select('id', { count: 'exact' })
+            .eq('status', 'waiting')
+            .lt('created_at', userEntry.created_at);
+        
+        if (error) {
+            logError(`Error getting waitlist position: ${error.message}`);
+            return null;
+        }
+        
+        return (data?.length || 0) + 1; // +1 because position starts at 1, not 0
+        
+    } catch (error) {
+        logError(`Error in getWaitlistPosition: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
+ * Get waitlist status for a phone number
+ */
+export async function getWaitlistStatus(phoneNumber: string): Promise<{ status: 'waiting' | 'approved' | 'not_found'; position?: number }> {
+    try {
+        const normalizePhoneNumber = (phone: string): string => {
+            let digitsOnly = phone.replace(/\D/g, '');
+            
+            if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+                return `+${digitsOnly}`;
+            } else if (digitsOnly.length === 10) {
+                return `+1${digitsOnly}`;
+            } else {
+                if (phone.startsWith('+')) {
+                    return phone;
+                } else if (phone.startsWith('1') && phone.length > 10) {
+                    return `+${phone}`;
+                }
+                return phone;
+            }
+        };
+        
+        const normalizedNumber = normalizePhoneNumber(phoneNumber);
+        
+        const { data, error } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .select('status, created_at')
+            .eq('phone_number', normalizedNumber)
+            .single();
+        
+        if (error || !data) {
+            return { status: 'not_found' };
+        }
+        
+        if (data.status === 'waiting') {
+            const position = await getWaitlistPosition(normalizedNumber);
+            return { status: 'waiting', position: position || 0 };
+        }
+        
+        return { status: data.status as 'approved' };
+        
+    } catch (error) {
+        logError(`Error in getWaitlistStatus: ${error instanceof Error ? error.message : String(error)}`);
+        return { status: 'not_found' };
+    }
+}
+
+/**
+ * Get all waiting users (admin function)
+ */
+export async function getWaitingUsers(limit: number = 100): Promise<Array<{ phone_number: string; created_at: string; position: number }>> {
+    try {
+        const { data, error } = await getSupabaseClient()
+            .from('sms_waitlist')
+            .select('phone_number, created_at')
+            .eq('status', 'waiting')
+            .order('created_at', { ascending: true })
+            .limit(limit);
+        
+        if (error) {
+            logError(`Error getting waiting users: ${error.message}`);
+            return [];
+        }
+        
+        // Add position to each user
+        return (data || []).map((user, index) => ({
+            ...user,
+            position: index + 1
+        }));
+        
+    } catch (error) {
+        logError(`Error in getWaitingUsers: ${error instanceof Error ? error.message : String(error)}`);
+        return [];
+    }
+}
+
+/**
+ * Approve users from waitlist (admin function)
+ */
+export async function approveFromWaitlist(phoneNumbers: string[]): Promise<{ success: boolean; approved: string[]; errors: string[] }> {
+    try {
+        const normalizePhoneNumber = (phone: string): string => {
+            let digitsOnly = phone.replace(/\D/g, '');
+            
+            if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+                return `+${digitsOnly}`;
+            } else if (digitsOnly.length === 10) {
+                return `+1${digitsOnly}`;
+            } else {
+                if (phone.startsWith('+')) {
+                    return phone;
+                } else if (phone.startsWith('1') && phone.length > 10) {
+                    return `+${phone}`;
+                }
+                return phone;
+            }
+        };
+        
+        const approved: string[] = [];
+        const errors: string[] = [];
+        
+        for (const phoneNumber of phoneNumbers) {
+            const normalizedNumber = normalizePhoneNumber(phoneNumber);
+            
+            try {
+                // Update waitlist status to approved
+                const { error } = await getSupabaseClient()
+                    .from('sms_waitlist')
+                    .update({
+                        status: 'approved',
+                        approved_at: new Date().toISOString()
+                    })
+                    .eq('phone_number', normalizedNumber)
+                    .eq('status', 'waiting');
+                
+                if (error) {
+                    errors.push(`${normalizedNumber}: ${error.message}`);
+                } else {
+                    approved.push(normalizedNumber);
+                    logSuccess(`Approved ${normalizedNumber} from waitlist`);
+                }
+                
+            } catch (error) {
+                errors.push(`${normalizedNumber}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        
+        return { 
+            success: errors.length === 0, 
+            approved, 
+            errors 
+        };
+        
+    } catch (error) {
+        logError(`Error in approveFromWaitlist: ${error instanceof Error ? error.message : String(error)}`);
+        return { 
+            success: false, 
+            approved: [], 
+            errors: [error instanceof Error ? error.message : String(error)] 
+        };
+    }
+}
+
+/**
+ * Check if system has capacity for new users
+ */
+export async function hasCapacity(): Promise<boolean> {
+    try {
+        // Import here to avoid circular dependency
+        const { USER_CAPACITY_LIMIT, WAITLIST_ENABLED } = await import('./shared/config.js');
+        
+        if (!WAITLIST_ENABLED) {
+            return true; // If waitlist is disabled, always allow new users
+        }
+        
+        const activeUsers = await getActiveUserCount();
+        return activeUsers < USER_CAPACITY_LIMIT;
+        
+    } catch (error) {
+        logError(`Error in hasCapacity: ${error instanceof Error ? error.message : String(error)}`);
+        return true; // Fail open - allow users if there's an error checking capacity
+    }
+}

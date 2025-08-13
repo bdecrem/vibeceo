@@ -1510,19 +1510,28 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       if (!existingSubscriber) {
         // New user signup
         console.log(`New user signup attempt: ${normalizedPhoneNumber}`);
-        const success = await createNewSubscriber(normalizedPhoneNumber);
+        const result = await createNewSubscriber(normalizedPhoneNumber);
         
-        if (success) {
+        if (result.success) {
           await sendSmsResponse(
             from,
             "Welcome to The Foundry! 🚀\n\nYou can now use all commands immediately. Try texting COMMANDS to see what's available.\n\nReply YES if you want our daily creative chaos delivered via SMS. Standard rates apply.\n\nText STOP anytime to unsubscribe.",
             twilioClient
           );
           console.log(`New subscriber created: ${normalizedPhoneNumber}, can use commands immediately`);
+        } else if (result.waitlisted) {
+          await sendSmsResponse(
+            from,
+            `Thanks for your interest! 🎯\n\nWe've reached capacity but you're now on our waitlist at position #${result.position}.\n\nWe'll text you when a spot opens up! In the meantime, follow our progress at webtoys.ai\n\nText WAITLIST to check your position anytime.`,
+            twilioClient
+          );
+          console.log(`User ${normalizedPhoneNumber} added to waitlist at position ${result.position}`);
         } else {
           await sendSmsResponse(
             from,
-            "We couldn't process your signup right now. Please try again later.",
+            result.error === 'Already registered' ? 
+              "You're already registered! Try texting COMMANDS to see what's available." :
+              "We couldn't process your signup right now. Please try again later.",
             twilioClient
           );
         }
@@ -1624,11 +1633,19 @@ export async function processIncomingSms(from: string, body: string, twilioClien
 
       if (!currentSubscriber) {
         console.log('New user - auto-creating subscriber record');
-        const success = await createNewSubscriber(normalizedPhoneNumber);
-        if (success) {
+        const result = await createNewSubscriber(normalizedPhoneNumber);
+        if (result.success) {
           console.log(`✅ Auto-created subscriber record for ${normalizedPhoneNumber}`);
+        } else if (result.waitlisted) {
+          console.log(`📝 User ${normalizedPhoneNumber} added to waitlist at position ${result.position}`);
+          await sendSmsResponse(
+            from,
+            `Welcome! 🎯 We've reached capacity, so you're on our waitlist at position #${result.position}.\n\nWe'll text you when a spot opens up! Text WAITLIST to check your position anytime.`,
+            twilioClient
+          );
+          return;
         } else {
-          console.log(`❌ Failed to auto-create subscriber record for ${normalizedPhoneNumber}`);
+          console.log(`❌ Failed to auto-create subscriber record for ${normalizedPhoneNumber}: ${result.error}`);
           await sendSmsResponse(
             from,
             'Sorry, there was an issue processing your request. Please try again later.',
@@ -1952,6 +1969,46 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       // Continue processing - we might not need the messages
     }
     
+    // Handle WAITLIST command
+    if (messageUpper === 'WAITLIST') {
+      console.log(`Processing WAITLIST command from ${from}`);
+      
+      try {
+        // Import waitlist functions
+        const { getWaitlistStatus } = await import('../../engine/storage-manager.js');
+        
+        const waitlistStatus = await getWaitlistStatus(normalizedPhoneNumber);
+        
+        if (waitlistStatus.status === 'waiting') {
+          await sendSmsResponse(
+            from,
+            `📋 Waitlist Status: You're at position #${waitlistStatus.position}\n\nWe're working to expand capacity! We'll text you as soon as a spot opens up.\n\nThanks for your patience! 🙏`,
+            twilioClient
+          );
+        } else if (waitlistStatus.status === 'approved') {
+          await sendSmsResponse(
+            from,
+            `🎉 Great news! You've been approved and can now register.\n\nText START to complete your registration and begin using all our features!`,
+            twilioClient
+          );
+        } else {
+          await sendSmsResponse(
+            from,
+            `🤔 You're not currently on our waitlist.\n\nIf you're interested in joining, text START to sign up!`,
+            twilioClient
+          );
+        }
+      } catch (error) {
+        console.error('Error processing WAITLIST command:', error);
+        await sendSmsResponse(
+          from,
+          'Sorry, there was an issue checking your waitlist status. Please try again later.',
+          twilioClient
+        );
+      }
+      return;
+    }
+    
     // Always check for system commands first
     if (messageUpper === 'COMMANDS' || messageUpper === 'HELP' || messageUpper === 'INFO') {
       console.log(`Sending COMMANDS response to ${from}`);
@@ -2002,7 +2059,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasAdmin = ${hasAdmin} (role: ${subscriber?.role})`);
       
       if (hasAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible\n• --waitlist - Manage user waitlist (list/approve/status)';
         console.log(`🔍 COMMANDS: Added admin commands to response`);
       } else {
         console.log(`🔍 COMMANDS: Skipping admin commands (user role: ${subscriber?.role})`);
@@ -3868,6 +3925,139 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         await sendSmsResponse(
           from,
           `❌ --make-public: Command failed - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+      }
+      return;
+    }
+
+    // Handle admin waitlist commands
+    if (message.match(/^--waitlist/i)) {
+      console.log(`Processing --waitlist command from ${from}`);
+      
+      try {
+        // Check admin privileges
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || !subscriber.is_admin) {
+          console.log(`User ${normalizedPhoneNumber} attempted --waitlist command without admin privileges`);
+          return; // Silent ignore for security
+        }
+        
+        // Import waitlist functions
+        const { getWaitingUsers, approveFromWaitlist, getActiveUserCount } = await import('../../engine/storage-manager.js');
+        const { notifyApprovedUsers } = await import('../../engine/notification-client.js');
+        
+        // Parse subcommands
+        if (message.match(/^--waitlist\s+list/i)) {
+          // List waiting users
+          const waitingUsers = await getWaitingUsers(20); // Limit to top 20
+          
+          if (waitingUsers.length === 0) {
+            await sendSmsResponse(
+              from,
+              `📋 ADMIN: Waitlist is empty!\n\nNo users currently waiting.`,
+              twilioClient
+            );
+          } else {
+            let response = `📋 ADMIN: Waitlist (${waitingUsers.length} users waiting):\n\n`;
+            waitingUsers.slice(0, 10).forEach((user, index) => {
+              const phone = user.phone_number.slice(-4); // Show last 4 digits
+              const date = new Date(user.created_at).toLocaleDateString();
+              response += `${user.position}. ***${phone} (${date})\n`;
+            });
+            
+            if (waitingUsers.length > 10) {
+              response += `\n... and ${waitingUsers.length - 10} more`;
+            }
+            
+            await sendChunkedSmsResponse(from, response, twilioClient);
+          }
+          
+        } else if (message.match(/^--waitlist\s+approve\s+(\d+)/i)) {
+          // Approve N users from waitlist
+          const approveMatch = message.match(/^--waitlist\s+approve\s+(\d+)/i);
+          const count = parseInt(approveMatch[1], 10);
+          
+          if (count < 1 || count > 50) {
+            await sendSmsResponse(
+              from,
+              `❌ ADMIN: Invalid approve count. Use 1-50.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          const waitingUsers = await getWaitingUsers(count);
+          if (waitingUsers.length === 0) {
+            await sendSmsResponse(
+              from,
+              `📋 ADMIN: No users waiting to approve.`,
+              twilioClient
+            );
+            return;
+          }
+          
+          const phoneNumbers = waitingUsers.map(user => user.phone_number);
+          const approveResult = await approveFromWaitlist(phoneNumbers);
+          
+          if (approveResult.approved.length > 0) {
+            // Send notifications to approved users
+            const notifyResult = await notifyApprovedUsers(approveResult.approved);
+            
+            await sendSmsResponse(
+              from,
+              `✅ ADMIN: Approved ${approveResult.approved.length} users from waitlist.\n\nNotified: ${notifyResult.notified.length}\nErrors: ${notifyResult.errors.length}`,
+              twilioClient
+            );
+            
+            if (notifyResult.errors.length > 0) {
+              console.error('Notification errors:', notifyResult.errors);
+            }
+          } else {
+            await sendSmsResponse(
+              from,
+              `❌ ADMIN: Failed to approve users. ${approveResult.errors.join(', ')}`,
+              twilioClient
+            );
+          }
+          
+        } else if (message.match(/^--waitlist\s+status/i)) {
+          // Show waitlist status
+          const activeUsers = await getActiveUserCount();
+          const { USER_CAPACITY_LIMIT } = await import('../../engine/shared/config.js');
+          const waitingUsers = await getWaitingUsers(1); // Just to get count
+          
+          await sendSmsResponse(
+            from,
+            `📊 ADMIN: System Status\n\nActive Users: ${activeUsers}/${USER_CAPACITY_LIMIT}\nWaitlist: ${waitingUsers.length} waiting\nCapacity: ${activeUsers < USER_CAPACITY_LIMIT ? 'Available' : 'Full'}`,
+            twilioClient
+          );
+          
+        } else if (message.match(/^--waitlist\s+capacity\s+(\d+)/i)) {
+          // Update capacity limit (note: this updates the environment variable conceptually)
+          const capacityMatch = message.match(/^--waitlist\s+capacity\s+(\d+)/i);
+          const newCapacity = parseInt(capacityMatch[1], 10);
+          
+          await sendSmsResponse(
+            from,
+            `⚙️ ADMIN: To update capacity to ${newCapacity}, set USER_CAPACITY_LIMIT=${newCapacity} in environment variables and restart the system.\n\nCurrent runtime capacity changes are not supported for safety.`,
+            twilioClient
+          );
+          
+        } else {
+          // Help for --waitlist commands
+          await sendSmsResponse(
+            from,
+            `📋 ADMIN: Waitlist Commands\n\n--waitlist list - Show waiting users\n--waitlist approve N - Approve N users\n--waitlist status - Show system status\n--waitlist capacity N - Set new capacity`,
+            twilioClient
+          );
+        }
+        
+      } catch (error) {
+        console.error('Error processing --waitlist command:', error);
+        await sendSmsResponse(
+          from,
+          `❌ ADMIN: Waitlist command failed - ${error instanceof Error ? error.message : 'Unknown error'}`,
           twilioClient
         );
       }

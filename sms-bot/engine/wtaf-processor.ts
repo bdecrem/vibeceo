@@ -24,6 +24,7 @@ import { fileURLToPath } from 'url';
 import { OPENAI_API_KEY, ANTHROPIC_API_KEY, WORKER_TIMEOUT_MS, ZAD_TIMEOUT_MS } from './shared/config.js';
 import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 import { detectRequestType as utilsDetectRequestType } from './shared/utils.js';
+import { makeRoutingDecision, applyRoutingDecision, generateRoutingContext, type RoutingDecision } from './routing-intelligence.js';
 // import { postProcessGameHTML } from './game-post-processor.js'; // COMMENTED OUT: Post-processing was causing duplicate controls
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
@@ -173,9 +174,11 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
         logWithTimestamp(`🧹 Cleaned input: ${cleanedInput}`);
     }
     
-    // STEP 2: Smart routing - detect if this is a game or app
-    const requestType = utilsDetectRequestType(cleanedInput);
-    logWithTimestamp(`🔀 Request type detected: ${requestType.toUpperCase()}`);
+    // STEP 2: Intelligent routing decision using centralized routing intelligence
+    const routingDecision = makeRoutingDecision(cleanedInput);
+    logWithTimestamp(`🧠 ROUTING DECISION: ${routingDecision.context}`);
+    logWithTimestamp(`🔀 Route type: ${routingDecision.routeType}, Builder: ${routingDecision.builderType}`);
+    logWithTimestamp(`🎯 Confidence: ${routingDecision.confidence}, Bypass classifier: ${routingDecision.bypassClassifier}`);
     
     let expandedPrompt = cleanedInput;
     
@@ -190,172 +193,124 @@ export async function generateCompletePrompt(userInput: string, config: Classifi
         }
     }
 
-    if (requestType === 'app') {
-        // 🔧 ADMIN OVERRIDE CHECK: Skip classifier entirely if admin override is set
-        if (config.forceAdminOverride) {
-            // Check if this is a minimal test request (passed via cleanedInput containing ADMIN_TEST marker)
-            if (cleanedInput.includes('ADMIN_TEST_MARKER')) {
-                logWithTimestamp("🧪 ADMIN-TEST OVERRIDE: Skipping classifier, going to minimal test builder");
-                expandedPrompt = `ADMIN_TEST_REQUEST: ${cleanedInput.replace('ADMIN_TEST_MARKER', '').trim()}
+    // STEP 4: Apply routing decision and handle shortcuts vs classifier routing
+    if (routingDecision.bypassClassifier) {
+        // Handle admin override flag from config (preserves existing behavior)
+        if (config.forceAdminOverride && routingDecision.builderType !== 'admin-dual-page' && routingDecision.builderType !== 'admin-minimal-test') {
+            logWithTimestamp("🔧 ADMIN OVERRIDE FLAG: Overriding routing decision for admin dual-page");
+            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
 
 EMAIL_NEEDED: false
 ZERO_ADMIN_DATA: false
 APP_TYPE: data_collection`;
-                logWithTimestamp("🧪 Admin-test override: Created minimal test prompt without classifier");
-            } else {
-                logWithTimestamp("🔧 ADMIN OVERRIDE: Skipping classifier entirely, going straight to admin generation");
-                expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
-
-EMAIL_NEEDED: false
-ZERO_ADMIN_DATA: false
-APP_TYPE: data_collection`;
-                logWithTimestamp("🔧 Admin override: Created admin dual-page prompt without classifier");
-            }
-        }
-        
-        // 🧪 ZAD TEST OVERRIDE CHECK: Skip classifier entirely if zad test is set
-        if (cleanedInput.includes('ZAD_TEST_MARKER')) {
-            logWithTimestamp("🧪 ZAD-TEST OVERRIDE: Skipping classifier, going to simple ZAD test builder");
-            expandedPrompt = `ZAD_TEST_REQUEST: ${cleanedInput.replace('ZAD_TEST_MARKER', '').trim()}
-
-EMAIL_NEEDED: false
-ZERO_ADMIN_DATA: true
-APP_TYPE: zero_admin_data`;
-            logWithTimestamp("🧪 ZAD-test override: Created simple ZAD test prompt without classifier");
-        }
-        
-        // 🚀 ZAD API OVERRIDE CHECK: Skip classifier entirely if zad api is set
-        if (cleanedInput.includes('ZAD_API_MARKER')) {
-            logWithTimestamp("🚀 ZAD-API OVERRIDE: Skipping classifier, going to comprehensive ZAD builder with API conversion");
-            expandedPrompt = `ZAD_API_REQUEST: ${cleanedInput.replace('ZAD_API_MARKER', '').trim()}
-
-EMAIL_NEEDED: false
-ZERO_ADMIN_DATA: true
-APP_TYPE: zero_admin_data`;
-            logWithTimestamp("🚀 ZAD-api override: Created comprehensive ZAD with API conversion prompt without classifier");
-        }
-        // 🎵 MUSIC OVERRIDE CHECK: Skip classifier entirely if music marker is present
-        else if (cleanedInput.includes('MUSIC_MARKER')) {
-            logWithTimestamp("🎵 MUSIC OVERRIDE: Skipping classifier, going to music app builder");
-            expandedPrompt = `MUSIC_APP_REQUEST: ${cleanedInput.replace('MUSIC_MARKER', '').trim()}
-
-EMAIL_NEEDED: false
-ZERO_ADMIN_DATA: false
-APP_TYPE: music_app`;
-            logWithTimestamp("🎵 Music override: Created music app prompt without classifier");
-        }
-        // 🌐 PUBLIC ZAD OVERRIDE CHECK: Skip classifier entirely if public keyword is present
-        else if (cleanedInput.toLowerCase().includes('public')) {
-            logWithTimestamp("🌐 PUBLIC ZAD OVERRIDE: Detected 'public' keyword - skipping classifier");
-            expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}
-
-EMAIL_NEEDED: false
-ZERO_ADMIN_DATA: true
-APP_TYPE: zero_admin_data`;
-            logWithTimestamp("🌐 PUBLIC ZAD override: Routing directly to public ZAD builder without classifier");
-        }
-        else {
-            // APP PATH: Use classifier to expand and clarify the request
-            logWithTimestamp("📋 APP detected - using modular classifier to expand prompt...");
-            
-            const { buildClassifierPrompt } = await import('./classifier-builder.js');
-            const classifierPrompt = await buildClassifierPrompt();
-            if (!classifierPrompt) {
-                logWarning("Failed to build classifier prompt, using original input");
-                expandedPrompt = cleanedInput;
-            } else {
-                try {
-                    // Pass coach info as part of user message for classifier to interpret
-                    let userMessage = cleanedInput;
-                    if (coach && coachPersonality) {
-                        userMessage += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
-                        logWithTimestamp(`🎭 Passing ${coach}'s personality to classifier for interpretation`);
-                    }
-                    
-                    const messages: ChatCompletionMessageParam[] = [
-                        classifierPrompt,
-                        { role: "user", content: userMessage } as ChatCompletionMessageParam
-                    ];
-                    
-                    logWithTimestamp(`\n🔍 SENDING TO GPT-4o CLASSIFIER:`);
-                    logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
-                    logWithTimestamp(`📋 SYSTEM PROMPT: ${(classifierPrompt as any).content?.length || 0} chars (includes ZAD template)`);
-                    logWithTimestamp(`📋 FULL CLASSIFIER SYSTEM PROMPT CONTENT:`);
-                    logWithTimestamp("=" + "=".repeat(80));
-                    logWithTimestamp((classifierPrompt as any).content || "No content");
-                    logWithTimestamp("=" + "=".repeat(80));
-                    logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage}`);
-                    
-                    const response = await getOpenAIClient().chat.completions.create({
-                        model: config.classifierModel,
-                        messages: messages,
-                        temperature: config.classifierTemperature,
-                        max_tokens: config.classifierMaxTokens,
-                        top_p: config.classifierTopP || 1,
-                        presence_penalty: config.classifierPresencePenalty || 0,
-                        frequency_penalty: config.classifierFrequencyPenalty || 0
-                    });
-                    
-                    const content = response.choices[0].message.content;
-                    logWithTimestamp(`\n📥 CLASSIFIER RESPONSE (${content?.length || 0} chars):`);
-                    logWithTimestamp("=" + "=".repeat(80));
-                    logWithTimestamp(content || "No content");
-                    logWithTimestamp("=" + "=".repeat(80));
-                    if (content) {
-                        // STEP 1: Check if classifier detected a ZAD request
-                        if (content.includes('ZERO_ADMIN_DATA: true')) {
-                            logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
-                            
-                            // Check if PUBLIC mode is requested (contains "public" keyword)
-                            if (cleanedInput.toLowerCase().includes('public')) {
-                                // Route to PUBLIC ZAD builder
-                                expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}`;
-                                logWithTimestamp("🌐 PUBLIC ZAD SYSTEM: Routing to public ZAD builder");
-                            } else {
-                                // NEW ELEGANT ZAD SYSTEM: Route to comprehensive builder
-                                // Pass the original user input for the comprehensive ZAD builder
-                                expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
-                                logWithTimestamp("🎨 NEW ZAD SYSTEM: Routing to comprehensive ZAD builder");
-                            }
-                        }
-                        // STEP 2: Check if classifier detected admin need (APP_TYPE: data_collection)
-                        else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
-                            logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
-                            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
-
-${content.trim()}`;
-                            logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
-                        }
-                        // STEP 3: Normal expanded prompt
-                        else {
-                            expandedPrompt = content.trim();
-                            logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
-                        }
-                    } else {
-                        logWarning("No content in classifier response, using original");
-                        expandedPrompt = cleanedInput;
-                    }
-                } catch (error) {
-                    logWarning(`Classifier error, using original: ${error instanceof Error ? error.message : String(error)}`);
-                    expandedPrompt = cleanedInput;
-                }
-            }
+            logWithTimestamp("🔧 Admin override: Created admin dual-page prompt (config override)");
+        } else {
+            // Apply shortcut routing decision
+            expandedPrompt = applyRoutingDecision(routingDecision, cleanedInput);
+            logWithTimestamp(`🎯 SHORTCUT APPLIED: ${routingDecision.reason}`);
         }
     } else {
-        // GAME PATH: Games don't need expansion, pass through directly
-        logWithTimestamp("🎮 GAME detected - skipping classifier (games don't need expansion)");
-        expandedPrompt = cleanedInput;
+        // Route to classifier for intelligent analysis
+        logWithTimestamp("📋 ROUTING TO CLASSIFIER: Using intelligent analysis for complex request");
+        
+        const { buildClassifierPrompt } = await import('./classifier-builder.js');
+        const classifierPrompt = await buildClassifierPrompt();
+        if (!classifierPrompt) {
+            logWarning("Failed to build classifier prompt, using original input");
+            expandedPrompt = cleanedInput;
+        } else {
+            try {
+                // Pass coach info as part of user message for classifier to interpret
+                let userMessage = cleanedInput;
+                if (coach && coachPersonality) {
+                    userMessage += `\n\nCOACH: ${coach}\nCOACH PERSONALITY: ${coachPersonality}`;
+                    logWithTimestamp(`🎭 Passing ${coach}'s personality to classifier for interpretation`);
+                }
+                
+                // Add routing intelligence context to classifier
+                userMessage += `\n\n${generateRoutingContext()}`;
+                logWithTimestamp("🧠 Added routing intelligence context to classifier for better decisions");
+                
+                const messages: ChatCompletionMessageParam[] = [
+                    classifierPrompt,
+                    { role: "user", content: userMessage } as ChatCompletionMessageParam
+                ];
+                
+                logWithTimestamp(`\n🔍 SENDING TO INTELLIGENT CLASSIFIER:`);
+                logWithTimestamp(`⚙️ Config: ${config.classifierModel}, ${config.classifierMaxTokens} tokens, temp ${config.classifierTemperature}`);
+                logWithTimestamp(`🧠 Routing context: ${generateRoutingContext().length} chars`);
+                logWithTimestamp(`📤 USER MESSAGE (${userMessage.length} chars): ${userMessage.slice(0, 300)}...`);
+                
+                const response = await getOpenAIClient().chat.completions.create({
+                    model: config.classifierModel,
+                    messages: messages,
+                    temperature: config.classifierTemperature,
+                    max_tokens: config.classifierMaxTokens,
+                    top_p: config.classifierTopP || 1,
+                    presence_penalty: config.classifierPresencePenalty || 0,
+                    frequency_penalty: config.classifierFrequencyPenalty || 0
+                });
+                
+                const content = response.choices[0].message.content;
+                logWithTimestamp(`\n📥 INTELLIGENT CLASSIFIER RESPONSE (${content?.length || 0} chars):`);
+                logWithTimestamp("=" + "=".repeat(80));
+                logWithTimestamp(content || "No content");
+                logWithTimestamp("=" + "=".repeat(80));
+                
+                if (content) {
+                    // Enhanced routing logic with full builder knowledge
+                    if (content.includes('ZERO_ADMIN_DATA: true')) {
+                        logWithTimestamp("🤝 ZAD detected by intelligent classifier");
+                        
+                        // Check if PUBLIC mode is requested
+                        if (cleanedInput.toLowerCase().includes('public')) {
+                            expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}`;
+                            logWithTimestamp("🌐 PUBLIC ZAD SYSTEM: Routing to public ZAD builder");
+                        } else {
+                            expandedPrompt = `ZAD_COMPREHENSIVE_REQUEST: ${cleanedInput}`;
+                            logWithTimestamp("🎨 ZAD SYSTEM: Routing to comprehensive ZAD builder");
+                        }
+                    }
+                    else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
+                        logWithTimestamp("📊 ADMIN detected by intelligent classifier");
+                        expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+
+${content.trim()}`;
+                        logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
+                    }
+                    // Check for routing notes that might suggest alternative builders
+                    else if (content.includes('ROUTING_NOTES:')) {
+                        const routingNotesMatch = content.match(/ROUTING_NOTES:\s*(.+)/);
+                        if (routingNotesMatch && routingNotesMatch[1].trim() !== 'none') {
+                            logWithTimestamp(`🤔 CLASSIFIER ROUTING SUGGESTION: ${routingNotesMatch[1]}`);
+                        }
+                        expandedPrompt = content.trim();
+                    }
+                    else {
+                        expandedPrompt = content.trim();
+                        logWithTimestamp(`📤 EXPANDED PROMPT: ${expandedPrompt.slice(0, 200)}...`);
+                    }
+                } else {
+                    logWarning("No content in classifier response, using original");
+                    expandedPrompt = cleanedInput;
+                }
+            } catch (error) {
+                logWarning(`Classifier error, using original: ${error instanceof Error ? error.message : String(error)}`);
+                expandedPrompt = cleanedInput;
+            }
+        }
     }
     
-    // STEP 4: Add metadata to expanded prompt for builder stage
+    // STEP 5: Add metadata to expanded prompt for builder stage
     if (coach) {
         expandedPrompt += `\n\nCOACH_HANDLE: ${coach}`;
         logWithTimestamp(`🎭 Added coach handle to final prompt: ${coach}`);
     }
     
     // Add request type metadata to prevent mis-detection in builder stage
-    expandedPrompt += `\n\nREQUEST_TYPE: ${requestType}`;
-    logWithTimestamp(`🔀 Added request type metadata: ${requestType}`);
+    const finalRequestType = routingDecision.builderType === 'game' ? 'game' : 'app';
+    expandedPrompt += `\n\nREQUEST_TYPE: ${finalRequestType}`;
+    logWithTimestamp(`🔀 Added request type metadata: ${finalRequestType}`);
     
     logSuccess("Prompt generation complete!");
     logWithTimestamp("=" + "=".repeat(79));
@@ -372,17 +327,20 @@ ${content.trim()}`;
  * - Returns raw HTML ready for extractCodeBlocks processing
  */
 export async function callClaude(systemPrompt: string, userPrompt: string, config: BuilderConfig): Promise<string> {
-    // STEP 1: Extract request type from metadata to avoid re-detection issues
+    // STEP 1: Use routing intelligence to determine request type and builder
     let requestType: 'game' | 'app' = 'app'; // default to app
+    let builderRoutingDecision: RoutingDecision | null = null;
+    
+    // Check for existing metadata first (from generateCompletePrompt)
     const typeMatch = userPrompt.match(/REQUEST_TYPE:\s*(game|app)/i);
     if (typeMatch) {
         requestType = typeMatch[1].toLowerCase() as 'game' | 'app';
         logWithTimestamp(`🔀 Using metadata request type: ${requestType.toUpperCase()}`);
     } else {
-        // Fallback to detection if no metadata found (shouldn't happen with new system)
-        logWarning("No REQUEST_TYPE metadata found, falling back to detection");
-        requestType = utilsDetectRequestType(userPrompt);
-        logWithTimestamp(`🔀 Fallback detection: ${requestType.toUpperCase()}`);
+        // Use routing intelligence for consistent decision making
+        builderRoutingDecision = makeRoutingDecision(userPrompt);
+        requestType = builderRoutingDecision.builderType === 'game' ? 'game' : 'app';
+        logWithTimestamp(`🧠 Routing intelligence decision: ${requestType.toUpperCase()} (${builderRoutingDecision.reason})`);
     }
     
     // STEP 2: Extract coach info and load personality for builder
@@ -496,6 +454,19 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         builderFile = 'builder-music.txt';
         builderType = 'Music App Builder';
         logWithTimestamp(`🎵 Using music app builder for: ${userRequest.slice(0, 50)}...`);
+    } else if (userPrompt.includes('HOTNOT_RATING_REQUEST:')) {
+        logWithTimestamp(`🔥 HOTNOT_RATING_REQUEST detected - using Hot or Not rating app builder`);
+        // Extract the user request from the hotnot request
+        const requestMatch = userPrompt.match(/HOTNOT_RATING_REQUEST:\s*(.+)/);
+        if (!requestMatch) {
+            throw new Error("HOTNOT_RATING_REQUEST detected but no content found - parsing error");
+        }
+        const userRequest = requestMatch[1].trim();
+        logWithTimestamp(`🔥 Extracted user request: ${userRequest}`);
+        
+        builderFile = 'builder-hotnot-rating.txt';
+        builderType = 'Hot or Not Rating App Builder';
+        logWithTimestamp(`🔥 Using Hot or Not rating builder for: ${userRequest.slice(0, 50)}...`);
     } else {
         // Standard app
         builderFile = 'builder-app.json';
@@ -587,6 +558,31 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
             logWithTimestamp(`🚀 ZAD API: Using clean user request for comprehensive builder with API conversion: ${userRequest.slice(0, 50)}...`);
+        }
+    }
+    // For Hot or Not rating requests, replace with the actual user request and inject startup data
+    else if (userPrompt.includes('HOTNOT_RATING_REQUEST:')) {
+        const requestMatch = userPrompt.match(/HOTNOT_RATING_REQUEST:\s*(.+)/);
+        if (requestMatch) {
+            const userRequest = requestMatch[1].trim();
+            
+            // Generate dynamic startup data for the rating app
+            logWithTimestamp(`🔥 HOT OR NOT: Generating dynamic startup data for rating app`);
+            try {
+                const { generateStartupJSArray } = await import('./shared/startup-generator.js');
+                const startupJS = await generateStartupJSArray(25); // Generate 25 startups for rating
+                
+                builderUserPrompt = `${userRequest}
+
+DYNAMIC STARTUP DATA TO INJECT:
+${startupJS}
+
+Replace the demo startup data in the HTML with this generated data for a real rating experience.`;
+                logWithTimestamp(`🔥 Hot or Not: Enhanced user request with ${startupJS.split('\n').length} lines of startup data`);
+            } catch (error) {
+                logWarning(`Failed to generate startup data: ${error instanceof Error ? error.message : String(error)}`);
+                builderUserPrompt = userRequest; // Fallback to original request
+            }
         }
     }
     

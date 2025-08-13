@@ -124,4 +124,8 @@ export const COACHES: Coach[] = [
 export const MAX_CONCURRENT_WORKERS = 3;
 export const WORKER_TIMEOUT_MS = 120000; // 2 minutes per AI call
 export const ZAD_TIMEOUT_MS = 300000; // 5 minutes for complex ZAD requests
-export const BATCH_CHECK_INTERVAL = 5; // Check for new files every 5 seconds 
+export const BATCH_CHECK_INTERVAL = 5; // Check for new files every 5 seconds
+
+// Waitlist system configuration
+export const USER_CAPACITY_LIMIT: number = parseInt(process.env.USER_CAPACITY_LIMIT || "1000", 10);
+export const WAITLIST_ENABLED: boolean = (process.env.WAITLIST_ENABLED || "true").toLowerCase() === "true"; 

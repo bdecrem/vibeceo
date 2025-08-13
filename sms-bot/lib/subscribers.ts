@@ -225,8 +225,9 @@ export async function confirmSubscriber(phoneNumber: string): Promise<boolean> {
 /**
  * Create a new subscriber in the database
  * Used when someone texts START to sign up for the first time
+ * Now includes waitlist capacity checking
  */
-export async function createNewSubscriber(phoneNumber: string): Promise<boolean> {
+export async function createNewSubscriber(phoneNumber: string): Promise<{ success: boolean; waitlisted?: boolean; position?: number; error?: string }> {
   try {
     // Normalize the phone number first
     const normalizedNumber = normalizePhoneNumber(phoneNumber);
@@ -235,7 +236,43 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
     const existingSubscriber = await getSubscriber(normalizedNumber);
     if (existingSubscriber) {
       console.log(`Subscriber ${normalizedNumber} already exists`);
-      return false;
+      return { success: false, error: 'Already registered' };
+    }
+    
+    // Import waitlist functions (dynamic import to avoid circular dependency)
+    const { hasCapacity, addToWaitlist, getWaitlistStatus } = await import('../engine/storage-manager.js');
+    
+    // Check if user is already on waitlist and approved
+    const waitlistStatus = await getWaitlistStatus(normalizedNumber);
+    if (waitlistStatus.status === 'waiting') {
+      console.log(`User ${normalizedNumber} is already on waitlist at position ${waitlistStatus.position}`);
+      return { 
+        success: false, 
+        waitlisted: true, 
+        position: waitlistStatus.position,
+        error: 'Already on waitlist'
+      };
+    }
+    
+    // Check capacity unless user was previously approved from waitlist
+    const systemHasCapacity = await hasCapacity();
+    if (!systemHasCapacity && waitlistStatus.status !== 'approved') {
+      // Add to waitlist
+      const waitlistResult = await addToWaitlist(normalizedNumber);
+      if (waitlistResult.success) {
+        console.log(`Added ${normalizedNumber} to waitlist at position ${waitlistResult.position}`);
+        return { 
+          success: false, 
+          waitlisted: true, 
+          position: waitlistResult.position 
+        };
+      } else {
+        console.error(`Failed to add ${normalizedNumber} to waitlist: ${waitlistResult.error}`);
+        return { 
+          success: false, 
+          error: waitlistResult.error || 'Failed to add to waitlist' 
+        };
+      }
     }
     
     // Generate a unique slug for this user
@@ -262,14 +299,17 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
       
     if (error) {
       console.error('Error creating new subscriber:', error);
-      return false;
+      return { success: false, error: error.message };
     }
     
     console.log(`Successfully created new subscriber: ${normalizedNumber} with slug: ${slug}`);
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Error in createNewSubscriber:', error);
-    return false;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error) 
+    };
   }
 }
 
