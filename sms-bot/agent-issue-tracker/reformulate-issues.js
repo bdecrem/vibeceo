@@ -665,11 +665,18 @@ async function processIssues() {
       // Plan/research/question categories go to Todo for Claude Code to process
       // They'll be marked Done after Claude Code creates the actual files
       
-      // Only auto-fix simple and medium complexity issues with high confidence
-      // Never auto-fix plan/research/question requests
-      const shouldAutoFix = reformulated.confidence === 'high' && 
-                           ['simple', 'medium'].includes(reformulated.complexity) &&
-                           !['plan', 'research', 'question'].includes(reformulated.category || issue.category);
+      // Plan/research/question should always be processed (they don't "fix" code)
+      // Regular fixes need high confidence and simple/medium complexity
+      let shouldAutoFix = false;
+      
+      if (['plan', 'research', 'question'].includes(reformulated.category || issue.category)) {
+        // Always process plan/research/question regardless of complexity
+        shouldAutoFix = true;
+      } else {
+        // Only auto-fix simple/medium issues with high confidence
+        shouldAutoFix = reformulated.confidence === 'high' && 
+                       ['simple', 'medium'].includes(reformulated.complexity);
+      }
 
       // Update the issue - PRESERVE THE ORIGINAL REQUEST
       const success = await updateIssue(record.id, {
