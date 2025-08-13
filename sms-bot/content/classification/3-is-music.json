@@ -1,20 +1,25 @@
 {
   "classification_type": "music",
-  "step_title": "MUSIC App Detection",
-  "step_description": "Check if the user wants to create a music or audio application",
-  "description": "Music apps are applications focused on audio playback, music creation, playlists, or sound experiences. Look for requests involving songs, audio players, or music-related functionality.",
+  "step_title": "MUSIC/SONG Generation Detection",
+  "step_description": "Check if the user wants to create AI-generated music using Sonauto",
+  "description": "Music apps use the Sonauto API to generate AI songs. Look for requests to create, generate, write, or make songs/music/beats/tracks. These apps let users generate full 1:35 songs with AI based on prompts, lyrics, or musical styles.",
   
   "good_examples": [
-    "make a music player",
-    "create a playlist app",
-    "build a song player",
-    "audio streaming app",
-    "DJ mixing app",
-    "spotify-like player",
-    "soundboard app",
-    "beat maker",
-    "piano keyboard app",
-    "music visualizer"
+    "make me a song that sounds like Taylor Swift",
+    "create a song about summer vacation",
+    "write me a rap song",
+    "generate a country music track",
+    "compose a rock ballad",
+    "make a song with lyrics about love",
+    "create an instrumental track",
+    "generate techno music",
+    "make me a birthday song",
+    "create a jingle for my business",
+    "write a song in the style of The Beatles",
+    "generate lo-fi study music",
+    "make party music",
+    "create a workout playlist generator",
+    "build a song creator app"
   ],
   
   "bad_examples": [
@@ -22,23 +27,25 @@
     "band website",
     "concert ticket app",
     "music theory quiz",
-    "album review site"
+    "album review site",
+    "lyrics database",
+    "chord chart viewer"
   ],
   
   "key_indicators": [
-    "Contains 'music player' or 'audio player'",
-    "Mentions 'playlist' in music context",
-    "References 'song' or 'track' playback",
-    "Asks for audio streaming",
-    "Mentions DJ or mixing functionality",
-    "References music apps like Spotify",
-    "Requests sound or beat creation",
-    "Asks for music visualization"
+    "Contains 'song' or 'music' with creation verbs (make, create, generate, write, compose)",
+    "Mentions specific music genres or artists to emulate",
+    "Requests AI-generated music or songs",
+    "Asks for lyrics to be turned into music",
+    "Wants instrumental or vocal tracks",
+    "References Sonauto or AI music generation",
+    "Requests custom music for specific purposes (birthday, business, mood)",
+    "Mentions song extension or remixing"
   ],
   
   "decision_logic": {
-    "if_yes": "MUSIC_DETECTED: This is a music/audio app request.\n\nRoute to music app builder for audio-focused functionality.\n\nAPP_TYPE: music",
-    "if_no": "NOT_A_MUSIC_APP: This is not a music app request.\n\nContinue to next classification step."
+    "if_yes": "MUSIC_DETECTED: Stop here - this needs the Sonauto music generation builder.\n\nThe user wants to create AI-generated music. DO NOT attempt to build a generic app. Simply expand their music creation request and output the metadata.\n\nAPP_TYPE: music",
+    "if_no": "NOT_A_MUSIC_APP: This is not a music generation request.\n\nContinue to next classification step."
   },
   
   "metadata_output": {
