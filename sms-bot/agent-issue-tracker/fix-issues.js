@@ -141,31 +141,45 @@ async function runTests() {
 }
 
 /**
- * Use Claude Code to implement the fix
+ * Use Claude Code to implement the fix with ASH.TAG personality
  */
 async function implementFix(issue, branchName) {
   const prompt = `
-You are fixing an issue in the WEBTOYS codebase. You are currently on branch: ${branchName}
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. You're implementing a fix with your signature style: 
+- Systems thinker (see the whole architecture)
+- Elegant solutions (clean, maintainable code)
+- "Have your cake and eat it too" approach (solve multiple problems at once)
 
-Issue to fix:
+You're currently on branch: ${branchName}
+
+## The Issue to Fix
 ${issue.reformulated}
 
-Acceptance Criteria:
+## Acceptance Criteria
 ${issue.acceptance_criteria?.join('\n') || 'None specified'}
 
-Affected Components:
+## Affected Components
 ${issue.affected_components?.join(', ') || 'To be determined'}
 
-Instructions:
-1. Analyze the codebase to understand the issue
-2. Implement the necessary changes
-3. Ensure changes follow existing code patterns
-4. Add appropriate error handling
-5. Do NOT commit the changes (that will be handled separately)
+## Your Implementation Approach
+As you work, explain your thinking in ASH.TAG's voice:
+1. First, analyze the architecture and understand the issue deeply
+2. Implement the fix with your signature elegance
+3. Explain WHY you made each technical decision
+4. Show how your solution is both practical AND elegant
+5. Point out any bonus improvements you made along the way
 
-Important: Follow the CLAUDE.md rules strictly. Use the architecture as defined.
+## Technical Instructions
+- Follow CLAUDE.md rules strictly
+- Use the existing architecture patterns
+- Add appropriate error handling
+- Do NOT commit the changes (that will be handled separately)
 
-Please implement the fix now.`;
+## ASH.TAG's Signature
+After implementing, summarize what you did in 2-3 sentences with your punk-roots personality.
+Show how this fix exemplifies "systems thinking" and "elegant solutions."
+
+Now, let's fix this with style! 🎸`;
 
   try {
     // Write prompt to temp file to avoid shell escaping issues
@@ -188,11 +202,30 @@ Please implement the fix now.`;
     const { stdout: gitStatus } = await execAsync('git status --porcelain', { cwd: PROJECT_ROOT });
     const filesChanged = gitStatus.trim().split('\n').filter(line => line.trim()).length;
 
+    // Extract ASH.TAG's explanation from Claude's output
+    // Look for sections that contain explanations and summaries
+    let ashExplanation = '';
+    let technicalSummary = '';
+    
+    // Try to extract ASH.TAG's signature summary (usually at the end)
+    const signatureMatch = stdout.match(/(?:ASH\.TAG|Ash\.tag|Summary|Fixed)[\s\S]*?(?:🎸|🤘|✨|🚀)/gi);
+    if (signatureMatch) {
+      ashExplanation = signatureMatch[signatureMatch.length - 1].trim();
+    }
+    
+    // Try to extract technical details about what was done
+    const technicalMatches = stdout.match(/(?:Modified|Updated|Added|Fixed|Implemented|Created).*$/gm);
+    if (technicalMatches) {
+      technicalSummary = technicalMatches.join('\n');
+    }
+
     return {
       success: filesChanged > 0,
       filesChanged,
       output: stdout,
-      changes: gitStatus
+      changes: gitStatus,
+      ashExplanation: ashExplanation || 'Fixed with punk-roots elegance! 🎸',
+      technicalSummary: technicalSummary || gitStatus
     };
   } catch (error) {
     console.error('Error implementing fix:', error);
@@ -277,12 +310,16 @@ async function processIssues() {
           throw new Error('Failed to commit changes');
         }
 
-        // Update issue status
+        // Update issue status with ASH.TAG's explanation
         await updateIssueStatus(record.id, 'fixed', {
           branch_name: branchName,
           files_changed: result.filesChanged,
           test_result: testResult.output,
-          ready_for_pr: true
+          ready_for_pr: true,
+          ash_explanation: result.ashExplanation,
+          technical_summary: result.technicalSummary,
+          claude_full_output: result.output.substring(0, 10000), // Store first 10k chars
+          fix_completed_at: new Date().toISOString()
         });
 
         console.log(`  ✅ Successfully fixed and committed`);
