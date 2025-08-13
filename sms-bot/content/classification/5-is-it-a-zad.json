@@ -1,38 +1,63 @@
 {
   "classification_type": "zero-admin-data",
   "step_title": "ZAD (Zero Admin Data)",
-  "step_description": "Check if this is a web app that could work with 5 or fewer people",
-  "description": "Accept if: The request is for a web app that could work with 5 or fewer people.",
+  "step_description": "Check if this is a CRUD app that needs data persistence",
+  "description": "Accept if: The request is for a CRUD app (Create/Read/Update/Delete data) that needs data persistence. Focus on the app's functionality, not audience size. Voting apps, rating systems, message boards, task trackers, blogs, and similar data-driven apps should be ZAD.",
   
   "good_examples": [
-    "a simple voting app → 5 people can vote together",
-    "A simple message board → a few people can discussed ideas", 
-    "personal journal for my thoughts → 1 person using it", 
-    "chat app to talk with my friends → Friend group of 5 or fewer",
-    "expense tracker for our roommates → Roommates = typically 2-5 people",
-    "group decision maker for weekend plans → Small group planning together"
+    "a simple voting app → Stores and displays votes",
+    "A simple message board → Users post and read messages", 
+    "personal journal for my thoughts → Create and save entries", 
+    "chat app to talk with my friends → Store and display messages",
+    "expense tracker for our roommates → Track and save expenses",
+    "group decision maker for weekend plans → Collect and tally preferences",
+    "hot or not for AI unicorns → Rating/voting app with data storage",
+    "rate my startup ideas → Voting system with persistence",
+    "anonymous confession board → Message board with data storage",
+    "where should we eat lunch voting → Polling app",
+    "rank these movies → Rating/ranking system",
+    "submit and vote on baby names → Submission + voting CRUD",
+    "blog for my thoughts → Create/edit/publish posts",
+    "team blog → Multiple authors posting content",
+    "note taking app → Create and organize notes",
+    "personal diary → Daily entries with persistence",
+    "shared notebook → Collaborative note-taking",
+    "micro-blog → Short posts with data storage",
+    "writing app → Draft and save documents"
   ],
   
   "bad_examples": [
-    "social media platform like Instagram → Needs thousands/millions of users",
-    "dating app to meet new people → Large user base to match against", 
-    "marketplace for buying and selling → Needs many buyers and sellers",
-    "enterprise CRM for our 200-person company → Explicitly more than 5 people",
-    "public forum for discussing politics → Designed for large public audience"
+    "company website → Static brochure site, no user-generated content",
+    "portfolio site → Just displaying existing work, no CRUD", 
+    "landing page → Marketing page, no data storage",
+    "documentation site → Static help content only",
+    "about me page → Single static page",
+    "product showcase → Display-only, no user interaction",
+    "restaurant menu → Static information, no ordering system"
   ],
   
   "rejection_criteria": [
-    "Designed for large public audience",
-    "Requires complex user management",
-    "Enterprise or business-scale features",
-    "Public marketplace or social platform"
+    "Static website with no data storage",
+    "Portfolio or marketing sites without user content",
+    "Documentation or help sites",
+    "Sites that only display information",
+    "No user-generated content needed",
+    "No database operations required"
   ],
   
   "key_indicators": [
-    "Small group size (5 or fewer people)",
-    "Personal or small team use",
-    "Simple collaboration needs",
-    "No complex business features required"
+    "Needs to save and retrieve data",
+    "Voting, rating, or polling functionality",
+    "Message board or forum features",
+    "Task/todo management",
+    "Submission and collection features",
+    "Any 'Hot or Not' style rating",
+    "Collaborative data editing",
+    "'Share' or 'collaborate' keywords",
+    "Blog or note-taking functionality",
+    "Journal or diary features",
+    "Content creation and storage",
+    "User-generated content"
   ],
   
   "decision_logic": {
