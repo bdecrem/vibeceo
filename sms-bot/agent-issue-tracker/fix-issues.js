@@ -27,8 +27,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/sms-bot';
 
 /**
  * Load reformulated issues ready for fixing
@@ -188,7 +188,7 @@ Now, let's fix this with style! 🎸`;
 
     // Execute Claude Code using FULL PATH for cron compatibility
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /opt/homebrew/bin/claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
