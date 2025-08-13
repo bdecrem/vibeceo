@@ -1424,7 +1424,7 @@
             margin-bottom: 5px;
         }
         
-        .cass-comment {
+        .ash-comment {
             margin-top: 15px;
             padding: 18px;
             background: linear-gradient(135deg, var(--blue) 0%, #87CEEB 100%);
@@ -1495,7 +1495,7 @@
             color: var(--charcoal);
         }
         
-        .cass-comment::before {
+        .ash-comment::before {
             content: '';
             position: absolute;
             top: 0;
@@ -1511,13 +1511,13 @@
             100% { background-position: 200% 50%; }
         }
         
-        .cass-comment strong {
+        .ash-comment strong {
             color: var(--charcoal);
             font-weight: 800;
             text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
         }
         
-        .cass-comment::after {
+        .ash-comment::after {
             content: '💭';
             position: absolute;
             top: -5px;
@@ -2132,39 +2132,21 @@
                             </div>
                         ` : ''}
                         
-                        ${data.ai_analysis ? `
-                            <div class="cass-comment">
-                                <strong>🎸 Ash.tag:</strong> ${createTruncatedText(data.ai_analysis)}
+                        ${data.ash_comment || data.ai_analysis || data.cass_comment || data.cassink_comment || data.agent_comment || data.analysis_comment ? `
+                            <div class="ash-comment">
+                                <strong>💭 Ash.tag says:</strong> ${createTruncatedText(data.ash_comment || data.ai_analysis || data.cass_comment || data.cassink_comment || data.agent_comment || data.analysis_comment)}
                             </div>
                         ` : ''}
                         
-                        ${data.ash_comment ? `
-                            <div class="cass-comment">
-                                <strong>💭 Ash.tag says:</strong> ${createTruncatedText(data.ash_comment)}
-                            </div>
-                        ` : ''}
-                        
-                        ${data.cass_comment ? `
-                            <div class="cass-comment">
-                                <strong>💬 Ash.tag:</strong> ${createTruncatedText(data.cass_comment)}
-                            </div>
-                        ` : ''}
-                        
-                        ${data.cassink_comment ? `
-                            <div class="cass-comment">
-                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.cassink_comment)}
-                            </div>
-                        ` : ''}
-                        
-                        ${data.agent_comment ? `
-                            <div class="cass-comment">
-                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.agent_comment)}
-                            </div>
-                        ` : ''}
-                        
-                        ${data.analysis_comment ? `
-                            <div class="cass-comment">
-                                <strong>💬 Ash.tag:</strong> ${escapeHtml(data.analysis_comment)}
+                        ${data.ash_explanation ? `
+                            <div class="ash-comment" style="background: linear-gradient(135deg, var(--green-mint) 0%, #98FB98 100%); border-color: var(--green-deep);">
+                                <strong>🎸 Ash.tag's Fix:</strong> ${createTruncatedText(data.ash_explanation)}
+                                ${data.technical_summary ? `
+                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(255,255,255,0.3);">
+                                        <strong>Technical Details:</strong>
+                                        <pre style="white-space: pre-wrap; font-size: 12px; margin: 5px 0;">${escapeHtml(data.technical_summary)}</pre>
+                                    </div>
+                                ` : ''}
                             </div>
                         ` : ''}
                         
