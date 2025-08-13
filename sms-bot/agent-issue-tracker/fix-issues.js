@@ -420,7 +420,9 @@ async function processIssues() {
                           `answers/issue-${record.id}-response.md`;
           
           try {
-            planContent = await fs.readFile(path.join(__dirname, fileName), 'utf-8');
+            // In ES modules, use import.meta.url to get current directory
+            const currentDir = path.dirname(new URL(import.meta.url).pathname);
+            planContent = await fs.readFile(path.join(currentDir, fileName), 'utf-8');
             
             // Get the last commit hash
             const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: PROJECT_ROOT });
