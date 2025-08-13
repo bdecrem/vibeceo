@@ -355,6 +355,17 @@ async function processIssues() {
   console.log('🔧 Auto-Fix Agent starting...');
   console.log(`📅 ${new Date().toISOString()}`);
   
+  // CHECK IF AUTOFIX IS DISABLED
+  try {
+    const currentDir = path.dirname(new URL(import.meta.url).pathname);
+    await fs.access(path.join(currentDir, 'STOP-AUTOFIX.txt'));
+    console.log('⛔ AUTOFIX IS DISABLED - Delete STOP-AUTOFIX.txt to re-enable');
+    console.log('   This prevents branch switching while you are coding!');
+    return;
+  } catch (e) {
+    // File doesn't exist, continue normally
+  }
+  
   // Save current branch to restore later
   const { stdout: originalBranch } = await execAsync('git branch --show-current', { cwd: PROJECT_ROOT });
   
