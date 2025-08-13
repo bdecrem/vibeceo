@@ -304,15 +304,19 @@ APP_TYPE: zero_admin_data`;
                     if (content) {
                         // NEW V2 ROUTING: Check for special app types first (meme, game, music)
                         
-                        // STEP 1: Check if classifier detected a MEME
-                        if (content.includes('APP_TYPE: meme')) {
+                        // STEP 1: Check if classifier detected a MEME (check multiple possible formats)
+                        if (content.includes('APP_TYPE: meme') || 
+                            content.includes('APP_TYPE=meme') || 
+                            content.includes('MEME_DETECTED')) {
                             logWithTimestamp("🎨 MEME detected by classifier - signaling to bypass to meme processor");
                             // Return a special marker that controller.ts will recognize
                             expandedPrompt = `MEME_BYPASS_SIGNAL: ${cleanedInput}`;
                             // This will be caught by controller.ts and routed to processMemeRequest()
                         }
                         // STEP 2: Check if classifier detected a GAME
-                        else if (content.includes('APP_TYPE: game')) {
+                        else if (content.includes('APP_TYPE: game') || 
+                                 content.includes('APP_TYPE=game') || 
+                                 content.includes('GAME_DETECTED')) {
                             logWithTimestamp("🎮 GAME detected by classifier - using game configuration");
                             // Return the expanded content but preserve game detection
                             // The controller.ts will still use game config based on isGameRequest flag
@@ -320,7 +324,9 @@ APP_TYPE: zero_admin_data`;
                             // Game processing will happen normally with higher temperature
                         }
                         // STEP 3: Check if classifier detected a MUSIC app
-                        else if (content.includes('APP_TYPE: music')) {
+                        else if (content.includes('APP_TYPE: music') || 
+                                 content.includes('APP_TYPE=music') || 
+                                 content.includes('MUSIC_DETECTED')) {
                             logWithTimestamp("🎵 MUSIC detected by classifier - adding MUSIC_MARKER");
                             // Add the MUSIC_MARKER that triggers music builder
                             expandedPrompt = cleanedInput + ' MUSIC_MARKER';

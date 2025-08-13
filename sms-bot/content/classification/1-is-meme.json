@@ -31,7 +31,7 @@
   ],
   
   "decision_logic": {
-    "if_yes": "MEME_DETECTED: This is a meme generation request.\n\nRoute to meme processor for GPT-4o text generation and DALL-E 3 image creation.\n\nAPP_TYPE: meme",
+    "if_yes": "MEME_DETECTED: Stop here - this needs special meme processing.\n\nDO NOT attempt to generate HTML for the meme. Simply expand the user's meme idea and then immediately output the metadata.\n\nAPP_TYPE: meme",
     "if_no": "NOT_A_MEME: This is not a meme request.\n\nContinue to next classification step."
   },
   
