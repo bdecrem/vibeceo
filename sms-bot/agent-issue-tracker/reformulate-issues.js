@@ -183,7 +183,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -288,7 +288,7 @@ Notes:
 
     // Use Claude via command line with FULL PATH for cron compatibility
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -400,7 +400,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 

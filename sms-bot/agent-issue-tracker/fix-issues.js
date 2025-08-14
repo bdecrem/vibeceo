@@ -278,7 +278,7 @@ Now, let's fix this with style! 🎸`;
 
     // Execute Claude Code using FULL PATH for cron compatibility
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /opt/homebrew/bin/claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
