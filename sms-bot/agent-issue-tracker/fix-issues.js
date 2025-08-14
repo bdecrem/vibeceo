@@ -27,8 +27,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/sms-bot';
 
 /**
  * Load reformulated issues ready for fixing
@@ -45,11 +45,18 @@ async function loadFixableIssues() {
     return [];
   }
 
-  // Filter for high-confidence reformulated issues
-  // Now also considering complexity - only auto-fix simple/medium issues
+  // Filter for issues ready to process
   return data.filter(record => {
     const content = record.content_data || {};
-    const isFixable = content.status === 'reformulated' && 
+    const category = content.category || 'bug';
+    
+    // Plan/Research/Question categories should be processed when status is Todo
+    if (['plan', 'research', 'question'].includes(category)) {
+      return content.status === 'Todo' && !content.skip_auto_fix;
+    }
+    
+    // Regular fixes: high-confidence Todo issues
+    const isFixable = content.status === 'Todo' && 
                      content.confidence === 'high' &&
                      !content.skip_auto_fix;
     
@@ -148,12 +155,88 @@ async function runTests() {
 }
 
 /**
- * Use Claude Code to implement the fix
+ * Use Claude Code to implement the fix with ASH.TAG personality
  */
-async function implementFix(issue, branchName) {
-  // Use ORIGINAL REQUEST as primary context, reformulation as supplementary
-  const prompt = `
-You are fixing an issue in the WEBTOYS codebase. You are currently on branch: ${branchName}
+async function implementFix(issue, branchName, recordId) {
+  const category = issue.category || 'bug';
+  const issueId = recordId || issue.id || 'unknown';
+  
+  // Different prompts for different categories
+  let prompt = '';
+  
+  if (category === 'plan') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## USER REQUEST:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+Create a detailed implementation plan as a markdown file.
+
+1. Create file: sms-bot/agent-issue-tracker/plans/issue-${issueId}-implementation.md
+2. Include:
+   - Executive summary
+   - Current state analysis
+   - Proposed architecture/solution
+   - Step-by-step implementation tasks (numbered)
+   - File paths and components affected
+   - Testing strategy
+   - Rollback plan
+   - Timeline estimate
+3. Make it actionable - each step should be a potential ticket
+
+Write the plan now with your signature systems-thinking approach! 🎸`;
+    
+  } else if (category === 'research') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## RESEARCH QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Search the codebase to understand current implementation
+2. Identify all relevant files and components
+3. Document findings in: sms-bot/agent-issue-tracker/research/issue-${issueId}-findings.md
+4. Include:
+   - What you found
+   - How it currently works
+   - Problems identified
+   - Recommendations
+   - Code examples
+5. Be thorough - check multiple files, trace the data flow
+
+Research and document your findings now with punk-roots precision! 🔍`;
+    
+  } else if (category === 'question') {
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. Branch: ${branchName}
+
+## QUESTION:
+"${issue.original_request || issue.idea}"
+
+## YOUR TASK:
+1. Find the answer in the codebase
+2. Write a clear explanation in: sms-bot/agent-issue-tracker/answers/issue-${issueId}-response.md
+3. Include:
+   - Direct answer to the question
+   - Supporting evidence (code snippets)
+   - File references
+   - Examples if applicable
+4. Be accurate and cite your sources
+
+Answer the question now with technical precision! 💡`;
+    
+  } else {
+    // Original fix implementation for bugs/features/enhancements
+    prompt = `
+You are ASH.TAG - the friendly punk-roots engineer for WEBTOYS. You're implementing a fix with your signature style: 
+- Systems thinker (see the whole architecture)
+- Elegant solutions (clean, maintainable code)
+- "Have your cake and eat it too" approach (solve multiple problems at once)
+
+You're currently on branch: ${branchName}
 
 ## ORIGINAL USER REQUEST (THIS IS WHAT THEY ACTUALLY WANT):
 "${issue.original_request || issue.idea}"
@@ -161,30 +244,32 @@ You are fixing an issue in the WEBTOYS codebase. You are currently on branch: ${
 ## AI Analysis & Context:
 ${issue.reformulated}
 
-${issue.implementation_notes ? `## Implementation Notes:
-${issue.implementation_notes}` : ''}
-
 ## Acceptance Criteria:
 ${issue.acceptance_criteria?.join('\n') || 'None specified'}
 
 ## Affected Components:
 ${issue.affected_components?.join(', ') || 'To be determined'}
 
-## Issue Complexity: ${issue.complexity || 'medium'}
-${issue.complexity === 'complex' ? 'This is a complex issue. Take time to understand the architecture before making changes.' : ''}
-${issue.complexity === 'research' ? 'This requires investigation. Start by exploring the codebase to understand the current implementation.' : ''}
+## Your Implementation Approach
+As you work, explain your thinking in ASH.TAG's voice:
+1. First, analyze the architecture and understand the issue deeply
+2. Implement the fix with your signature elegance
+3. Explain WHY you made each technical decision
+4. Show how your solution is both practical AND elegant
+5. Point out any bonus improvements you made along the way
 
-## Instructions:
-1. READ THE ORIGINAL USER REQUEST CAREFULLY - that's what needs to be solved
-2. Use the AI analysis as helpful context, but prioritize the user's actual request
-3. ${issue.complexity === 'complex' || issue.complexity === 'research' ? 'Create a plan first, then implement step by step' : 'Implement the necessary changes'}
-4. Ensure changes follow existing code patterns and CLAUDE.md rules
-5. Add appropriate error handling
-6. Do NOT commit the changes (that will be handled separately)
+## Technical Instructions
+- Follow CLAUDE.md rules strictly
+- Use the existing architecture patterns
+- Add appropriate error handling
+- Do NOT commit the changes (that will be handled separately)
 
-Important: The user's ORIGINAL REQUEST is the source of truth. The reformulation is just to help clarify, not replace their intent.
+## ASH.TAG's Signature
+After implementing, summarize what you did in 2-3 sentences with your punk-roots personality.
+Show how this fix exemplifies "systems thinking" and "elegant solutions."
 
-Please implement the fix now.`;
+Now, let's fix this with style! 🎸`;
+  }
 
   try {
     // Write prompt to temp file to avoid shell escaping issues
@@ -193,7 +278,7 @@ Please implement the fix now.`;
 
     // Execute Claude Code using FULL PATH for cron compatibility
     const { stdout, stderr } = await execAsync(
-      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --dangerously-skip-permissions`,
+      `cd ${PROJECT_ROOT} && cat "${tempFile}" | /opt/homebrew/bin/claude --print --dangerously-skip-permissions`,
       { 
         maxBuffer: 1024 * 1024 * 50, // 50MB buffer
         timeout: 300000 // 5 minute timeout
@@ -207,11 +292,30 @@ Please implement the fix now.`;
     const { stdout: gitStatus } = await execAsync('git status --porcelain', { cwd: PROJECT_ROOT });
     const filesChanged = gitStatus.trim().split('\n').filter(line => line.trim()).length;
 
+    // Extract ASH.TAG's explanation from Claude's output
+    // Look for sections that contain explanations and summaries
+    let ashExplanation = '';
+    let technicalSummary = '';
+    
+    // Try to extract ASH.TAG's signature summary (usually at the end)
+    const signatureMatch = stdout.match(/(?:ASH\.TAG|Ash\.tag|Summary|Fixed)[\s\S]*?(?:🎸|🤘|✨|🚀)/gi);
+    if (signatureMatch) {
+      ashExplanation = signatureMatch[signatureMatch.length - 1].trim();
+    }
+    
+    // Try to extract technical details about what was done
+    const technicalMatches = stdout.match(/(?:Modified|Updated|Added|Fixed|Implemented|Created).*$/gm);
+    if (technicalMatches) {
+      technicalSummary = technicalMatches.join('\n');
+    }
+
     return {
       success: filesChanged > 0,
       filesChanged,
       output: stdout,
-      changes: gitStatus
+      changes: gitStatus,
+      ashExplanation: ashExplanation || 'Fixed with punk-roots elegance! 🎸',
+      technicalSummary: technicalSummary || gitStatus
     };
   } catch (error) {
     console.error('Error implementing fix:', error);
@@ -251,33 +355,23 @@ async function processIssues() {
   console.log('🔧 Auto-Fix Agent starting...');
   console.log(`📅 ${new Date().toISOString()}`);
   
+  // CHECK IF AUTOFIX IS DISABLED
+  try {
+    const currentDir = path.dirname(new URL(import.meta.url).pathname);
+    await fs.access(path.join(currentDir, 'STOP-AUTOFIX.txt'));
+    console.log('⛔ AUTOFIX IS DISABLED - Delete STOP-AUTOFIX.txt to re-enable');
+    console.log('   This prevents branch switching while you are coding!');
+    return;
+  } catch (e) {
+    // File doesn't exist, continue normally
+  }
+  
   // Save current branch to restore later
   const { stdout: originalBranch } = await execAsync('git branch --show-current', { cwd: PROJECT_ROOT });
   
   try {
-    // First, let's check for complex issues that are being skipped
-    const { data: allReformulated } = await supabase
-      .from('wtaf_zero_admin_collaborative')
-      .select('*')
-      .eq('app_id', ISSUE_TRACKER_APP_ID)
-      .eq('action_type', 'issue');
-    
-    const complexIssues = allReformulated?.filter(record => {
-      const content = record.content_data || {};
-      return content.status === 'reformulated' && 
-             content.confidence === 'high' &&
-             ['complex', 'research'].includes(content.complexity);
-    }) || [];
-    
-    if (complexIssues.length > 0) {
-      console.log(`⚠️  Skipping ${complexIssues.length} complex/research issues that need manual review:`);
-      complexIssues.forEach(record => {
-        console.log(`   - #${record.id}: ${record.content_data.reformulated} (${record.content_data.complexity})`);
-      });
-    }
-    
     const issues = await loadFixableIssues();
-    console.log(`📥 Found ${issues.length} simple/medium high-confidence issues to auto-fix`);
+    console.log(`📥 Found ${issues.length} high-confidence issues to fix`);
 
     for (const record of issues) {
       const issue = record.content_data;
@@ -287,13 +381,21 @@ async function processIssues() {
       await updateIssueStatus(record.id, 'fixing');
 
       try {
-        // Create feature branch
-        const branchName = await createFeatureBranch(record.id, issue.reformulated);
-        console.log(`  📌 Created branch: ${branchName}`);
+        // For plan/research/question, stay on current branch to avoid losing work
+        let branchName = originalBranch.trim();
+        const category = issue.category || 'bug';
+        
+        // Only create new branch for actual fixes
+        if (!['plan', 'research', 'question'].includes(category)) {
+          branchName = await createFeatureBranch(record.id, issue.reformulated);
+          console.log(`  📌 Created branch: ${branchName}`);
+        } else {
+          console.log(`  📌 Staying on branch: ${branchName} (no branch switch for ${category})`);
+        }
 
         // Implement the fix
         console.log(`  🤖 Implementing fix with Claude Code...`);
-        const result = await implementFix(issue, branchName);
+        const result = await implementFix(issue, branchName, record.id);
 
         if (!result.success) {
           throw new Error(`Failed to implement fix: ${result.error}`);
@@ -317,12 +419,45 @@ async function processIssues() {
           throw new Error('Failed to commit changes');
         }
 
-        // Update issue status
-        await updateIssueStatus(record.id, 'fixed', {
+        // For plan/research/question, capture the content and create GitHub link
+        let planContent = null;
+        let githubLink = null;
+        
+        if (['plan', 'research', 'question'].includes(category)) {
+          // Read the created file to get content
+          const fileName = category === 'plan' ? `plans/issue-${record.id}-implementation.md` :
+                          category === 'research' ? `research/issue-${record.id}-findings.md` :
+                          `answers/issue-${record.id}-response.md`;
+          
+          try {
+            // In ES modules, use import.meta.url to get current directory
+            const currentDir = path.dirname(new URL(import.meta.url).pathname);
+            planContent = await fs.readFile(path.join(currentDir, fileName), 'utf-8');
+            
+            // Get the last commit hash
+            const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: PROJECT_ROOT });
+            
+            // Create GitHub link to the file
+            githubLink = `https://github.com/bdecrem/vibeceo/blob/${commitHash.trim()}/sms-bot/agent-issue-tracker/${fileName}`;
+            
+            console.log(`  📄 Plan saved: ${githubLink}`);
+          } catch (readError) {
+            console.error('Could not read plan file:', readError);
+          }
+        }
+
+        // Update issue status with ASH.TAG's explanation
+        await updateIssueStatus(record.id, 'Done', {
           branch_name: branchName,
           files_changed: result.filesChanged,
           test_result: testResult.output,
-          ready_for_pr: true
+          ready_for_pr: !['plan', 'research', 'question'].includes(category),
+          ash_explanation: result.ashExplanation,
+          technical_summary: result.technicalSummary,
+          claude_full_output: result.output.substring(0, 10000), // Store first 10k chars
+          plan_content: planContent,
+          github_link: githubLink,
+          fix_completed_at: new Date().toISOString()
         });
 
         console.log(`  ✅ Successfully fixed and committed`);
@@ -330,8 +465,8 @@ async function processIssues() {
       } catch (error) {
         console.error(`  ❌ Failed to fix:`, error.message);
         
-        // Update issue with error
-        await updateIssueStatus(record.id, 'fix-failed', {
+        // Update issue with error - back to Todo
+        await updateIssueStatus(record.id, 'Todo', {
           error: error.message,
           needs_manual_fix: true
         });
@@ -367,9 +502,9 @@ async function processIssues() {
     .eq('action_type', 'issue');
 
   const stats = {
-    fixed: summary?.filter(r => r.content_data?.status === 'fixed').length || 0,
-    failed: summary?.filter(r => r.content_data?.status === 'fix-failed').length || 0,
-    pending: summary?.filter(r => r.content_data?.status === 'reformulated').length || 0
+    fixed: summary?.filter(r => r.content_data?.status === 'Done').length || 0,
+    failed: summary?.filter(r => r.content_data?.status === 'Todo' && r.content_data?.needs_manual_fix).length || 0,
+    pending: summary?.filter(r => r.content_data?.status === 'Todo' && !r.content_data?.needs_manual_fix).length || 0
   };
 
   console.log(`\n📊 Fix Summary:`);
