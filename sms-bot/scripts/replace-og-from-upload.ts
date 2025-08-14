@@ -8,9 +8,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables - try multiple locations
+// When compiled, this script runs from dist/scripts/, so we need to go up properly
 const envPaths = [
-  path.join(__dirname, '../.env.local'),     // sms-bot/.env.local
-  path.join(__dirname, '../../.env.local'),  // root/.env.local
+  path.join(__dirname, '../../.env.local'),     // From dist/scripts to sms-bot/.env.local
+  path.join(__dirname, '../../../.env.local'),  // From dist/scripts to root/.env.local
+  path.join(__dirname, '../.env.local'),        // Fallback for running from scripts/
 ];
 
 let envLoaded = false;
