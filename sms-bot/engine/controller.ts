@@ -1660,6 +1660,82 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         const completePrompt = await generateCompletePrompt(promptToProcess, classifierConfig);
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
         
+        // NEW V2 ROUTING: Check if classifier detected a MEME and wants to bypass
+        if (completePrompt.includes('MEME_BYPASS_SIGNAL:')) {
+            logWithTimestamp("🎨 MEME_BYPASS_SIGNAL detected - routing to meme processor");
+            // Extract the original prompt
+            const memePrompt = completePrompt.replace('MEME_BYPASS_SIGNAL:', '').trim();
+            
+            // Call processMemeRequest directly
+            const memeProcessor = await import('./meme-processor.js');
+            const memeConfig = {
+                model: 'gpt-4o',
+                maxTokens: 200,
+                temperature: 0.9
+            };
+            
+            const memeResult = await memeProcessor.processMemeRequest(memePrompt, userSlug, memeConfig);
+            
+            if (!memeResult.success || !memeResult.html) {
+                logError(`Meme generation failed: ${memeResult.error || 'Unknown error'}`);
+                await sendFailureNotification("meme-generation", senderPhone);
+                return false;
+            }
+            
+            // Save meme HTML to Supabase with type='MEME'
+            const deployResult = await saveCodeToSupabase(
+                memeResult.html, 
+                'meme-generator', 
+                userSlug, 
+                senderPhone, 
+                memePrompt,
+                null,
+                false
+            );
+            
+            if (deployResult.publicUrl && deployResult.uuid) {
+                // Update the HTML with the correct URL and set type='MEME'
+                try {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+                    
+                    const updatedHTML = memeResult.html!.replace(
+                        'window.MEME_URL = null;',
+                        `window.MEME_URL = "${deployResult.publicUrl}";`
+                    );
+                    
+                    const { error: updateError } = await supabase
+                        .from('wtaf_content')
+                        .update({ 
+                            type: 'MEME',
+                            html_content: updatedHTML,
+                            landscape_image_url: memeResult.landscapeImageUrl || memeResult.imageUrl,
+                            og_second_chance: memeResult.imageUrl,  // CRITICAL: Set og_second_chance for proper OG image display
+                            submission_data: {
+                                meme_text: memePrompt,
+                                meme_image_url: memeResult.imageUrl,
+                                landscape_image_url: memeResult.landscapeImageUrl
+                            }
+                        })
+                        .eq('uuid', deployResult.uuid);
+                    
+                    if (!updateError) {
+                        logSuccess(`✅ Meme saved with type='MEME' and metadata`);
+                    }
+                } catch (error) {
+                    logWarning(`Failed to update meme metadata: ${error}`);
+                }
+                
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                logWithTimestamp("🎉 MEME PROCESSING COMPLETE via V2 routing!");
+                return true;
+            }
+            
+            logError("Failed to save meme to Supabase");
+            await sendFailureNotification("save", senderPhone);
+            return false;
+        }
+        
         let result: string;
         
         // Check if generateCompletePrompt returned final HTML (ZAD template)

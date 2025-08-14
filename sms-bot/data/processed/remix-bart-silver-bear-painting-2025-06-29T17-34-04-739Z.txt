@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix silver-bear-painting make it the bio for Ian McCarthy, Product coauthor and entrepreneur - just insert those words for the title and change nothing else
-
-ORIGINAL_REQUEST:REMIX silver-bear-painting make it the bio for Ian McCarthy, Product coauthor and entrepreneur - just insert those words for the title and change nothing else

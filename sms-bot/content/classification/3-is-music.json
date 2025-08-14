@@ -1,0 +1,72 @@
+{
+  "classification_type": "music",
+  "step_title": "MUSIC/SONG Generation Detection",
+  "step_description": "Check if the user wants to create AI-generated music using Sonauto",
+  "description": "Music apps use the Sonauto API to generate AI songs and create music experiences. These include song generators, playlist builders, beat machines, mood radios, remix tools, and interactive music toys. Look for ANY request involving music creation, generation, or interactive music experiences.",
+  
+  "good_examples": [
+    "make me a song that sounds like Taylor Swift",
+    "create a playlist for studying",
+    "build a beat machine",
+    "make a mood radio with different vibes",
+    "create a remix tool",
+    "build a music toybox",
+    "make an iterative playlist builder",
+    "generate workout music",
+    "create a song about summer vacation",
+    "write me a rap song",
+    "generate a country music track",
+    "compose a rock ballad",
+    "make a song with lyrics about love",
+    "create an instrumental track",
+    "generate techno music",
+    "make me a birthday song",
+    "create a jingle for my business",
+    "write a song in the style of The Beatles",
+    "generate lo-fi study music",
+    "make party music",
+    "build a song creator app",
+    "create a music layer mixer",
+    "make a BPM-based beat generator"
+  ],
+  
+  "bad_examples": [
+    "music blog",
+    "band website",
+    "concert ticket app",
+    "music theory quiz",
+    "album review site",
+    "lyrics database",
+    "chord chart viewer"
+  ],
+  
+  "key_indicators": [
+    "Contains 'song', 'music', 'beat', 'track', or 'playlist'",
+    "Mentions playlist creation or curation",
+    "References beat machines or music layers",
+    "Asks for mood-based music generation",
+    "Requests remix or variation tools",
+    "Wants interactive music experiences",
+    "Contains 'song' or 'music' with creation verbs (make, create, generate, write, compose)",
+    "Mentions specific music genres or artists to emulate",
+    "Requests AI-generated music or songs",
+    "Asks for lyrics to be turned into music",
+    "Wants instrumental or vocal tracks",
+    "References Sonauto or AI music generation",
+    "Requests custom music for specific purposes (birthday, business, mood)",
+    "Mentions BPM, tempo, or music parameters",
+    "Asks for music toys or interactive sound"
+  ],
+  
+  "decision_logic": {
+    "if_yes": "MUSIC_DETECTED: Stop here - this needs the Sonauto music generation builder.\n\nThe user wants to create AI-generated music. DO NOT attempt to build a generic app. Simply expand their music creation request and output the metadata.\n\nAPP_TYPE: music",
+    "if_no": "NOT_A_MUSIC_APP: This is not a music generation request.\n\nContinue to next classification step."
+  },
+  
+  "metadata_output": {
+    "APP_TYPE": "music",
+    "SPECIAL_BUILDER": "builder-music",
+    "BUILDER_FILE": "builder-music.txt",
+    "MUSIC_MARKER": "true"
+  }
+}

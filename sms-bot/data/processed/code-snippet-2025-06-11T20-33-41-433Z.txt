@@ -1,2 +1,0 @@
-SENDER:+16508989508
-kailey - jordan - This user said: “I’m Jordan. I love weird tech and tacos.” Build their About Me page and save it to our system using fetch to POST to /api/save-profile. Use their name as the slug. After saving, show a message with the link to their live profile page.

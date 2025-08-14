@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---stackzad demo-paint-od96qt40 make me an admin page that shows all the paintings and lets me delete the ones I don't like

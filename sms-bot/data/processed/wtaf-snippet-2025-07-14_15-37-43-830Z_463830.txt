@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---zad-test create a personal journal app that shows a personalized greeting with timestamp at the top

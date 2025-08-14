@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-MEME test the opengraph fix - should upload to supabase storage

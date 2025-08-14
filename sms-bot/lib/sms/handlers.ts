@@ -1963,7 +1963,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const isAdmin = subscriber && subscriber.is_admin;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
-      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
+      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');
@@ -2002,7 +2002,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasAdmin = ${hasAdmin} (role: ${subscriber?.role})`);
       
       if (hasAdmin) {
-        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible\n• (Plus all OPERATOR, DEGEN & CODER commands above)';
+        helpText += '\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible';
         console.log(`🔍 COMMANDS: Added admin commands to response`);
       } else {
         console.log(`🔍 COMMANDS: Skipping admin commands (user role: ${subscriber?.role})`);
@@ -3967,7 +3967,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     console.log(`Unrecognized command/message from ${from}: ${message}`);
     await sendSmsResponse(
       from,
-      'WEBTOYS didn\'t catch that. Start your message with "WTAF" — e.g.\n"WTAF build a chat app for me and my friends". Type COMMANDS for more help.',
+      'Unrecognized command. Type COMMANDS for available options.',
       twilioClient
     );
     return;

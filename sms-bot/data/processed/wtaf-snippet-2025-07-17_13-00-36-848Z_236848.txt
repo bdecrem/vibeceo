@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a shared community "graffiti wall" where each user can spray something on the wall to add to it. But instead of spraying each person adds an emoji and it gets randomly placed somewhere on the way in a random size. Have a collected of hundreds of emojis to pick from: show 10 at a time and let the user tap a button to show 10 different ones

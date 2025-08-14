@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---stackobjectify subtle-cardinal-harvesting give each blog post its own unique url and create an index page of all the blog posts

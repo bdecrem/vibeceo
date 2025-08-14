@@ -76,6 +76,20 @@ export async function POST(req: NextRequest) {
     // Normalize phone number
     const normalizedPhone = normalizePhoneNumber(phone_number);
     
+    // Check if this user already has a phone number (that's not a placeholder)
+    const { data: currentUser } = await supabase
+      .from('sms_subscribers')
+      .select('*')
+      .eq('supabase_id', user_id)
+      .single();
+      
+    if (currentUser && currentUser.phone_number && !currentUser.phone_number.startsWith('+1555')) {
+      return NextResponse.json(
+        { error: 'You already have a phone number linked to your account' },
+        { status: 400 }
+      );
+    }
+    
     // Check if phone number already exists in sms_subscribers
     const { data: existingSubscriber } = await supabase
       .from('sms_subscribers')
@@ -87,12 +101,11 @@ export async function POST(req: NextRequest) {
     const verificationCode = generateVerificationCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
-    // Store verification code in temporary table (or in-memory for now)
-    // For production, use a proper cache like Redis or a verification_codes table
-    // For now, we'll store it in the sms_subscribers table
+    // Store verification code
+    // IMPORTANT: For web users linking phones, we store the code on THEIR record
     
     if (existingSubscriber) {
-      // Update existing record with verification code
+      // Phone already exists in system
       await supabase
         .from('sms_subscribers')
         .update({
@@ -101,19 +114,18 @@ export async function POST(req: NextRequest) {
         })
         .eq('phone_number', normalizedPhone);
     } else {
-      // Create a new record with pending status
+      // Phone doesn't exist - store verification on current user's record
+      // We'll update their phone_number after verification
       await supabase
         .from('sms_subscribers')
-        .insert({
-          phone_number: normalizedPhone,
-          supabase_id: user_id,
+        .update({
           verification_code: verificationCode,
           verification_expires: expiresAt.toISOString(),
-          confirmed: false,
-          consent_given: false,
-          slug: `pending-${Date.now()}`, // Temporary slug
-          created_at: new Date().toISOString()
-        });
+          // Store the pending phone number in a temporary field or just remember it for verification
+        })
+        .eq('supabase_id', user_id);
+        
+      console.log(`Stored verification code for user ${user_id} to link ${normalizedPhone}`);
     }
     
     // Send SMS verification code

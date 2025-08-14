@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix tangerine-bat-tracking make it green
-
-ORIGINAL_REQUEST:REMIX tangerine-bat-tracking make it green

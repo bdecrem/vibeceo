@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build a simple grocery shopping list I can share with my family. make it bright and colorful

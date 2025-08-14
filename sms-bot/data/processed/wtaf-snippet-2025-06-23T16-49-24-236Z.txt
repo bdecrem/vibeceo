@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Build a chat app named Warriors for me and my friend
