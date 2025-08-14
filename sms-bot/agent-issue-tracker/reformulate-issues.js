@@ -29,7 +29,7 @@ const supabase = createClient(
 );
 
 // Issue tracker app ID (can be configured)
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
 
 /**
  * Load issues from ZAD with specific status
@@ -49,7 +49,11 @@ async function loadIssues(status = 'new') {
   // Filter by status in content_data
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === status || (!content.status && status === 'new');
+    // Handle both 'new' and 'Backlog' as new issues (Backlog is the Linear-style status)
+    if (status === 'new') {
+      return content.status === 'new' || content.status === 'Backlog' || !content.status;
+    }
+    return content.status === status;
   });
 }
 
@@ -177,7 +181,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -256,7 +260,7 @@ Format your response as JSON:
   "reformulated": "Clear, technical description of what needs to be done",
   "acceptance_criteria": ["Specific criterion 1", "Specific criterion 2"],
   "affected_components": ["component1", "component2"],
-  "category": "bug|feature|enhancement|docs|test",
+  "category": "bug|feature|enhancement|docs|test|plan|research|question",
   "confidence": "high|medium|low",
   "complexity": "simple|medium|complex|research",
   "needs_clarification": "What additional info is needed (if confidence is low)",
@@ -282,7 +286,7 @@ Notes:
 
     // Use Claude via command line with FULL PATH for cron compatibility
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -394,7 +398,7 @@ Format your response as JSON:
     await fs.writeFile(tempFile, prompt);
 
     const { stdout } = await execAsync(
-      `cat "${tempFile}" | /Users/bartdecrem/.local/bin/claude --print --output-format json`,
+      `cat "${tempFile}" | /opt/homebrew/bin/claude --print --output-format json`,
       { maxBuffer: 1024 * 1024 * 10 }
     );
 
@@ -623,14 +627,10 @@ async function processIssues() {
       }
 
       // Determine status based on confidence and complexity
-      let status = 'reformulated';
+      let status = 'Todo';
       if (reformulated.confidence === 'low') {
-        status = 'needs_info';
+        status = 'Needs Info';
       }
-      
-      // Only auto-fix simple and medium complexity issues with high confidence
-      const shouldAutoFix = reformulated.confidence === 'high' && 
-                           ['simple', 'medium'].includes(reformulated.complexity);
 
       // Update the issue - PRESERVE THE ORIGINAL REQUEST
       const success = await updateIssue(record.id, {
@@ -642,10 +642,10 @@ async function processIssues() {
         confidence: reformulated.confidence,
         complexity: reformulated.complexity || 'medium',
         implementation_notes: reformulated.implementation_notes,
+        implementation_plan: reformulated.implementation_plan, // Save the plan if generated
         needs_clarification: reformulated.needs_clarification,
         category: reformulated.category || issue.category,
         ash_comment: reformulated.ash_comment,
-        skip_auto_fix: !shouldAutoFix, // Skip auto-fix for complex/research issues
         reformulated_at: new Date().toISOString()
       });
 
