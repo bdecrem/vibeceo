@@ -1710,6 +1710,7 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                             type: 'MEME',
                             html_content: updatedHTML,
                             landscape_image_url: memeResult.landscapeImageUrl || memeResult.imageUrl,
+                            og_second_chance: memeResult.imageUrl,  // CRITICAL: Set og_second_chance for proper OG image display
                             submission_data: {
                                 meme_text: memePrompt,
                                 meme_image_url: memeResult.imageUrl,
