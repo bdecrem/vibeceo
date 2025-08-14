@@ -45,6 +45,8 @@ The SMS bot follows a microservices architecture with strict separation of conce
 - **Managers**: Domain-specific functionality (storage, social, stackables)
 - **Shared utilities**: Common functions and configurations
 
+**📚 For detailed technical documentation on the classifier and routing system, see: `sms-bot/engine/CLAUDE.md`**
+
 ## Strict Rules for Code Agents
 
 ### 0. SECURITY: NEVER Hardcode Secrets
