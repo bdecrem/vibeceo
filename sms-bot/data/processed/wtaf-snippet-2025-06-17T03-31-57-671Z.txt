@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a page that has a red gradient colors background and a giant peace sign

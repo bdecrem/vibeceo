@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---music make a simple music app where I can type in what kind of song I want to listen to

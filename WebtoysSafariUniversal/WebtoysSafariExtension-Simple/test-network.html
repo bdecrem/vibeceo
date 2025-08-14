@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Test</title>
+</head>
+<body>
+    <h1>Network Test</h1>
+    <button onclick="testHTTP()">Test HTTP</button>
+    <button onclick="testHTTPS()">Test HTTPS</button>
+    <div id="results"></div>
+
+    <script>
+        async function testHTTP() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>Testing HTTP localhost:3000...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/wtaf/extension');
+                results.innerHTML += `<p>HTTP Success: ${response.status}</p>`;
+                const data = await response.json();
+                results.innerHTML += `<p>HTTP Data: ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                results.innerHTML += `<p>HTTP Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testHTTPS() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>Testing HTTPS localhost:3000...</p>';
+            
+            try {
+                const response = await fetch('https://localhost:3000/api/wtaf/extension');
+                results.innerHTML += `<p>HTTPS Success: ${response.status}</p>`;
+                const data = await response.json();
+                results.innerHTML += `<p>HTTPS Data: ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                results.innerHTML += `<p>HTTPS Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

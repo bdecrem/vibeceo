@@ -1,1 +1,0 @@
-You have permission to write files and use all tools. Create an HTML file that says “hello from the SMS bot” and save it to web/hello.html

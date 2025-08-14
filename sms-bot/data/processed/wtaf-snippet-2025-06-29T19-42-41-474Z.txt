@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---stack honey-monitor-boxing have it say Hey Bart instead of Hello World

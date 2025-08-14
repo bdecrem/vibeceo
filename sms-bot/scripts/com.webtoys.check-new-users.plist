@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.webtoys.check-new-users</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/sms-bot/scripts/check-new-users-cron.sh</string>
+    </array>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>/tmp/new-users-check.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/tmp/new-users-check-error.log</string>
+    
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

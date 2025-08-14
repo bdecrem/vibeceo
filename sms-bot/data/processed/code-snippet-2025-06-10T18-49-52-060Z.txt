@@ -1,1 +1,0 @@
-create a new script that sends an SMS with the exact message "hi Bart" to +16508989508 using our Twilio setup

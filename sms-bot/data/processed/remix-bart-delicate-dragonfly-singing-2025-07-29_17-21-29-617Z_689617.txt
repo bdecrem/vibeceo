@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix delicate-dragonfly-singing make it pink
-
-ORIGINAL_REQUEST:REMIX delicate-dragonfly-singing make it pink

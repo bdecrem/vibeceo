@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix midnight-silver-haired-yoga give it a yellow background
-
-ORIGINAL_REQUEST:REMIX midnight-silver-haired-yoga give it a yellow background

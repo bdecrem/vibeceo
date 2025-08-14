@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-build a ZAD app where friends can each describe an building or a public place (such as a park or a monument) that then gets generated and showed on a “virtual street” that users can just scroll to view. Buildings should have consistent lighting, scale, and mood—but the architecture should be imaginative, like something you’d see in a stylized indie animation or art-house magazine. Think Monument Valley meets editorial illustration. You should always show the OUTSIDE of the building, and then angle needs to be STRAIGHT ON so that these images could be placed side by side and look like it’s a city block.

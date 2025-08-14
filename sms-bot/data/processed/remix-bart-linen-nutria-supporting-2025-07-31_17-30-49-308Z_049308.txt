@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix linen-nutria-supporting change the background color behind the tiles to light peach and the padding background color to a brighter peach color BUT MAKE SURE TO NOT BREAK THE APP
-
-ORIGINAL_REQUEST:REMIX linen-nutria-supporting change the background color behind the tiles to light peach and the padding background color to a brighter peach color BUT MAKE SURE TO NOT BREAK THE APP

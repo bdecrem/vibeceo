@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-wtaf make a public database-powered ASCII critter wall using ZAD functions. Gallery of submitted critters must be at the TOP of the page above user controls. Display as a colorful mosaic wall with 10 random bright background colors (red, blue, green, purple, orange, yellow, pink,cyan, magenta, lime) that randomly assign to each critter tile. Minimal padding around critters, tiny 8px font names below each like small  scribbles. Must use initPublicMode(), save('critter', {name, ascii, color}), and load('critter'). Include 100+ ASCII critters (5-7 lines  each) in HTML array. Picker cycles through critters, user selects, enters name, saves to database for all visitors to see in real-time auto-refresh. public
