@@ -1,0 +1,49 @@
+{
+  "classification_type": "game",
+  "step_title": "GAME Detection",
+  "step_description": "Check if the user wants to create a game",
+  "description": "Games are interactive applications with gameplay mechanics, scoring, levels, or competitive elements. Look for requests to create playable experiences.",
+  
+  "good_examples": [
+    "make a simple snake game",
+    "create a pong game with two paddles",
+    "build a puzzle game",
+    "arcade game where you dodge obstacles",
+    "tetris clone",
+    "memory card matching game",
+    "whack-a-mole game",
+    "simple platformer game",
+    "breakout game with blocks"
+  ],
+  
+  "bad_examples": [
+    "gamification for my website",
+    "game tracker app",
+    "video game database",
+    "game review site",
+    "gaming blog"
+  ],
+  
+  "key_indicators": [
+    "Contains word 'game'",
+    "References specific game types (pong, snake, tetris, puzzle)",
+    "Mentions 'arcade' in gaming context",
+    "Describes gameplay mechanics",
+    "Requests scoring or levels",
+    "Mentions player/character movement",
+    "Asks for interactive gameplay"
+  ],
+  
+  "decision_logic": {
+    "if_yes": "GAME_DETECTED: This is a game creation request.\n\nRoute to game builder with high creativity settings (temperature 0.8).\n\nAPP_TYPE: game",
+    "if_no": "NOT_A_GAME: This is not a game request.\n\nContinue to next classification step."
+  },
+  
+  "metadata_output": {
+    "APP_TYPE": "game",
+    "CONFIG_TYPE": "game",
+    "BUILDER_FILE": "builder-game.json",
+    "BUILDER_TEMPERATURE": "0.8",
+    "DATABASE_TYPE": "GAME"
+  }
+}
