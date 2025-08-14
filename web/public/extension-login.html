@@ -240,9 +240,12 @@
         </div>
         
         <div id="manualSetup" style="display: none;">
+            <p style="color: #718096; margin-bottom: 15px; font-size: 14px;">
+                Enter the extension auth token from your .env.local file (WEBTOYS_EXT_AUTH_TOKEN)
+            </p>
             <div class="form-group">
-                <label for="authToken">Auth Token</label>
-                <input type="text" id="authToken" placeholder="M2a/gemOStrxNhh4fygtZuEBdTbDmO68s35IrFO5ay0=">
+                <label for="authToken">Auth Token (without Bearer prefix)</label>
+                <input type="text" id="authToken" placeholder="Paste your WEBTOYS_EXT_AUTH_TOKEN here">
             </div>
             
             <div class="form-group">
@@ -271,25 +274,23 @@
         <div class="instructions">
             <h3>📝 How to Use:</h3>
             <ol>
-                <li>Sign in with your Supabase account above</li>
-                <li>Once authenticated, the extension will have access</li>
-                <li>Open your Safari Extension and enter:
+                <li>Click "Manual Token Setup" above</li>
+                <li>Get your token from <code>web/.env.local</code> or <code>sms-bot/.env.local</code>:
                     <ul style="margin-top: 5px;">
-                        <li>API URL: <code id="apiUrlDisplay">http://localhost:3000</code></li>
-                        <li>Auth Token: <code>(will be shown after login)</code></li>
+                        <li>Look for: <code>WEBTOYS_EXT_AUTH_TOKEN=...</code></li>
+                        <li>Copy the value (without quotes)</li>
                     </ul>
                 </li>
-                <li>Click "Test Connection" in the extension</li>
+                <li>Paste the token and click "Set Authentication"</li>
+                <li>Open your Safari Extension and enter the same credentials</li>
                 <li>Visit any issue tracker with <code>?superpower=true</code></li>
             </ol>
         </div>
     </div>
     
     <script>
-        // Configuration
-        const SUPABASE_URL = 'https://glvlqzuihnmsfakbplnt.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdmxxenVpaG5tc2Zha2JwbG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTMwMDI2NjgsImV4cCI6MjAyODU3ODY2OH0.PilwZa70VzQzT1cH5pjCvzJtQwBMGqFQiUvemkrAzeQ';
-        const SERVICE_TOKEN = 'M2a/gemOStrxNhh4fygtZuEBdTbDmO68s35IrFO5ay0='; // The extension token
+        // Configuration will be provided by user
+        let SERVICE_TOKEN = null;
         
         // Check existing auth on load
         window.addEventListener('DOMContentLoaded', () => {
@@ -324,42 +325,9 @@
                 return;
             }
             
-            document.getElementById('loginBtn').disabled = true;
-            showStatus('Signing in...', 'info');
-            
-            try {
-                // For now, we'll use the manual token approach
-                // In production, you'd make a proper Supabase auth call here
-                
-                // Simulate successful login and set the service token
-                const apiUrl = document.getElementById('apiUrl').value || 
-                              (window.location.hostname === 'localhost' 
-                                ? `http://localhost:${window.location.port || '3000'}`
-                                : 'https://webtoys.ai');
-                
-                // Set the auth in localStorage for the extension to use
-                localStorage.setItem('webtoysAuthToken', `Bearer ${SERVICE_TOKEN}`);
-                localStorage.setItem('webtoysApiUrl', apiUrl);
-                
-                showStatus('✅ Authentication successful! Extension is now authorized.', 'success');
-                
-                // Show auth info
-                document.getElementById('tokenDisplay').textContent = `Bearer ${SERVICE_TOKEN}`;
-                document.getElementById('urlDisplay').textContent = apiUrl;
-                document.getElementById('authInfo').classList.add('show');
-                
-                // Offer to open issue tracker
-                setTimeout(() => {
-                    if (confirm('Authentication complete! Open the Issue Tracker with Superpower Mode?')) {
-                        window.open(`${apiUrl}/bart/issue-tracker?superpower=true`, '_blank');
-                    }
-                }, 1000);
-                
-            } catch (error) {
-                showStatus('Login failed: ' + error.message, 'error');
-            } finally {
-                document.getElementById('loginBtn').disabled = false;
-            }
+            // For simplified auth, just show the manual setup
+            showStatus('Please use Manual Token Setup to configure authentication', 'info');
+            showManualSetup();
         }
         
         function showManualSetup() {
