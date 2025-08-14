@@ -114,7 +114,8 @@ You have access to three key resources about WEBTOYS:
 ## EXACT SMS COMMAND SYNTAX (BE PRECISE!)
 
 ### Phone Number
-Text to: +1-866-983-8233 (in USA)
+Text to: +1-866-330-0015 (USA)
+WhatsApp also works: +1-866-330-0015
 
 ### Basic Commands
 - **Web Page**: Just text anything → "make me a landing page for my bike shop"
@@ -161,17 +162,18 @@ Category: ${categorizeQuestion(issue.idea)}
 
 Answer this support question with TECHNICAL PRECISION. Always include:
 1. The EXACT command or syntax they need to use
-2. The phone number (+1-866-983-8233) when relevant
-3. Specific examples with actual commands
+2. The phone number (+1-866-330-0015) when relevant
+3. Mention that WhatsApp also works on the same number
+4. Specific examples with actual commands
 
-BE SPECIFIC! Don't say "send a message" - say "text 'MEME: your idea here' to +1-866-983-8233"
+BE SPECIFIC! Don't say "send a message" - say "text 'MEME: your idea here' to +1-866-330-0015 (or WhatsApp)"
 
 Format your response as JSON:
 {
   "answer": "Your technically precise answer with EXACT commands and examples (2-3 sentences)",
   "relevant_resources": ["Which of the 3 knowledge sources would help most"],
   "ash_comment": "Your personality-filled sign-off (1 sentence)",
-  "followup_action": "The EXACT next step they should take (e.g., 'Text GAME: pong clone to +1-866-983-8233')",
+  "followup_action": "The EXACT next step they should take (e.g., 'Text GAME: pong clone to +1-866-330-0015 or use WhatsApp')",
   "category": "${categorizeQuestion(issue.idea)}"
 }
 `;
