@@ -2191,7 +2191,7 @@
                                     </a>
                                 ` : ''}
                                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 10px;">
-                                    <pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px; color: var(--charcoal);">${escapeHtml(data.plan_content)}</pre>
+                                    <pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px; color: var(--charcoal);">${createTruncatedTextForPre(data.plan_content)}</pre>
                                 </div>
                             </div>
                         ` : ''}
@@ -2383,6 +2383,28 @@
                     <a href="#" onclick="collapseText('${uniqueId}'); return false;" style="color: var(--electric-blue); font-weight: 600; margin-left: 10px;">Show Less</a>
                 </span>
             `;
+        }
+        
+        // Special version for pre-formatted content (like PLAN CREATED)
+        function createTruncatedTextForPre(text, maxLines = 10) {
+            if (!text) return '';
+            
+            const lines = text.split('\n');
+            
+            // Check if truncation is needed (10 lines)
+            if (lines.length <= maxLines) {
+                return escapeHtml(text);
+            }
+            
+            // Truncate by lines for pre-formatted content
+            const truncated = lines.slice(0, maxLines).join('\n');
+            const fullText = text;
+            const uniqueId = 'pre-' + Math.random().toString(36).substr(2, 9);
+            
+            return `<span id="${uniqueId}-truncated">${escapeHtml(truncated)}
+... (${lines.length - maxLines} more lines)
+<a href="#" onclick="expandText('${uniqueId}'); return false;" style="color: var(--electric-blue); font-weight: 600; display: inline-block; margin-top: 10px;">📖 Read Full Plan</a></span><span id="${uniqueId}-full" style="display: none;">${escapeHtml(fullText)}
+<a href="#" onclick="collapseText('${uniqueId}'); return false;" style="color: var(--electric-blue); font-weight: 600; display: inline-block; margin-top: 10px;">📕 Collapse Plan</a></span>`;
         }
 
         // Expand text to show full content
