@@ -1980,7 +1980,7 @@ export default function WebtoysSitePage() {
                 <span>• file uploads</span>
                 <span>• real-time sync</span>
                 <span>• your startup idea</span>
-              </span></span>. Read <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">the blog</a>.
+              </span></span>. Read <a href="https://webtoys.ai/bart/neutral-grebe-composing?id=1753916017300" className="blog-link">the blog</a>. Got a feature request or want to file a bug? Try our experimental <a href="https://webtoys.ai/bart/issue-tracker" className="blog-link">Fixit Board</a>.
             </p>
             
             <div className="phone-display">
