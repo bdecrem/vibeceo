@@ -2118,9 +2118,19 @@
                         </div>
                         
                         ${data.answer ? `
-                            <div style="margin-top: 15px; padding: 15px; background: var(--blue); border-radius: 15px; border: 2px solid var(--blue-deep);">
-                                <strong style="color: var(--charcoal);">💬 Support Answer:</strong><br>
+                            <div class="ash-comment" style="margin-top: 15px; background: linear-gradient(135deg, var(--blue) 0%, #87CEEB 100%); border: 2px solid var(--blue-deep);">
+                                <strong style="color: var(--charcoal);">🎸 Ash.tag says:</strong><br>
                                 <span style="color: var(--charcoal);">${createTruncatedText(data.answer)}</span>
+                                ${data.ash_comment ? `
+                                    <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid rgba(0,0,0,0.1);">
+                                        <em style="color: var(--charcoal);">${createTruncatedText(data.ash_comment)}</em>
+                                    </div>
+                                ` : ''}
+                                ${data.followup_action ? `
+                                    <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 10px;">
+                                        <strong>Next Step:</strong> ${escapeHtml(data.followup_action)}
+                                    </div>
+                                ` : ''}
                             </div>
                         ` : ''}
                         
@@ -2143,7 +2153,7 @@
                                         </div>
                                     ` : ''}
                                 </div>
-                            ` : data.ash_comment ? `
+                            ` : (data.ash_comment && !data.answer) ? `
                                 <div class="ash-comment">
                                     <strong>🎸 Ash.tag:</strong> ${createTruncatedText(data.ash_comment)}
                                     ${data.reformulated && data.status !== 'Canceled' && data.status !== 'closed' ? `
