@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import WTAFNavigationBar from "./navigation-bar";
 
 interface WTAFAppViewerProps {
@@ -13,6 +15,36 @@ export default function WTAFAppViewer({
   appSlug, 
   htmlContent 
 }: WTAFAppViewerProps) {
+  const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    // Listen for navigation requests from iframe (stackobjectify apps)
+    const handleMessage = (event: MessageEvent) => {
+      // Security: Only accept messages from our own iframe
+      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) {
+        return;
+      }
+
+      if (event.data && event.data.type === 'NAVIGATE_REQUEST') {
+        console.log('📍 Navigation request from iframe:', event.data.url);
+        
+        // Navigate to the requested URL
+        const currentPath = window.location.pathname;
+        const newUrl = event.data.url ? `${currentPath}${event.data.url}` : currentPath;
+        
+        // Use router.push to navigate
+        router.push(newUrl);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [router, userSlug, appSlug]);
+
   return (
     <div className="wtaf-app-container">
       {/* Navigation Bar */}
@@ -24,6 +56,7 @@ export default function WTAFAppViewer({
       {/* App Content Iframe */}
       <div className="wtaf-iframe-container">
         <iframe
+          ref={iframeRef}
           srcDoc={htmlContent}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
           className="wtaf-app-iframe"
