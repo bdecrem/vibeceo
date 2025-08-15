@@ -530,6 +530,21 @@ setTimeout(function() {
 											return;
 										}
 										
+										// Handle navigation requests from stackobjectify apps
+										if (event.data && event.data.type === 'NAVIGATE_REQUEST') {
+											console.log('📍 Navigation request from iframe:', event.data.url);
+											
+											// Navigate to the requested URL
+											const currentPath = window.location.pathname;
+											const newUrl = event.data.url ? currentPath + event.data.url : currentPath;
+											
+											console.log('🚀 Navigating to:', newUrl);
+											
+											// Use window.location to navigate (since we don't have router in this context)
+											window.location.href = newUrl;
+											return;
+										}
+										
 										if (event.data && event.data.type === 'SUPERPOWER_AUTH_REQUEST') {
 											console.log('🔌 Received auth request from iframe');
 											

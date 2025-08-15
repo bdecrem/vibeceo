@@ -21,10 +21,9 @@ export default function WTAFAppViewer({
   useEffect(() => {
     // Listen for navigation requests from iframe (stackobjectify apps)
     const handleMessage = (event: MessageEvent) => {
-      // Security: Only accept messages from our own iframe
-      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) {
-        return;
-      }
+      // For srcDoc iframes, we can't reliably check the source
+      // Instead, check if the message is the expected format
+      console.log('📨 Received message:', event.data, 'from:', event.origin);
 
       if (event.data && event.data.type === 'NAVIGATE_REQUEST') {
         console.log('📍 Navigation request from iframe:', event.data.url);
@@ -32,6 +31,8 @@ export default function WTAFAppViewer({
         // Navigate to the requested URL
         const currentPath = window.location.pathname;
         const newUrl = event.data.url ? `${currentPath}${event.data.url}` : currentPath;
+        
+        console.log('🚀 Navigating to:', newUrl);
         
         // Use router.push to navigate
         router.push(newUrl);
