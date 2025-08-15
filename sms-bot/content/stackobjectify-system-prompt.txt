@@ -92,9 +92,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    - Display all fields nicely formatted
    - Include "Back to Index" link
    - Show creation date and author
-   - IMPORTANT: Use JavaScript navigation instead of href for links in iframes:
-     - For index links: onclick="window.location.search = '?id=' + post.id; loadAndDisplayData(); return false;"
-     - For back links: onclick="window.location.search = ''; loadAndDisplayData(); return false;"
+   - IMPORTANT: Use parent window navigation for iframe compatibility:
+     - For index links: onclick="navigateToObject(itemId)"
+     - For back links: onclick="navigateToIndex()"
 
 7. DATA STRUCTURE:
    - The source app's data will be provided in the prompt
@@ -126,19 +126,58 @@ EXAMPLE STRUCTURE:
 // REQUIRED: Placeholder for system injection
 window.OBJECTIFY_SOURCE_APP_ID = null; // Will be replaced by system
 
-// Navigation helper for iframe compatibility
-function navigateTo(queryString) {
-    // For iframes with srcDoc, we need a different approach
-    if (window.location.search !== queryString) {
-        // Suppress any alerts during navigation
-        const originalAlert = window.alert;
-        window.alert = function() {}; // Temporarily disable alerts
-        
-        window.location.search = queryString;
-        // The page will reload, so we don't need to call loadAndDisplayData
-        
-        // Restore alert after a short delay (though page will reload anyway)
-        setTimeout(() => { window.alert = originalAlert; }, 100);
+// Navigation helpers for iframe compatibility
+// These functions navigate the parent window when in an iframe
+function navigateToObject(objectId) {
+    try {
+        // Check if we're in an iframe
+        if (window.parent && window.parent !== window) {
+            // Get the parent window's current URL
+            const parentUrl = new URL(window.parent.location.href);
+            parentUrl.searchParams.set('id', objectId);
+            // Navigate the parent window
+            window.parent.location.href = parentUrl.toString();
+        } else {
+            // Fallback for non-iframe (testing/direct access)
+            window.location.search = '?id=' + objectId;
+        }
+    } catch (e) {
+        // Cross-origin error - try alternative approach
+        console.log('Navigation via parent failed, trying alternative:', e);
+        // Send message to parent to request navigation
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'NAVIGATE_REQUEST',
+                url: '?id=' + objectId
+            }, '*');
+        }
+    }
+    return false;
+}
+
+function navigateToIndex() {
+    try {
+        // Check if we're in an iframe
+        if (window.parent && window.parent !== window) {
+            // Get the parent window's current URL and remove query params
+            const parentUrl = new URL(window.parent.location.href);
+            parentUrl.search = '';
+            // Navigate the parent window
+            window.parent.location.href = parentUrl.toString();
+        } else {
+            // Fallback for non-iframe (testing/direct access)
+            window.location.search = '';
+        }
+    } catch (e) {
+        // Cross-origin error - try alternative approach
+        console.log('Navigation via parent failed, trying alternative:', e);
+        // Send message to parent to request navigation
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'NAVIGATE_REQUEST',
+                url: ''
+            }, '*');
+        }
     }
     return false;
 }
@@ -181,12 +220,11 @@ async function loadAndDisplayData() {
 
 // Example index display with proper navigation
 function displayIndex(items) {
-    // DO NOT try to get URLs from window.location - it won't work in iframes
-    // Just display the query parameter for users to append to their URL
+    // Display items with proper navigation for iframe compatibility
     
     document.getElementById('content').innerHTML = items.map(item => `
         <div class="item-card">
-            <a href="#" onclick="return navigateTo('?id=${item.id}')">
+            <a href="#" onclick="navigateToObject('${item.id}'); return false;">
                 ${item.title}
             </a>
             <!-- Display post ID for URL construction -->
@@ -200,7 +238,7 @@ function displayIndex(items) {
 // Example back link
 function displayObject(item) {
     document.getElementById('content').innerHTML = `
-        <a href="#" onclick="return navigateTo('')">← Back to Index</a>
+        <a href="#" onclick="navigateToIndex(); return false;">← Back to Index</a>
         <h1>${item.title}</h1>
         <!-- rest of content -->
     `;
