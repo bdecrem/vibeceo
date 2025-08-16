@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { logWithTimestamp, logError, logSuccess } from './shared/utils.js';
+import { logWithTimestamp, logError, logSuccess, logWarning } from './shared/logger.js';
 
 const supabase = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
