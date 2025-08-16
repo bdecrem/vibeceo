@@ -63,8 +63,8 @@ function buildEditPrompt(request, prompts) {
   const { edit_request, wtaf_content } = request;
   const { editInstructions, safetyRules } = prompts;
   
-  // Get the current HTML from the joined wtaf_content
-  const currentHtml = wtaf_content?.html_content || '';
+  // Get the current HTML from the stacked content (loaded in collect-edit-requests.js)
+  const currentHtml = request.content?.html_content || wtaf_content?.html_content || '';
   const detectedType = request.content?.detectedType || 'standard';
   
   return `${editInstructions}
