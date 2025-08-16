@@ -1663,7 +1663,28 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         logWithTimestamp(`🎯 Using ${configType} configuration`);
         logWithTimestamp(`🤖 Models: Classifier=${(config as any).classifierModel || 'N/A'}, Builder=${config.builderModel}`);
         
-        // Step 1: Load WTAF Design System BEFORE generating complete prompt
+        // Step 1: Check for image references and enhance prompt
+        let processedPrompt = userPrompt;
+        let imageUrls: string[] = [];
+        
+        // Import image helpers dynamically
+        const { parseImageReferences, enhancePromptWithImages } = await import('./image-helpers.js');
+        
+        const imageRefs = parseImageReferences(userPrompt);
+        if (imageRefs.length > 0) {
+            logWithTimestamp(`🖼️ Image references detected: ${imageRefs.join(', ')}`);
+            const imageEnhancement = await enhancePromptWithImages(userPrompt, userSlug);
+            processedPrompt = imageEnhancement.enhancedPrompt;
+            imageUrls = imageEnhancement.imageUrls;
+            
+            if (imageUrls.length > 0) {
+                logWithTimestamp(`✅ Enhanced prompt with ${imageUrls.length} user images`);
+            } else {
+                logWarning(`⚠️ No valid images found for references: ${imageRefs.join(', ')}`);
+            }
+        }
+        
+        // Step 2: Load WTAF Design System BEFORE generating complete prompt
         logWithTimestamp(`🎨 Loading WTAF Design System for prompt generation...`);
         const designSystemForPrompt = await loadWtafDesignSystem();
         if (designSystemForPrompt) {
@@ -1672,8 +1693,8 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
             logWarning("⚠️ WTAF Design System failed to load for prompt generation");
         }
         
-        // Step 2: Generate complete prompt with config (including admin override and design system)
-        logWithTimestamp(`🔧 Generating complete prompt from: ${userPrompt.slice(0, 50)}...`);
+        // Step 3: Generate complete prompt with config (including admin override and design system)
+        logWithTimestamp(`🔧 Generating complete prompt from: ${processedPrompt.slice(0, 50)}...`);
         
         // For games, classifier config is not needed since games skip the classifier entirely
         const classifierConfig = configType === 'game' ? {
@@ -1697,27 +1718,27 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         };
         
         // Add marker for minimal test if needed
-        let promptToProcess = userPrompt;
+        let promptToProcess = processedPrompt;
         if (isMinimalTest) {
-            promptToProcess = userPrompt + ' ADMIN_TEST_MARKER';
+            promptToProcess = processedPrompt + ' ADMIN_TEST_MARKER';
             logWithTimestamp("🧪 Added ADMIN_TEST_MARKER to prompt for minimal processing");
         }
         
         // Add marker for ZAD test if needed
         if (isZadTest) {
-            promptToProcess = userPrompt + ' ZAD_TEST_MARKER';
+            promptToProcess = processedPrompt + ' ZAD_TEST_MARKER';
             logWithTimestamp("🧪 Added ZAD_TEST_MARKER to prompt for simple ZAD processing");
         }
         
         // Add marker for ZAD API if needed
         if (isZadApi) {
-            promptToProcess = userPrompt + ' ZAD_API_MARKER';
+            promptToProcess = processedPrompt + ' ZAD_API_MARKER';
             logWithTimestamp("🚀 Added ZAD_API_MARKER to prompt for comprehensive ZAD with API conversion");
         }
         
         // Add marker for Music if needed
         if (isMusicRequest) {
-            promptToProcess = userPrompt + ' MUSIC_MARKER';
+            promptToProcess = processedPrompt + ' MUSIC_MARKER';
             logWithTimestamp("🎵 Added MUSIC_MARKER to prompt for music app generation");
         }
         
