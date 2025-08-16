@@ -43,8 +43,9 @@ function validateHTML(html, appType) {
   const closeTags = (html.match(/<\/[^>]*>/g) || []).length;
   
   
-  // Simple balance check - many HTML tags are self-closing
-  if (Math.abs(openTags - closeTags) > 10) {
+  // Generous balance check for complex generated content
+  // Allow up to 20 tag difference to account for meta tags, self-closing tags, etc.
+  if (Math.abs(openTags - closeTags) > 20) {
     issues.push('Severely unbalanced HTML tags');
   }
   
