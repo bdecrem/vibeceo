@@ -110,18 +110,41 @@ async function validateContent(contentId) {
     return null;
   }
   
-  // Detect app type from HTML content
+  let htmlContent = data.html_content;
+  
+  // Load current revision HTML if it exists (for stacking edits)
+  if (data.current_revision !== null) {
+    console.log(`  🔄 Loading current revision ${data.current_revision} for stacking`);
+    
+    const { data: revisionData, error: revisionError } = await supabase
+      .from('wtaf_revisions')
+      .select('html_content')
+      .eq('content_id', data.id)
+      .eq('revision_id', data.current_revision)
+      .eq('status', 'completed')
+      .single();
+
+    if (revisionError) {
+      console.log(`  ⚠️  Failed to load revision ${data.current_revision}, using original`);
+    } else if (revisionData?.html_content) {
+      console.log(`  ✅ Using revision ${data.current_revision} HTML for stacking`);
+      htmlContent = revisionData.html_content;
+    }
+  }
+  
+  // Detect app type from HTML content (use current revision content)
   let appType = 'standard';
-  if (data.html_content.includes('/api/zad/')) {
+  if (htmlContent.includes('/api/zad/')) {
     appType = 'zad';
-  } else if (data.html_content.includes('requestAnimationFrame') && data.html_content.includes('canvas')) {
+  } else if (htmlContent.includes('requestAnimationFrame') && htmlContent.includes('canvas')) {
     appType = 'game';
-  } else if (data.html_content.includes('<form') && data.html_content.includes('submit')) {
+  } else if (htmlContent.includes('<form') && htmlContent.includes('submit')) {
     appType = 'form';
   }
   
   return {
     ...data,
+    html_content: htmlContent, // Use the current revision content
     detectedType: appType
   };
 }
