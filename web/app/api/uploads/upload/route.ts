@@ -72,18 +72,18 @@ export async function POST(request: NextRequest) {
 
 		const nextUploadNumber = uploadCount ? uploadCount.upload_number + 1 : 1;
 
-		// Create unique filename
+		// Create unique filename with user-uploads prefix for organization
 		const fileExt = file.name.split('.').pop();
 		const fileName = `${nextUploadNumber}_${Date.now()}.${fileExt}`;
-		const filePath = `${userId}/${fileName}`;
+		const filePath = `user-uploads/${userId}/${fileName}`;
 
 		// Convert File to ArrayBuffer
 		const arrayBuffer = await file.arrayBuffer();
 		const buffer = Buffer.from(arrayBuffer);
 
-		// Upload to Supabase Storage
+		// Upload to Supabase Storage (using existing og-images bucket)
 		const { data: uploadData, error: uploadError } = await supabase.storage
-			.from('user-uploads')
+			.from('og-images')
 			.upload(filePath, buffer, {
 				contentType: file.type,
 				upsert: false
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
 		// Get public URL
 		const { data: { publicUrl } } = supabase.storage
-			.from('user-uploads')
+			.from('og-images')
 			.getPublicUrl(filePath);
 
 		// Get image dimensions (optional, for images)
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 			
 			// Clean up uploaded file
 			await supabase.storage
-				.from('user-uploads')
+				.from('og-images')
 				.remove([filePath]);
 
 			return NextResponse.json(
