@@ -438,6 +438,16 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🔧 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // 🌐 WEBPAGE: Check for --webpage flag to force standard web page builder
+    let forceWebpage = false;
+    if (userPrompt && userPrompt.includes('--webpage')) {
+        logWithTimestamp("🌐 WEBPAGE OVERRIDE DETECTED: Forcing standard web page builder");
+        // Clean the prompt by removing the webpage flag
+        userPrompt = userPrompt.replace(/--webpage\s*/g, '').trim();
+        forceWebpage = true;
+        logWithTimestamp(`🌐 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
+    
     // 🧪 ZAD TEST: Check for --zad-test flag to force simple ZAD test processing
     let isZadTest = false;
     if (userPrompt && userPrompt.includes('--zad-test')) {
@@ -1722,6 +1732,12 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         if (isMinimalTest) {
             promptToProcess = processedPrompt + ' ADMIN_TEST_MARKER';
             logWithTimestamp("🧪 Added ADMIN_TEST_MARKER to prompt for minimal processing");
+        }
+        
+        // Add marker for webpage override if needed
+        if (forceWebpage) {
+            promptToProcess = processedPrompt + ' WEBPAGE_MARKER';
+            logWithTimestamp("🌐 Added WEBPAGE_MARKER to prompt for standard web page processing");
         }
         
         // Add marker for ZAD test if needed

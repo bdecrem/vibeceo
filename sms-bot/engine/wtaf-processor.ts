@@ -213,8 +213,19 @@ APP_TYPE: data_collection`;
             }
         }
         
+        // 🌐 WEBPAGE OVERRIDE CHECK: Skip classifier entirely if webpage flag is set
+        if (cleanedInput.includes('WEBPAGE_MARKER')) {
+            logWithTimestamp("🌐 WEBPAGE OVERRIDE: Skipping classifier, going to standard web page builder");
+            expandedPrompt = `${cleanedInput.replace('WEBPAGE_MARKER', '').trim()}
+
+EMAIL_NEEDED: false
+ZERO_ADMIN_DATA: false
+APP_TYPE: web_page`;
+            logWithTimestamp("🌐 Webpage override: Created standard web page prompt without classifier");
+        }
+        
         // 🧪 ZAD TEST OVERRIDE CHECK: Skip classifier entirely if zad test is set
-        if (cleanedInput.includes('ZAD_TEST_MARKER')) {
+        else if (cleanedInput.includes('ZAD_TEST_MARKER')) {
             logWithTimestamp("🧪 ZAD-TEST OVERRIDE: Skipping classifier, going to simple ZAD test builder");
             expandedPrompt = `ZAD_TEST_REQUEST: ${cleanedInput.replace('ZAD_TEST_MARKER', '').trim()}
 
@@ -225,7 +236,7 @@ APP_TYPE: zero_admin_data`;
         }
         
         // 🚀 ZAD API OVERRIDE CHECK: Skip classifier entirely if zad api is set
-        if (cleanedInput.includes('ZAD_API_MARKER')) {
+        else if (cleanedInput.includes('ZAD_API_MARKER')) {
             logWithTimestamp("🚀 ZAD-API OVERRIDE: Skipping classifier, going to comprehensive ZAD builder with API conversion");
             expandedPrompt = `ZAD_API_REQUEST: ${cleanedInput.replace('ZAD_API_MARKER', '').trim()}
 
