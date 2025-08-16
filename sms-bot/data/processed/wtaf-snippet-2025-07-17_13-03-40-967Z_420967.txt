@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a shared quilt where each user adds one square by picking a color and a symbol. Display all the squares in a grid that grows over time. Example: after 4 contributions it might look like this: 🟥 🌸 | 🟦 ⚡ | 🟩 💀 | 🟪 🔥

@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-wtaf Make me a simple PAINT app with a nostalgic "MacPaint" vibe that has a pencil, brush, spray paint (neon!) color and thickness slider, Undo button. Also a Gallery Wall that shows who created each shared piece. make the canvas square. When the user hits SAVE ask for their name and post that below their art on the gallery. The gallery should immediately show all the art (not once the user saves) public

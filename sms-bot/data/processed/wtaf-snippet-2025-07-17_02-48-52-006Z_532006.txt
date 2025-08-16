@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
---admin make a hello world generator app, like this: each time I tap the next button it creates a new hello world page with new colors and gorgeous gradients and floating emojis etc. but when I click on the save button in the lower right corner, that's the end: that will now be the hello world page shown anytime anyone loads the page after that. Builder gpt: Use the admin data space to store the key bit of the permanent choice

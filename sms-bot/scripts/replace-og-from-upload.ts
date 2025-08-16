@@ -1,16 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables - try multiple locations
+// When compiled, this script runs from dist/scripts/, so we need to go up properly
 const envPaths = [
-  path.join(__dirname, '../.env.local'),     // sms-bot/.env.local
-  path.join(__dirname, '../../.env.local'),  // root/.env.local
+  path.join(__dirname, '../../.env.local'),     // From dist/scripts to sms-bot/.env.local
+  path.join(__dirname, '../../../.env.local'),  // From dist/scripts to root/.env.local
+  path.join(__dirname, '../.env.local'),        // Fallback for running from scripts/
 ];
 
 let envLoaded = false;
@@ -33,20 +35,24 @@ if (!envLoaded) {
 }
 
 // Verify environment variables
-console.log('🔧 Environment Check:');
-console.log(`  🔗 SUPABASE_URL: ${process.env.SUPABASE_URL ? 'loaded' : 'MISSING'}`);
-console.log(`  🔑 SUPABASE_SERVICE_KEY: ${process.env.SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+console.log('🔧 Environment Check:');
+console.log(`  🔗 SUPABASE_URL: ${SUPABASE_URL ? 'loaded' : 'MISSING'}`);
+console.log(`  🔑 SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY ? 'loaded' : 'MISSING'}`);
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Required environment variables missing:');
   console.error('   SUPABASE_URL and SUPABASE_SERVICE_KEY required');
+  console.error('   Please ensure .env.local file exists with these variables');
   process.exit(1);
 }
 
 // Initialize Supabase
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY
 );
 
 async function testSupabaseConnection() {
@@ -70,14 +76,14 @@ async function testSupabaseConnection() {
       console.log('  ✅ Created og-images bucket');
     }
     
-    // Test 2: Check wtaf_content table structure
+    // Test 2: Check wtaf_content table structure including override field
     const { data: tableData, error: tableError } = await supabase
       .from('wtaf_content')
-      .select('user_slug, app_slug, og_image_url, og_image_cached_at')
+      .select('user_slug, app_slug, og_image_url, og_image_override, og_image_cached_at')
       .limit(1);
     
     if (tableError) throw new Error(`Failed to query wtaf_content: ${tableError.message}`);
-    console.log(`  📊 wtaf_content table: ACCESSIBLE`);
+    console.log(`  📊 wtaf_content table: ACCESSIBLE (og_image_override field present)`);
     
     // Test 3: Count total records
     const { count, error: countError } = await supabase
@@ -159,27 +165,39 @@ async function replaceOGFromUpload(uploadFilename: string) {
     const ogImageUrl = urlData.publicUrl;
     console.log(`🔗 Public URL: ${ogImageUrl}`);
     
-    // Update the wtaf_content table
+    // Update the wtaf_content table with override flag
+    console.log(`📝 Updating database with:`);
+    console.log(`   og_image_url: ${ogImageUrl}`);
+    console.log(`   og_image_override: true`);
+    console.log(`   For: ${userSlug}/${appSlug}`);
+    
     const { data: updateData, error: updateError } = await supabase
       .from('wtaf_content')
       .update({ 
         og_image_url: ogImageUrl,
+        og_image_override: true,  // Set the override flag to true
         og_image_cached_at: new Date().toISOString()
       })
       .eq('user_slug', userSlug)
-      .eq('app_slug', appSlug);
+      .eq('app_slug', appSlug)
+      .select();  // Add select to ensure the update completes
     
     if (updateError) {
       throw new Error(`Failed to update database: ${updateError.message}`);
     }
     
+    if (!updateData || updateData.length === 0) {
+      throw new Error('Update appeared to succeed but no rows were affected');
+    }
+    
     console.log(`✅ Updated OG image for ${userSlug}/${appSlug}`);
+    console.log(`🌟 Override flag set to TRUE - this custom image will stick!`);
     console.log(`🌐 New OG URL: ${ogImageUrl}`);
     
     // Verify the update worked
     const { data: verifyData, error: verifyError } = await supabase
       .from('wtaf_content')
-      .select('og_image_url, og_image_cached_at')
+      .select('og_image_url, og_image_override, og_image_cached_at')
       .eq('user_slug', userSlug)
       .eq('app_slug', appSlug)
       .single();
@@ -189,6 +207,7 @@ async function replaceOGFromUpload(uploadFilename: string) {
     } else {
       console.log(`✅ Verification: Database updated successfully`);
       console.log(`   URL: ${verifyData.og_image_url}`);
+      console.log(`   Override: ${verifyData.og_image_override}`);
       console.log(`   Cached at: ${verifyData.og_image_cached_at}`);
     }
     

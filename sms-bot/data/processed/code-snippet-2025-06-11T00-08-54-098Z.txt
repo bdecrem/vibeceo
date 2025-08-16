@@ -1,1 +1,0 @@
-Create a JSON file that lists the top 3 sci-fi movies of all time.

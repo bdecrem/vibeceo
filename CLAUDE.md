@@ -28,12 +28,14 @@ Our CRUD/social apps feature:
 
 ### Website Structure
 - **Main Site**: AdvisorsFoundry (parent directory)
-- **WEBTOYS**: Subdirectory using middleware/routing
-- **Key Pages**:
-  - Homepage: `/web/wtaf-landing`
-  - `/trending` - Popular creations
-  - `/featured` - Curated content
-  - User pages: "Creations" (user homepages)
+- **WEBTOYS.ai Website** (as of August 6, 2025): 
+  - **Important**: "The website" refers to the Webtoys.ai website specifically, NOT everything in the web/ folder
+  - **Homepage**: `/web/wtaf-landing`
+  - **Gallery Pages**:
+    - `/recents` - Most recent creations
+    - `/trending` - Popular creations
+    - `/featured` - Curated content
+  - **User Pages**: "Creations" (user homepages)
 
 ## Project Architecture Overview
 
@@ -43,7 +45,31 @@ The SMS bot follows a microservices architecture with strict separation of conce
 - **Managers**: Domain-specific functionality (storage, social, stackables)
 - **Shared utilities**: Common functions and configurations
 
+**📚 For detailed technical documentation on the classifier and routing system, see: `sms-bot/engine/CLAUDE.md`**
+
 ## Strict Rules for Code Agents
+
+### 0. SECURITY: NEVER Hardcode Secrets
+**THIS IS THE #1 RULE - VIOLATING THIS RULE IS UNACCEPTABLE**
+- **NEVER** put API keys, tokens, or secrets directly in code files
+- **NEVER** commit credentials to Git, even in test scripts
+- **ALWAYS** use environment variables from `.env` files
+- **ALWAYS** use `process.env.VARIABLE_NAME` for sensitive values
+- Test scripts are NOT exempt from this rule
+- **DO NOT EDIT OR CHANGE OR COPY OR IN ANY OTHER WAY MESS WITH MY SECRETS**
+
+```javascript
+// ❌ ABSOLUTELY WRONG - NEVER DO THIS
+const supabaseKey = 'eyJhbGc...actual-key-here...';
+
+// ✅ CORRECT - ALWAYS DO THIS
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+```
+
+If you create test scripts:
+1. Put them in directories covered by .gitignore (`/sms-bot/scripts/`, `/web/scripts/`)
+2. Still use environment variables for all credentials
+3. Include instructions for setting up required env vars
 
 ### 1. NEVER Mix Layers
 - **Controller** handles business logic and orchestration ONLY
@@ -252,14 +278,56 @@ When in doubt:
 3. Ask: "Which module owns this concern?"
 4. Keep modules focused on their single responsibility
 
+## Server Management and Deployment Rules
+
+### Claude Code MUST Have User Permission For:
+- **Starting, stopping, or restarting ANY server** (web server on port 3000, SMS listener on port 3030, Webtoys Engine)
+- **Running build commands** (`npm run build`, etc.)
+- **Pushing code to GitHub** (commits are allowed without permission)
+- Always ask for explicit user approval before any of these actions
+
+### After Making Changes:
+Unless it's VERY clear, inform the user whether they need to:
+1. **Rebuild code** (which code specifically)
+2. **Restart a server** (specify which one):
+   - Web server (port 3000) - for changes to web/ directory
+   - SMS listener (port 3030) - for changes to sms-bot/
+   - Webtoys Engine - for changes to sms-bot/engine/
+
 ## Git Commit and Push Rules
 
-**NEVER commit or push changes to GitHub unless explicitly requested by the user.**
-- You may stage changes with `git add` for review
+**Claude Code can commit anytime. For PUSHES the user needs to approve those requests.**
+- You may stage changes with `git add`
 - You may check status with `git status`
-- DO NOT run `git commit` unless the user says "commit" 
-- DO NOT run `git push` unless the user says "push"
-- Wait for explicit user approval before committing or pushing any changes
+- You may run `git commit` at any time
+- DO NOT run `git push` unless the user explicitly approves
+- Wait for explicit user approval before pushing any changes
+
+## Production Deployment Checklist
+
+**BEFORE pushing code that might break production, check:**
+
+1. **New Dependencies**: If you `import` a new library:
+   - Add it to package.json with `npm install <package>`
+   - Verify it's in the correct package.json (web/ or sms-bot/)
+   - Run `npm run test:smoke` to check for missing dependencies
+
+2. **Environment Variables**: If you add `process.env.NEW_VAR`:
+   - Document it in the relevant .env.example file
+   - Inform user it needs to be set in production (Railway)
+   - Add to critical vars list in smoke tests if critical
+
+3. **Config Changes**: If you modify config.ts or shared/config.ts:
+   - Ensure default values work for production
+   - Check if production override is needed
+
+4. **Database Changes**: If you modify database schema:
+   - Alert user that Supabase migration may be needed
+   - Never assume table structure - verify first
+
+5. **API/Service Changes**: If you add new external service:
+   - Ensure API keys are via environment variables
+   - Document the service setup requirements
 
 ## Security Exception: Web Console API
 
@@ -324,6 +392,130 @@ The system automatically classifies apps into 5 types:
 - Skip error transformation
 - Hardcode configuration values
 - Make direct Supabase calls in controller
+
+## CRITICAL: Use Task Tool to Avoid Failure Loops
+
+### When to AUTOMATICALLY use the Task tool:
+- **After 2 failed attempts** at fixing any issue (especially UI/CSS)
+- **When user shows ANY frustration** ("still broken", "doesn't work", "come on", "NO", etc.)
+- **When dealing with:**
+  - Complex CSS positioning/layout problems
+  - Visual appearance issues
+  - Multi-file debugging
+  - Any issue you've tried to fix 2+ times
+
+### Trigger Phrases (use Task tool IMMEDIATELY):
+- "still not working" / "still broken"
+- "that's wrong" / "not right"
+- "try again" / "failed again"
+- Multiple "NO" responses
+- Any swearing or CAPS LOCK frustration
+- "X times" (indicating repeated failures)
+
+### How to Use:
+```
+Task tool with subagent_type: general-purpose
+Include:
+- File path(s) involved
+- What's broken (with screenshots if provided)
+- What you've already tried
+- Exact desired outcome
+```
+
+### Why This is MANDATORY:
+- Prevents endless trial-and-error loops
+- Gets fresh perspective on the problem
+- Respects user's time and patience
+- Task agents can review entire context you might miss
+
+**DO NOT continue trying the same type of fix after 2 failures. Use the Task tool.**
+
+## Automatic Commits and Testing
+
+### When to Auto-Commit (Without Asking)
+
+Claude Code SHOULD automatically commit at these logical points:
+1. **After completing a feature** - When a requested feature is fully implemented
+2. **After fixing a bug** - When a bug fix is complete and tested
+3. **Before starting new work** - To checkpoint completed work
+4. **After refactoring** - When code structure improvements are done
+5. **Every 3-5 related changes** - To maintain atomic commit history
+
+Example: User says "fix the gallery hover effects" → implement → test → auto-commit
+
+### Smoke Testing System
+
+**Automatic pre-commit testing is enabled:**
+- Tests run automatically before every commit
+- Located in `web/scripts/smoke-test.js`
+- Checks critical paths:
+  - Web server responds
+  - Key pages load (/trending, /featured, /recents)
+  - OG image API works
+  - Demo mode functions
+  - Static assets accessible
+
+**If tests fail:**
+1. Fix the issue immediately
+2. OR inform user and ask if they want to skip with `--no-verify`
+
+**For complex testing needs:**
+- Use `test-runner` sub-agent type with Task tool
+- Example: "Task: Run comprehensive tests on all gallery pages"
+
+### Visual Testing with Puppeteer MCP
+
+**PROACTIVE USE REQUIRED**: Claude Code MUST use Puppeteer MCP to visually verify changes when:
+
+1. **After UI/CSS Changes** - Take screenshots to verify visual appearance
+2. **Testing User-Created Pages** - Navigate to and screenshot generated apps/pages
+3. **Gallery Updates** - Visually verify /trending, /featured, /recents pages
+4. **Form Testing** - Fill and submit forms on created apps
+5. **Mobile Responsiveness** - Test at different viewport sizes
+6. **Before Committing UI Changes** - Screenshot before/after for visual regression
+
+**When to Use Puppeteer Automatically:**
+- User mentions "looks broken", "visual bug", "CSS issue" → Take screenshot
+- After modifying gallery pages → Navigate and verify visually
+- Testing created apps → Navigate to the app URL and interact
+- User shares screenshot of issue → Compare with Puppeteer screenshot
+- After OG image changes → Verify OG images render correctly
+
+**Example Workflow:**
+```javascript
+// After making CSS changes to gallery
+1. Navigate to https://webtoys.ai/trending
+2. Screenshot the page
+3. Check hover states by hovering elements
+4. Test at mobile viewport (390x844)
+5. Verify visual consistency
+```
+
+**Puppeteer Commands to Use:**
+- `mcp__puppeteer__puppeteer_navigate` - Go to pages
+- `mcp__puppeteer__puppeteer_screenshot` - Capture visuals
+- `mcp__puppeteer__puppeteer_click` - Test interactions
+- `mcp__puppeteer__puppeteer_fill` - Test forms
+- `mcp__puppeteer__puppeteer_evaluate` - Check computed styles
+
+**Testing Generated Content:**
+When user creates an app via SMS, automatically:
+1. Navigate to the generated URL
+2. Take a screenshot
+3. Test any interactive elements
+4. Report visual confirmation to user
+
+**Launch Options for Different Scenarios:**
+```javascript
+// Standard testing
+{ "headless": true }
+
+// Visual debugging
+{ "headless": false }
+
+// Mobile testing
+{ "headless": true, "defaultViewport": { "width": 390, "height": 844 } }
+```
 
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->

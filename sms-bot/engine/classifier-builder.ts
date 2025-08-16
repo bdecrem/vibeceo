@@ -108,9 +108,12 @@ async function loadClassifierConfig(): Promise<ClassifierConfig | null> {
  */
 async function loadAllModules(): Promise<ClassificationLogic[]> {
     const moduleFiles = [
-        'needs-email.json',
-        'is-it-a-zad.json', 
-        'needs-admin.json'
+        '1-is-meme.json',          // NEW: Check for meme first
+        '2-is-game.json',          // NEW: Check for game second
+        '3-is-music.json',         // NEW: Check for music third
+        '4-needs-email.json',      // Renamed from needs-email.json
+        '5-is-it-a-zad.json',      // Renamed from is-it-a-zad.json
+        '6-needs-admin.json'       // Renamed from needs-admin.json
     ];
 
     const modules = await Promise.all(
@@ -226,14 +229,19 @@ export async function buildClassifierPrompt(): Promise<ChatCompletionMessagePara
             loadClassifierConfig()
         ]);
 
-        if (modules.length !== 3) {
-            logWarning("Failed to load all classification logic files");
+        if (modules.length === 0) {
+            logWarning("Failed to load any classification logic files");
             return null;
         }
 
         if (!config) {
             logWarning("Failed to load classifier configuration");
             return null;
+        }
+
+        // Updated check for expected 6 modules instead of 3
+        if (modules.length !== 6) {
+            logWarning(`Expected 6 classification modules but loaded ${modules.length}`);
         }
 
         logWithTimestamp(`✅ Loaded ${modules.length} classification modules: ${modules.map(m => m.classification_type).join(', ')}`);

@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix cantaloupe-chinchilla-directing make it about a dog
-
-ORIGINAL_REQUEST:REMIX cantaloupe-chinchilla-directing make it about a dog

@@ -1,0 +1,67 @@
+{
+  "classification_type": "zero-admin-data",
+  "step_title": "ZAD (Zero Admin Data)",
+  "step_description": "Check if this is a CRUD app that needs data persistence",
+  "description": "Accept if: The request is for a CRUD app (Create/Read/Update/Delete data) that needs data persistence. Focus on the app's functionality, not audience size. Voting apps, rating systems, message boards, task trackers, blogs, and similar data-driven apps should be ZAD.",
+  
+  "good_examples": [
+    "a simple voting app → Stores and displays votes",
+    "A simple message board → Users post and read messages", 
+    "personal journal for my thoughts → Create and save entries", 
+    "chat app to talk with my friends → Store and display messages",
+    "expense tracker for our roommates → Track and save expenses",
+    "group decision maker for weekend plans → Collect and tally preferences",
+    "hot or not for AI unicorns → Rating/voting app with data storage",
+    "rate my startup ideas → Voting system with persistence",
+    "anonymous confession board → Message board with data storage",
+    "where should we eat lunch voting → Polling app",
+    "rank these movies → Rating/ranking system",
+    "submit and vote on baby names → Submission + voting CRUD",
+    "blog for my thoughts → Create/edit/publish posts",
+    "team blog → Multiple authors posting content",
+    "note taking app → Create and organize notes",
+    "personal diary → Daily entries with persistence",
+    "shared notebook → Collaborative note-taking",
+    "micro-blog → Short posts with data storage",
+    "writing app → Draft and save documents"
+  ],
+  
+  "bad_examples": [
+    "company website → Static brochure site, no user-generated content",
+    "portfolio site → Just displaying existing work, no CRUD", 
+    "landing page → Marketing page, no data storage",
+    "documentation site → Static help content only",
+    "about me page → Single static page",
+    "product showcase → Display-only, no user interaction",
+    "restaurant menu → Static information, no ordering system"
+  ],
+  
+  "rejection_criteria": [
+    "Static website with no data storage",
+    "Portfolio or marketing sites without user content",
+    "Documentation or help sites",
+    "Sites that only display information",
+    "No user-generated content needed",
+    "No database operations required"
+  ],
+  
+  "key_indicators": [
+    "Needs to save and retrieve data",
+    "Voting, rating, or polling functionality",
+    "Message board or forum features",
+    "Task/todo management",
+    "Submission and collection features",
+    "Any 'Hot or Not' style rating",
+    "Collaborative data editing",
+    "'Share' or 'collaborate' keywords",
+    "Blog or note-taking functionality",
+    "Journal or diary features",
+    "Content creation and storage",
+    "User-generated content"
+  ],
+  
+  "decision_logic": {
+    "if_yes": "ZAD_DETECTED: This request is for a small-scale web application suitable for 5 or fewer people.\n\nThis will be built as a collaborative app with simple authentication and data sharing.",
+    "if_no": "STANDARD_REQUEST: This request should be handled by the standard app builder.\n\nReason: Designed for larger audience or requires complex features beyond small group collaboration."
+  }
+} 

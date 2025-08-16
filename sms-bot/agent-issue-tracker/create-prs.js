@@ -26,8 +26,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'webtoys-issue-tracker';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8-agenttest/sms-bot';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load fixed issues ready for PR creation
@@ -47,7 +47,7 @@ async function loadFixedIssues() {
   // Filter for fixed issues ready for PR
   return data.filter(record => {
     const content = record.content_data || {};
-    return content.status === 'fixed' && 
+    return content.status === 'Done' && 
            content.ready_for_pr === true &&
            !content.pr_url;
   });
@@ -164,7 +164,7 @@ async function createPullRequest(issue, issueId, branchName) {
     await fs.writeFile(tempFile, body);
     
     const { stdout } = await execAsync(
-      `gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
+      `/opt/homebrew/bin/gh pr create --title "${title}" --body-file "${tempFile}" --base agenttest --head ${branchName}`,
       { cwd: PROJECT_ROOT }
     );
     
@@ -207,7 +207,7 @@ async function addPRLabels(prNumber, issue) {
 
   try {
     await execAsync(
-      `gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
+      `/opt/homebrew/bin/gh pr edit ${prNumber} --add-label "${labels.join(',')}"`,
       { cwd: PROJECT_ROOT }
     );
     return true;
@@ -267,7 +267,7 @@ async function processPullRequests() {
           const comment = `### Community Discussion\n\n${issue.comments.map(c => `- ${c}`).join('\n')}`;
           try {
             await execAsync(
-              `gh pr comment ${prNumber} --body "${comment}"`,
+              `/opt/homebrew/bin/gh pr comment ${prNumber} --body "${comment}"`,
               { cwd: PROJECT_ROOT }
             );
           } catch (commentError) {
@@ -309,7 +309,7 @@ async function processPullRequests() {
     console.log(`\n📋 Checking all auto-generated PRs...`);
     try {
       const { stdout: prList } = await execAsync(
-        `gh pr list --label "auto-generated" --state open --json number,title,url`,
+        `/opt/homebrew/bin/gh pr list --label "auto-generated" --state open --json number,title,url`,
         { cwd: PROJECT_ROOT }
       );
       
