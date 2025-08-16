@@ -46,9 +46,9 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		// Also delete from storage
+		// Also delete from storage (using og-images bucket)
 		const { error: storageError } = await supabase.storage
-			.from('user-uploads')
+			.from('og-images')
 			.remove([imageData.file_path]);
 
 		if (storageError) {

@@ -133,5 +133,5 @@ CREATE POLICY "Users can delete own uploads" ON public.wtaf_user_uploads
 COMMENT ON TABLE public.wtaf_user_uploads IS 'Stores user-uploaded files (images, etc.) for use in WEBTOYS creations';
 COMMENT ON COLUMN public.wtaf_user_uploads.upload_number IS 'Sequential number per user, used for easy reference in SMS commands';
 COMMENT ON COLUMN public.wtaf_user_uploads.display_name IS 'Optional user-friendly name for the upload';
-COMMENT ON COLUMN public.wtaf_user_uploads.file_path IS 'Path within the storage bucket';
-COMMENT ON COLUMN public.wtaf_user_uploads.file_url IS 'Full public URL to access the file';
+COMMENT ON COLUMN public.wtaf_user_uploads.file_path IS 'Path within the og-images bucket (format: user-uploads/{user_id}/{filename})';
+COMMENT ON COLUMN public.wtaf_user_uploads.file_url IS 'Full public URL to access the file from og-images bucket';
