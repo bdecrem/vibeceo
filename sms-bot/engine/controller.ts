@@ -458,6 +458,70 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🚀 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
+    // ✏️ REVISE: Check for --revise flag to edit existing Webtoys
+    if (userPrompt && (userPrompt.startsWith('--revise ') || userPrompt.startsWith('wtaf --revise '))) {
+        logWithTimestamp("✏️ REVISE DETECTED: Processing edit request for existing Webtoy");
+        
+        try {
+            // Parse the revise command: --revise app-slug edit request
+            const reviseCommand = userPrompt.replace(/^wtaf\s+/, '').trim();
+            const parts = reviseCommand.substring(9).trim().split(' '); // Remove '--revise '
+            const appSlug = parts[0];
+            const editRequest = parts.slice(1).join(' ');
+            
+            if (!appSlug || !editRequest) {
+                await sendConfirmationSms("Usage: --revise [app-slug] [edit request]. Example: --revise my-game make it faster", senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`📝 Revise request - App: ${appSlug}, Request: "${editRequest}"`);
+            
+            // Import storage manager functions
+            const { getContentBySlug } = await import('./storage-manager.js');
+            
+            // Find the content by user slug and app slug
+            const content = await getContentBySlug(userSlug, appSlug);
+            if (!content) {
+                await sendConfirmationSms(`App "${appSlug}" not found. Check the app name and try again.`, senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`✅ Found app: ${content.id} - ${userSlug}/${appSlug}`);
+            
+            // Import Supabase client to queue the edit request
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+            
+            // Queue the edit request using the database function
+            const { data: requestId, error } = await supabase.rpc('queue_edit_request', {
+                p_content_id: content.id,
+                p_edit_request: editRequest,
+                p_user_phone: senderPhone
+            });
+            
+            if (error) {
+                logError(`Error queuing edit request: ${error.message}`);
+                await sendConfirmationSms("Sorry, there was an error processing your edit request. Please try again.", senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`📋 Edit request queued with ID: ${requestId}`);
+            
+            // Send confirmation to user
+            await sendConfirmationSms(
+                `Edit request received! I'll process "${editRequest}" for your app "${appSlug}" and notify you when it's ready. This usually takes 1-2 minutes.`,
+                senderPhone
+            );
+            
+            return true;
+            
+        } catch (error) {
+            logError(`❌ Error processing revise request: ${error.message}`);
+            await sendConfirmationSms("Sorry, there was an error processing your edit request. Please check the format and try again.", senderPhone);
+            return false;
+        }
+    }
+    
     // 🎵 MUSIC: Check for --music flag to force music app generation
     let isMusicRequest = false;
     if (userPrompt && (userPrompt.includes('--music '))) {

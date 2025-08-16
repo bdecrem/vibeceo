@@ -622,6 +622,38 @@ export async function createRequiredDirectories(
 }
 
 /**
+ * Get content by user slug and app slug (for REVISE commands)
+ */
+export async function getContentBySlug(userSlug: string, appSlug: string): Promise<any | null> {
+    try {
+        logWithTimestamp(`🔍 Looking up content: ${userSlug}/${appSlug}`);
+        
+        const { data, error } = await getSupabaseClient()
+            .from('wtaf_content')
+            .select('*')
+            .eq('user_slug', userSlug)
+            .eq('app_slug', appSlug)
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // No rows returned
+                logWithTimestamp(`📭 Content not found: ${userSlug}/${appSlug}`);
+                return null;
+            }
+            throw error;
+        }
+        
+        logWithTimestamp(`✅ Found content: ${data.id} - ${userSlug}/${appSlug}`);
+        return data;
+        
+    } catch (error) {
+        logError(`Error getting content by slug: ${error}`);
+        return null;
+    }
+}
+
+/**
  * Update existing page in Supabase (for EDIT commands)
  */
 export async function updatePageInSupabase(userSlug: string, appSlug: string, newHtml: string): Promise<boolean> {

@@ -33,7 +33,7 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 		// Fetch the WTAF content from Supabase
 		const { data, error } = await supabase
 			.from("wtaf_content")
-			.select("html_content, coach, original_prompt, created_at, type")
+			.select("id, html_content, coach, original_prompt, created_at, type, current_revision")
 			.eq("user_slug", user_slug)
 			.eq("app_slug", app_slug)
 			.eq("status", "published")
@@ -45,6 +45,27 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 		}
 
 		let htmlContent = data.html_content;
+
+		// Check if there's a current revision to load instead
+		if (data.current_revision !== null) {
+			console.log(`🔄 Loading revision ${data.current_revision} for ${user_slug}/${app_slug}`);
+			
+			const { data: revisionData, error: revisionError } = await supabase
+				.from("wtaf_revisions")
+				.select("html_content")
+				.eq("content_id", data.id)
+				.eq("revision_id", data.current_revision)
+				.eq("status", "completed")
+				.single();
+
+			if (revisionError) {
+				console.error(`Failed to load revision ${data.current_revision}:`, revisionError);
+				// Fall back to original content
+			} else if (revisionData?.html_content) {
+				console.log(`✅ Using revised content from revision ${data.current_revision}`);
+				htmlContent = revisionData.html_content;
+			}
+		}
 
 		// Inject query parameters into iframe context
 		const safeParams: Record<string, string> = {};
@@ -738,7 +759,7 @@ export async function generateMetadata({ params }: PageProps) {
 		// Fetch the WTAF content to get basic info
 		const { data } = await supabase
 			.from("wtaf_content")
-			.select("original_prompt, coach, created_at")
+			.select("original_prompt, coach, created_at, current_revision")
 			.eq("user_slug", user_slug)
 			.eq("app_slug", app_slug)
 			.eq("status", "published")
