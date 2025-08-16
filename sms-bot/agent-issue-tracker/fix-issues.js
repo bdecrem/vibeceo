@@ -28,7 +28,7 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || '83218c2e-281e-4265-a95f-1d3f763870d4';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/sms-bot';
+const PROJECT_ROOT = process.env.PROJECT_ROOT || '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot';
 
 /**
  * Load reformulated issues ready for fixing
