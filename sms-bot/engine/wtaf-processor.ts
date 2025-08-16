@@ -222,6 +222,7 @@ EMAIL_NEEDED: false
 ZERO_ADMIN_DATA: false
 APP_TYPE: web_page`;
             logWithTimestamp("🌐 Webpage override: Created standard web page prompt without classifier");
+            // CRITICAL: Skip ALL other checks and go directly to builder
         }
         
         // 🧪 ZAD TEST OVERRIDE CHECK: Skip classifier entirely if zad test is set
@@ -255,9 +256,9 @@ ZERO_ADMIN_DATA: false
 APP_TYPE: music_app`;
             logWithTimestamp("🎵 Music override: Created music app prompt without classifier");
         }
-        // 🌐 PUBLIC ZAD OVERRIDE CHECK: Skip classifier entirely if public keyword is present
-        else if (cleanedInput.toLowerCase().includes('public')) {
-            logWithTimestamp("🌐 PUBLIC ZAD OVERRIDE: Detected 'public' keyword - skipping classifier");
+        // 🌐 PUBLIC ZAD OVERRIDE CHECK: Skip classifier entirely if public keyword is present at start
+        else if (cleanedInput.toLowerCase().trim().startsWith('public')) {
+            logWithTimestamp("🌐 PUBLIC ZAD OVERRIDE: Detected 'public' command at start - skipping classifier");
             expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}
 
 EMAIL_NEEDED: false
@@ -351,8 +352,8 @@ NEEDS_ADMIN: false`;
                         else if (content.includes('ZERO_ADMIN_DATA: true')) {
                             logWithTimestamp("🤝 ZAD detected by classifier (ZERO_ADMIN_DATA: true found)");
                             
-                            // Check if PUBLIC mode is requested (contains "public" keyword)
-                            if (cleanedInput.toLowerCase().includes('public')) {
+                            // Check if PUBLIC mode is requested (starts with "public" keyword)
+                            if (cleanedInput.toLowerCase().trim().startsWith('public')) {
                                 // Route to PUBLIC ZAD builder
                                 expandedPrompt = `ZAD_PUBLIC_REQUEST: ${cleanedInput}`;
                                 logWithTimestamp("🌐 PUBLIC ZAD SYSTEM: Routing to public ZAD builder");
