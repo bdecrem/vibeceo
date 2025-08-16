@@ -84,12 +84,17 @@ ENABLE_AUTO_FIX=false node monitor.js
 
 Add to crontab (`crontab -e`):
 ```bash
-# Run reformulation every 2 hours
-0 */2 * * * cd /path/to/agent-issue-tracker && node monitor.js --reformulate >> logs/reformulate.log 2>&1
-
-# Run full pipeline every 4 hours (if auto-fix enabled)
-0 */4 * * * cd /path/to/agent-issue-tracker && ENABLE_AUTO_FIX=true node monitor.js >> logs/monitor.log 2>&1
+# Run full pipeline every 3 minutes (includes reformulation, fix, and PR creation)
+*/3 * * * * HOME=/Users/bartdecrem GH_TOKEN=your_github_token GITHUB_TOKEN=your_github_token ENABLE_AUTO_FIX=true PROJECT_ROOT=/Users/bartdecrem/Documents/code/vibeceo8/sms-bot /usr/local/bin/node /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.js >> /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.log 2>&1
 ```
+
+**Important Environment Variables for Cron:**
+- `HOME`: Required for proper shell environment
+- `GH_TOKEN` and `GITHUB_TOKEN`: Required for GitHub CLI authentication (get from `gh auth token`)
+- `ENABLE_AUTO_FIX`: Set to `true` to enable automatic fixing
+- `PROJECT_ROOT`: Path to the sms-bot directory
+
+**Note:** Use full paths for all executables (`/usr/local/bin/node`) as cron has minimal PATH
 
 ### 6. Manual Operation
 
