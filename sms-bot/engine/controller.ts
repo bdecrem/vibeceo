@@ -9,7 +9,9 @@ import {
     WEB_OUTPUT_DIR, 
     CLAUDE_OUTPUT_DIR,
     PROCESSED_DIR,
-    WATCH_DIRS
+    WATCH_DIRS,
+    EDIT_AGENT_ENABLED,
+    EDIT_AGENT_WEBHOOK_PORT
 } from './shared/config.js';
 import { 
     logStartupInfo, 
@@ -220,6 +222,43 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
     } catch (error) {
         logError(`Claude API call failed: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
+    }
+}
+
+/**
+ * Trigger edit processing webhook if enabled
+ * Only runs on machines with EDIT_AGENT_ENABLED=true
+ */
+async function triggerEditProcessingWebhook(revisionId?: string): Promise<void> {
+    if (!EDIT_AGENT_ENABLED) {
+        logWithTimestamp("ℹ️ Edit Agent webhook disabled (EDIT_AGENT_ENABLED=false)");
+        return;
+    }
+
+    try {
+        logWithTimestamp("🔔 Triggering edit processing webhook...");
+        
+        const webhookUrl = `http://localhost:${EDIT_AGENT_WEBHOOK_PORT}/webhook/trigger-edit-processing`;
+        const payload = revisionId ? { revisionId } : {};
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (response.ok) {
+            logWithTimestamp("✅ Edit processing webhook triggered successfully");
+        } else {
+            logWarning(`⚠️ Edit webhook returned ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        // Don't fail the main process if webhook fails
+        logWarning(`⚠️ Edit webhook trigger failed: ${error instanceof Error ? error.message : String(error)}`);
+        logWithTimestamp("ℹ️ Edit processing will rely on fallback cron job");
     }
 }
 
@@ -506,6 +545,9 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             }
             
             logWithTimestamp(`📋 Edit request queued with ID: ${requestId}`);
+            
+            // Trigger edit processing webhook if enabled
+            await triggerEditProcessingWebhook(requestId);
             
             // Send confirmation to user
             await sendConfirmationSms(
