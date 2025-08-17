@@ -23,7 +23,27 @@ const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // CRITICAL: Use full path for Claude CLI (cron compatibility)
-const CLAUDE_PATH = '/opt/homebrew/bin/claude';
+// Try multiple Claude CLI locations
+const CLAUDE_PATHS = [
+  '/Users/bartdecrem/.local/bin/claude',
+  '/opt/homebrew/bin/claude'
+];
+
+// Find the first existing Claude CLI
+import fsSync from 'fs';
+let CLAUDE_PATH = null;
+for (const path of CLAUDE_PATHS) {
+  if (fsSync.existsSync(path)) {
+    CLAUDE_PATH = path;
+    break;
+  }
+}
+
+if (!CLAUDE_PATH) {
+  console.error('❌ Claude CLI not found in any expected location');
+  console.error('Checked:', CLAUDE_PATHS.join(', '));
+  process.exit(1);
+}
 
 /**
  * Load pending edits from temp file

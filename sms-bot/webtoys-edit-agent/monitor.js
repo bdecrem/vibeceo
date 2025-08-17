@@ -44,7 +44,7 @@ async function runAgent(scriptName, description) {
 
   try {
     const scriptPath = path.join(__dirname, scriptName);
-    const { stdout, stderr } = await execAsync(`/opt/homebrew/bin/node ${scriptPath}`, {
+    const { stdout, stderr } = await execAsync(`node ${scriptPath}`, {
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       timeout: 300000 // 5 minute timeout per agent
     });

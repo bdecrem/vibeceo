@@ -17,8 +17,8 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "📁 Script directory: $SCRIPT_DIR"
 
-# Create the cron job entry
-CRON_ENTRY="*/10 * * * * cd $SCRIPT_DIR && /opt/homebrew/bin/node monitor.js >> /tmp/webtoys-edit-agent.log 2>&1"
+# Create the cron job entry (use node from PATH)
+CRON_ENTRY="*/10 * * * * cd $SCRIPT_DIR && node monitor.js >> /tmp/webtoys-edit-agent.log 2>&1"
 
 echo "📋 Cron entry to be added:"
 echo "   $CRON_ENTRY"
