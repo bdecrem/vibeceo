@@ -35,10 +35,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Check for Claude CLI
-if ! command -v /opt/homebrew/bin/claude &> /dev/null; then
-    echo "❌ Claude CLI not found at /opt/homebrew/bin/claude"
-    echo "The edit agent requires Claude CLI to be installed"
-    exit 1
+CLAUDE_PATH="/Users/bartdecrem/.local/bin/claude"
+if [ ! -f "$CLAUDE_PATH" ]; then
+    # Try alternate location
+    CLAUDE_PATH="/opt/homebrew/bin/claude"
+    if [ ! -f "$CLAUDE_PATH" ]; then
+        echo "❌ Claude CLI not found"
+        echo "The edit agent requires Claude CLI to be installed"
+        echo "Checked: /Users/bartdecrem/.local/bin/claude and /opt/homebrew/bin/claude"
+        exit 1
+    fi
 fi
 
 echo "✅ Claude CLI found"
@@ -55,4 +61,4 @@ echo "🚀 Starting Edit Agent Webhook Server..."
 echo "📊 Logs will appear below:"
 echo "=" && printf '=%.0s' {1..50} && echo ""
 
-exec /opt/homebrew/bin/node webhook-server.js
+exec node webhook-server.js

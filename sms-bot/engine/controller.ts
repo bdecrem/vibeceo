@@ -238,7 +238,10 @@ async function triggerEditProcessingWebhook(revisionId?: string): Promise<void> 
     try {
         logWithTimestamp("🔔 Triggering edit processing webhook...");
         
-        const webhookUrl = `http://localhost:${EDIT_AGENT_WEBHOOK_PORT}/webhook/trigger-edit-processing`;
+        // Use external webhook URL if configured (for remote agent), otherwise localhost
+        const webhookUrl = process.env.EDIT_AGENT_WEBHOOK_URL 
+            ? `${process.env.EDIT_AGENT_WEBHOOK_URL}/webhook/trigger-edit-processing`
+            : `http://localhost:${EDIT_AGENT_WEBHOOK_PORT}/webhook/trigger-edit-processing`;
         const payload = revisionId ? { revisionId } : {};
         
         const response = await fetch(webhookUrl, {

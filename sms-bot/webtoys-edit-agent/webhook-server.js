@@ -57,7 +57,7 @@ async function processEditRequests() {
     
     // Run the complete edit pipeline
     const { stdout, stderr } = await execAsync(
-      `/opt/homebrew/bin/node monitor.js`,
+      `node monitor.js`,
       {
         cwd: __dirname,
         maxBuffer: 1024 * 1024 * 10, // 10MB buffer
