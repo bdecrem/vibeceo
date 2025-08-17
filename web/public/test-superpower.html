@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Superpower Test Helper</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #FFD63D;
+            border: 3px solid #2A2A2A;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background: #6ECBFF;
+        }
+        .status {
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Superpower Mode Test Helper</h1>
+    <p>This page helps you test the Issue Tracker with superpower mode locally.</p>
+    
+    <button onclick="enableSuperpower()">Enable Superpower Mode</button>
+    <button onclick="openIssueTracker()">Open Issue Tracker with Superpowers</button>
+    
+    <div class="status" id="status">
+        Status: Not configured yet
+    </div>
+    
+    <script>
+        function enableSuperpower() {
+            // Set fake auth credentials in localStorage for testing
+            localStorage.setItem('webtoysAuthToken', 'test-token-local-dev');
+            localStorage.setItem('webtoysApiUrl', 'http://localhost:3000');
+            
+            document.getElementById('status').innerHTML = `
+                ✅ Superpower mode enabled!<br>
+                Token: test-token-local-dev<br>
+                API URL: http://localhost:3000<br><br>
+                Now click "Open Issue Tracker with Superpowers"
+            `;
+        }
+        
+        function openIssueTracker() {
+            // Set a flag to indicate this is a local test
+            localStorage.setItem('webtoysLocalTest', 'true');
+            // Open the RAW issue tracker HTML directly (no iframe!)
+            window.open('http://localhost:3000/api/wtaf/raw?user=bart&slug=issue-tracker&superpower=true', '_blank');
+        }
+    </script>
+</body>
+</html>

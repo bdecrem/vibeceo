@@ -7,7 +7,6 @@ import { ArrowRight, Sparkles, Zap, Brain, Users, MessageSquare, ChevronLeft, Ch
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmsModal from "@/components/sms-modal";
-import SmsBanner from "@/components/sms-banner";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -69,8 +68,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#0f172a]">
-      {/* SMS Banner flush left, rounded right */}
-      <SmsBanner onSignupClick={() => setIsSmsModalOpen(true)} />
 
       {/* Dark navy to teal gradient background - matching The Foundry */}
       <div className="fixed inset-0 bg-[#0f172a] bg-gradient-to-br from-[#0f172a] via-[#0f172a]/95 to-[#134e4a]" />

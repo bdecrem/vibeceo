@@ -1,5 +1,0 @@
-SENDER: +15551234567
-USER_SLUG: bart
-COACH: alex
-
-Create a simple page with "DEBUG OG TEST" in big letters and a blue background 

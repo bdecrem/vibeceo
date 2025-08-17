@@ -1,7 +1,65 @@
 /**
  * Enhanced logging for production debugging
  * Extracted from monitor.py log_with_timestamp function
+ * Now includes file logging with daily rotation
  */
+
+import { appendFileSync, existsSync, statSync, renameSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Log file configuration
+const LOG_DIR = join(__dirname, '..', '..', '..', 'logs');
+const LOG_FILE = join(LOG_DIR, 'wtaf-engine.log');
+const LOG_FILE_OLD = join(LOG_DIR, 'wtaf-engine.old.log');
+const MAX_LOG_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Ensure log directory exists
+if (!existsSync(LOG_DIR)) {
+    mkdirSync(LOG_DIR, { recursive: true });
+}
+
+/**
+ * Check if log file needs rotation (older than 24 hours)
+ */
+function checkLogRotation(): void {
+    try {
+        if (existsSync(LOG_FILE)) {
+            const stats = statSync(LOG_FILE);
+            const fileAge = Date.now() - stats.birthtimeMs;
+            
+            if (fileAge > MAX_LOG_AGE_MS) {
+                // Rotate the log file
+                if (existsSync(LOG_FILE_OLD)) {
+                    // Delete the old backup
+                    require('fs').unlinkSync(LOG_FILE_OLD);
+                }
+                renameSync(LOG_FILE, LOG_FILE_OLD);
+                console.log(`[LOG ROTATION] Rotated log file after ${(fileAge / 1000 / 60 / 60).toFixed(1)} hours`);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking log rotation:', error);
+    }
+}
+
+// Check rotation on module load
+checkLogRotation();
+
+/**
+ * Write message to log file
+ */
+function writeToLogFile(formattedMessage: string): void {
+    try {
+        appendFileSync(LOG_FILE, formattedMessage + '\n', 'utf8');
+    } catch (error) {
+        // Silently fail if we can't write to log file
+        // We don't want logging to break the application
+    }
+}
 
 export function logWithTimestamp(message: string): void {
     const timestamp = new Date().toLocaleString('en-US', {
@@ -14,7 +72,14 @@ export function logWithTimestamp(message: string): void {
         hour12: false
     });
     
-    console.log(`[${timestamp}] ${message}`);
+    const formattedMessage = `[${timestamp}] ${message}`;
+    
+    // Write to console
+    console.log(formattedMessage);
+    
+    // Write to file
+    writeToLogFile(formattedMessage);
+    
     // Flush output for Railway logs
     if (process.stdout && 'flush' in process.stdout && typeof process.stdout.flush === 'function') {
         (process.stdout as any).flush();

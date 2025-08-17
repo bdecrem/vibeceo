@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix dynamic-capybara-debating change the background color to hot pink, bother the area behind the blocks and the outer padding (a darker hot pink)
-
-ORIGINAL_REQUEST:REMIX dynamic-capybara-debating change the background color to hot pink, bother the area behind the blocks and the outer padding (a darker hot pink)

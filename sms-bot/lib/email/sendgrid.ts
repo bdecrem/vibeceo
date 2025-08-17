@@ -1,33 +1,12 @@
 import sgMail from '@sendgrid/mail';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
-import * as fs from 'fs';
-import { fileURLToPath } from 'url';
-
-// Environment setup
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Load environment variables from .env.local in development
+// Load environment variables in development
 if (!isProduction) {
-  const envPath = path.resolve(__dirname, '../.env.local');
-  
-  // Check if file exists before trying to load it
-  if (fs.existsSync(envPath)) {
-    console.log(`Loading environment from ${envPath}`);
-    dotenv.config({ path: envPath });
-  } else {
-    console.warn(`Environment file not found at ${envPath}`);
-    // Try loading from current working directory as fallback
-    const cwdEnvPath = path.join(process.cwd(), '.env.local');
-    if (fs.existsSync(cwdEnvPath)) {
-      console.log(`Loading environment from ${cwdEnvPath}`);
-      dotenv.config({ path: cwdEnvPath });
-    }
-  }
+  dotenv.config({ path: '.env.local' });
 }
 
 // Initialize SendGrid

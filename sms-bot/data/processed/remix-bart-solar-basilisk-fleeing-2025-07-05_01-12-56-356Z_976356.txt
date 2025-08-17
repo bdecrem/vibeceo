@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix solar-basilisk-fleeing change the title to I'm Baby Purple
-
-ORIGINAL_REQUEST:REMIX solar-basilisk-fleeing change the title to I'm Baby Purple

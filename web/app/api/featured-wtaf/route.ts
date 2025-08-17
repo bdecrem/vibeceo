@@ -11,9 +11,9 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // Get featured apps - first try apps explicitly marked as featured
+    // Get featured apps directly from wtaf_content table (not from view which may be cached)
     const { data: featuredApps, error: featuredError } = await supabase
-      .from('trending_apps_7d')
+      .from('wtaf_content')
       .select(`
         id,
         app_slug,
@@ -23,15 +23,20 @@ export async function GET() {
         remix_count,
         total_descendants,
         last_remixed_at,
-        recent_remixes,
         is_remix,
         parent_app_id,
         is_featured,
+        featured_at,
         Fave,
-        Forget
+        Forget,
+        type,
+        landscape_image_url,
+        og_image_url,
+        status
       `)
       .eq('is_featured', true)  // Only featured apps
-      .order('created_at', { ascending: false })  // Most recent first
+      .not('Forget', 'is', true)  // Exclude only explicitly forgotten apps
+      .order('featured_at', { ascending: false })  // Most recently featured first
       .limit(20)
 
     if (featuredError) {
@@ -39,59 +44,19 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch featured apps' }, { status: 500 })
     }
 
-    let allApps = featuredApps || []
+    // featuredApps already has all the data we need including type and image URLs
+    const featuredAppsList = featuredApps || []
 
-    // DISABLED: Auto-backfill with highly remixed apps - Featured now shows only manually curated apps
-    /*
-    if (allApps.length < 20) {
-      const { data: popularApps, error: popularError } = await supabase
-        .from('trending_apps_7d')
-        .select(`
-          id,
-          app_slug,
-          user_slug,
-          original_prompt,
-          created_at,
-          remix_count,
-          total_descendants,
-          last_remixed_at,
-          recent_remixes,
-          is_remix,
-          parent_app_id,
-          is_featured,
-          Fave,
-          Forget
-        `)
-        .gt('total_descendants', 1)  // Apps with multiple total descendants
-        .order('total_descendants', { ascending: false })  // Most descendants first
-        .limit(20 - allApps.length)  // Fill remaining slots
-
-      if (!popularError && popularApps) {
-        // Filter out apps already in featuredApps to avoid duplicates
-        const existingSlugs = new Set(allApps.map((app: any) => `${app.user_slug}/${app.app_slug}`))
-        const uniquePopularApps = popularApps.filter((app: any) => 
-          !existingSlugs.has(`${app.user_slug}/${app.app_slug}`)
-        )
-        allApps = [...allApps, ...uniquePopularApps]
-      }
-    }
-    */
-
-    // Filter out forgotten apps in JavaScript
-    const featuredAppsList = (allApps || []).filter((app: any) => !app.Forget)
-
-    // Get type data for each app
+    // Calculate recent_remixes for each app (last 7 days activity)
     for (const app of featuredAppsList) {
-      const { data: contentData } = await supabase
-        .from('wtaf_content')
-        .select('type, landscape_image_url, og_image_url')
-        .eq('user_slug', app.user_slug)
-        .eq('app_slug', app.app_slug)
-        .single()
+      // Get remix activity from the last 7 days
+      const { data: recentRemixData } = await supabase
+        .from('wtaf_remix_lineage')
+        .select('id')
+        .eq('parent_app_id', app.id)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       
-      ;(app as any).type = contentData?.type || 'web'
-      ;(app as any).landscape_image_url = contentData?.landscape_image_url || null
-      ;(app as any).og_image_url = contentData?.og_image_url || null
+      ;(app as any).recent_remixes = recentRemixData?.length || 0
     }
 
     const totalFeaturedApps = featuredAppsList.length

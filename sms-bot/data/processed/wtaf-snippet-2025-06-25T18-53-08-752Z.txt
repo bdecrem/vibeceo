@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-A simple message board where users post topics and others can reply or add emoji reactions (👍❤️😂🤔🔥). Display posts as cards with the poster's name and timestamp, show replies indented below each post, display reaction counts next to each post. Include a 'New Post' button at top, reply button under each post, and reaction emoji bar. Posts should stay visible with newest at top, and show total reply count on each post card.

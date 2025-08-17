@@ -9,7 +9,9 @@ import {
     WEB_OUTPUT_DIR, 
     CLAUDE_OUTPUT_DIR,
     PROCESSED_DIR,
-    WATCH_DIRS
+    WATCH_DIRS,
+    EDIT_AGENT_ENABLED,
+    EDIT_AGENT_WEBHOOK_PORT
 } from './shared/config.js';
 import { 
     logStartupInfo, 
@@ -220,6 +222,43 @@ async function callClaudeDirectly(systemPrompt: string, userPrompt: string, conf
     } catch (error) {
         logError(`Claude API call failed: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
+    }
+}
+
+/**
+ * Trigger edit processing webhook if enabled
+ * Only runs on machines with EDIT_AGENT_ENABLED=true
+ */
+async function triggerEditProcessingWebhook(revisionId?: string): Promise<void> {
+    if (!EDIT_AGENT_ENABLED) {
+        logWithTimestamp("ℹ️ Edit Agent webhook disabled (EDIT_AGENT_ENABLED=false)");
+        return;
+    }
+
+    try {
+        logWithTimestamp("🔔 Triggering edit processing webhook...");
+        
+        const webhookUrl = `http://localhost:${EDIT_AGENT_WEBHOOK_PORT}/webhook/trigger-edit-processing`;
+        const payload = revisionId ? { revisionId } : {};
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (response.ok) {
+            logWithTimestamp("✅ Edit processing webhook triggered successfully");
+        } else {
+            logWarning(`⚠️ Edit webhook returned ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        // Don't fail the main process if webhook fails
+        logWarning(`⚠️ Edit webhook trigger failed: ${error instanceof Error ? error.message : String(error)}`);
+        logWithTimestamp("ℹ️ Edit processing will rely on fallback cron job");
     }
 }
 
@@ -456,6 +495,73 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         userPrompt = userPrompt.replace(/--zad-api\s*/g, '').trim();
         isZadApi = true;
         logWithTimestamp(`🚀 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
+    
+    // ✏️ REVISE: Check for --revise flag to edit existing Webtoys
+    if (userPrompt && (userPrompt.startsWith('--revise ') || userPrompt.startsWith('wtaf --revise '))) {
+        logWithTimestamp("✏️ REVISE DETECTED: Processing edit request for existing Webtoy");
+        
+        try {
+            // Parse the revise command: --revise app-slug edit request
+            const reviseCommand = userPrompt.replace(/^wtaf\s+/, '').trim();
+            const parts = reviseCommand.substring(9).trim().split(' '); // Remove '--revise '
+            const appSlug = parts[0];
+            const editRequest = parts.slice(1).join(' ');
+            
+            if (!appSlug || !editRequest) {
+                await sendConfirmationSms("Usage: --revise [app-slug] [edit request]. Example: --revise my-game make it faster", senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`📝 Revise request - App: ${appSlug}, Request: "${editRequest}"`);
+            
+            // Import storage manager functions
+            const { getContentBySlug } = await import('./storage-manager.js');
+            
+            // Find the content by user slug and app slug
+            const content = await getContentBySlug(userSlug, appSlug);
+            if (!content) {
+                await sendConfirmationSms(`App "${appSlug}" not found. Check the app name and try again.`, senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`✅ Found app: ${content.id} - ${userSlug}/${appSlug}`);
+            
+            // Import Supabase client to queue the edit request
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+            
+            // Queue the edit request using the database function
+            const { data: requestId, error } = await supabase.rpc('queue_edit_request', {
+                p_content_id: content.id,
+                p_edit_request: editRequest,
+                p_user_phone: senderPhone
+            });
+            
+            if (error) {
+                logError(`Error queuing edit request: ${error.message}`);
+                await sendConfirmationSms("Sorry, there was an error processing your edit request. Please try again.", senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`📋 Edit request queued with ID: ${requestId}`);
+            
+            // Trigger edit processing webhook if enabled
+            await triggerEditProcessingWebhook(requestId);
+            
+            // Send confirmation to user
+            await sendConfirmationSms(
+                `Edit request received! I'll process "${editRequest}" for your app "${appSlug}" and notify you when it's ready. This usually takes 1-2 minutes.`,
+                senderPhone
+            );
+            
+            return true;
+            
+        } catch (error) {
+            logError(`❌ Error processing revise request: ${error.message}`);
+            await sendConfirmationSms("Sorry, there was an error processing your edit request. Please check the format and try again.", senderPhone);
+            return false;
+        }
     }
     
     // 🎵 MUSIC: Check for --music flag to force music app generation
@@ -1659,6 +1765,82 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         
         const completePrompt = await generateCompletePrompt(promptToProcess, classifierConfig);
         logWithTimestamp(`🔧 Complete prompt generated: ${completePrompt.slice(0, 100) || 'None'}...`);
+        
+        // NEW V2 ROUTING: Check if classifier detected a MEME and wants to bypass
+        if (completePrompt.includes('MEME_BYPASS_SIGNAL:')) {
+            logWithTimestamp("🎨 MEME_BYPASS_SIGNAL detected - routing to meme processor");
+            // Extract the original prompt
+            const memePrompt = completePrompt.replace('MEME_BYPASS_SIGNAL:', '').trim();
+            
+            // Call processMemeRequest directly
+            const memeProcessor = await import('./meme-processor.js');
+            const memeConfig = {
+                model: 'gpt-4o',
+                maxTokens: 200,
+                temperature: 0.9
+            };
+            
+            const memeResult = await memeProcessor.processMemeRequest(memePrompt, userSlug, memeConfig);
+            
+            if (!memeResult.success || !memeResult.html) {
+                logError(`Meme generation failed: ${memeResult.error || 'Unknown error'}`);
+                await sendFailureNotification("meme-generation", senderPhone);
+                return false;
+            }
+            
+            // Save meme HTML to Supabase with type='MEME'
+            const deployResult = await saveCodeToSupabase(
+                memeResult.html, 
+                'meme-generator', 
+                userSlug, 
+                senderPhone, 
+                memePrompt,
+                null,
+                false
+            );
+            
+            if (deployResult.publicUrl && deployResult.uuid) {
+                // Update the HTML with the correct URL and set type='MEME'
+                try {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+                    
+                    const updatedHTML = memeResult.html!.replace(
+                        'window.MEME_URL = null;',
+                        `window.MEME_URL = "${deployResult.publicUrl}";`
+                    );
+                    
+                    const { error: updateError } = await supabase
+                        .from('wtaf_content')
+                        .update({ 
+                            type: 'MEME',
+                            html_content: updatedHTML,
+                            landscape_image_url: memeResult.landscapeImageUrl || memeResult.imageUrl,
+                            og_second_chance: memeResult.imageUrl,  // CRITICAL: Set og_second_chance for proper OG image display
+                            submission_data: {
+                                meme_text: memePrompt,
+                                meme_image_url: memeResult.imageUrl,
+                                landscape_image_url: memeResult.landscapeImageUrl
+                            }
+                        })
+                        .eq('uuid', deployResult.uuid);
+                    
+                    if (!updateError) {
+                        logSuccess(`✅ Meme saved with type='MEME' and metadata`);
+                    }
+                } catch (error) {
+                    logWarning(`Failed to update meme metadata: ${error}`);
+                }
+                
+                await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
+                logWithTimestamp("🎉 MEME PROCESSING COMPLETE via V2 routing!");
+                return true;
+            }
+            
+            logError("Failed to save meme to Supabase");
+            await sendFailureNotification("save", senderPhone);
+            return false;
+        }
         
         let result: string;
         

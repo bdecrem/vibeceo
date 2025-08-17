@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-make a public database-powered ASCII critter wall using ZAD

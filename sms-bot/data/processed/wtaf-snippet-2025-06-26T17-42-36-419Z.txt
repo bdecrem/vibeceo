@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-an app that generates a completely different looking Hello World page with different gradients or color and emojis and easter eggs each time I tap or click, and a ❤️ icon to store my final one

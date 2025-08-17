@@ -1,3 +1,0 @@
-SENDER:whatsapp:+16508989508
-USER_SLUG:bart
-build a Hello World page on a gradient background color

@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix delicate-dragonfly-singing add emoji reactions
-
-ORIGINAL_REQUEST:REMIX delicate-dragonfly-singing add emoji reactions

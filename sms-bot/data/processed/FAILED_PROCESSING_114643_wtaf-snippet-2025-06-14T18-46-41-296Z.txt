@@ -1,3 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-Make a simple bio page where our coach ROHAN sings the praises of Bart Decrem in the form of a testimonial

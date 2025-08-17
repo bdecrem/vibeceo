@@ -1,5 +1,0 @@
-SENDER:+16508989508
-USER_SLUG:bart
-REMIX_COMMAND:--remix rainbow-falcon-strategizing name it Look Mom, Now 2nd Gen branch!
-
-ORIGINAL_REQUEST:REMIX rainbow-falcon-strategizing name it Look Mom, Now 2nd Gen branch!
