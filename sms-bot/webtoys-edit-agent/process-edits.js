@@ -102,6 +102,14 @@ ${currentHtml}
 
 ## Instructions
 Edit the HTML above according to the user's request. Return ONLY the complete modified HTML with no explanations or markdown code blocks.`;
+
+  // Check prompt size and warn if very large
+  const promptSizeKB = Buffer.byteLength(prompt, 'utf-8') / 1024;
+  if (promptSizeKB > 100) {
+    console.log(`  ⚠️  Large prompt: ${promptSizeKB.toFixed(1)} KB`);
+  }
+  
+  return prompt;
 }
 
 /**
@@ -157,11 +165,16 @@ async function executeEdit(prompt, requestId) {
           reject(new Error(`Failed to start Claude CLI: ${err.message}`));
         });
         
-        // Set timeout
-        setTimeout(() => {
+        // Set timeout (increase to 5 minutes for complex edits)
+        const timeout = setTimeout(() => {
           claude.kill('SIGTERM');
-          reject(new Error('Claude CLI timed out after 2 minutes'));
-        }, 120000);
+          reject(new Error('Claude CLI timed out after 5 minutes'));
+        }, 300000);
+        
+        // Clear timeout if process completes
+        claude.on('exit', () => {
+          clearTimeout(timeout);
+        });
       });
     };
     
@@ -197,6 +210,39 @@ async function executeEdit(prompt, requestId) {
     
   } catch (error) {
     console.error(`  ❌ Error executing Claude:`, error.message);
+    
+    // If timeout, try a simpler approach with just exec
+    if (error.message.includes('timed out')) {
+      console.log('  🔄 Retrying with simpler exec approach...');
+      try {
+        // Just use the file directly with Claude
+        const { stdout, stderr } = await execAsync(
+          `${CLAUDE_PATH} --print < "${promptFile}"`,
+          {
+            maxBuffer: 1024 * 1024 * 50, // 50MB
+            timeout: 300000, // 5 minutes
+            shell: '/bin/bash'
+          }
+        );
+        
+        await fs.unlink(promptFile).catch(() => {});
+        
+        let html = stdout.trim();
+        html = html.replace(/^```html?\n?/gm, '');
+        html = html.replace(/\n?```$/gm, '');
+        
+        if (html.includes('<!DOCTYPE') || html.includes('<html')) {
+          console.log('  ✅ Retry successful');
+          return {
+            success: true,
+            editedHtml: html,
+            fullResponse: html
+          };
+        }
+      } catch (retryError) {
+        console.error(`  ❌ Retry also failed:`, retryError.message);
+      }
+    }
     
     // Clean up temp file on error
     await fs.unlink(promptFile).catch(() => {});
