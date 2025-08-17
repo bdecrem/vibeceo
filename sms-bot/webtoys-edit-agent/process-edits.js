@@ -118,7 +118,7 @@ async function executeEdit(prompt, requestId) {
   try {
     // Use spawn instead of exec for better handling of large content
     const { spawn } = await import('child_process');
-    const { promisify } = await import('util');
+    const fsModule = await import('fs');
     
     // Create a promise to handle the Claude process
     const runClaude = () => {
@@ -132,7 +132,7 @@ async function executeEdit(prompt, requestId) {
         });
         
         // Feed the prompt file content to Claude's stdin
-        const readStream = require('fs').createReadStream(promptFile);
+        const readStream = fsModule.createReadStream(promptFile);
         readStream.pipe(claude.stdin);
         
         // Collect output
