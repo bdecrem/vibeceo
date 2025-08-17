@@ -87,6 +87,10 @@ export const CLAUDE_OUTPUT_DIR: string = join(SMS_BOT_DIR, "data", "claude_outpu
 // Monitor settings
 export const CHECK_INTERVAL: number = 15; // seconds
 
+// Edit Agent settings (only enabled on specific machines with Claude CLI)
+export const EDIT_AGENT_ENABLED: boolean = (process.env.EDIT_AGENT_ENABLED || "false").toLowerCase() === "true";
+export const EDIT_AGENT_WEBHOOK_PORT: number = parseInt(process.env.EDIT_AGENT_WEBHOOK_PORT || "3031", 10);
+
 // Configure WTAF domain based on environment
 export const WTAF_DOMAIN: string = (() => {
     if (WEB_APP_URL.includes("localhost") || WEB_APP_URL.includes("ngrok")) {
