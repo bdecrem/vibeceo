@@ -110,20 +110,62 @@ Edit the HTML above according to the user's request. Return ONLY the complete mo
 async function executeEdit(prompt, requestId) {
   console.log(`  🤖 Calling Claude CLI...`);
   
-  // Write prompt to temp file
+  // Write prompt to temp file (more reliable than piping for large content)
   const tempDir = os.tmpdir();
   const promptFile = path.join(tempDir, `edit-prompt-${requestId}.txt`);
-  await fs.writeFile(promptFile, prompt);
+  await fs.writeFile(promptFile, prompt, 'utf-8');
   
   try {
-    // Execute Claude with the prompt (without --output-format json since we want raw HTML)
-    const { stdout, stderr } = await execAsync(
-      `cat "${promptFile}" | ${CLAUDE_PATH} --print`,
-      {
-        maxBuffer: 1024 * 1024 * 50, // 50MB buffer for large HTML files
-        timeout: 120000 // 2 minute timeout
-      }
-    );
+    // Use spawn instead of exec for better handling of large content
+    const { spawn } = await import('child_process');
+    const { promisify } = await import('util');
+    
+    // Create a promise to handle the Claude process
+    const runClaude = () => {
+      return new Promise((resolve, reject) => {
+        let stdout = '';
+        let stderr = '';
+        
+        // Spawn Claude process
+        const claude = spawn(CLAUDE_PATH, ['--print'], {
+          maxBuffer: 1024 * 1024 * 50, // 50MB
+        });
+        
+        // Feed the prompt file content to Claude's stdin
+        const readStream = require('fs').createReadStream(promptFile);
+        readStream.pipe(claude.stdin);
+        
+        // Collect output
+        claude.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        claude.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        // Handle completion
+        claude.on('close', (code) => {
+          if (code !== 0) {
+            reject(new Error(`Claude CLI exited with code ${code}: ${stderr}`));
+          } else {
+            resolve({ stdout, stderr });
+          }
+        });
+        
+        claude.on('error', (err) => {
+          reject(new Error(`Failed to start Claude CLI: ${err.message}`));
+        });
+        
+        // Set timeout
+        setTimeout(() => {
+          claude.kill('SIGTERM');
+          reject(new Error('Claude CLI timed out after 2 minutes'));
+        }, 120000);
+      });
+    };
+    
+    const { stdout, stderr } = await runClaude();
     
     // Clean up temp file
     await fs.unlink(promptFile).catch(() => {});
