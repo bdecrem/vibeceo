@@ -2112,13 +2112,13 @@ export default function WebtoysSitePage() {
               <div className="example-info">
                 <div className="prompt-label">The prompt:</div>
                 <HomepageTruncatedPrompt 
-                  prompt="WTAF make a retro paint app like old windows"
+                  prompt="WTAF make a ZAD app that is a retro paint app like old MacPaint. Make sure it has a brush, a pencil, a color selector, Undo, and the user can SAVE to a gallery shown below"
                   maxLength={120}
                   className="prompt-text"
                 />
                 <div className="example-actions">
                   <a href="https://webtoys.ai/bart/wave-wood-deconstructing?demo=true" className="btn-view">Try It</a>
-                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a retro paint app like old windows")}>
+                  <button className="btn-remix" onClick={() => handleRemixClick("WTAF make a ZAD app that is a retro paint app like old MacPaint. Make sure it has a brush, a pencil, a color selector, Undo, and the user can SAVE to a gallery shown below")}>
                     <span>🎨</span>
                     <span>Remix</span>
                   </button>
