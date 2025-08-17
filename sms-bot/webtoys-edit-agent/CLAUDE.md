@@ -3,9 +3,64 @@
 ## 🎯 Project Purpose
 This agent enables users to edit their existing Webtoys via natural language requests using the `--revise` SMS command. The agent uses Claude CLI to intelligently modify HTML while preserving functionality.
 
+## 🏠 **DEPLOYMENT ARCHITECTURE**
+
+### Where Things Run:
+- **SMS Bot (Railway)**: Receives SMS commands, queues edit requests in database
+- **Edit Agent (Local Mac)**: Processes edits using Claude CLI, only runs on Bart's Mac mini
+- **Webhook Bridge**: ngrok tunnel exposes local agent to Railway (https://[id].ngrok.app → localhost:3031)
+
+### Environment Variables:
+**On Railway (Production SMS Bot):**
+```bash
+EDIT_AGENT_ENABLED=true                                    # Enables webhook calls to agent
+EDIT_AGENT_WEBHOOK_URL=https://[your-id].ngrok.app        # ngrok tunnel URL
+```
+
+**On Local Mac (Agent Machine):**
+```bash
+# In sms-bot/.env.local
+EDIT_AGENT_ENABLED=true                                    # Runs webhook server locally
+EDIT_AGENT_WEBHOOK_PORT=3031                              # Local webhook port
+NGROK_AUTHTOKEN=[your-token]                              # ngrok authentication
+```
+
+### Starting the Edit Agent (Local Mac):
+
+1. **Start ngrok tunnel** (exposes local webhook to internet):
+```bash
+ngrok http 3031
+# Note the https URL (e.g., https://009ef44e91c0.ngrok.app)
+# Update Railway's EDIT_AGENT_WEBHOOK_URL with this URL
+```
+
+2. **Start webhook server** (in a separate terminal):
+```bash
+cd /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-edit-agent
+node webhook-server.js
+```
+
+3. **Verify it's working**:
+```bash
+# Test health check through ngrok
+curl https://[your-ngrok-id].ngrok.app/health
+
+# View ngrok traffic dashboard
+open http://localhost:4040
+
+# Check cron job fallback (runs every 10 minutes)
+crontab -l | grep webtoys-edit-agent
+```
+
+### How the EDIT_AGENT_ENABLED Flag Works:
+- **Confusing but important**: This flag controls webhook triggering, NOT where the agent runs
+- **On Railway**: `EDIT_AGENT_ENABLED=true` means "call the webhook when edits are requested"
+- **On Local**: `EDIT_AGENT_ENABLED=true` means "run the webhook server to receive calls"
+- The agent code ONLY runs on the local Mac (Railway has no Claude CLI)
+
 ## ✅ **IMPLEMENTATION STATUS: COMPLETE & OPERATIONAL**
 
-The Webtoys Edit Agent is **fully implemented and production-ready** as of August 16, 2025:
+The Webtoys Edit Agent is **fully implemented and production-ready** as of August 17, 2025:
 
 ### 🚀 **What Works Now:**
 - **SMS Command**: `--revise [app-slug] [edit request]` queues edit requests
@@ -225,6 +280,42 @@ const CRITICAL_PATTERNS = {
 
 ### Issue: Concurrent edit requests
 **Solution**: Queue system processes one at a time
+
+## 🔧 Troubleshooting
+
+### Edit requests not processing:
+1. **Check Railway logs**: Look for `Edit Agent webhook disabled (EDIT_AGENT_ENABLED=false)`
+   - Fix: Set `EDIT_AGENT_ENABLED=true` in Railway environment variables
+
+2. **Check webhook server is running**:
+   ```bash
+   ps aux | grep webhook-server
+   ```
+
+3. **Check ngrok is running**:
+   ```bash
+   ps aux | grep ngrok
+   # View traffic at http://localhost:4040
+   ```
+
+4. **Manually process pending edits**:
+   ```bash
+   cd /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-edit-agent
+   node monitor.js
+   ```
+
+### After Mac restart:
+You must manually restart both services:
+```bash
+# Terminal 1: Start ngrok
+ngrok http 3031
+
+# Terminal 2: Start webhook server
+cd /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-edit-agent
+node webhook-server.js
+```
+
+The cron job (fallback) will persist across restarts but only runs every 10 minutes.
 
 ## 🧪 Testing Checklist
 

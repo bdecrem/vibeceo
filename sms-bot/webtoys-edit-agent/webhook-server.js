@@ -66,9 +66,9 @@ async function processEditRequests() {
     );
 
     console.log('📊 Edit processing output:');
-    if (stdout) console.log(stdout);
-    if (stderr && !stderr.includes('Warning')) {
-      console.error('⚠️ Edit processing warnings:', stderr);
+    console.log(stdout || '(no output)');
+    if (stderr) {
+      console.error('⚠️ Edit processing stderr:', stderr);
     }
 
     console.log('✅ Edit processing completed successfully');
@@ -116,6 +116,8 @@ function createServer() {
   app.post('/webhook/trigger-edit-processing', async (req, res) => {
     console.log('\n🔔 Webhook triggered for edit processing');
     console.log(`📅 Time: ${new Date().toISOString()}`);
+    console.log(`📦 Request body:`, JSON.stringify(req.body));
+    console.log(`🔍 Headers:`, req.headers['user-agent']);
     
     if (!checkEditAgentEnabled()) {
       return res.status(503).json({
