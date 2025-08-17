@@ -52,7 +52,7 @@ function validateHTML(html, appType) {
   // 3. Check for dangerous code
   const dangerousPatterns = [
     /eval\s*\(/gi,
-    /Function\s*\(/gi,
+    /new\s+Function\s*\(/gi,  // Only block new Function(), not all Function references
     /document\.write\s*\(/gi,
     /innerHTML\s*=.*<script/gi,
     /on\w+\s*=\s*"[^"]*javascript:/gi
