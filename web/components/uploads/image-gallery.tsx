@@ -18,9 +18,10 @@ interface ImageData {
 interface ImageGalleryProps {
 	images: ImageData[];
 	userSlug: string;
+	onDeleteSuccess?: () => void;
 }
 
-export default function ImageGallery({ images, userSlug }: ImageGalleryProps) {
+export default function ImageGallery({ images, userSlug, onDeleteSuccess }: ImageGalleryProps) {
 	const router = useRouter();
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [copiedNumber, setCopiedNumber] = useState<number | null>(null);
@@ -66,8 +67,12 @@ export default function ImageGallery({ images, userSlug }: ImageGalleryProps) {
 				throw new Error('Delete failed');
 			}
 
-			// Refresh the page to update the gallery
-			router.refresh();
+			// Refresh the gallery to update the list
+			if (onDeleteSuccess) {
+				onDeleteSuccess();
+			} else {
+				router.refresh();
+			}
 		} catch (error) {
 			console.error('Error deleting image:', error);
 			alert('Failed to delete image');
