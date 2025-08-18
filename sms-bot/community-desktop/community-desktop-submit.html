@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add to Community Desktop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 300% 100%;
+            animation: gradient 3s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .examples {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .examples strong {
+            color: #444;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .recent-apps {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e1e8ed;
+        }
+        
+        .recent-apps h3 {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .app-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .app-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .app-item .icon {
+            font-size: 18px;
+        }
+        
+        .view-desktop {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .view-desktop:hover {
+            color: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span style="font-size: 32px;">🖥️</span>
+            Add to Community Desktop
+        </h1>
+        <p class="subtitle">
+            Submit your app idea and watch it appear on the community desktop! 
+            Keep it simple - each app should do just one fun thing.
+        </p>
+        
+        <form id="appForm">
+            <div class="form-group">
+                <label for="appName">What should your app be called?</label>
+                <input type="text" id="appName" name="appName" placeholder="e.g., Lucky Dice, Pet Rock, Mood Ring" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="appFunction">What does it do? (one simple action)</label>
+                <textarea id="appFunction" name="appFunction" placeholder="e.g., Shows a random dice roll, Lets you name a virtual pet rock, Changes the page color based on mood" required></textarea>
+                <div class="examples">
+                    <strong>Good examples:</strong><br>
+                    • "Shows a random compliment"<br>
+                    • "Counts backwards from 10"<br>
+                    • "Plays a sound effect"<br>
+                    • "Tells a dad joke"
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="submitterName">Your name (optional)</label>
+                <input type="text" id="submitterName" name="submitterName" placeholder="Anonymous">
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                🚀 Add My App to the Desktop
+            </button>
+        </form>
+        
+        <div id="status" class="status"></div>
+        
+        <a href="/community-desktop" class="view-desktop">← View Community Desktop</a>
+        
+        <div class="recent-apps" id="recentApps" style="display: none;">
+            <h3>Recently Added Apps</h3>
+            <div class="app-list" id="appList"></div>
+        </div>
+    </div>
+    
+    <script>
+        // ZAD helper functions (injected by the system)
+        window.APP_ID = 'community-desktop-apps';
+        
+        // Simulated ZAD functions for testing
+        async function save(dataType, data) {
+            // In production, this calls /api/zad/save
+            console.log('Saving:', dataType, data);
+            
+            // For now, save to localStorage for testing
+            const existing = JSON.parse(localStorage.getItem('community_apps') || '[]');
+            existing.push({
+                ...data,
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                status: 'new'
+            });
+            localStorage.setItem('community_apps', JSON.stringify(existing));
+            
+            return { success: true };
+        }
+        
+        async function load(dataType) {
+            // In production, this calls /api/zad/load
+            console.log('Loading:', dataType);
+            
+            // For now, load from localStorage for testing
+            return JSON.parse(localStorage.getItem('community_apps') || '[]');
+        }
+        
+        // Form handling
+        document.getElementById('appForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const statusDiv = document.getElementById('status');
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Submitting...';
+            
+            // Get form data
+            const formData = {
+                appName: document.getElementById('appName').value.trim(),
+                appFunction: document.getElementById('appFunction').value.trim(),
+                submitterName: document.getElementById('submitterName').value.trim() || 'Anonymous',
+                timestamp: new Date().toISOString(),
+                status: 'new'
+            };
+            
+            try {
+                // Save to ZAD
+                await save('desktop_app', formData);
+                
+                // Show success
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    ✅ <strong>Success!</strong> Your app "${formData.appName}" has been submitted!<br>
+                    It will appear on the desktop within 2 minutes.
+                `;
+                
+                // Clear form
+                document.getElementById('appForm').reset();
+                
+                // Load and show recent apps
+                loadRecentApps();
+                
+            } catch (error) {
+                // Show error
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ <strong>Error:</strong> Failed to submit your app. Please try again.
+                `;
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Add My App to the Desktop';
+            }
+        });
+        
+        // Load recent apps
+        async function loadRecentApps() {
+            try {
+                const apps = await load('desktop_app');
+                const recentApps = apps
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .slice(0, 10);
+                
+                if (recentApps.length > 0) {
+                    document.getElementById('recentApps').style.display = 'block';
+                    const appList = document.getElementById('appList');
+                    
+                    // Sample icons for variety
+                    const icons = ['🎮', '🎲', '🎨', '🎵', '🎭', '🎪', '🎯', '🎰', '🎸', '🎺'];
+                    
+                    appList.innerHTML = recentApps.map((app, i) => `
+                        <div class="app-item">
+                            <span class="icon">${icons[i % icons.length]}</span>
+                            <span>${app.appName}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load recent apps:', error);
+            }
+        }
+        
+        // Load on page load
+        loadRecentApps();
+    </script>
+</body>
+</html>
