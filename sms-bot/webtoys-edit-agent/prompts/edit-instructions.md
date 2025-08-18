@@ -110,6 +110,34 @@ The HTML should:
 ### Request: "Rewrite in React"
 - Out of scope - preserve existing architecture
 
+## Mobile Viewport Special Handling
+
+When user mentions "iPhone", "mobile", "viewport", or "oversized":
+
+### CRITICAL: Fix These Common Issues
+1. **Remove fixed canvas dimensions from HTML**
+   - Change: `<canvas width="800" height="600">` 
+   - To: `<canvas id="canvas"></canvas>`
+
+2. **Use percentage-based CSS widths**
+   - Change: `width: calc(100vw - 20px)`
+   - To: `width: 100%; max-width: 100%`
+
+3. **Make canvas sizing responsive in JavaScript**
+   ```javascript
+   // Calculate based on container, not viewport
+   const maxWidth = container.clientWidth - padding;
+   const maxHeight = window.innerHeight - uiHeight;
+   ```
+
+4. **Ensure body prevents overflow**
+   ```css
+   body { 
+     overflow-x: hidden; 
+     max-width: 100vw; 
+   }
+   ```
+
 ## Final Checklist
 
 Before returning the edited HTML:
@@ -118,6 +146,9 @@ Before returning the edited HTML:
 - [ ] No syntax errors introduced?
 - [ ] HTML is valid?
 - [ ] Mobile responsive maintained?
+- [ ] No horizontal scroll on mobile?
+- [ ] Canvas fits within viewport?
+- [ ] Touch/click coordinates accurate?
 - [ ] No external dependencies added?
 
 Remember: When in doubt, preserve the original functionality over making the edit.
