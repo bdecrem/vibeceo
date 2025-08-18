@@ -214,6 +214,15 @@
             <div class="icon">🥠</div>
             <div class="label">Fortune Cookie</div>
         </div>
+        
+        <div class="desktop-icon" 
+             style="left: 220px; top: 20px"
+             data-submitter-id="undefined"
+             title="Shows how long you've been on this site"
+             onclick="var start = localStorage.siteStartTime || (localStorage.siteStartTime = Date.now()); alert(&#39;You\&#39;ve been here for &#39; + Math.floor((Date.now() - start) / 1000) + &#39; seconds!&#39;)">
+            <div class="icon">⏱️</div>
+            <div class="label">Site Timer</div>
+        </div>
         <!-- COMMUNITY_APPS_END -->
     </div>
     
