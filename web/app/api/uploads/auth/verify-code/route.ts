@@ -20,40 +20,40 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Find valid, unused code
-		const { data: authCode, error: codeError } = await supabase
-			.from('wtaf_upload_auth_codes')
-			.select('*')
-			.eq('user_slug', userSlug)
-			.eq('code', code)
-			.eq('used', false)
-			.gt('expires_at', new Date().toISOString())
-			.order('created_at', { ascending: false })
-			.limit(1)
+		// Find user with valid code
+		const { data: userData, error: codeError } = await supabase
+			.from('sms_subscribers')
+			.select('id, slug, upload_auth_code, upload_auth_expires')
+			.eq('slug', userSlug)
+			.eq('upload_auth_code', code)
+			.gt('upload_auth_expires', new Date().toISOString())
 			.single();
 
-		if (codeError || !authCode) {
+		if (codeError || !userData) {
 			return NextResponse.json(
 				{ error: 'Invalid or expired code' },
 				{ status: 401 }
 			);
 		}
 
-		// Mark code as used
-		const { error: updateError } = await supabase
-			.from('wtaf_upload_auth_codes')
-			.update({ used: true, used_at: new Date().toISOString() })
-			.eq('id', authCode.id);
+		// Clear the used code
+		const { error: clearError } = await supabase
+			.from('sms_subscribers')
+			.update({ 
+				upload_auth_code: null, 
+				upload_auth_expires: null 
+			})
+			.eq('id', userData.id);
 
-		if (updateError) {
-			console.error('Error marking code as used:', updateError);
+		if (clearError) {
+			console.error('Error clearing auth code:', clearError);
 		}
 
 		// Generate JWT token for uploads access (valid for 1 hour)
 		const token = jwt.sign(
 			{ 
 				userSlug, 
-				userId: authCode.user_id,
+				userId: userData.id,
 				purpose: 'uploads_access',
 				exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
 			},

@@ -49,19 +49,17 @@ export async function POST(request: NextRequest) {
 		const securityCode = generateSecurityCode();
 		const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-		// Store code in database (create table if needed)
-		const { error: insertError } = await supabase
-			.from('wtaf_upload_auth_codes')
-			.insert({
-				user_id: userData.id,
-				user_slug: userSlug,
-				code: securityCode,
-				expires_at: expiresAt.toISOString(),
-				used: false
-			});
+		// Store code in sms_subscribers table
+		const { error: updateError } = await supabase
+			.from('sms_subscribers')
+			.update({
+				upload_auth_code: securityCode,
+				upload_auth_expires: expiresAt.toISOString()
+			})
+			.eq('id', userData.id);
 
-		if (insertError) {
-			console.error('Error storing auth code:', insertError);
+		if (updateError) {
+			console.error('Error storing auth code:', updateError);
 			return NextResponse.json(
 				{ error: 'Failed to generate security code' },
 				{ status: 500 }
