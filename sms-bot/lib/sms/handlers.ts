@@ -1984,10 +1984,10 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           return;
         }
         
-        // Use the same delivery mechanism as successful WTAF apps
+        // Send just the access code with no links to avoid carrier filtering
         const { sendConfirmationSms } = await import('../../engine/notification-client.js');
         await sendConfirmationSms(
-          `📱 Your app is ready to use: https://webtoys.ai/${userSlug}/uploads`,
+          `Your upload access code: ${accessCode}`,
           normalizedPhoneNumber
         );
         
