@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Desktop - Local Submission</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        #status.show { display: block; }
+        #status.success { background: #d4edda; color: #155724; }
+        #status.error { background: #f8d7da; color: #721c24; }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ Community Desktop - Local Test</h1>
+        
+        <div class="warning">
+            ⚠️ This is a LOCAL TEST form that saves to localStorage only.
+            Your submission won't go to the database.
+        </div>
+        
+        <form id="appForm">
+            <div class="form-group">
+                <label>App Name</label>
+                <input type="text" id="appName" required placeholder="e.g., Timer, Dice Roll">
+            </div>
+            <div class="form-group">
+                <label>What does it do?</label>
+                <textarea id="appFunction" required placeholder="e.g., Counts down from 10 seconds"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Your Name (optional)</label>
+                <input type="text" id="submitterName" placeholder="Anonymous">
+            </div>
+            <button type="submit">Save to Local Storage</button>
+        </form>
+        
+        <div id="status"></div>
+        
+        <div class="instructions">
+            <strong>After submitting:</strong><br>
+            1. Run: <code>node community-desktop/process-local-submission.js</code><br>
+            2. It will read from localStorage and add to desktop.html<br>
+            3. Open desktop.html to see your app!
+        </div>
+    </div>
+    
+    <script>
+        // Load existing submissions
+        let submissions = JSON.parse(localStorage.getItem('community_desktop_submissions') || '[]');
+        
+        document.getElementById('appForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('status');
+            const submission = {
+                appName: document.getElementById('appName').value,
+                appFunction: document.getElementById('appFunction').value,
+                submitterName: document.getElementById('submitterName').value || 'Anonymous',
+                timestamp: new Date().toISOString(),
+                id: Date.now()
+            };
+            
+            // Save to localStorage
+            submissions.push(submission);
+            localStorage.setItem('community_desktop_submissions', JSON.stringify(submissions));
+            
+            // Also save as "latest" for easy access
+            localStorage.setItem('latest_submission', JSON.stringify(submission));
+            
+            statusDiv.className = 'show success';
+            statusDiv.innerHTML = `
+                ✅ Saved to localStorage!<br>
+                <strong>Next step:</strong> Run the process-local-submission script
+            `;
+            
+            document.getElementById('appForm').reset();
+        });
+    </script>
+</body>
+</html>
