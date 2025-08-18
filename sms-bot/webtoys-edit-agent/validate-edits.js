@@ -12,9 +12,21 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Load processed edits from temp file
+ * Load processed edits from temp file or worker input
  */
 async function loadProcessedEdits() {
+  // Check if we're in worker mode
+  if (process.env.WORKER_INPUT) {
+    try {
+      const data = await fs.readFile(process.env.WORKER_INPUT, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.log('Error reading worker input:', error);
+      return [];
+    }
+  }
+  
+  // Normal mode: read from processed file
   try {
     const tempFile = path.join(__dirname, '.processed-edits.json');
     const data = await fs.readFile(tempFile, 'utf-8');
@@ -143,8 +155,14 @@ function validateEdit(edit) {
  * Save validated edits for next stage
  */
 async function saveValidatedEdits(edits) {
-  const tempFile = path.join(__dirname, '.validated-edits.json');
-  await fs.writeFile(tempFile, JSON.stringify(edits, null, 2));
+  // In worker mode, update the same file
+  if (process.env.WORKER_INPUT) {
+    await fs.writeFile(process.env.WORKER_INPUT, JSON.stringify(edits, null, 2));
+  } else {
+    // Normal mode: write to validated file
+    const tempFile = path.join(__dirname, '.validated-edits.json');
+    await fs.writeFile(tempFile, JSON.stringify(edits, null, 2));
+  }
 }
 
 // Main execution

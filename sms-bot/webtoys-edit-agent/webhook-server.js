@@ -26,9 +26,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.EDIT_AGENT_WEBHOOK_PORT || '3031', 10);
 const EDIT_AGENT_ENABLED = (process.env.EDIT_AGENT_ENABLED || 'false').toLowerCase() === 'true';
 
-// Track processing to prevent concurrent runs
-let isProcessing = false;
-let processingQueue = [];
+// Track active workers (no longer blocking new requests)
+let activeWorkers = 0;
+const MAX_WORKERS = 2;
 
 /**
  * Check if edit agent is enabled
@@ -42,54 +42,20 @@ function checkEditAgentEnabled() {
 }
 
 /**
- * Process edit requests using the existing monitor.js
+ * Trigger workers to check for new work
+ * Workers run independently - webhook just signals them
  */
-async function processEditRequests() {
-  if (isProcessing) {
-    console.log('⏳ Edit processing already in progress, skipping...');
-    return { success: false, message: 'Already processing' };
-  }
-
-  isProcessing = true;
+async function triggerWorkers() {
+  console.log('🔔 Signaling workers to check for new edits...');
   
-  try {
-    console.log('🎨 Starting edit processing via webhook...');
-    
-    // Run the complete edit pipeline
-    const { stdout, stderr } = await execAsync(
-      `node monitor.js`,
-      {
-        cwd: __dirname,
-        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-        timeout: 300000 // 5 minute timeout
-      }
-    );
-
-    console.log('📊 Edit processing output:');
-    console.log(stdout || '(no output)');
-    if (stderr) {
-      console.error('⚠️ Edit processing stderr:', stderr);
-    }
-
-    console.log('✅ Edit processing completed successfully');
-    return { 
-      success: true, 
-      message: 'Edit processing completed',
-      output: stdout
-    };
-
-  } catch (error) {
-    console.error('❌ Edit processing failed:', error.message);
-    
-    return { 
-      success: false, 
-      message: error.message,
-      output: error.stdout || '',
-      errors: error.stderr || ''
-    };
-  } finally {
-    isProcessing = false;
-  }
+  // Workers poll the database independently
+  // This is just a notification that new work arrived
+  
+  return { 
+    success: true, 
+    message: 'Workers notified',
+    activeWorkers: activeWorkers
+  };
 }
 
 /**
@@ -107,7 +73,8 @@ function createServer() {
     res.json({ 
       status: 'ok', 
       editAgentEnabled: EDIT_AGENT_ENABLED,
-      processing: isProcessing,
+      activeWorkers: activeWorkers,
+      maxWorkers: MAX_WORKERS,
       timestamp: new Date().toISOString()
     });
   });
@@ -131,22 +98,16 @@ function createServer() {
       console.log(`📝 Revision ID: ${req.body.revisionId}`);
     }
 
-    // Process edits
-    const result = await processEditRequests();
+    // Just notify workers - they handle the actual processing
+    const result = await triggerWorkers();
     
-    if (result.success) {
-      res.json({
-        success: true,
-        message: 'Edit processing completed successfully',
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: result.message,
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Always return success - the request is queued
+    res.json({
+      success: true,
+      message: 'Edit request queued for processing',
+      activeWorkers: activeWorkers,
+      timestamp: new Date().toISOString()
+    });
   });
 
   // Endpoint to manually trigger processing (for testing)
@@ -160,8 +121,11 @@ function createServer() {
       });
     }
 
-    const result = await processEditRequests();
-    res.json(result);
+    const result = await triggerWorkers();
+    res.json({
+      ...result,
+      note: 'Workers have been notified to check for new edits'
+    });
   });
 
   return app;
@@ -229,4 +193,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { startServer, processEditRequests };
+export { startServer, triggerWorkers, activeWorkers, MAX_WORKERS };
