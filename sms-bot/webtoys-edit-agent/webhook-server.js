@@ -128,6 +128,42 @@ function createServer() {
     });
   });
 
+  // Community Desktop webhook endpoint
+  app.post('/webhook/community-desktop', async (req, res) => {
+    console.log('\n🖥️  Community Desktop webhook triggered');
+    console.log(`📅 Time: ${new Date().toISOString()}`);
+    console.log(`📦 Request body:`, JSON.stringify(req.body));
+    
+    try {
+      // Run the Community Desktop monitor to process new submissions
+      const { stdout, stderr } = await execAsync(
+        `node monitor.js`,
+        { 
+          cwd: path.join(__dirname, '../community-desktop'),
+          maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+          timeout: 60000 // 1 minute timeout
+        }
+      );
+      
+      console.log('✅ Community Desktop processing completed');
+      if (stdout) console.log('Output:', stdout);
+      if (stderr) console.error('Errors:', stderr);
+      
+      res.json({
+        success: true,
+        message: 'Community Desktop submission processed',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Community Desktop processing failed:', error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   return app;
 }
 
@@ -157,6 +193,7 @@ async function startServer() {
       console.log('=' + '='.repeat(50));
       console.log('📡 Webhook endpoints:');
       console.log(`   POST http://localhost:${PORT}/webhook/trigger-edit-processing`);
+      console.log(`   POST http://localhost:${PORT}/webhook/community-desktop`);
       console.log(`   GET  http://localhost:${PORT}/health`);
       console.log(`   GET  http://localhost:${PORT}/trigger (testing)`);
       console.log('=' + '='.repeat(50));
