@@ -1960,8 +1960,6 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         const accessCode = generateAccessCode();
         const baseUrl = process.env.UPLOADS_BASE_URL || 'https://webtoys.ai';
-        const uploadsUrl = `${baseUrl}/${userSlug}/uploads?code=${accessCode}`;
-        
         // Store the code temporarily (expires in 10 minutes)
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         
@@ -1980,7 +1978,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           const fallbackUrl = `${baseUrl}/${userSlug}/uploads`;
           await sendSmsResponse(
             from,
-            `Your secure upload gallery:\n${fallbackUrl}\n\nYou'll need to verify with SMS when you visit.`,
+            `Visit webtoys.ai/bart/uploads to access your image gallery. You'll need to verify with SMS when you visit.`,
             twilioClient
           );
           return;
@@ -1988,7 +1986,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         await sendSmsResponse(
           from,
-          `Your secure upload gallery:\n${uploadsUrl}\n\nValid for 10 minutes. Upload images and reference them as "image 1", "image 2", etc.`,
+          `Your upload access code: ${accessCode}
+
+Visit webtoys.ai/bart/uploads and enter this code. Valid for 10 minutes. Upload images and reference them as "image 1", "image 2", etc.`,
           twilioClient
         );
         
