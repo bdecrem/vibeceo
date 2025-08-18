@@ -26,9 +26,21 @@ const supabase = createClient(
 );
 
 /**
- * Load validated edits from temp file
+ * Load validated edits from temp file or worker input
  */
 async function loadValidatedEdits() {
+  // Check if we're in worker mode
+  if (process.env.WORKER_INPUT) {
+    try {
+      const data = await fs.readFile(process.env.WORKER_INPUT, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.log('Error reading worker input:', error);
+      return [];
+    }
+  }
+  
+  // Normal mode: read from validated file
   try {
     const tempFile = path.join(__dirname, '.validated-edits.json');
     const data = await fs.readFile(tempFile, 'utf-8');
