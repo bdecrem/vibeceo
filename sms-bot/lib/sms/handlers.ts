@@ -1980,7 +1980,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           const fallbackUrl = `${baseUrl}/${userSlug}/uploads`;
           await sendSmsResponse(
             from,
-            `🖼️ Your secure upload gallery:\n${fallbackUrl}\n\nYou'll need to verify with SMS when you visit.`,
+            `Your secure upload gallery:\n${fallbackUrl}\n\nYou'll need to verify with SMS when you visit.`,
             twilioClient
           );
           return;
@@ -1988,7 +1988,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         
         await sendSmsResponse(
           from,
-          `🖼️ Your secure upload gallery:\n${uploadsUrl}\n\n✅ Auto-authenticated for 10 minutes\n🔒 Upload & manage your images safely\n📱 Reference them in SMS as "image #1", "image #2", etc.`,
+          `Your secure upload gallery:\n${uploadsUrl}\n\nValid for 10 minutes. Upload images and reference them as "image 1", "image 2", etc.`,
           twilioClient
         );
         
