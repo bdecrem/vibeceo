@@ -1984,12 +1984,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           return;
         }
         
-        await sendSmsResponse(
-          from,
-          `Your upload access code: ${accessCode}
-
-Visit webtoys.ai/bart/uploads and enter this code. Valid for 10 minutes. Upload images and reference them as "image 1", "image 2", etc.`,
-          twilioClient
+        // Use the same delivery mechanism as successful WTAF apps
+        const { sendConfirmationSms } = await import('../../engine/notification-client.js');
+        await sendConfirmationSms(
+          `📱 Your app is ready to use: https://webtoys.ai/${userSlug}/uploads`,
+          normalizedPhoneNumber
         );
         
         console.log(`User ${normalizedPhoneNumber} (${userSlug}) received UPLOADS link with pre-auth code`);
