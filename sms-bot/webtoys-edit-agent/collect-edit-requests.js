@@ -26,12 +26,27 @@ const supabase = createClient(
 
 /**
  * Load pending edit requests
+ * Modified to support worker mode with proper input handling
  */
 async function collectEditRequests() {
   console.log('📥 Collecting pending edit requests...');
   
+  // Check if we're in worker mode (single edit passed via env)
+  if (process.env.WORKER_INPUT) {
+    try {
+      const fs = await import('fs/promises');
+      const data = await fs.readFile(process.env.WORKER_INPUT, 'utf-8');
+      const requests = JSON.parse(data);
+      console.log(`📝 Worker mode: Processing ${requests.length} pre-claimed edit(s)`);
+      return requests;
+    } catch (error) {
+      console.error('Error reading worker input:', error);
+      return [];
+    }
+  }
+  
   try {
-    // Query for pending edit requests from wtaf_revisions table with app info
+    // Normal mode: Query for pending edit requests from database
     const { data: requests, error } = await supabase
       .from('wtaf_revisions')
       .select(`
@@ -44,7 +59,7 @@ async function collectEditRequests() {
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
-      .limit(5); // Process max 5 at a time
+      .limit(1); // Process only 1 at a time when not in worker mode
     
     if (error) {
       // Table might not exist yet
