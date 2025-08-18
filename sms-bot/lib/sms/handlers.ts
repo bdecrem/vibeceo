@@ -1937,8 +1937,78 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       }
     }
 
+    // Handle UPLOADS command
+    if (messageUpper === 'UPLOADS') {
+      console.log(`Processing UPLOADS command from ${from}`);
+      
+      try {
+        // Check user role for UPLOADS command (degen+ only)
+        const subscriber = await getSubscriber(normalizedPhoneNumber);
+        if (!subscriber || (subscriber.role !== 'degen' && subscriber.role !== 'operator' && subscriber.role !== 'admin')) {
+          console.log(`User ${normalizedPhoneNumber} attempted UPLOADS command without degen/operator/admin privileges`);
+          // Silent ignore - don't reveal command to non-degen users
+          return;
+        }
+        
+        // Get or create user slug
+        const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
+        
+        // Generate a temporary access code
+        function generateAccessCode(): string {
+          return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        const accessCode = generateAccessCode();
+        const baseUrl = process.env.UPLOADS_BASE_URL || 'https://webtoys.ai';
+        const uploadsUrl = `${baseUrl}/${userSlug}/uploads?code=${accessCode}`;
+        
+        // Store the code temporarily (expires in 10 minutes)
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        
+        // Insert into auth codes table
+        const { data: authData, error: authError } = await supabase
+          .from('wtaf_upload_auth_codes')
+          .insert({
+            user_id: subscriber.id,
+            user_slug: userSlug,
+            code: accessCode,
+            expires_at: expiresAt.toISOString(),
+            used: false
+          });
+
+        if (authError) {
+          console.error('Error storing auth code:', authError);
+          // Fallback - send URL without pre-auth
+          const fallbackUrl = `${baseUrl}/${userSlug}/uploads`;
+          await sendSmsResponse(
+            from,
+            `🖼️ Your secure upload gallery:\n${fallbackUrl}\n\nYou'll need to verify with SMS when you visit.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        await sendSmsResponse(
+          from,
+          `🖼️ Your secure upload gallery:\n${uploadsUrl}\n\n✅ Auto-authenticated for 10 minutes\n🔒 Upload & manage your images safely\n📱 Reference them in SMS as "image #1", "image #2", etc.`,
+          twilioClient
+        );
+        
+        console.log(`User ${normalizedPhoneNumber} (${userSlug}) received UPLOADS link with pre-auth code`);
+        return;
+      } catch (error) {
+        console.error(`Error processing UPLOADS command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ UPLOADS: Failed to generate secure link - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC'];
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'UPLOADS', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC'];
     if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE|PUBLIC)\s/i) || message.match(/^--make-public\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
@@ -1978,7 +2048,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: hasDegen = ${hasDegen} (role: ${subscriber?.role})`);
       
       if (hasDegen) {
-        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text';
+        helpText += '\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n• UPLOADS - Get secure link to your image gallery';
         
         helpText += '\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackpublic [public-app-slug] [request] - Create app sharing data with PUBLIC app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation';
         console.log(`🔍 COMMANDS: Added stack commands to response`);
