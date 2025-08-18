@@ -542,7 +542,7 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             
             // Import Supabase client to queue the edit request
             const { createClient } = await import('@supabase/supabase-js');
-            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+            const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
             
             // Queue the edit request using the database function
             const { data: requestId, error } = await supabase.rpc('queue_edit_request', {
