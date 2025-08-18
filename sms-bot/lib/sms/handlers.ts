@@ -1965,16 +1965,14 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         // Store the code temporarily (expires in 10 minutes)
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         
-        // Insert into auth codes table
-        const { data: authData, error: authError } = await supabase
-          .from('wtaf_upload_auth_codes')
-          .insert({
-            user_id: subscriber.id,
-            user_slug: userSlug,
-            code: accessCode,
-            expires_at: expiresAt.toISOString(),
-            used: false
-          });
+        // Store code in sms_subscribers table
+        const { error: authError } = await supabase
+          .from('sms_subscribers')
+          .update({
+            upload_auth_code: accessCode,
+            upload_auth_expires: expiresAt.toISOString()
+          })
+          .eq('id', subscriber.id);
 
         if (authError) {
           console.error('Error storing auth code:', authError);
