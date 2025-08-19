@@ -162,7 +162,7 @@ Respond with ONLY valid JSON, no explanation.`;
  */
 function isInappropriate(submission) {
   const inappropriate = [
-    'test', 'testing', 'asdf', 'xxx', 'fuck', 'shit', 
+    'asdf', 'xxx', 'fuck', 'shit', 
     'penis', 'vagina', 'nazi', 'hitler', 'nigger'
   ];
   
