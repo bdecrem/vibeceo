@@ -435,8 +435,27 @@ function createAuthOverlay(): void {
             <div class="auth-screen active" id="welcome-screen">
                 <h2>Welcome to ${authConfig.appTitle}</h2>
                 <p>Join the collaborative chaos!</p>
-                <button class="auth-btn" onclick="showNewUserScreen()">New User</button>
+                <button class="auth-btn" onclick="showAuthVersionScreen()">New User</button>
                 <button class="auth-btn" onclick="showReturningUserScreen()">Returning User</button>
+            </div>
+            
+            <div class="auth-screen" id="auth-version-screen">
+                <h2>Choose Your Path</h2>
+                <p>Pick your authentication style:</p>
+                <button class="auth-btn" onclick="showCustomUserScreen()">Custom Handle & PIN</button>
+                <button class="auth-btn" onclick="showNewUserScreen()">Classic Presets</button>
+                <button class="auth-btn" onclick="showScreen('welcome-screen')">Back</button>
+            </div>
+            
+            <div class="auth-screen" id="custom-user-screen">
+                <h2>Create Your Identity</h2>
+                <input type="text" class="auth-input" id="custom-handle" placeholder="Your Handle (3-15 chars)" maxlength="15">
+                <br>
+                <input type="text" class="auth-input" id="custom-pin" placeholder="Your 4-digit PIN" maxlength="4" pattern="\d{4}">
+                <br>
+                <div id="custom-user-feedback" style="margin: 10px; font-size: 14px;"></div>
+                <button class="auth-btn" onclick="checkAndRegisterCustomUser()">Claim Identity</button>
+                <button class="auth-btn" onclick="showScreen('auth-version-screen')">Back</button>
             </div>
             
             <div class="auth-screen" id="new-user-screen">
@@ -448,6 +467,25 @@ function createAuthOverlay(): void {
             
             <div class="auth-screen" id="returning-user-screen">
                 <h2>Returning User</h2>
+                <div id="returning-user-options">
+                    <button class="auth-btn" onclick="showCustomLoginScreen()">Custom Handle Login</button>
+                    <button class="auth-btn" onclick="showPresetLoginScreen()">Preset Label Login</button>
+                </div>
+                <button class="auth-btn" onclick="showScreen('welcome-screen')">Back</button>
+            </div>
+            
+            <div class="auth-screen" id="custom-login-screen">
+                <h2>Custom Login</h2>
+                <input type="text" class="auth-input" id="custom-login-handle" placeholder="Your Handle">
+                <br>
+                <input type="text" class="auth-input" id="custom-login-pin" placeholder="Your 4-digit PIN" maxlength="4">
+                <br>
+                <button class="auth-btn" onclick="loginCustomUser()">Login</button>
+                <button class="auth-btn" onclick="showScreen('returning-user-screen')">Back</button>
+            </div>
+            
+            <div class="auth-screen" id="preset-login-screen">
+                <h2>Preset Login</h2>
                 <select class="auth-input" id="user-label-select">
                     <option>Select User</option>
                 </select>
@@ -455,7 +493,7 @@ function createAuthOverlay(): void {
                 <input type="text" class="auth-input" id="returning-passcode" placeholder="4-digit code" maxlength="4">
                 <br>
                 <button class="auth-btn" onclick="loginReturningUser()">Login</button>
-                <button class="auth-btn" onclick="showScreen('welcome-screen')">Back</button>
+                <button class="auth-btn" onclick="showScreen('returning-user-screen')">Back</button>
             </div>
         `;
         
@@ -752,6 +790,217 @@ function enterMainScreen(): void {
         
     } catch (error) {
         console.error('❌ Error entering main screen:', error);
+    }
+}
+
+// =====================================================
+// AUTHV2: CUSTOM HANDLE & PIN FUNCTIONS
+// =====================================================
+
+// Show auth version selection screen
+function showAuthVersionScreen(): void {
+    showScreen('auth-version-screen');
+}
+
+// Show custom user registration screen
+function showCustomUserScreen(): void {
+    showScreen('custom-user-screen');
+    // Clear previous inputs
+    const handleInput = document.getElementById('custom-handle') as HTMLInputElement;
+    const pinInput = document.getElementById('custom-pin') as HTMLInputElement;
+    if (handleInput) handleInput.value = '';
+    if (pinInput) pinInput.value = '';
+    
+    // Clear feedback
+    const feedback = document.getElementById('custom-user-feedback');
+    if (feedback) feedback.innerHTML = '';
+}
+
+// Show custom login screen
+function showCustomLoginScreen(): void {
+    showScreen('custom-login-screen');
+    // Clear previous inputs
+    const handleInput = document.getElementById('custom-login-handle') as HTMLInputElement;
+    const pinInput = document.getElementById('custom-login-pin') as HTMLInputElement;
+    if (handleInput) handleInput.value = '';
+    if (pinInput) pinInput.value = '';
+}
+
+// Show preset login screen
+function showPresetLoginScreen(): void {
+    showScreen('preset-login-screen');
+    
+    // Populate user select dropdown
+    const userSelect = document.getElementById('user-label-select') as HTMLSelectElement;
+    if (userSelect) {
+        userSelect.innerHTML = '<option>Select User</option>';
+        authConfig.userLabels.forEach(label => {
+            const option = document.createElement('option');
+            option.value = label;
+            option.textContent = label;
+            userSelect.appendChild(option);
+        });
+    }
+}
+
+// Check handle availability and register custom user
+async function checkAndRegisterCustomUser(): Promise<void> {
+    const handleInput = document.getElementById('custom-handle') as HTMLInputElement;
+    const pinInput = document.getElementById('custom-pin') as HTMLInputElement;
+    const feedback = document.getElementById('custom-user-feedback');
+    
+    if (!handleInput || !pinInput || !feedback) {
+        alert('Form elements not found!');
+        return;
+    }
+    
+    const handle = handleInput.value.trim();
+    const pin = pinInput.value.trim();
+    
+    // Clear previous feedback
+    feedback.innerHTML = '';
+    
+    // Basic validation
+    if (!handle) {
+        feedback.innerHTML = '<span style="color: #ff4444;">⚠️ Handle is required</span>';
+        return;
+    }
+    
+    if (!pin) {
+        feedback.innerHTML = '<span style="color: #ff4444;">⚠️ PIN is required</span>';
+        return;
+    }
+    
+    if (handle.length < 3 || handle.length > 15) {
+        feedback.innerHTML = '<span style="color: #ff4444;">⚠️ Handle must be 3-15 characters</span>';
+        return;
+    }
+    
+    if (!/^[A-Za-z0-9_-]+$/.test(handle)) {
+        feedback.innerHTML = '<span style="color: #ff4444;">⚠️ Handle can only contain letters, numbers, underscores, and hyphens</span>';
+        return;
+    }
+    
+    if (!/^\d{4}$/.test(pin)) {
+        feedback.innerHTML = '<span style="color: #ff4444;">⚠️ PIN must be exactly 4 digits</span>';
+        return;
+    }
+    
+    feedback.innerHTML = '<span style="color: #ffaa00;">🔄 Checking availability...</span>';
+    
+    try {
+        // Check handle availability
+        const checkResponse = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: getAppId(),
+                action_type: 'check_custom_handle',
+                content_data: { handle: handle }
+            })
+        });
+        
+        const checkResult = await checkResponse.json();
+        
+        if (!checkResult.available) {
+            feedback.innerHTML = `<span style="color: #ff4444;">❌ ${checkResult.error}</span>`;
+            return;
+        }
+        
+        feedback.innerHTML = '<span style="color: #00ff00;">✅ Handle available! Registering...</span>';
+        
+        // Register the user
+        const registerResponse = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: getAppId(),
+                action_type: 'register_custom_user',
+                content_data: { handle: handle, pin: pin }
+            })
+        });
+        
+        const registerResult = await registerResponse.json();
+        
+        if (registerResult.success) {
+            currentUser = {
+                username: registerResult.userLabel,
+                id: registerResult.participantId,
+                userLabel: registerResult.userLabel,
+                passcode: registerResult.pin,
+                participantId: registerResult.participantId
+            };
+            
+            feedback.innerHTML = `<span style="color: #00ff00;">🎉 Welcome, ${registerResult.userLabel}!</span>`;
+            
+            // Brief delay to show success message, then enter main screen
+            setTimeout(() => {
+                enterMainScreen();
+            }, 1500);
+        } else {
+            feedback.innerHTML = `<span style="color: #ff4444;">❌ Registration failed: ${registerResult.error}</span>`;
+        }
+        
+    } catch (error) {
+        console.error('Custom registration error:', error);
+        feedback.innerHTML = '<span style="color: #ff4444;">❌ Registration failed - please try again</span>';
+    }
+}
+
+// Login with custom handle and PIN
+async function loginCustomUser(): Promise<void> {
+    const handleInput = document.getElementById('custom-login-handle') as HTMLInputElement;
+    const pinInput = document.getElementById('custom-login-pin') as HTMLInputElement;
+    
+    if (!handleInput || !pinInput) {
+        alert('Login form not found!');
+        return;
+    }
+    
+    const handle = handleInput.value.trim();
+    const pin = pinInput.value.trim();
+    
+    if (!handle) {
+        alert('ENTER YOUR HANDLE, PHANTOM 👻');
+        return;
+    }
+    
+    if (!pin || pin.length !== 4) {
+        alert('4 DIGITS REQUIRED 🔢');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: getAppId(),
+                action_type: 'authenticate_custom_user',
+                content_data: { handle: handle, pin: pin }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentUser = {
+                username: result.user.userLabel,
+                id: result.user.participantId,
+                userLabel: result.user.userLabel,
+                passcode: pin,
+                participantId: result.user.participantId
+            };
+            
+            console.log('✅ Custom login successful for:', result.user.userLabel);
+            enterMainScreen();
+        } else {
+            alert(result.error || 'Login failed');
+        }
+        
+    } catch (error) {
+        console.error('Custom login error:', error);
+        alert('LOGIN MALFUNCTION 🌀\n\nError: ' + (error instanceof Error ? error.message : String(error)));
     }
 }
 
@@ -1157,7 +1406,7 @@ async function generateText(prompt: string, options?: {
 (window as any).saveMessage = save;
 (window as any).loadMessages = load;
 
-// Auth system functions
+// Auth system functions (V1 - Legacy)
 (window as any).generateNewUser = generateNewUser;
 (window as any).registerNewUser = registerNewUser;
 (window as any).showNewUserScreen = showNewUserScreen;
@@ -1167,13 +1416,22 @@ async function generateText(prompt: string, options?: {
 (window as any).enterMainScreen = enterMainScreen;
 (window as any).leaveApp = leaveApp;
 
-console.log('🚀 ZAD Helper Functions loaded successfully - ALL 36 FUNCTIONS AVAILABLE');
+// AuthV2 functions (Custom Handle & PIN)
+(window as any).showAuthVersionScreen = showAuthVersionScreen;
+(window as any).showCustomUserScreen = showCustomUserScreen;
+(window as any).showCustomLoginScreen = showCustomLoginScreen;
+(window as any).showPresetLoginScreen = showPresetLoginScreen;
+(window as any).checkAndRegisterCustomUser = checkAndRegisterCustomUser;
+(window as any).loginCustomUser = loginCustomUser;
+
+console.log('🚀 ZAD Helper Functions loaded successfully - ALL 42 FUNCTIONS AVAILABLE');
 console.log('📊 Data functions: save(), load(), loadAll(), query()');
 console.log('🔐 Auth functions: initAuth(), getCurrentUser(), updateZadAuth()');
 console.log('🌐 Backend helpers: checkAvailableSlots(), generateUser(), registerUser(), authenticateUser(), greet()');
 console.log('🎨 AI functions: generateImage(), generateText()');
 console.log('⚡ Real-time: enableLiveUpdates(), startRealtime(), stopRealtime()');
 console.log('🔧 Helper aliases: saveEntry, loadEntries, saveData, loadData, etc.');
-console.log('📱 Legacy auth: generateNewUser(), registerNewUser(), showNewUserScreen(), etc.');
+console.log('📱 V1 auth: generateNewUser(), registerNewUser(), showNewUserScreen(), etc.');
+console.log('🆕 V2 auth: showAuthVersionScreen(), checkAndRegisterCustomUser(), loginCustomUser(), etc.');
 console.log('App ID:', getAppId());
 console.log('Participant ID:', getParticipantId()); 

@@ -95,30 +95,76 @@ initAuth()                // Start auth system (call this once)
 
 **That's all you need for 90% of apps!**
 
-### 4. Simple Authentication (Just Copy This)
+### 4. AuthV2: Modern Authentication (RECOMMENDED)
+
+**NEW: Custom Handle & PIN System**
+Users now choose their own handles (3-15 characters) and 4-digit PINs!
+
+**Why AuthV2?**
+- ✅ **Personal Identity**: Users pick meaningful handles like "PIZZA_CHEF" or "TEAM_LEADER"
+- ✅ **Memorable PINs**: Users choose their own easy-to-remember 4-digit codes
+- ✅ **No Screenshots**: Users set it themselves, so they remember it
+- ✅ **Same 5-user limit**: Still enforced, just with custom names
+- ✅ **Backward Compatible**: Classic presets still work for existing apps
+
+**When to use each:**
+- **AuthV2 (Custom)**: New apps, teams who want personal handles
+- **Classic V1**: Quick demos, when you want fun preset names
 
 ```html
 <div class="app-container">
     <div id="welcome-screen" class="screen active">
         <h1>Welcome to [Your App Name]</h1>
         <p>[Brief description]</p>
-        <button onclick="showNewUserScreen()">New User</button>
+        <button onclick="showAuthVersionScreen()">New User</button>
         <button onclick="showReturningUserScreen()">Returning User</button>
     </div>
     
+    <div id="auth-version-screen" class="screen">
+        <h1>Choose Your Path</h1>
+        <p>Pick your authentication style:</p>
+        <button onclick="showCustomUserScreen()">Custom Handle & PIN</button>
+        <button onclick="showNewUserScreen()">Classic Presets</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="custom-user-screen" class="screen">
+        <h1>Create Your Identity</h1>
+        <input type="text" id="custom-handle" placeholder="Your Handle (3-15 chars)" maxlength="15">
+        <input type="text" id="custom-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <div id="custom-user-feedback"></div>
+        <button onclick="checkAndRegisterCustomUser()">Claim Identity</button>
+        <button onclick="showScreen('auth-version-screen')">Back</button>
+    </div>
+    
     <div id="new-user-screen" class="screen">
-        <h1>New User</h1>
+        <h1>Classic Registration</h1>
         <div id="new-user-info"></div>
         <button onclick="registerNewUser()">Register & Enter</button>
-        <button onclick="showScreen('welcome-screen')">Back</button>
+        <button onclick="showScreen('auth-version-screen')">Back</button>
     </div>
     
     <div id="returning-user-screen" class="screen">
         <h1>Returning User</h1>
+        <button onclick="showCustomLoginScreen()">Custom Handle Login</button>
+        <button onclick="showPresetLoginScreen()">Classic Login</button>
+        <button onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+    
+    <div id="custom-login-screen" class="screen">
+        <h1>Custom Login</h1>
+        <input type="text" id="custom-login-handle" placeholder="Your Handle">
+        <input type="text" id="custom-login-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <button onclick="loginCustomUser()">Login</button>
+        <button onclick="showScreen('returning-user-screen')">Back</button>
+    </div>
+    
+    <div id="preset-login-screen" class="screen">
+        <h1>Classic Login</h1>
         <select id="user-label-select"></select>
         <input type="text" id="returning-passcode" placeholder="4-digit code" maxlength="4">
         <button onclick="loginReturningUser()">Login</button>
-        <button onclick="showScreen('welcome-screen')">Back</button>
+        <button onclick="showScreen('returning-user-screen')">Back</button>
     </div>
     
     <div id="main-screen" class="screen">
@@ -135,9 +181,69 @@ initAuth()                // Start auth system (call this once)
 </div>
 ```
 
-**Required Auth JavaScript:**
+**AuthV2 JavaScript (Simpler & Better):**
 ```javascript
 let currentUser = null;
+
+// AuthV2: Show version selection screen (RECOMMENDED ENTRY POINT)
+function showAuthVersionScreen() {
+  showScreen('auth-version-screen');
+}
+
+// AuthV2: Show custom user creation (RECOMMENDED)
+function showCustomUserScreen() {
+  showScreen('custom-user-screen');
+  document.getElementById('custom-handle').value = '';
+  document.getElementById('custom-pin').value = '';
+  document.getElementById('custom-user-feedback').innerHTML = '';
+}
+
+// AuthV2: Register with custom handle and PIN
+async function checkAndRegisterCustomUser() {
+  const handle = document.getElementById('custom-handle').value.trim();
+  const pin = document.getElementById('custom-pin').value.trim();
+  const feedback = document.getElementById('custom-user-feedback');
+  
+  if (!handle || handle.length < 3) {
+    feedback.innerHTML = '⚠️ Handle must be 3-15 characters';
+    return;
+  }
+  
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    feedback.innerHTML = '⚠️ PIN must be exactly 4 digits';
+    return;
+  }
+  
+  feedback.innerHTML = '🔄 Checking availability...';
+  
+  // The system handles all validation and registration automatically
+  // Just call this and it works!
+}
+
+// AuthV2: Custom login
+function showCustomLoginScreen() {
+  showScreen('custom-login-screen');
+  document.getElementById('custom-login-handle').value = '';
+  document.getElementById('custom-login-pin').value = '';
+}
+
+async function loginCustomUser() {
+  const handle = document.getElementById('custom-login-handle').value.trim();
+  const pin = document.getElementById('custom-login-pin').value.trim();
+  
+  if (!handle || !pin) {
+    alert('Enter both handle and PIN!');
+    return;
+  }
+  
+  // System handles authentication automatically
+}
+
+// Classic V1 functions (for backward compatibility)
+function showPresetLoginScreen() {
+  showScreen('preset-login-screen');
+  // Populate classic user dropdown
+}
 
 async function generateNewUser() {
   const slots = await checkAvailableSlots();
@@ -193,12 +299,6 @@ function showScreen(screenId) {
 
 async function showReturningUserScreen() {
   showScreen('returning-user-screen');
-  const slots = await checkAvailableSlots();
-  const select = document.getElementById('user-label-select');
-  select.innerHTML = '<option>Select User</option>';
-  slots.usedLabels.forEach(label => {
-    select.innerHTML += `<option>${label}</option>`;
-  });
 }
 
 function enterMainScreen() {
@@ -208,15 +308,15 @@ function enterMainScreen() {
   loadLatestData();
 }
 
-// User labels for your app (customize these)
-const USER_LABELS = ['user1🎯', 'user2⚡', 'user3🌟', 'user4🔥', 'user5💎'];
-
 // Authentication helper functions are automatically injected by the ZAD system
-// The following functions are available globally:
-// - checkAvailableSlots()
-// - generateUser()
-// - registerUser(userLabel, passcode, participantId)
-// - authenticateUser(userLabel, passcode)
+// AuthV2 functions available globally:
+// - checkAndRegisterCustomUser() - Custom handle registration
+// - loginCustomUser() - Custom handle login  
+// - showCustomUserScreen() - Show custom registration
+// - showCustomLoginScreen() - Show custom login
+// 
+// Classic V1 functions:
+// - checkAvailableSlots(), generateUser(), registerUser(), authenticateUser()
 // - updateZadAuth(userLabel, participantId)
 
 initAuth();
