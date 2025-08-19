@@ -39,6 +39,7 @@ async function save(dataType, data) {
       body: JSON.stringify({
         app_id: window.APP_ID,
         action_type: dataType,
+        participant_id: 'community',
         content_data: data
       })
     });
@@ -58,7 +59,8 @@ async function load(dataType) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         app_id: window.APP_ID,
-        action_type: dataType
+        action_type: dataType,
+        participant_id: 'community'
       })
     });
     
