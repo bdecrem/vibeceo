@@ -70,6 +70,7 @@ async function sendNotification(userPhone, message) {
  */
 async function deployEdit(edit) {
   const appSlug = edit.wtaf_content?.app_slug || 'unknown';
+  const userSlug = edit.wtaf_content?.user_slug || 'unknown';
   console.log(`\n🚀 Deploying edit for: ${appSlug}`);
   
   // Check if validation passed
@@ -120,7 +121,8 @@ async function deployEdit(edit) {
     console.log(`  ✅ Deployed as revision ${revisionId}`);
     
     // Send success notification to user
-    const message = `Your edit request "${edit.edit_request}" for "${appSlug}" has been completed! The changes are now live at your app URL.`;
+    const appUrl = `https://webtoys.ai/${userSlug}/${appSlug}`;
+    const message = `✅ Edit done. Go check your app! ${appUrl}`;
     await sendNotification(edit.user_phone, message);
     
     return true;
