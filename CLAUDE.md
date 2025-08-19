@@ -280,19 +280,62 @@ When in doubt:
 
 ## Server Management and Deployment Rules
 
+### 🚨 HIGH PRIORITY: Server Control Restrictions
+
+**NEVER start, stop, restart, or build ANY of these services without explicit user permission:**
+
+1. **SMS listener** (port 3030) - `node dist/src/index.js`
+2. **Webtoys Engine** - engine processing system
+3. **Web server** (port 3000) - Next.js development server
+
+**ALWAYS ASK FIRST** before running commands like:
+- `npm run build`
+- `npm start` / `npm run dev`
+- Any server start/stop/restart commands
+- Any build or compilation commands
+
 ### Claude Code MUST Have User Permission For:
 - **Starting, stopping, or restarting ANY server** (web server on port 3000, SMS listener on port 3030, Webtoys Engine)
 - **Running build commands** (`npm run build`, etc.)
 - **Pushing code to GitHub** (commits are allowed without permission)
 - Always ask for explicit user approval before any of these actions
 
-### After Making Changes:
-Unless it's VERY clear, inform the user whether they need to:
-1. **Rebuild code** (which code specifically)
-2. **Restart a server** (specify which one):
-   - Web server (port 3000) - for changes to web/ directory
-   - SMS listener (port 3030) - for changes to sms-bot/
-   - Webtoys Engine - for changes to sms-bot/engine/
+### 🎯 MANDATORY: Post-Task Server Guidance
+
+**After completing ANY task, when it's not VERY obvious, you MUST inform the user:**
+
+**"Do you need to REBUILD or RESTART any services?"**
+
+Specify exactly which action may be needed:
+
+#### When to REBUILD:
+- **SMS bot changes** → `cd sms-bot && npm run build`
+- **Web app changes** → `cd web && npm run build` (production only)
+- **TypeScript changes** → Rebuild the affected service
+
+#### When to RESTART:
+- **SMS listener (port 3030)** → For changes to `sms-bot/` code
+- **Web server (port 3000)** → For changes to `web/` directory
+- **Webtoys Engine** → For changes to `sms-bot/engine/`
+
+#### Example Post-Task Messages:
+```
+✅ Task completed! 
+
+📋 Next steps: You may need to REBUILD the SMS bot since I modified validation logic:
+   cd sms-bot && npm run build
+
+Then RESTART the SMS listener if it's currently running.
+```
+
+```
+✅ Template updated!
+
+📋 Next steps: Since I modified the ZAD builder template, you'll need to REBUILD the SMS bot:
+   cd sms-bot && npm run build
+   
+No restart needed - changes take effect on next SMS request.
+```
 
 ## Git Commit and Push Rules
 
