@@ -60,7 +60,32 @@ function generateGreeting(name: string): { greeting: string; timestamp: string; 
   };
 }
 
-// Phase 1 Authentication Backend Helper Functions
+// AuthV2: Custom handle validation rules
+function validateCustomHandle(handle: string): { valid: boolean; error?: string } {
+  // Handle must be 3-15 characters
+  if (!handle || handle.length < 3 || handle.length > 15) {
+    return { valid: false, error: 'Handle must be 3-15 characters long' };
+  }
+  
+  // Only allow alphanumeric, underscores, and hyphens
+  if (!/^[A-Za-z0-9_-]+$/.test(handle)) {
+    return { valid: false, error: 'Handle can only contain letters, numbers, underscores, and hyphens' };
+  }
+  
+  // Convert to uppercase for consistency
+  return { valid: true };
+}
+
+function validateCustomPIN(pin: string): { valid: boolean; error?: string } {
+  // PIN must be exactly 4 digits
+  if (!pin || !/^\d{4}$/.test(pin)) {
+    return { valid: false, error: 'PIN must be exactly 4 digits' };
+  }
+  
+  return { valid: true };
+}
+
+// Phase 1 Authentication Backend Helper Functions (V1 - Legacy)
 const ZAD_USER_LABELS = ['CHAOS_AGENT', 'VIBE_MASTER', 'GLITCH_RIDER', 'PRIMAL_FORCE', 'NEON_PHANTOM'];
 
 // Helper: Get existing users for an app
@@ -86,7 +111,7 @@ async function getExistingUsers(app_id: string, participant_id?: string, content
   })).filter(user => user.userLabel); // Filter out invalid entries
 }
 
-// Backend Helper 1: Check Available Slots
+// Backend Helper 1: Check Available Slots (Updated for AuthV2)
 async function checkAvailableSlots(app_id: string, participant_id?: string, content_data?: any) {
   const existingUsers = await getExistingUsers(app_id, participant_id, content_data);
   const usedLabels = existingUsers.map(u => u.userLabel).filter(Boolean);
@@ -96,13 +121,40 @@ async function checkAvailableSlots(app_id: string, participant_id?: string, cont
     totalSlots: 5,
     usedSlots: usedLabels.length,
     availableSlots: availableLabels.length,
-    availableLabels: availableLabels,
+    availableLabels: availableLabels, // V1 compatibility
     usedLabels: usedLabels,
-    isFull: availableLabels.length === 0
+    isFull: usedLabels.length >= 5, // V2: Based on total user count, not preset labels
+    authVersion: usedLabels.length === 0 ? 'v2' : 'detect' // Suggest V2 for new apps
   };
 }
 
-// Backend Helper 2: Generate User Credentials
+// AuthV2: Check if custom handle is available
+async function checkCustomHandle(app_id: string, requestedHandle: string, participant_id?: string, content_data?: any): Promise<{ available: boolean; error?: string }> {
+  // Validate handle format first
+  const validation = validateCustomHandle(requestedHandle);
+  if (!validation.valid) {
+    return { available: false, error: validation.error };
+  }
+  
+  // Convert to uppercase for comparison
+  const normalizedHandle = requestedHandle.toUpperCase();
+  
+  const existingUsers = await getExistingUsers(app_id, participant_id, content_data);
+  const usedHandles = existingUsers.map(u => u.userLabel?.toUpperCase()).filter(Boolean);
+  
+  if (usedHandles.includes(normalizedHandle)) {
+    return { available: false, error: 'Handle already taken - pick another!' };
+  }
+  
+  // Check if app is full (5 users max)
+  if (existingUsers.length >= 5) {
+    return { available: false, error: 'Squad\'s full! Try another dimension 🚫' };
+  }
+  
+  return { available: true };
+}
+
+// Backend Helper 2: Generate User Credentials (V1 - Legacy)
 async function generateUser(app_id: string, participant_id?: string, content_data?: any) {
   const slots = await checkAvailableSlots(app_id, participant_id, content_data);
   
@@ -133,6 +185,7 @@ async function generateUser(app_id: string, participant_id?: string, content_dat
     userLabel: userLabel,
     passcode: passcode,
     participantId: participantId,
+    authVersion: 'v1',
     message: `YOUR LABEL: ${userLabel}\nSECRET DIGITS: ${passcode}\nSCREENSHOT THIS OR CRY LATER 📸`
   };
 }
@@ -198,7 +251,150 @@ async function registerUser(app_id: string, userLabel: string, passcode: string,
   }
 }
 
-// Backend Helper 4: Authenticate User
+// AuthV2: Register Custom User
+async function registerCustomUser(app_id: string, handle: string, pin: string, participant_id?: string, content_data?: any) {
+  // Validate handle format
+  const handleValidation = validateCustomHandle(handle);
+  if (!handleValidation.valid) {
+    return {
+      success: false,
+      error: handleValidation.error
+    };
+  }
+  
+  // Validate PIN format
+  const pinValidation = validateCustomPIN(pin);
+  if (!pinValidation.valid) {
+    return {
+      success: false,
+      error: pinValidation.error
+    };
+  }
+  
+  // Check if handle is available
+  const handleCheck = await checkCustomHandle(app_id, handle, participant_id, content_data);
+  if (!handleCheck.available) {
+    return {
+      success: false,
+      error: handleCheck.error
+    };
+  }
+  
+  // Normalize handle (uppercase)
+  const normalizedHandle = handle.toUpperCase();
+  const participantId = normalizedHandle + '_' + pin;
+  
+  try {
+    const supabase = getSupabaseClient();
+    
+    const { data, error } = await supabase
+      .from(getTableName(participant_id, content_data, app_id))
+      .insert({
+        app_id: app_id,
+        participant_id: participantId,
+        participant_data: {
+          userLabel: normalizedHandle,
+          username: normalizedHandle,
+          passcode: pin,
+          join_time: Date.now(),
+          authVersion: 'v2'
+        },
+        action_type: 'join',
+        content_data: {
+          message: 'Joined the app',
+          timestamp: Date.now(),
+          join_time: Date.now(),
+          userLabel: normalizedHandle,
+          passcode: pin,
+          authVersion: 'v2'
+        }
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('AuthV2 registration error:', error);
+      return {
+        success: false,
+        error: 'REGISTRATION EXPLODED, TRY AGAIN 💥'
+      };
+    }
+
+    return {
+      success: true,
+      participantId: participantId,
+      userLabel: normalizedHandle,
+      handle: normalizedHandle,
+      pin: pin,
+      authVersion: 'v2',
+      message: `Welcome to the chaos, ${normalizedHandle}! 🎉`
+    };
+    
+  } catch (error) {
+    console.error('AuthV2 registration error:', error);
+    return {
+      success: false,
+      error: 'REGISTRATION EXPLODED, TRY AGAIN 💥'
+    };
+  }
+}
+
+// AuthV2: Authenticate Custom User
+async function authenticateCustomUser(app_id: string, handle: string, pin: string) {
+  // Validate inputs
+  const handleValidation = validateCustomHandle(handle);
+  if (!handleValidation.valid) {
+    return {
+      success: false,
+      error: handleValidation.error
+    };
+  }
+  
+  const pinValidation = validateCustomPIN(pin);
+  if (!pinValidation.valid) {
+    return {
+      success: false,
+      error: pinValidation.error
+    };
+  }
+  
+  try {
+    const existingUsers = await getExistingUsers(app_id);
+    const normalizedHandle = handle.toUpperCase();
+    
+    const authRecord = existingUsers.find(user => 
+      user.userLabel?.toUpperCase() === normalizedHandle && user.passcode === pin
+    );
+    
+    if (authRecord) {
+      return {
+        success: true,
+        user: {
+          userLabel: authRecord.userLabel,
+          handle: authRecord.userLabel,
+          participantId: authRecord.participantId,
+          joinTime: authRecord.joinTime,
+          authVersion: 'v2'
+        },
+        message: `✅ Welcome back, ${authRecord.userLabel}!`
+      };
+    } else {
+      return {
+        success: false,
+        error: 'WRONG HANDLE OR PIN ❌\n\nDouble-check your credentials!'
+      };
+    }
+    
+  } catch (error) {
+    console.error('AuthV2 authentication error:', error);
+    return {
+      success: false,
+      error: 'LOGIN MALFUNCTION, REALITY GLITCHING 🌀\n\nError: ' + (error instanceof Error ? error.message : String(error))
+    };
+  }
+}
+
+// Backend Helper 4: Authenticate User (V1 - Legacy)
 async function authenticateUser(app_id: string, userLabel: string, passcode: string) {
   if (!userLabel || userLabel === 'Select User') {
     return {
@@ -298,6 +494,52 @@ export async function POST(req: NextRequest) {
         success: authResult.success,
         result: authResult
       }, { status: 200 });
+    }
+    
+    // AUTHV2: New Custom Handle & PIN System
+    if (action_type === 'check_custom_handle') {
+      const { handle } = content_data || {};
+      console.log('🆔 AuthV2: checkCustomHandle for app:', app_id, 'handle:', handle);
+      
+      if (!handle) {
+        return NextResponse.json({ 
+          available: false, 
+          error: 'Handle is required' 
+        }, { status: 400 });
+      }
+      
+      const result = await checkCustomHandle(app_id, handle, participant_id, content_data);
+      return NextResponse.json(result, { status: 200 });
+    }
+    
+    if (action_type === 'register_custom_user') {
+      const { handle, pin } = content_data || {};
+      console.log('📝 AuthV2: registerCustomUser for app:', app_id, 'handle:', handle);
+      
+      if (!handle || !pin) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Both handle and PIN are required' 
+        }, { status: 400 });
+      }
+      
+      const result = await registerCustomUser(app_id, handle, pin, participant_id, content_data);
+      return NextResponse.json(result, { status: 200 });
+    }
+    
+    if (action_type === 'authenticate_custom_user') {
+      const { handle, pin } = content_data || {};
+      console.log('🔐 AuthV2: authenticateCustomUser for app:', app_id, 'handle:', handle);
+      
+      if (!handle || !pin) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Both handle and PIN are required' 
+        }, { status: 400 });
+      }
+      
+      const result = await authenticateCustomUser(app_id, handle, pin);
+      return NextResponse.json(result, { status: 200 });
     }
     
     // BACKEND HELPER FUNCTION: Update existing record (for collaborative apps)
