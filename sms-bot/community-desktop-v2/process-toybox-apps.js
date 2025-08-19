@@ -143,6 +143,54 @@ Respond with ONLY valid JSON, no explanation.`;
 }
 
 /**
+ * Find a good position for a new desktop icon
+ */
+function findEmptyPosition(html) {
+  // Parse existing icon positions
+  const iconPattern = /style="left:\s*(\d+)px;\s*top:\s*(\d+)px;"/g;
+  const occupiedPositions = [];
+  let match;
+  
+  while ((match = iconPattern.exec(html)) !== null) {
+    occupiedPositions.push({
+      x: parseInt(match[1]),
+      y: parseInt(match[2])
+    });
+  }
+  
+  // Define a grid for icon placement (icons are ~75px wide, give 100px spacing)
+  const gridSize = 100;
+  const startX = 20;
+  const startY = 100;
+  const maxX = 800;
+  const maxY = 500;
+  
+  // Try to find an empty grid position
+  for (let y = startY; y <= maxY; y += gridSize) {
+    for (let x = startX; x <= maxX; x += gridSize) {
+      // Check if this position is too close to any existing icon
+      const isFree = !occupiedPositions.some(pos => 
+        Math.abs(pos.x - x) < 80 && Math.abs(pos.y - y) < 80
+      );
+      
+      if (isFree) {
+        // Add slight randomization within the grid cell (±10px)
+        return {
+          x: x + Math.floor(Math.random() * 20 - 10),
+          y: y + Math.floor(Math.random() * 20 - 10)
+        };
+      }
+    }
+  }
+  
+  // If no empty position found, place it randomly in lower area
+  return {
+    x: startX + Math.floor(Math.random() * 700),
+    y: 400 + Math.floor(Math.random() * 100)
+  };
+}
+
+/**
  * Add app to ToyBox OS desktop
  */
 async function addAppToDesktop(appSpec) {
@@ -161,12 +209,16 @@ async function addAppToDesktop(appSpec) {
     }
 
     let html = desktopData.html_content;
+    
+    // Find a good position for the new icon
+    const position = findEmptyPosition(html);
+    console.log(`Placing ${appSpec.name} at position (${position.x}, ${position.y})`);
 
     // Create the desktop icon HTML
     const iconHtml = `
     <!-- ${appSpec.name} by ${appSpec.submitterName} -->
     <div class="desktop-icon" 
-         style="left: ${appSpec.position.x}px; top: ${appSpec.position.y}px;"
+         style="left: ${position.x}px; top: ${position.y}px;"
          onclick="${appSpec.code.replace(/"/g, '&quot;').replace(/'/g, '\\\'')}"
          title="${appSpec.tooltip}">
         <div class="icon">${appSpec.icon}</div>
