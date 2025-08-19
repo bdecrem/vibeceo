@@ -7,9 +7,10 @@ interface UploadWidgetProps {
 	userSlug: string;
 	userId: string;
 	currentCount: number;
+	onUploadSuccess?: () => void;
 }
 
-export default function UploadWidget({ userSlug, userId, currentCount }: UploadWidgetProps) {
+export default function UploadWidget({ userSlug, userId, currentCount, onUploadSuccess }: UploadWidgetProps) {
 	const router = useRouter();
 	const [file, setFile] = useState<File | null>(null);
 	const [displayName, setDisplayName] = useState('');
@@ -84,10 +85,14 @@ export default function UploadWidget({ userSlug, userId, currentCount }: UploadW
 			const fileInput = document.getElementById('file-input') as HTMLInputElement;
 			if (fileInput) fileInput.value = '';
 
-			// Refresh the page to show new image
-			setTimeout(() => {
-				router.refresh();
-			}, 2000);
+			// Refresh the gallery to show new image
+			if (onUploadSuccess) {
+				onUploadSuccess();
+			} else {
+				setTimeout(() => {
+					router.refresh();
+				}, 2000);
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Upload failed');
 		} finally {
