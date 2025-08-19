@@ -204,7 +204,7 @@ APP_TYPE: data_collection`;
                 logWithTimestamp("🧪 Admin-test override: Created minimal test prompt without classifier");
             } else {
                 logWithTimestamp("🔧 ADMIN OVERRIDE: Skipping classifier entirely, going straight to admin generation");
-                expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+                expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${userInput}
 
 EMAIL_NEEDED: false
 ZERO_ADMIN_DATA: false
@@ -367,7 +367,7 @@ NEEDS_ADMIN: false`;
                         // STEP 5: Check if classifier detected admin need (APP_TYPE: data_collection)
                         else if (content.includes('APP_TYPE: data_collection') || content.includes('APP_TYPE=data_collection')) {
                             logWithTimestamp("📊 ADMIN detected by classifier (APP_TYPE: data_collection found)");
-                            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${cleanedInput}
+                            expandedPrompt = `ADMIN_DUAL_PAGE_REQUEST: ${userInput}
 
 ${content.trim()}`;
                             logWithTimestamp("📊 ADMIN SYSTEM: Routing to admin dual-page builder");
@@ -452,7 +452,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ADMIN_TEST_REQUEST:')) {
         logWithTimestamp(`🧪 ADMIN_TEST_REQUEST detected - using minimal test builder`);
         // Extract the user request from the admin test request
-        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ADMIN_TEST_REQUEST detected but no content found - parsing error");
         }
@@ -465,7 +465,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
         logWithTimestamp(`📊 ADMIN_DUAL_PAGE_REQUEST detected - using admin dual-page builder`);
         // Extract the user request from the admin request
-        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ADMIN_DUAL_PAGE_REQUEST detected but no content found - parsing error");
         }
@@ -478,7 +478,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ZAD_TEST_REQUEST:')) {
         logWithTimestamp(`🧪 ZAD_TEST_REQUEST detected - using ultra-simple ZAD builder`);
         // Extract the user request from the ZAD test request
-        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ZAD_TEST_REQUEST detected but no content found - parsing error");
         }
@@ -491,7 +491,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ZAD_API_REQUEST:')) {
         logWithTimestamp(`🚀 ZAD_API_REQUEST detected - using comprehensive ZAD builder with API conversion`);
         // Extract the user request from the ZAD API request
-        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ZAD_API_REQUEST detected but no content found - parsing error");
         }
@@ -504,7 +504,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ZAD_PUBLIC_REQUEST:')) {
         logWithTimestamp(`🌐 ZAD_PUBLIC_REQUEST detected - using public ZAD builder (.txt format)`);
         // Extract the user request from the public ZAD request
-        const requestMatch = userPrompt.match(/ZAD_PUBLIC_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_PUBLIC_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ZAD_PUBLIC_REQUEST detected but no content found - parsing error");
         }
@@ -518,7 +518,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
         logWithTimestamp(`🎨 ZAD_COMPREHENSIVE_REQUEST detected - using comprehensive ZAD builder (.txt format)`);
         // Extract the user request from the comprehensive ZAD request
-        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("ZAD_COMPREHENSIVE_REQUEST detected but no content found - parsing error");
         }
@@ -532,7 +532,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     } else if (userPrompt.includes('MUSIC_APP_REQUEST:')) {
         logWithTimestamp(`🎵 MUSIC_APP_REQUEST detected - using music app builder`);
         // Extract the user request from the music app request (handle multi-line content)
-        const requestMatch = userPrompt.match(/MUSIC_APP_REQUEST:\s*([^\n]+)/);
+        const requestMatch = userPrompt.match(/MUSIC_APP_REQUEST:\s*([\s\S]+)/);
         if (!requestMatch) {
             throw new Error("MUSIC_APP_REQUEST detected but no content found - parsing error");
         }
@@ -583,7 +583,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     
     // For admin test requests, replace with the actual user request
     if (userPrompt.includes('ADMIN_TEST_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ADMIN_TEST_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the minimal test builder
@@ -592,7 +592,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     // For admin dual-page requests, replace with the actual user request but preserve metadata
     else if (userPrompt.includes('ADMIN_DUAL_PAGE_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ADMIN_DUAL_PAGE_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the admin builder
@@ -601,7 +601,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     // For ZAD public requests, replace with the actual user request
     else if (userPrompt.includes('ZAD_PUBLIC_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ZAD_PUBLIC_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_PUBLIC_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the public builder
@@ -610,7 +610,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     // For ZAD comprehensive requests, replace with the actual user request
     else if (userPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_COMPREHENSIVE_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
@@ -619,7 +619,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     // For ZAD test requests, replace with the actual user request
     else if (userPrompt.includes('ZAD_TEST_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_TEST_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the simple test builder
@@ -628,7 +628,7 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
     }
     // For ZAD API requests, replace with the actual user request
     else if (userPrompt.includes('ZAD_API_REQUEST:')) {
-        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*(.+)/);
+        const requestMatch = userPrompt.match(/ZAD_API_REQUEST:\s*([\s\S]+)/);
         if (requestMatch) {
             const userRequest = requestMatch[1].trim();
             builderUserPrompt = userRequest; // Use the clean user request for the comprehensive builder
