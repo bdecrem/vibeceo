@@ -114,6 +114,10 @@ Generate a JSON object with:
    - document.body.style for visual changes
    Keep it VERY simple - one line if possible, max 3 lines
 4. tooltip: A fun description (max 50 chars)
+5. theme: (optional) Suggest a theme ID if the app would benefit from specific styling:
+   - "toybox-os" for desktop/OS-like apps
+   - "notepad" for text/document apps
+   - "default" or omit for general apps
 
 Examples of good code:
 - "alert('You rolled: ' + Math.ceil(Math.random()*6))"

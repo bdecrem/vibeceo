@@ -30,10 +30,10 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 	const { demo } = allSearchParams;
 
 	try {
-		// Fetch the WTAF content from Supabase
+		// Fetch the WTAF content from Supabase with theme
 		const { data, error } = await supabase
 			.from("wtaf_content")
-			.select("id, html_content, coach, original_prompt, created_at, type, current_revision")
+			.select("id, html_content, coach, original_prompt, created_at, type, current_revision, theme_id, css_override")
 			.eq("user_slug", user_slug)
 			.eq("app_slug", app_slug)
 			.eq("status", "published")
@@ -64,6 +64,63 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 			} else if (revisionData?.html_content) {
 				console.log(`✅ Using revised content from revision ${data.current_revision}`);
 				htmlContent = revisionData.html_content;
+			}
+		}
+
+		// Load theme CSS if theme_id is set
+		let themeCSS = '';
+		if (data.theme_id) {
+			console.log(`🎨 Loading theme: ${data.theme_id}`);
+			
+			const { data: themeData, error: themeError } = await supabase
+				.from("wtaf_themes")
+				.select("css_content")
+				.eq("id", data.theme_id)
+				.eq("is_active", true)
+				.single();
+
+			if (themeError) {
+				console.error(`Failed to load theme ${data.theme_id}:`, themeError);
+				// Try to load default theme as fallback
+				const { data: defaultTheme } = await supabase
+					.from("wtaf_themes")
+					.select("css_content")
+					.eq("is_default", true)
+					.single();
+				
+				if (defaultTheme?.css_content) {
+					themeCSS = defaultTheme.css_content;
+					console.log('✅ Using default theme as fallback');
+				}
+			} else if (themeData?.css_content) {
+				themeCSS = themeData.css_content;
+				console.log(`✅ Theme ${data.theme_id} loaded successfully`);
+			}
+		}
+
+		// Add any app-specific CSS overrides
+		if (data.css_override) {
+			themeCSS += '\n\n/* App-specific overrides */\n' + data.css_override;
+		}
+
+		// Inject theme CSS into HTML if we have any
+		if (themeCSS) {
+			// Check if there's already a </head> tag
+			if (htmlContent.includes('</head>')) {
+				// Inject before </head>
+				htmlContent = htmlContent.replace(
+					'</head>',
+					`<style id="theme-css">\n${themeCSS}\n</style>\n</head>`
+				);
+			} else if (htmlContent.includes('<body')) {
+				// If no head tag, inject at the beginning of body
+				htmlContent = htmlContent.replace(
+					'<body',
+					`<style id="theme-css">\n${themeCSS}\n</style>\n<body`
+				);
+			} else {
+				// As a last resort, prepend to the entire content
+				htmlContent = `<style id="theme-css">\n${themeCSS}\n</style>\n${htmlContent}`;
 			}
 		}
 
