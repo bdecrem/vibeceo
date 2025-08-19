@@ -216,8 +216,53 @@ async function checkAndRegisterCustomUser() {
   
   feedback.innerHTML = '🔄 Checking availability...';
   
-  // The system handles all validation and registration automatically
-  // Just call this and it works!
+  try {
+    // Check handle availability first
+    const checkResponse = await fetch('/api/zad/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        app_id: getAppId(),
+        action_type: 'check_custom_handle',
+        content_data: { handle: handle }
+      })
+    });
+    
+    const checkResult = await checkResponse.json();
+    if (!checkResult.available) {
+      feedback.innerHTML = `❌ ${checkResult.error}`;
+      return;
+    }
+    
+    feedback.innerHTML = '✅ Handle available! Registering...';
+    
+    // Register the user
+    const registerResponse = await fetch('/api/zad/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        app_id: getAppId(),
+        action_type: 'register_custom_user',
+        content_data: { handle: handle, pin: pin }
+      })
+    });
+    
+    const registerResult = await registerResponse.json();
+    if (registerResult.success) {
+      currentUser = {
+        username: registerResult.userLabel,
+        userLabel: registerResult.userLabel,
+        participantId: registerResult.participantId
+      };
+      
+      updateZadAuth(registerResult.userLabel, registerResult.participantId);
+      enterMainScreen();
+    } else {
+      feedback.innerHTML = `❌ ${registerResult.error}`;
+    }
+  } catch (error) {
+    feedback.innerHTML = '❌ Registration failed - please try again';
+  }
 }
 
 // AuthV2: Custom login
@@ -236,7 +281,33 @@ async function loginCustomUser() {
     return;
   }
   
-  // System handles authentication automatically
+  try {
+    const response = await fetch('/api/zad/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        app_id: getAppId(),
+        action_type: 'authenticate_custom_user',
+        content_data: { handle: handle, pin: pin }
+      })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      currentUser = {
+        username: result.user.userLabel,
+        userLabel: result.user.userLabel,
+        participantId: result.user.participantId
+      };
+      
+      updateZadAuth(result.user.userLabel, result.user.participantId);
+      enterMainScreen();
+    } else {
+      alert(result.error || 'Login failed');
+    }
+  } catch (error) {
+    alert('Login failed - please try again');
+  }
 }
 
 // Classic V1 functions (for backward compatibility)
