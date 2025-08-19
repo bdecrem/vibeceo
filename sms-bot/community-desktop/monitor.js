@@ -52,34 +52,28 @@ async function runScript(scriptName, description) {
 }
 
 /**
- * Deploy desktop.html to production
+ * Deploy desktop.html to production (Supabase)
  */
 async function deployDesktop() {
-  console.log('\n🚀 Deploying desktop to production...');
+  console.log('\n🚀 Deploying desktop to Supabase...');
   
   try {
-    // Read desktop.html
-    const desktopPath = path.join(__dirname, 'desktop.html');
-    const html = await fs.readFile(desktopPath, 'utf-8');
+    // Use the deploy-to-supabase script
+    const { stdout, stderr } = await execAsync('node deploy-to-supabase.js', {
+      cwd: __dirname,
+      maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+    });
     
-    // TODO: Deploy to webtoys via the SMS bot system
-    // For now, we'll just save locally and commit to git
-    
-    // Commit changes
-    const { stdout: statusOut } = await execAsync('git status --porcelain desktop.html', { cwd: __dirname });
-    
-    if (statusOut.trim()) {
-      console.log('Committing desktop changes...');
-      await execAsync('git add desktop.html', { cwd: __dirname });
-      await execAsync(`git commit -m "feat: Update community desktop with new apps"`, { cwd: __dirname });
-      console.log('✅ Desktop changes committed');
-    } else {
-      console.log('No changes to commit');
+    if (stdout) console.log(stdout);
+    if (stderr && !stderr.includes('Warning')) {
+      console.error('Deployment warnings:', stderr);
     }
     
     return true;
   } catch (error) {
-    console.error('Deployment error:', error);
+    console.error('Deployment error:', error.message);
+    if (error.stdout) console.log('Output:', error.stdout);
+    if (error.stderr) console.error('Error output:', error.stderr);
     return false;
   }
 }

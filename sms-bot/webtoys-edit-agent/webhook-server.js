@@ -67,6 +67,20 @@ function createServer() {
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // CORS middleware to allow requests from localhost:3000
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
 
   // Health check endpoint
   app.get('/health', (req, res) => {

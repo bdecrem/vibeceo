@@ -279,33 +279,77 @@
     </div>
     
     <script>
-        // ZAD helper functions (injected by the system)
+        // ZAD helper functions (use real APIs)
         window.APP_ID = 'community-desktop-apps';
         
-        // Simulated ZAD functions for testing
+        // Real ZAD functions that call the APIs
         async function save(dataType, data) {
-            // In production, this calls /api/zad/save
-            console.log('Saving:', dataType, data);
+            console.log('Saving to ZAD API:', dataType, data);
             
-            // For now, save to localStorage for testing
-            const existing = JSON.parse(localStorage.getItem('community_apps') || '[]');
-            existing.push({
-                ...data,
-                id: Date.now(),
-                timestamp: new Date().toISOString(),
-                status: 'new'
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: 'community-desktop-submitter',
+                    action_type: dataType,
+                    content_data: data
+                })
             });
-            localStorage.setItem('community_apps', JSON.stringify(existing));
             
-            return { success: true };
+            if (!response.ok) {
+                throw new Error(`Failed to save: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            return result;
         }
         
         async function load(dataType) {
-            // In production, this calls /api/zad/load
-            console.log('Loading:', dataType);
+            console.log('Loading from ZAD API:', dataType);
             
-            // For now, load from localStorage for testing
-            return JSON.parse(localStorage.getItem('community_apps') || '[]');
+            const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`, {
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to load: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            return data;
+        }
+        
+        // Function to trigger webhook for processing
+        async function triggerWebhook() {
+            console.log('Triggering community-desktop webhook...');
+            
+            try {
+                const response = await fetch('http://localhost:3031/webhook/community-desktop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        trigger: 'new_submission',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    console.warn('Webhook call failed:', response.statusText);
+                    return false;
+                }
+                
+                const result = await response.json();
+                console.log('Webhook triggered successfully:', result);
+                return true;
+            } catch (error) {
+                console.warn('Webhook call error:', error);
+                return false;
+            }
         }
         
         // Form handling
@@ -330,14 +374,34 @@
             
             try {
                 // Save to ZAD
-                await save('desktop_app', formData);
+                const saveResult = await save('desktop_app', formData);
                 
-                // Show success
-                statusDiv.className = 'status success';
+                if (!saveResult.success) {
+                    throw new Error('Failed to save to database');
+                }
+                
+                // Trigger webhook for automatic processing
+                statusDiv.className = 'status info';
                 statusDiv.innerHTML = `
-                    ✅ <strong>Success!</strong> Your app "${formData.appName}" has been submitted!<br>
-                    It will appear on the desktop within 2 minutes.
+                    ⏳ <strong>Processing...</strong> Your app "${formData.appName}" has been saved!<br>
+                    Triggering automatic processing...
                 `;
+                
+                const webhookSuccess = await triggerWebhook();
+                
+                // Show final success message
+                statusDiv.className = 'status success';
+                if (webhookSuccess) {
+                    statusDiv.innerHTML = `
+                        ✅ <strong>Success!</strong> Your app "${formData.appName}" has been submitted and is being processed!<br>
+                        It will appear on the desktop within 2 minutes.
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        ✅ <strong>Success!</strong> Your app "${formData.appName}" has been submitted!<br>
+                        It will be processed automatically on the next monitoring cycle.
+                    `;
+                }
                 
                 // Clear form
                 document.getElementById('appForm').reset();
@@ -346,10 +410,12 @@
                 loadRecentApps();
                 
             } catch (error) {
+                console.error('Submission error:', error);
                 // Show error
                 statusDiv.className = 'status error';
                 statusDiv.innerHTML = `
-                    ❌ <strong>Error:</strong> Failed to submit your app. Please try again.
+                    ❌ <strong>Error:</strong> Failed to submit your app. Please try again.<br>
+                    <small>${error.message}</small>
                 `;
             } finally {
                 // Re-enable button
@@ -362,7 +428,14 @@
         async function loadRecentApps() {
             try {
                 const apps = await load('desktop_app');
+                
+                // Extract content_data from the ZAD response format
                 const recentApps = apps
+                    .map(record => ({
+                        ...record.content_data,
+                        created_at: record.created_at,
+                        timestamp: record.content_data.timestamp || record.created_at
+                    }))
                     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                     .slice(0, 10);
                 

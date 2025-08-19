@@ -125,12 +125,18 @@ Respond with ONLY valid JSON, no explanation.`;
   try {
     // Use full path for cron compatibility
     const claudePath = '/Users/bartdecrem/.local/bin/claude';
-    const { stdout } = await execAsync(`echo ${JSON.stringify(prompt)} | ${claudePath} --no-markdown`, {
+    const { stdout } = await execAsync(`echo ${JSON.stringify(prompt)} | ${claudePath}`, {
       maxBuffer: 1024 * 1024 * 10 // 10MB buffer
     });
 
-    // Parse the JSON response
-    const appSpec = JSON.parse(stdout.trim());
+    // Parse the JSON response (handle markdown wrapping if present)
+    let jsonStr = stdout.trim();
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+    const appSpec = JSON.parse(jsonStr);
     
     // Validate the response
     if (!appSpec.name || !appSpec.icon || !appSpec.code) {
@@ -139,7 +145,7 @@ Respond with ONLY valid JSON, no explanation.`;
 
     return {
       ...appSpec,
-      submitterId: submission.id,
+      submitterId: submission.recordId || submission.id,
       submitterName: submission.submitterName,
       originalRequest: submission.appFunction,
       createdAt: new Date().toISOString()
@@ -182,7 +188,7 @@ async function processApps() {
 
   // Process each submission
   for (const record of submissions) {
-    const submission = record.content_data;
+    const submission = { ...record.content_data, recordId: record.id };
     console.log(`\nProcessing: "${submission.appName}" by ${submission.submitterName}`);
 
     // Check for inappropriate content

@@ -148,9 +148,9 @@ async function injectApp(appSpec) {
     const existingApps = appsSection.split('<div class="desktop-icon"').filter(s => s.trim());
     
     // Check if app already exists (by submitter ID)
-    if (appsSection.includes(`data-submitter-id="${appSpec.submitterId}"`)) {
-      console.log('App already exists on desktop');
-      return true;
+    if (appSpec.submitterId && appsSection.includes(`data-submitter-id="${appSpec.submitterId}"`)) {
+      console.log(`App with submitter ID ${appSpec.submitterId} already exists on desktop`);
+      return 'already-exists';
     }
     
     // Calculate position for new app
@@ -220,9 +220,15 @@ async function addToDesktop() {
     console.log(`\nAdding: ${appSpec.name} ${appSpec.icon}`);
     
     // Inject into desktop.html
-    const success = await injectApp(appSpec);
+    const result = await injectApp(appSpec);
     
-    if (success) {
+    if (result === 'already-exists') {
+      // Update status to 'added' even if already exists
+      await updateAppStatus(record.id, 'added', {
+        addedAt: new Date().toISOString(),
+        note: 'Already existed on desktop'
+      });
+    } else if (result === true) {
       // Update status to 'added'
       await updateAppStatus(record.id, 'added', {
         addedAt: new Date().toISOString(),
