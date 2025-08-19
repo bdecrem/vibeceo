@@ -752,19 +752,20 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
             const hasGenerateNewUser = result.includes('generateNewUser');
             const hasRegisterNewUser = result.includes('registerNewUser');
             
-            // AuthV2 alternatives
-            const hasAuthVersionScreen = result.includes('showAuthVersionScreen');
+            // AuthV2 alternatives (simplified - no choice screens)
             const hasCustomUserScreen = result.includes('showCustomUserScreen');
             const hasCheckAndRegister = result.includes('checkAndRegisterCustomUser');
+            const hasCustomLoginScreen = result.includes('showCustomLoginScreen');
+            const hasLoginCustomUser = result.includes('loginCustomUser');
             
             // Accept either V1 (classic) or V2 (custom) authentication patterns
             const hasV1Auth = hasShowNewUserScreen && hasGenerateNewUser && hasRegisterNewUser;
-            const hasV2Auth = hasAuthVersionScreen && hasCustomUserScreen && hasCheckAndRegister;
+            const hasV2Auth = hasCustomUserScreen && hasCheckAndRegister && hasCustomLoginScreen && hasLoginCustomUser;
             
             if (!hasV1Auth && !hasV2Auth) {
                 logWarning(`🎨 ZAD response missing critical functions - incomplete response detected`);
                 logWarning(`V1 functions: showNewUserScreen(${hasShowNewUserScreen}), generateNewUser(${hasGenerateNewUser}), registerNewUser(${hasRegisterNewUser})`);
-                logWarning(`V2 functions: showAuthVersionScreen(${hasAuthVersionScreen}), showCustomUserScreen(${hasCustomUserScreen}), checkAndRegisterCustomUser(${hasCheckAndRegister})`);
+                logWarning(`V2 functions: showCustomUserScreen(${hasCustomUserScreen}), checkAndRegisterCustomUser(${hasCheckAndRegister}), showCustomLoginScreen(${hasCustomLoginScreen}), loginCustomUser(${hasLoginCustomUser})`);
                 throw new Error(`ZAD response incomplete: Missing required authentication functions (needs either V1 or V2 auth pattern)`);
             }
             
@@ -863,19 +864,20 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
                     const hasGenerateNewUser = fallbackResult.includes('generateNewUser');
                     const hasRegisterNewUser = fallbackResult.includes('registerNewUser');
                     
-                    // AuthV2 alternatives
-                    const hasAuthVersionScreen = fallbackResult.includes('showAuthVersionScreen');
+                    // AuthV2 alternatives (simplified - no choice screens)
                     const hasCustomUserScreen = fallbackResult.includes('showCustomUserScreen');
                     const hasCheckAndRegister = fallbackResult.includes('checkAndRegisterCustomUser');
+                    const hasCustomLoginScreen = fallbackResult.includes('showCustomLoginScreen');
+                    const hasLoginCustomUser = fallbackResult.includes('loginCustomUser');
                     
                     // Accept either V1 (classic) or V2 (custom) authentication patterns
                     const hasV1Auth = hasShowNewUserScreen && hasGenerateNewUser && hasRegisterNewUser;
-                    const hasV2Auth = hasAuthVersionScreen && hasCustomUserScreen && hasCheckAndRegister;
+                    const hasV2Auth = hasCustomUserScreen && hasCheckAndRegister && hasCustomLoginScreen && hasLoginCustomUser;
                     
                     if (!hasV1Auth && !hasV2Auth) {
                         logWarning(`🎨 Fallback ${fallback.model} ZAD response missing critical functions - incomplete response detected`);
                         logWarning(`V1 functions: showNewUserScreen(${hasShowNewUserScreen}), generateNewUser(${hasGenerateNewUser}), registerNewUser(${hasRegisterNewUser})`);
-                        logWarning(`V2 functions: showAuthVersionScreen(${hasAuthVersionScreen}), showCustomUserScreen(${hasCustomUserScreen}), checkAndRegisterCustomUser(${hasCheckAndRegister})`);
+                        logWarning(`V2 functions: showCustomUserScreen(${hasCustomUserScreen}), checkAndRegisterCustomUser(${hasCheckAndRegister}), showCustomLoginScreen(${hasCustomLoginScreen}), loginCustomUser(${hasLoginCustomUser})`);
                         throw new Error(`ZAD response incomplete: Missing required authentication functions (needs either V1 or V2 auth pattern)`);
                     }
                     

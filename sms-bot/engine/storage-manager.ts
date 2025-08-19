@@ -274,7 +274,7 @@ export async function saveCodeToSupabase(
     const isZadTest = originalPrompt.includes('ZAD_TEST_MARKER');
     
     // Check if this is ZAD API (comprehensive template with API conversion)
-    const isZadApi = originalPrompt.includes('ZAD_API_MARKER');
+    const isZadApi = originalPrompt.includes('ZAD_API_MARKER') || originalPrompt.includes('ZAD_API_REQUEST:');
     
     // Check if this is natural ZAD request (comprehensive template with API conversion)
     const isNaturalZad = originalPrompt.includes('ZAD_COMPREHENSIVE_REQUEST:');
