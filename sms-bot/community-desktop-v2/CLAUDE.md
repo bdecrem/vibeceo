@@ -1,4 +1,6 @@
-# ToyBox OS / Community Desktop V2
+# ToyBox OS / Community Desktop V2 (ACTIVE PROJECT)
+
+⚠️ **This is the ACTIVE Community Desktop project. The v1 folder (`/sms-bot/community-desktop/`) is deprecated.**
 
 ## Project Overview
 

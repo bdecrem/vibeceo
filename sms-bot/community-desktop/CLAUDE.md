@@ -1,4 +1,17 @@
-# The Community Desktop Experiment
+# ⚠️ DEPRECATED - DO NOT UPDATE THIS FOLDER ⚠️
+
+**This folder (community-desktop) is DEPRECATED as of January 2025.**
+
+**✅ USE INSTEAD: `/sms-bot/community-desktop-v2/` - The active ToyBox OS project**
+
+All new development happens in community-desktop-v2. This v1 folder is preserved for:
+- Historical reference
+- Understanding the evolution from simple alerts to windowed OS
+- Legacy code that may still be referenced
+
+---
+
+# The Community Desktop Experiment (V1 - ARCHIVED)
 
 ## Quick Test: "The Community Desktop" - Simplest Proof of Concept
 
