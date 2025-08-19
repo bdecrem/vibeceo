@@ -562,12 +562,6 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
             // Trigger edit processing webhook if enabled
             await triggerEditProcessingWebhook(requestId);
             
-            // Send confirmation to user
-            await sendConfirmationSms(
-                `Edit request received! I'll process "${editRequest}" for your app "${appSlug}" and notify you when it's ready. This usually takes 1-2 minutes.`,
-                senderPhone
-            );
-            
             return true;
             
         } catch (error) {
