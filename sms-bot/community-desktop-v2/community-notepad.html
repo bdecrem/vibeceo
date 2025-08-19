@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Notepad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        
+        .notepad-toolbar {
+            background: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            padding: 5px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .notepad-toolbar button {
+            padding: 5px 10px;
+            background: #e0e0e0;
+            border: 1px solid #999;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .notepad-toolbar button:hover {
+            background: #d0d0d0;
+        }
+        
+        .notepad-toolbar button:active {
+            background: #c0c0c0;
+        }
+        
+        .file-info {
+            margin-left: auto;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .notepad-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #editor {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .status-bar {
+            background: #f0f0f0;
+            border-top: 1px solid #ccc;
+            padding: 3px 10px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .save-indicator {
+            color: green;
+            display: none;
+        }
+        
+        .save-indicator.show {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <div class="notepad-toolbar">
+        <button onclick="newFile()">New</button>
+        <button onclick="saveFile()">Save</button>
+        <button onclick="loadFile()">Load</button>
+        <button onclick="clearEditor()">Clear</button>
+        <select id="fileSelector" onchange="loadSelectedFile()">
+            <option value="">-- Select a file --</option>
+        </select>
+        <span class="file-info">
+            <span id="fileName">Untitled</span>
+        </span>
+    </div>
+    
+    <div class="notepad-content">
+        <textarea id="editor" placeholder="Start typing your notes here..."></textarea>
+    </div>
+    
+    <div class="status-bar">
+        <span>Lines: <span id="lineCount">0</span> | Chars: <span id="charCount">0</span></span>
+        <span class="save-indicator" id="saveIndicator">✓ Saved</span>
+        <span id="lastSaved">Never saved</span>
+    </div>
+
+    <script>
+        // ZAD App Configuration
+        window.APP_ID = 'community-notepad';
+        window.USER_ID = localStorage.getItem('community_user_id') || 'guest';
+        
+        // Current file state
+        let currentFileName = 'Untitled';
+        let lastSavedContent = '';
+        let autoSaveTimer = null;
+        
+        // ZAD Helper Functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        action_type: dataType,
+                        participant_id: window.USER_ID,
+                        content_data: data
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Save failed');
+                return await response.json();
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Failed to save. Please try again.');
+                return null;
+            }
+        }
+        
+        async function load(dataType, participantId = window.USER_ID) {
+            try {
+                const response = await fetch('/api/zad/load', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        action_type: dataType,
+                        participant_id: participantId
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Load failed');
+                const result = await response.json();
+                return result.data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+        
+        // Editor functions
+        const editor = document.getElementById('editor');
+        const lineCount = document.getElementById('lineCount');
+        const charCount = document.getElementById('charCount');
+        const fileName = document.getElementById('fileName');
+        const lastSaved = document.getElementById('lastSaved');
+        const saveIndicator = document.getElementById('saveIndicator');
+        const fileSelector = document.getElementById('fileSelector');
+        
+        // Update stats
+        function updateStats() {
+            const text = editor.value;
+            const lines = text.split('\n').length;
+            const chars = text.length;
+            
+            lineCount.textContent = lines;
+            charCount.textContent = chars;
+            
+            // Check if content changed
+            if (text !== lastSavedContent && currentFileName !== 'Untitled') {
+                fileName.textContent = currentFileName + ' *';
+                scheduleAutoSave();
+            }
+        }
+        
+        // Auto-save after 3 seconds of no typing
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                if (currentFileName !== 'Untitled') {
+                    saveFile(true); // true = auto-save
+                }
+            }, 3000);
+        }
+        
+        // New file
+        function newFile() {
+            if (editor.value && !confirm('Discard current content?')) return;
+            
+            const name = prompt('Enter file name:', 'Note_' + Date.now());
+            if (!name) return;
+            
+            editor.value = '';
+            currentFileName = name;
+            fileName.textContent = name;
+            lastSavedContent = '';
+            updateStats();
+        }
+        
+        // Save file
+        async function saveFile(isAutoSave = false) {
+            if (currentFileName === 'Untitled') {
+                const name = prompt('Enter file name:', 'Note_' + Date.now());
+                if (!name) return;
+                currentFileName = name;
+            }
+            
+            const content = editor.value;
+            const result = await save('notepad_file', {
+                fileName: currentFileName,
+                content: content,
+                savedAt: new Date().toISOString(),
+                author: window.USER_ID
+            });
+            
+            if (result) {
+                lastSavedContent = content;
+                fileName.textContent = currentFileName;
+                lastSaved.textContent = 'Last saved: ' + new Date().toLocaleTimeString();
+                
+                // Show save indicator
+                saveIndicator.classList.add('show');
+                setTimeout(() => saveIndicator.classList.remove('show'), 2000);
+                
+                if (!isAutoSave) {
+                    alert('File saved successfully!');
+                }
+                
+                // Refresh file list
+                loadFileList();
+            }
+        }
+        
+        // Load file
+        async function loadFile() {
+            const files = await load('notepad_file');
+            if (files.length === 0) {
+                alert('No saved files found.');
+                return;
+            }
+            
+            // Show file selector
+            fileSelector.style.display = 'inline';
+            loadFileList();
+        }
+        
+        // Load file list into selector
+        async function loadFileList() {
+            const files = await load('notepad_file');
+            
+            // Clear and rebuild options
+            fileSelector.innerHTML = '<option value="">-- Select a file --</option>';
+            
+            // Group files by name and get latest version
+            const fileMap = new Map();
+            files.forEach(file => {
+                const data = file.content_data;
+                if (!fileMap.has(data.fileName) || 
+                    new Date(data.savedAt) > new Date(fileMap.get(data.fileName).savedAt)) {
+                    fileMap.set(data.fileName, data);
+                }
+            });
+            
+            // Add options
+            fileMap.forEach((data, name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name + ' (' + new Date(data.savedAt).toLocaleDateString() + ')';
+                fileSelector.appendChild(option);
+            });
+        }
+        
+        // Load selected file
+        async function loadSelectedFile() {
+            const selectedName = fileSelector.value;
+            if (!selectedName) return;
+            
+            const files = await load('notepad_file');
+            const file = files
+                .map(f => f.content_data)
+                .filter(d => d.fileName === selectedName)
+                .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))[0];
+            
+            if (file) {
+                editor.value = file.content;
+                currentFileName = file.fileName;
+                fileName.textContent = currentFileName;
+                lastSavedContent = file.content;
+                lastSaved.textContent = 'Last saved: ' + new Date(file.savedAt).toLocaleString();
+                updateStats();
+            }
+        }
+        
+        // Clear editor
+        function clearEditor() {
+            if (!confirm('Clear all content?')) return;
+            editor.value = '';
+            updateStats();
+        }
+        
+        // Event listeners
+        editor.addEventListener('input', updateStats);
+        editor.addEventListener('keydown', (e) => {
+            // Tab key inserts tab character
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+                updateStats();
+            }
+            
+            // Ctrl+S to save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveFile();
+            }
+        });
+        
+        // Initialize
+        updateStats();
+        loadFileList();
+        
+        // Welcome message
+        editor.value = `Welcome to Community Notepad!
+
+This is a shared notepad where you can:
+- Create and save text files
+- Load previously saved files
+- Auto-save your work
+
+Press Ctrl+S to save, or use the Save button above.
+
+Happy writing!`;
+        updateStats();
+    </script>
+</body>
+</html>
