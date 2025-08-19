@@ -184,7 +184,7 @@
         </div>
         
         <div class="desktop-icon" style="left: 20px; top: 120px" 
-             onclick="window.open('https://webtoys.ai/community-desktop-submit', '_blank')">
+             onclick="window.open('/bart/community-desktop-submit', '_blank')">
             <div class="icon">➕</div>
             <div class="label">Add App</div>
         </div>
@@ -331,11 +331,227 @@
             <div class="icon">🎉</div>
             <div class="label">Party Time</div>
         </div>
+        
+        <div class="desktop-icon" 
+             style="left: 120px; top: 220px"
+             data-submitter-id="2250"
+             title="Shows the current time instantly"
+             onclick="alert(&#39;Current time: &#39; + new Date().toLocaleTimeString())">
+            <div class="icon">🕐</div>
+            <div class="label">Time Clock</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 220px; top: 220px"
+             data-submitter-id="2251"
+             title="Plays a retro beep sound effect"
+             onclick="new Audio(&#39;data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmMcCjiCyfLLeCsFJG/D8N2SQAoUWK3n7K1bGAg9ku7wuWsfCTN7xfDSeSgFJGi98N2PRAwUW6ri7bJeGwg9k+3vuGYeDzN6w/DVcycFJGGz79+WRQwUYq7e7rVfGwg9lOrvtmQeEDN3wfHWfCgGI2Cx8N2SQgsTYaje7bZgGwk8kuzvuGkgEDN4wfLZeygFJWCu8N2QRQsUYLDc8L5jIgU8htjv52UeETN0wO5wWKQU8O7CffDb6OfP2+jrPAwUYrPi7bNfHAg9lOvwuGEfEDN2we7UdSgFJVqp79uSSQoUZ6rf7LNjGAo9kurw72wfEzNwse5wWKQU8e7CffDb6OfP2+jrPQwUYa3i7bZeGwg9k+vwtmseDzJ2xO/UdigFJFeq8NySRwwUaK7d7LJjFwk9kurx73EfEzNvse5wWKQU8O3CffDb6OfP2+jrPwwUYKni7rNfGAg9lerys2ofEzJzxe/YfigGI1eq8d2QRQsUZ6rf7bNjGAo9lOrws2wfEjJzxO7UdygGJFWo8d2QRQsUZK3i7rNeGwg9leversoRu&#39;))audio.play()">
+            <div class="icon">🔊</div>
+            <div class="label">Sounds</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 420px; top: 220px"
+             data-submitter-id="2253"
+             title="Shake the magic 8-ball for mystical answers!"
+             onclick="const answers = [&#39;Yes&#39;, &#39;No&#39;, &#39;Maybe&#39;, &#39;Ask again later&#39;, &#39;Definitely&#39;, &#39;Don\&#39;t count on it&#39;, &#39;Very likely&#39;, &#39;Outlook not so good&#39;]; alert(&#39;🎱 &#39; + answers[Math.floor(Math.random() * answers.length)])">
+            <div class="icon">🎱</div>
+            <div class="label">Magic 8-Ball</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 520px; top: 220px"
+             data-submitter-id="2254"
+             title="Random weather forecast for Palo Alto"
+             onclick="const emojis = [&#39;☀️&#39;,&#39;⛅&#39;,&#39;🌤️&#39;,&#39;🌦️&#39;,&#39;🌧️&#39;,&#39;⛈️&#39;,&#39;🌩️&#39;,&#39;❄️&#39;,&#39;🌨️&#39;,&#39;🌪️&#39;]; alert(&#39;Tomorrow in Palo Alto: &#39; + emojis[Math.floor(Math.random() * emojis.length)] + &#39; &#39; + (Math.floor(Math.random() * 30) + 60) + &#39;°F&#39;)">
+            <div class="icon">🌤️</div>
+            <div class="label">Weather</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 620px; top: 220px"
+             data-submitter-id="2255"
+             title="Shows random weather emojis with fun messages!"
+             onclick="alert([&#39;☀️ Sunny vibes!&#39;, &#39;🌧️ Rainy mood!&#39;, &#39;❄️ Snow day!&#39;, &#39;🌈 Rainbow magic!&#39;, &#39;⛈️ Thunder time!&#39;, &#39;🌪️ Windy wild!&#39;][Math.floor(Math.random()*6)])">
+            <div class="icon">🌤️</div>
+            <div class="label">Weather Fun</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 720px; top: 220px"
+             data-submitter-id="2256"
+             title="A friendly greeting just for Bart"
+             onclick="alert(&#39;Hi Bart! 😊&#39;)">
+            <div class="icon">👋</div>
+            <div class="label">Hello Bart</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 20px; top: 320px"
+             data-submitter-id="2257"
+             title="Greets you in a random language!"
+             onclick="const greetings = [&#39;Hello!&#39;, &#39;Hola!&#39;, &#39;Bonjour!&#39;, &#39;Guten Tag!&#39;, &#39;Ciao!&#39;, &#39;こんにちは!&#39;, &#39;Olá!&#39;]; alert(greetings[Math.floor(Math.random() * 7)])">
+            <div class="icon">👋</div>
+            <div class="label">Hello World</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 120px; top: 320px"
+             data-submitter-id="2258"
+             title="Says hello in a random language!"
+             onclick="const greetings = [&#39;Hello!&#39;, &#39;¡Hola!&#39;, &#39;Bonjour!&#39;, &#39;Ciao!&#39;, &#39;こんにちは!&#39;]; alert(greetings[Math.floor(Math.random() * 5)])">
+            <div class="icon">👋</div>
+            <div class="label">Hola</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 220px; top: 320px"
+             data-submitter-id="2260"
+             title="Click for mystical wisdom from the universe! 🔮"
+             onclick="alert([&#39;Your future looks bright!&#39;, &#39;Good things come to those who wait&#39;, &#39;Adventure awaits around the corner&#39;, &#39;Today is your lucky day!&#39;, &#39;Believe in yourself and magic happens&#39;, &#39;A surprise gift is coming your way&#39;, &#39;Wisdom comes from unexpected places&#39;, &#39;Your kindness will be rewarded&#39;][Math.floor(Math.random()*8)])">
+            <div class="icon">🥠</div>
+            <div class="label">Magic Fortune</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 320px; top: 320px"
+             data-submitter-id="2262"
+             title="Click to see if everything works!"
+             onclick="alert(&#39;Test successful! Everything is working perfectly! ✅&#39;)">
+            <div class="icon">🧪</div>
+            <div class="label">Test Button</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 420px; top: 320px"
+             data-submitter-id="2266"
+             title="A friendly greeting just for Bart!"
+             onclick="alert(&#39;Hi Bart! 👋&#39;)">
+            <div class="icon">👋</div>
+            <div class="label">Hi Bart</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 520px; top: 320px"
+             data-submitter-id="2265"
+             title="A friendly greeting just for you!"
+             onclick="alert(&#39;Hello there! 👋&#39;)">
+            <div class="icon">👋</div>
+            <div class="label">Hello</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 620px; top: 320px"
+             data-submitter-id="2267"
+             title="Says hello in 5 different languages!"
+             onclick="const greetings = [&#39;Hello!&#39;, &#39;Hola!&#39;, &#39;Bonjour!&#39;, &#39;Hallo!&#39;, &#39;Ciao!&#39;]; alert(greetings[Math.floor(Math.random() * greetings.length)])">
+            <div class="icon">👋</div>
+            <div class="label">Hello World</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 720px; top: 320px"
+             data-submitter-id="2264"
+             title="Get instant tech support wisdom!"
+             onclick="const issues = [&#39;Restart it&#39;, &#39;Check cables&#39;, &#39;Clear cache&#39;, &#39;Update drivers&#39;, &#39;Turn off/on&#39;]; alert(&#39;Diagnosis: &#39; + issues[Math.floor(Math.random() * issues.length)])">
+            <div class="icon">🔧</div>
+            <div class="label">DiagnoTest</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 20px; top: 420px"
+             data-submitter-id="2263"
+             title="Dutch morning greetings from Hilde"
+             onclick="alert(&#39;Goedemorgen!&#39;)">
+            <div class="icon">🌅</div>
+            <div class="label">Hilde</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 120px; top: 420px"
+             data-submitter-id="2268"
+             title="Says hello in French - très magnifique!"
+             onclick="alert(&#39;Bonjour! Comment allez-vous?&#39;)">
+            <div class="icon">🇫🇷</div>
+            <div class="label">Bonjour</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 220px; top: 420px"
+             data-submitter-id="2270"
+             title="Click to get a friendly greeting from Andrew"
+             onclick="alert(&#39;Hi there! Andrew says hello!&#39;)">
+            <div class="icon">👋</div>
+            <div class="label">Andrew</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 320px; top: 420px"
+             data-submitter-id="2273"
+             title="Agnes says hello in her friendly way"
+             onclick="alert(&#39;Hallo! I am Agnes!&#39;)">
+            <div class="icon">👋</div>
+            <div class="label">Agnes</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 420px; top: 420px"
+             data-submitter-id="2272"
+             title="Peter says good morning in random languages!"
+             onclick="const greetings = [&#39;Good morning!&#39;, &#39;Buenos días!&#39;, &#39;Bonjour!&#39;, &#39;Guten Morgen!&#39;, &#39;Buongiorno!&#39;, &#39;Ohayo!&#39;, &#39;Bom dia!&#39;, &#39;Dobroe utro!&#39;, &#39;Kalimera!&#39;, &#39;Selamat pagi!&#39;]; alert(greetings[Math.floor(Math.random() * greetings.length)])">
+            <div class="icon">🌍</div>
+            <div class="label">Peter</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 520px; top: 420px"
+             data-submitter-id="2269"
+             title="Peter says hello in French"
+             onclick="alert(&#39;Bonjour! Je suis Peter!&#39;)">
+            <div class="icon">🇫🇷</div>
+            <div class="label">Peter</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 620px; top: 420px"
+             data-submitter-id="2271"
+             title="Dutch greeting from Willy"
+             onclick="alert(&#39;Hallo!&#39;)">
+            <div class="icon">🇳🇱</div>
+            <div class="label">Willy</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 720px; top: 420px"
+             data-submitter-id="2274"
+             title="Virtual dog that barks on command"
+             onclick="alert(&#39;🐕 Bark bark!&#39;)">
+            <div class="icon">🐕</div>
+            <div class="label">Kujo</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 470px; top: 359px"
+             data-submitter-id="2275"
+             title="Makes a satisfying beep sound!"
+             onclick="new Audio(&#39;data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYeCD2QyvHJdGwFhXDK9N2QRg==&#39;).play().catch(()=&gt;alert(&#39;🔊 BEEP!&#39;))">
+            <div class="icon">🔊</div>
+            <div class="label">Beep</div>
+        </div>
+        
+        <div class="desktop-icon" 
+             style="left: 22px; top: 359px"
+             data-submitter-id="2276"
+             title="Meet Henry the chicken! Click for a greeting."
+             onclick="alert(&#39;🐔 Cluck cluck! Henry says hello!&#39;)">
+            <div class="icon">🐔</div>
+            <div class="label">Henry</div>
+        </div>
         <!-- COMMUNITY_APPS_END -->
     </div>
     
     <div class="taskbar">
-        <button class="start-button" onclick="window.open('https://webtoys.ai/community-desktop-submit', '_blank')">
+        <button class="start-button" onclick="window.open('/bart/community-desktop-submit', '_blank')">
             <span class="logo">🪟</span>
             <span>Start</span>
         </button>

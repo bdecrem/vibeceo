@@ -100,9 +100,9 @@ if pgrep -f "worker-manager.js" > /dev/null; then
     fi
 fi
 
-# Start ngrok in background
+# Start ngrok in background with permanent subdomain
 echo -e "${BLUE}🌐 Starting ngrok tunnel...${NC}"
-ngrok http 3031 > /tmp/ngrok.log 2>&1 &
+ngrok http 3031 --subdomain=webtoys-agents > /tmp/ngrok.log 2>&1 &
 NGROK_PID=$!
 
 # Wait for ngrok to start and get URL

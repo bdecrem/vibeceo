@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webhook Test Form</title>
+</head>
+<body>
+    <h1>Community Desktop Webhook Test</h1>
+    <button id="testBtn">Test Webhook Call</button>
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Testing...';
+            
+            // Simulate exact form data
+            const formData = {
+                appName: 'Browser Test App',
+                appFunction: 'Tests the webhook from browser',
+                submitterName: 'Test User',
+                timestamp: new Date().toISOString(),
+                status: 'new'
+            };
+            
+            try {
+                // Use same logic as the real form
+                const webhookUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3031/webhook/community-desktop'
+                    : 'https://webtoys-agents.ngrok.io/webhook/community-desktop';
+                
+                output.innerHTML += `<br>Calling: ${webhookUrl}`;
+                
+                const webhookResponse = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        appName: formData.appName,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await webhookResponse.json();
+                output.innerHTML += `<br>✅ SUCCESS: ${JSON.stringify(result)}`;
+                
+            } catch (error) {
+                output.innerHTML += `<br>❌ ERROR: ${error.message}`;
+                console.error('Webhook error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -68,11 +68,22 @@ function createServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   
-  // CORS middleware to allow requests from localhost:3000
+  // CORS middleware to allow requests from localhost and production
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://webtoys.ai',
+      'https://www.webtoys.ai'
+    ];
+    
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
+    
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
