@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Mac OS 8 Platinum Theme - Test Showcase</title>
+    <style>
+        /* Enhanced Mac OS 8 Platinum Theme - Version 1.1.0 */
+        @import url('https://fonts.googleapis.com/css2?family=Charcoal:wght@400;700&display=swap');
+
+        :root {
+          --platinum-gray: #EEEEEE;
+          --platinum-light: #F5F5F5;
+          --platinum-medium: #DDDDDD;
+          --platinum-dark: #AAAAAA;
+          --platinum-darker: #888888;
+          --platinum-accent: #0066CC;
+          --platinum-accent-light: #4A90E2;
+          --platinum-accent-dark: #004499;
+          --platinum-shadow: rgba(0, 0, 0, 0.4);
+          --platinum-shadow-light: rgba(0, 0, 0, 0.2);
+          --platinum-highlight: rgba(255, 255, 255, 0.8);
+          --platinum-text: #000000;
+          --platinum-white: #FFFFFF;
+          
+          /* Typography */
+          --font-system: 'Charcoal', 'Geneva', 'Chicago', 'Helvetica Neue', system-ui, sans-serif;
+          --font-size-base: 12px;
+          --font-size-small: 10px;
+          --font-size-large: 13px;
+          --line-height-tight: 1.1;
+          --line-height-normal: 1.2;
+          
+          /* Spacing */
+          --spacing-xs: 4px;
+          --spacing-sm: 8px;
+          --spacing-md: 12px;
+          --spacing-lg: 16px;
+          --spacing-xl: 20px;
+          
+          /* Border radius */
+          --radius-sm: 2px;
+          --radius-md: 4px;
+          --radius-lg: 6px;
+          --radius-xl: 8px;
+          
+          /* Shadows */
+          --shadow-soft: 0 2px 8px var(--platinum-shadow);
+          --shadow-hard: 2px 2px 0 rgba(0, 0, 0, 0.3);
+          --shadow-inset-raised: inset 1px 1px 0 var(--platinum-highlight), inset -1px -1px 0 rgba(0, 0, 0, 0.1);
+          --shadow-inset-pressed: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 1px var(--platinum-highlight);
+        }
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          background: var(--platinum-gray);
+          background-image: 
+            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.15) 1px, transparent 1px),
+            radial-gradient(circle at 75% 75%, rgba(0,0,0,0.05) 1px, transparent 1px),
+            linear-gradient(45deg, transparent 46%, rgba(0,0,0,0.02) 49%, rgba(0,0,0,0.02) 51%, transparent 54%);
+          background-size: 12px 12px, 12px 12px, 8px 8px;
+          font-family: var(--font-system);
+          font-size: var(--font-size-base);
+          margin: 0;
+          height: 100vh;
+          position: relative;
+          overflow: hidden;
+          color: var(--platinum-text);
+          line-height: var(--line-height-normal);
+          -webkit-font-smoothing: none;
+          -moz-osx-font-smoothing: unset;
+          font-smooth: never;
+          text-rendering: optimizeSpeed;
+        }
+
+        /* Desktop Background */
+        .desktop {
+          width: 100%;
+          height: calc(100vh - 28px);
+          position: relative;
+          background: var(--platinum-gray);
+          background-image: inherit;
+          background-size: inherit;
+          padding: var(--spacing-xl);
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 28px;
+          background: linear-gradient(to bottom, var(--platinum-light) 0%, #E8E8E8 50%, var(--platinum-medium) 100%);
+          border-bottom: 1px solid var(--platinum-dark);
+          display: flex;
+          align-items: center;
+          padding: 0 var(--spacing-sm);
+          z-index: 1000;
+          box-shadow: 
+            0 1px 0 var(--platinum-highlight),
+            0 2px 4px var(--platinum-shadow-light),
+            0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .menu-bar .apple-menu {
+          background: var(--platinum-text);
+          color: var(--platinum-white);
+          font-family: system-ui;
+          border-radius: var(--radius-sm);
+          margin-right: var(--spacing-sm);
+          width: 24px;
+          text-align: center;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.1s ease;
+        }
+
+        .menu-bar .apple-menu:hover {
+          background: #333333;
+          transform: scale(1.05);
+        }
+
+        .menu-bar .menu-title {
+          font-weight: bold;
+          font-size: var(--font-size-large);
+          padding: 0 var(--spacing-md);
+          height: 100%;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          border: 1px solid transparent;
+          border-radius: var(--radius-sm);
+          transition: all 0.1s ease;
+        }
+
+        .menu-bar .menu-title:hover {
+          background: var(--platinum-accent);
+          color: var(--platinum-white);
+          border: 1px solid var(--platinum-accent-dark);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* Desktop Icons */
+        .desktop-icon {
+          position: absolute;
+          width: 72px;
+          text-align: center;
+          cursor: pointer;
+          padding: var(--spacing-sm) var(--spacing-xs);
+          border: 1px solid transparent;
+          border-radius: var(--radius-md);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--spacing-xs);
+          background: transparent;
+          transition: all 0.15s ease;
+          user-select: none;
+        }
+
+        .desktop-icon[draggable="true"] {
+          cursor: grab;
+        }
+
+        .desktop-icon[draggable="true"]:active {
+          cursor: grabbing;
+        }
+
+        .desktop-icon.dragging {
+          opacity: 0.5;
+          transform: rotate(5deg) scale(1.1);
+          z-index: 1000;
+        }
+
+        .desktop-icon:hover {
+          background: rgba(102, 153, 204, 0.25);
+          border: 1px solid rgba(102, 153, 204, 0.5);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .desktop-icon.selected {
+          background: var(--platinum-accent);
+          border: 1px solid var(--platinum-accent-dark);
+          box-shadow: var(--shadow-inset-raised);
+        }
+
+        .desktop-icon .icon {
+          font-size: 36px;
+          line-height: 1;
+          filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
+          margin-bottom: var(--spacing-xs);
+          transition: transform 0.1s ease;
+          image-rendering: pixelated;
+          image-rendering: -moz-crisp-edges;
+          image-rendering: crisp-edges;
+        }
+
+        .desktop-icon:hover .icon {
+          transform: scale(1.05);
+        }
+
+        .desktop-icon .label {
+          color: var(--platinum-text);
+          font-size: var(--font-size-small);
+          line-height: var(--line-height-tight);
+          word-wrap: break-word;
+          max-width: 72px;
+          font-weight: normal;
+          text-shadow: 1px 1px 1px var(--platinum-highlight);
+          -webkit-font-smoothing: none;
+        }
+
+        .desktop-icon.selected .label {
+          color: var(--platinum-white);
+          text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+
+        .desktop-icon.trashed {
+          display: none !important;
+          visibility: hidden !important;
+        }
+
+        /* Trash Drop Zone */
+        .desktop-icon.trash-drop-zone {
+          background: rgba(255, 100, 100, 0.3) !important;
+          border: 2px dashed #FF6B6B !important;
+          transform: scale(1.1);
+        }
+
+        .desktop-icon.trash.full .icon {
+          filter: sepia(0.3) brightness(1.1);
+        }
+
+        .desktop-icon.trash.empty .icon {
+          filter: grayscale(0.4) brightness(0.9);
+        }
+
+        /* Windows */
+        .desktop-window {
+          position: absolute;
+          background: var(--platinum-gray);
+          border: 2px solid var(--platinum-dark);
+          border-radius: var(--radius-xl);
+          box-shadow: 
+            var(--shadow-soft),
+            var(--shadow-inset-raised);
+          display: flex;
+          flex-direction: column;
+          min-width: 320px;
+          min-height: 240px;
+          overflow: hidden;
+          transition: all 0.2s ease;
+        }
+
+        .desktop-window.active {
+          border-color: var(--platinum-accent);
+          box-shadow: 
+            0 4px 16px var(--platinum-shadow),
+            var(--shadow-inset-raised),
+            0 0 0 1px rgba(102, 153, 204, 0.3);
+          transform: translateY(-2px);
+        }
+
+        /* Window Titlebar */
+        .window-titlebar {
+          height: 20px;
+          background: linear-gradient(to bottom, var(--platinum-white) 0%, #E8E8E8 50%, var(--platinum-medium) 100%);
+          border-bottom: 1px solid var(--platinum-dark);
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 var(--spacing-sm);
+          cursor: grab;
+          user-select: none;
+          position: relative;
+          box-shadow: inset 0 1px 0 var(--platinum-highlight);
+        }
+
+        .desktop-window.active .window-titlebar {
+          background: linear-gradient(to bottom, #F0F8FF 0%, #E6F2FF 50%, #D9EEFF 100%);
+          box-shadow: 
+            inset 0 1px 0 var(--platinum-highlight),
+            0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .window-title {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          font-size: 11px;
+          font-weight: bold;
+          color: var(--platinum-text);
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          -webkit-font-smoothing: none;
+        }
+
+        /* Window Controls */
+        .window-controls {
+          display: flex;
+          gap: var(--spacing-sm);
+          position: absolute;
+          left: var(--spacing-sm);
+        }
+
+        .window-controls button {
+          width: 13px;
+          height: 13px;
+          border: 1px solid var(--platinum-darker);
+          border-radius: 50%;
+          font-size: 8px;
+          line-height: 1;
+          cursor: pointer;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.1s ease;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .close-button {
+          background: linear-gradient(to bottom, #FF6B6B, #FF5252);
+          color: #8B0000;
+          border-color: #CC4444;
+        }
+
+        .minimize-button {
+          background: linear-gradient(to bottom, #FFD93D, #FFCD02);
+          color: #B8860B;
+          border-color: #CCAA00;
+        }
+
+        .zoom-button {
+          background: linear-gradient(to bottom, #6BCF7F, #4CAF50);
+          color: #2E7D32;
+          border-color: #44AA44;
+        }
+
+        .window-controls button:hover {
+          border-color: #666666;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          transform: translateY(-1px);
+        }
+
+        .window-controls button:active {
+          transform: translateY(1px);
+          box-shadow: var(--shadow-inset-pressed);
+        }
+
+        /* Window Content */
+        .window-content {
+          flex: 1;
+          background: var(--platinum-white);
+          border: 1px solid #CCCCCC;
+          border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+          overflow: auto;
+          margin: 0;
+          position: relative;
+          padding: var(--spacing-lg) var(--spacing-xl);
+          line-height: 1.4;
+        }
+
+        /* Enhanced Buttons */
+        button, .button {
+          padding: var(--spacing-xs) var(--spacing-md);
+          background: linear-gradient(to bottom, var(--platinum-white) 0%, #E8E8E8 50%, var(--platinum-medium) 100%);
+          border: 1px solid var(--platinum-dark);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          font-size: 11px;
+          font-family: inherit;
+          color: var(--platinum-text);
+          min-height: 22px;
+          box-shadow: 
+            0 1px 3px var(--platinum-shadow-light),
+            var(--shadow-inset-raised);
+          transition: all 0.1s ease;
+          -webkit-font-smoothing: none;
+          font-weight: normal;
+          margin: 4px;
+        }
+
+        button:hover, .button:hover {
+          background: linear-gradient(to bottom, #F8F8F8 0%, #E0E0E0 50%, #D5D5D5 100%);
+          border-color: #999999;
+          box-shadow: 
+            0 2px 4px var(--platinum-shadow-light),
+            var(--shadow-inset-raised);
+          transform: translateY(-1px);
+        }
+
+        button:active, .button:active {
+          background: linear-gradient(to bottom, #D8D8D8 0%, #C8C8C8 50%, #BBBBBB 100%);
+          box-shadow: var(--shadow-inset-pressed);
+          transform: translateY(1px);
+          border-color: var(--platinum-darker);
+        }
+
+        /* Default Button */
+        .default-button {
+          background: linear-gradient(to bottom, #5B9BD5 0%, var(--platinum-accent-light) 50%, #357ABD 100%);
+          color: var(--platinum-white);
+          border: 2px solid var(--platinum-accent-dark);
+          font-weight: bold;
+          box-shadow: 
+            0 2px 6px rgba(0,0,0,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.3);
+          text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+        }
+
+        .default-button:hover {
+          background: linear-gradient(to bottom, #6BA6E0 0%, #5BA0ED 50%, #4080C8 100%);
+          box-shadow: 
+            0 3px 8px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        /* Form Elements */
+        input, textarea, select {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border: 1px solid var(--platinum-dark);
+          border-radius: var(--radius-sm);
+          font-size: 11px;
+          font-family: inherit;
+          background: var(--platinum-white);
+          box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+          transition: all 0.15s ease;
+          -webkit-font-smoothing: none;
+          margin: 4px;
+          min-width: 120px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+          outline: 2px solid var(--platinum-accent);
+          outline-offset: 0;
+          border-color: var(--platinum-accent);
+          box-shadow: 
+            inset 1px 1px 2px rgba(0,0,0,0.1),
+            0 0 0 3px rgba(102, 153, 204, 0.2);
+        }
+
+        /* Dialog */
+        .dialog {
+          background: var(--platinum-gray);
+          border: 2px solid var(--platinum-dark);
+          border-radius: var(--radius-xl);
+          box-shadow: 
+            4px 4px 16px var(--platinum-shadow),
+            var(--shadow-inset-raised);
+          padding: var(--spacing-lg);
+          max-width: 420px;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 2000;
+          animation: dialogAppear 0.2s ease-out;
+        }
+
+        @keyframes dialogAppear {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
+        .dialog-title {
+          font-weight: bold;
+          margin-bottom: var(--spacing-md);
+          font-size: var(--font-size-base);
+          -webkit-font-smoothing: none;
+        }
+
+        .dialog-buttons {
+          display: flex;
+          gap: var(--spacing-sm);
+          justify-content: flex-end;
+          margin-top: var(--spacing-lg);
+        }
+
+        /* Showcase specific styles */
+        .showcase-section {
+          margin: 20px 0;
+          padding: 16px;
+          border: 1px solid #CCCCCC;
+          border-radius: 6px;
+          background: rgba(255,255,255,0.9);
+        }
+
+        .showcase-title {
+          font-weight: bold;
+          margin-bottom: 12px;
+          color: var(--platinum-accent-dark);
+          font-size: 14px;
+        }
+
+        .color-swatch {
+          display: inline-block;
+          width: 30px;
+          height: 20px;
+          border: 1px solid #999;
+          margin: 2px;
+          vertical-align: middle;
+        }
+
+        .feature-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 16px;
+          margin: 16px 0;
+        }
+
+        .tooltip-demo {
+          cursor: help;
+          text-decoration: underline;
+          position: relative;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          margin-right: 6px;
+        }
+
+        .status-online { background: #4CAF50; }
+        .status-busy { background: #FF9800; }
+        .status-offline { background: #999999; }
+
+        /* Micro-interaction demos */
+        .micro-demo {
+          padding: 8px;
+          border: 1px solid #ddd;
+          margin: 4px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+
+        .micro-demo:hover {
+          transform: scale(1.02);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="apple-menu">🍎</div>
+        <div class="menu-title">TestApp</div>
+        <div class="menu-title">File</div>
+        <div class="menu-title">Edit</div>
+        <div class="menu-title">View</div>
+        <div class="menu-title">Special</div>
+        <div class="menu-title">Help</div>
+    </div>
+
+    <!-- Desktop -->
+    <div class="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icon" id="system-folder" draggable="true" style="top: 20px; left: 20px;">
+            <div class="icon">💾</div>
+            <div class="label">System Folder</div>
+        </div>
+
+        <div class="desktop-icon selected" id="documents" draggable="true" style="top: 120px; left: 20px;">
+            <div class="icon">📂</div>
+            <div class="label">Documents</div>
+        </div>
+
+        <div class="desktop-icon trash" id="trash" style="top: 220px; left: 20px;">
+            <div class="icon">🗑️</div>
+            <div class="label">Trash</div>
+        </div>
+
+        <div class="desktop-icon" id="control-panels" draggable="true" style="top: 20px; left: 120px;">
+            <div class="icon">⚙️</div>
+            <div class="label">Control Panels</div>
+        </div>
+
+        <div class="desktop-icon" id="my-app" draggable="true" style="top: 320px; left: 20px;">
+            <div class="icon">🎮</div>
+            <div class="label">My Game</div>
+        </div>
+
+        <div class="desktop-icon" id="text-editor" draggable="true" style="top: 20px; left: 220px;">
+            <div class="icon">📝</div>
+            <div class="label">SimpleText</div>
+        </div>
+
+        <div class="desktop-icon" id="calculator" draggable="true" style="top: 120px; left: 120px;">
+            <div class="icon">🧮</div>
+            <div class="label">Calculator</div>
+        </div>
+
+        <!-- Test Window -->
+        <div class="desktop-window active" style="top: 50px; left: 200px; width: 600px; height: 500px;">
+            <div class="window-titlebar">
+                <div class="window-controls">
+                    <button class="close-button" title="Close">×</button>
+                    <button class="minimize-button" title="Minimize">−</button>
+                    <button class="zoom-button" title="Zoom">+</button>
+                </div>
+                <div class="window-title">
+                    <span class="window-icon">🎨</span>
+                    Enhanced Mac OS 8 Theme Showcase
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="showcase-section">
+                    <div class="showcase-title">🎯 Typography Refinements</div>
+                    <p>This text demonstrates the enhanced <strong>Charcoal font family</strong> with pixelated authenticity. Notice the <code>font-smoothing: none</code> for that classic Mac feel.</p>
+                    <p class="small-text">Small text (10px) with improved line-height for readability.</p>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">🎨 Enhanced Color System</div>
+                    <p>Period-accurate blue accent (#0066CC) with CSS variables:</p>
+                    <div>
+                        <span class="color-swatch" style="background: var(--platinum-accent);"></span> Primary Accent
+                        <span class="color-swatch" style="background: var(--platinum-gray);"></span> Platinum Gray
+                        <span class="color-swatch" style="background: var(--platinum-medium);"></span> Medium Gray
+                        <span class="color-swatch" style="background: var(--platinum-dark);"></span> Dark Gray
+                    </div>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">⚡ Micro-Interactions</div>
+                    <div class="feature-grid">
+                        <div class="micro-demo">Hover for Scale Effect</div>
+                        <div class="micro-demo">Smooth Transitions</div>
+                        <button>Button Press Animation</button>
+                        <button class="default-button">Enhanced Default Button</button>
+                    </div>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">📐 Improved Spacing & Proportions</div>
+                    <p>Window content padding: <strong>16-20px</strong> (more generous)</p>
+                    <p>Titlebar height: <strong>20px</strong> (authentic proportions)</p>
+                    <p>Desktop icon width: <strong>72px</strong> (enhanced spacing)</p>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">✨ Visual Effects</div>
+                    <p>Enhanced shadow system with both soft and hard shadows</p>
+                    <p>Improved desktop background texture with layered gradients</p>
+                    <p>Authentic Mac-style scrollbar styling (visible in overflow areas)</p>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">🎛️ Form Elements</div>
+                    <div>
+                        <input type="text" placeholder="Enhanced input field" />
+                        <select>
+                            <option>Dropdown with improved styling</option>
+                            <option>Option 2</option>
+                        </select>
+                        <br>
+                        <textarea placeholder="Textarea with authentic Mac styling" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">🔍 Enhanced Focus & Accessibility</div>
+                    <p>Try tabbing through elements to see improved focus indicators:</p>
+                    <button>Tab to me</button>
+                    <input type="text" placeholder="Then to me" />
+                    <button class="default-button">And finally here</button>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">📊 Status Indicators</div>
+                    <p>
+                        <span class="status-indicator status-online"></span>Online
+                        <span class="status-indicator status-busy"></span>Busy  
+                        <span class="status-indicator status-offline"></span>Offline
+                    </p>
+                </div>
+
+                <div class="showcase-section">
+                    <div class="showcase-title">🎁 Additional Enhancements</div>
+                    <ul style="margin-left: 20px; line-height: 1.6;">
+                        <li>CSS Variables for consistent theming throughout</li>
+                        <li>Enhanced hover states with subtle transformations</li>
+                        <li>Improved gradient definitions for authentic Mac look</li>
+                        <li>Pixel-perfect measurements and spacing</li>
+                        <li>Smooth micro-animations for delightful interactions</li>
+                        <li>Dialog animation effects (check console for demo)</li>
+                        <li>Enhanced menu bar with layered shadows</li>
+                        <li>Sophisticated shadow system for depth</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center; margin: 20px 0; padding: 16px; background: #F0F8FF; border-radius: 6px;">
+                    <strong>🎉 Mac OS 8 Platinum Theme v1.1.0</strong><br>
+                    <em>From functional nostalgia to absolutely delightful authenticity</em>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Window (non-active) -->
+        <div class="desktop-window" style="top: 100px; left: 850px; width: 300px; height: 200px;">
+            <div class="window-titlebar">
+                <div class="window-controls">
+                    <button class="close-button">×</button>
+                    <button class="minimize-button">−</button>
+                    <button class="zoom-button">+</button>
+                </div>
+                <div class="window-title">
+                    <span class="window-icon">📝</span>
+                    Inactive Window
+                </div>
+            </div>
+            <div class="window-content">
+                <p>This window demonstrates the inactive state styling with subtle differences in titlebar gradients and shadow depth.</p>
+                <button style="margin-top: 16px;">Test Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog Demo (hidden by default) -->
+    <div class="dialog" id="demo-dialog" style="display: none;">
+        <div class="dialog-title">🎨 Enhanced Dialog</div>
+        <p>This dialog showcases the enhanced animation effects and improved styling with authentic Mac OS 8 appearance.</p>
+        <div class="dialog-buttons">
+            <button onclick="hideDialog()">Cancel</button>
+            <button class="default-button" onclick="hideDialog()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Persistent Trash System
+        class MacDesktop {
+            constructor() {
+                this.trashedItems = this.loadTrashedItems();
+                this.initializeDesktop();
+                this.setupDragAndDrop();
+                this.setupDialogDemo();
+                this.updateTrashIcon();
+            }
+
+            // Load trashed items from localStorage
+            loadTrashedItems() {
+                try {
+                    const stored = localStorage.getItem('macos8-trashed-items');
+                    console.log('🔍 localStorage raw value:', stored);
+                    const parsed = stored ? JSON.parse(stored) : [];
+                    console.log('🔍 Parsed trashed items:', parsed);
+                    return parsed;
+                } catch (error) {
+                    console.error('❌ localStorage error:', error);
+                    return [];
+                }
+            }
+
+            // Save trashed items to localStorage
+            saveTrashedItems() {
+                localStorage.setItem('macos8-trashed-items', JSON.stringify(this.trashedItems));
+            }
+
+            // Initialize desktop and restore state
+            initializeDesktop() {
+                console.log('🔧 Initializing desktop with trashed items:', this.trashedItems);
+                
+                // Force immediate hiding of trashed items for Safari
+                this.trashedItems.forEach(itemId => {
+                    const element = document.getElementById(itemId);
+                    if (element) {
+                        console.log(`🗑️ Hiding trashed item: ${itemId}`);
+                        // Use display: none for Safari compatibility
+                        element.style.display = 'none';
+                        element.classList.add('trashed');
+                        // Clear any potential transform/positioning issues
+                        element.style.transform = 'none';
+                        element.style.position = '';
+                        element.style.top = '';
+                        element.style.left = '';
+                        element.style.opacity = '';
+                        element.style.transition = 'none';
+                    }
+                });
+
+                // Add click handlers only to visible icons
+                document.querySelectorAll('.desktop-icon').forEach(icon => {
+                    if (!this.trashedItems.includes(icon.id)) {
+                        icon.addEventListener('click', (e) => {
+                            if (icon.id === 'trash') {
+                                this.handleTrashClick(e);
+                            } else {
+                                this.selectIcon(icon);
+                            }
+                        });
+                    }
+                });
+
+                // Add window activation
+                document.querySelectorAll('.desktop-window').forEach(window => {
+                    window.addEventListener('click', function() {
+                        document.querySelectorAll('.desktop-window').forEach(w => w.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+                });
+            }
+
+            // Handle trash can double-click to empty
+            handleTrashClick(e) {
+                this.selectIcon(document.getElementById('trash'));
+                
+                if (e.detail === 2) { // Double-click
+                    this.emptyTrash();
+                }
+            }
+
+            // Select an icon
+            selectIcon(icon) {
+                document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+            }
+
+            // Setup drag and drop functionality
+            setupDragAndDrop() {
+                const desktop = document.querySelector('.desktop');
+                const trash = document.getElementById('trash');
+
+                // Add drag handlers to draggable icons (only non-trashed ones)
+                document.querySelectorAll('.desktop-icon[draggable="true"]:not(.trashed)').forEach(icon => {
+                    icon.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', icon.id);
+                        icon.classList.add('dragging');
+                        console.log(`🗂️ Started dragging: ${icon.querySelector('.label').textContent}`);
+                    });
+
+                    icon.addEventListener('dragend', () => {
+                        icon.classList.remove('dragging');
+                        trash.classList.remove('trash-drop-zone');
+                    });
+                });
+
+                // Trash can drop zone
+                trash.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    trash.classList.add('trash-drop-zone');
+                });
+
+                trash.addEventListener('dragleave', () => {
+                    trash.classList.remove('trash-drop-zone');
+                });
+
+                trash.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData('text/plain');
+                    const draggedElement = document.getElementById(draggedId);
+                    
+                    if (draggedElement && draggedId !== 'trash') {
+                        this.moveToTrash(draggedId, draggedElement);
+                    }
+                    
+                    trash.classList.remove('trash-drop-zone');
+                });
+            }
+
+            // Move item to trash
+            moveToTrash(itemId, element) {
+                const itemName = element.querySelector('.label').textContent;
+                
+                // Add to trashed items
+                if (!this.trashedItems.includes(itemId)) {
+                    this.trashedItems.push(itemId);
+                    this.saveTrashedItems();
+                    console.log(`💾 Saved to localStorage: ${JSON.stringify(this.trashedItems)}`);
+                }
+
+                // Safari-compatible hide with animation
+                element.style.transition = 'all 0.3s ease-out';
+                element.style.transform = 'scale(0) rotate(180deg)';
+                element.style.opacity = '0';
+
+                setTimeout(() => {
+                    // Use display: none for Safari compatibility
+                    element.style.display = 'none';
+                    element.classList.add('trashed');
+                    // Clear all positioning-related styles
+                    element.style.transform = 'none';
+                    element.style.opacity = '';
+                    element.style.transition = 'none';
+                    element.style.position = '';
+                    element.style.top = '';
+                    element.style.left = '';
+                    this.updateTrashIcon();
+                }, 300);
+
+                // Show confirmation
+                this.showNotification(`"${itemName}" moved to Trash`, '🗑️');
+                
+                console.log(`🗑️ Moved to trash: ${itemName} (${itemId})`);
+                console.log(`📝 Trashed items: ${this.trashedItems.length}`);
+            }
+
+            // Empty trash
+            emptyTrash() {
+                if (this.trashedItems.length === 0) {
+                    this.showNotification('Trash is already empty', '🗑️');
+                    return;
+                }
+
+                const itemCount = this.trashedItems.length;
+                
+                // Show confirmation dialog
+                if (confirm(`Are you sure you want to permanently delete ${itemCount} item${itemCount > 1 ? 's' : ''}?`)) {
+                    // Remove all trashed items from DOM
+                    this.trashedItems.forEach(itemId => {
+                        const element = document.getElementById(itemId);
+                        if (element) {
+                            element.remove();
+                        }
+                    });
+
+                    // Clear the trash
+                    this.trashedItems = [];
+                    this.saveTrashedItems();
+                    this.updateTrashIcon();
+
+                    this.showNotification(`${itemCount} item${itemCount > 1 ? 's' : ''} permanently deleted`, '✨');
+                    console.log(`🗑️ Emptied trash: ${itemCount} items permanently deleted`);
+                }
+            }
+
+            // Update trash icon based on contents
+            updateTrashIcon() {
+                const trash = document.getElementById('trash');
+                const trashLabel = trash.querySelector('.label');
+                
+                if (this.trashedItems.length > 0) {
+                    trash.classList.add('full');
+                    trash.classList.remove('empty');
+                    trashLabel.textContent = `Trash (${this.trashedItems.length})`;
+                } else {
+                    trash.classList.add('empty');
+                    trash.classList.remove('full');
+                    trashLabel.textContent = 'Trash (Empty)';
+                }
+            }
+
+            // Show desktop notification
+            showNotification(message, icon = '💬') {
+                const notification = document.createElement('div');
+                notification.className = 'desktop-notification';
+                notification.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 50px;
+                        right: 20px;
+                        background: var(--platinum-gray);
+                        border: 2px solid var(--platinum-dark);
+                        border-radius: var(--radius-lg);
+                        padding: var(--spacing-md);
+                        box-shadow: var(--shadow-soft);
+                        z-index: 3000;
+                        display: flex;
+                        align-items: center;
+                        gap: var(--spacing-sm);
+                        max-width: 300px;
+                        animation: slideInRight 0.3s ease-out;
+                    ">
+                        <span style="font-size: 20px;">${icon}</span>
+                        <span style="font-size: var(--font-size-small);">${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease-in';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Setup dialog demo
+            setupDialogDemo() {
+                setTimeout(() => {
+                    document.getElementById('demo-dialog').style.display = 'block';
+                    setTimeout(() => this.hideDialog(), 4000);
+                }, 3000);
+            }
+
+            hideDialog() {
+                document.getElementById('demo-dialog').style.display = 'none';
+            }
+        }
+
+        // Initialize desktop when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            window.macDesktop = new MacDesktop();
+
+            console.log('🎨 Enhanced Mac OS 8 Platinum Theme v1.2.0 loaded successfully!');
+            console.log('Features demonstrated:');
+            console.log('• Enhanced typography with font-smoothing: none');
+            console.log('• Improved spacing and proportions');
+            console.log('• Period-accurate color system with CSS variables');
+            console.log('• Micro-interactions and smooth animations');
+            console.log('• Enhanced shadow system and visual effects');
+            console.log('• Pixel-perfect details and authentic Mac styling');
+            console.log('• 🗑️ PERSISTENT TRASH SYSTEM with localStorage');
+            console.log('• 🖱️ Drag & Drop functionality');
+            console.log('• 💾 State persists across page refreshes');
+        });
+
+        // Add CSS animations for notifications
+        const notificationCSS = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+
+        // Inject notification styles
+        const style = document.createElement('style');
+        style.textContent = notificationCSS;
+        document.head.appendChild(style);
+
+        // Legacy function for dialog
+        function hideDialog() {
+            if (window.macDesktop) {
+                window.macDesktop.hideDialog();
+            }
+        }
+    </script>
+</body>
+</html>
