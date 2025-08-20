@@ -403,9 +403,37 @@ async function addToDesktop(appSpec) {
         <div class="label">${appSpec.name}</div>
     </div>`;
 
-    // Add before end of desktop
-    const desktopEnd = '</div><!-- end desktop -->';
-    html = html.replace(desktopEnd, iconHtml + '\n    ' + desktopEnd);
+    // Add before end of desktop - try multiple patterns
+    const desktopEndPatterns = [
+      '</div><!-- end desktop -->',
+      '</div><!--end desktop-->',
+      '</div> <!-- end desktop -->',
+      '<div class="taskbar"'
+    ];
+    
+    let inserted = false;
+    for (const pattern of desktopEndPatterns) {
+      if (html.includes(pattern)) {
+        if (pattern.includes('taskbar')) {
+          html = html.replace(pattern, iconHtml + '\n    ' + pattern);
+        } else {
+          html = html.replace(pattern, iconHtml + '\n    ' + pattern);
+        }
+        inserted = true;
+        break;
+      }
+    }
+    
+    if (!inserted) {
+      console.log('Warning: Could not find desktop end marker, appending to end');
+      // Fallback: find the last desktop icon and add after it
+      const lastIcon = html.lastIndexOf('</div>\n    </div>');
+      if (lastIcon > -1) {
+        const insertPoint = lastIcon + '</div>'.length;
+        html = html.slice(0, insertPoint) + '\n' + iconHtml + html.slice(insertPoint);
+        inserted = true;
+      }
+    }
 
     // Update ToyBox OS
     const { error: updateError } = await supabase

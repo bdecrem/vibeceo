@@ -87,6 +87,7 @@ function createServer() {
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
+      console.log(`🔍 OPTIONS preflight request from ${req.headers.origin} to ${req.path}`);
       res.sendStatus(200);
     } else {
       next();
@@ -240,10 +241,23 @@ function createServer() {
       
       console.log(`✅ ${appType} app submission saved for processing`);
       
-      // Optionally trigger immediate processing (for simple apps)
-      if (!isWindowed) {
-        try {
-          console.log('🔄 Triggering immediate processing for simple app...');
+      // Trigger immediate processing based on app type
+      try {
+        if (isWindowed) {
+          console.log('🔄 Triggering windowed app processor...');
+          const { stdout, stderr } = await execAsync(
+            `node process-windowed-apps.js`,
+            { 
+              cwd: path.join(__dirname, '../community-desktop-v2'),
+              maxBuffer: 1024 * 1024 * 10,
+              timeout: 60000 // 60 second timeout for complex apps
+            }
+          );
+          
+          if (stdout) console.log('Windowed app output:', stdout);
+          if (stderr) console.error('Windowed app errors:', stderr);
+        } else {
+          console.log('🔄 Triggering simple app processor...');
           const { stdout, stderr } = await execAsync(
             `node process-toybox-apps.js`,
             { 
@@ -253,12 +267,12 @@ function createServer() {
             }
           );
           
-          if (stdout) console.log('Processing output:', stdout);
-          if (stderr) console.error('Processing errors:', stderr);
-        } catch (processError) {
-          console.error('⚠️ Processing failed (will retry via cron):', processError.message);
-          // Don't fail the webhook - the cron job will pick it up
+          if (stdout) console.log('Simple app output:', stdout);
+          if (stderr) console.error('Simple app errors:', stderr);
         }
+      } catch (processError) {
+        console.error('⚠️ Processing failed (will retry via cron):', processError.message);
+        // Don't fail the webhook - the cron job will pick it up
       }
       
       res.json({ 
@@ -303,6 +317,7 @@ async function startServer() {
       console.log('📡 Webhook endpoints:');
       console.log(`   POST http://localhost:${PORT}/webhook/trigger-edit-processing`);
       console.log(`   POST http://localhost:${PORT}/webhook/community-desktop`);
+      console.log(`   POST http://localhost:${PORT}/webhook/toybox-apps`);
       console.log(`   GET  http://localhost:${PORT}/health`);
       console.log(`   GET  http://localhost:${PORT}/trigger (testing)`);
       console.log('=' + '='.repeat(50));
