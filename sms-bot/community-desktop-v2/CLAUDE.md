@@ -18,9 +18,22 @@
 
 #### For ANY ToyBox OS changes:
 
-1. **Use the safe update wrapper**:
+1. **Use the organized update system**:
+```bash
+# For HTML changes (content, menus, icons)
+node scripts/update-toybox.js html "description" --change="type"
+
+# For CSS changes (styling, themes, layout)  
+node scripts/update-toybox.js css "description" --change="type"
+
+# Available change types:
+# HTML: menu-item, icon-removal, padding-adjustment
+# CSS: font-size, colors, layout
+```
+
+2. **Or use the safe update wrapper directly**:
 ```javascript
-import { fetchCurrentToyBoxOS, safeUpdateToyBoxOS } from './safe-update-wrapper.js';
+import { fetchCurrentToyBoxOS, safeUpdateToyBoxOS } from './scripts/safe-update-wrapper.js';
 
 // Get current HTML
 const current = await fetchCurrentToyBoxOS();
@@ -34,13 +47,21 @@ await safeUpdateToyBoxOS(html, 'Description of changes');
 ```
 
 2. **Backups are automatically created** in `backups/` folder:
-   - Timestamped: `toybox-os_2025-08-20_17-13-03.html`
-   - Latest: `toybox-os_latest-backup.html`
-   - Metadata: `.json` files with descriptions
+   - **HTML backups**: `toybox-os_2025-08-20_17-13-03.html`
+   - **CSS backups**: `backups/css/system7-theme_2025-08-20_17-13-03.css`
+   - **Latest backups**: `toybox-os_latest-backup.html` and `system7-theme_latest-backup.css`
+   - **Metadata**: `.json` files with descriptions for both HTML and CSS
 
 3. **To restore from backup**:
 ```bash
-node update-toybox-os.js backups/toybox-os_latest-backup.html
+# Restore HTML
+node scripts/update-toybox-os.js backups/toybox-os_latest-backup.html
+
+# Restore CSS
+node scripts/css-backup-manager.js restore system7-theme_latest-backup.css
+
+# List available CSS backups
+node scripts/css-backup-manager.js list
 ```
 
 ### Theme System Architecture
@@ -72,22 +93,34 @@ const { error } = await supabase
 community-desktop-v2/
 ├── backups/                    # Automatic backups (git-ignored)
 │   ├── toybox-os_[timestamp].html
-│   └── toybox-os_latest-backup.html
+│   ├── toybox-os_latest-backup.html
+│   └── css/                   # CSS theme backups
+│       ├── system7-theme_[timestamp].css
+│       ├── system7-theme_[timestamp].json (metadata)
+│       └── system7-theme_latest-backup.css
+├── scripts/                    # All update scripts organized here
+│   ├── update-toybox.js       # Primary reusable update script
+│   ├── safe-update-wrapper.js # HTML backup functionality
+│   ├── safe-css-wrapper.js    # CSS backup functionality  
+│   ├── css-backup-manager.js  # CSS backup utility
+│   ├── README.md              # Scripts documentation
+│   └── [legacy scripts]       # Historical individual changes
 ├── themes/
 │   ├── base.css               # Minimal structural CSS
 │   └── system7/
-│       └── system7.css        # System 7 theme
-├── safe-update-wrapper.js     # ALWAYS USE THIS for updates
-├── update-toybox-os.js        # Manual update/restore tool
+│       └── system7.css        # System 7 theme (synced with DB)
 └── current-toybox-os.html     # Local working copy
 ```
 
 ### Update Workflow
 
-1. **Always backup first** (automatic with safe-update-wrapper)
-2. **Test locally** at http://localhost:3000/public/toybox-os
-3. **Commit changes** to git for version control
-4. **Never lose work** - backups folder preserves all versions
+1. **Use organized scripts** - `node scripts/update-toybox.js` for most changes
+2. **Always backup first** (automatic with safe-update-wrapper)
+3. **Test locally** at http://localhost:3000/public/toybox-os
+4. **Commit changes** to git for version control
+5. **Never lose work** - backups folder preserves all versions
+
+**Best Practice**: Instead of creating new scripts, edit `scripts/update-toybox.js` with specific modifications for reusability.
 
 ## Architecture
 
