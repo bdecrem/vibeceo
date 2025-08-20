@@ -1,0 +1,136 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+#desktop {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 22px); /* leave room for top menu bar */
+  padding: 8px;
+}
+
+.desktop-icon {
+  position: absolute;
+  width: 75px;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.desktop-icon .icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.desktop-icon .label {
+  font-size: 11px;
+  line-height: 1.2;
+  word-wrap: break-word;
+  max-width: 75px;
+}
+
+.taskbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  gap: 4px;
+  z-index: 2000;
+}
+
+.start-button {
+  height: 18px;
+  padding: 0 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#window-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.desktop-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  height: 18px;
+  cursor: default;
+  user-select: none;
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.window-controls button {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  appearance: none;
+}
+
+.window-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.window-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+}
+
+

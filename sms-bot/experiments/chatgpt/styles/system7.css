@@ -1,0 +1,213 @@
+.theme-system7 @font-face {
+  font-family: 'SysFont';
+  src: url('../sysfont/webfonts/sysfont.woff2') format('woff2'),
+       url('../sysfont/webfonts/sysfont.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.theme-system7 @font-face {
+  font-family: 'SysFont';
+  src: url('../sysfont/webfonts/sysfont.woff2') format('woff2'),
+       url('../sysfont/webfonts/sysfont.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+.theme-system7 .desktop-icon {
+  transition: transform 80ms ease-out, background 80ms ease-out;
+}
+
+.theme-system7 .desktop-icon:active {
+  transform: translateY(1px);
+}
+.theme-system7 .desktop-icon .label::selection,
+.theme-system7 .menu-title::selection,
+.theme-system7 #menu-clock::selection {
+  background: #000;
+  color: #fff;
+}
+.theme-system7 {
+  --sys7-bg: #BFBFBF;
+  --sys7-border: #000000;
+  --sys7-text: #000000;
+  --sys7-title: #000000;
+}
+
+.theme-system7 body,
+body.theme-system7 {
+  background:
+    repeating-linear-gradient(0deg, #C6C6C6 0 1px, #BFBFBF 1px 2px);
+  color: var(--sys7-text);
+  font-family: 'SysFont', 'Chivo', Geneva, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+}
+
+.theme-system7 #desktop {
+  background: transparent;
+  image-rendering: pixelated;
+}
+
+/* Menu bar (top) */
+.theme-system7 .taskbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--sys7-border);
+  color: var(--sys7-text);
+  height: 22px;
+}
+
+.theme-system7 .start-button {
+  background: transparent;
+  border: none;
+  color: var(--sys7-text);
+  font-weight: normal;
+}
+
+.theme-system7 .menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.theme-system7 .menu-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-system7 .menu-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-system7 .menu-title {
+  font-size: 12px;
+  line-height: 22px;
+  letter-spacing: 0;
+  padding: 0 8px;
+  user-select: none;
+  font-weight: 600;
+}
+
+.theme-system7 .menu-title:hover,
+.theme-system7 #menu-clock:hover {
+  background: #000;
+  color: #fff;
+}
+
+.theme-system7 .menu-title.apple {
+  font-family: 'Geneva', Helvetica, Arial, sans-serif;
+  font-weight: bold;
+  padding-left: 2px;
+  font-size: 13px; /* 1pt larger look */
+}
+
+.theme-system7 #menu-clock {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 8px;
+}
+
+.theme-system7 .menu-windows .start-button {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* Desktop icons */
+.theme-system7 .desktop-icon:hover {
+  outline: 1px dotted var(--sys7-border);
+  background: transparent;
+}
+.theme-system7 .trash-can .icon {
+  width: 32px;
+  height: 32px;
+  background: url('../trashcan.png') no-repeat center/contain;
+  image-rendering: pixelated;
+  font-size: 0; /* hide emoji */
+}
+
+.theme-system7 .trash-can .label { margin-top: 4px; }
+
+.theme-system7 .desktop-icon.selected {
+  outline: 1px dotted var(--sys7-border);
+  background: rgba(0,0,0,0.08);
+}
+
+.theme-system7 .desktop-icon .label {
+  color: var(--sys7-text);
+  text-shadow: none;
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+/* Windows */
+.theme-system7 .desktop-window {
+  background: #FFFFFF;
+  border: 1px solid var(--sys7-border);
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.theme-system7 .desktop-window.active {
+  border-color: var(--sys7-border);
+}
+
+.theme-system7 .window-titlebar {
+  background: #E0E0E0;
+  border-bottom: 1px solid var(--sys7-border);
+  height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.theme-system7 .window-title {
+  color: var(--sys7-title);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+/* Control boxes: left = close, right = zoom, optional middle = minimize */
+.theme-system7 .window-controls { display: flex; gap: 4px; }
+.theme-system7 .window-controls.left { margin-right: 4px; }
+.theme-system7 .window-controls.right { margin-left: auto; }
+
+.theme-system7 .window-controls button {
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.theme-system7 .window-controls .window-close::before,
+.theme-system7 .window-controls .window-maximize::before,
+.theme-system7 .window-controls .window-minimize::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--sys7-border);
+  background: #FFFFFF;
+}
+
+.theme-system7 .window-content {
+  border-top: none;
+}
+
+.theme-system7 .window-resize-handle {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 2px, var(--sys7-border) 2px 3px);
+}
+
+/* Taskbar restore buttons should look like menu titles */
+.theme-system7 #taskbar-windows .start-button {
+  border: none;
+  background: transparent;
+  padding: 0 6px;
+}
+
+
