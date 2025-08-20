@@ -2,14 +2,11 @@
 backups/
 *.backup.html
 *_backup.html
+*_backup.css
 
-# Temporary fix files
-fix-*.js
-fixed-*.html
-test-*.js
-verify-*.js
-restore-*.js
-fetch-*.js
+# Temporary fix files (now organized in scripts/)
+scripts/temp-*.js
+scripts/debug-*.js
 
 # Local test files
 current-toybox-os.html
