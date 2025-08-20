@@ -1,0 +1,225 @@
+/* System 7 Theme for ToyBox OS */
+
+/* Chicago-like font (fallback to system fonts) */
+@font-face {
+  font-family: 'Chicago';
+  src: local('Chicago'), local('Charcoal'), local('Geneva');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Theme variables */
+.theme-system7 {
+  --sys7-bg: #BFBFBF;
+  --sys7-border: #000000;
+  --sys7-text: #000000;
+  --sys7-title: #000000;
+  --sys7-menu-bg: #FFFFFF;
+  --sys7-window-bg: #FFFFFF;
+  --sys7-titlebar-bg: #E0E0E0;
+}
+
+/* Body and desktop */
+body.theme-system7 {
+  background:
+    repeating-linear-gradient(0deg, #C6C6C6 0 1px, #BFBFBF 1px 2px);
+  color: var(--sys7-text);
+  font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  image-rendering: pixelated;
+}
+
+.theme-system7 #desktop {
+  background: transparent;
+}
+
+/* Menu bar */
+.theme-system7 .menu-bar {
+  background: var(--sys7-menu-bg);
+  border-bottom: 1px solid var(--sys7-border);
+  color: var(--sys7-text);
+  font-size: 12px;
+}
+
+.theme-system7 .menu-title {
+  font-weight: normal;
+  border-left: none;
+  border-right: none;
+}
+
+.theme-system7 .menu-title:hover,
+.theme-system7 #menu-clock:hover {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+.theme-system7 .menu-title.apple {
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0 12px;
+}
+
+.theme-system7 #menu-clock {
+  font-weight: normal;
+  cursor: default;
+}
+
+/* Desktop icons */
+.theme-system7 .desktop-icon {
+  transition: none;
+}
+
+.theme-system7 .desktop-icon:hover {
+  background: transparent;
+  border: 1px dotted var(--sys7-border);
+}
+
+.theme-system7 .desktop-icon:active {
+  transform: translateY(1px);
+}
+
+.theme-system7 .desktop-icon.selected {
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px dotted var(--sys7-border);
+}
+
+.theme-system7 .desktop-icon .icon {
+  filter: none;
+}
+
+.theme-system7 .desktop-icon .label {
+  color: var(--sys7-text);
+  text-shadow: none;
+  margin-top: 2px;
+  font-weight: normal;
+  font-family: 'Geneva', 'Chicago', Helvetica, Arial, sans-serif;
+}
+
+/* Trash can with pixelated look */
+.theme-system7 .trash-can .icon {
+  image-rendering: pixelated;
+  filter: contrast(1.2);
+}
+
+/* Windows */
+.theme-system7 .desktop-window {
+  background: var(--sys7-window-bg);
+  border: 1px solid var(--sys7-border);
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.theme-system7 .desktop-window.active {
+  border-color: var(--sys7-border);
+  z-index: 1000;
+}
+
+.theme-system7 .window-titlebar {
+  background: var(--sys7-titlebar-bg);
+  border-bottom: 1px solid var(--sys7-border);
+  height: 18px;
+  cursor: move;
+}
+
+.theme-system7 .desktop-window.active .window-titlebar {
+  background: repeating-linear-gradient(
+    to right,
+    var(--sys7-titlebar-bg) 0px,
+    var(--sys7-titlebar-bg) 1px,
+    #000000 1px,
+    #000000 2px
+  );
+}
+
+.theme-system7 .window-title {
+  color: var(--sys7-title);
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  flex: 1;
+}
+
+.theme-system7 .desktop-window.active .window-title {
+  color: var(--sys7-menu-bg);
+}
+
+/* Window controls */
+.theme-system7 .window-controls {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  gap: 4px;
+}
+
+.theme-system7 .window-controls button {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--sys7-border);
+  background: var(--sys7-menu-bg);
+  font-size: 8px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-system7 .window-controls button:active {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+.theme-system7 .window-controls .window-close::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--sys7-border);
+}
+
+.theme-system7 .window-controls .window-maximize::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--sys7-border);
+}
+
+.theme-system7 .window-controls .window-minimize::after {
+  content: '';
+  width: 6px;
+  height: 1px;
+  background: var(--sys7-border);
+}
+
+.theme-system7 .window-content {
+  border: none;
+  background: var(--sys7-window-bg);
+}
+
+.theme-system7 .window-resize-handle {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 2px,
+    var(--sys7-border) 2px 3px
+  );
+}
+
+/* Text selection */
+.theme-system7 ::selection {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+/* Remove Windows 95 style elements */
+.theme-system7 .start-button {
+  display: none;
+}
+
+/* Ensure proper stacking */
+.theme-system7 #window-container {
+  z-index: 100;
+}
+
+.theme-system7 .menu-bar {
+  z-index: 9999;
+}

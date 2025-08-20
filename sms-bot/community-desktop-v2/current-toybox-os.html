@@ -5,271 +5,407 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToyBox OS - Community Desktop</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body { 
-            background: #008080;
-            background-image: 
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(0, 0, 0, 0.03) 2px,
-                    rgba(0, 0, 0, 0.03) 4px
-                );
-            font-family: 'MS Sans Serif', 'VT323', monospace;
-            margin: 0;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-            user-select: none;
-        }
-        
-        #desktop {
-            width: 100%;
-            height: calc(100vh - 40px);
-            position: relative;
-            padding: 10px;
-        }
-        
-        .desktop-icon {
-            position: absolute;
-            width: 75px;
-            text-align: center;
-            cursor: pointer;
-            padding: 4px;
-            border: 1px solid transparent;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .desktop-icon:hover {
-            background: rgba(0, 0, 139, 0.3);
-            border: 1px dotted #fff;
-        }
-        
-        .desktop-icon:active {
-            background: rgba(0, 0, 139, 0.5);
-        }
-        
-        .desktop-icon .icon {
-            font-size: 32px;
-            line-height: 1;
-            filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.5));
-        }
-        
-        .desktop-icon .label { 
-            color: white; 
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
-            font-size: 11px;
-            line-height: 1.2;
-            word-wrap: break-word;
-            max-width: 75px;
-            font-family: 'Tahoma', 'Arial', sans-serif;
-        }
-        
-        .taskbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: #c0c0c0;
-            border-top: 2px solid #ffffff;
-            border-left: 2px solid #ffffff;
-            display: flex;
-            align-items: center;
-            padding: 2px 4px;
-            gap: 4px;
-            box-shadow: inset -1px -1px #000000, inset 1px 1px #dfdfdf;
-        }
-        
-        .start-button {
-            height: 32px;
-            padding: 0 8px;
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-family: 'Tahoma', 'Arial', sans-serif;
-        }
-        
-        .start-button:active {
-            border-color: #808080 #ffffff #ffffff #808080;
-            padding-top: 1px;
-            padding-left: 9px;
-        }
-        
-        .welcome-box {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            border: 2px solid #000;
-            padding: 20px;
-            width: 400px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
-        }
-        
-        .welcome-box h2 {
-            margin: 0 0 15px 0;
-            font-size: 20px;
-            color: #000080;
-        }
-        
-        .welcome-box p {
-            margin: 10px 0;
-            line-height: 1.5;
-        }
-        
-        .welcome-box button {
-            margin-top: 15px;
-            padding: 5px 15px;
-            background: #e0e0e0;
-            border: 2px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        
-        .welcome-box button:active {
-            border-color: #808080 #ffffff #ffffff #808080;
-        }
-        
-        /* Window Manager Styles */
-        #window-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 40px;
-            pointer-events: none;
-        }
-        
-        .desktop-window {
-            position: absolute;
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            pointer-events: auto;
-            min-width: 200px;
-            min-height: 150px;
-        }
-        
-        .desktop-window.active {
-            border-color: #ffffff #404040 #404040 #ffffff;
-            box-shadow: 3px 3px 15px rgba(0,0,0,0.4);
-        }
-        
-        .window-titlebar {
-            height: 28px;
-            background: linear-gradient(to right, #000080, #1084d0);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 3px;
-            cursor: grab;
-            user-select: none;
-        }
-        
-        .desktop-window.active .window-titlebar {
-            background: linear-gradient(to right, #000080, #1084d0);
-        }
-        
-        .desktop-window:not(.active) .window-titlebar {
-            background: linear-gradient(to right, #808080, #b5b5b5);
-        }
-        
-        .window-title {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            font-weight: bold;
-            font-family: 'Tahoma', sans-serif;
-        }
-        
-        .window-icon {
-            font-size: 16px;
-        }
-        
-        .window-controls {
-            display: flex;
-            gap: 2px;
-        }
-        
-        .window-controls button {
-            width: 20px;
-            height: 20px;
-            border: 2px solid;
-            border-color: #ffffff #404040 #404040 #ffffff;
-            background: #c0c0c0;
-            font-size: 12px;
-            line-height: 1;
-            cursor: pointer;
-            font-family: 'Tahoma', sans-serif;
-            padding: 0;
-        }
-        
-        .window-controls button:active {
-            border-color: #404040 #ffffff #ffffff #404040;
-        }
-        
-        .window-content {
-            flex: 1;
-            background: white;
-            border: 2px solid;
-            border-color: #808080 #ffffff #ffffff #808080;
-            overflow: hidden;
-        }
-        
-        .window-resize-handle {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 15px;
-            height: 15px;
-            cursor: nwse-resize;
-            background: linear-gradient(135deg, transparent 50%, #808080 50%);
-        }
+/* Base Theme */
+/* ToyBox OS Base Theme - Core structural styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+#desktop {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 22px); /* leave room for menu bar */
+  padding: 8px;
+}
+
+.desktop-icon {
+  position: absolute;
+  width: 75px;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.desktop-icon .icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.desktop-icon .label {
+  font-size: 11px;
+  line-height: 1.2;
+  word-wrap: break-word;
+  max-width: 75px;
+}
+
+/* Menu bar (top) */
+.menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  z-index: 2000;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-title {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#menu-clock {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 8px;
+  user-select: none;
+}
+
+/* Trash can specific */
+.trash-can {
+  position: absolute !important;
+  right: 20px;
+  bottom: 20px;
+}
+
+#window-container {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.desktop-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  height: 18px;
+  cursor: move;
+  user-select: none;
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.window-controls button {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  appearance: none;
+}
+
+.window-content {
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
+
+.window-content iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.window-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+/* System 7 Theme */
+/* System 7 Theme for ToyBox OS */
+
+/* Chicago-like font (fallback to system fonts) */
+@font-face {
+  font-family: 'Chicago';
+  src: local('Chicago'), local('Charcoal'), local('Geneva');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Theme variables */
+.theme-system7 {
+  --sys7-bg: #BFBFBF;
+  --sys7-border: #000000;
+  --sys7-text: #000000;
+  --sys7-title: #000000;
+  --sys7-menu-bg: #FFFFFF;
+  --sys7-window-bg: #FFFFFF;
+  --sys7-titlebar-bg: #E0E0E0;
+}
+
+/* Body and desktop */
+body.theme-system7 {
+  background:
+    repeating-linear-gradient(0deg, #C6C6C6 0 1px, #BFBFBF 1px 2px);
+  color: var(--sys7-text);
+  font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  image-rendering: pixelated;
+}
+
+.theme-system7 #desktop {
+  background: transparent;
+}
+
+/* Menu bar */
+.theme-system7 .menu-bar {
+  background: var(--sys7-menu-bg);
+  border-bottom: 1px solid var(--sys7-border);
+  color: var(--sys7-text);
+  font-size: 12px;
+}
+
+.theme-system7 .menu-title {
+  font-weight: normal;
+  border-left: none;
+  border-right: none;
+}
+
+.theme-system7 .menu-title:hover,
+.theme-system7 #menu-clock:hover {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+.theme-system7 .menu-title.apple {
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0 12px;
+}
+
+.theme-system7 #menu-clock {
+  font-weight: normal;
+  cursor: default;
+}
+
+/* Desktop icons */
+.theme-system7 .desktop-icon {
+  transition: none;
+}
+
+.theme-system7 .desktop-icon:hover {
+  background: transparent;
+  border: 1px dotted var(--sys7-border);
+}
+
+.theme-system7 .desktop-icon:active {
+  transform: translateY(1px);
+}
+
+.theme-system7 .desktop-icon.selected {
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px dotted var(--sys7-border);
+}
+
+.theme-system7 .desktop-icon .icon {
+  filter: none;
+}
+
+.theme-system7 .desktop-icon .label {
+  color: var(--sys7-text);
+  text-shadow: none;
+  margin-top: 2px;
+  font-weight: normal;
+  font-family: 'Geneva', 'Chicago', Helvetica, Arial, sans-serif;
+}
+
+/* Trash can with pixelated look */
+.theme-system7 .trash-can .icon {
+  image-rendering: pixelated;
+  filter: contrast(1.2);
+}
+
+/* Windows */
+.theme-system7 .desktop-window {
+  background: var(--sys7-window-bg);
+  border: 1px solid var(--sys7-border);
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.theme-system7 .desktop-window.active {
+  border-color: var(--sys7-border);
+  z-index: 1000;
+}
+
+.theme-system7 .window-titlebar {
+  background: var(--sys7-titlebar-bg);
+  border-bottom: 1px solid var(--sys7-border);
+  height: 18px;
+  cursor: move;
+}
+
+.theme-system7 .desktop-window.active .window-titlebar {
+  background: repeating-linear-gradient(
+    to right,
+    var(--sys7-titlebar-bg) 0px,
+    var(--sys7-titlebar-bg) 1px,
+    #000000 1px,
+    #000000 2px
+  );
+}
+
+.theme-system7 .window-title {
+  color: var(--sys7-title);
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  flex: 1;
+}
+
+.theme-system7 .desktop-window.active .window-title {
+  color: var(--sys7-menu-bg);
+}
+
+/* Window controls */
+.theme-system7 .window-controls {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  gap: 4px;
+}
+
+.theme-system7 .window-controls button {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--sys7-border);
+  background: var(--sys7-menu-bg);
+  font-size: 8px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-system7 .window-controls button:active {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+.theme-system7 .window-controls .window-close::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--sys7-border);
+}
+
+.theme-system7 .window-controls .window-maximize::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--sys7-border);
+}
+
+.theme-system7 .window-controls .window-minimize::after {
+  content: '';
+  width: 6px;
+  height: 1px;
+  background: var(--sys7-border);
+}
+
+.theme-system7 .window-content {
+  border: none;
+  background: var(--sys7-window-bg);
+}
+
+.theme-system7 .window-resize-handle {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 2px,
+    var(--sys7-border) 2px 3px
+  );
+}
+
+/* Text selection */
+.theme-system7 ::selection {
+  background: var(--sys7-border);
+  color: var(--sys7-menu-bg);
+}
+
+/* Remove Windows 95 style elements */
+.theme-system7 .start-button {
+  display: none;
+}
+
+/* Ensure proper stacking */
+.theme-system7 #window-container {
+  z-index: 100;
+}
+
+.theme-system7 .menu-bar {
+  z-index: 9999;
+}
     </style>
 </head>
-<body>
+<body class="theme-system7">
     <div id="desktop">
-        <!-- Welcome Box -->
-        <div class="welcome-box" id="welcomeBox">
-            <h2>🎮 Welcome to ToyBox OS</h2>
-            <p>A community-powered desktop where apps come to life!</p>
-            <p><strong>Try these features:</strong></p>
-            <ul style="margin: 10px 0; padding-left: 20px;">
-                <li>📝 <strong>Notepad</strong> - A real text editor with save/load</li>
-                <li>🎲 <strong>Simple Apps</strong> - Quick fun interactions</li>
-                <li>🪟 <strong>Windows</strong> - Drag, resize, and multitask!</li>
-            </ul>
-            <p style="font-size: 12px; color: #666;">Built by the community, for the community.</p>
-            <button onclick="document.getElementById('welcomeBox').style.display='none'">Get Started</button>
-        </div>
-        
         <!-- Windowed Apps -->
         <div class="desktop-icon" style="left: 20px; top: 20px" 
              onclick="openWindowedApp('community-notepad')">
@@ -277,11 +413,7 @@
             <div class="label">Notepad</div>
         </div>
         
-        <div class="desktop-icon" style="left: 120px; top: 20px" 
-             onclick="alert('Community Paint coming soon! 🎨')">
-            <div class="icon">🎨</div>
-            <div class="label">Paint</div>
-        </div>
+        
         
         <div class="desktop-icon" style="left: 220px; top: 20px" 
              onclick="alert('Community Chat coming soon! 💬')">
@@ -363,13 +495,35 @@
         <div class="icon">📝</div>
         <div class="label">Bart</div>
     </div>
-    <div class="taskbar">
-        <button class="start-button" onclick="alert('Start menu coming soon!')">
-            <span style="font-size: 16px;">🎮</span>
-            <span>ToyBox</span>
-        </button>
-        <div style="margin-left: auto; padding-right: 10px; font-size: 11px; color: #333;">
-            ToyBox OS - Community Edition
+    
+    <!-- GM by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 20px;"
+         onclick="openWindowedApp('gm')"
+         title="GM">
+        <div class="icon">📝</div>
+        <div class="label">GM</div>
+    </div>
+    
+    <!-- Hi by hi -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 120px;"
+         onclick="openWindowedApp('hi')"
+         title="Hi">
+        <div class="icon">🎨</div>
+        <div class="label">Hi</div>
+    </div>
+    
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="menu-title apple" onclick="alert('ToyBox OS System 7\n\nA collaborative desktop experiment\n\nBuilt with WEBTOYS')">🍎</div>
+            <div class="menu-title">File</div>
+            <div class="menu-title">Edit</div>
+            <div class="menu-title">View</div>
+            <div class="menu-title">Special</div>
+        </div>
+        <div class="menu-right">
+            <div id="menu-clock" aria-label="Clock"></div>
         </div>
     </div>
     
@@ -657,7 +811,7 @@ class WindowManager {
                 top: 0;
                 left: 0;
                 right: 0;
-                bottom: 40px;
+                top: 22px; bottom: 0;
                 pointer-events: none;
             }
             
@@ -776,11 +930,7 @@ window.windowManager = new WindowManager();
                 return;
             }
             
-            // Close welcome box if open
-            const welcomeBox = document.getElementById('welcomeBox');
-            if (welcomeBox) {
-                welcomeBox.style.display = 'none';
-            }
+            
             
             const windowId = window.windowManager.openApp(app.name, app.url, {
                 width: app.width || 800,
@@ -797,6 +947,22 @@ window.windowManager = new WindowManager();
         
         
         window.windowedApps = {
+
+        'hi': {
+            name: 'Hi',
+            url: '/hi/hi',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'gm': {
+            name: 'GM',
+            url: '/bd/gm',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
 
         'bart': {
             name: 'Bart',
@@ -1120,6 +1286,20 @@ async function deleteIconFromDesktop(iconElement) {
     await saveIconPositions();
     console.log('🗑️ Deleted', label, 'from desktop for everyone');
 }
+
+        // System 7 Menu Clock
+        function updateMenuClock() {
+            const clockEl = document.getElementById('menu-clock');
+            if (clockEl) {
+                const now = new Date();
+                const hours = now.getHours() % 12 || 12;
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                clockEl.textContent = hours + ':' + minutes + ' ' + ampm;
+            }
+        }
+        setInterval(updateMenuClock, 1000);
+        updateMenuClock(); // Initial call
 </script>
 </body>
 </html>
