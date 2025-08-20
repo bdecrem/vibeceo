@@ -1,6 +1,14 @@
 # ToyBox OS Changelog
 
-## 2025-08-20 - Theme and UX Improvements
+## 2025-08-20 - Critical Fixes and UX Improvements
+
+### Emergency Fixes (Post Theme-Switching)
+- **Window Manager Restoration**: Fixed broken app launching after theme switching corrupted JavaScript functions
+- **Desktop Icon Organization**: Reorganized 24 overlapping icons into clean 8-column grid layout
+- **Drag Functionality Repair**: Restored Safari-compatible icon dragging with proper collision detection
+- **Position Management**: Fixed icon position saving/loading and drag-to-trash functionality
+
+### Theme and UX Improvements
 
 ### Mac OS 8 Theme Enhancements
 - **Top Menu Bar**: Updated Mac OS 8 theme to position taskbar at top of screen (authentic Mac OS 8 behavior)
