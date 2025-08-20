@@ -1,0 +1,19 @@
+# Backup files
+backups/
+*.backup.html
+*_backup.html
+
+# Temporary fix files
+fix-*.js
+fixed-*.html
+test-*.js
+verify-*.js
+restore-*.js
+fetch-*.js
+
+# Local test files
+current-toybox-os.html
+TOYBOX_OS_FIX_SUMMARY.md
+
+# OS files
+.DS_Store
