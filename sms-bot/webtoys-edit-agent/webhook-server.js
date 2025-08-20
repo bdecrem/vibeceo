@@ -87,6 +87,7 @@ function createServer() {
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
+      console.log(`🔍 OPTIONS preflight request from ${req.headers.origin} to ${req.path}`);
       res.sendStatus(200);
     } else {
       next();
@@ -153,9 +154,9 @@ function createServer() {
     });
   });
 
-  // Community Desktop webhook endpoint
+  // Community Desktop webhook endpoint (V1 - deprecated but kept for compatibility)
   app.post('/webhook/community-desktop', async (req, res) => {
-    console.log('\n🖥️  Community Desktop webhook triggered');
+    console.log('\n🖥️  Community Desktop V1 webhook triggered (deprecated)');
     console.log(`📅 Time: ${new Date().toISOString()}`);
     console.log(`📦 Request body:`, JSON.stringify(req.body));
     
@@ -189,6 +190,103 @@ function createServer() {
     }
   });
 
+  // ToyBox OS webhook endpoint (V2 - active)
+  app.post('/webhook/toybox-apps', async (req, res) => {
+    console.log('\n🚀 ToyBox OS App Studio Webhook Received');
+    console.log(`📅 Time: ${new Date().toISOString()}`);
+    console.log(`📦 Request body:`, JSON.stringify(req.body));
+    
+    try {
+      const { appName, appFunction, appIcon, appType, submitterName, source } = req.body;
+      
+      // Import Supabase here to save submissions
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+      
+      // Determine which processor should handle this
+      const isWindowed = appType === 'windowed';
+      const actionType = isWindowed ? 'windowed_app' : 'desktop_app';
+      const appId = isWindowed ? 'toybox-windowed-apps' : 'toybox-desktop-apps';
+      
+      // Store in ZAD for the appropriate processor
+      const submission = {
+        appName: appName || 'Unnamed App',
+        appFunction: appFunction || 'Does something fun',
+        appIcon: appIcon || null,
+        appType: appType || 'simple',
+        submitterName: submitterName || 'Anonymous',
+        source: source || 'app-studio',
+        status: 'new',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Save to wtaf_zero_admin_collaborative
+      const { data, error } = await supabase
+        .from('wtaf_zero_admin_collaborative')
+        .insert({
+          app_id: appId,
+          action_type: actionType,
+          content_data: submission,
+          participant_id: submitterName || 'anonymous',
+          created_at: new Date()
+        });
+      
+      if (error) {
+        console.error('Failed to save submission:', error);
+        return res.status(500).json({ error: 'Failed to save submission' });
+      }
+      
+      console.log(`✅ ${appType} app submission saved for processing`);
+      
+      // Trigger immediate processing based on app type
+      try {
+        if (isWindowed) {
+          console.log('🔄 Triggering windowed app processor...');
+          const { stdout, stderr } = await execAsync(
+            `node process-windowed-apps.js`,
+            { 
+              cwd: path.join(__dirname, '../community-desktop-v2'),
+              maxBuffer: 1024 * 1024 * 10,
+              timeout: 60000 // 60 second timeout for complex apps
+            }
+          );
+          
+          if (stdout) console.log('Windowed app output:', stdout);
+          if (stderr) console.error('Windowed app errors:', stderr);
+        } else {
+          console.log('🔄 Triggering simple app processor...');
+          const { stdout, stderr } = await execAsync(
+            `node process-toybox-apps.js`,
+            { 
+              cwd: path.join(__dirname, '../community-desktop-v2'),
+              maxBuffer: 1024 * 1024 * 10,
+              timeout: 30000 // 30 second timeout
+            }
+          );
+          
+          if (stdout) console.log('Simple app output:', stdout);
+          if (stderr) console.error('Simple app errors:', stderr);
+        }
+      } catch (processError) {
+        console.error('⚠️ Processing failed (will retry via cron):', processError.message);
+        // Don't fail the webhook - the cron job will pick it up
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `${appType} app submission received`,
+        processor: isWindowed ? 'windowed-app-processor' : 'desktop-app-processor'
+      });
+      
+    } catch (error) {
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return app;
 }
 
@@ -219,6 +317,7 @@ async function startServer() {
       console.log('📡 Webhook endpoints:');
       console.log(`   POST http://localhost:${PORT}/webhook/trigger-edit-processing`);
       console.log(`   POST http://localhost:${PORT}/webhook/community-desktop`);
+      console.log(`   POST http://localhost:${PORT}/webhook/toybox-apps`);
       console.log(`   GET  http://localhost:${PORT}/health`);
       console.log(`   GET  http://localhost:${PORT}/trigger (testing)`);
       console.log('=' + '='.repeat(50));

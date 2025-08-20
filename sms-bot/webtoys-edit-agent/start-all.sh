@@ -170,5 +170,13 @@ echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 echo "======================================"
 echo ""
 
+# Show real-time webhook activity
+echo -e "${BLUE}📡 Webhook Activity (real-time):${NC}"
+echo "======================================"
+
+# Tail webhook log to show activity as it happens
+tail -f /tmp/webhook.log &
+TAIL_PID=$!
+
 # Keep script running and show worker output
 wait $WORKERS_PID
