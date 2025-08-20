@@ -148,3 +148,78 @@ export function listBackups() {
         .sort()
         .reverse();
 }
+
+// App Studio specific functions
+export async function fetchCurrentAppStudio() {
+    const { data, error } = await supabase
+        .from('wtaf_content')
+        .select('html_content, app_slug, user_slug, updated_at')
+        .eq('user_slug', 'public')
+        .eq('app_slug', 'app-studio')
+        .single();
+    
+    if (error) {
+        console.error('Error fetching App Studio:', error);
+        throw error;
+    }
+    
+    return data;
+}
+
+export async function safeUpdateAppStudio(newHtml, description = 'Update') {
+    try {
+        console.log('\n🔒 Safe Update Process Starting for App Studio...');
+        
+        // Step 1: Fetch and backup current version
+        console.log('1️⃣  Backing up current App Studio...');
+        const current = await fetchCurrentAppStudio();
+        const timestamp = new Date().toISOString()
+            .replace(/:/g, '-')
+            .replace(/\./g, '-')
+            .replace('T', '_')
+            .slice(0, -5);
+        
+        const backupFile = path.join(backupDir, `app-studio_${timestamp}.html`);
+        fs.writeFileSync(backupFile, current.html_content);
+        console.log(`💾 Backup created: ${backupFile}`);
+        
+        // Step 2: Update in Supabase
+        console.log('2️⃣  Applying update to Supabase...');
+        const { error } = await supabase
+            .from('wtaf_content')
+            .update({
+                html_content: newHtml,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_slug', 'public')
+            .eq('app_slug', 'app-studio');
+        
+        if (error) {
+            throw new Error(`Update failed: ${error.message}`);
+        }
+        
+        // Step 3: Save new version locally
+        console.log('3️⃣  Saving new version locally...');
+        fs.writeFileSync('app-studio.html', newHtml);
+        fs.writeFileSync(path.join(backupDir, 'app-studio_latest-backup.html'), newHtml);
+        
+        // Save metadata
+        const metadata = {
+            timestamp: new Date().toISOString(),
+            description: `After: ${description}`,
+            size: newHtml.length,
+            app: 'app-studio'
+        };
+        fs.writeFileSync(path.join(backupDir, 'app-studio_latest-backup.json'), JSON.stringify(metadata, null, 2));
+        
+        console.log(`✅ App Studio updated successfully: ${description}`);
+        console.log('🔗 Live at: https://webtoys.ai/public/app-studio');
+        
+        return { success: true, backup: backupFile };
+        
+    } catch (error) {
+        console.error('❌ App Studio update failed:', error.message);
+        console.log('🔄 Your backup is safe in the backups/ folder');
+        throw error;
+    }
+}
