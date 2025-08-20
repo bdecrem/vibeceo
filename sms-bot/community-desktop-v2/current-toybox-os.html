@@ -123,7 +123,7 @@
         </div>
         
         <div class="desktop-icon" style="left: 320px; top: 120px" 
-             onclick="document.body.style.background='#'+Math.floor(Math.random()*16777215).toString(16)">
+             onclick="changeBgColor()">
             <div class="icon">🎨</div>
             <div class="label">BG Color</div>
         </div>
@@ -824,8 +824,8 @@ window.windowManager = new WindowManager();
                 
                 if (isOverTrash) {
                     const iconName = draggedIcon.querySelector('.label').textContent;
-                    if (confirm('Remove "' + iconName + '" from desktop?')) {
-                        draggedIcon.remove();
+                    if (confirm('Hide "' + iconName + '" from desktop?')) {
+                        draggedIcon.style.display = 'none';
                         await saveIconPositions(); // After deletion
                         showTrashFeedback(iconName);
                         draggedIcon = null;
@@ -868,7 +868,7 @@ window.windowManager = new WindowManager();
         function showTrashFeedback(iconName) {
             const feedback = document.createElement('div');
             feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
-            feedback.textContent = '"' + iconName + '" moved to trash';
+            feedback.textContent = '"' + iconName + '" hidden from desktop';
             document.body.appendChild(feedback);
             
             setTimeout(function() {
@@ -920,10 +920,76 @@ window.windowManager = new WindowManager();
             setTimeout(async function() {
                 setupDragForIcons();
                 await loadIconPositions();
+                await loadBgColor();
             }, 100);
         });
         
         console.log('ToyBox OS Ready - Fixed Version');
+        
+        
+        // Persistent Background Color functionality
+        async function changeBgColor() {
+            // Generate random color
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            
+            // Apply to body
+            document.body.style.background = randomColor;
+            
+            // Save to database using same ZAD system
+            await saveBgColor(randomColor);
+            
+            console.log('🎨 Background color changed to:', randomColor);
+        }
+        
+        async function saveBgColor(color) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-desktop-layout',
+                        participant_id: 'global',
+                        action_type: 'bg_color',
+                        content_data: {
+                            backgroundColor: color,
+                            lastModified: new Date().toISOString(),
+                            modifiedBy: 'user'
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Background color saved:', color);
+                } else {
+                    console.error('❌ Failed to save background color');
+                }
+            } catch (error) {
+                console.error('❌ Error saving background color:', error);
+            }
+        }
+        
+        async function loadBgColor() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-desktop-layout&action_type=bg_color&participant_id=global');
+                
+                if (!response.ok) {
+                    console.log('No saved background color found, using default');
+                    return;
+                }
+                
+                const result = await response.json();
+                const bgData = result && result.length > 0 ? result[0] : null;
+                
+                if (bgData && bgData.content_data && bgData.content_data.backgroundColor) {
+                    const savedColor = bgData.content_data.backgroundColor;
+                    document.body.style.background = savedColor;
+                    console.log('✅ Background color restored:', savedColor);
+                }
+            } catch (error) {
+                console.error('❌ Error loading background color:', error);
+            }
+        }
+        
         
         // Special menu dropdown functionality
         function toggleSpecialMenu(event) {
