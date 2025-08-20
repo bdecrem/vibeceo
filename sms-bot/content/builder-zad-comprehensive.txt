@@ -79,7 +79,58 @@ Build: **[USER REQUEST]**
 - Test layout works at 375px width
 - No hover-only interactions
 
-### 3. Essential Functions Only
+### 3. 🎨 App Windowing & Semantic Markup (RECOMMENDED)
+
+When building window-based or desktop-style apps, use these semantic classes for consistent theming:
+
+**Window Structure:**
+```html
+<div class="app-window">
+  <div class="app-titlebar">
+    <div class="app-close-box"></div>
+    <div class="app-title">My App</div>
+    <div class="app-zoom-box"></div>
+  </div>
+  <div class="app-content">
+    <!-- Your app content here -->
+  </div>
+  <div class="app-resize-handle"></div>
+</div>
+```
+
+**Form Elements:**
+```html
+<button class="app-button">Save</button>
+<button class="app-button primary">OK</button>
+<input type="text" class="app-input" placeholder="Enter text...">
+<textarea class="app-textarea">Content here</textarea>
+<select class="app-select">
+  <option>Option 1</option>
+</select>
+```
+
+**Layout Components:**
+```html
+<div class="app-header">Toolbar/Header</div>
+<div class="app-section">
+  <div class="app-section-title">Section Title</div>
+  <div class="app-section-content">Content here</div>
+</div>
+<ul class="app-list">
+  <li class="app-list-item">Item 1</li>
+  <li class="app-list-item selected">Selected Item</li>
+</ul>
+```
+
+**Benefits:**
+- Apps automatically match System 7, Mac OS 8, and other retro themes
+- Consistent windowing behavior across all themed apps
+- No need to write custom CSS for basic UI elements
+- Professional desktop app appearance
+
+**When to Use:** Desktop-style apps, productivity tools, file managers, text editors, system utilities, control panels
+
+### 4. Essential Functions Only
 
 **For saving/loading data:**
 ```javascript
@@ -95,7 +146,7 @@ initAuth()                // Start auth system (call this once)
 
 **That's all you need for 90% of apps!**
 
-### 4. AuthV2: Modern Authentication (RECOMMENDED)
+### 5. AuthV2: Modern Authentication (RECOMMENDED)
 
 **NEW: Custom Handle & PIN System**
 Users now choose their own handles (3-15 characters) and 4-digit PINs!
@@ -366,7 +417,7 @@ initAuth();
 
 **Missing any function = broken app!**
 
-### 5. Auto-Refresh (Just Add This)
+### 6. Auto-Refresh (Just Add This)
 
 ```javascript
 let pollingInterval;
@@ -391,7 +442,7 @@ function updateUI(data) {
 }
 ```
 
-### 6. Design System: **WEBTOYS v2.0**
+### 7. Design System: **WEBTOYS v2.0**
 All apps must follow the rebellious and playful Webtoys visual language:
 
 * **Theme Selection** (Pick ONE per app)
