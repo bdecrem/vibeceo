@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac OS 8 Platinum Theme Test</title>
+    <style>
+/* Mac OS 8 Platinum Theme - Authentic Classic Mac Interface */
+@import url('https://fonts.googleapis.com/css2?family=Charcoal&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #EEEEEE;
+  font-family: 'Charcoal', 'Geneva', 'Chicago', system-ui, sans-serif;
+  font-size: 12px;
+  margin: 0;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  color: #000000;
+  line-height: 1.2;
+}
+
+/* Desktop Background */
+.desktop, #desktop {
+  width: 100%;
+  height: calc(100vh - 28px);
+  position: relative;
+  background: #EEEEEE;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(0,0,0,0.05) 1px, transparent 1px);
+  background-size: 8px 8px;
+  padding: 20px;
+}
+
+/* Menu Bar */
+.menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: linear-gradient(to bottom, #F5F5F5 0%, #E8E8E8 50%, #DDDDDD 100%);
+  border-bottom: 1px solid #AAAAAA;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 1000;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.menu-bar .menu-title {
+  font-weight: bold;
+  font-size: 13px;
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.menu-bar .menu-title:hover {
+  background: #4A90E2;
+  color: white;
+  border: 1px solid #2171B5;
+}
+
+.menu-bar .apple-menu {
+  background: black;
+  color: white;
+  font-family: system-ui;
+  border-radius: 3px;
+  margin-right: 8px;
+  width: 24px;
+  text-align: center;
+}
+
+/* Desktop Icons */
+.desktop-icon {
+  position: absolute;
+  width: 64px;
+  text-align: center;
+  cursor: pointer;
+  padding: 6px 4px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+}
+
+.desktop-icon:hover {
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  border-radius: 4px;
+}
+
+.desktop-icon.selected {
+  background: #4A90E2;
+  border: 1px solid #2171B5;
+  border-radius: 4px;
+}
+
+.desktop-icon .icon {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+  margin-bottom: 2px;
+}
+
+.desktop-icon .label {
+  color: #000000;
+  font-size: 10px;
+  line-height: 1.1;
+  word-wrap: break-word;
+  max-width: 64px;
+  font-weight: normal;
+  text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+}
+
+.desktop-icon.selected .label {
+  color: white;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+/* Windows */
+#window-container {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.desktop-window {
+  position: absolute;
+  background: #EEEEEE;
+  border: 2px solid #AAAAAA;
+  border-radius: 8px;
+  box-shadow: 
+    2px 2px 8px rgba(0,0,0,0.4),
+    inset 1px 1px 0 rgba(255,255,255,0.8),
+    inset -1px -1px 0 rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  min-width: 280px;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.desktop-window.active {
+  border-color: #4A90E2;
+  box-shadow: 
+    3px 3px 12px rgba(0,0,0,0.5),
+    inset 1px 1px 0 rgba(255,255,255,0.9),
+    inset -1px -1px 0 rgba(0,0,0,0.1);
+}
+
+/* Window Titlebar */
+.window-titlebar {
+  height: 22px;
+  background: linear-gradient(to bottom, #FFFFFF 0%, #E8E8E8 50%, #DDDDDD 100%);
+  border-bottom: 1px solid #AAAAAA;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+}
+
+.desktop-window.active .window-titlebar {
+  background: linear-gradient(to bottom, #F0F8FF 0%, #E6F2FF 50%, #D9EEFF 100%);
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #000000;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.window-icon {
+  font-size: 14px;
+}
+
+/* Window Controls */
+.window-controls {
+  display: flex;
+  gap: 8px;
+  position: absolute;
+  left: 8px;
+}
+
+.window-controls button {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #888888;
+  border-radius: 50%;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button {
+  background: linear-gradient(to bottom, #FF6B6B, #FF5252);
+  color: #8B0000;
+}
+
+.minimize-button {
+  background: linear-gradient(to bottom, #FFD93D, #FFCD02);
+  color: #B8860B;
+}
+
+.zoom-button {
+  background: linear-gradient(to bottom, #6BCF7F, #4CAF50);
+  color: #2E7D32;
+}
+
+.window-controls button:hover {
+  border-color: #666666;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Window Content */
+.window-content {
+  flex: 1;
+  background: white;
+  border: 1px solid #CCCCCC;
+  border-radius: 0 0 6px 6px;
+  overflow: auto;
+  margin: 0;
+  position: relative;
+  padding: 12px;
+}
+
+/* Buttons */
+button, .button {
+  padding: 4px 12px;
+  background: linear-gradient(to bottom, #FFFFFF 0%, #E8E8E8 50%, #DDDDDD 100%);
+  border: 1px solid #AAAAAA;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  color: #000000;
+  min-height: 20px;
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+button:hover, .button:hover {
+  background: linear-gradient(to bottom, #F8F8F8 0%, #E0E0E0 50%, #D5D5D5 100%);
+  border-color: #999999;
+}
+
+/* Form Elements */
+input, textarea, select {
+  padding: 4px 6px;
+  border: 1px solid #AAAAAA;
+  border-radius: 2px;
+  font-size: 11px;
+  font-family: inherit;
+  background: white;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+  margin: 4px 0;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 
+    0 2px 8px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+}
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="apple-menu">🍎</div>
+        <div class="menu-title">File</div>
+        <div class="menu-title">Edit</div>
+        <div class="menu-title">View</div>
+        <div class="menu-title">Special</div>
+        <div class="menu-title">Help</div>
+    </div>
+
+    <!-- Desktop -->
+    <div class="desktop" id="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icon" style="top: 20px; left: 20px;">
+            <div class="icon">💻</div>
+            <div class="label">Hard Disk</div>
+        </div>
+        
+        <div class="desktop-icon selected" style="top: 100px; left: 20px;">
+            <div class="icon">📁</div>
+            <div class="label">Documents</div>
+        </div>
+        
+        <div class="desktop-icon" style="top: 180px; left: 20px;">
+            <div class="icon">🗑️</div>
+            <div class="label">Trash</div>
+        </div>
+
+        <!-- Window Container -->
+        <div id="window-container">
+            <!-- Active Window -->
+            <div class="desktop-window active" style="top: 50px; left: 150px; width: 400px; height: 300px;">
+                <div class="window-titlebar">
+                    <div class="window-controls">
+                        <button class="close-button">×</button>
+                        <button class="minimize-button">−</button>
+                        <button class="zoom-button">□</button>
+                    </div>
+                    <div class="window-title">
+                        <span class="window-icon">📝</span>
+                        Untitled Document
+                    </div>
+                </div>
+                <div class="window-content">
+                    <h2>Welcome to Mac OS 8 Platinum</h2>
+                    <p>This is a demonstration of the authentic Mac OS 8 Platinum theme with:</p>
+                    <ul>
+                        <li>Light gray desktop background</li>
+                        <li>Platinum-style windows with rounded corners</li>
+                        <li>Classic Mac window controls</li>
+                        <li>Charcoal/Geneva typography</li>
+                        <li>Subtle 3D effects and shadows</li>
+                    </ul>
+                    
+                    <p>Form elements:</p>
+                    <input type="text" placeholder="Text input" style="width: 200px;">
+                    <br>
+                    <textarea placeholder="Textarea" style="width: 200px; height: 60px;"></textarea>
+                    <br>
+                    <button>Mac OS Button</button>
+                    <button class="default-button">Default Button</button>
+                </div>
+            </div>
+
+            <!-- Inactive Window -->
+            <div class="desktop-window" style="top: 120px; left: 300px; width: 300px; height: 200px;">
+                <div class="window-titlebar">
+                    <div class="window-controls">
+                        <button class="close-button">×</button>
+                        <button class="minimize-button">−</button>
+                        <button class="zoom-button">□</button>
+                    </div>
+                    <div class="window-title">
+                        <span class="window-icon">🏠</span>
+                        Finder
+                    </div>
+                </div>
+                <div class="window-content">
+                    <p>This is an inactive window showing the different styling for non-active windows.</p>
+                    <p>Notice the titlebar gradient changes when the window is not active.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
