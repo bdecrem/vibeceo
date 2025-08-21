@@ -169,7 +169,7 @@
     
     <!-- Bart by Bart -->
     <div class="desktop-icon" 
-         style="left: 20px; top: 20px;"
+         style="left: 20px; top: 220px;"
          onclick="openWindowedApp('bart')"
          title="Bart">
         <div class="icon">📝</div>
@@ -178,7 +178,7 @@
     
     <!-- GM by bd -->
     <div class="desktop-icon" 
-         style="left: 120px; top: 20px;"
+         style="left: 120px; top: 320px;"
          onclick="openWindowedApp('gm')"
          title="GM">
         <div class="icon">📝</div>
@@ -187,7 +187,7 @@
     
     <!-- Hi by hi -->
     <div class="desktop-icon" 
-         style="left: 20px; top: 120px;"
+         style="left: 520px; top: 120px;"
          onclick="openWindowedApp('hi')"
          title="Hi">
         <div class="icon">🎨</div>
@@ -209,6 +209,33 @@
         <div class="menu-right">
             <div id="menu-clock" aria-label="Clock"></div>
         </div>
+
+    <!-- BD by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 120px;"
+         onclick="openWindowedApp('bd')"
+         title="BD">
+        <div class="icon">📝</div>
+        <div class="label">BD</div>
+    </div>
+
+    <!-- BDpaint by bd -->
+    <div class="desktop-icon" 
+         style="left: 220px; top: 120px;"
+         onclick="openWindowedApp('bdpaint')"
+         title="BDpaint">
+        <div class="icon">🎨</div>
+        <div class="label">BDpaint</div>
+    </div>
+
+    <!-- Words by bd -->
+    <div class="desktop-icon" 
+         style="left: 320px; top: 120px;"
+         onclick="openWindowedApp('words')"
+         title="Words">
+        <div class="icon">📝</div>
+        <div class="label">Words</div>
+    </div>
     </div>
     
     <script>
@@ -631,6 +658,30 @@ window.windowManager = new WindowManager();
         
         
         window.windowedApps = {
+
+        'words': {
+            name: 'Words',
+            url: '/community/words',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'bdpaint': {
+            name: 'BDpaint',
+            url: '/community/bdpaint',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'bd': {
+            name: 'BD',
+            url: '/community/bd',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
 
         'hi': {
             name: 'Hi',
