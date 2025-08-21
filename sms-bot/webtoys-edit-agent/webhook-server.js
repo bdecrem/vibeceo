@@ -30,6 +30,9 @@ const EDIT_AGENT_ENABLED = (process.env.EDIT_AGENT_ENABLED || 'false').toLowerCa
 let activeWorkers = 0;
 const MAX_WORKERS = 2;
 
+// Track recent submissions to prevent duplicates
+const recentSubmissions = new Map();
+
 /**
  * Check if edit agent is enabled
  */
@@ -192,6 +195,33 @@ function createServer() {
 
   // ToyBox OS webhook endpoint (V2 - active)
   app.post('/webhook/toybox-apps', async (req, res) => {
+    // Create a unique key for this submission
+    const submissionKey = `${req.body.appName}-${req.body.submitterName}-${req.body.appType}`;
+    const now = Date.now();
+    
+    // Check if we've seen this exact submission in the last 5 seconds
+    if (recentSubmissions.has(submissionKey)) {
+      const lastTime = recentSubmissions.get(submissionKey);
+      if (now - lastTime < 5000) {
+        console.log('⚠️ Duplicate submission detected, ignoring');
+        return res.json({ 
+          success: true, 
+          message: 'Duplicate submission ignored',
+          duplicate: true
+        });
+      }
+    }
+    
+    // Record this submission
+    recentSubmissions.set(submissionKey, now);
+    
+    // Clean up old entries (older than 1 minute)
+    for (const [key, time] of recentSubmissions.entries()) {
+      if (now - time > 60000) {
+        recentSubmissions.delete(key);
+      }
+    }
+    
     console.log('\n🚀 ToyBox OS App Studio Webhook Received');
     console.log(`📅 Time: ${new Date().toISOString()}`);
     console.log(`📦 Request body:`, JSON.stringify(req.body));
