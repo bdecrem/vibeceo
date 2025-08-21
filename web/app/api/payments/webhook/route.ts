@@ -43,10 +43,15 @@ function normalizePhoneNumber(phone: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[Webhook] POST request received');
     const payload = await req.text();
     const signature = req.headers.get('x-signature');
     
+    console.log(`[Webhook] Payload length: ${payload.length}`);
+    console.log(`[Webhook] Signature present: ${!!signature}`);
+    
     if (!signature) {
+      console.error('[Webhook] Missing signature header');
       return NextResponse.json(
         { error: 'Missing signature' },
         { status: 400 }
@@ -55,17 +60,21 @@ export async function POST(req: NextRequest) {
     
     // Verify webhook signature
     if (!verifyWebhookSignature(payload, signature)) {
-      console.error('Invalid webhook signature');
+      console.error('[Webhook] Invalid webhook signature');
+      console.error(`[Webhook] Expected signature format, got: ${signature.substring(0, 20)}...`);
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 403 }
       );
     }
     
+    console.log('[Webhook] Signature verified successfully');
+    
     const webhookData = JSON.parse(payload);
     const eventType = webhookData.meta?.event_name;
     
     console.log(`[Payments] Webhook received: ${eventType}`);
+    console.log(`[Payments] Full webhook data:`, JSON.stringify(webhookData, null, 2));
     
     // Handle different webhook events
     switch (eventType) {
@@ -98,16 +107,19 @@ async function handleOrderCreated(webhookData: any) {
   try {
     const order = webhookData.data;
     const orderAttributes = order.attributes;
-    const customData = orderAttributes.first_order_item?.variant_name?.includes('custom') 
-      ? JSON.parse(orderAttributes.user_custom_data || '{}')
-      : { phone_number: '', subscriber_id: '', purpose: '' };
+    
+    // LemonSqueezy sends custom data in the meta field
+    const customData = webhookData.meta?.custom_data || {};
+    console.log('[Webhook] Custom data:', JSON.stringify(customData));
     
     // Extract phone number and subscriber ID from custom data
-    const phoneNumber = customData.phone_number;
-    const subscriberId = customData.subscriber_id;
+    let phoneNumber = customData.phone_number;
+    let subscriberId = customData.subscriber_id;
     
     if (!phoneNumber || !subscriberId) {
-      console.error('Missing phone number or subscriber ID in webhook data');
+      console.error('❌ CRITICAL: Missing phone number or subscriber ID in webhook data');
+      console.error('Custom data found:', JSON.stringify(customData));
+      console.error('Could not identify user for credit update');
       return;
     }
     
@@ -115,43 +127,60 @@ async function handleOrderCreated(webhookData: any) {
     
     // Determine credit amount based on order total
     const totalCents = orderAttributes.total;
-    const creditsToAdd = Math.floor(totalCents / 100); // $1 = 1 credit for now, can be adjusted
+    const creditsToAdd = Math.floor((totalCents / 100) * 2.5); // $10 = 25 credits ($1 = 2.5 credits)
     
     // Skip transaction logging - LemonSqueezy keeps all records
     console.log(`[Payments] Processing $${totalCents/100} payment for ${normalizedPhone} (${creditsToAdd} credits)`);
     
     // If order is paid, add credits to subscriber
     if (orderAttributes.status === 'paid') {
+      console.log(`[Payments] ✅ Order is paid, processing credit update for subscriber ${subscriberId}`);
+      
       const { data: subscriber, error: fetchError } = await supabase
         .from('sms_subscribers')
-        .select('credits_remaining')
+        .select('credits_remaining, phone_number, email')
         .eq('id', subscriberId)
         .single();
         
       if (fetchError || !subscriber) {
-        console.error('Failed to fetch subscriber for credit update:', fetchError);
+        console.error('❌ CRITICAL: Failed to fetch subscriber for credit update:', fetchError);
+        console.error('Subscriber ID:', subscriberId);
         return;
       }
+      
+      console.log(`[Payments] 📊 Current subscriber data:`, {
+        id: subscriberId,
+        phone: subscriber.phone_number,
+        email: subscriber.email,
+        currentCredits: subscriber.credits_remaining
+      });
       
       const newCredits = (subscriber.credits_remaining || 0) + creditsToAdd;
       
-      const { error: updateError } = await supabase
+      console.log(`[Payments] 💳 About to update: ${subscriber.credits_remaining || 0} + ${creditsToAdd} = ${newCredits} credits`);
+      
+      const { data: updateResult, error: updateError } = await supabase
         .from('sms_subscribers')
         .update({
-          credits_remaining: newCredits,
-          payment_customer_id: orderAttributes.customer_id?.toString(),
+          credits_remaining: newCredits
         })
-        .eq('id', subscriberId);
+        .eq('id', subscriberId)
+        .select('credits_remaining');
       
       if (updateError) {
-        console.error('Failed to update subscriber credits:', updateError);
+        console.error('❌ CRITICAL: Failed to update subscriber credits:', updateError);
+        console.error('Subscriber ID:', subscriberId);
+        console.error('Attempted update:', { credits_remaining: newCredits });
         return;
       }
       
+      console.log(`[Payments] ✅ SUCCESS: Database updated! New credits: ${updateResult?.[0]?.credits_remaining}`);
       console.log(`[Payments] Added ${creditsToAdd} credits to ${normalizedPhone} (total: ${newCredits})`);
       
       // Send SMS confirmation
       await sendPaymentConfirmationSMS(normalizedPhone, creditsToAdd, newCredits);
+    } else {
+      console.log(`[Payments] ⚠️ Order status is '${orderAttributes.status}', not 'paid'. Skipping credit update.`);
     }
     
   } catch (error) {
