@@ -26,49 +26,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.EDIT_AGENT_WEBHOOK_PORT || '3031', 10);
 const EDIT_AGENT_ENABLED = (process.env.EDIT_AGENT_ENABLED || 'false').toLowerCase() === 'true';
 
-
-// Process lock mechanism to prevent race conditions
-const activeProcesses = new Map();
-
-/**
- * Check if a processor is already running for a given type
- */
-function isProcessorRunning(processorType) {
-    return activeProcesses.has(processorType);
-}
-
-/**
- * Mark a processor as running
- */
-function markProcessorRunning(processorType) {
-    activeProcesses.set(processorType, Date.now());
-}
-
-/**
- * Mark a processor as finished
- */
-function markProcessorFinished(processorType) {
-    activeProcesses.delete(processorType);
-}
-
-/**
- * Clean up old process locks (older than 5 minutes)
- */
-function cleanupOldProcessLocks() {
-    const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
-    
-    for (const [processorType, startTime] of activeProcesses.entries()) {
-        if (now - startTime > fiveMinutes) {
-            console.log(`⚠️ Cleaning up stale process lock for ${processorType}`);
-            activeProcesses.delete(processorType);
-        }
-    }
-}
-
-// Clean up stale locks every minute
-setInterval(cleanupOldProcessLocks, 60000);
-
 // Track active workers (no longer blocking new requests)
 let activeWorkers = 0;
 const MAX_WORKERS = 2;
@@ -284,17 +241,9 @@ function createServer() {
       const actionType = isWindowed ? 'windowed_app' : 'desktop_app';
       const appId = isWindowed ? 'toybox-windowed-apps' : 'toybox-desktop-apps';
       
-      // Generate unique app ID with format: NAME-XXXXXX
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      const uniqueId = `${timestamp}${random}`.slice(-6);
-      const cleanName = (appName || 'Unnamed').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-      const appSlug = `${cleanName}-${uniqueId}`;
-      
       // Store in ZAD for the appropriate processor
       const submission = {
         appName: appName || 'Unnamed App',
-        appSlug: appSlug,  // New unique ID
         appFunction: appFunction || 'Does something fun',
         appIcon: appIcon || null,
         appType: appType || 'simple',
@@ -322,47 +271,34 @@ function createServer() {
       
       console.log(`✅ ${appType} app submission saved for processing`);
       
-      // Trigger immediate processing based on app type (with race condition protection)
+      // Trigger immediate processing based on app type
       try {
-        const processorType = isWindowed ? 'windowed-apps' : 'simple-apps';
-        
-        // Check if processor is already running
-        if (isProcessorRunning(processorType)) {
-          console.log(`⏳ ${processorType} processor already running, submission queued for next run`);
-        } else {
-          markProcessorRunning(processorType);
-          
-          try {
-            if (isWindowed) {
-              console.log('🔄 Triggering windowed app processor...');
-              const { stdout, stderr } = await execAsync(
-                `node process-windowed-apps.js`,
-                { 
-                  cwd: path.join(__dirname, '../community-desktop-v2'),
-                  maxBuffer: 1024 * 1024 * 10,
-                  timeout: 60000 // 60 second timeout for complex apps
-                }
-              );
-              
-              if (stdout) console.log('Windowed app output:', stdout);
-              if (stderr) console.error('Windowed app errors:', stderr);
-            } else {
-              console.log('🔄 Triggering simple app processor...');
-              const { stdout, stderr } = await execAsync(
-                `node process-toybox-apps.js`,
-                { 
-                  cwd: path.join(__dirname, '../community-desktop-v2'),
-                  maxBuffer: 1024 * 1024 * 10,
-                  timeout: 30000 // 30 second timeout
-                }
-              );
-              
-              if (stdout) console.log('Simple app output:', stdout);
-              if (stderr) console.error('Simple app errors:', stderr);
+        if (isWindowed) {
+          console.log('🔄 Triggering windowed app processor...');
+          const { stdout, stderr } = await execAsync(
+            `node process-windowed-apps.js`,
+            { 
+              cwd: path.join(__dirname, '../community-desktop-v2'),
+              maxBuffer: 1024 * 1024 * 10,
+              timeout: 60000 // 60 second timeout for complex apps
             }
-          } finally {
-            markProcessorFinished(processorType);
-          }
+          );
+          
+          if (stdout) console.log('Windowed app output:', stdout);
+          if (stderr) console.error('Windowed app errors:', stderr);
+        } else {
+          console.log('🔄 Triggering simple app processor...');
+          const { stdout, stderr } = await execAsync(
+            `node process-toybox-apps.js`,
+            { 
+              cwd: path.join(__dirname, '../community-desktop-v2'),
+              maxBuffer: 1024 * 1024 * 10,
+              timeout: 30000 // 30 second timeout
+            }
+          );
+          
+          if (stdout) console.log('Simple app output:', stdout);
+          if (stderr) console.error('Simple app errors:', stderr);
         }
       } catch (processError) {
         console.error('⚠️ Processing failed (will retry via cron):', processError.message);

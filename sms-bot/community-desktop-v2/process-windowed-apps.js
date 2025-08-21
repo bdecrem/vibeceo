@@ -67,11 +67,15 @@ async function generateWindowedApp(submission) {
     appTemplate = 'chat';
   }
 
+  // Use appSlug if provided, otherwise generate from appName
+  const appId = submission.appSlug || generateAppId(submission.appName);
+  
   const prompt = `Create a complete windowed desktop application for ToyBox OS.
 
 User wants: "${submission.appName}"
 Description: "${submission.appFunction}"
 App Type Detected: ${appTemplate}
+App ID: ${appId}
 
 Generate a COMPLETE HTML application with:
 
@@ -89,7 +93,7 @@ Generate a COMPLETE HTML application with:
    - Theme will be applied separately
 
 3. REQUIRED JAVASCRIPT:
-   - window.APP_ID = '${generateAppId(submission.appName)}';
+   - window.APP_ID = '${appId}';
    - Include ZAD helper functions for save/load
    - Implement auto-save every 30 seconds if applicable
 
@@ -173,8 +177,12 @@ Respond with ONLY valid JSON, no explanation.`;
       throw new Error('Invalid app specification');
     }
 
+    // Use appSlug if provided, otherwise generate from name
+    const slug = submission.appSlug || generateSlug(appSpec.name);
+    
     return {
       ...appSpec,
+      slug: slug,  // Use the unique slug
       submitterId: submission.recordId || submission.id,
       submitterName: submission.submitterName,
       originalRequest: submission.appFunction,

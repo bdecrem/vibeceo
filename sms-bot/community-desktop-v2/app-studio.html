@@ -357,7 +357,7 @@
     <script>
         // Configuration
         window.APP_ID = 'toybox-app-studio';
-        window.WEBHOOK_URL = 'https://webtoys-agents.ngrok.app/webhook/toybox-apps';
+        window.WEBHOOK_URL = 'https://webtoys-agents.ngrok.io/webhook/toybox-apps';
         
         // ZAD helper functions
         async function save(dataType, data) {
@@ -441,6 +441,7 @@
         ];
 
         let selectedType = null;
+        let isSubmitting = false; // Global flag to prevent duplicate submissions
 
         // Load saved name
         window.addEventListener('load', () => {
@@ -515,6 +516,13 @@
         }
 
         async function submitApp() {
+            // Prevent duplicate submissions
+            if (isSubmitting) {
+                console.log('Already submitting, ignoring duplicate click');
+                return;
+            }
+            isSubmitting = true;
+            
             const appName = document.getElementById('appName').value.trim();
             const appFunction = document.getElementById('appFunction').value.trim();
             const appIcon = document.getElementById('appIcon').value.trim();
@@ -523,11 +531,13 @@
             // Validation
             if (!appName || !appFunction) {
                 showStatus('error', 'Please provide both an app name and description!');
+                isSubmitting = false;
                 return;
             }
             
             if (!selectedType) {
                 showStatus('error', 'Please select what kind of app you want to create!');
+                isSubmitting = false;
                 return;
             }
             
