@@ -287,13 +287,27 @@
                 <span>🎯</span>
                 <span>What Kind of App?</span>
             </div>
-            <div class="form-group">
-                <select id="appType" onchange="selectAppType(this.value)">
-                    <option value="simple">App</option>
-                    <option value="interactive">Interactive</option>
-                    <option value="visual">Visual Effect</option>
-                    <option value="windowed">Windowed App</option>
-                </select>
+            <div class="app-type-grid">
+                <div class="app-type-card" data-type="simple" onclick="selectAppType('simple')">
+                    <div class="app-type-icon">🎲</div>
+                    <div class="app-type-name">Simple Toy</div>
+                    <div class="app-type-desc">Quick action or fun message</div>
+                </div>
+                <div class="app-type-card" data-type="interactive" onclick="selectAppType('interactive')">
+                    <div class="app-type-icon">🎮</div>
+                    <div class="app-type-name">Interactive</div>
+                    <div class="app-type-desc">Get input, show results</div>
+                </div>
+                <div class="app-type-card" data-type="visual" onclick="selectAppType('visual')">
+                    <div class="app-type-icon">🎨</div>
+                    <div class="app-type-name">Visual Effect</div>
+                    <div class="app-type-desc">Change colors or styles</div>
+                </div>
+                <div class="app-type-card" data-type="windowed" onclick="selectAppType('windowed')">
+                    <div class="app-type-icon">🪟</div>
+                    <div class="app-type-name">Windowed App</div>
+                    <div class="app-type-desc">Opens in its own window</div>
+                </div>
             </div>
         </div>
 
@@ -428,7 +442,7 @@
 
         let selectedType = null;
 
-        // Load saved name and initialize form
+        // Load saved name
         window.addEventListener('load', () => {
             const savedName = localStorage.getItem('studio_submitter_name');
             if (savedName) {
@@ -439,10 +453,6 @@
             if (!localStorage.getItem('studio_participant_id')) {
                 localStorage.setItem('studio_participant_id', 'user_' + Math.random().toString(36).substr(2, 9));
             }
-            
-            // Initialize form with default selection
-            selectedType = 'simple';
-            selectAppType('simple');
         });
 
         function saveName() {
@@ -456,37 +466,34 @@
         function selectAppType(type) {
             selectedType = type;
             
+            // Update UI
+            document.querySelectorAll('.app-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+            
             // Show examples
             const examplesDiv = document.getElementById('examples');
             const exampleList = document.getElementById('exampleList');
             const exampleType = document.getElementById('exampleType');
             
-            if (type) {
-                const typeNames = {
-                    'simple': 'App',
-                    'interactive': 'Interactive',
-                    'visual': 'Visual Effect',
-                    'windowed': 'Windowed App'
-                };
-                
-                examplesDiv.style.display = 'block';
-                exampleType.textContent = typeNames[type];
-                
-                exampleList.innerHTML = examples[type].map(ex => 
-                    `<div class="example-item">${ex}</div>`
-                ).join('');
-            } else {
-                examplesDiv.style.display = 'none';
-            }
+            examplesDiv.style.display = 'block';
+            exampleType.textContent = document.querySelector(`[data-type="${type}"] .app-type-name`).textContent;
+            
+            exampleList.innerHTML = examples[type].map(ex => 
+                `<div class="example-item">${ex}</div>`
+            ).join('');
         }
 
         function clearForm() {
             document.getElementById('appName').value = '';
             document.getElementById('appFunction').value = '';
             document.getElementById('appIcon').value = '';
-            document.getElementById('appType').selectedIndex = 0;
-            selectedType = 'simple'; // Default to first option
-            selectAppType('simple'); // Show examples for default
+            selectedType = null;
+            document.querySelectorAll('.app-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.getElementById('examples').style.display = 'none';
             hideStatus();
         }
 
@@ -494,7 +501,6 @@
             const idea = randomIdeas[Math.floor(Math.random() * randomIdeas.length)];
             document.getElementById('appName').value = idea.name;
             document.getElementById('appFunction').value = idea.desc;
-            document.getElementById('appType').value = idea.type;
             selectAppType(idea.type);
         }
 
@@ -513,7 +519,6 @@
             const appFunction = document.getElementById('appFunction').value.trim();
             const appIcon = document.getElementById('appIcon').value.trim();
             const submitterName = document.getElementById('submitterName').value.trim() || 'Anonymous';
-            const selectedType = document.getElementById('appType').value;
             
             // Validation
             if (!appName || !appFunction) {
