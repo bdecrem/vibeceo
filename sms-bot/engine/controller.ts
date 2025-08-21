@@ -1822,6 +1822,18 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 return false;
             }
             
+            // Check credits before creating meme
+            const { checkCredits, deductCredit } = await import('../lib/credit-manager.js');
+            const creditCheck = await checkCredits(senderPhone);
+            
+            if (!creditCheck.hasCredits) {
+                logWarning(`💳 Credit check failed for ${senderPhone}: ${creditCheck.message}`);
+                await sendConfirmationSms(creditCheck.message || "Insufficient credits", senderPhone);
+                return false;
+            }
+            
+            logWithTimestamp(`💰 Credit check passed: ${creditCheck.creditsRemaining} credits remaining`);
+            
             // Save meme HTML to Supabase with type='MEME'
             const deployResult = await saveCodeToSupabase(
                 memeResult.html, 
@@ -1864,6 +1876,15 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                     }
                 } catch (error) {
                     logWarning(`Failed to update meme metadata: ${error}`);
+                }
+                
+                // Deduct credit after successful meme deployment
+                const creditDeducted = await deductCredit(senderPhone);
+                if (creditDeducted) {
+                    const remainingCredits = creditCheck.creditsRemaining - 1;
+                    logSuccess(`💳 Credit deducted - ${remainingCredits} credits remaining for ${senderPhone}`);
+                } else {
+                    logWarning(`⚠️ Failed to deduct credit for ${senderPhone}`);
                 }
                 
                 await sendSuccessNotification(deployResult.publicUrl, null, senderPhone, false);
@@ -1939,6 +1960,18 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 const [publicHtml, adminHtml] = code.split(delimiter, 2);
                 logWithTimestamp(`✂️ Split HTML into public (${publicHtml.length} chars) and admin (${adminHtml.length} chars) pages`);
                 
+                // Check credits before creating dual-page app
+                const { checkCredits, deductCredit } = await import('../lib/credit-manager.js');
+                const creditCheck = await checkCredits(senderPhone);
+                
+                if (!creditCheck.hasCredits) {
+                    logWarning(`💳 Credit check failed for ${senderPhone}: ${creditCheck.message}`);
+                    await sendConfirmationSms(creditCheck.message || "Insufficient credits", senderPhone);
+                    return false;
+                }
+                
+                logWithTimestamp(`💰 Credit check passed: ${creditCheck.creditsRemaining} credits remaining`);
+                
                 // Deploy public page (normal app)
                 // Determine the coach type for database storage
                 const coachType = configType === 'game' ? 'game' : (coach || "unknown");
@@ -1978,16 +2011,48 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                         logWithTimestamp(`   📱 Main app: ${publicUrl} (UUID: ${publicResult.uuid})`);
                         logWithTimestamp(`   📊 Admin page: ${adminUrl} (UUID: ${adminResult.uuid})`);
                         logWithTimestamp(`   💾 Data storage: Uses main app UUID ${publicResult.uuid}`);
+                        
+                        // Deduct credit after successful dual-page deployment
+                        const creditDeducted = await deductCredit(senderPhone);
+                        if (creditDeducted) {
+                            const remainingCredits = creditCheck.creditsRemaining - 1;
+                            logSuccess(`💳 Credit deducted - ${remainingCredits} credits remaining for ${senderPhone}`);
+                        } else {
+                            logWarning(`⚠️ Failed to deduct credit for ${senderPhone}`);
+                        }
                     }
                 }
             } else {
                 // Single page deployment
                 logWithTimestamp(`📱 Single-page app - deploying one page`);
                 
+                // Check credits before creating app
+                const { checkCredits, deductCredit } = await import('../lib/credit-manager.js');
+                const creditCheck = await checkCredits(senderPhone);
+                
+                if (!creditCheck.hasCredits) {
+                    logWarning(`💳 Credit check failed for ${senderPhone}: ${creditCheck.message}`);
+                    await sendConfirmationSms(creditCheck.message || "Insufficient credits", senderPhone);
+                    return false;
+                }
+                
+                logWithTimestamp(`💰 Credit check passed: ${creditCheck.creditsRemaining} credits remaining`);
+                
                 // Determine the coach type for database storage
                 const coachType = configType === 'game' ? 'game' : (coach || "unknown");
                 
                 const result = await saveCodeToSupabase(code, coachType, userSlug, senderPhone, originalUserInput, null, false, isPublicZadRequest);
+                
+                // Deduct credit after successful deployment
+                if (result.publicUrl) {
+                    const creditDeducted = await deductCredit(senderPhone);
+                    if (creditDeducted) {
+                        const remainingCredits = creditCheck.creditsRemaining - 1;
+                        logSuccess(`💳 Credit deducted - ${remainingCredits} credits remaining for ${senderPhone}`);
+                    } else {
+                        logWarning(`⚠️ Failed to deduct credit for ${senderPhone}`);
+                    }
+                }
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
