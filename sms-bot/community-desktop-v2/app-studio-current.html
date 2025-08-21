@@ -361,6 +361,7 @@
                 });
                 return await response.json();
             } catch (error) {
+                isSubmitting = false;
                 console.error('Save error:', error);
                 return null;
             }
@@ -508,7 +509,15 @@
             document.getElementById('status').className = 'status';
         }
 
+        let isSubmitting = false;
+        
         async function submitApp() {
+            // Prevent multiple submissions
+            if (isSubmitting) {
+                console.log('Already submitting, please wait...');
+                return;
+            }
+            isSubmitting = true;
             const appName = document.getElementById('appName').value.trim();
             const appFunction = document.getElementById('appFunction').value.trim();
             const appIcon = document.getElementById('appIcon').value.trim();
@@ -528,6 +537,11 @@
             
             // Disable submit button
             const submitBtn = document.getElementById('submitBtn');
+            
+            // Double-check submission isn't in progress
+            if (isSubmitting) {
+                return;
+            }
             submitBtn.disabled = true;
             submitBtn.innerHTML = 'Submitting... <span class="spinner"></span>';
             
@@ -577,6 +591,7 @@
                 // Re-enable button
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Submit App to Desktop';
+                isSubmitting = false;
             }
         }
     </script>
