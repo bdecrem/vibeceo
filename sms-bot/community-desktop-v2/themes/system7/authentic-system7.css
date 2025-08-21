@@ -1,7 +1,6 @@
 /* AUTHENTIC System 7 Theme - Clean and Professional
  * Based on real 1991 Mac System 7.0 interface
  * No ugly stripes, no crude lines - just clean, elegant design
- * FIXED: All visual issues resolved for beautiful, professional appearance
  */
 
 /* ===== CHICAGO FONT IMPORT ===== */
@@ -32,12 +31,6 @@
   --sys7-text-white: #FFFFFF;
   --sys7-button-bg: #DFDFDF;
   --sys7-menu-bg: #FFFFFF;
-  
-  /* Legacy variable support */
-  --sys7-bg: #BFBFBF;
-  --sys7-border: #000000;
-  --sys7-text: #000000;
-  --sys7-title: #000000;
 }
 
 /* ===== GLOBAL DESKTOP STYLING ===== */
@@ -134,16 +127,11 @@ body.theme-system7 {
   font-size: 10px;
 }
 
-/* Trash can with pixelated look */
-.theme-system7 .trash-can .icon {
-  image-rendering: pixelated;
-  filter: contrast(1.2);
-}
-
 /* ===== AUTHENTIC SYSTEM 7 WINDOWS ===== */
 
-/* Window container with proper 3D beveled edges - NO UGLY STRIPES! */
-.theme-system7 .desktop-window {
+/* Window container with proper 3D beveled edges */
+.theme-system7 .desktop-window,
+.theme-system7.windowed-app {
   background: var(--sys7-window-bg);
   border: none;
   box-shadow: 
@@ -155,6 +143,10 @@ body.theme-system7 {
     inset -2px -2px 0 var(--sys7-border-black);
   border-radius: 0;
   position: relative;
+  min-height: 200px;
+  min-width: 300px;
+  margin: 20px auto;
+  max-width: 800px;
 }
 
 .theme-system7 .desktop-window.active {
@@ -162,7 +154,8 @@ body.theme-system7 {
 }
 
 /* CLEAN SOLID TITLE BAR - No ugly stripes! */
-.theme-system7 .window-titlebar {
+.theme-system7 .window-titlebar,
+.theme-system7.windowed-app .window-titlebar {
   height: 20px;
   background: var(--sys7-titlebar-bg);
   border-bottom: 1px solid var(--sys7-border-black);
@@ -171,17 +164,16 @@ body.theme-system7 {
   align-items: center;
   justify-content: center;
   margin: 2px 2px 0 2px; /* Account for window border */
-  cursor: move;
 }
 
 /* Active window title bar - still clean and solid */
 .theme-system7 .desktop-window.active .window-titlebar {
   background: var(--sys7-titlebar-active-bg);
-  /* NO UGLY STRIPES - this was the main problem! */
 }
 
 /* Window title text - centered like real System 7 */
-.theme-system7 .window-title {
+.theme-system7 .window-title,
+.theme-system7.windowed-app .window-title {
   color: var(--sys7-text-black);
   font-family: 'Chicago', Monaco, monospace;
   font-size: 12px;
@@ -192,53 +184,37 @@ body.theme-system7 {
   flex: 1;
 }
 
-.theme-system7 .desktop-window.active .window-title {
-  color: var(--sys7-text-black); /* Keep text black, not white */
-}
-
-/* ===== CLEAN WINDOW CONTROLS - LEFT SIDE ===== */
-.theme-system7 .window-controls {
+/* ===== CLEAN CLOSE BOX - LEFT SIDE ===== */
+.theme-system7 .window-close-box,
+.theme-system7.windowed-app .window-close-box,
+.theme-system7 .window-controls .window-close {
   position: absolute;
   left: 6px;
   top: 4px;
-  gap: 4px;
-  display: flex;
-}
-
-.theme-system7 .window-controls button {
   width: 11px;
   height: 11px;
   border: 1px solid var(--sys7-border-black);
   background: var(--sys7-window-bg);
-  font-size: 0; /* Hide any text content */
-  line-height: 1;
-  padding: 0;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0;
-  cursor: pointer;
+  font-family: none;
+  font-size: 0;
   box-shadow: 
     inset 1px 1px 0 var(--sys7-border-light),
     inset -1px -1px 0 var(--sys7-border-dark);
-  /* Hide any text content that might be causing "B: V2" */
-  text-indent: -9999px;
-  overflow: hidden;
 }
 
-.theme-system7 .window-controls button:hover {
+.theme-system7 .window-close-box:hover,
+.theme-system7.windowed-app .window-close-box:hover,
+.theme-system7 .window-controls .window-close:hover {
   background: var(--sys7-border-black);
-}
-
-.theme-system7 .window-controls button:active {
-  background: var(--sys7-border-black);
-  color: var(--sys7-text-white);
-  box-shadow: 
-    inset -1px -1px 0 var(--sys7-border-light),
-    inset 1px 1px 0 var(--sys7-border-dark);
 }
 
 /* Simple solid square in close box - no fancy patterns */
+.theme-system7 .window-close-box::after,
+.theme-system7.windowed-app .window-close-box::after,
 .theme-system7 .window-controls .window-close::after {
   content: '';
   width: 5px;
@@ -246,42 +222,67 @@ body.theme-system7 {
   background: var(--sys7-border-black);
 }
 
+.theme-system7 .window-close-box:hover::after,
+.theme-system7.windowed-app .window-close-box:hover::after,
 .theme-system7 .window-controls .window-close:hover::after {
   background: var(--sys7-text-white);
 }
 
-.theme-system7 .window-controls .window-maximize::after {
+/* Hide any text content in close button */
+.theme-system7 .window-controls .window-close {
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+/* ===== ZOOM BOX - RIGHT SIDE (optional) ===== */
+.theme-system7 .window-zoom-box,
+.theme-system7.windowed-app .window-zoom-box {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--sys7-border-black);
+  background: var(--sys7-window-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    inset 1px 1px 0 var(--sys7-border-light),
+    inset -1px -1px 0 var(--sys7-border-dark);
+}
+
+.theme-system7 .window-zoom-box:hover,
+.theme-system7.windowed-app .window-zoom-box:hover {
+  background: var(--sys7-border-black);
+}
+
+.theme-system7 .window-zoom-box::after,
+.theme-system7.windowed-app .window-zoom-box::after {
   content: '';
   width: 5px;
   height: 5px;
   border: 1px solid var(--sys7-border-black);
 }
 
-.theme-system7 .window-controls .window-maximize:hover::after {
+.theme-system7 .window-zoom-box:hover::after,
+.theme-system7.windowed-app .window-zoom-box:hover::after {
   border-color: var(--sys7-text-white);
 }
 
-.theme-system7 .window-controls .window-minimize::after {
-  content: '';
-  width: 6px;
-  height: 1px;
-  background: var(--sys7-border-black);
-}
-
-.theme-system7 .window-controls .window-minimize:hover::after {
-  background: var(--sys7-text-white);
-}
-
 /* ===== WINDOW CONTENT AREA ===== */
-.theme-system7 .window-content {
-  padding: 0;
+.theme-system7 .window-content,
+.theme-system7.windowed-app .window-content {
+  padding: 12px;
   background: var(--sys7-window-bg);
   color: var(--sys7-text-black);
   font-family: 'Geneva', 'Chicago', Monaco, monospace;
   font-size: 12px;
   line-height: 1.4;
+  overflow-y: auto;
+  min-height: 150px;
   margin: 0 2px 2px 2px; /* Account for window border */
-  border: none;
 }
 
 /* ===== CLEAN RESIZE HANDLE ===== */
@@ -304,105 +305,145 @@ body.theme-system7 {
   background-repeat: no-repeat;
 }
 
-/* ===== WINDOWED APP STYLING ===== */
-.theme-system7.windowed-app {
-  background: var(--sys7-window-bg);
-  border: none;
-  box-shadow: 
-    /* Outer raised border effect */
-    inset 1px 1px 0 var(--sys7-border-light),
-    inset -1px -1px 0 var(--sys7-border-dark),
-    /* Inner border */
-    inset 2px 2px 0 var(--sys7-border-light),
-    inset -2px -2px 0 var(--sys7-border-black);
-  border-radius: 0;
-  position: relative;
-  min-height: 200px;
-  min-width: 300px;
-  margin: 20px auto;
-  max-width: 800px;
-}
+/* ===== PROFESSIONAL FORM ELEMENTS ===== */
 
-.theme-system7 .window-titlebar,
-.theme-system7.windowed-app .window-titlebar {
-  height: 20px;
-  background: var(--sys7-titlebar-bg);
-  border-bottom: 1px solid var(--sys7-border-black);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2px 2px 0 2px;
-}
-
-.theme-system7 .window-title,
-.theme-system7.windowed-app .window-title {
-  color: var(--sys7-text-black);
-  font-family: 'Chicago', Monaco, monospace;
-  font-size: 12px;
-  font-weight: bold;
-  text-align: center;
-  user-select: none;
-  line-height: 20px;
-  flex: 1;
-}
-
-.theme-system7 .window-close-box,
-.theme-system7.windowed-app .window-close-box {
-  position: absolute;
-  left: 6px;
-  top: 4px;
-  width: 11px;
-  height: 11px;
+/* System 7 style buttons with clean 3D effect */
+.theme-system7 .button,
+.theme-system7 button,
+.theme-system7 input[type="button"],
+.theme-system7 input[type="submit"] {
+  background: var(--sys7-button-bg);
   border: 1px solid var(--sys7-border-black);
-  background: var(--sys7-window-bg);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0;
-  text-indent: -9999px;
-  overflow: hidden;
   box-shadow: 
     inset 1px 1px 0 var(--sys7-border-light),
     inset -1px -1px 0 var(--sys7-border-dark);
-}
-
-.theme-system7 .window-close-box:hover,
-.theme-system7.windowed-app .window-close-box:hover {
-  background: var(--sys7-border-black);
-}
-
-.theme-system7 .window-close-box::after,
-.theme-system7.windowed-app .window-close-box::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  background: var(--sys7-border-black);
-}
-
-.theme-system7 .window-close-box:hover::after,
-.theme-system7.windowed-app .window-close-box:hover::after {
-  background: var(--sys7-text-white);
-}
-
-.theme-system7 .window-content,
-.theme-system7.windowed-app .window-content {
-  padding: 12px;
-  background: var(--sys7-window-bg);
   color: var(--sys7-text-black);
-  font-family: 'Geneva', 'Chicago', Monaco, monospace;
+  font-family: 'Chicago', Monaco, monospace;
   font-size: 12px;
-  line-height: 1.4;
-  overflow-y: auto;
-  min-height: 150px;
-  margin: 0 2px 2px 2px;
+  padding: 4px 12px;
+  cursor: pointer;
+  border-radius: 0;
+  min-width: 60px;
+  height: 24px;
+  font-weight: normal;
+}
+
+.theme-system7 .button:hover,
+.theme-system7 button:hover {
+  background: #E8E8E8;
+}
+
+.theme-system7 .button:active,
+.theme-system7 button:active {
+  background: var(--sys7-border-black);
+  color: var(--sys7-text-white);
+  box-shadow: 
+    inset -1px -1px 0 var(--sys7-border-light),
+    inset 1px 1px 0 var(--sys7-border-dark);
+}
+
+/* Default/primary button styling */
+.theme-system7 .button.primary,
+.theme-system7 button.primary {
+  border: 2px solid var(--sys7-border-black);
+  font-weight: bold;
+}
+
+/* Text inputs with clean inset effect */
+.theme-system7 input[type="text"],
+.theme-system7 input[type="email"],
+.theme-system7 input[type="password"],
+.theme-system7 input[type="number"] {
+  background: var(--sys7-window-bg);
+  border: 1px solid var(--sys7-border-black);
+  box-shadow: 
+    inset -1px -1px 0 var(--sys7-border-light),
+    inset 1px 1px 0 var(--sys7-border-dark);
+  color: var(--sys7-text-black);
+  font-family: 'Geneva', Monaco, monospace;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 0;
+  height: 20px;
+}
+
+.theme-system7 input[type="text"]:focus,
+.theme-system7 input[type="email"]:focus,
+.theme-system7 input[type="password"]:focus {
+  outline: 1px solid var(--sys7-border-black);
+  outline-offset: 1px;
+}
+
+/* Textareas */
+.theme-system7 textarea {
+  background: var(--sys7-window-bg);
+  border: 1px solid var(--sys7-border-black);
+  box-shadow: 
+    inset -1px -1px 0 var(--sys7-border-light),
+    inset 1px 1px 0 var(--sys7-border-dark);
+  color: var(--sys7-text-black);
+  font-family: 'Geneva', Monaco, monospace;
+  font-size: 12px;
+  padding: 4px;
+  border-radius: 0;
+  resize: none;
+}
+
+.theme-system7 textarea:focus {
+  outline: 1px solid var(--sys7-border-black);
+  outline-offset: 1px;
+}
+
+/* ===== TOOLBAR AND STATUS BAR ===== */
+.theme-system7 .toolbar {
+  background: var(--sys7-titlebar-bg);
+  border-bottom: 1px solid var(--sys7-border-black);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: 'Chicago', Monaco, monospace;
+  margin: 0 2px;
+}
+
+.theme-system7 .status-bar {
+  background: var(--sys7-titlebar-bg);
+  border-top: 1px solid var(--sys7-border-black);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: 'Geneva', Monaco, monospace;
+  height: 16px;
+  line-height: 16px;
+  margin: 0 2px 0 2px;
 }
 
 /* ===== TEXT SELECTION ===== */
 .theme-system7 ::selection {
   background: var(--sys7-border-black);
   color: var(--sys7-text-white);
+}
+
+/* ===== SCROLLBARS (Clean System 7 style) ===== */
+.theme-system7 ::-webkit-scrollbar {
+  width: 16px;
+  background: var(--sys7-titlebar-bg);
+  border-left: 1px solid var(--sys7-border-black);
+}
+
+.theme-system7 ::-webkit-scrollbar-track {
+  background: var(--sys7-titlebar-bg);
+  border: 1px solid var(--sys7-border-dark);
+}
+
+.theme-system7 ::-webkit-scrollbar-thumb {
+  background: var(--sys7-window-bg);
+  border: 1px solid var(--sys7-border-black);
+  border-radius: 0;
+  box-shadow: 
+    inset 1px 1px 0 var(--sys7-border-light),
+    inset -1px -1px 0 var(--sys7-border-dark);
+}
+
+.theme-system7 ::-webkit-scrollbar-thumb:hover {
+  background: #F0F0F0;
 }
 
 /* ===== REMOVE MODERN ELEMENTS ===== */
@@ -417,6 +458,18 @@ body.theme-system7 {
 
 .theme-system7 .menu-bar {
   z-index: 9999;
+}
+
+/* ===== RESPONSIVE MOBILE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+  .theme-system7.windowed-app {
+    margin: 10px;
+    max-width: calc(100vw - 20px);
+  }
+  
+  .theme-system7 .window-content {
+    padding: 8px;
+  }
 }
 
 /* ===== ENSURE PIXELATED RENDERING ===== */

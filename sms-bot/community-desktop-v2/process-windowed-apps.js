@@ -10,11 +10,16 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load .env.local first, fallback to .env
-dotenv.config({ path: '../.env.local' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env.local first, fallback to .env (use absolute paths)
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 if (!process.env.SUPABASE_URL) {
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
 }
 
 const execAsync = promisify(exec);
@@ -83,6 +88,7 @@ Generate a COMPLETE HTML application with:
    - Full HTML document with <!DOCTYPE html>
    - Title: ${submission.appName}
    - Mobile viewport meta tag
+   - Body tag MUST include: <body class="theme-system7 windowed-app">
    - Self-contained (no external dependencies)
 
 2. STYLING (use theme classes, minimal inline styles):
@@ -289,8 +295,8 @@ function getDefaultIcon(template) {
  * Get appropriate theme for template
  */
 function getThemeForTemplate(template) {
-  if (template === 'notepad') return 'notepad';
-  return 'default';
+  // All windowed apps in ToyBox OS should use System 7 theme for authentic classic Mac look
+  return '2ec89c02-d424-4cf6-81f1-371ca6b9afcf'; // System 7 theme ID
 }
 
 /**
