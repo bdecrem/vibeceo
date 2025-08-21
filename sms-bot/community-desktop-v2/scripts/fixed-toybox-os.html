@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToyBox OS - Community Desktop</title>
+    <style>
+        /* Minimal structural CSS - themes handle the rest */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #desktop {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 22px);
+            padding: 8px;
+        }
+        
+        .desktop-icon {
+            position: absolute;
+            width: 75px;
+            text-align: center;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+        
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            z-index: 2000;
+        }
+        
+        .trash-can {
+            position: absolute !important;
+            right: 20px;
+            bottom: 20px;
+        }
+        
+        #window-container {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        .desktop-window {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            min-width: 200px;
+            min-height: 150px;
+        }
+        
+        .window-content {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .window-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="theme-system7">
+    <div id="desktop">
+        <!-- Windowed Apps -->
+        <div class="desktop-icon" style="left: 20px; top: 20px" 
+             onclick="openWindowedApp('community-notepad')">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Notepad</div>
+        </div>
+        
+        
+        
+        <div class="desktop-icon" style="left: 220px; top: 20px" 
+             onclick="alert('Community Chat coming soon! 💬')">
+        <div class="icon">💬</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Chat</div>
+        </div>
+        
+        <!-- Simple Apps -->
+        <div class="desktop-icon" style="left: 20px; top: 120px" 
+             onclick="alert('You rolled: ' + Math.ceil(Math.random() * 6))">
+        <div class="icon">🎲</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Dice</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 120px; top: 120px" 
+             onclick="localStorage.rockName=prompt('Name your pet rock:')||localStorage.rockName||'Rocky';alert('Your pet rock '+localStorage.rockName+' loves you!')">
+        <div class="icon">🪨</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Pet Rock</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 220px; top: 120px" 
+             onclick="const fortunes=['The future is bright!','Adventure awaits!','Be brave today!','Good luck is coming!'];alert('🥠 '+fortunes[Math.floor(Math.random()*fortunes.length)])">
+        <div class="icon">🥠</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Fortune</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 320px; top: 120px" 
+             onclick="changeBgColor()">
+        <div class="icon">🎨</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">BG Color</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 420px; top: 120px" 
+             onclick="alert(new Date().toLocaleTimeString())">
+        <div class="icon">🕐</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Clock</div>
+        </div>
+        
+        <!-- About -->
+        
+            <div class="label">About</div>
+        </div>
+    </div>
+    
+    
+        <div class="desktop-icon" style="left: 320px; top: 20px" onclick="openWindowedApp('app-studio')"><div class="icon">🚀</div><div class="label">App Studio</div></div>
+        <div class="desktop-icon" style="left: 420px; top: 20px" 
+             onclick="openWindowedApp("wordy")">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Wordy</div>
+        </div>
+        <div class="desktop-icon" style="left: 520px; top: 20px" 
+             onclick="openWindowedApp("wordier")">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Wordier</div>
+        </div>
+        <div class="desktop-icon" style="left: 120px; top: 220px" onclick="openWindowedApp('macpaint')"><div class="icon">🎨</div><div class="label">MacPaint</div></div>
+        <div class="desktop-icon" style="left: 220px; top: 220px" 
+             onclick="alert("Testing webhook system")">
+        <div class="icon">🔗</div>
+        <div class="label">Untitled</div>
+    </div>
+            <div class="label">Webhook Test</div>
+        </div>
+        <!-- Trash Can -->
+        <div class="desktop-icon trash-can" 
+             style="position: absolute; right: 20px; bottom: 60px;"
+             id="trashCan"
+             title="Drag icons here to remove them">
+            <div class="icon" style="font-size: 48px;">🗑️</div>
+            <div class="label">Trash</div>
+        </div>
+    
+    <!-- Bart by Bart -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 220px;"
+         onclick="openWindowedApp('bart')"
+         title="Bart">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Bart</div>
+    </div>
+    
+    <!-- GM by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 320px;"
+         onclick="openWindowedApp('gm')"
+         title="GM">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">GM</div>
+    </div>
+    
+    <!-- Hi by hi -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 120px;"
+         onclick="openWindowedApp('hi')"
+         title="Hi">
+        <div class="icon">🎨</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Hi</div>
+    
+    <!-- Random Emojis by bd -->
+    <div class="desktop-icon" 
+         style="left: 28px; top: 106px;"
+         onclick="const emojis = [\'🎉\', \'🌟\', \'🦄\', \'🍕\', \'🎸\', \'🌈\', \'🚀\', \'🎭\', \'🍀\', \'⚡\', \'🎨\', \'🦋\', \'🌺\', \'🎪\', \'🔮\', \'🍄\', \'🎯\', \'🌙\', \'🎊\', \'💫\']; alert(Array.from({length: 3}, () => emojis[Math.floor(Math.random() * emojis.length)]).join(\' \'))"
+         title="Shows 3 random emojis just for fun!">
+        <div class="icon">🎲</div>
+        <div class="label">Random Emojis</div>
+    </div>
+    
+    <!-- HOHO Santa by bd -->
+    <div class="desktop-icon" 
+         style="left: 412px; top: 106px;"
+         onclick="alert(\'🎅 HO HO HO! 🎄✨\')"
+         title="Santa says HO HO HO!">
+        <div class="icon">🎅</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">HOHO Santa</div>
+    </div>
+    
+    <!-- Sleep Mode by vs -->
+    <div class="desktop-icon" 
+         style="left: 626px; top: 99px;"
+         onclick="alert(\'😴💤 Zzzz... Sweet dreams! 💤😴\')"
+         title="Show sleepy Zzzz emoji">
+        <div class="icon">💤</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Sleep Mode</div>
+    </div>
+    
+    <!-- Hello Greeter by bd -->
+    <div class="desktop-icon" 
+         style="left: 727px; top: 104px;"
+         onclick="alert(\'Hi\');"
+         title="Shows a friendly greeting">
+        <div class="icon">👋</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Hello Greeter</div>
+    </div>
+    
+    <!-- Random Emojis by bd -->
+    <div class="desktop-icon" 
+         style="left: 127px; top: 197px;"
+         onclick="const emojis = [\'😀\',\'🎉\',\'🌟\',\'🦄\',\'🍕\',\'🎨\',\'🚀\',\'🎵\',\'🌈\',\'⭐\',\'🎯\',\'🎪\',\'🎭\',\'🎨\',\'🎮\',\'🎲\',\'🎸\',\'🎺\',\'🎻\',\'🎤\',\'🎧\',\'📱\',\'💎\',\'🔮\',\'🌙\',\'☀️\',\'🌸\',\'🌺\',\'🌻\',\'🌷\',\'🌹\',\'🦋\',\'🐝\',\'🐙\',\'🦊\',\'🐯\',\'🦁\',\'🐨\',\'🐼\',\'🐸\',\'🦔\',\'🦉\',\'🐳\',\'🐬\',\'🦄\',\'🦋\',\'🌟\',\'💫\',\'⭐\',\'✨\',\'🎆\',\'🎇\',\'🔥\',\'💖\',\'💝\',\'🎁\',\'🎈\',\'🎊\',\'🎉\']; alert(emojis.sort(() => Math.random() - 0.5).slice(0, 5).join(\' \'))"
+         title="Shows 5 random emojis every time!">
+        <div class="icon">🎲</div>
+        <div class="label">Random Emojis</div>
+    </div>
+    
+    <!-- Emoji Show by bd -->
+    <div class="desktop-icon" 
+         style="left: 228px; top: 190px;"
+         onclick="alert(\'😊\')"
+         title="Shows a happy emoji!">
+        <div class="icon">😊</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Emoji Show</div>
+    </div>
+    
+    <!-- Test Button by cli-test -->
+    <div class="desktop-icon" 
+         style="left: 319px; top: 203px;"
+         onclick="alert(\'Test successful! 🎉\')"
+         title="Click to run a simple test">
+        <div class="icon">🧪</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Test Button</div>
+    </div><div class="label">kdfhgfdh
+    <!-- kdfhgfdh by Anonymous -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 20px;"
+         onclick="openWindowedApp('kdfhgfdh')"
+         title="kdfhgfdh">
+        <div class="icon">😀</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">kdfhgfdh
+    </div><!-- end desktop -->
+    
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="menu-title apple"></div>
+            <div class="menu-title">File</div>
+            <div class="menu-title">Edit</div>
+            <div class="menu-title">View</div>
+            <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
+                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                    <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up</div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-right">
+            <div id="menu-clock" aria-label="Clock"></div>
+        </div>
+
+    <!-- BD by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 120px;"
+         onclick="openWindowedApp('bd')"
+         title="BD">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">BD</div>
+    </div>
+
+    <!-- BDpaint by bd -->
+    <div class="desktop-icon" 
+         style="left: 220px; top: 120px;"
+         onclick="openWindowedApp('bdpaint')"
+         title="BDpaint">
+        <div class="icon">🎨</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">BDpaint</div>
+    </div>
+
+    <!-- Words by bd -->
+    <div class="desktop-icon" 
+         style="left: 320px; top: 120px;"
+         onclick="openWindowedApp('words')"
+         title="Words">
+        <div class="icon">📝</div>
+        <div class="label">Untitled</div>
+    </div>
+        <div class="label">Words</div>
+    </div>
+    </div>
+    
+    <script>
+        // Complete Window Manager and Desktop System
+        /**
+ * Community Desktop Window Manager
+ * Handles windowed apps with iframe content
+ * Designed to be added to desktop.html without breaking existing functionality
+ */
+
+class WindowManager {
+    constructor() {
+        this.windows = new Map();
+        this.zIndex = 1000;
+        this.activeWindow = null;
+        this.nextWindowId = 1;
+    }
+
+    /**
+     * Initialize the window manager
+     */
+    init() {
+        // Add window container to desktop if it doesn't exist
+        if (!document.getElementById('window-container')) {
+            const container = document.createElement('div');
+            container.id = 'window-container';
+            document.getElementById('desktop').appendChild(container);
+        }
+
+        // Add window styles if not already present
+        if (!document.getElementById('window-manager-styles')) {
+            this.injectStyles();
+        }
+    }
+
+    /**
+     * Open a new windowed app
+     */
+    openApp(appName, appUrl, options = {}) {
+        const defaults = {
+            width: 600,
+            height: 400,
+            x: 100 + (this.windows.size * 30),
+            y: 50 + (this.windows.size * 30),
+            icon: '📄',
+            resizable: true,
+            minimizable: true,
+            maximizable: true
+        };
+
+        const config = { ...defaults, ...options };
+        const windowId = `window-${this.nextWindowId++}`;
+
+        // Create window element
+        const windowEl = this.createWindow(windowId, appName, appUrl, config);
+        
+        // Add to container
+        document.getElementById('window-container').appendChild(windowEl);
+        
+        // Store window reference
+        this.windows.set(windowId, {
+            element: windowEl,
+            appName,
+            appUrl,
+            config,
+            state: 'normal',
+            zIndex: ++this.zIndex
+        });
+
+        // Make it active
+        this.focusWindow(windowId);
+        
+        // Make draggable
+        this.makeDraggable(windowEl);
+        
+        // Make resizable if enabled
+        if (config.resizable) {
+            this.makeResizable(windowEl);
+        }
+
+        return windowId;
+    }
+
+    /**
+     * Create window HTML structure
+     */
+    createWindow(windowId, appName, appUrl, config) {
+        const window = document.createElement('div');
+        window.className = 'desktop-window';
+        window.id = windowId;
+        window.style.width = config.width + 'px';
+        window.style.height = config.height + 'px';
+        window.style.left = config.x + 'px';
+        window.style.top = config.y + 'px';
+        window.style.zIndex = this.zIndex;
+
+        window.innerHTML = `
+            <div class="window-titlebar">
+                <div class="window-title">
+                    <span class="window-icon">${config.icon}</span>
+                    <span class="window-name">${appName}</span>
+                </div>
+                <div class="window-controls">
+                    ${config.minimizable ? '<button class="window-minimize" onclick="windowManager.minimizeWindow(\'' + windowId + '\')">_</button>' : ''}
+                    ${config.maximizable ? '<button class="window-maximize" onclick="windowManager.maximizeWindow(\'' + windowId + '\')">□</button>' : ''}
+                    <button class="window-close" onclick="windowManager.closeWindow('${windowId}')">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <iframe src="${appUrl}" frameborder="0" style="width:100%;height:100%;"></iframe>
+            </div>
+        `;
+
+        // Click to focus
+        window.addEventListener('mousedown', () => this.focusWindow(windowId));
+
+        return window;
+    }
+
+    /**
+     * Make window draggable
+     */
+    makeDraggable(windowEl) {
+        const titlebar = windowEl.querySelector('.window-titlebar');
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        titlebar.addEventListener('mousedown', (e) => {
+            // Don't drag if clicking controls
+            if (e.target.closest('.window-controls')) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = windowEl.offsetLeft;
+            initialY = windowEl.offsetTop;
+            
+            titlebar.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            windowEl.style.left = (initialX + dx) + 'px';
+            windowEl.style.top = (initialY + dy) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            titlebar.style.cursor = 'grab';
+        });
+    }
+
+    /**
+     * Make window resizable
+     */
+    makeResizable(windowEl) {
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'window-resize-handle';
+        windowEl.appendChild(resizeHandle);
+
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = parseInt(windowEl.style.width, 10);
+            startHeight = parseInt(windowEl.style.height, 10);
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const width = startWidth + (e.clientX - startX);
+            const height = startHeight + (e.clientY - startY);
+            
+            if (width > 200) windowEl.style.width = width + 'px';
+            if (height > 150) windowEl.style.height = height + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+        });
+    }
+
+    /**
+     * Focus a window (bring to front)
+     */
+    focusWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        // Remove active class from all windows
+        document.querySelectorAll('.desktop-window').forEach(w => {
+            w.classList.remove('active');
+        });
+
+        // Add active class and update z-index
+        windowData.element.classList.add('active');
+        windowData.element.style.zIndex = ++this.zIndex;
+        windowData.zIndex = this.zIndex;
+        
+        this.activeWindow = windowId;
+    }
+
+    /**
+     * Close a window
+     */
+    closeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        // Remove from DOM
+        windowData.element.remove();
+        
+        // Remove from map
+        this.windows.delete(windowId);
+        
+        // Update active window
+        if (this.activeWindow === windowId) {
+            this.activeWindow = null;
+        }
+    }
+
+    /**
+     * Minimize window (hide it)
+     */
+    minimizeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        windowData.element.style.display = 'none';
+        windowData.state = 'minimized';
+        
+        // TODO: Add to taskbar
+    }
+
+    /**
+     * Maximize/restore window
+     */
+    maximizeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        if (windowData.state === 'maximized') {
+            // Restore
+            windowData.element.style.width = windowData.config.width + 'px';
+            windowData.element.style.height = windowData.config.height + 'px';
+            windowData.element.style.left = windowData.config.x + 'px';
+            windowData.element.style.top = windowData.config.y + 'px';
+            windowData.state = 'normal';
+        } else {
+            // Save current position
+            windowData.config.width = parseInt(windowData.element.style.width);
+            windowData.config.height = parseInt(windowData.element.style.height);
+            windowData.config.x = parseInt(windowData.element.style.left);
+            windowData.config.y = parseInt(windowData.element.style.top);
+            
+            // Maximize
+            windowData.element.style.width = 'calc(100% - 20px)';
+            windowData.element.style.height = 'calc(100% - 60px)';
+            windowData.element.style.left = '10px';
+            windowData.element.style.top = '10px';
+            windowData.state = 'maximized';
+        }
+    }
+
+    /**
+     * Inject CSS styles for windows
+     */
+    injectStyles() {
+        const styles = document.createElement('style');
+        styles.id = 'window-manager-styles';
+        styles.innerHTML = `
+            #window-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                top: 22px; bottom: 0;
+                pointer-events: none;
+            }
+            
+            .desktop-window {
+                position: absolute;
+                background: #c0c0c0;
+                border: 2px solid;
+                border-color: #ffffff #808080 #808080 #ffffff;
+                box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+                display: flex;
+                flex-direction: column;
+                pointer-events: auto;
+                min-width: 200px;
+                min-height: 150px;
+            }
+            
+            .desktop-window.active {
+                border-color: #ffffff #404040 #404040 #ffffff;
+                box-shadow: 3px 3px 15px rgba(0,0,0,0.4);
+            }
+            
+            .window-titlebar {
+                height: 28px;
+                background: linear-gradient(to right, #000080, #1084d0);
+                color: white;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 3px;
+                cursor: grab;
+                user-select: none;
+            }
+            
+            .desktop-window.active .window-titlebar {
+                background: linear-gradient(to right, #000080, #1084d0);
+            }
+            
+            .desktop-window:not(.active) .window-titlebar {
+                background: linear-gradient(to right, #808080, #b5b5b5);
+            }
+            
+            .window-title {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Tahoma', sans-serif;
+            }
+            
+            .window-icon {
+                font-size: 16px;
+            }
+            
+            .window-controls {
+                display: flex;
+                gap: 2px;
+            }
+            
+            .window-controls button {
+                width: 20px;
+                height: 20px;
+                border: 2px solid;
+                border-color: #ffffff #404040 #404040 #ffffff;
+                background: #c0c0c0;
+                font-size: 12px;
+                line-height: 1;
+                cursor: pointer;
+                font-family: 'Tahoma', sans-serif;
+                padding: 0;
+            }
+            
+            .window-controls button:active {
+                border-color: #404040 #ffffff #ffffff #404040;
+            }
+            
+            .window-content {
+                flex: 1;
+                background: white;
+                border: 2px solid;
+                border-color: #808080 #ffffff #ffffff #808080;
+                overflow: hidden;
+            }
+            
+            .window-resize-handle {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 15px;
+                height: 15px;
+                cursor: nwse-resize;
+                background: linear-gradient(135deg, transparent 50%, #808080 50%);
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+}
+
+// Create global instance
+window.windowManager = new WindowManager();
+        
+        // Global functions for compatibility
+        function createWindow(appName, appUrl, options = {}) {
+            return window.windowManager.openApp(appName, appUrl, options);
+        }
+
+        function showWindow(appName, appUrl, options = {}) {
+            return window.windowManager.openApp(appName, appUrl, options);
+        }
+
+        // Enhanced openWindowedApp function
+        function openWindowedApp(appId) {
+            const app = window.windowedApps[appId];
+            if (!app) {
+                console.error('Unknown windowed app:', appId);
+                return;
+            }
+            
+            
+            
+            const windowId = window.windowManager.openApp(app.name, app.url, {
+                width: app.width || 800,
+                height: app.height || 600,
+                icon: app.icon || '📱',
+                resizable: true,
+                minimizable: true,
+                maximizable: true
+            });
+            
+            console.log('Opened ' + app.name + ' in window ' + windowId);
+            return windowId;
+        }
+        
+        
+        window.windowedApps = {
+        'kdfhgfdh': {
+            name: 'kdfhgfdh',
+            url: '/community/kdfhgfdh',
+            icon: '😀',
+            width: 400,
+            height: 300
+        },'words': {
+            name: 'Words',
+            url: '/community/words',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'bdpaint': {
+            name: 'BDpaint',
+            url: '/community/bdpaint',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'bd': {
+            name: 'BD',
+            url: '/community/bd',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'hi': {
+            name: 'Hi',
+            url: '/hi/hi',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'gm': {
+            name: 'GM',
+            url: '/bd/gm',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'bart': {
+            name: 'Bart',
+            url: '/bart/bart',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+            'community-notepad': {
+                name: 'Community Notepad',
+                url: '/public/community-notepad',
+                icon: '📝',
+                width: 600,
+                height: 400
+            },
+            'app-studio': {
+                name: 'App Studio',
+                url: '/public/app-studio',
+                icon: '🚀',
+                width: 800,
+                height: 600
+            },
+            'wordy': {
+                name: 'Wordy',
+                url: '/community/wordy',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+            'wordier': {
+                name: 'Wordier',
+                url: '/community/wordier',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+            'macpaint': {
+                name: 'MacPaint',
+                url: '/community/macpaint',
+                icon: '🎨',
+                width: 800,
+                height: 600
+            }
+        };
+        
+        
+                // Enhanced desktop icon dragging with trash functionality
+        let draggedIcon = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function setupDragForIcons() {
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            icons.forEach(function(icon) {
+                icon.addEventListener('mousedown', handleIconMouseDown);
+                icon.style.cursor = 'move';
+                icon.style.position = 'absolute';
+            });
+            
+            document.addEventListener('mousemove', handleIconDrag);
+            document.addEventListener('mouseup', handleIconDragEnd);
+        }
+
+        function handleIconMouseDown(event) {
+            const icon = event.currentTarget;
+            if (icon.classList.contains('trash-can')) return;
+            
+            // Store the start position to detect if it's a drag or click
+            const startX = event.clientX;
+            const startY = event.clientY;
+            let hasMoved = false;
+            let dragStarted = false;
+            
+            // Prepare for potential drag
+            draggedIcon = icon;
+            const rect = icon.getBoundingClientRect();
+            const desktop = document.querySelector('#desktop');
+            const desktopRect = desktop.getBoundingClientRect();
+            
+            dragOffset.x = event.clientX - rect.left;
+            dragOffset.y = event.clientY - rect.top;
+            
+            // Function to start dragging
+            function startDrag(e) {
+                const distance = Math.sqrt(
+                    Math.pow(e.clientX - startX, 2) + 
+                    Math.pow(e.clientY - startY, 2)
+                );
+                
+                // Only start dragging if moved more than 5 pixels
+                if (distance > 5 && !dragStarted) {
+                    dragStarted = true;
+                    isDragging = true;
+                    hasMoved = true;
+                    draggedIcon.style.opacity = '0.7';
+                    draggedIcon.style.zIndex = '1000';
+                    draggedIcon.style.pointerEvents = 'none';
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+            
+            // Function to end drag
+            function endDrag(e) {
+                document.removeEventListener('mousemove', startDrag);
+                document.removeEventListener('mouseup', endDrag);
+                
+                // If we didn't move, it's a click - don't prevent default, allow onclick to fire
+                if (!hasMoved) {
+                    draggedIcon = null;
+                    return;
+                }
+                
+                // Otherwise handle as drag end
+                if (isDragging) {
+                    handleIconDragEnd(e);
+                }
+            }
+            
+            document.addEventListener('mousemove', startDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function handleIconDrag(event) {
+            if (!isDragging || !draggedIcon) return;
+            
+            event.preventDefault();
+            
+            const desktop = document.querySelector('#desktop');
+            const desktopRect = desktop.getBoundingClientRect();
+            
+            let x = event.clientX - desktopRect.left - dragOffset.x;
+            let y = event.clientY - desktopRect.top - dragOffset.y;
+            
+            x = Math.max(0, Math.min(x, desktopRect.width - draggedIcon.offsetWidth));
+            y = Math.max(0, Math.min(y, desktopRect.height - draggedIcon.offsetHeight - 50));
+            
+            draggedIcon.style.left = x + 'px';
+            draggedIcon.style.top = y + 'px';
+            
+            // Check trash can highlighting
+            const trash = document.getElementById('trashCan');
+            if (trash) {
+                const trashRect = trash.getBoundingClientRect();
+                const iconRect = draggedIcon.getBoundingClientRect();
+                
+                const isOverTrash = (
+                    iconRect.left < trashRect.right &&
+                    iconRect.right > trashRect.left &&
+                    iconRect.top < trashRect.bottom &&
+                    iconRect.bottom > trashRect.top
+                );
+                
+                highlightTrash(isOverTrash);
+            }
+        }
+
+        async function handleIconDragEnd(event) {
+            if (!isDragging || !draggedIcon) return;
+            
+            isDragging = false;
+            
+            // Check if dropped on trash
+            const trash = document.getElementById('trashCan');
+            if (trash) {
+                const trashRect = trash.getBoundingClientRect();
+                const iconRect = draggedIcon.getBoundingClientRect();
+                
+                const isOverTrash = (
+                    iconRect.left < trashRect.right &&
+                    iconRect.right > trashRect.left &&
+                    iconRect.top < trashRect.bottom &&
+                    iconRect.bottom > trashRect.top
+                );
+                
+                if (isOverTrash) {
+                    const iconName = draggedIcon.querySelector('.label').textContent;
+                    if (confirm('Hide "' + iconName + '" from desktop?')) {
+                        draggedIcon.style.display = 'none';
+                        await saveIconPositions(); // After deletion
+                        showTrashFeedback(iconName);
+                        draggedIcon = null;
+                        highlightTrash(false);
+                        return;
+                    }
+                }
+                
+                highlightTrash(false);
+            }
+            
+            draggedIcon.style.opacity = '1';
+            draggedIcon.style.zIndex = '';
+            draggedIcon.style.pointerEvents = '';
+                
+                // Restore selection after drag
+                document.body.style.userSelect = '';
+                document.body.style.webkitUserSelect = '';
+                document.body.style.MozUserSelect = '';
+            
+            await saveIconPositions();
+            draggedIcon = null;
+        }
+
+        function highlightTrash(highlight) {
+            const trash = document.getElementById('trashCan');
+            if (!trash) return;
+            
+            if (highlight) {
+                trash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                trash.style.border = '3px dashed red';
+                trash.style.transform = 'scale(1.1)';
+            } else {
+                trash.style.backgroundColor = '';
+                trash.style.border = '';
+                trash.style.transform = '';
+            }
+        }
+
+        function showTrashFeedback(iconName) {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
+            feedback.textContent = '"' + iconName + '" hidden from desktop';
+            document.body.appendChild(feedback);
+            
+            setTimeout(function() {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 2500);
+        }
+
+        async function loadIconPositions() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-desktop-layout&action_type=desktop_state&participant_id=global');
+                
+                if (!response.ok) {
+                    console.log('No saved layout found, using default positions');
+                    return;
+                }
+                
+                const result = await response.json();
+                const layoutData = result && result.length > 0 ? result[0] : null;
+                
+                if (layoutData && layoutData.content_data && layoutData.content_data.icons) {
+                    const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+                    const savedIcons = layoutData.content_data.icons;
+                    
+                    icons.forEach(function(icon) {
+                        const label = icon.querySelector('.label').textContent;
+                        const id = label.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        
+                        if (savedIcons[id]) {
+                            const savedIcon = savedIcons[id];
+                            icon.style.left = savedIcon.x + 'px';
+                            icon.style.top = savedIcon.y + 'px';
+                            icon.style.display = savedIcon.visible ? '' : 'none';
+                        }
+                    });
+                    
+                    console.log('✅ Desktop layout loaded from server');
+                }
+            } catch (error) {
+                console.error('Error loading desktop layout:', error);
+            }
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            window.windowManager.init();
+            
+            setTimeout(async function() {
+                setupDragForIcons();
+                await loadIconPositions();
+                await loadBgColor();
+            }, 100);
+        });
+        
+        console.log('ToyBox OS Ready - Fixed Version');
+        
+        
+        // Persistent Background Color functionality
+        async function changeBgColor() {
+            // Generate random color
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            
+            // Apply to body
+            document.body.style.background = randomColor;
+            
+            // Save to database using same ZAD system
+            await saveBgColor(randomColor);
+            
+            console.log('🎨 Background color changed to:', randomColor);
+        }
+        
+        async function saveBgColor(color) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-desktop-layout',
+                        participant_id: 'global',
+                        action_type: 'bg_color',
+                        content_data: {
+                            backgroundColor: color,
+                            lastModified: new Date().toISOString(),
+                            modifiedBy: 'user'
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Background color saved:', color);
+                } else {
+                    console.error('❌ Failed to save background color');
+                }
+            } catch (error) {
+                console.error('❌ Error saving background color:', error);
+            }
+        }
+        
+        async function loadBgColor() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-desktop-layout&action_type=bg_color&participant_id=global');
+                
+                if (!response.ok) {
+                    console.log('No saved background color found, using default');
+                    return;
+                }
+                
+                const result = await response.json();
+                const bgData = result && result.length > 0 ? result[0] : null;
+                
+                if (bgData && bgData.content_data && bgData.content_data.backgroundColor) {
+                    const savedColor = bgData.content_data.backgroundColor;
+                    document.body.style.background = savedColor;
+                    console.log('✅ Background color restored:', savedColor);
+                }
+            } catch (error) {
+                console.error('❌ Error loading background color:', error);
+            }
+        }
+        
+        
+        // Special menu dropdown functionality
+        function toggleSpecialMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('specialMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeSpecialMenu, { once: true });
+                }, 10);
+            }
+        }
+        
+        function closeSpecialMenu() {
+            document.getElementById('specialMenu').style.display = 'none';
+        }
+        
+        // Clean Up Desktop functionality
+        async function cleanUpDesktop(event) {
+            event.stopPropagation();
+            closeSpecialMenu();
+            
+            console.log('🧹 Cleaning up desktop...');
+            
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            const paddingTop = 80; // Top padding
+            const paddingLeft = 40; // Left padding
+            const iconWidth = 75; // Width of each icon
+            const iconHeight = 100; // Height including label
+            const spacingX = 20; // Horizontal spacing between icons
+            const spacingY = 20; // Vertical spacing between icons
+            const iconsPerRow = 6; // Icons per row
+            
+            let currentRow = 0;
+            let currentCol = 0;
+            
+            icons.forEach((icon, index) => {
+                // Skip if icon is hidden
+                if (icon.style.display === 'none') return;
+                
+                const x = paddingLeft + (currentCol * (iconWidth + spacingX));
+                const y = paddingTop + (currentRow * (iconHeight + spacingY));
+                
+                // Animate to new position
+                icon.style.transition = 'all 0.3s ease-out';
+                icon.style.left = x + 'px';
+                icon.style.top = y + 'px';
+                
+                currentCol++;
+                if (currentCol >= iconsPerRow) {
+                    currentCol = 0;
+                    currentRow++;
+                }
+            });
+            
+            // Remove transition after animation
+            setTimeout(() => {
+                icons.forEach(icon => {
+                    icon.style.transition = '';
+                });
+            }, 300);
+            
+            // Save the new positions
+            await saveIconPositions();
+            
+            console.log('✅ Desktop cleaned up!');
+            
+            // Show feedback
+            showCleanupFeedback();
+        }
+        
+        function showCleanupFeedback() {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
+            feedback.textContent = 'Desktop cleaned up!';
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 2000);
+        }
+// ZAD-based persistent desktop layout system
+async function saveIconPositions() {
+    const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+    const iconData = {};
+    
+    icons.forEach(function(icon) {
+        const label = icon.querySelector('.label').textContent;
+        const id = label.toLowerCase().replace(/[^a-z0-9]/g, '');
+        iconData[id] = {
+            x: parseInt(icon.style.left) || 0,
+            y: parseInt(icon.style.top) || 0,
+            visible: icon.style.display !== 'none',
+            label: label
+        };
+    });
+    
+    try {
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: 'toybox-desktop-layout',
+                participant_id: 'global',
+                action_type: 'desktop_state',
+                content_data: {
+                    icons: iconData,
+                    lastModified: new Date().toISOString(),
+                    modifiedBy: 'user'
+                }
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Desktop layout saved for everyone');
+        }
+    } catch (error) {
+        console.error('Error saving desktop layout:', error);
+    }
+}
+
+async function deleteIconFromDesktop(iconElement) {
+    const label = iconElement.querySelector('.label').textContent;
+    iconElement.style.display = 'none';
+    await saveIconPositions();
+    console.log('🗑️ Deleted', label, 'from desktop for everyone');
+}
+
+        // System 7 Menu Clock
+        function updateMenuClock() {
+            const clockEl = document.getElementById('menu-clock');
+            if (clockEl) {
+                const now = new Date();
+                const hours = now.getHours() % 12 || 12;
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                clockEl.textContent = hours + ':' + minutes + ' ' + ampm;
+            }
+        }
+        setInterval(updateMenuClock, 1000);
+        updateMenuClock(); // Initial call
+</script>
+</body>
+</html>

@@ -19,10 +19,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Load environment variables
-const result = dotenv.config({ path: '../.env.local' });
+let result = dotenv.config({ path: '../../.env.local' });
 if (result.error) {
-    console.error('Error loading .env.local:', result.error.message);
-    process.exit(1);
+    // Try the regular .env file
+    result = dotenv.config({ path: '../../.env' });
+    if (result.error) {
+        console.error('Error loading .env files:', result.error.message);
+        process.exit(1);
+    }
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
