@@ -39,11 +39,22 @@ const injectedScript = `
   const marquee = document.createElement('div');
   marquee.id = 'selection-marquee';
   desktop.appendChild(marquee);
+  // Transparent overlay to capture pointer events reliably in Safari
+  const overlay = document.createElement('div');
+  overlay.id = 'interaction-overlay';
+  overlay.style.position = 'absolute';
+  overlay.style.left = '0';
+  overlay.style.top = '0';
+  overlay.style.right = '0';
+  overlay.style.bottom = '0';
+  overlay.style.pointerEvents = 'none';
+  overlay.style.zIndex = '9998';
+  desktop.appendChild(overlay);
   let selecting = false; let startX=0, startY=0; let rafId=null;
 
   function rectsOverlap(r1,r2){return !(r2.left>r1.right||r2.right<r1.left||r2.top>r1.bottom||r2.bottom<r1.top)}
 
-  // Use pointer events for Safari reliability
+  // Use overlay for selection to avoid interference with icons/windows
   desktop.addEventListener('pointerdown', (e)=>{
     if(e.target.closest('.desktop-icon')) return; // only empty space
     const dRect = desktop.getBoundingClientRect();
@@ -54,8 +65,9 @@ const injectedScript = `
     marquee.style.width='0px'; marquee.style.height='0px';
     document.body.style.userSelect='none';
     e.preventDefault();
+    overlay.style.pointerEvents = 'auto';
   });
-  document.addEventListener('pointermove', (e)=>{
+  overlay.addEventListener('pointermove', (e)=>{
     if(!selecting) return;
     const dRect = desktop.getBoundingClientRect();
     const x = Math.min(e.clientX, startX) - dRect.left; const y = Math.min(e.clientY, startY) - dRect.top;
@@ -70,7 +82,7 @@ const injectedScript = `
       });
     });
   });
-  document.addEventListener('pointerup', ()=>{ if(selecting){ selecting=false; marquee.style.display='none'; document.body.style.userSelect=''; }});
+  overlay.addEventListener('pointerup', ()=>{ if(selecting){ selecting=false; marquee.style.display='none'; document.body.style.userSelect=''; overlay.style.pointerEvents='none'; }});
 
   // Group drag integration: wrap existing icon drag start to support groups
   const origHandleMouseDown = window.handleIconMouseDown;
