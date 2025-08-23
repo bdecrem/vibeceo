@@ -24,17 +24,85 @@ class WidgetGenerator {
         }
         
         let systemPrompt = """
-        Create a simple, beautiful HTML widget for iPhone. Return ONLY complete HTML - no explanations.
+        You are a master iOS widget developer. Create a FULLY FUNCTIONAL HTML widget for iPhone. Return ONLY complete HTML with working JavaScript - no explanations, no markdown formatting, no code blocks.
 
-        Requirements:
-        - Full-screen widget (width: 100%, height: 100%, no margins)
-        - Beautiful colors and smooth animations
-        - Large, touch-friendly buttons (minimum 60px)
-        - Include real images from Unsplash or Giphy when relevant
-        - Add satisfying audio feedback using: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playNote", note: "C", octave: 4, duration: 0.3})
-        - Content should auto-disappear after 3 seconds to encourage re-trying
+        CRITICAL REQUIREMENTS - THESE MUST ALL WORK:
+        1. ALL buttons/elements MUST respond to touch events (touchstart, touchend, click)
+        2. JavaScript MUST be functional and error-free
+        3. Include REAL images from URLs (Unsplash: https://source.unsplash.com/400x300/?keyword or Giphy: https://media.giphy.com/media/ID/giphy.gif)
+        4. Audio feedback MUST work: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playNote", note: "C", octave: 4, duration: 0.3})
+        5. Include variety - at least 20 different responses/content pieces for random selection
+        6. Content auto-disappears after 3 seconds to encourage re-trying
+        7. Smooth animations and visual effects
 
-        Template structure:
+        MANDATORY TECHNICAL PATTERNS:
+
+        Touch Events (USE THESE EXACTLY):
+        ```javascript
+        element.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            // Touch feedback
+            this.style.transform = 'scale(0.95)';
+            this.style.opacity = '0.7';
+        });
+        
+        element.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            this.style.transform = 'scale(1)';
+            this.style.opacity = '1';
+            // Your action here
+            handleButtonPress();
+        });
+        
+        // Fallback for desktop testing
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleButtonPress();
+        });
+        ```
+
+        Audio Integration (USE EXACTLY):
+        ```javascript
+        function playSound(note = "C", octave = 4, duration = 0.3) {
+            try {
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nativeAudio) {
+                    window.webkit.messageHandlers.nativeAudio.postMessage({
+                        action: "playNote", 
+                        note: note, 
+                        octave: octave, 
+                        duration: duration
+                    });
+                }
+            } catch(e) {
+                console.log('Audio not available');
+            }
+        }
+        ```
+
+        Random Content Array (ALWAYS INCLUDE 20+ ITEMS):
+        ```javascript
+        const responses = [
+            {text: "Option 1", image: "https://source.unsplash.com/400x300/?cat", note: "C"},
+            {text: "Option 2", image: "https://source.unsplash.com/400x300/?dog", note: "D"},
+            // ... MINIMUM 20 ITEMS
+        ];
+        ```
+
+        Auto-Disappear Pattern:
+        ```javascript
+        function showThenHide(element) {
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.opacity = '0';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                    element.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        }
+        ```
+
+        MANDATORY HTML STRUCTURE:
         ```html
         <!DOCTYPE html>
         <html>
@@ -46,28 +114,64 @@ class WidgetGenerator {
                 html, body { width: 100%; height: 100%; overflow: hidden; }
                 body { 
                     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
                     display: flex; align-items: center; justify-content: center;
+                    position: relative;
                 }
+                .button {
+                    min-height: 80px; min-width: 200px; font-size: 24px;
+                    border: none; border-radius: 20px; cursor: pointer;
+                    transition: all 0.2s ease; user-select: none;
+                    -webkit-tap-highlight-color: transparent;
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+                }
+                .content {
+                    position: absolute; top: 50%; left: 50%;
+                    transform: translate(-50%, -50%); text-align: center;
+                    transition: all 0.5s ease; display: none;
+                }
+                img { max-width: 300px; max-height: 200px; border-radius: 15px; }
             </style>
         </head>
         <body>
-            <!-- Your widget content here -->
-            <script>
-                function playSound() {
-                    try {
-                        window.webkit?.messageHandlers?.nativeAudio?.postMessage({
-                            action: "playNote", note: "C", octave: 4, duration: 0.3
-                        });
-                    } catch(e) {}
-                }
-            </script>
+            <!-- IMPLEMENT ACTUAL FUNCTIONALITY HERE -->
         </body>
         </html>
         ```
 
-        User request: "{prompt}"
-        """
+        EXAMPLES OF WORKING PATTERNS:
+
+        For "DO NOT PUSH" button:
+        - Big red button with warning styling
+        - Array of 20+ silly images/texts when pressed
+        - Particle explosion effect
+        - Screen shake animation
+        - Random sound notes
+        - Content disappears after 3 seconds
+
+        For games:
+        - Touch-responsive game controls
+        - Score tracking with local storage
+        - Visual feedback for all interactions
+        - Progressive difficulty
+
+        For utilities:
+        - Working form inputs with validation
+        - Real API calls to useful services
+        - Data persistence
+        - Interactive controls
+
+        QUALITY CHECKLIST - ALL MUST BE TRUE:
+        ✓ Button responds to touch immediately
+        ✓ JavaScript executes without errors
+        ✓ Images load from real URLs
+        ✓ Audio plays when expected
+        ✓ Content includes 20+ variations
+        ✓ Auto-hide works after 3 seconds
+        ✓ Animations are smooth
+        ✓ No console errors
+
+        USER REQUEST: """
 
         let requestBody: [String: Any] = [
             "model": "claude-3-5-sonnet-20241022",
