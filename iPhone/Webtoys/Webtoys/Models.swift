@@ -69,6 +69,36 @@ struct WebtToy: Identifiable, Codable {
     // Mock data for development
     static let mockData: [WebtToy] = [
         WebtToy(
+            title: "Mini Weather",
+            description: "Beautiful weather widget with animated clouds and live temperature",
+            creator: "WeatherPro",
+            createdAt: Date().addingTimeInterval(-1800),
+            likes: 156,
+            shares: 34,
+            type: .app,
+            url: "https://webtoys.ai/public/mini-weather"
+        ),
+        WebtToy(
+            title: "Color Palette",
+            description: "Interactive color picker with trending palettes and hex codes",
+            creator: "DesignStudio",
+            createdAt: Date().addingTimeInterval(-3600),
+            likes: 289,
+            shares: 67,
+            type: .app,
+            url: "https://webtoys.ai/public/color-palette"
+        ),
+        WebtToy(
+            title: "Focus Timer",
+            description: "Minimalist pomodoro timer with breathing animations and zen vibes",
+            creator: "ProductivityGuru",
+            createdAt: Date().addingTimeInterval(-5400),
+            likes: 124,
+            shares: 28,
+            type: .app,
+            url: "https://webtoys.ai/public/focus-timer"
+        ),
+        WebtToy(
             title: "Beat Metronome",
             description: "Professional metronome with customizable tempo and beautiful design",
             creator: "MusicMaker",
@@ -77,6 +107,16 @@ struct WebtToy: Identifiable, Codable {
             shares: 15,
             type: .app,
             url: "https://webtoys.ai/public/beat-metronome"
+        ),
+        WebtToy(
+            title: "Tap Counter",
+            description: "Satisfying tap counter with ripple effects and smooth animations",
+            creator: "CountMaster",
+            createdAt: Date().addingTimeInterval(-9000),
+            likes: 167,
+            shares: 42,
+            type: .app,
+            url: "https://webtoys.ai/public/tap-counter"
         ),
         WebtToy(
             title: "Cosmic Screensaver",
@@ -93,17 +133,57 @@ struct WebtToy: Identifiable, Codable {
 
 // MARK: - WebtToy Store
 class WebtToyStore: ObservableObject {
-    @Published var webtoys: [WebtToy] = WebtToy.mockData
+    @Published var webtoys: [WebtToy] = []
     
     static let shared = WebtToyStore()
+    private let userDefaults = UserDefaults.standard
+    private let storageKey = "SavedWebtToys"
     
-    private init() {}
+    private init() {
+        loadWebtToys()
+    }
     
     func addWebtToy(_ webtoy: WebtToy) {
         webtoys.insert(webtoy, at: 0) // Add to top of feed
+        saveWebtToys()
     }
     
     func removeWebtToy(_ webtoy: WebtToy) {
         webtoys.removeAll { $0.id == webtoy.id }
+        saveWebtToys()
+    }
+    
+    private func saveWebtToys() {
+        do {
+            let data = try JSONEncoder().encode(webtoys)
+            userDefaults.set(data, forKey: storageKey)
+            print("✅ Saved \(webtoys.count) WebtToys to storage")
+        } catch {
+            print("❌ Failed to save WebtToys: \(error)")
+        }
+    }
+    
+    private func loadWebtToys() {
+        guard let data = userDefaults.data(forKey: storageKey) else {
+            print("📦 No saved WebtToys found, using mock data")
+            webtoys = WebtToy.mockData
+            saveWebtToys() // Save mock data for next time
+            return
+        }
+        
+        do {
+            webtoys = try JSONDecoder().decode([WebtToy].self, from: data)
+            print("✅ Loaded \(webtoys.count) WebtToys from storage")
+        } catch {
+            print("❌ Failed to load WebtToys: \(error)")
+            print("📦 Using mock data as fallback")
+            webtoys = WebtToy.mockData
+            saveWebtToys()
+        }
+    }
+    
+    func resetToMockData() {
+        webtoys = WebtToy.mockData
+        saveWebtToys()
     }
 }
