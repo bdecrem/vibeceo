@@ -10,6 +10,7 @@ struct WidgetGeneratorView: View {
     @State private var showingSuccessMessage = false
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var useReactNative = false // Toggle for React Native vs WebView
     
     private let widgetGenerator = WidgetGenerator()
     private let store = WebtToyStore.shared
@@ -26,12 +27,13 @@ struct WidgetGeneratorView: View {
                     .font(.body)
                     .foregroundColor(.secondary)
                 
-                // Quick Examples
+                // Quick Examples - Musical Focus
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ExampleCard(title: "Clock", emoji: "🕐", prompt: "A digital clock with animated seconds")
-                        ExampleCard(title: "Counter", emoji: "🔢", prompt: "A simple counter with + and - buttons")
-                        ExampleCard(title: "Progress", emoji: "📊", prompt: "An animated progress bar")
+                        ExampleCard(title: "Piano", emoji: "🎹", prompt: "A beautiful piano with black and white keys")
+                        ExampleCard(title: "Chords", emoji: "🎸", prompt: "A chord player with progressions")
+                        ExampleCard(title: "Notes", emoji: "🎵", prompt: "A musical note player with colors")
+                        ExampleCard(title: "Colors", emoji: "🎨", prompt: "A color mixer that makes harmonious sounds")
                     }
                     .padding(.horizontal, 20)
                 }
@@ -88,13 +90,23 @@ struct WidgetGeneratorView: View {
         }
         .sheet(isPresented: $showingWidget) {
             if let widget = generatedWidget {
-                WidgetPreviewView(
-                    htmlContent: widget,
-                    prompt: prompt,
-                    onAddToHome: { title in
-                        addWidgetToHome(title: title, htmlContent: widget)
-                    }
-                )
+                if useReactNative {
+                    ReactNativeWidgetPreviewView(
+                        jsxContent: widget,
+                        prompt: prompt,
+                        onAddToHome: { title in
+                            addWidgetToHome(title: title, htmlContent: widget)
+                        }
+                    )
+                } else {
+                    WidgetPreviewView(
+                        htmlContent: widget,
+                        prompt: prompt,
+                        onAddToHome: { title in
+                            addWidgetToHome(title: title, htmlContent: widget)
+                        }
+                    )
+                }
             }
         }
         .alert("Widget Added!", isPresented: $showingSuccessMessage) {
@@ -185,8 +197,7 @@ struct WidgetPreviewView: View {
                 
                 WebView(htmlContent: htmlContent)
                     .aspectRatio(2/3, contentMode: .fit)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
+                    .clipped()
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Widget Title:")
@@ -235,6 +246,85 @@ struct WidgetPreviewView: View {
     }
 }
 
+struct ReactNativeWidgetPreviewView: View {
+    let jsxContent: String
+    let prompt: String
+    let onAddToHome: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var widgetTitle = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Your React Native Widget")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                // React Native Widget Preview
+                ReactNativeWidgetViewWrapper(jsxCode: jsxContent, widgetType: determineWidgetType())
+                    .aspectRatio(3/2, contentMode: .fit)
+                    .clipped()
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Widget Title:")
+                        .font(.headline)
+                    
+                    TextField("Enter a title for your widget", text: $widgetTitle)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                .padding(.horizontal)
+                
+                HStack(spacing: 16) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(12)
+                    
+                    Button("Add to Home") {
+                        let title = widgetTitle.isEmpty ? "My Widget" : widgetTitle
+                        onAddToHome(title)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal)
+                .padding(.bottom)
+                
+                Spacer()
+            }
+            .navigationBarHidden(true)
+        }
+        .onAppear {
+            widgetTitle = generateTitleFromPrompt(prompt)
+        }
+    }
+    
+    private func generateTitleFromPrompt(_ prompt: String) -> String {
+        let words = prompt.split(separator: " ").prefix(3)
+        return words.map { $0.capitalized }.joined(separator: " ")
+    }
+    
+    private func determineWidgetType() -> String {
+        let lowercaseContent = jsxContent.lowercased()
+        if lowercaseContent.contains("piano") {
+            return "piano"
+        } else if lowercaseContent.contains("chord") {
+            return "chord"
+        } else if lowercaseContent.contains("color") {
+            return "color"
+        } else {
+            return "music"
+        }
+    }
+}
+
 struct WebView: UIViewRepresentable {
     let htmlContent: String
     
@@ -244,6 +334,10 @@ struct WebView: UIViewRepresentable {
         configuration.mediaTypesRequiringUserActionForPlayback = []
         configuration.allowsAirPlayForMediaPlayback = true
         
+        // Add JavaScript bridge for native audio
+        let audioHandler = AudioMessageHandler()
+        configuration.userContentController.add(audioHandler, name: "nativeAudio")
+        
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
@@ -251,6 +345,12 @@ struct WebView: UIViewRepresentable {
         webView.scrollView.showsVerticalScrollIndicator = false
         webView.isOpaque = false
         webView.backgroundColor = .clear
+        
+        // Remove any default borders or insets that could create frames
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.layer.borderWidth = 0
+        webView.layer.cornerRadius = 0
+        
         return webView
     }
     
