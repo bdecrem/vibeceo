@@ -225,6 +225,481 @@
         .auth-message.success {
             background: #ccffcc;
         }
+    
+        /* System 7 Menu Enhancements CSS */
+
+/* Apple Logo Styling */
+.apple-logo {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1;
+    display: inline-block;
+    user-select: none;
+    /* Use the classic Apple logo emoji for authentic look */
+    filter: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Menu titles with proper hover states */
+.menu-title {
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+    user-select: none;
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.menu-title:hover,
+.menu-title.active {
+    background: #000000;
+    color: #ffffff;
+}
+
+/* Apple menu special styling */
+.apple-menu {
+    padding: 2px 6px;
+}
+
+/* Enhanced dropdown menus */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #808080;
+    z-index: 2100;
+    min-width: 150px;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    display: none;
+}
+
+/* Apple menu positioning */
+.apple-menu .dropdown-menu {
+    left: 0;
+}
+
+/* File menu positioning */  
+.menu-title:nth-child(2) .dropdown-menu {
+    left: 0;
+}
+
+/* Menu items */
+.menu-item {
+    padding: 4px 16px 4px 20px;
+    cursor: pointer;
+    line-height: 1.4;
+    white-space: nowrap;
+    position: relative;
+    color: #000000;
+    background: transparent;
+}
+
+.menu-item:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+.menu-item.disabled {
+    color: #808080;
+    cursor: default;
+}
+
+.menu-item.disabled:hover {
+    background: transparent;
+    color: #808080;
+}
+
+/* Menu separators */
+.menu-separator {
+    height: 1px;
+    background: #808080;
+    margin: 2px 10px;
+    pointer-events: none;
+}
+
+/* Menu keyboard shortcuts (for future) */
+.menu-shortcut {
+    float: right;
+    margin-left: 20px;
+    color: inherit;
+    font-size: 11px;
+}
+
+/* Submenu arrows (for future nested menus) */
+.menu-item.has-submenu::after {
+    content: "▶";
+    position: absolute;
+    right: 8px;
+    font-size: 8px;
+    color: inherit;
+}
+
+/* Menu bar enhancements */
+.menu-bar {
+    background: #ffffff;
+    border-bottom: 1px solid #000000;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Clock styling */
+#menu-clock {
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+    color: #000000;
+    padding: 2px 4px;
+    user-select: none;
+}
+
+/* Profile icon styling */
+#profile-icon {
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    font-family: "Chicago", "Geneva", monospace;
+}
+
+#profile-icon:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+#username-display {
+    font-size: 11px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ensure menus appear above everything */
+.dropdown-menu {
+    z-index: 2100;
+}
+
+/* Menu interaction feedback */
+.menu-title {
+    transition: background-color 0.1s, color 0.1s;
+}
+
+.menu-item {
+    transition: background-color 0.1s, color 0.1s;
+}
+
+/* Special menu items styling */
+.menu-item[onclick*="showAboutToyBox"] {
+    font-weight: bold;
+}
+
+.menu-item[onclick*="shutDown"] {
+    border-top: 1px solid #c0c0c0;
+    margin-top: 2px;
+    padding-top: 6px;
+}
+
+/* Responsive menu adjustments */
+@media (max-width: 800px) {
+    .menu-bar {
+        font-size: 11px;
+    }
+    
+    .menu-title {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+    
+    .dropdown-menu {
+        min-width: 120px;
+        font-size: 11px;
+    }
+    
+    .menu-item {
+        padding: 3px 12px 3px 16px;
+    }
+}
+
+/* Ensure proper layering */
+.menu-bar * {
+    z-index: inherit;
+}
+
+.dropdown-menu * {
+    z-index: inherit;
+}
+    
+        /* System 7 Menu Enhancements CSS */
+
+/* Apple Logo Styling */
+.apple-logo {
+    font-family: -apple-system, SF Symbols, system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1;
+    display: inline-block;
+    user-select: none;
+    /* Use the actual Apple logo character from SF Symbols */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.apple-logo::before {
+    content: "";
+    font-family: -apple-system, SF Symbols, system-ui;
+    font-size: 16px;
+}
+
+/* Menu titles with proper hover states */
+.menu-title {
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+    user-select: none;
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.menu-title:hover,
+.menu-title.active {
+    background: #000000;
+    color: #ffffff;
+}
+
+/* Apple menu special styling */
+.apple-menu {
+    padding: 2px 6px;
+}
+
+/* Enhanced dropdown menus */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #808080;
+    z-index: 2100;
+    min-width: 150px;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    display: none;
+}
+
+/* Apple menu positioning */
+.apple-menu .dropdown-menu {
+    left: 0;
+}
+
+/* File menu positioning */  
+.menu-title:nth-child(2) .dropdown-menu {
+    left: 0;
+}
+
+/* Menu items */
+.menu-item {
+    padding: 4px 16px 4px 20px;
+    cursor: pointer;
+    line-height: 1.4;
+    white-space: nowrap;
+    position: relative;
+    color: #000000;
+    background: transparent;
+}
+
+.menu-item:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+.menu-item.disabled {
+    color: #808080;
+    cursor: default;
+}
+
+.menu-item.disabled:hover {
+    background: transparent;
+    color: #808080;
+}
+
+/* Menu separators */
+.menu-separator {
+    height: 1px;
+    background: #808080;
+    margin: 2px 10px;
+    pointer-events: none;
+}
+
+/* Menu keyboard shortcuts (for future) */
+.menu-shortcut {
+    float: right;
+    margin-left: 20px;
+    color: inherit;
+    font-size: 11px;
+}
+
+/* Submenu arrows (for future nested menus) */
+.menu-item.has-submenu::after {
+    content: "▶";
+    position: absolute;
+    right: 8px;
+    font-size: 8px;
+    color: inherit;
+}
+
+/* Menu bar enhancements */
+.menu-bar {
+    background: #ffffff;
+    border-bottom: 1px solid #000000;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Clock styling */
+#menu-clock {
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+    color: #000000;
+    padding: 2px 4px;
+    user-select: none;
+}
+
+/* Profile icon styling */
+#profile-icon {
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    font-family: "Chicago", "Geneva", monospace;
+}
+
+#profile-icon:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+#username-display {
+    font-size: 11px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ensure menus appear above everything */
+.dropdown-menu {
+    z-index: 2100;
+}
+
+/* Menu interaction feedback */
+.menu-title {
+    transition: background-color 0.1s, color 0.1s;
+}
+
+.menu-item {
+    transition: background-color 0.1s, color 0.1s;
+}
+
+/* Special menu items styling */
+.menu-item[onclick*="showAboutToyBox"] {
+    font-weight: bold;
+}
+
+.menu-item[onclick*="shutDown"] {
+    border-top: 1px solid #c0c0c0;
+    margin-top: 2px;
+    padding-top: 6px;
+}
+
+/* Responsive menu adjustments */
+@media (max-width: 800px) {
+    .menu-bar {
+        font-size: 11px;
+    }
+    
+    .menu-title {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+    
+    .dropdown-menu {
+        min-width: 120px;
+        font-size: 11px;
+    }
+    
+    .menu-item {
+        padding: 3px 12px 3px 16px;
+    }
+}
+
+/* Ensure proper layering */
+.menu-bar * {
+    z-index: inherit;
+}
+
+.dropdown-menu * {
+    z-index: inherit;
+}
     </style>
 </head>
 <body class="theme-system7">
@@ -328,7 +803,147 @@
     
     <div class="menu-bar">
         <div class="menu-left">
-            <div class="menu-title apple"></div>
+            <!-- Authentic System 7 Apple Logo -->
+            <div class="menu-title apple-menu" onclick="toggleAppleMenu(event)">
+                <span class="apple-logo"></span>
+                <div class="dropdown-menu" id="appleMenu" style="display: none;">
+                    <div class="menu-item" onclick="showAboutToyBox(event)">About ToyBox OS...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Control Panels</div>
+                    <div class="menu-item disabled">System Extensions</div>
+                </div>
+            </div>
+            
+            <!-- File Menu -->
+            <div class="menu-title" onclick="toggleFileMenu(event)">File
+                <div class="dropdown-menu" id="fileMenu" style="display: none;">
+                    <div class="menu-item" onclick="newApp(event)">New App...</div>
+                    <div class="menu-item" onclick="openApp(event)">Open...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="closeActiveWindow(event)">Close</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Print...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="restartDesktop(event)">Restart</div>
+                </div>
+            </div>
+            
+            <!-- Edit Menu -->
+            <div class="menu-title" onclick="toggleEditMenu(event)">Edit
+                <div class="dropdown-menu" id="editMenu" style="display: none;">
+                    <div class="menu-item disabled">Undo</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Cut</div>
+                    <div class="menu-item disabled">Copy</div>
+                    <div class="menu-item disabled">Paste</div>
+                    <div class="menu-item" onclick="selectAllIcons(event)">Select All</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="showPreferences(event)">Preferences...</div>
+                </div>
+            </div>
+            
+            <!-- View Menu -->
+            <div class="menu-title" onclick="toggleViewMenu(event)">View
+                <div class="dropdown-menu" id="viewMenu" style="display: none;">
+                    <div class="menu-item" onclick="viewByIcon(event)">by Icon</div>
+                    <div class="menu-item" onclick="viewByName(event)">by Name</div>
+                    <div class="menu-item disabled">by Size</div>
+                    <div class="menu-item disabled">by Date</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="changeBgColor(event)">Change Background...</div>
+                </div>
+            </div>
+            
+            <!-- Special Menu -->
+            <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
+                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                    <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up Desktop</div>
+                    <div class="menu-item" onclick="emptyTrash(event)">Empty Trash...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Eject Disk</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="restartDesktop(event)">Restart</div>
+                    <div class="menu-item" onclick="shutDown(event)">Shut Down</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="menu-right">
+            <div id="profile-icon" onclick="toggleAuth(event)">
+                <span id="profile-emoji">👤</span>
+                <span id="username-display"></span>
+            </div>
+            <div id="menu-clock" aria-label="Clock"></div>
+        </div>
+    </div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Control Panels</div>
+                    <div class="menu-item disabled">System Extensions</div>
+                </div>
+            </div>
+            
+            <!-- File Menu -->
+            <div class="menu-title" onclick="toggleFileMenu(event)">File
+                <div class="dropdown-menu" id="fileMenu" style="display: none;">
+                    <div class="menu-item" onclick="newApp(event)">New App...</div>
+                    <div class="menu-item" onclick="openApp(event)">Open...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="closeActiveWindow(event)">Close</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Print...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="restartDesktop(event)">Restart</div>
+                </div>
+            </div>
+            
+            <!-- Edit Menu -->
+            <div class="menu-title" onclick="toggleEditMenu(event)">Edit
+                <div class="dropdown-menu" id="editMenu" style="display: none;">
+                    <div class="menu-item disabled">Undo</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Cut</div>
+                    <div class="menu-item disabled">Copy</div>
+                    <div class="menu-item disabled">Paste</div>
+                    <div class="menu-item" onclick="selectAllIcons(event)">Select All</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="showPreferences(event)">Preferences...</div>
+                </div>
+            </div>
+            
+            <!-- View Menu -->
+            <div class="menu-title" onclick="toggleViewMenu(event)">View
+                <div class="dropdown-menu" id="viewMenu" style="display: none;">
+                    <div class="menu-item" onclick="viewByIcon(event)">by Icon</div>
+                    <div class="menu-item" onclick="viewByName(event)">by Name</div>
+                    <div class="menu-item disabled">by Size</div>
+                    <div class="menu-item disabled">by Date</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="changeBgColor(event)">Change Background...</div>
+                </div>
+            </div>
+            
+            <!-- Special Menu -->
+            <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
+                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                    <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up Desktop</div>
+                    <div class="menu-item" onclick="emptyTrash(event)">Empty Trash...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item disabled">Eject Disk</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" onclick="restartDesktop(event)">Restart</div>
+                    <div class="menu-item" onclick="shutDown(event)">Shut Down</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="menu-right">
+            <div id="profile-icon" onclick="toggleAuth(event)">
+                <span id="profile-emoji">👤</span>
+                <span id="username-display"></span>
+            </div>
+            <div id="menu-clock" aria-label="Clock"></div>
+        </div>
+    </div>
             <div class="menu-title">File</div>
             <div class="menu-title">Edit</div>
             <div class="menu-title">View</div>
@@ -1272,22 +1887,6 @@ window.windowManager = new WindowManager();
             await saveIconPositions();
             
             console.log('✅ Desktop cleaned up!');
-            
-            // Show feedback
-            showCleanupFeedback();
-        }
-        
-        function showCleanupFeedback() {
-            const feedback = document.createElement('div');
-            feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
-            feedback.textContent = 'Desktop cleaned up!';
-            document.body.appendChild(feedback);
-            
-            setTimeout(() => {
-                if (document.body.contains(feedback)) {
-                    document.body.removeChild(feedback);
-                }
-            }, 2000);
         }
 // ZAD-based persistent desktop layout system
 async function saveIconPositions() {
@@ -1852,5 +2451,907 @@ async function deleteIconFromDesktop(iconElement) {
             </div>
         </div>
     </div>
+
+    <script>
+        // === SYSTEM 7 INTERACTION ENHANCEMENTS ===
+        /**
+         * System 7 Interaction Enhancements for WEBTOYS-OS
+         * 
+         * Adds authentic System 7 interaction behaviors:
+         * - Marquee desktop selection
+         * - Improved window focus management 
+         * - Enhanced icon selection and dragging
+         * - Proper active/inactive window states
+         */
+        
+        // System 7 Interaction State
+        let system7State = {
+            desktopSelection: {
+                isSelecting: false,
+                startX: 0,
+                startY: 0,
+                currentX: 0,
+                currentY: 0
+            },
+            selectedIcons: new Set(),
+            activeWindow: null,
+            marqueeElement: null
+        };
+        
+        // Initialize System 7 interactions
+        function initSystem7Interactions() {
+            console.log('🎯 Initializing System 7 interactions...');
+            
+            // Add marquee selection to desktop
+            setupDesktopMarqueeSelection();
+            
+            // Enhance window focus management
+            enhanceWindowFocusSystem();
+            
+            // Improve icon selection behavior
+            enhanceIconSelectionSystem();
+            
+            // Add authentic keyboard shortcuts
+            setupSystem7KeyboardShortcuts();
+            
+            console.log('✅ System 7 interactions ready');
+        }
+        
+        // === MARQUEE DESKTOP SELECTION === 
+        function setupDesktopMarqueeSelection() {
+            const desktop = document.getElementById('desktop');
+            if (!desktop) return;
+            
+            desktop.addEventListener('mousedown', handleDesktopMouseDown);
+            document.addEventListener('mousemove', handleDesktopMouseMove);
+            document.addEventListener('mouseup', handleDesktopMouseUp);
+        }
+        
+        function handleDesktopMouseDown(e) {
+            // Only start selection if clicking directly on desktop
+            if (e.target !== e.currentTarget) return;
+            
+            const rect = e.currentTarget.getBoundingClientRect();
+            
+            system7State.desktopSelection = {
+                isSelecting: true,
+                startX: e.clientX - rect.left,
+                startY: e.clientY - rect.top,
+                currentX: e.clientX - rect.left,
+                currentY: e.clientY - rect.top
+            };
+            
+            // Clear previous selections
+            clearIconSelections();
+            
+            // Prevent default to avoid text selection
+            e.preventDefault();
+        }
+        
+        function handleDesktopMouseMove(e) {
+            const selection = system7State.desktopSelection;
+            if (!selection.isSelecting) return;
+            
+            const desktop = document.getElementById('desktop');
+            const rect = desktop.getBoundingClientRect();
+            
+            // Update current position
+            selection.currentX = e.clientX - rect.left;
+            selection.currentY = e.clientY - rect.top;
+            
+            // Update marquee visual
+            updateMarqueeVisual();
+            
+            // Update icon selection
+            updateIconSelectionFromMarquee();
+        }
+        
+        function handleDesktopMouseUp(e) {
+            if (system7State.desktopSelection.isSelecting) {
+                system7State.desktopSelection.isSelecting = false;
+                removeMarqueeVisual();
+            }
+        }
+        
+        function updateMarqueeVisual() {
+            const selection = system7State.desktopSelection;
+            
+            // Remove existing marquee
+            removeMarqueeVisual();
+            
+            // Calculate marquee bounds
+            const left = Math.min(selection.startX, selection.currentX);
+            const top = Math.min(selection.startY, selection.currentY);
+            const width = Math.abs(selection.currentX - selection.startX);
+            const height = Math.abs(selection.currentY - selection.startY);
+            
+            // Create marquee element
+            const marquee = document.createElement('div');
+            marquee.className = 'desktop-selection-marquee';
+            marquee.style.cssText = `
+                position: absolute;
+                left: ${left}px;
+                top: ${top}px;
+                width: ${width}px;
+                height: ${height}px;
+                border: 1px dashed #000000;
+                background: rgba(0, 0, 0, 0.1);
+                pointer-events: none;
+                z-index: 10;
+            `;
+            
+            document.getElementById('desktop').appendChild(marquee);
+            system7State.marqueeElement = marquee;
+        }
+        
+        function removeMarqueeVisual() {
+            if (system7State.marqueeElement) {
+                system7State.marqueeElement.remove();
+                system7State.marqueeElement = null;
+            }
+        }
+        
+        function updateIconSelectionFromMarquee() {
+            const selection = system7State.desktopSelection;
+            
+            const selectionRect = {
+                left: Math.min(selection.startX, selection.currentX),
+                top: Math.min(selection.startY, selection.currentY),
+                right: Math.max(selection.startX, selection.currentX),
+                bottom: Math.max(selection.startY, selection.currentY)
+            };
+            
+            // Check each desktop icon
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            const newSelection = new Set();
+            
+            icons.forEach(icon => {
+                const iconRect = icon.getBoundingClientRect();
+                const desktopRect = document.getElementById('desktop').getBoundingClientRect();
+                
+                // Convert to desktop coordinates
+                const iconX = iconRect.left - desktopRect.left;
+                const iconY = iconRect.top - desktopRect.top;
+                const iconRight = iconX + iconRect.width;
+                const iconBottom = iconY + iconRect.height;
+                
+                // Check if icon intersects with selection
+                if (iconX < selectionRect.right &&
+                    iconRight > selectionRect.left &&
+                    iconY < selectionRect.bottom &&
+                    iconBottom > selectionRect.top) {
+                    
+                    const iconId = getIconId(icon);
+                    if (iconId) {
+                        newSelection.add(iconId);
+                        icon.classList.add('selected');
+                    }
+                } else {
+                    icon.classList.remove('selected');
+                }
+            });
+            
+            system7State.selectedIcons = newSelection;
+        }
+        
+        // === ENHANCED WINDOW FOCUS SYSTEM ===
+        function enhanceWindowFocusSystem() {
+            // Override the existing window focus to add System 7 active states
+            const originalFocusWindow = window.windowManager.focusWindow.bind(window.windowManager);
+            
+            window.windowManager.focusWindow = function(windowId) {
+                // Call original focus logic
+                originalFocusWindow(windowId);
+                
+                // Add System 7 active/inactive styling
+                updateWindowActiveStates(windowId);
+                
+                system7State.activeWindow = windowId;
+            };
+            
+            // Enhanced window click handling
+            document.addEventListener('click', function(e) {
+                const windowEl = e.target.closest('.desktop-window');
+                if (windowEl && windowEl.id) {
+                    const windowId = windowEl.id;
+                    if (window.windowManager.windows.has(windowId)) {
+                        window.windowManager.focusWindow(windowId);
+                    }
+                }
+            });
+        }
+        
+        function updateWindowActiveStates(activeWindowId) {
+            // Remove active class from all windows
+            document.querySelectorAll('.desktop-window').forEach(win => {
+                win.classList.remove('active');
+            });
+            
+            // Add active class to the focused window
+            const activeWindow = document.getElementById(activeWindowId);
+            if (activeWindow) {
+                activeWindow.classList.add('active');
+            }
+        }
+        
+        // === ENHANCED ICON SELECTION SYSTEM ===
+        function enhanceIconSelectionSystem() {
+            // Improve icon click behavior
+            document.addEventListener('click', function(e) {
+                const icon = e.target.closest('.desktop-icon');
+                
+                if (icon && !icon.classList.contains('trash-can')) {
+                    e.stopPropagation();
+                    
+                    const iconId = getIconId(icon);
+                    if (iconId) {
+                        // Handle multi-select with Cmd/Ctrl key
+                        if (e.metaKey || e.ctrlKey) {
+                            toggleIconSelection(iconId, icon);
+                        } else {
+                            // Single select
+                            clearIconSelections();
+                            selectIcon(iconId, icon);
+                        }
+                    }
+                } else if (e.target.id === 'desktop' || e.target.closest('#desktop') === document.getElementById('desktop')) {
+                    // Clicked on empty desktop - clear selections
+                    clearIconSelections();
+                }
+            });
+            
+            // Improve icon double-click behavior
+            document.addEventListener('dblclick', function(e) {
+                const icon = e.target.closest('.desktop-icon');
+                if (icon && !icon.classList.contains('trash-can')) {
+                    // Double-click should trigger the icon's onclick
+                    if (icon.onclick) {
+                        icon.onclick(e);
+                    }
+                }
+            });
+        }
+        
+        function getIconId(iconElement) {
+            // Try to extract an ID from the icon
+            const label = iconElement.querySelector('.label');
+            if (label) {
+                return label.textContent.toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+            return null;
+        }
+        
+        function selectIcon(iconId, iconElement) {
+            system7State.selectedIcons.add(iconId);
+            iconElement.classList.add('selected');
+        }
+        
+        function toggleIconSelection(iconId, iconElement) {
+            if (system7State.selectedIcons.has(iconId)) {
+                system7State.selectedIcons.delete(iconId);
+                iconElement.classList.remove('selected');
+            } else {
+                system7State.selectedIcons.add(iconId);
+                iconElement.classList.add('selected');
+            }
+        }
+        
+        function clearIconSelections() {
+            system7State.selectedIcons.clear();
+            document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
+                icon.classList.remove('selected');
+            });
+        }
+        
+        // === SYSTEM 7 KEYBOARD SHORTCUTS ===
+        function setupSystem7KeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                // Cmd+A / Ctrl+A - Select All Icons
+                if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+                    e.preventDefault();
+                    selectAllIcons();
+                }
+                
+                // Escape - Clear selections
+                if (e.key === 'Escape') {
+                    clearIconSelections();
+                    if (system7State.desktopSelection.isSelecting) {
+                        system7State.desktopSelection.isSelecting = false;
+                        removeMarqueeVisual();
+                    }
+                }
+                
+                // Delete/Backspace - Move selected icons to trash (if implemented)
+                if ((e.key === 'Delete' || e.key === 'Backspace') && system7State.selectedIcons.size > 0) {
+                    e.preventDefault();
+                    // Could implement move to trash here
+                    console.log('Would move selected icons to trash:', Array.from(system7State.selectedIcons));
+                }
+            });
+        }
+        
+        function selectAllIcons() {
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            system7State.selectedIcons.clear();
+            
+            icons.forEach(icon => {
+                const iconId = getIconId(icon);
+                if (iconId) {
+                    system7State.selectedIcons.add(iconId);
+                    icon.classList.add('selected');
+                }
+            });
+        }
+        
+        // === ENHANCED DRAG BEHAVIOR ===
+        function enhanceIconDragBehavior() {
+            // This could enhance the existing drag behavior to work better with selections
+            // For now, we'll keep the existing drag system but improve visual feedback
+            
+            const originalSetupDragForIcons = window.setupDragForIcons;
+            if (originalSetupDragForIcons) {
+                window.setupDragForIcons = function() {
+                    originalSetupDragForIcons();
+                    
+                    // Add System 7 drag visual feedback
+                    document.querySelectorAll('.desktop-icon:not(.trash-can)').forEach(icon => {
+                        icon.addEventListener('dragstart', function(e) {
+                            icon.classList.add('dragging');
+                        });
+                        
+                        icon.addEventListener('dragend', function(e) {
+                            icon.classList.remove('dragging');
+                        });
+                    });
+                };
+            }
+        }
+        
+        // === MENU BAR ENHANCEMENTS ===
+        function enhanceMenuBarBehavior() {
+            // Add proper System 7 menu hover and click behavior
+            const menuItems = document.querySelectorAll('.menu-title');
+            let menuMode = false;
+            
+            menuItems.forEach(menuItem => {
+                menuItem.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menuMode = !menuMode;
+                    
+                    if (menuMode) {
+                        menuItem.classList.add('active');
+                    } else {
+                        menuItems.forEach(m => m.classList.remove('active'));
+                    }
+                });
+                
+                menuItem.addEventListener('mouseenter', function() {
+                    if (menuMode) {
+                        menuItems.forEach(m => m.classList.remove('active'));
+                        menuItem.classList.add('active');
+                    }
+                });
+            });
+            
+            // Click outside closes menu mode
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.menu-bar')) {
+                    menuMode = false;
+                    menuItems.forEach(m => m.classList.remove('active'));
+                }
+            });
+        }
+        
+        // === WINDOW RESIZE ENHANCEMENTS ===
+        function addWindowResizeHandles() {
+            // Add System 7 style resize handles to windows
+            document.addEventListener('DOMNodeInserted', function(e) {
+                if (e.target.classList && e.target.classList.contains('desktop-window')) {
+                    addResizeHandle(e.target);
+                }
+            });
+            
+            // Add to existing windows
+            document.querySelectorAll('.desktop-window').forEach(addResizeHandle);
+        }
+        
+        function addResizeHandle(windowEl) {
+            if (windowEl.querySelector('.window-resize-handle')) return; // Already has handle
+            
+            const handle = document.createElement('div');
+            handle.className = 'window-resize-handle';
+            handle.innerHTML = '';
+            windowEl.appendChild(handle);
+            
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+            
+            handle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(getComputedStyle(windowEl).width, 10);
+                startHeight = parseInt(getComputedStyle(windowEl).height, 10);
+                
+                document.addEventListener('mousemove', handleResize);
+                document.addEventListener('mouseup', stopResize);
+            });
+            
+            function handleResize(e) {
+                if (!isResizing) return;
+                
+                const width = startWidth + (e.clientX - startX);
+                const height = startHeight + (e.clientY - startY);
+                
+                if (width > 200) windowEl.style.width = width + 'px';
+                if (height > 150) windowEl.style.height = height + 'px';
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+        
+        // === INITIALIZATION ===
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSystem7Interactions);
+        } else {
+            initSystem7Interactions();
+        }
+        
+        // Export for manual initialization if needed
+        window.initSystem7Interactions = initSystem7Interactions;
+        window.system7State = system7State;
+        
+        console.log('📁 System 7 interactions module loaded');
+    
+        
+        // === ENHANCED SYSTEM 7 MENU SYSTEM ===
+        let currentOpenMenu = null;
+        let menuMode = false;
+        
+        // Generic menu toggle function
+        function toggleMenu(menuId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            const isCurrentlyOpen = menu.style.display === 'block';
+            
+            // Close all menus first
+            closeAllMenus();
+            
+            if (!isCurrentlyOpen) {
+                menu.style.display = 'block';
+                currentOpenMenu = menuId;
+                menuMode = true;
+                
+                // Add hover behavior when in menu mode
+                setupMenuModeHover();
+            } else {
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        }
+        
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            // Remove active states from menu titles
+            document.querySelectorAll('.menu-title').forEach(title => {
+                title.classList.remove('active');
+            });
+        }
+        
+        function setupMenuModeHover() {
+            if (!menuMode) return;
+            
+            document.querySelectorAll('.menu-title').forEach(menuTitle => {
+                menuTitle.onmouseenter = function() {
+                    if (menuMode) {
+                        closeAllMenus();
+                        const dropdownMenu = this.querySelector('.dropdown-menu');
+                        if (dropdownMenu) {
+                            dropdownMenu.style.display = 'block';
+                            currentOpenMenu = dropdownMenu.id;
+                        }
+                    }
+                };
+            });
+        }
+        
+        // Individual menu toggle functions
+        function toggleAppleMenu(event) { toggleMenu('appleMenu', event); }
+        function toggleFileMenu(event) { toggleMenu('fileMenu', event); }
+        function toggleEditMenu(event) { toggleMenu('editMenu', event); }
+        function toggleViewMenu(event) { toggleMenu('viewMenu', event); }
+        
+        // Menu item actions
+        function showAboutToyBox(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('ToyBox OS\n\nSystem Software 2.0\n© WEBTOYS Community 2025\n\nA collaborative desktop environment\nfor building and sharing web apps.');
+        }
+        
+        function newApp(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Try to open App Studio if available
+            if (window.windowedApps && window.windowedApps['app-studio']) {
+                openWindowedApp('app-studio');
+            } else {
+                alert('Create new apps at:\nhttps://webtoys.ai');
+            }
+        }
+        
+        function openApp(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            const appName = prompt('Enter app name to open:');
+            if (appName && window.windowedApps[appName.toLowerCase()]) {
+                openWindowedApp(appName.toLowerCase());
+            } else if (appName) {
+                alert('App "' + appName + '" not found');
+            }
+        }
+        
+        function closeActiveWindow(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (window.windowManager && window.windowManager.activeWindow) {
+                window.windowManager.closeWindow(window.windowManager.activeWindow);
+            }
+        }
+        
+        function selectAllIconsFromMenu(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (window.selectAllIcons) {
+                selectAllIcons();
+            } else {
+                // Fallback selection
+                const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+                icons.forEach(icon => icon.classList.add('selected'));
+            }
+        }
+        
+        function showPreferences(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('ToyBox OS Preferences\n\n• Theme: System 7\n• Icons: Classic Style\n• Background: Customizable\n\nMore preferences coming soon!');
+        }
+        
+        function viewByIcon(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Already in icon view - show feedback
+            alert('Desktop is already in Icon view');
+        }
+        
+        function viewByName(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('Name view not yet implemented.\nCurrently in Icon view.');
+        }
+        
+        function emptyTrash(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Count hidden icons
+            const hiddenIcons = document.querySelectorAll('.desktop-icon[style*="display: none"]').length;
+            
+            if (hiddenIcons === 0) {
+                alert('Trash is already empty.');
+            } else {
+                if (confirm('Are you sure you want to permanently remove ' + hiddenIcons + ' item(s) from Trash?')) {
+                    // Actually remove hidden icons from DOM
+                    document.querySelectorAll('.desktop-icon[style*="display: none"]').forEach(icon => {
+                        icon.remove();
+                    });
+                    alert('Trash emptied.');
+                }
+            }
+        }
+        
+        function restartDesktop(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (confirm('Restart ToyBox OS?\n\nThis will close all open windows and refresh the desktop.')) {
+                // Close all windows
+                if (window.windowManager) {
+                    Array.from(window.windowManager.windows.keys()).forEach(windowId => {
+                        window.windowManager.closeWindow(windowId);
+                    });
+                }
+                
+                // Refresh the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+        }
+        
+        function shutDown(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (confirm('Shut down ToyBox OS?\n\nThis will close all apps and return to the main site.')) {
+                window.location.href = 'https://webtoys.ai';
+            }
+        }
+        
+        // Close menus when clicking outside
+        document.addEventListener('click', function(event) {
+            if (menuMode && !event.target.closest('.menu-bar')) {
+                closeAllMenus();
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        });
+        
+        // Escape key closes menus
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && menuMode) {
+                closeAllMenus();
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        });
+        
+        console.log('🍎 System 7 menu system enhanced');
+        
+        
+        // === ENHANCED SYSTEM 7 MENU SYSTEM ===
+        let currentOpenMenu = null;
+        let menuMode = false;
+        
+        // Generic menu toggle function
+        function toggleMenu(menuId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            const isCurrentlyOpen = menu.style.display === 'block';
+            
+            // Close all menus first
+            closeAllMenus();
+            
+            if (!isCurrentlyOpen) {
+                menu.style.display = 'block';
+                currentOpenMenu = menuId;
+                menuMode = true;
+                
+                // Add hover behavior when in menu mode
+                setupMenuModeHover();
+            } else {
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        }
+        
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            // Remove active states from menu titles
+            document.querySelectorAll('.menu-title').forEach(title => {
+                title.classList.remove('active');
+            });
+        }
+        
+        function setupMenuModeHover() {
+            if (!menuMode) return;
+            
+            document.querySelectorAll('.menu-title').forEach(menuTitle => {
+                menuTitle.onmouseenter = function() {
+                    if (menuMode) {
+                        closeAllMenus();
+                        const dropdownMenu = this.querySelector('.dropdown-menu');
+                        if (dropdownMenu) {
+                            dropdownMenu.style.display = 'block';
+                            currentOpenMenu = dropdownMenu.id;
+                        }
+                    }
+                };
+            });
+        }
+        
+        // Individual menu toggle functions
+        function toggleAppleMenu(event) { toggleMenu('appleMenu', event); }
+        function toggleFileMenu(event) { toggleMenu('fileMenu', event); }
+        function toggleEditMenu(event) { toggleMenu('editMenu', event); }
+        function toggleViewMenu(event) { toggleMenu('viewMenu', event); }
+        
+        // Menu item actions
+        function showAboutToyBox(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('ToyBox OS\n\nSystem Software 2.0\n© WEBTOYS Community 2025\n\nA collaborative desktop environment\nfor building and sharing web apps.');
+        }
+        
+        function newApp(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Try to open App Studio if available
+            if (window.windowedApps && window.windowedApps['app-studio']) {
+                openWindowedApp('app-studio');
+            } else {
+                alert('Create new apps at:\nhttps://webtoys.ai');
+            }
+        }
+        
+        function openApp(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            const appName = prompt('Enter app name to open:');
+            if (appName && window.windowedApps[appName.toLowerCase()]) {
+                openWindowedApp(appName.toLowerCase());
+            } else if (appName) {
+                alert('App "' + appName + '" not found');
+            }
+        }
+        
+        function closeActiveWindow(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (window.windowManager && window.windowManager.activeWindow) {
+                window.windowManager.closeWindow(window.windowManager.activeWindow);
+            }
+        }
+        
+        function selectAllIconsFromMenu(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (window.selectAllIcons) {
+                selectAllIcons();
+            } else {
+                // Fallback selection
+                const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+                icons.forEach(icon => icon.classList.add('selected'));
+            }
+        }
+        
+        function showPreferences(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('ToyBox OS Preferences\n\n• Theme: System 7\n• Icons: Classic Style\n• Background: Customizable\n\nMore preferences coming soon!');
+        }
+        
+        function viewByIcon(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Already in icon view - show feedback
+            alert('Desktop is already in Icon view');
+        }
+        
+        function viewByName(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            alert('Name view not yet implemented.\nCurrently in Icon view.');
+        }
+        
+        function emptyTrash(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            // Count hidden icons
+            const hiddenIcons = document.querySelectorAll('.desktop-icon[style*="display: none"]').length;
+            
+            if (hiddenIcons === 0) {
+                alert('Trash is already empty.');
+            } else {
+                if (confirm('Are you sure you want to permanently remove ' + hiddenIcons + ' item(s) from Trash?')) {
+                    // Actually remove hidden icons from DOM
+                    document.querySelectorAll('.desktop-icon[style*="display: none"]').forEach(icon => {
+                        icon.remove();
+                    });
+                    alert('Trash emptied.');
+                }
+            }
+        }
+        
+        function restartDesktop(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (confirm('Restart ToyBox OS?\n\nThis will close all open windows and refresh the desktop.')) {
+                // Close all windows
+                if (window.windowManager) {
+                    Array.from(window.windowManager.windows.keys()).forEach(windowId => {
+                        window.windowManager.closeWindow(windowId);
+                    });
+                }
+                
+                // Refresh the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+        }
+        
+        function shutDown(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            menuMode = false;
+            
+            if (confirm('Shut down ToyBox OS?\n\nThis will close all apps and return to the main site.')) {
+                window.location.href = 'https://webtoys.ai';
+            }
+        }
+        
+        // Close menus when clicking outside
+        document.addEventListener('click', function(event) {
+            if (menuMode && !event.target.closest('.menu-bar')) {
+                closeAllMenus();
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        });
+        
+        // Escape key closes menus
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && menuMode) {
+                closeAllMenus();
+                menuMode = false;
+                currentOpenMenu = null;
+            }
+        });
+        
+        console.log('🍎 System 7 menu system enhanced');
+        </script>
 </body>
 </html>
