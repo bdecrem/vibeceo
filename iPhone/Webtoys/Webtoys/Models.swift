@@ -69,6 +69,105 @@ struct WebtToy: Identifiable, Codable {
     // Mock data for development
     static let mockData: [WebtToy] = [
         WebtToy(
+            title: "🎹 Native Audio Test",
+            description: "Test piano with beautiful native iOS audio",
+            htmlContent: """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Test Native Audio</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100vw; height: 100vh;
+            overflow: hidden; touch-action: manipulation;
+        }
+        .widget {
+            width: 100vw; height: 100vh;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center;
+        }
+        .piano-key {
+            width: 50px; height: 120px; margin: 1px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 6px;
+            display: flex; align-items: flex-end; justify-content: center;
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-size: 12px;
+        }
+        .piano-key:active {
+            background: rgba(255,255,255,0.6);
+            transform: scale(0.95);
+        }
+        .piano {
+            display: flex;
+            gap: 2px;
+        }
+        .title {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget">
+        <div class="title">🎹 Native Audio</div>
+        <div class="piano">
+            <div class="piano-key" data-note="C" data-octave="4">C</div>
+            <div class="piano-key" data-note="D" data-octave="4">D</div>
+            <div class="piano-key" data-note="E" data-octave="4">E</div>
+            <div class="piano-key" data-note="F" data-octave="4">F</div>
+            <div class="piano-key" data-note="G" data-octave="4">G</div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function for native audio
+        function playNote(note, octave = 4, duration = 0.5) {
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nativeAudio) {
+                window.webkit.messageHandlers.nativeAudio.postMessage({
+                    action: "playNote",
+                    note: note,
+                    octave: octave,
+                    duration: duration
+                });
+                console.log(`🎵 Playing native audio: ${note}${octave}`);
+            } else {
+                console.log("❌ Native audio bridge not available");
+            }
+        }
+
+        // Add touch events to piano keys
+        document.querySelectorAll('.piano-key').forEach(key => {
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const note = key.dataset.note;
+                const octave = parseInt(key.dataset.octave);
+                playNote(note, octave, 0.6);
+            });
+
+            key.addEventListener('click', (e) => {
+                const note = key.dataset.note;
+                const octave = parseInt(key.dataset.octave);
+                playNote(note, octave, 0.6);
+            });
+        });
+    </script>
+</body>
+</html>
+"""
+        ),
+        WebtToy(
             title: "Mini Weather",
             description: "Beautiful weather widget with animated clouds and live temperature",
             creator: "WeatherPro",

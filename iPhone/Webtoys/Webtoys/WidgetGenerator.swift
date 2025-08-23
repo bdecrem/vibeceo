@@ -24,26 +24,23 @@ class WidgetGenerator {
         }
         
         let systemPrompt = """
-        Create a MUSICAL, INTERACTIVE, COLORFUL mini-app widget for iPhone in HTML/CSS/JS. This is a 3:2 portrait canvas for creating dynamic, playful, sound-rich experiences.
+        Create a MUSICAL, INTERACTIVE, COLORFUL HTML widget for iPhone. Return complete HTML with embedded CSS and JavaScript for a beautiful 3:2 portrait widget with Web Audio API.
 
-        🎵 BEAUTIFUL SOUND & MUSIC PRIORITY:
-        - MOST widgets should include BEAUTIFUL, HARMONIC sound effects and music
-        - NEVER create harsh, experimental, or screechy sounds
-        - ALWAYS use proper musical scales (major, minor, pentatonic, etc.)
-        - ALWAYS apply low-pass filtering to remove harsh high frequencies
-        - Use Web Audio API with proper filtering and envelope shaping
-        - Create SMOOTH, ROUNDED tones using:
-          * Sine waves (smoothest) or filtered sawtooth/square waves
-          * Low-pass filters (cutoff around 2000-4000Hz) to remove harshness
-          * ADSR envelopes for gentle attack/release
-          * Reverb and gentle chorus effects for warmth
-        - Musical examples to emulate:
-          * Soft piano sounds, warm pad synthesizers
-          * Gentle bells and chimes in musical keys
-          * Smooth ambient textures, not harsh electronic bleeps
-          * Melodic sequences that sound like actual music
-        - ALWAYS use musical intervals: octaves, fifths, major/minor thirds
-        - NEVER use random frequencies - stick to note frequencies (440Hz = A4, etc.)
+        🎵 NATIVE AUDIO SYSTEM:
+        - Use window.webkit.messageHandlers.nativeAudio for beautiful, professional sound
+        - Native audio methods available in JavaScript:
+          * playNote(note, octave, duration) - Play single note through native bridge
+          * playChord(notes, octave, duration) - Play chord through native bridge
+          * playScale(root, scaleType, octave) - Play musical scale through native bridge
+        - Available notes: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+        - Available scales: "major", "pentatonic"
+        
+        MUSICAL GUIDELINES:
+        - Use proper musical scales and chord progressions
+        - Create harmonic, beautiful sounds - never harsh or experimental
+        - Examples: C major (C-D-E-F-G-A-B), C major chord (C-E-G)
+        - Pentatonic scales for ambient/meditative sounds
+        - Layer multiple notes with slight delays for rich harmony
 
         🎨 VISUAL & INTERACTION PRIORITY:
         - Extremely colorful with vibrant gradients and dynamic color changes
@@ -53,34 +50,36 @@ class WidgetGenerator {
         - Colors should change based on interaction, sound frequency, or time
         - Create "playful" experiences - make it fun to just touch and explore
 
-        🎯 WIDGET CONCEPTS TO PRIORITIZE (ALL WITH BEAUTIFUL SOUND):
-        - Soft piano-like paint brushes that play gentle melodies as you draw
-        - Touch-sensitive tone generators with warm, filtered sine waves
-        - Rhythmic pattern makers with smooth drum sounds (no harsh clicks)
-        - Melodic color mapping (C major scale: C-D-E-F-G-A-B across rainbow colors)
-        - Ambient pad generators with flowing particles and warm textures
-        - Gentle chord progressions (C-Am-F-G, etc.) triggered by touch
-        - Sound-reactive animations that pulse with filtered, musical audio  
-        - Pentatonic scale sequences you can paint across the screen
-        - Soft synthesizer keyboards with reverb and gentle attacks
-        - Generative music using only pleasant musical scales and intervals
-        
-        SOUND FILTERING EXAMPLES:
-        - Always create: const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 3000;
-        - Use gainNode with smooth envelope: gain.gain.setTargetAtTime(0, time + 0.5, 0.1);
-        - Prefer sine waves: oscillator.type = 'sine'; over square/sawtooth
-        - Add reverb: const convolver = audioCtx.createConvolver(); for warmth
+        🎯 HTML WIDGET CONCEPTS (ALL WITH BEAUTIFUL AUDIO):
+        - Piano keyboards with clickable keys playing chords
+        - Color palettes where each color plays a musical note
+        - Animated particle systems with musical sequences
+        - Touch-responsive gradient backgrounds that change with music
+        - Rhythm makers with visual beat patterns and drum sounds
+        - Ambient chord progression generators with flowing animations
+        - Musical paint brushes with mouse/touch drawing + sound
+        - Pentatonic wind chimes with animated falling elements
+        - Interactive musical scales with colorful note visualization
+        - Chord progression widgets (C-Am-F-G patterns) with beautiful transitions
+
+        NATIVE AUDIO EXAMPLES:
+        - Single note: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playNote", note: "C", octave: 4, duration: 0.5})
+        - Beautiful chord: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playChord", notes: ["C", "E", "G"], octave: 4, duration: 1.0})
+        - Musical scale: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playScale", root: "C", scaleType: "major", octave: 4})
+        - With error handling: try { window.webkit?.messageHandlers?.nativeAudio?.postMessage(...) } catch(e) { console.log(e) }
 
         REQUIREMENTS:
-        - Return ONLY complete HTML (no markdown, no explanations)
-        - Use inline CSS/JS (no external dependencies except Web Audio API)
+        - Return ONLY complete HTML document (no markdown, no explanations)
+        - Include <!DOCTYPE html>, <html>, <head>, <body> structure
         - 3:2 portrait aspect ratio optimized for iPhone feed
-        - Initialize Web Audio API on first user touch (iOS requirement)
-        - Immediate audio feedback on touch/drag interactions
-        - Vibrant colors that change dynamically
-        - Smooth 60fps animations
-        - Touch-friendly with fluid gesture recognition
-        - Use touchstart/touchmove/touchend events for mobile
+        - IMPORTANT: Use full canvas - NO borders, margins, or frames around content
+        - Set html/body to width: 100%, height: 100%, margin: 0, padding: 0
+        - Use native audio bridge for all sounds (window.webkit.messageHandlers.nativeAudio)
+        - Immediate beautiful audio feedback on touch interactions
+        - Embedded CSS in <style> tags for styling
+        - Smooth animations with CSS transitions and JavaScript
+        - Touch-friendly with large clickable areas
+        - Include proper error handling for audio calls (try/catch)
 
         TEMPLATE:
         ```html
@@ -88,45 +87,50 @@ class WidgetGenerator {
         <html>
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-            <title>Widget</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+            <title>Musical Widget</title>
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; }
-                body {
+                * { box-sizing: border-box; margin: 0; padding: 0; border: none; outline: none; }
+                html, body {
+                    margin: 0; padding: 0; border: 0;
+                    width: 100%; height: 100%;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    width: 100vw; height: 100vh;
                     overflow: hidden; touch-action: manipulation;
-                }
-                .widget {
-                    width: 100vw; height: 100vh;
-                    background: rgba(255,255,255,0.15);
-                    backdrop-filter: blur(20px);
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.3);
-                    border: 1px solid rgba(255,255,255,0.2);
                     display: flex; flex-direction: column; align-items: center; justify-content: center;
-                    color: white; text-align: center; position: relative;
-                    overflow: hidden;
+                    position: relative;
                 }
-                .btn {
-                    background: rgba(255,255,255,0.2); border: none; border-radius: 12px;
-                    padding: 12px 20px; color: white; font-weight: 600;
+                .title {
+                    font-size: 24px; font-weight: bold; color: white; margin-bottom: 30px;
+                }
+                .button {
+                    background: rgba(255,255,255,0.2);
+                    padding: 15px 30px; border-radius: 25px;
                     cursor: pointer; transition: all 0.3s ease;
-                    backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);
-                    min-height: 44px; min-width: 44px;
+                    border: none; color: white; font-size: 18px; font-weight: 600;
                 }
-                .btn:hover, .btn:active {
-                    background: rgba(255,255,255,0.3); transform: scale(0.95);
-                }
+                .button:active { transform: scale(0.95); }
             </style>
         </head>
         <body>
-            <div class="widget">
-                <!-- Your interactive widget content here -->
-            </div>
+            <div class="title">🎵 Your Widget</div>
+            <button class="button" onclick="playSound()">Touch Me</button>
+            
             <script>
-                // Your JavaScript here - make it interactive and engaging!
-                // Add event listeners, animations, real-time updates, etc.
+                function playSound() {
+                    try {
+                        if (window.webkit?.messageHandlers?.nativeAudio) {
+                            window.webkit.messageHandlers.nativeAudio.postMessage({
+                                action: "playNote",
+                                note: "C",
+                                octave: 4,
+                                duration: 0.5
+                            });
+                        }
+                    } catch (error) {
+                        console.log('Audio error:', error);
+                    }
+                }
             </script>
         </body>
         </html>
@@ -196,6 +200,25 @@ class WidgetGenerator {
 
         print("✅ Extracted widget HTML content")
         return cleanHTMLResponse(text)
+    }
+    
+    private func cleanJSXResponse(_ response: String) -> String {
+        var cleaned = response
+        
+        // Remove code block markers
+        cleaned = cleaned.replacingOccurrences(of: "```jsx", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "```javascript", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "```", with: "")
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Extract JSX component if wrapped in explanatory text
+        if !cleaned.hasPrefix("import") {
+            if let startRange = cleaned.range(of: "import React") ?? cleaned.range(of: "import {") {
+                cleaned = String(cleaned[startRange.lowerBound...])
+            }
+        }
+        
+        return cleaned
     }
     
     private func cleanHTMLResponse(_ response: String) -> String {
