@@ -16,9 +16,7 @@ struct ContentView: View {
                         .font(.title)
                         .foregroundColor(.secondary)
                 case 2:
-                    Text("Profile")
-                        .font(.title)
-                        .foregroundColor(.secondary)
+                    ProfileView()
                 default:
                     HomeFeedView()
                 }

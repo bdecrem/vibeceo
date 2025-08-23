@@ -116,3 +116,6 @@ tiny/
 
 # Temporary/experimental uploads folder
 /web/UPLOADS/
+
+# iOS App Security - API Keys
+iPhone/Webtoys/Webtoys/APIKeys.plist
