@@ -8,6 +8,8 @@ struct WidgetGeneratorView: View {
     @State private var generatedWidget: String? = nil
     @State private var showingWidget = false
     @State private var showingSuccessMessage = false
+    @State private var showingError = false
+    @State private var errorMessage = ""
     
     private let widgetGenerator = WidgetGenerator()
     private let store = WebtToyStore.shared
@@ -102,6 +104,11 @@ struct WidgetGeneratorView: View {
         } message: {
             Text("Your widget has been added to the home feed!")
         }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
     }
     
     private func generateWidget() {
@@ -122,7 +129,8 @@ struct WidgetGeneratorView: View {
                 print("❌ Widget generation failed: \(error)")
                 await MainActor.run {
                     isGenerating = false
-                    // TODO: Show error alert to user
+                    errorMessage = "Failed to generate widget: \(error.localizedDescription)"
+                    showingError = true
                 }
             }
         }
@@ -231,8 +239,18 @@ struct WebView: UIViewRepresentable {
     let htmlContent: String
     
     func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.allowsAirPlayForMediaPlayback = true
+        
+        let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.scrollView.isScrollEnabled = false
+        webView.scrollView.bounces = false
+        webView.scrollView.showsHorizontalScrollIndicator = false
+        webView.scrollView.showsVerticalScrollIndicator = false
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
         return webView
     }
     

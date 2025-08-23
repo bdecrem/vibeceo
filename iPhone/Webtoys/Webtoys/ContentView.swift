@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
-    @State private var showingCreateWebtToy = false
+    @State private var showingWidgetGenerator = false
     
     var body: some View {
         ZStack {
@@ -38,7 +38,7 @@ struct ContentView: View {
                         Spacer()
                         
                         Button(action: {
-                            showingCreateWebtToy = true
+                            showingWidgetGenerator = true
                         }) {
                             ZStack {
                                 // Gradient background
@@ -47,12 +47,12 @@ struct ContentView: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
-                                .frame(width: 44, height: 44)
+                                .frame(width: 55, height: 55)
                                 .clipShape(Circle())
                                 .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
                                 
                                 Image(systemName: "plus")
-                                    .font(.system(size: 18, weight: .semibold))
+                                    .font(.system(size: 22.5, weight: .semibold))
                                     .foregroundColor(.white)
                             }
                         }
@@ -62,8 +62,8 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .sheet(isPresented: $showingCreateWebtToy) {
-            CreateOptionsView()
+        .sheet(isPresented: $showingWidgetGenerator) {
+            WidgetGeneratorView()
         }
     }
 }
@@ -72,7 +72,7 @@ struct GlassTabBar: View {
     @Binding var selectedTab: Int
     
     var body: some View {
-        HStack(spacing: 24) {
+        HStack(spacing: 30) {
             // Home Tab
             TabBarButton(
                 icon: "house.fill",
@@ -98,17 +98,17 @@ struct GlassTabBar: View {
             }
         }
         .padding(.horizontal, 4)
-        .padding(.vertical, 2.4)
+        .padding(.vertical, 3)
         .background(
             // Glass morphism effect
             ZStack {
                 // Blur background
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 22.5)
                     .fill(.ultraThinMaterial)
                     .environment(\.colorScheme, .light)
                 
                 // Subtle border
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 22.5)
                     .stroke(
                         LinearGradient(
                             colors: [
@@ -122,7 +122,7 @@ struct GlassTabBar: View {
                     )
                 
                 // Inner glow
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 22.5)
                     .fill(
                         LinearGradient(
                             colors: [
@@ -149,12 +149,12 @@ struct TabBarButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 17.5, weight: .medium))
                 .foregroundColor(isSelected ? .blue : .secondary)
                 .scaleEffect(isSelected ? 1.15 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
-        .frame(width: 32, height: 32)
+        .frame(width: 40, height: 40)
     }
 }
 
