@@ -819,7 +819,7 @@
         <div class="menu-left">
             <!-- Authentic System 7 Apple Logo -->
             <div class="menu-title apple-menu" onclick="toggleAppleMenu(event)">
-                <span class="apple-logo"></span>
+                <span class="apple-logo"></span>
                 <div class="dropdown-menu" id="appleMenu" style="display: none;">
                     <div class="menu-item" onclick="showAboutToyBox(event)">About ToyBox OS...</div>
                     <div class="menu-separator"></div>
@@ -832,7 +832,7 @@
             <div class="menu-title" onclick="toggleFileMenu(event)">File
                 <div class="dropdown-menu" id="fileMenu" style="display: none;">
                     <div class="menu-item" onclick="newApp(event)">New App...</div>
-                    <div class="menu-item" onclick="newFolder(event)">New Folder</div>
+                    <div class="menu-item" onclick="createNewFolder()">New Folder</div>
                     <div class="menu-item" onclick="openApp(event)">Open...</div>
                     <div class="menu-separator"></div>
                     <div class="menu-item" onclick="closeActiveWindow(event)">Close</div>
@@ -899,7 +899,7 @@
             
             <!-- File Menu -->
             <div class="menu-title" onclick="toggleFileMenu(event)">File
-                <div class="dropdown-menu" id="fileMenu" style="display: none;">
+                <div class="dropdown-menu" id="fileMenu2" style="display: none;">
                     <div class="menu-item" onclick="newApp(event)">New App...</div>
                     <div class="menu-item" onclick="openApp(event)">Open...</div>
                     <div class="menu-separator"></div>
@@ -913,7 +913,7 @@
             
             <!-- Edit Menu -->
             <div class="menu-title" onclick="toggleEditMenu(event)">Edit
-                <div class="dropdown-menu" id="editMenu" style="display: none;">
+                <div class="dropdown-menu" id="editMenu2" style="display: none;">
                     <div class="menu-item disabled">Undo</div>
                     <div class="menu-separator"></div>
                     <div class="menu-item disabled">Cut</div>
@@ -927,7 +927,7 @@
             
             <!-- View Menu -->
             <div class="menu-title" onclick="toggleViewMenu(event)">View
-                <div class="dropdown-menu" id="viewMenu" style="display: none;">
+                <div class="dropdown-menu" id="viewMenu2" style="display: none;">
                     <div class="menu-item" onclick="viewByIcon(event)">by Icon</div>
                     <div class="menu-item" onclick="viewByName(event)">by Name</div>
                     <div class="menu-item disabled">by Size</div>
@@ -939,7 +939,7 @@
             
             <!-- Special Menu -->
             <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
-                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                <div class="dropdown-menu" id="specialMenu2" style="display: none;">
                     <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up Desktop</div>
                     <div class="menu-item" onclick="emptyTrash(event)">Empty Trash...</div>
                     <div class="menu-separator"></div>
@@ -963,7 +963,7 @@
             <div class="menu-title">Edit</div>
             <div class="menu-title">View</div>
             <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
-                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                <div class="dropdown-menu" id="specialMenu3" style="display: none;">
                     <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up</div>
                 </div>
             </div>
@@ -1536,6 +1536,7 @@ window.windowManager = new WindowManager();
         let draggedIcon = null;
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
+        let dragStartPos = { x: 0, y: 0 };
 
         function setupDragForIcons() {
             const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
@@ -1567,6 +1568,8 @@ window.windowManager = new WindowManager();
             
             dragOffset.x = event.clientX - rect.left;
             dragOffset.y = event.clientY - rect.top;
+            dragStartPos.x = event.clientX;
+            dragStartPos.y = event.clientY;
             
             // Function to start dragging
             function startDrag(e) {
@@ -1580,8 +1583,25 @@ window.windowManager = new WindowManager();
                     dragStarted = true;
                     isDragging = true;
                     hasMoved = true;
-                    draggedIcon.style.opacity = '0.7';
-                    draggedIcon.style.zIndex = '1000';
+                    // Make sure the dragged icon is selected if not already
+                    if (system7State && !system7State.selectedIcons.has(getIconId(draggedIcon) || draggedIcon.id)) {
+                        system7State.selectedIcons.add(getIconId(draggedIcon) || draggedIcon.id);
+                        draggedIcon.classList.add('selected');
+                    }
+                    
+                    // Apply visual feedback to all selected icons
+                    if (system7State) {
+                        document.querySelectorAll('.desktop-icon').forEach(icon => {
+                            const iconId = getIconId(icon) || icon.id;
+                            if (system7State.selectedIcons.has(iconId)) {
+                                icon.style.opacity = '0.7';
+                                icon.style.zIndex = '1000';
+                            }
+                        });
+                    } else {
+                        draggedIcon.style.opacity = '0.7';
+                        draggedIcon.style.zIndex = '1000';
+                    }
                     draggedIcon.style.pointerEvents = 'none';
                     e.preventDefault();
                     e.stopPropagation();
@@ -1617,14 +1637,35 @@ window.windowManager = new WindowManager();
             const desktop = document.querySelector('#desktop');
             const desktopRect = desktop.getBoundingClientRect();
             
-            let x = event.clientX - desktopRect.left - dragOffset.x;
-            let y = event.clientY - desktopRect.top - dragOffset.y;
+            // Calculate the delta movement from last position
+            const deltaX = event.clientX - dragStartPos.x;
+            const deltaY = event.clientY - dragStartPos.y;
             
-            x = Math.max(0, Math.min(x, desktopRect.width - draggedIcon.offsetWidth));
-            y = Math.max(0, Math.min(y, desktopRect.height - draggedIcon.offsetHeight - 50));
+            // Get all selected icons (including the one being dragged)
+            const selectedIcons = system7State ? system7State.selectedIcons : new Set([draggedIcon.id]);
             
-            draggedIcon.style.left = x + 'px';
-            draggedIcon.style.top = y + 'px';
+            // Move all selected icons together
+            document.querySelectorAll('.desktop-icon').forEach(icon => {
+                const iconId = getIconId(icon) || icon.id;
+                if (selectedIcons.has(iconId)) {
+                    const currentLeft = parseInt(icon.style.left) || icon.offsetLeft;
+                    const currentTop = parseInt(icon.style.top) || icon.offsetTop;
+                    
+                    let newX = currentLeft + deltaX;
+                    let newY = currentTop + deltaY;
+                    
+                    // Constrain to desktop bounds
+                    newX = Math.max(0, Math.min(newX, desktopRect.width - icon.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, desktopRect.height - icon.offsetHeight - 50));
+                    
+                    icon.style.left = newX + 'px';
+                    icon.style.top = newY + 'px';
+                }
+            });
+            
+            // Update drag start position for next delta calculation
+            dragStartPos.x = event.clientX;
+            dragStartPos.y = event.clientY;
             
             // Check trash can highlighting
             const trash = document.getElementById('trashCan');
@@ -1851,6 +1892,93 @@ window.windowManager = new WindowManager();
         
         function closeSpecialMenu() {
             document.getElementById('specialMenu').style.display = 'none';
+        }
+        function toggleAppleMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('appleMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeAppleMenu, { once: true });
+                }, 10);
+            }
+        }
+
+        function toggleFileMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('fileMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeFileMenu, { once: true });
+                }, 10);
+            }
+        }
+
+        function toggleEditMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('editMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeEditMenu, { once: true });
+                }, 10);
+            }
+        }
+
+        function toggleViewMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('viewMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeViewMenu, { once: true });
+                }, 10);
+            }
+        }
+
+        function closeAppleMenu() {
+            document.getElementById('appleMenu').style.display = 'none';
+        }
+        
+        function closeFileMenu() {
+            document.getElementById('fileMenu').style.display = 'none';
+        }
+        
+        function closeEditMenu() {
+            document.getElementById('editMenu').style.display = 'none';
+        }
+        
+        function closeViewMenu() {
+            document.getElementById('viewMenu').style.display = 'none';
         }
         
         // Clean Up Desktop functionality
@@ -2987,10 +3115,10 @@ async function deleteIconFromDesktop(iconElement) {
         }
         
         // Individual menu toggle functions
-        function toggleAppleMenu(event) { toggleMenu('appleMenu', event); }
-        function toggleFileMenu(event) { toggleMenu('fileMenu', event); }
-        function toggleEditMenu(event) { toggleMenu('editMenu', event); }
-        function toggleViewMenu(event) { toggleMenu('viewMenu', event); }
+        
+        
+        
+        
         
         // Menu item actions
         function showAboutToyBox(event) {
@@ -3208,10 +3336,10 @@ async function deleteIconFromDesktop(iconElement) {
         }
         
         // Individual menu toggle functions
-        function toggleAppleMenu(event) { toggleMenu('appleMenu', event); }
-        function toggleFileMenu(event) { toggleMenu('fileMenu', event); }
-        function toggleEditMenu(event) { toggleMenu('editMenu', event); }
-        function toggleViewMenu(event) { toggleMenu('viewMenu', event); }
+        
+        
+        
+        
         
         // Menu item actions
         function showAboutToyBox(event) {
@@ -3456,6 +3584,109 @@ async function deleteIconFromDesktop(iconElement) {
             alert(`Opening folder: ${folderName}\n\n(Folder contents functionality coming soon!)`);
         }
 
+        
+        // Folder creation functionality
+        let folderCounter = 1;
+        
+        function createNewFolder() {
+            console.log('Creating new folder...');
+            
+            // Hide any open menus first
+            document.querySelectorAll('.menu-dropdown').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // Find an available position on the desktop
+            const desktop = document.getElementById('desktop');
+            const existingIcons = Array.from(desktop.querySelectorAll('.desktop-icon, .folder-icon'));
+            
+            // Calculate grid positions (80px spacing)
+            const iconSize = 80;
+            const startX = 20;
+            const startY = 60; // Below menubar
+            const maxCols = Math.floor((window.innerWidth - 40) / iconSize);
+            
+            let position = findAvailablePosition(existingIcons, startX, startY, iconSize, maxCols);
+            
+            // Create folder element
+            const folder = document.createElement('div');
+            folder.className = 'folder-icon desktop-icon';
+            folder.style.position = 'absolute';
+            folder.style.left = position.x + 'px';
+            folder.style.top = position.y + 'px';
+            folder.style.width = '64px';
+            folder.style.height = '80px';
+            folder.style.textAlign = 'center';
+            folder.style.cursor = 'pointer';
+            folder.style.userSelect = 'none';
+            folder.style.zIndex = '100';
+            
+            // Create folder name
+            let folderName = 'New Folder';
+            if (folderCounter > 1) {
+                folderName = 'New Folder ' + folderCounter;
+            }
+            folderCounter++;
+            
+            // Folder HTML structure
+            folder.innerHTML = `
+                <div style="width: 64px; height: 64px; background: #f0f0f0; border: 2px solid #999; border-radius: 4px; position: relative; margin-bottom: 4px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                    <div style="position: absolute; top: 5px; left: 5px; right: 5px; height: 20px; background: #ddd; border-radius: 2px;"></div>
+                    <div style="position: absolute; top: 25px; left: 8px; right: 8px; bottom: 8px; background: #fff; border: 1px solid #999; border-radius: 2px;"></div>
+                    <div style="position: absolute; top: 30px; left: 12px; right: 12px; height: 2px; background: #ccc;"></div>
+                    <div style="position: absolute; top: 35px; left: 12px; right: 12px; height: 2px; background: #ccc;"></div>
+                    <div style="position: absolute; top: 40px; left: 12px; right: 12px; height: 2px; background: #ccc;"></div>
+                </div>
+                <div class="icon-label" style="font-size: 10px; color: black; background: white; padding: 1px 2px; border-radius: 2px; display: inline-block; max-width: 64px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${folderName}</div>
+            `;
+            
+            // Make folder draggable
+            makeDraggable(folder);
+            
+            // Add double-click handler to open folder (placeholder)
+            folder.addEventListener('dblclick', function() {
+                alert('Folder "' + folderName + '" opened!\n\n(Folder contents functionality would go here)');
+            });
+            
+            // Add to desktop
+            desktop.appendChild(folder);
+            
+            console.log('New folder created:', folderName);
+            
+            // Flash effect to show it was created
+            folder.style.background = 'rgba(255, 255, 0, 0.3)';
+            setTimeout(() => {
+                folder.style.background = '';
+            }, 500);
+        }
+        
+        function findAvailablePosition(existingIcons, startX, startY, iconSize, maxCols) {
+            const occupiedPositions = new Set();
+            
+            // Track all occupied positions
+            existingIcons.forEach(icon => {
+                const rect = icon.getBoundingClientRect();
+                const x = Math.round((rect.left - startX) / iconSize);
+                const y = Math.round((rect.top - startY) / iconSize);
+                occupiedPositions.add(`${x},${y}`);
+            });
+            
+            // Find first available position
+            for (let row = 0; row < 20; row++) { // Max 20 rows
+                for (let col = 0; col < maxCols; col++) {
+                    const posKey = `${col},${row}`;
+                    if (!occupiedPositions.has(posKey)) {
+                        return {
+                            x: startX + (col * iconSize),
+                            y: startY + (row * iconSize)
+                        };
+                    }
+                }
+            }
+            
+            // Fallback position if grid is full
+            return { x: startX, y: startY };
+        }
         </script>
 </body>
 </html>
