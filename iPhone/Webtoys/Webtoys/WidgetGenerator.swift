@@ -24,112 +24,42 @@ class WidgetGenerator {
         }
         
         let systemPrompt = """
-        Create a MUSICAL, INTERACTIVE, COLORFUL HTML widget for iPhone. Return complete HTML with embedded CSS and JavaScript for a beautiful 3:2 portrait widget with Web Audio API.
+        Create a simple, beautiful HTML widget for iPhone. Return ONLY complete HTML - no explanations.
 
-        🎵 NATIVE AUDIO SYSTEM:
-        - Use window.webkit.messageHandlers.nativeAudio for beautiful, professional sound
-        - Native audio methods available in JavaScript:
-          * playNote(note, octave, duration) - Play single note through native bridge
-          * playChord(notes, octave, duration) - Play chord through native bridge
-          * playScale(root, scaleType, octave) - Play musical scale through native bridge
-        - Available notes: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
-        - Available scales: "major", "pentatonic"
-        
-        MUSICAL GUIDELINES:
-        - Use proper musical scales and chord progressions
-        - Create harmonic, beautiful sounds - never harsh or experimental
-        - Examples: C major (C-D-E-F-G-A-B), C major chord (C-E-G)
-        - Pentatonic scales for ambient/meditative sounds
-        - Layer multiple notes with slight delays for rich harmony
+        Requirements:
+        - Full-screen widget (width: 100%, height: 100%, no margins)
+        - Beautiful colors and smooth animations
+        - Large, touch-friendly buttons (minimum 60px)
+        - Include real images from Unsplash or Giphy when relevant
+        - Add satisfying audio feedback using: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playNote", note: "C", octave: 4, duration: 0.3})
+        - Content should auto-disappear after 3 seconds to encourage re-trying
 
-        🎨 VISUAL & INTERACTION PRIORITY:
-        - Extremely colorful with vibrant gradients and dynamic color changes
-        - Every touch/drag should create immediate visual and audio feedback
-        - Smooth animations that respond to user input in real-time
-        - Particle systems, flowing animations, and morphing shapes
-        - Colors should change based on interaction, sound frequency, or time
-        - Create "playful" experiences - make it fun to just touch and explore
-
-        🎯 HTML WIDGET CONCEPTS (ALL WITH BEAUTIFUL AUDIO):
-        - Piano keyboards with clickable keys playing chords
-        - Color palettes where each color plays a musical note
-        - Animated particle systems with musical sequences
-        - Touch-responsive gradient backgrounds that change with music
-        - Rhythm makers with visual beat patterns and drum sounds
-        - Ambient chord progression generators with flowing animations
-        - Musical paint brushes with mouse/touch drawing + sound
-        - Pentatonic wind chimes with animated falling elements
-        - Interactive musical scales with colorful note visualization
-        - Chord progression widgets (C-Am-F-G patterns) with beautiful transitions
-
-        NATIVE AUDIO EXAMPLES:
-        - Single note: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playNote", note: "C", octave: 4, duration: 0.5})
-        - Beautiful chord: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playChord", notes: ["C", "E", "G"], octave: 4, duration: 1.0})
-        - Musical scale: window.webkit.messageHandlers.nativeAudio.postMessage({action: "playScale", root: "C", scaleType: "major", octave: 4})
-        - With error handling: try { window.webkit?.messageHandlers?.nativeAudio?.postMessage(...) } catch(e) { console.log(e) }
-
-        REQUIREMENTS:
-        - Return ONLY complete HTML document (no markdown, no explanations)
-        - Include <!DOCTYPE html>, <html>, <head>, <body> structure
-        - 3:2 portrait aspect ratio optimized for iPhone feed
-        - IMPORTANT: Use full canvas - NO borders, margins, or frames around content
-        - Set html/body to width: 100%, height: 100%, margin: 0, padding: 0
-        - Use native audio bridge for all sounds (window.webkit.messageHandlers.nativeAudio)
-        - Immediate beautiful audio feedback on touch interactions
-        - Embedded CSS in <style> tags for styling
-        - Smooth animations with CSS transitions and JavaScript
-        - Touch-friendly with large clickable areas
-        - Include proper error handling for audio calls (try/catch)
-
-        TEMPLATE:
+        Template structure:
         ```html
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-            <title>Musical Widget</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; border: none; outline: none; }
-                html, body {
-                    margin: 0; padding: 0; border: 0;
-                    width: 100%; height: 100%;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                html, body { width: 100%; height: 100%; overflow: hidden; }
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    overflow: hidden; touch-action: manipulation;
-                    display: flex; flex-direction: column; align-items: center; justify-content: center;
-                    position: relative;
+                    display: flex; align-items: center; justify-content: center;
                 }
-                .title {
-                    font-size: 24px; font-weight: bold; color: white; margin-bottom: 30px;
-                }
-                .button {
-                    background: rgba(255,255,255,0.2);
-                    padding: 15px 30px; border-radius: 25px;
-                    cursor: pointer; transition: all 0.3s ease;
-                    border: none; color: white; font-size: 18px; font-weight: 600;
-                }
-                .button:active { transform: scale(0.95); }
             </style>
         </head>
         <body>
-            <div class="title">🎵 Your Widget</div>
-            <button class="button" onclick="playSound()">Touch Me</button>
-            
+            <!-- Your widget content here -->
             <script>
                 function playSound() {
                     try {
-                        if (window.webkit?.messageHandlers?.nativeAudio) {
-                            window.webkit.messageHandlers.nativeAudio.postMessage({
-                                action: "playNote",
-                                note: "C",
-                                octave: 4,
-                                duration: 0.5
-                            });
-                        }
-                    } catch (error) {
-                        console.log('Audio error:', error);
-                    }
+                        window.webkit?.messageHandlers?.nativeAudio?.postMessage({
+                            action: "playNote", note: "C", octave: 4, duration: 0.3
+                        });
+                    } catch(e) {}
                 }
             </script>
         </body>
