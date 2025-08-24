@@ -1209,6 +1209,156 @@ function userSeemsLost(message: string): boolean {
   return lostUserPatterns.test(message.trim());
 }
 
+// Parse alert request to extract basic monitoring info
+function parseAlertRequest(request: string): { 
+  targetUrl: string | null, 
+  searchTerms: string, 
+  frequency: number,
+  alertType: 'event' | 'recurring',
+  scheduleTime: string | null,
+  scheduleDays: string | null
+} {
+  const lower = request.toLowerCase();
+  
+  // Check if this is a recurring alert
+  const isRecurring = lower.includes('every') || 
+                     lower.includes('daily') || 
+                     lower.includes('at ') && (lower.includes('am') || lower.includes('pm')) ||
+                     lower.includes('morning') ||
+                     lower.includes('evening');
+  
+  let alertType: 'event' | 'recurring' = isRecurring ? 'recurring' : 'event';
+  let scheduleTime: string | null = null;
+  let scheduleDays: string | null = null;
+  
+  if (isRecurring) {
+    // Parse time-based patterns
+    const timePatterns = parseRecurringSchedule(request);
+    scheduleTime = timePatterns.time;
+    scheduleDays = timePatterns.days;
+  }
+  
+  // Determine target URL
+  let targetUrl = null;
+  if (lower.includes('amazon')) targetUrl = 'https://amazon.com';
+  else if (lower.includes('twitter')) targetUrl = 'https://twitter.com';
+  else if (lower.includes('youtube')) targetUrl = 'https://youtube.com';
+  else if (lower.includes('reddit')) targetUrl = 'https://reddit.com';
+  else if (lower.includes('news') || lower.includes('announce')) targetUrl = 'https://news.google.com';
+  else if (lower.includes('surf') || lower.includes('weather')) targetUrl = 'https://forecast.weather.gov';
+  
+  // Extract search terms (simple keyword extraction)
+  const searchTerms = extractSearchTerms(request);
+  
+  // Determine check frequency based on request type (for event-based alerts)
+  let frequency = 60; // default 1 hour
+  if (!isRecurring) {
+    if (lower.includes('stock') || lower.includes('sale') || lower.includes('price')) {
+      frequency = 120; // 2 hours for shopping
+    } else if (lower.includes('twitter') || lower.includes('post') || lower.includes('tweet')) {
+      frequency = 30; // 30 minutes for social media
+    } else if (lower.includes('news') || lower.includes('announce')) {
+      frequency = 180; // 3 hours for news
+    }
+  }
+  
+  return { targetUrl, searchTerms, frequency, alertType, scheduleTime, scheduleDays };
+}
+
+// Parse recurring schedule from request
+function parseRecurringSchedule(request: string): { time: string | null, days: string | null } {
+  const lower = request.toLowerCase();
+  let time: string | null = null;
+  let days: string | null = null;
+  
+  // Extract time patterns (most specific first)
+  const timePatterns = [
+    /at (\d{1,2}):(\d{2})\s*(am|pm)/i,   // "at 7:30am", "at 11:45pm"  
+    /(\d{1,2}):(\d{2})\s*(am|pm)/i,      // "7:30am", "11:45pm"
+    /at (\d{1,2})\s*(am|pm)/i,           // "at 7am", "at 11pm"
+    /(\d{1,2})\s*(am|pm)/i,              // "7am", "11pm"
+  ];
+  
+  for (const pattern of timePatterns) {
+    const match = request.match(pattern);
+    if (match) {
+      let hour = parseInt(match[1]);
+      let minute = '00';
+      let ampm = '';
+      
+      // Handle different regex patterns based on capture groups
+      if (match.length === 4) {
+        // Pattern with minutes: (at) (\d{1,2}):(\d{2})\s*(am|pm) or (\d{1,2}):(\d{2})\s*(am|pm)
+        minute = match[2];
+        ampm = match[3];
+      } else {
+        // Pattern without minutes: (at) (\d{1,2})\s*(am|pm) or (\d{1,2})\s*(am|pm)
+        minute = '00';
+        ampm = match[2];
+      }
+      
+      // Convert to 24-hour format
+      if (ampm.toLowerCase() === 'pm' && hour !== 12) hour += 12;
+      if (ampm.toLowerCase() === 'am' && hour === 12) hour = 0;
+      
+      time = `${hour.toString().padStart(2, '0')}:${minute.padStart(2, '0')}:00`;
+      break;
+    }
+  }
+  
+  // If no specific time found but mentions morning/evening
+  if (!time) {
+    if (lower.includes('morning')) time = '07:00:00';
+    if (lower.includes('evening')) time = '18:00:00';
+  }
+  
+  // Extract day patterns
+  if (lower.includes('daily') || lower.includes('every day')) {
+    days = 'daily';
+  } else if (lower.includes('weekdays') || lower.includes('monday through friday')) {
+    days = 'weekdays';
+  } else if (lower.includes('weekends')) {
+    days = 'weekends';
+  } else if (lower.includes('every morning') || lower.includes('every evening')) {
+    days = 'daily';
+  } else {
+    // Default to daily for now
+    days = 'daily';
+  }
+  
+  return { time, days };
+}
+
+function extractSearchTerms(request: string): string {
+  // Extract key terms from the request
+  const terms = [];
+  
+  // Common patterns
+  if (request.match(/kindle/i)) terms.push('kindle');
+  if (request.match(/nintendo\s+switch/i)) terms.push('nintendo switch');
+  if (request.match(/iphone/i)) terms.push('iphone');
+  if (request.match(/tesla/i)) terms.push('tesla');
+  if (request.match(/apple/i)) terms.push('apple');
+  if (request.match(/sale|discount|deal/i)) terms.push('sale', 'discount', 'deal');
+  
+  // Extract quoted terms
+  const quoted = request.match(/"([^"]+)"/g);
+  if (quoted) {
+    quoted.forEach(q => terms.push(q.replace(/"/g, '')));
+  }
+  
+  // If no specific terms found, use key words from the request
+  if (terms.length === 0) {
+    const words = request.toLowerCase()
+      .replace(/alert me when|notify me when|tell me when/g, '')
+      .split(' ')
+      .filter(word => word.length > 3 && !['when', 'there', 'goes', 'gets', 'hits'].includes(word));
+    terms.push(...words.slice(0, 3)); // Take first 3 meaningful words
+  }
+  
+  return terms.join(', ');
+}
+
 // Handle conversation with any coach, including Leo and standard coaches
 async function handleCoachConversation(message: string, twilioClient: TwilioClient, from: string, coachProfile: CEO, shouldIdentify: boolean = true): Promise<boolean> {
   try {
@@ -1854,6 +2004,132 @@ ${response}`;
       }
     }
 
+    // Handle ALERT command
+    if (message.match(/^ALERT(?:\s|$)/i)) {
+      console.log(`Processing ALERT command from ${from}`);
+      
+      try {
+        // Extract the alert request (everything after "ALERT ")
+        const alertMatch = message.match(/^ALERT\s+(.+)$/i);
+        
+        if (!alertMatch) {
+          // User just typed "ALERT" alone - show help
+          const response = `🚨 ALERTS system ready!
+
+Try stuff like:
+→ alert me when apple announces new product
+→ alert when nintendo switch 2 is in stock on amazon
+→ alert me when bitcoin hits $100k
+
+We'll monitor the web and text you when conditions are met.`;
+          
+          await sendSmsResponse(
+            from,
+            response,
+            twilioClient
+          );
+          return;
+        }
+        
+        const alertRequest = alertMatch[1].trim();
+        
+        if (!alertRequest) {
+          await sendSmsResponse(
+            from,
+            `❌ ALERT: Please provide what to monitor after ALERT command.\nExamples:\nALERT me when apple announces new product\nALERT when tesla model 3 price drops below $30k`,
+            twilioClient
+          );
+          return;
+        }
+        
+        console.log(`Alert request from ${normalizedPhoneNumber}: ${alertRequest}`);
+        
+        // Parse alert request to extract basic info
+        const { targetUrl, searchTerms, frequency, alertType, scheduleTime, scheduleDays } = parseAlertRequest(alertRequest);
+        
+        // Get user slug for the alert
+        const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
+        
+        // Save alert to database
+        const alertData: any = {
+          phone_number: normalizedPhoneNumber,
+          user_slug: userSlug,
+          request: alertRequest,
+          target_url: targetUrl,
+          search_terms: searchTerms,
+          alert_type: alertType,
+          check_frequency_minutes: frequency
+        };
+        
+        // Add recurring-specific fields if applicable
+        if (alertType === 'recurring') {
+          alertData.schedule_time = scheduleTime;
+          alertData.schedule_days = scheduleDays;
+        }
+        
+        const { data, error } = await supabase
+          .from('wtaf_alerts')
+          .insert(alertData)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Failed to save alert:', error);
+          await sendSmsResponse(
+            from,
+            `❌ ALERT: Failed to save your alert. Please try again.`,
+            twilioClient
+          );
+          return;
+        }
+        
+        console.log(`✅ Alert saved with ID: ${data.id}`);
+        
+        let confirmationMessage;
+        if (alertType === 'recurring') {
+          const timeStr = scheduleTime ? new Date(`2000-01-01T${scheduleTime}`).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit', 
+            hour12: true 
+          }) : 'scheduled time';
+          
+          confirmationMessage = `🚨 RECURRING ALERT CREATED!
+
+"${alertRequest}"
+
+I'll send you updates ${scheduleDays} at ${timeStr} (Pacific Time).
+
+Text ALERTS to see all your alerts.`;
+        } else {
+          confirmationMessage = `🚨 ALERT CREATED!
+
+"${alertRequest}"
+
+I'll check every ${frequency} minutes and text you when the condition is met.
+
+Text ALERTS to see all your alerts.`;
+        }
+        
+        await sendSmsResponse(
+          from,
+          confirmationMessage,
+          twilioClient
+        );
+        
+        console.log(`✅ Alert confirmation sent to ${from} for request: ${alertRequest}`);
+        return;
+        
+      } catch (error) {
+        console.error(`Error processing ALERT command: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ ALERT: Failed to process alert request - ${error instanceof Error ? error.message : 'Unknown error'}`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Handle MEME command
     if (message.match(/^MEME(?:\s|$)/i)) {
       console.log(`Processing MEME command from ${from}`);
@@ -2005,8 +2281,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     }
 
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'UPLOADS', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC'];
-    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE|PUBLIC)\s/i) || message.match(/^--make-public\s/i)) {
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'ALERT', 'UPLOADS', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC'];
+    if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME|ALERT)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE|PUBLIC)\s/i) || message.match(/^--make-public\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
     }
