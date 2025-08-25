@@ -418,3 +418,337 @@ To add a new app to ToyBox OS:
 - **Keep backups/ folder (it's git-ignored)**
 
 Remember: **Preserve the magic of V1 while building the future in V2!**
+
+## User Authentication System
+
+ToyBox OS includes a complete user authentication system that allows users to log in and access personalized features across all windowed apps.
+
+### Authentication Overview
+
+The ToyBox OS authentication system provides:
+- User registration and login via handle + 4-digit PIN
+- Session persistence across browser sessions
+- Real-time authentication broadcast to all open windows
+- Integration with ZAD API for user data storage
+
+### Database Schema
+
+**Table**: `wtaf_zero_admin_collaborative`
+**App ID**: `toybox-os-users` 
+**Action Type**: `user_registry`
+
+**User Record Structure**:
+```json
+{
+    "handle": "bart",           // Username (3-15 characters)
+    "pin": "1234",             // 4-digit numeric PIN
+    "id": "bart",              // User ID (same as handle)
+    "created": "2025-01-21T..."  // ISO timestamp
+}
+```
+
+### Profile/Login Button
+
+The profile button is located in the upper right corner of the menu bar:
+
+```html
+<div id="profile-icon" onclick="toggleAuth(event)">
+    <span id="profile-emoji">👤</span>
+    <span id="username-display"></span>
+</div>
+```
+
+**Visual States**:
+- **Not logged in**: Shows `👤` with empty username display
+- **Logged in**: Shows `👤 username` with user's handle
+
+### Authentication Flow
+
+#### 1. Login Process
+```javascript
+async function doLogin() {
+    const handle = document.getElementById('loginHandle').value.trim();
+    const pin = document.getElementById('loginPin').value;
+    
+    // Load all users from ZAD
+    const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+    const users = await response.json();
+    
+    // Find matching user
+    const user = users.find(u => 
+        u.content_data && 
+        u.content_data.handle === handle && 
+        u.content_data.pin === pin
+    );
+    
+    if (user) {
+        currentToyBoxUser = user.content_data;
+        localStorage.setItem('toybox_user', JSON.stringify(currentToyBoxUser));
+        updateProfileDisplay();
+        broadcastAuth();
+    }
+}
+```
+
+#### 2. Registration Process
+```javascript
+async function doRegister() {
+    const userData = {
+        handle: handle,
+        pin: pin,
+        id: handle,
+        created: new Date().toISOString()
+    };
+    
+    // Save to ZAD system
+    const saveResponse = await fetch('/api/zad/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            app_id: 'toybox-os-users',
+            data_type: 'user_registry',
+            content_data: userData,
+            participant_id: handle,
+            action_type: 'user_registry'
+        })
+    });
+}
+```
+
+#### 3. Session Persistence
+- User data stored in `localStorage` as `toybox_user`
+- Session automatically restored on page load
+- Survives browser restarts and tab refreshes
+
+```javascript
+function initToyBoxAuth() {
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        try {
+            currentToyBoxUser = JSON.parse(savedUser);
+            updateProfileDisplay();
+        } catch (e) {
+            localStorage.removeItem('toybox_user');
+        }
+    }
+}
+```
+
+### How Windowed Apps Access User Data
+
+#### 1. Authentication Broadcast System
+
+ToyBox OS broadcasts authentication state to all open windows via `postMessage`:
+
+```javascript
+function broadcastAuth() {
+    const iframes = document.querySelectorAll('iframe');
+    iframes.forEach(iframe => {
+        try {
+            iframe.contentWindow.postMessage({
+                type: 'TOYBOX_AUTH',
+                user: currentUser  // Full user object or null
+            }, '*');
+        } catch (e) {
+            // Silently fail if iframe not ready
+        }
+    });
+}
+```
+
+#### 2. App-Side Authentication Handler
+
+Windowed apps should include this pattern to receive authentication data:
+
+```javascript
+// Global variable to store current user
+let currentUser = null;
+
+// Listen for auth updates from ToyBox OS
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'TOYBOX_AUTH') {
+        console.log('Received auth update:', event.data.user);
+        currentUser = event.data.user;
+        
+        if (currentUser) {
+            // User is logged in - update UI
+            updateStatus(`Logged in as ${currentUser.handle}`);
+        } else {
+            // User is logged out - update UI
+            updateStatus('Not logged in');
+        }
+    }
+});
+
+// Request current auth state when app loads
+window.addEventListener('DOMContentLoaded', function() {
+    // Also try localStorage as fallback
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+        } catch (e) {
+            console.error('Failed to parse saved user');
+        }
+    }
+    
+    // Request fresh auth state from ToyBox OS
+    window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+});
+```
+
+#### 3. Common User Data Access Patterns
+
+**Check if user is logged in**:
+```javascript
+if (currentUser) {
+    // User is logged in
+    console.log('Username:', currentUser.handle);
+    console.log('User ID:', currentUser.id);
+} else {
+    // User not logged in
+    alert('Please login to use this feature');
+}
+```
+
+**Get current username for display**:
+```javascript
+const displayName = currentUser ? currentUser.handle : 'Anonymous';
+```
+
+**Use in ZAD API calls**:
+```javascript
+async function saveUserData(data) {
+    const response = await fetch('/api/zad/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            app_id: window.APP_ID,
+            participant_id: currentUser ? currentUser.handle : 'anonymous',
+            action_type: 'user_data',
+            content_data: data
+        })
+    });
+}
+```
+
+### Complete Working Example: ToyBox Chat App
+
+The ToyBox Chat app demonstrates proper authentication integration:
+
+```javascript
+// State management
+let currentUser = null;
+
+// Load auth from localStorage (backup method)
+function loadAuth() {
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            updateStatus(`Logged in as ${currentUser.handle}`);
+        } catch (e) {
+            updateStatus('Not logged in');
+        }
+    }
+}
+
+// Send message with authentication
+async function sendMessage() {
+    if (!currentUser) {
+        alert('Please login to send messages');
+        return;
+    }
+    
+    const message = {
+        text: text,
+        author: currentUser.handle,  // Use authenticated username
+        timestamp: new Date().toISOString(),
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    await save('chat_message', message);
+}
+
+// Listen for auth changes from ToyBox OS
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'TOYBOX_AUTH') {
+        currentUser = event.data.user;
+        if (currentUser) {
+            updateStatus(`Logged in as ${currentUser.handle}`);
+        } else {
+            updateStatus('Not logged in');
+        }
+    }
+});
+
+// Initialize
+window.addEventListener('DOMContentLoaded', function() {
+    loadAuth();  // Fallback method
+});
+```
+
+### Common Pitfalls and Solutions
+
+#### ❌ Wrong: Using `.username`
+```javascript
+const name = currentUser.username;  // UNDEFINED - wrong field
+```
+
+#### ✅ Correct: Using `.handle`
+```javascript
+const name = currentUser.handle;  // Works - correct field
+```
+
+#### ❌ Wrong: Not handling null user
+```javascript
+const name = currentUser.handle;  // ERROR if user is null
+```
+
+#### ✅ Correct: Always check for null
+```javascript
+const name = currentUser ? currentUser.handle : 'Anonymous';
+```
+
+#### ❌ Wrong: Only using localStorage
+```javascript
+// Only checks localStorage - misses real-time updates
+const savedUser = localStorage.getItem('toybox_user');
+```
+
+#### ✅ Correct: Using postMessage + localStorage fallback
+```javascript
+// Listen for real-time updates AND check localStorage
+window.addEventListener('message', handleAuthUpdate);
+window.addEventListener('DOMContentLoaded', loadAuthFallback);
+```
+
+### Authentication Security Model
+
+1. **Local Authentication**: Handle + PIN stored in ZAD database
+2. **Session Management**: localStorage for persistence
+3. **No Passwords**: 4-digit numeric PINs for simplicity
+4. **User Isolation**: Each app uses participant_id for data separation
+5. **No Cross-App Data**: User data isolated by app_id
+
+### Testing Authentication Integration
+
+To test authentication in your windowed app:
+
+1. **Open ToyBox OS**: https://webtoys.ai/public/toybox-os
+2. **Login/Register**: Click profile icon, create account or sign in
+3. **Open your app**: Click app icon to open in window
+4. **Check console**: Look for auth messages and currentUser object
+5. **Test features**: Verify app respects login state
+
+### Global Variables Reference
+
+**In ToyBox OS main window**:
+- `currentToyBoxUser` - Main user object
+- `currentUser` - Sync variable for compatibility
+
+**In windowed apps**:
+- `currentUser` - User object received from ToyBox OS
+- Available fields: `handle`, `pin`, `id`, `created`
+
+**localStorage key**: `toybox_user` - JSON string of user object
