@@ -60,7 +60,16 @@ async function generateWindowedApp(submission) {
   let appTemplate = 'generic';
   const desc = submission.appFunction.toLowerCase();
   
-  if (desc.includes('paint') || desc.includes('draw') || desc.includes('sketch')) {
+  // Check if this is a Webtoys import
+  // Also check if the description looks like just an app slug (wave-wood-deconstructing)
+  const looksLikeSlug = desc.match(/^[a-z0-9-]+$/) && desc.includes('-');
+  
+  if (submission.appType === 'webtoys' || 
+      desc.includes('import webtoys app:') ||
+      (looksLikeSlug && desc.split('-').length >= 3)) {
+    appTemplate = 'webtoys';
+    console.log('🔄 Detected as Webtoys import based on slug pattern');
+  } else if (desc.includes('paint') || desc.includes('draw') || desc.includes('sketch')) {
     appTemplate = 'paint';
   } else if (desc.includes('note') || desc.includes('text') || desc.includes('write')) {
     appTemplate = 'notepad';
@@ -72,6 +81,38 @@ async function generateWindowedApp(submission) {
     appTemplate = 'chat';
   }
 
+  // Special handling for Webtoys import
+  if (appTemplate === 'webtoys') {
+    console.log('🔄 Converting Webtoys app...');
+    
+    // Extract the app slug from the description
+    let webtoysSlug = submission.appFunction.replace('import webtoys app:', '').trim();
+    if (!webtoysSlug) {
+      webtoysSlug = submission.appFunction.trim();
+    }
+    
+    // Import the converter
+    const { default: convertWebtoysApp } = await import('./convert-webtoys-app.js');
+    
+    // Convert the app
+    const result = await convertWebtoysApp(webtoysSlug);
+    
+    if (result.success) {
+      console.log(`✅ Successfully converted ${webtoysSlug} to ToyBox OS`);
+      return {
+        success: true,
+        appId: result.toyboxSlug,
+        appName: result.appTitle
+      };
+    } else {
+      console.error(`❌ Failed to convert: ${result.error}`);
+      return {
+        success: false,
+        error: result.error
+      };
+    }
+  }
+  
   // Use appSlug if provided, otherwise generate from appName
   const appId = submission.appSlug || generateAppId(submission.appName);
   
