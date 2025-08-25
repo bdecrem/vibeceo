@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToyBox OS Fixit Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .reload-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .reload-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(180deg);
+        }
+        
+        .reload-button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        
+        #userInfo {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .form-section {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .issues-list {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .issue-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .issue-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-right: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .issue-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .type-fix { background: #ffebee; color: #c62828; }
+        .type-feature { background: #e3f2fd; color: #1565c0; }
+        .type-update { background: #fff3e0; color: #e65100; }
+        .type-rollback { background: #f3e5f5; color: #6a1b9a; }
+        
+        .issue-description {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .issue-status {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .status-completed { color: #4caf50; }
+        .status-failed { color: #f44336; }
+        .status-pending { color: #ff9800; }
+        .status-closed { color: #9e9e9e; font-style: italic; }
+        
+        .close-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+        
+        .close-button:hover {
+            background: #d32f2f;
+            transform: translateY(-1px);
+        }
+        
+        .bart-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .auth-debug {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="reload-button" onclick="location.reload()" title="Reload">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+            </button>
+            <h1>🔧 ToyBox OS Fixit Board</h1>
+            <div class="subtitle">Report bugs and request features for ToyBox OS</div>
+            <div id="lastIssueInfo" style="margin-top: 10px; font-size: 14px; opacity: 0.95; font-weight: 500;"></div>
+            <div id="userInfo" style="margin-top: 5px; font-size: 14px; opacity: 0.95; font-weight: 500;"></div>
+        </div>
+        
+        <div class="form-section">
+            <!-- Debug panel for auth troubleshooting -->
+            <div id="authDebug" class="auth-debug" style="display: none;">
+                <strong>🔍 Auth Debug Info:</strong><br>
+                <div id="debugContent"></div>
+            </div>
+            
+            <form id="issueForm">
+                <div id="bartMessage" style="display: none; background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center;">
+                    ⚡ BART Admin Mode Active - You can close issues!
+                </div>
+                <div class="form-group">
+                    <label for="actionType">What needs to be done?</label>
+                    <select id="actionType" name="actionType" required>
+                        <option value="fix" selected>🔧 Fix Bug</option>
+                        <option value="feature">✨ Add Feature</option>
+                        <option value="update">📝 Update App</option>
+                        <option value="rollback">↩️ Rollback Change</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target">Which app/component?</label>
+                    <select id="target" name="target" required>
+                        <option value="">Select target...</option>
+                        <option value="toybox-os">ToyBox OS Desktop</option>
+                        <option value="app-studio">App Studio</option>
+                        <option value="toybox-issue-tracker">Issue Tracker (this app)</option>
+                        <option value="community-notepad">Community Notepad</option>
+                        <option value="toybox-macword">MacWord</option>
+                        <option value="toybox-chat">Chat</option>
+                        <option value="toybox-lightning-puma-parasailing">Sudoku</option>
+                        <option value="wave-wood-deconstructing">Paint</option>
+                        <option value="other">Other (specify in description)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Describe the change:</label>
+                    <textarea id="description" name="description" required 
+                        placeholder="Be specific: 'Make the Sudoku hint button green' or 'Add a calculator app to the desktop' or 'Fix the chat message overflow issue'"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="priority">Priority:</label>
+                    <select id="priority" name="priority" required>
+                        <option value="low">🟢 Low - Nice to have</option>
+                        <option value="medium" selected>🟡 Medium - Should be done soon</option>
+                        <option value="high">🟠 High - Breaking something</option>
+                        <option value="critical">🔴 Critical - System unusable</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Submit Issue
+                </button>
+            </form>
+        </div>
+        
+        <div class="issues-list" id="issuesList">
+            <h3 style="margin-bottom: 15px;">📋 Recent Issues</h3>
+            <div id="issuesContainer">
+                <p style="color: #666;">No recent updates yet.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // CRITICAL AUTH FIX: Debug logging system
+        const authDebug = [];
+        
+        function logAuth(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            authDebug.push(data ? `${logEntry}: ${JSON.stringify(data)}` : logEntry);
+            console.log('🔍 AUTH DEBUG:', logEntry, data || '');
+            
+            // Update debug panel
+            const debugContent = document.getElementById('debugContent');
+            if (debugContent) {
+                debugContent.innerHTML = authDebug.slice(-10).join('<br>');
+            }
+        }
+        
+        // Show/hide debug panel (for troubleshooting)
+        function toggleDebug() {
+            const debugPanel = document.getElementById('authDebug');
+            debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Add debug toggle on Ctrl+D
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                toggleDebug();
+            }
+        });
+        
+        // FIXED: Helper function to check if user is BART 
+        // OLD CODE: const username = typeof user === 'string' ? user : user.username;
+        // NEW CODE: Use user.handle (the actual property from ToyBox OS auth)
+        function isBart() {
+            const user = window.toyboxUser;
+            logAuth('isBart() check', { user, hasToyboxUser: !!user });
+            
+            if (!user) {
+                logAuth('isBart() = false (no user)');
+                return false;
+            }
+            
+            // CRITICAL FIX: ToyBox OS sends 'handle' not 'username'
+            const userIdentifier = typeof user === 'string' ? user : (user.handle || user.username || user.id);
+            const isBartResult = userIdentifier && userIdentifier.toLowerCase() === 'bart';
+            
+            logAuth('isBart() result', { userIdentifier, isBartResult });
+            return isBartResult;
+        }
+        
+        // ToyBox OS compatibility and authentication
+        window.toyboxUser = null;
+        
+        window.addEventListener('message', function(event) {
+            logAuth('Message received', { type: event.data?.type, origin: event.origin });
+            
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                window.toyboxUser = event.data.user;
+                logAuth('ToyBox OS user authenticated', window.toyboxUser);
+                
+                // Update UI immediately
+                updateUserDisplay();
+                checkBartStatus();
+                
+                // Display user info - FIXED to use handle
+                const userDisplay = document.getElementById('userInfo');
+                if (userDisplay && window.toyboxUser) {
+                    // CRITICAL FIX: Use handle instead of username
+                    const displayName = typeof window.toyboxUser === 'string' 
+                        ? window.toyboxUser 
+                        : (window.toyboxUser.handle || window.toyboxUser.username || window.toyboxUser.id || 'Unknown');
+                    
+                    userDisplay.textContent = `Logged in as: ${displayName}`;
+                    logAuth('User display updated', { displayName });
+                }
+            }
+        });
+        
+        // Show BART message if BART is logged in
+        function checkBartStatus() {
+            const bartMessage = document.getElementById('bartMessage');
+            if (bartMessage) {
+                const isBartUser = isBart();
+                logAuth('checkBartStatus()', { isBartUser });
+                
+                if (isBartUser) {
+                    bartMessage.style.display = 'block';
+                    logAuth('BART message shown - Admin mode active!');
+                } else {
+                    bartMessage.style.display = 'none';
+                    logAuth('BART message hidden - Not admin user');
+                }
+            }
+        }
+        
+        function updateUserDisplay() {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && window.toyboxUser) {
+                const userName = typeof window.toyboxUser === 'string' 
+                    ? window.toyboxUser 
+                    : (window.toyboxUser.handle || window.toyboxUser.username || window.toyboxUser.id || 'Unknown User');
+                    
+                userInfo.textContent = `Logged in as: ${userName}`;
+                
+                // Add BART badge if user is BART
+                if (isBart()) {
+                    userInfo.innerHTML += ' <span class="bart-badge">ADMIN</span>';
+                }
+            }
+        }
+        
+        // Request auth from parent window on load
+        window.addEventListener('load', function() {
+            logAuth('Page loaded - requesting auth from parent');
+            
+            // Request authentication from ToyBox OS
+            if (window.parent !== window) {
+                logAuth('Sending REQUEST_AUTH to parent window');
+                window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+                
+                // Also try a delayed request in case of timing issues
+                setTimeout(() => {
+                    logAuth('Sending delayed REQUEST_AUTH (timing fallback)');
+                    window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+                }, 1000);
+            } else {
+                logAuth('Warning: Not in iframe, cannot request auth from parent');
+            }
+        });
+        
+        // App configuration
+        window.APP_ID = 'toybox-direct-updates';
+        
+        // Close ticket function (BART only)
+        async function closeTicket(issueNumber) {
+            if (!isBart()) {
+                alert('Only BART can close tickets!');
+                logAuth('closeTicket() denied - user is not BART');
+                return;
+            }
+            
+            logAuth('closeTicket() called by BART', { issueNumber });
+            
+            if (!confirm(`Close Issue #${issueNumber}?\n\nThis will mark the issue as closed.`)) {
+                return;
+            }
+            
+            // Load all issues
+            const updates = await load('update_request');
+            
+            // Find and update the specific issue
+            let updated = false;
+            for (const update of updates) {
+                if (update.content_data.issueNumber === issueNumber) {
+                    update.content_data.status = 'closed';
+                    update.content_data.closedBy = getUserIdentifier();
+                    update.content_data.closedAt = new Date().toISOString();
+                    
+                    // Save the updated issue
+                    const saved = await save('update_request', update.content_data);
+                    if (saved) {
+                        updated = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (updated) {
+                alert(`✅ Issue #${issueNumber} closed successfully!`);
+                loadRecentUpdates(); // Refresh the list
+            } else {
+                alert(`❌ Failed to close Issue #${issueNumber}`);
+            }
+        }
+        
+        // Helper to get user identifier for saving
+        function getUserIdentifier() {
+            if (!window.toyboxUser) return 'anonymous';
+            
+            if (typeof window.toyboxUser === 'string') {
+                return window.toyboxUser;
+            }
+            
+            // FIXED: Use handle as primary identifier
+            return window.toyboxUser.handle || window.toyboxUser.username || window.toyboxUser.id || 'anonymous';
+        }
+        
+        // Get next issue number
+        async function getNextIssueNumber() {
+            const counterData = await load('issue_counter');
+            let nextNumber = 1;
+            
+            if (counterData && counterData.length > 0) {
+                const lastCounter = counterData[0].content_data;
+                nextNumber = (lastCounter.lastNumber || 0) + 1;
+            }
+            
+            await save('issue_counter', { lastNumber: nextNumber });
+            return nextNumber;
+        }
+        
+        // ZAD helper functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        data_type: dataType,
+                        content_data: data,
+                        participant_id: getUserIdentifier(), // FIXED: Use proper identifier
+                        action_type: 'update_request'
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save failed:', error);
+                return false;
+            }
+        }
+        
+        async function load(dataType) {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&data_type=${dataType}`);
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
+            } catch (error) {
+                console.error('Load failed:', error);
+                return [];
+            }
+        }
+        
+        // Form submission
+        document.getElementById('issueForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            try {
+                const issueNumber = await getNextIssueNumber();
+                const formData = new FormData(e.target);
+                
+                const issueData = {
+                    issueNumber: issueNumber,
+                    actionType: formData.get('actionType'),
+                    target: formData.get('target'),
+                    description: formData.get('description'),
+                    priority: formData.get('priority'),
+                    status: 'pending',
+                    submittedBy: getUserIdentifier(),
+                    submittedAt: new Date().toISOString()
+                };
+                
+                const success = await save('update_request', issueData);
+                
+                if (success) {
+                    alert(`✅ Issue #${issueNumber} submitted successfully!`);
+                    e.target.reset();
+                    loadRecentUpdates();
+                } else {
+                    alert('❌ Failed to submit issue. Please try again.');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('❌ An error occurred. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Issue';
+            }
+        });
+        
+        // Load and display recent issues
+        async function loadRecentUpdates() {
+            try {
+                const updates = await load('update_request');
+                const container = document.getElementById('issuesContainer');
+                
+                if (!updates || updates.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No recent updates yet.</p>';
+                    return;
+                }
+                
+                // Sort by issue number (newest first)
+                updates.sort((a, b) => b.content_data.issueNumber - a.content_data.issueNumber);
+                
+                container.innerHTML = updates.slice(0, 10).map(update => {
+                    const data = update.content_data;
+                    const statusClass = `status-${data.status}`;
+                    const typeClass = `type-${data.actionType}`;
+                    
+                    const closeButton = isBart() && data.status !== 'closed' 
+                        ? `<button class="close-button" onclick="closeTicket(${data.issueNumber})">Close</button>` 
+                        : '';
+                    
+                    return `
+                        <div class="issue-item">
+                            <div class="issue-header">
+                                <div>
+                                    <span class="issue-number">#${data.issueNumber}</span>
+                                    <span class="issue-type ${typeClass}">${data.actionType}</span>
+                                    ${closeButton}
+                                </div>
+                            </div>
+                            <div class="issue-description">
+                                <strong>Target:</strong> ${data.target}<br>
+                                <strong>Description:</strong> ${data.description}
+                            </div>
+                            <div class="issue-status ${statusClass}">
+                                Status: ${data.status.toUpperCase()} | 
+                                Priority: ${data.priority.toUpperCase()} | 
+                                By: ${data.submittedBy} | 
+                                ${new Date(data.submittedAt).toLocaleDateString()}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Update last issue info
+                const lastIssueInfo = document.getElementById('lastIssueInfo');
+                if (lastIssueInfo) {
+                    const latestIssue = updates[0].content_data;
+                    lastIssueInfo.textContent = `Latest: Issue #${latestIssue.issueNumber} (${latestIssue.actionType})`;
+                }
+                
+            } catch (error) {
+                console.error('Failed to load updates:', error);
+            }
+        }
+        
+        // Load issues on startup
+        loadRecentUpdates();
+        
+        // Initialize auth state checking
+        setTimeout(() => {
+            logAuth('Initial auth state check', { toyboxUser: window.toyboxUser });
+            checkBartStatus();
+        }, 100);
+        
+        logAuth('Fixit Board initialized with auth fix');
+    </script>
+</body>
+</html>
