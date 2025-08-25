@@ -19,10 +19,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Load environment variables from sms-bot directory
-let result = dotenv.config({ path: '../.env.local' });
+let result = dotenv.config({ path: '../../.env.local' });
 if (result.error) {
     // Try the regular .env file
-    result = dotenv.config({ path: '../.env' });
+    result = dotenv.config({ path: '../../.env' });
     if (result.error) {
         console.error('Error loading .env files:', result.error.message);
         console.error('Expected .env.local or .env in sms-bot directory');
