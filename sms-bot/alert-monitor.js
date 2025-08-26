@@ -124,16 +124,23 @@ function isRecurringAlertDue(alert) {
   
   // Convert to user's timezone (default Pacific)
   const timezone = alert.timezone || 'America/Los_Angeles';
-  const userTime = new Intl.DateTimeFormat('en-US', {
+  
+  // Get current time in user's timezone
+  const timeFormatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     hour12: false,
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
+  });
+  
+  // Get current day in user's timezone
+  const dayFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
     weekday: 'long'
   });
   
-  const timeString = userTime.format(now);
-  const [currentTime, currentDay] = timeString.split(', ');
+  const currentTime = timeFormatter.format(now);
+  const currentDay = dayFormatter.format(now);
   
   // Check if current time matches schedule_time (within 1 minute window)
   if (alert.schedule_time) {

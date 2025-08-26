@@ -4437,6 +4437,7 @@ async function sendSmsResponse(
     });
     
     console.log(`${platform.toUpperCase()} sent to ${to}: ${message.substring(0, 50)}...`);
+    console.log(`Twilio response - SID: ${response.sid}, Status: ${response.status}, ErrorCode: ${response.errorCode || 'none'}`);
     return response;
   } catch (error: any) {
     const platform = detectMessagePlatform(to);
