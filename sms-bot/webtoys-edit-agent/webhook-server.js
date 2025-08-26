@@ -348,8 +348,9 @@ function createServer() {
               if (stderr) console.error('Windowed app errors:', stderr);
             } else {
               console.log('🔄 Triggering simple app processor...');
+              const targetDesktop = req.body.targetDesktop || 'toybox-os';
               const { stdout, stderr } = await execAsync(
-                `node process-toybox-apps.js`,
+                `node process-toybox-apps.js "${targetDesktop}"`,
                 { 
                   cwd: path.join(__dirname, '../community-desktop-v2'),
                   maxBuffer: 1024 * 1024 * 10,

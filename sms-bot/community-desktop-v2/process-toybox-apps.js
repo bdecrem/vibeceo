@@ -28,6 +28,10 @@ const supabase = createClient(
 // App ID for simple desktop apps
 const SIMPLE_APPS_ID = 'toybox-desktop-apps';
 
+// Get target desktop from command line argument (default to toybox-os)
+const TARGET_DESKTOP = process.argv[2] || 'toybox-os';
+console.log(`🎯 Target desktop: ${TARGET_DESKTOP}`);
+
 /**
  * Load app submissions
  */
@@ -195,16 +199,17 @@ function findEmptyPosition(html) {
  */
 async function addAppToDesktop(appSpec) {
   try {
-    // Get current ToyBox OS
+    // Get current desktop
+    console.log(`📱 Adding ${appSpec.name} to ${TARGET_DESKTOP}`);
     const { data: desktopData, error: fetchError } = await supabase
       .from('wtaf_content')
       .select('html_content')
       .eq('user_slug', 'public')
-      .eq('app_slug', 'toybox-os')
+      .eq('app_slug', TARGET_DESKTOP)
       .single();
 
     if (fetchError) {
-      console.error('Error fetching ToyBox OS:', fetchError);
+      console.error(`Error fetching ${TARGET_DESKTOP}:`, fetchError);
       return false;
     }
 
@@ -234,7 +239,7 @@ async function addAppToDesktop(appSpec) {
       html = html.replace(/<\/div>\s*<div class="taskbar"/, iconHtml + '\n    </div>\n    <div class="taskbar"');
     }
 
-    // Update ToyBox OS
+    // Update desktop
     const { error: updateError } = await supabase
       .from('wtaf_content')
       .update({ 
@@ -242,13 +247,14 @@ async function addAppToDesktop(appSpec) {
         updated_at: new Date()
       })
       .eq('user_slug', 'public')
-      .eq('app_slug', 'toybox-os');
+      .eq('app_slug', TARGET_DESKTOP);
 
     if (updateError) {
-      console.error('Error updating ToyBox OS:', updateError);
+      console.error(`Error updating ${TARGET_DESKTOP}:`, updateError);
       return false;
     }
 
+    console.log(`✅ Successfully added ${appSpec.name} to ${TARGET_DESKTOP} desktop`);
     return true;
 
   } catch (error) {
