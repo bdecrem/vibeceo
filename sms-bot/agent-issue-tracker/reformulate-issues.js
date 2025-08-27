@@ -39,7 +39,7 @@ async function loadIssues(status = 'new') {
     .from('wtaf_zero_admin_collaborative')
     .select('*')
     .eq('app_id', ISSUE_TRACKER_APP_ID)
-    .eq('action_type', 'issue');
+    .eq('action_type', 'update_request');
 
   if (error) {
     console.error('Error loading issues:', error);
@@ -49,9 +49,9 @@ async function loadIssues(status = 'new') {
   // Filter by status in content_data
   return data.filter(record => {
     const content = record.content_data || {};
-    // Handle both 'new' and 'Backlog' as new issues (Backlog is the Linear-style status)
+    // Handle 'new', 'open', and 'Backlog' as new issues
     if (status === 'new') {
-      return content.status === 'new' || content.status === 'Backlog' || !content.status;
+      return content.status === 'new' || content.status === 'open' || content.status === 'Backlog' || !content.status;
     }
     return content.status === status;
   });
@@ -463,8 +463,8 @@ function isAdminReopenedIssue(issue) {
   
   const wasProcessed = data.reformulated || data.ash_comment;
   
-  // If it has admin comments and is now in NEW or NEEDS_INFO status after being processed
-  if ((status === 'new' || status === 'needs_info') && wasProcessed) {
+  // If it has admin comments and is now in NEW, OPEN, or NEEDS_INFO status after being processed
+  if ((status === 'new' || status === 'open' || status === 'needs_info') && wasProcessed) {
     return true;
   }
   

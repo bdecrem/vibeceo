@@ -19,10 +19,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Load environment variables
-let result = dotenv.config({ path: '../../.env.local' });
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+let result = dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 if (result.error) {
-    // Try the regular .env file
-    result = dotenv.config({ path: '../../.env' });
+    // Try the regular .env file  
+    result = dotenv.config({ path: path.join(__dirname, '../../.env') });
     if (result.error) {
         console.error('Error loading .env files:', result.error.message);
         process.exit(1);

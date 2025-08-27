@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No404 - Cloud Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2d2d30;
+            padding: 10px 20px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #0e639c;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #1177bb;
+        }
+
+        .btn:active {
+            background: #0d5a94;
+        }
+
+        .btn.secondary {
+            background: #5a5a5a;
+        }
+
+        .btn.secondary:hover {
+            background: #6a6a6a;
+        }
+
+        .status {
+            background: #007acc;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        #userStatus {
+            background: #f44336;
+            margin-right: 10px;
+            margin-left: 0;
+        }
+        
+        #userStatus.logged-in {
+            background: #4caf50;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .editor {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            outline: none;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            tab-size: 4;
+        }
+
+        .editor:focus {
+            background: #1e1e1e;
+        }
+
+        .footer {
+            background: #2d2d30;
+            padding: 8px 20px;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #cccccc;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .filename-input {
+            background: #3c3c3c;
+            border: 1px solid #5a5a5a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            width: 200px;
+        }
+
+        .filename-input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        /* File input styling */
+        .file-input {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: #f44336;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 8px 15px;
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .toolbar {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+
+            .filename-input {
+                width: 150px;
+            }
+
+            .editor {
+                padding: 15px;
+                font-size: 13px;
+            }
+
+            .footer {
+                padding: 6px 15px;
+                flex-direction: column;
+                gap: 5px;
+                text-align: center;
+            }
+
+            .stats {
+                gap: 15px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">No404 Cloud Text Editor</div>
+        <div class="toolbar">
+            <button class="btn" onclick="newFile()">New</button>
+            <button class="btn" onclick="openCloudFile()">Open</button>
+            <button class="btn" onclick="saveToCloud()" title="Save to cloud (Ctrl+S)">Save</button>
+            <button class="btn" onclick="openFile()" title="Import local file (Shift+Ctrl+S to download)">Import</button>
+            <input type="text" class="filename-input" id="filename" placeholder="document.txt" value="untitled.txt">
+            <button class="btn secondary" onclick="clearEditor()">Clear</button>
+            <button class="btn secondary" onclick="showHelp()" title="Keyboard shortcuts">Help</button>
+            <div class="status" id="userStatus">Not logged in</div>
+            <div class="status" id="status">Ready</div>
+        </div>
+    </div>
+
+    <div class="editor-container">
+        <textarea class="editor" id="editor" placeholder="Start typing your text here..."></textarea>
+    </div>
+
+    <div class="footer">
+        <div class="stats">
+            <span>Lines: <span id="lineCount">1</span></span>
+            <span>Words: <span id="wordCount">0</span></span>
+            <span>Characters: <span id="charCount">0</span></span>
+        </div>
+        <div>No404 v2.0 - Cloud Text Editor with User Authentication</div>
+    </div>
+
+    <input type="file" class="file-input" id="fileInput" accept=".txt,.md,.js,.css,.html,.json,.xml,.csv,.log" onchange="handleFileLoad(event)">
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const filenameInput = document.getElementById('filename');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const userStatus = document.getElementById('userStatus');
+        const lineCount = document.getElementById('lineCount');
+        const wordCount = document.getElementById('wordCount');
+        const charCount = document.getElementById('charCount');
+        const toast = document.getElementById('toast');
+
+        // App configuration for ZAD system
+        window.APP_ID = 'no404-cloud-editor';
+        
+        // User authentication state
+        let currentUser = null;
+        let hasUnsavedChanges = false;
+        let userFiles = [];
+        
+        // ZAD API Helper Functions
+        async function save(dataType, data) {
+            const participantId = currentUser ? currentUser.handle : 'anonymous';
+            
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: participantId,
+                    data_type: dataType,
+                    action_type: dataType,
+                    content_data: data
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save data');
+            }
+            
+            return await response.json();
+        }
+        
+        async function load(dataType) {
+            const participantId = currentUser ? currentUser.handle : 'anonymous';
+            
+            const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}&participant_id=${participantId}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load data');
+            }
+            
+            const data = await response.json();
+            return data.map(item => item.content_data).filter(Boolean);
+        }
+        
+        // User Authentication Functions
+        function updateUserStatus() {
+            if (currentUser) {
+                userStatus.textContent = `Logged in as ${currentUser.handle}`;
+                userStatus.style.background = '#4caf50';
+            } else {
+                userStatus.textContent = 'Not logged in';
+                userStatus.style.background = '#f44336';
+            }
+        }
+        
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserStatus();
+                    loadUserFiles();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Listen for auth updates from ToyBox OS
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                console.log('Received auth update:', event.data.user);
+                currentUser = event.data.user;
+                updateUserStatus();
+                
+                if (currentUser) {
+                    loadUserFiles();
+                } else {
+                    userFiles = [];
+                }
+            }
+        });
+        
+        // Request current auth state when app loads
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+        });
+
+        // Cloud file management
+        async function loadUserFiles() {
+            if (!currentUser) {
+                userFiles = [];
+                return;
+            }
+            
+            try {
+                userFiles = await load('saved_file');
+                console.log('Loaded user files:', userFiles);
+            } catch (error) {
+                console.error('Error loading user files:', error);
+                userFiles = [];
+            }
+        }
+        
+        async function saveToCloud() {
+            if (!currentUser) {
+                showToast('Please log in to save files to the cloud', true);
+                return;
+            }
+            
+            const content = editor.value;
+            let filename = filenameInput.value.trim();
+            
+            if (!filename) {
+                filename = 'untitled.txt';
+                filenameInput.value = filename;
+            }
+            
+            if (!content.trim()) {
+                showToast('Cannot save empty file', true);
+                return;
+            }
+            
+            try {
+                const fileData = {
+                    filename: filename,
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    id: `${filename}_${Date.now()}`
+                };
+                
+                await save('saved_file', fileData);
+                hasUnsavedChanges = false;
+                setStatus(`Saved to cloud: ${filename}`);
+                showToast(`File "${filename}" saved to cloud successfully`);
+                
+                // Reload user files list
+                await loadUserFiles();
+            } catch (error) {
+                console.error('Error saving to cloud:', error);
+                showToast('Error saving file to cloud', true);
+            }
+        }
+        
+        async function openCloudFile() {
+            if (!currentUser) {
+                showToast('Please log in to access cloud files', true);
+                return;
+            }
+            
+            await loadUserFiles();
+            
+            if (userFiles.length === 0) {
+                showToast('No cloud files found', true);
+                return;
+            }
+            
+            // Create file selection dialog
+            const fileList = userFiles.map((file, index) => 
+                `${index + 1}. ${file.filename} (${new Date(file.timestamp).toLocaleString()})`
+            ).join('\n');
+            
+            const selection = prompt(`Select a file to open:\n\n${fileList}\n\nEnter file number:`);
+            
+            if (!selection) return;
+            
+            const fileIndex = parseInt(selection) - 1;
+            if (fileIndex >= 0 && fileIndex < userFiles.length) {
+                const selectedFile = userFiles[fileIndex];
+                
+                if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue?')) {
+                    return;
+                }
+                
+                editor.value = selectedFile.content;
+                filenameInput.value = selectedFile.filename;
+                hasUnsavedChanges = false;
+                setStatus(`Opened from cloud: ${selectedFile.filename}`);
+                updateStats();
+                showToast(`File "${selectedFile.filename}" loaded from cloud`);
+            } else {
+                showToast('Invalid file selection', true);
+            }
+        }
+        
+        // Initialize editor
+        function initEditor() {
+            editor.focus();
+            updateStats();
+            updateUserStatus();
+            
+            // Auto-save to cloud every 60 seconds if user is logged in
+            setInterval(autoSaveToCloud, 60000);
+            
+            // Restore from localStorage if available
+            restoreFromAutoSave();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const text = editor.value;
+            const lines = text.split('\n').length;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+
+            lineCount.textContent = lines;
+            wordCount.textContent = words;
+            charCount.textContent = chars;
+        }
+
+        // Handle text changes
+        editor.addEventListener('input', () => {
+            updateStats();
+            hasUnsavedChanges = true;
+            setStatus('Modified');
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        newFile();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            openCloudFile();
+                        } else {
+                            openFile();
+                        }
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            saveFile(); // Local download
+                        } else {
+                            saveToCloud(); // Cloud save
+                        }
+                        break;
+                }
+            }
+        });
+
+        // New file
+        function newFile() {
+            if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue?')) {
+                return;
+            }
+            
+            editor.value = '';
+            filenameInput.value = 'untitled.txt';
+            hasUnsavedChanges = false;
+            setStatus('New file created');
+            updateStats();
+            editor.focus();
+        }
+
+        // Open file
+        function openFile() {
+            fileInput.click();
+        }
+
+        // Handle file load
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                editor.value = e.target.result;
+                filenameInput.value = file.name;
+                hasUnsavedChanges = false;
+                setStatus(`Opened: ${file.name}`);
+                updateStats();
+                showToast(`File "${file.name}" loaded successfully`);
+            };
+            
+            reader.onerror = () => {
+                showToast('Error loading file', true);
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Save file (local download)
+        function saveFile() {
+            const content = editor.value;
+            let filename = filenameInput.value.trim();
+            
+            if (!filename) {
+                filename = 'untitled.txt';
+                filenameInput.value = filename;
+            }
+
+            // Create download
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setStatus(`Downloaded: ${filename}`);
+            showToast(`File "${filename}" downloaded successfully`);
+        }
+
+        // Clear editor
+        function clearEditor() {
+            if (hasUnsavedChanges && !confirm('You have unsaved changes. Clear anyway?')) {
+                return;
+            }
+            
+            editor.value = '';
+            hasUnsavedChanges = false;
+            setStatus('Editor cleared');
+            updateStats();
+            editor.focus();
+        }
+
+        // Auto-save functionality
+        function autoSave() {
+            if (editor.value.trim()) {
+                localStorage.setItem('no404_autosave', JSON.stringify({
+                    content: editor.value,
+                    filename: filenameInput.value,
+                    timestamp: Date.now()
+                }));
+            }
+        }
+        
+        // Auto-save to cloud (if user is logged in)
+        async function autoSaveToCloud() {
+            if (!currentUser || !hasUnsavedChanges || !editor.value.trim()) {
+                return;
+            }
+            
+            try {
+                const autoSaveData = {
+                    filename: `${filenameInput.value || 'untitled.txt'} (auto-save)`,
+                    content: editor.value,
+                    timestamp: new Date().toISOString(),
+                    id: `autosave_${Date.now()}`,
+                    isAutoSave: true
+                };
+                
+                await save('saved_file', autoSaveData);
+                console.log('Auto-saved to cloud');
+            } catch (error) {
+                console.error('Auto-save to cloud failed:', error);
+            }
+        }
+
+        // Restore from auto-save
+        function restoreFromAutoSave() {
+            const saved = localStorage.getItem('no404_autosave');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    const timeDiff = Date.now() - data.timestamp;
+                    
+                    // Only restore if less than 24 hours old and has content
+                    if (timeDiff < 24 * 60 * 60 * 1000 && data.content.trim()) {
+                        if (confirm('Found auto-saved content. Restore it?')) {
+                            editor.value = data.content;
+                            filenameInput.value = data.filename || 'untitled.txt';
+                            setStatus('Auto-save restored');
+                            updateStats();
+                            hasUnsavedChanges = true;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error restoring auto-save:', e);
+                }
+            }
+        }
+
+        // Set status message
+        function setStatus(message) {
+            status.textContent = message;
+            setTimeout(() => {
+                if (status.textContent === message) {
+                    status.textContent = 'Ready';
+                }
+            }, 3000);
+        }
+
+        // Show toast notification
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = `toast ${isError ? 'error' : ''}`;
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Warn about unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+
+        // Handle file drops
+        editor.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+
+        editor.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|js|css|html|json|xml|csv|log)$/i)) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        editor.value = e.target.result;
+                        filenameInput.value = file.name;
+                        hasUnsavedChanges = false;
+                        setStatus(`Loaded: ${file.name}`);
+                        updateStats();
+                        showToast(`File "${file.name}" loaded successfully`);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showToast('Unsupported file type', true);
+                }
+            }
+        });
+
+        // Show help dialog
+        function showHelp() {
+            const helpText = `No404 Cloud Text Editor - Keyboard Shortcuts:
+
+` +
+                `Ctrl+N - New file\n` +
+                `Ctrl+O - Open cloud file\n` +
+                `Shift+Ctrl+O - Import local file\n` +
+                `Ctrl+S - Save to cloud\n` +
+                `Shift+Ctrl+S - Download file\n\n` +
+                `Features:\n` +
+                `• Auto-save to cloud every 60 seconds (when logged in)\n` +
+                `• Drag & drop file loading\n` +
+                `• Real-time statistics\n` +
+                `• User authentication with ToyBox OS\n\n` +
+                `Note: You must be logged in to ToyBox OS to save/load cloud files.`;
+            
+            alert(helpText);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initEditor);
+    </script>
+</body>
+</html>
