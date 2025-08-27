@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDwords</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Chicago, Geneva, Arial, sans-serif;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Classic Mac menu bar */
+        .menu-bar {
+            background: linear-gradient(to bottom, #ffffff, #dedede);
+            border-bottom: 2px solid #000000;
+            display: flex;
+            padding: 2px 4px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .menu-item {
+            padding: 2px 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .menu-item:hover {
+            background: #000000;
+            color: #ffffff;
+        }
+        
+        /* Toolbar with retro buttons */
+        .toolbar {
+            background: #c0c0c0;
+            border-bottom: 2px solid #000000;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .tool-button {
+            padding: 4px 8px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: Geneva, Arial, sans-serif;
+        }
+        
+        .tool-button:active {
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+        
+        /* Text area with retro styling */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            background: #ffffff;
+            border: 2px solid #000000;
+            margin: 4px;
+        }
+        
+        .line-numbers {
+            background: #f0f0f0;
+            border-right: 1px solid #808080;
+            padding: 8px 4px;
+            font-family: Monaco, 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #666666;
+            user-select: none;
+            min-width: 30px;
+            text-align: right;
+        }
+        
+        textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 8px;
+            font-family: Monaco, 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            resize: none;
+            background: #ffffff;
+            color: #000000;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            padding: 2px 8px;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            font-family: Geneva, Arial, sans-serif;
+        }
+        
+        .status-section {
+            display: flex;
+            gap: 16px;
+        }
+        
+        /* File dialog */
+        .dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 0;
+            z-index: 1000;
+            min-width: 320px;
+            box-shadow: 2px 2px 0 #000000;
+        }
+        
+        .dialog-title {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: #ffffff;
+            padding: 2px 4px;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dialog-close {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #ffffff;
+            background: #c0c0c0;
+            cursor: pointer;
+            font-size: 10px;
+            text-align: center;
+            line-height: 14px;
+        }
+        
+        .dialog-content {
+            padding: 12px;
+        }
+        
+        .dialog input {
+            width: 100%;
+            padding: 2px;
+            margin: 8px 0;
+            border: 2px solid;
+            border-color: #000000 #ffffff #ffffff #000000;
+            background: #ffffff;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .dialog button {
+            padding: 4px 16px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .dialog button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+        }
+        
+        .file-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 2px solid;
+            border-color: #000000 #ffffff #ffffff #000000;
+            background: #ffffff;
+            margin: 8px 0;
+        }
+        
+        .file-item {
+            padding: 2px 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .file-item:hover {
+            background: #000080;
+            color: #ffffff;
+        }
+        
+        .file-item.selected {
+            background: #000080;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-item" onclick="showNewDialog()">File</div>
+        <div class="menu-item" onclick="showEditMenu()">Edit</div>
+        <div class="menu-item" onclick="showFormatMenu()">Format</div>
+        <div class="menu-item" onclick="showAbout()">About</div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="tool-button" onclick="newFile()">New</button>
+        <button class="tool-button" onclick="showOpenDialog()">Open</button>
+        <button class="tool-button" onclick="saveFile()">Save</button>
+        <button class="tool-button" onclick="showSaveAsDialog()">Save As</button>
+        <span style="width: 16px;"></span>
+        <button class="tool-button" onclick="document.execCommand('undo')">Undo</button>
+        <button class="tool-button" onclick="document.execCommand('redo')">Redo</button>
+        <span style="width: 16px;"></span>
+        <button class="tool-button" onclick="document.execCommand('cut')">Cut</button>
+        <button class="tool-button" onclick="document.execCommand('copy')">Copy</button>
+        <button class="tool-button" onclick="document.execCommand('paste')">Paste</button>
+        <span style="width: 16px;"></span>
+        <button class="tool-button" onclick="findText()">Find</button>
+        <button class="tool-button" onclick="replaceText()">Replace</button>
+    </div>
+    
+    <!-- Editor -->
+    <div class="editor-container">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <textarea id="editor" placeholder="Start writing..." spellcheck="false"></textarea>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-section">
+            <span id="status">Ready</span>
+            <span id="filename">Untitled</span>
+        </div>
+        <div class="status-section">
+            <span id="position">Ln 1, Col 1</span>
+            <span id="wordcount">0 words</span>
+            <span id="charcount">0 chars</span>
+        </div>
+        <div id="user-status">Guest</div>
+    </div>
+    
+    <!-- Save As Dialog -->
+    <div id="saveDialog" class="dialog">
+        <div class="dialog-title">
+            Save Document
+            <div class="dialog-close" onclick="closeSaveDialog()">✕</div>
+        </div>
+        <div class="dialog-content">
+            <label>Filename:</label>
+            <input type="text" id="saveFilename" placeholder="document.txt">
+            <div class="dialog-buttons">
+                <button onclick="closeSaveDialog()">Cancel</button>
+                <button onclick="performSave()">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Open Dialog -->
+    <div id="openDialog" class="dialog">
+        <div class="dialog-title">
+            Open Document
+            <div class="dialog-close" onclick="closeOpenDialog()">✕</div>
+        </div>
+        <div class="dialog-content">
+            <div class="file-list" id="fileList"></div>
+            <div class="dialog-buttons">
+                <button onclick="closeOpenDialog()">Cancel</button>
+                <button onclick="performOpen()">Open</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New File Dialog -->
+    <div id="newDialog" class="dialog">
+        <div class="dialog-title">
+            New Document
+            <div class="dialog-close" onclick="closeNewDialog()">✕</div>
+        </div>
+        <div class="dialog-content">
+            <p>Save changes to current document?</p>
+            <div class="dialog-buttons">
+                <button onclick="closeNewDialog()">Cancel</button>
+                <button onclick="newFileWithoutSave()">Don't Save</button>
+                <button onclick="saveAndNew()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        window.APP_ID = 'toybox-bdwords';
+        
+        // State
+        let currentUser = null;
+        let currentFile = 'Untitled';
+        let isDirty = false;
+        let selectedFile = null;
+        
+        // DOM elements
+        const editor = document.getElementById('editor');
+        const statusEl = document.getElementById('status');
+        const filenameEl = document.getElementById('filename');
+        const positionEl = document.getElementById('position');
+        const wordcountEl = document.getElementById('wordcount');
+        const charcountEl = document.getElementById('charcount');
+        const userStatusEl = document.getElementById('user-status');
+        const lineNumbersEl = document.getElementById('lineNumbers');
+        
+        // Authentication
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUserStatus();
+            }
+        });
+        
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserStatus();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        function updateUserStatus() {
+            if (currentUser) {
+                userStatusEl.textContent = currentUser.handle;
+            } else {
+                userStatusEl.textContent = 'Guest';
+            }
+        }
+        
+        // ZAD API
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: currentUser?.handle || 'anonymous',
+                        action_type: dataType,
+                        content_data: data
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save error:', error);
+                return false;
+            }
+        }
+        
+        async function load(dataType) {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`);
+                const data = await response.json();
+                return data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+        
+        // Editor functions
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n').length;
+            let numbers = '';
+            for (let i = 1; i <= lines; i++) {
+                numbers += i + '\n';
+            }
+            lineNumbersEl.textContent = numbers;
+        }
+        
+        function updatePosition() {
+            const pos = editor.selectionStart;
+            const text = editor.value.substring(0, pos);
+            const lines = text.split('\n');
+            const line = lines.length;
+            const col = lines[lines.length - 1].length + 1;
+            positionEl.textContent = `Ln ${line}, Col ${col}`;
+        }
+        
+        function updateCounts() {
+            const text = editor.value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            wordcountEl.textContent = `${words} words`;
+            charcountEl.textContent = `${chars} chars`;
+        }
+        
+        function newFile() {
+            if (isDirty && editor.value.trim()) {
+                showNewDialog();
+            } else {
+                newFileWithoutSave();
+            }
+        }
+        
+        function newFileWithoutSave() {
+            editor.value = '';
+            currentFile = 'Untitled';
+            isDirty = false;
+            filenameEl.textContent = currentFile;
+            updateStatus('New document created');
+            closeNewDialog();
+            updateLineNumbers();
+            updateCounts();
+        }
+        
+        function saveAndNew() {
+            saveFile();
+            newFileWithoutSave();
+        }
+        
+        async function saveFile() {
+            if (currentFile === 'Untitled') {
+                showSaveAsDialog();
+                return;
+            }
+            
+            const content = editor.value;
+            const fileData = {
+                filename: currentFile,
+                content: content,
+                author: currentUser?.handle || 'anonymous',
+                timestamp: new Date().toISOString(),
+                words: content.trim() ? content.trim().split(/\s+/).length : 0,
+                chars: content.length
+            };
+            
+            const success = await save('document', fileData);
+            if (success) {
+                isDirty = false;
+                updateStatus(`Saved: ${currentFile}`);
+            } else {
+                updateStatus('Save failed');
+            }
+        }
+        
+        async function performSave() {
+            const filename = document.getElementById('saveFilename').value.trim();
+            if (!filename) {
+                alert('Please enter a filename');
+                return;
+            }
+            
+            currentFile = filename;
+            filenameEl.textContent = currentFile;
+            await saveFile();
+            closeSaveDialog();
+        }
+        
+        async function showOpenDialog() {
+            const files = await load('document');
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            const fileMap = {};
+            files.forEach(file => {
+                const data = file.content_data;
+                if (!fileMap[data.filename] || new Date(data.timestamp) > new Date(fileMap[data.filename].timestamp)) {
+                    fileMap[data.filename] = data;
+                }
+            });
+            
+            Object.keys(fileMap).sort().forEach(filename => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.textContent = `${filename} (${fileMap[filename].words} words)`;
+                div.onclick = () => selectFile(filename, fileMap[filename]);
+                fileList.appendChild(div);
+            });
+            
+            document.getElementById('openDialog').style.display = 'block';
+        }
+        
+        function selectFile(filename, data) {
+            selectedFile = { filename, data };
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.textContent.startsWith(filename)) {
+                    item.classList.add('selected');
+                }
+            });
+        }
+        
+        function performOpen() {
+            if (!selectedFile) {
+                alert('Please select a file');
+                return;
+            }
+            
+            editor.value = selectedFile.data.content;
+            currentFile = selectedFile.filename;
+            filenameEl.textContent = currentFile;
+            isDirty = false;
+            updateStatus(`Opened: ${currentFile}`);
+            updateLineNumbers();
+            updateCounts();
+            updatePosition();
+            closeOpenDialog();
+        }
+        
+        // Dialog functions
+        function showSaveAsDialog() {
+            document.getElementById('saveFilename').value = currentFile === 'Untitled' ? '' : currentFile;
+            document.getElementById('saveDialog').style.display = 'block';
+        }
+        
+        function closeSaveDialog() {
+            document.getElementById('saveDialog').style.display = 'none';
+        }
+        
+        function closeOpenDialog() {
+            document.getElementById('openDialog').style.display = 'none';
+            selectedFile = null;
+        }
+        
+        function showNewDialog() {
+            document.getElementById('newDialog').style.display = 'block';
+        }
+        
+        function closeNewDialog() {
+            document.getElementById('newDialog').style.display = 'none';
+        }
+        
+        // Menu functions
+        function showEditMenu() {
+            // Placeholder for edit menu
+            updateStatus('Edit menu');
+        }
+        
+        function showFormatMenu() {
+            // Placeholder for format menu
+            updateStatus('Format menu');
+        }
+        
+        function showAbout() {
+            alert('BDwords\nA simple text editor for WebtoysOS\n\nVersion 1.0');
+        }
+        
+        function findText() {
+            const search = prompt('Find text:');
+            if (search) {
+                const index = editor.value.indexOf(search);
+                if (index >= 0) {
+                    editor.setSelectionRange(index, index + search.length);
+                    editor.focus();
+                    updateStatus(`Found: "${search}"`);
+                } else {
+                    updateStatus(`Not found: "${search}"`);
+                }
+            }
+        }
+        
+        function replaceText() {
+            const search = prompt('Find text:');
+            if (search) {
+                const replace = prompt('Replace with:');
+                if (replace !== null) {
+                    const newText = editor.value.replace(search, replace);
+                    editor.value = newText;
+                    isDirty = true;
+                    updateStatus(`Replaced: "${search}" with "${replace}"`);
+                    updateLineNumbers();
+                    updateCounts();
+                }
+            }
+        }
+        
+        // Status functions
+        function updateStatus(message) {
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.textContent = isDirty ? 'Modified' : 'Ready';
+            }, 2000);
+        }
+        
+        // Event listeners
+        editor.addEventListener('input', () => {
+            isDirty = true;
+            updateLineNumbers();
+            updateCounts();
+            statusEl.textContent = 'Modified';
+        });
+        
+        editor.addEventListener('scroll', () => {
+            lineNumbersEl.scrollTop = editor.scrollTop;
+        });
+        
+        editor.addEventListener('click', updatePosition);
+        editor.addEventListener('keyup', updatePosition);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveFile();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newFile();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        showOpenDialog();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        findText();
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        replaceText();
+                        break;
+                }
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuth();
+            updateLineNumbers();
+            updateCounts();
+            updatePosition();
+            statusEl.textContent = 'Ready';
+            
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

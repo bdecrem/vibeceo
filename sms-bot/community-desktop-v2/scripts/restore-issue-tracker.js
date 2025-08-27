@@ -1,63 +1,93 @@
 #!/usr/bin/env node
 
 /**
- * Restore Issue Tracker from backup
+ * Restore webtoysos-issue-tracker to the last known good version
+ * This will re-clone from bart/issue-tracker with just the app_id change
  */
 
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import * as dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '../../.env.local') });
-if (!process.env.SUPABASE_URL) {
-    dotenv.config({ path: path.join(__dirname, '../../.env') });
+let result = dotenv.config({ path: '../../.env.local' });
+if (result.error) {
+    result = dotenv.config({ path: '../../.env' });
+    if (result.error) {
+        console.error('Error loading .env files:', result.error.message);
+        process.exit(1);
+    }
 }
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.error('Missing Supabase credentials');
+    process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 async function restoreIssueTracker() {
     try {
-        console.log('🔄 Restoring Issue Tracker from backup...');
+        console.log('🔄 Restoring webtoysos-issue-tracker from bart/issue-tracker...');
         
-        // Read the backup file (before duplicate fix)
-        const backupPath = path.join(__dirname, '..', 'backups', 'issue-tracker_before_duplicate_fix_1756166724102.html');
-        const html = await fs.readFile(backupPath, 'utf-8');
-        
-        console.log(`📁 Restoring from: ${backupPath}`);
-        
-        // Update in Supabase
-        const { error } = await supabase
+        // Fetch bart's original issue-tracker
+        const { data: original, error: fetchError } = await supabase
             .from('wtaf_content')
-            .update({
+            .select('*')
+            .eq('user_slug', 'bart')
+            .eq('app_slug', 'issue-tracker')
+            .single();
+        
+        if (fetchError || !original) {
+            console.error('❌ Error fetching bart/issue-tracker:', fetchError?.message || 'Not found');
+            return;
+        }
+        
+        console.log('✅ Found bart/issue-tracker');
+        
+        // Get the HTML and only change the app_id
+        let html = original.html_content;
+        
+        // Replace the app_id
+        const oldAppId = '83218c2e-281e-4265-a95f-1d3f763870d4';
+        const newAppId = '5b98f08a-60c7-48cd-bd1c-fb4bad3615ae';
+        
+        html = html.replace(new RegExp(oldAppId, 'g'), newAppId);
+        
+        // Update the title
+        html = html.replace(/<title>.*?<\/title>/i, '<title>WebtoysOS Fixit Board</title>');
+        html = html.replace(/>Issue Tracker</g, '>WebtoysOS Fixit Board<');
+        
+        console.log('💾 Restoring to Supabase...');
+        
+        const { error: updateError } = await supabase
+            .from('wtaf_content')
+            .update({ 
                 html_content: html,
                 updated_at: new Date().toISOString()
             })
             .eq('user_slug', 'public')
-            .eq('app_slug', 'toybox-issue-tracker');
+            .eq('app_slug', 'webtoysos-issue-tracker');
         
-        if (error) throw error;
+        if (updateError) {
+            console.error('❌ Error updating:', updateError.message);
+            return;
+        }
         
-        console.log('✅ Issue Tracker restored successfully!');
-        console.log('\n📋 Restored version includes:');
-        console.log('  • All authentication fixes');
-        console.log('  • Admin powers for bart');
-        console.log('  • Username display');
-        console.log('  • Issue numbering');
-        console.log('\n🔄 Refresh the Issue Tracker to see all issues again!');
-        console.log('  • https://webtoys.ai/public/toybox-issue-tracker');
+        console.log('✅ Successfully restored webtoysos-issue-tracker!');
+        console.log('');
+        console.log('📋 Restored state:');
+        console.log('   • Exact copy of bart/issue-tracker');
+        console.log('   • App ID: 5b98f08a-60c7-48cd-bd1c-fb4bad3615ae');
+        console.log('   • Title: WebtoysOS Fixit Board');
+        console.log('   • Original authentication (API key) intact');
+        console.log('');
+        console.log('🔗 URL: https://webtoys.ai/public/webtoysos-issue-tracker');
         
     } catch (error) {
-        console.error('❌ Failed to restore:', error);
-        process.exit(1);
+        console.error('❌ Unexpected error:', error);
     }
 }
 

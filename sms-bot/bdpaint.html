@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDpaint</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 5px;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        
+        .color-option.active {
+            border-color: #333;
+        }
+        
+        .brush-size {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .size-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #666;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        
+        .size-option.active {
+            border-color: #333;
+        }
+        
+        .size-small { width: 15px; height: 15px; }
+        .size-medium { width: 25px; height: 25px; }
+        .size-large { width: 35px; height: 35px; }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #007cba;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #005a8a;
+        }
+        
+        .clear-btn {
+            background: #dc3545;
+        }
+        
+        .clear-btn:hover {
+            background: #c82333;
+        }
+        
+        #canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        
+        .canvas-container {
+            text-align: center;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+                margin: 10px;
+            }
+            
+            .toolbar {
+                justify-content: center;
+            }
+            
+            #canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 BDpaint</h1>
+        
+        <div class="toolbar">
+            <div class="color-picker">
+                <span>Colors:</span>
+                <div class="color-option active" data-color="#000000" style="background: #000000;"></div>
+                <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
+                <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
+                <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
+                <div class="color-option" data-color="#ffff00" style="background: #ffff00;"></div>
+                <div class="color-option" data-color="#ff00ff" style="background: #ff00ff;"></div>
+                <div class="color-option" data-color="#00ffff" style="background: #00ffff;"></div>
+                <div class="color-option" data-color="#ffa500" style="background: #ffa500;"></div>
+                <div class="color-option" data-color="#800080" style="background: #800080;"></div>
+                <div class="color-option" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ccc;"></div>
+            </div>
+            
+            <div class="brush-size">
+                <span>Size:</span>
+                <div class="size-option size-small active" data-size="2"></div>
+                <div class="size-option size-medium" data-size="5"></div>
+                <div class="size-option size-large" data-size="10"></div>
+            </div>
+            
+            <button class="clear-btn" onclick="clearCanvas()">Clear Canvas</button>
+            <button onclick="downloadImage()">Save Image</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="760" height="500"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let isDrawing = false;
+        let currentColor = '#000000';
+        let currentSize = 2;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // Set up canvas
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Color selection
+        document.querySelectorAll('.color-option').forEach(color => {
+            color.addEventListener('click', (e) => {
+                document.querySelector('.color-option.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentColor = e.target.dataset.color;
+            });
+        });
+        
+        // Brush size selection
+        document.querySelectorAll('.size-option').forEach(size => {
+            size.addEventListener('click', (e) => {
+                document.querySelector('.size-option.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentSize = parseInt(e.target.dataset.size);
+            });
+        });
+        
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = getMousePos(e);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const [currentX, currentY] = getMousePos(e);
+            
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentSize;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+            
+            [lastX, lastY] = [currentX, currentY];
+        }
+        
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+        }
+        
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return [
+                (clientX - rect.left) * scaleX,
+                (clientY - rect.top) * scaleY
+            ];
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startDrawing(e);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            draw(e);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopDrawing();
+        });
+        
+        // Utility functions
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'bdpaint-creation.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Prevent scrolling on mobile when drawing
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.body.addEventListener('touchend', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

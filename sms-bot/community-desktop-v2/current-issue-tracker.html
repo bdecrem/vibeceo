@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToyBox OS Fixit Board</title>
     <style>
+        /* Import Chicago font for authentic Mac feel */
+        @import url('https://fonts.cdnfonts.com/css/chicago');
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,321 +15,499 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Chicago', 'Monaco', 'Courier New', monospace;
+            font-size: 9px;
+            background: #c0c0c0; /* Classic Mac desktop gray */
+            background-image: 
+                radial-gradient(circle at 2px 2px, rgba(0,0,0,0.1) 1px, transparent 0);
+            background-size: 4px 4px;
             padding: 20px;
             min-height: 100vh;
         }
         
+        /* Classic Mac Window Chrome */
         .container {
-            max-width: 800px;
+            max-width: 640px; /* Classic Mac resolution inspired */
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            background: #c0c0c0;
+            border: 2px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            box-shadow: 
+                inset 1px 1px 0 #ffffff,
+                inset -1px -1px 0 #808080,
+                2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 9px;
         }
         
+        /* Classic Mac Title Bar */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            padding: 4px;
             position: relative;
+            height: 19px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Window Controls */
+        .window-controls {
+            position: absolute;
+            left: 4px;
+            top: 3px;
+            display: flex;
+            gap: 2px;
+        }
+        
+        .control-button {
+            width: 11px;
+            height: 11px;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            background: #c0c0c0;
+            cursor: pointer;
+            font-size: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-button:active {
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #ffffff;
+            border-right-color: #ffffff;
+        }
+        
+        .window-title {
+            flex: 1;
+            text-align: center;
+            font-weight: bold;
+            font-size: 9px;
+            margin: 0 30px;
         }
         
         .reload-button {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            width: 36px;
-            height: 36px;
+            right: 4px;
+            top: 3px;
+            width: 11px;
+            height: 11px;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            background: #c0c0c0;
+            cursor: pointer;
+            font-size: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .reload-button:active {
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #ffffff;
+            border-right-color: #ffffff;
+        }
+        
+        .reload-button:before {
+            content: "⟲";
+            font-size: 8px;
+        }
+        
+        /* Content Area */
+        .content-area {
+            padding: 8px;
+            background: #c0c0c0;
+        }
+        
+        /* User Info Box */
+        .user-info-box {
+            background: #ffffff;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            padding: 6px;
+            margin-bottom: 8px;
+            box-shadow: inset 1px 1px 0 #808080;
+        }
+        
+        /* Status Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #808080;
+        }
+        
+        .filter-tab {
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            border-bottom: none;
+            padding: 4px 8px;
             cursor: pointer;
-            transition: all 0.3s;
+            font-size: 9px;
+            margin-right: 1px;
+            position: relative;
+            z-index: 1;
         }
         
-        .reload-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(180deg);
+        .filter-tab.active {
+            background: #ffffff;
+            border-bottom: 1px solid #ffffff;
+            z-index: 2;
         }
         
-        .reload-button svg {
-            width: 20px;
-            height: 20px;
-            fill: white;
+        .filter-tab:hover:not(.active) {
+            background: #d4d4d4;
         }
         
-        #userInfo {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        
-        h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
+        /* Form Section */
         .form-section {
-            padding: 30px;
+            background: #ffffff;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            box-shadow: inset 1px 1px 0 #808080;
+            padding: 8px;
+            margin-bottom: 8px;
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 8px;
         }
         
         label {
             display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 9px;
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 2px 4px;
+            border: 1px solid #808080;
+            background: #ffffff;
+            font-family: 'Chicago', 'Monaco', 'Courier New', monospace;
+            font-size: 9px;
+            box-shadow: inset 1px 1px 0 #808080;
         }
         
         input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
+            outline: 1px dotted #000000;
+            outline-offset: -1px;
         }
         
         textarea {
-            min-height: 120px;
-            resize: vertical;
+            min-height: 60px;
+            resize: none;
         }
         
+        /* Classic Mac Button */
         .submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
+            background: #c0c0c0;
+            border: 2px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            padding: 4px 16px;
+            font-family: 'Chicago', 'Monaco', 'Courier New', monospace;
+            font-size: 9px;
+            font-weight: bold;
             cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s;
+            box-shadow: 1px 1px 0 #808080;
         }
         
-        .submit-btn:hover {
-            transform: translateY(-2px);
+        .submit-btn:active {
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #ffffff;
+            border-right-color: #ffffff;
+            box-shadow: inset 1px 1px 0 #808080;
         }
         
         .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            color: #808080;
+            cursor: default;
         }
         
+        /* Issues List */
         .issues-list {
-            padding: 20px;
-            border-top: 1px solid #e0e0e0;
+            background: #ffffff;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            box-shadow: inset 1px 1px 0 #808080;
+            padding: 8px;
+        }
+        
+        .issues-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #808080;
         }
         
         .issue-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            background: #f0f0f0;
+            border: 1px solid #c0c0c0;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            padding: 6px;
+            margin-bottom: 4px;
+            box-shadow: 1px 1px 0 #808080;
+        }
+        
+        .issue-item.closed {
+            background: #e0e0e0;
+            color: #808080;
         }
         
         .issue-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         
         .issue-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            margin-right: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: #000000;
+            color: #ffffff;
+            padding: 1px 4px;
+            font-size: 8px;
+            font-weight: bold;
+            margin-right: 4px;
         }
         
         .issue-submitter {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            padding: 1px 4px;
+            font-size: 7px;
+            font-weight: bold;
+            margin-left: 4px;
         }
         
         .issue-submitter.anonymous {
-            background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
+            background: #808080;
+            color: #ffffff;
         }
         
         .issue-meta {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
             flex-wrap: wrap;
         }
         
         .issue-type {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 1px 4px;
+            font-size: 7px;
+            font-weight: bold;
             text-transform: uppercase;
+            border: 1px solid;
         }
         
-        .type-fix { background: #ffebee; color: #c62828; }
-        .type-feature { background: #e3f2fd; color: #1565c0; }
-        .type-update { background: #fff3e0; color: #e65100; }
-        .type-rollback { background: #f3e5f5; color: #6a1b9a; }
+        .type-fix { 
+            background: #ffcccc; 
+            color: #990000; 
+            border-color: #cc9999;
+        }
+        
+        .type-feature { 
+            background: #ccccff; 
+            color: #000099; 
+            border-color: #9999cc;
+        }
+        
+        .type-update { 
+            background: #ffffcc; 
+            color: #996600; 
+            border-color: #cccc99;
+        }
+        
+        .type-rollback { 
+            background: #ffccff; 
+            color: #990099; 
+            border-color: #cc99cc;
+        }
         
         .issue-description {
-            color: #666;
-            font-size: 14px;
+            font-size: 8px;
+            line-height: 1.2;
+            margin: 2px 0;
         }
         
         .issue-status {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #666;
+            font-size: 7px;
+            font-style: italic;
+            margin-top: 2px;
         }
         
-        .status-completed { color: #4caf50; }
-        .status-failed { color: #f44336; }
-        .status-pending { color: #ff9800; }
-        .status-closed { color: #9e9e9e; font-style: italic; }
+        .status-completed { color: #006600; }
+        .status-failed { color: #cc0000; }
+        .status-pending { color: #cc6600; }
+        .status-closed { color: #808080; }
         
         .close-button {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+            padding: 1px 4px;
+            font-size: 7px;
+            font-weight: bold;
             cursor: pointer;
-            margin-left: 10px;
-            transition: all 0.2s;
+            margin-left: 4px;
         }
         
-        .close-button:hover {
-            background: #d32f2f;
-            transform: translateY(-1px);
+        .close-button:active {
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #ffffff;
+            border-right-color: #ffffff;
         }
         
-        .bart-badge {
-            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-left: 8px;
-            text-transform: uppercase;
-            animation: pulse 2s infinite;
+        .admin-badge {
+            background: #000000;
+            color: #ffffff;
+            padding: 1px 4px;
+            font-size: 7px;
+            font-weight: bold;
+            animation: blink 1s infinite;
         }
         
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+        
+        /* Scrollbar styling for authenticity */
+        ::-webkit-scrollbar {
+            width: 16px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #c0c0c0;
+            border: 1px solid #808080;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
+        }
+        
+        /* Hidden by default */
+        .issue-item.hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Classic Mac Title Bar -->
         <div class="header">
-            <button class="reload-button" onclick="location.reload()" title="Reload">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                </svg>
-            </button>
-            <h1>🔧 ToyBox OS Fixit Board</h1>
-            <div class="subtitle">Report bugs and request features for ToyBox OS</div>
-            <div id="lastIssueInfo" style="margin-top: 10px; font-size: 14px; opacity: 0.95; font-weight: 500;"></div>
-            <div id="currentUserInfo" style="margin-top: 5px; font-size: 13px; opacity: 0.9;"></div>
-            <div id="userInfo" style="margin-top: 5px; font-size: 14px; opacity: 0.95; font-weight: 500;"></div>
+            <div class="window-controls">
+                <div class="control-button" title="Close">×</div>
+                <div class="control-button" title="Minimize">-</div>
+            </div>
+            <div class="window-title">ToyBox OS - Fixit Board</div>
+            <div class="reload-button" onclick="location.reload()" title="Reload"></div>
         </div>
         
-        <div class="form-section">
-            <form id="issueForm">
-                <div id="bartMessage" style="display: none; background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center;">
-                    ⚡ Admin Mode Active - You can close issues!
+        <div class="content-area">
+            <!-- User Info Box -->
+            <div class="user-info-box">
+                <div style="font-weight: bold; margin-bottom: 4px;">System Status</div>
+                <div id="lastIssueInfo" style="font-size: 8px; margin-bottom: 2px;"></div>
+                <div id="currentUserInfo" style="font-size: 8px; margin-bottom: 2px;"></div>
+                <div id="userInfo" style="font-size: 8px;"></div>
+                <div id="adminBadge" style="display: none;">
+                    <div class="admin-badge">ADMIN MODE ACTIVE</div>
                 </div>
-                <div class="form-group">
-                    <label for="actionType">What needs to be done?</label>
-                    <select id="actionType" name="actionType" required>
-                        <option value="fix" selected>🔧 Fix Bug</option>
-                        <option value="feature">✨ Add Feature</option>
-                        <option value="update">📝 Update App</option>
-                        <option value="rollback">↩️ Rollback Change</option>
-                    </select>
-                </div>
+            </div>
+            
+            <!-- Status Filter Tabs -->
+            <div class="filter-tabs">
+                <div class="filter-tab active" data-filter="all">All Issues</div>
+                <div class="filter-tab" data-filter="open">Open</div>
+                <div class="filter-tab" data-filter="closed">Closed</div>
+                <div class="filter-tab" data-filter="pending">Pending</div>
+                <div class="filter-tab" data-filter="completed">Completed</div>
+            </div>
+            
+            <!-- Form Section -->
+            <div class="form-section">
+                <div style="font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #808080; padding-bottom: 2px;">Submit New Issue</div>
                 
-                <div class="form-group">
-                    <label for="target">Which app/component?</label>
-                    <select id="target" name="target" required>
-                        <option value="">Select target...</option>
-                        <option value="toybox-os">ToyBox OS Desktop</option>
-                        <option value="app-studio">App Studio</option>
-                        <option value="toybox-issue-tracker">Issue Tracker (this app)</option>
-                        <option value="community-notepad">Community Notepad</option>
-                        <option value="toybox-macword">MacWord</option>
-                        <option value="toybox-chat">Chat</option>
-                        <option value="toybox-lightning-puma-parasailing">Sudoku</option>
-                        <option value="wave-wood-deconstructing">Paint</option>
-                        <option value="other">Other (specify in description)</option>
-                    </select>
+                <form id="issueForm">
+                    <div id="bartMessage" style="display: none; background: #000000; color: #ffffff; padding: 4px; margin-bottom: 6px; font-weight: bold; text-align: center; font-size: 8px;">
+                        ADMIN MODE: You can close issues
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="actionType">What needs to be done?</label>
+                        <select id="actionType" name="actionType" required>
+                            <option value="fix" selected>Fix Bug</option>
+                            <option value="feature">Add Feature</option>
+                            <option value="update">Update App</option>
+                            <option value="rollback">Rollback Change</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target">Which app/component?</label>
+                        <select id="target" name="target" required>
+                            <option value="">Select target...</option>
+                            <option value="toybox-os">ToyBox OS Desktop</option>
+                            <option value="app-studio">App Studio</option>
+                            <option value="toybox-issue-tracker">Issue Tracker (this app)</option>
+                            <option value="community-notepad">Community Notepad</option>
+                            <option value="toybox-macword">MacWord</option>
+                            <option value="toybox-chat">Chat</option>
+                            <option value="toybox-lightning-puma-parasailing">Sudoku</option>
+                            <option value="wave-wood-deconstructing">Paint</option>
+                            <option value="other">Other (specify in description)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Describe the change:</label>
+                        <textarea id="description" name="description" required 
+                            placeholder="Be specific: 'Make the Sudoku hint button green' or 'Add a calculator app to the desktop'"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="priority">Priority:</label>
+                        <select id="priority" name="priority" required>
+                            <option value="low">Low - Nice to have</option>
+                            <option value="medium" selected>Medium - Should be done soon</option>
+                            <option value="high">High - Breaking something</option>
+                            <option value="critical">Critical - System unusable</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Submit Issue
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Issues List -->
+            <div class="issues-list">
+                <div class="issues-header">Issue List</div>
+                <div id="issuesContainer">
+                    <div style="font-size: 8px; color: #808080; font-style: italic;">No issues loaded yet.</div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="description">Describe the change:</label>
-                    <textarea id="description" name="description" required 
-                        placeholder="Be specific: 'Make the Sudoku hint button green' or 'Add a calculator app to the desktop' or 'Fix the chat message overflow issue'"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="priority">Priority:</label>
-                    <select id="priority" name="priority" required>
-                        <option value="low">🟢 Low - Nice to have</option>
-                        <option value="medium" selected>🟡 Medium - Should be done soon</option>
-                        <option value="high">🟠 High - Breaking something</option>
-                        <option value="critical">🔴 Critical - System unusable</option>
-                    </select>
-                </div>
-                
-                <button type="submit" class="submit-btn" id="submitBtn">
-                    Submit Issue
-                </button>
-            </form>
-        </div>
-        
-        <div class="issues-list" id="issuesList">
-            <h3 style="margin-bottom: 15px;">📋 Recent Issues</h3>
-            <div id="issuesContainer">
-                <p style="color: #666;">No recent updates yet.</p>
             </div>
         </div>
     </div>
@@ -570,10 +751,64 @@
             submitBtn.textContent = 'Execute Update with Backup';
         });
         
+        // Current filter state
+        let currentFilter = 'all';
+        let allIssues = [];
+        
+        // Filter tab functionality
+        function initFilterTabs() {
+            const filterTabs = document.querySelectorAll('.filter-tab');
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    filterTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    // Set current filter
+                    currentFilter = this.dataset.filter;
+                    // Apply filter
+                    filterIssues();
+                });
+            });
+        }
+        
+        // Filter issues based on current filter
+        function filterIssues() {
+            const issueItems = document.querySelectorAll('.issue-item');
+            issueItems.forEach(item => {
+                const status = item.dataset.status || 'pending';
+                let show = false;
+                
+                switch(currentFilter) {
+                    case 'all':
+                        show = true;
+                        break;
+                    case 'open':
+                        show = status !== 'closed';
+                        break;
+                    case 'closed':
+                        show = status === 'closed';
+                        break;
+                    case 'pending':
+                        show = status === 'pending';
+                        break;
+                    case 'completed':
+                        show = status === 'completed';
+                        break;
+                }
+                
+                if (show) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+        
         // Load recent updates
         async function loadRecentUpdates() {
             const updates = await load('update_request');
-            const container = document.getElementById('recentUpdates');
+            const container = document.getElementById('issuesContainer');
             
             if (updates && updates.length > 0) {
                 // Deduplicate by issueNumber - keep the most recent version of each
@@ -598,39 +833,44 @@
                 
                 console.log(`Loaded ${updates.length} records, showing ${uniqueIssues.length} unique issues`);
                 
-                container.innerHTML = '<h3 style="margin-bottom: 15px;">📋 Recent Issues</h3>' + 
-                    uniqueIssues.map(update => {
-                        const data = update.content_data;
-                        const date = new Date(data.timestamp);
-                        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-                        const submitter = data.submittedBy || 'anonymous';
-                        const isAnonymous = submitter === 'anonymous';
-                        
-                        return `
-                            <div class="issue-item">
-                                <div class="issue-header">
-                                    <div class="issue-meta">
-                                        <span class="issue-number">#${data.issueNumber || '?'}</span>
-                                        <span class="issue-type type-${data.actionType}">${data.actionType}</span>
-                                        <span class="issue-submitter ${isAnonymous ? 'anonymous' : ''}">${submitter}</span>
-                                    </div>
-                                    <span style="font-size: 12px; color: #666;">${dateStr}</span>
+                allIssues = uniqueIssues; // Store for filtering
+                
+                container.innerHTML = uniqueIssues.map(update => {
+                    const data = update.content_data;
+                    const date = new Date(data.timestamp);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    const submitter = data.submittedBy || 'anonymous';
+                    const isAnonymous = submitter === 'anonymous';
+                    const status = data.status || 'pending';
+                    const isClosed = status === 'closed';
+                    
+                    return `
+                        <div class="issue-item ${isClosed ? 'closed' : ''}" data-status="${status}">
+                            <div class="issue-header">
+                                <div class="issue-meta">
+                                    <span class="issue-number">#${data.issueNumber || '?'}</span>
+                                    <span class="issue-type type-${data.actionType}">${data.actionType.toUpperCase()}</span>
+                                    <span class="issue-submitter ${isAnonymous ? 'anonymous' : ''}">${submitter}</span>
                                 </div>
-                                <div style="font-weight: 600; margin-bottom: 4px;">${data.target}</div>
-                                <div class="issue-description">${data.description}</div>
-                                <div class="issue-status status-${data.status || 'pending'}">
-                                    Status: ${data.status || 'pending'}
-                                    ${data.closedBy ? ` (closed by ${data.closedBy})` : ''}
-                                    ${currentUser && currentUser.handle === 'bart' && data.status !== 'closed' ? 
-                                        `<button class="close-button" onclick="closeTicket(${data.issueNumber})">Close Issue</button>` : 
-                                        ''
-                                    }
-                                </div>
+                                <div style="font-size: 7px; color: #808080;">${dateStr}</div>
                             </div>
-                        `;
-                    }).join('');
+                            <div style="font-weight: bold; margin-bottom: 2px; font-size: 8px;">${data.target}</div>
+                            <div class="issue-description">${data.description}</div>
+                            <div class="issue-status status-${status}">
+                                Status: ${status.toUpperCase()}${data.closedBy ? ` (closed by ${data.closedBy})` : ''}
+                                ${currentUser && currentUser.handle === 'bart' && status !== 'closed' ? 
+                                    `<button class="close-button" onclick="closeTicket(${data.issueNumber})">CLOSE</button>` : 
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Apply current filter after loading
+                filterIssues();
             } else {
-                container.innerHTML = '<p style="color: #666;">No recent updates yet.</p>';
+                container.innerHTML = '<div style="font-size: 8px; color: #808080; font-style: italic;">No issues found.</div>';
             }
         }
         
@@ -640,6 +880,7 @@
             loadAuth();  // Load from localStorage first
             loadRecentUpdates();  // Load issues
             updateLastIssueInfo();  // Update issue counter
+            initFilterTabs();  // Initialize filter tab functionality
         });
         
         // Show last issue info
@@ -679,20 +920,26 @@
 
         // Show admin mode indicator
         function updateAdminIndicator() {
-            const header = document.querySelector('.header');
-            if (currentUser && currentUser.handle === 'bart' && header) {
-                // Check if admin badge already exists
-                if (!document.getElementById('adminBadge')) {
-                    const adminBadge = document.createElement('div');
-                    adminBadge.id = 'adminBadge';
-                    adminBadge.innerHTML = '👑 Admin Mode Active';
-                    adminBadge.style.cssText = 'background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; display: inline-block;';
-                    header.appendChild(adminBadge);
+            const adminBadgeContainer = document.getElementById('adminBadge');
+            const bartMessage = document.getElementById('bartMessage');
+            
+            if (currentUser && currentUser.handle === 'bart') {
+                // Show admin badge in user info box
+                if (adminBadgeContainer) {
+                    adminBadgeContainer.style.display = 'block';
+                }
+                // Show admin message in form
+                if (bartMessage) {
+                    bartMessage.style.display = 'block';
                 }
             } else {
-                // Remove admin badge if not bart
-                const badge = document.getElementById('adminBadge');
-                if (badge) badge.remove();
+                // Hide admin indicators
+                if (adminBadgeContainer) {
+                    adminBadgeContainer.style.display = 'none';
+                }
+                if (bartMessage) {
+                    bartMessage.style.display = 'none';
+                }
             }
         }
         

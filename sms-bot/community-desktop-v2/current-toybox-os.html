@@ -84,24 +84,181 @@
             height: 100%;
             border: none;
         }
+    
+        /* Profile Icon Styles */
+        #profile-icon {
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            background: #f0f0f0;
+            border: 1px solid #999;
+            border-radius: 3px;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            transition: all 0.1s ease;
+        }
+        
+        #profile-icon:hover {
+            background: #e0e0ff;
+            border-color: #4169e1;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        #profile-icon:active {
+            background: #d0d0ff;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        #username-display {
+            font-size: 11px;
+            font-family: Chicago, Geneva, sans-serif;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Login Modal Styles */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-modal.active {
+            display: flex;
+        }
+        
+        .auth-dialog {
+            background: #c0c0c0;
+            border: 2px solid #000;
+            box-shadow: 
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #fff,
+                2px 2px 0 #000;
+            padding: 0;
+            width: 320px;
+            font-family: Chicago, Geneva, sans-serif;
+        }
+        
+        .auth-title {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 2px 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .auth-close {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            background: #c0c0c0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            font-size: 10px;
+        }
+        
+        .auth-content {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .auth-screen {
+            display: none;
+        }
+        
+        .auth-screen.active {
+            display: block;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 6px;
+            margin: 8px 0;
+            border: 2px solid #000;
+            background: white;
+            font-family: Chicago, Geneva, sans-serif;
+            font-size: 12px;
+        }
+        
+        .auth-button {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 6px 16px;
+            margin: 4px;
+            cursor: pointer;
+            font-family: Chicago, Geneva, sans-serif;
+            font-size: 11px;
+            box-shadow: 
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #fff;
+        }
+        
+        .auth-button:hover {
+            background: #000;
+            color: white;
+        }
+        
+        .auth-button:active {
+            box-shadow: 
+                inset 1px 1px 0 #808080,
+                inset -1px -1px 0 #fff;
+        }
+        
+        .auth-message {
+            font-size: 11px;
+            margin: 10px 0;
+            padding: 8px;
+            background: #ffffcc;
+            border: 1px solid #000;
+        }
+        
+        .auth-message.error {
+            background: #ffcccc;
+        }
+        
+        .auth-message.success {
+            background: #ccffcc;
+        }
     </style>
 </head>
 <body class="theme-system7">
     <div id="desktop">
         <!-- Windowed Apps -->
-        <div class="desktop-icon" style="left: 20px; top: 20px" 
-             onclick="openWindowedApp('community-notepad')">
-            <div class="icon">📝</div>
-            <div class="label">Notepad</div>
-        </div>
-        
-        
-        
-        <div class="desktop-icon" style="left: 220px; top: 20px" 
-             onclick="alert('Community Chat coming soon! 💬')">
-            <div class="icon">💬</div>
-            <div class="label">Chat</div>
-        </div>
+        <div class="desktop-icon" onclick="openWindowedApp('toybox-chat')">
+                <div class="icon">💬</div>
+            <div class="desktop-icon" onclick="openWindowedApp('toybox-lightning-puma-parasailing')">
+                <div class="icon">🎯</div>
+                <div class="label">Sudoku</div>
+            </div>
+            <div class="desktop-icon" onclick="openWindowedApp('webtoysos-issue-tracker')">
+                <div class="icon">🔧</div>
+                <div class="label">Fixit Board</div>
+            </div>
+                <div class="label">Chat</div>
+            </div>
+
+            <div class="desktop-icon" onclick="openWindowedApp('toybox-lightning-puma-parasailing')">
+                <div class="icon">🎯</div>
+                <div class="label">Sudoku</div>
+            </div>
         
         <!-- Simple Apps -->
         <div class="desktop-icon" style="left: 20px; top: 120px" 
@@ -142,6 +299,10 @@
     
     
         <div class="desktop-icon" style="left: 320px; top: 20px" onclick="openWindowedApp('app-studio')"><div class="icon">🚀</div><div class="label">App Studio</div></div>
+        <div class="desktop-icon" onclick="openWindowedApp('toybox-issue-tracker')">
+            <div class="icon">🐛</div>
+            <div class="label">Issues</div>
+        </div>
         <div class="desktop-icon" style="left: 420px; top: 20px" 
              onclick="openWindowedApp("wordy")">
             <div class="icon">📝</div>
@@ -207,6 +368,11 @@
             </div>
         </div>
         <div class="menu-right">
+            
+            <div id="profile-icon" onclick="toggleAuth(event)">
+                <span id="profile-emoji">👤</span>
+                <span id="username-display"></span>
+            </div>
             <div id="menu-clock" aria-label="Clock"></div>
         </div>
 
@@ -236,9 +402,15 @@
         <div class="icon">📝</div>
         <div class="label">Words</div>
     </div>
+            
+            <div class="desktop-icon" onclick="openWindowedApp('macword')">
+                <div class="icon">📝</div>
+                <div class="label">MacWord</div>
+            </div>
     </div>
     
     <script>
+    let currentToyBoxUser = null;
         // Complete Window Manager and Desktop System
         /**
  * Community Desktop Window Manager
@@ -658,6 +830,149 @@ window.windowManager = new WindowManager();
         
         
         window.windowedApps = {
+
+        'TESTY-246380': {
+            name: 'testy',
+            url: '/community/TESTY-246380',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'TOYBOX-024271': {
+            name: 'toybox',
+            url: '/community/TOYBOX-024271',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'TEST-720954': {
+            name: 'Test',
+            url: '/community/TEST-720954',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'TEST-658202': {
+            name: 'Test',
+            url: '/community/TEST-658202',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'TEST-066681': {
+            name: 'test',
+            url: '/community/TEST-066681',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'WORD-687615': {
+            name: 'Word',
+            url: '/community/WORD-687615',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'TEST-836435': {
+            name: 'test',
+            url: '/community/TEST-836435',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'WRODS-050932': {
+            name: 'Wrods',
+            url: '/community/WRODS-050932',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'SUDOKU-628634': {
+            name: 'Sudoku',
+            url: '/community/SUDOKU-628634',
+            icon: '🔢',
+            width: 500,
+            height: 700
+        },
+            'toybox-issue-tracker': {
+                name: 'Issue Tracker',
+                url: '/public/toybox-issue-tracker',
+                icon: '🐛',
+                width: 700,
+                height: 600
+            },
+            'toybox-lightning-puma-parasailing': {
+                name: 'WTAF – Delusional App Generator',
+                url: '/public/toybox-lightning-puma-parasailing',
+                icon: '🎯',
+                width: 600,
+                height: 880
+            },
+            'toybox-wave-wood-deconstructing': {
+                name: 'WTAF – Delusional App Generator',
+                url: '/public/toybox-wave-wood-deconstructing',
+                icon: '📱',
+                width: 800,
+                height: 600
+            },
+
+        'MACPAINT-134526': {
+            name: 'MacPAINT',
+            url: '/community/MACPAINT-134526',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'MACPAINT-882258': {
+            name: 'MacPAINT',
+            url: '/community/MACPAINT-882258',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+            'toybox-bouncing-ball': {
+                name: 'Bouncing Ball',
+                url: '/public/toybox-bouncing-ball',
+                icon: '📱',
+                width: 800,
+                height: 600
+            },
+            
+            'toybox-chat': {
+                name: 'ToyBox Chat',
+                url: '/public/toybox-chat',
+                icon: '💬',
+                width: 600,
+                height: 500
+            },            'toybox-lightning-puma-parasailing': {
+                name: 'WTAF – Delusional App Generator',
+                url: '/public/toybox-lightning-puma-parasailing',
+                icon: '🎯',
+                width: 600,
+                height: 880
+            },            'webtoysos-issue-tracker': {
+                name: 'Fixit Board',
+                url: '/public/webtoysos-issue-tracker',
+                icon: '🔧',
+                width: 900,
+                height: 700
+            },
+            'macword': {
+                name: 'MacWord',
+                url: '/public/macword',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
 
         'words': {
             name: 'Words',
@@ -1191,6 +1506,607 @@ async function deleteIconFromDesktop(iconElement) {
         }
         setInterval(updateMenuClock, 1000);
         updateMenuClock(); // Initial call
+
+    // ToyBox OS Authentication System
+    let currentUser = null;
+    const AUTH_APP_ID = 'toybox-os-users';
+    
+    // Check for saved user on load
+    function initAuth() {
+        const savedUser = localStorage.getItem('toybox_user');
+        if (savedUser) {
+            try {
+                currentUser = JSON.parse(savedUser);
+                updateUIForUser();
+                broadcastAuthState();
+            } catch (e) {
+                console.error('Failed to restore user session:', e);
+                localStorage.removeItem('toybox_user');
+            }
+        }
+    }
+    
+    // ZAD Helper Functions for Auth
+    async function saveAuth(dataType, data) {
+        try {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: AUTH_APP_ID,
+                    data_type: dataType,
+                    content_data: data,
+                    participant_id: currentUser ? currentUser.id : 'anonymous',
+                    action_type: dataType
+                })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Save error:', error);
+            return null;
+        }
+    }
+    
+    async function loadAuth(dataType) {
+        try {
+            const url = `/api/zad/load?app_id=${encodeURIComponent(AUTH_APP_ID)}&action_type=${encodeURIComponent(dataType)}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`Load failed: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (Array.isArray(result)) {
+                return result.map(record => ({
+                    ...record.content_data,
+                    _participant_id: record.participant_id,
+                    _created_at: record.created_at
+                }));
+            }
+            
+            return [];
+        } catch (error) {
+            console.error('Load error:', error);
+            return [];
+        }
+    }
+    
+    // UI Functions
+    function toggleAuth(event) {
+        if (event) { 
+            event.preventDefault();
+            event.stopPropagation(); 
+        }
+        openAuthModal();
+    }
+    
+    function openAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.style.display = 'block';
+            if (currentToyBoxUser) {
+                showProfileScreen();
+            } else {
+                showWelcomeScreen();
+            }
+        }
+    }
+    
+    function closeAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    function closeAuth() {
+        document.getElementById('authModal').classList.remove('active');
+        clearMessages();
+    }
+    
+    function showScreen(screenId) {
+        document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        clearMessages();
+    }
+    
+    function clearMessages() {
+        const loginMsg = document.getElementById('loginMessage');
+        const registerMsg = document.getElementById('registerMessage');
+        if (loginMsg) loginMsg.innerHTML = '';
+        if (registerMsg) registerMsg.innerHTML = '';
+    }
+    
+    function showMessage(elementId, message, type = '') {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.innerHTML = `<div class="auth-message ${type}">${message}</div>`;
+        }
+    }
+    
+    // Authentication Functions
+    async function register() {
+        const handle = document.getElementById('registerHandle').value.trim();
+        const pin = document.getElementById('registerPin').value;
+        const confirmPin = document.getElementById('confirmPin').value;
+        
+        if (handle.length < 3 || handle.length > 15) {
+            showMessage('registerMessage', 'Handle must be 3-15 characters', 'error');
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(pin)) {
+            showMessage('registerMessage', 'PIN must be exactly 4 digits', 'error');
+            return;
+        }
+        
+        if (pin !== confirmPin) {
+            showMessage('registerMessage', 'PINs do not match', 'error');
+            return;
+        }
+        
+        // Check if handle exists
+        const users = await loadAuth('user_registry');
+        const existingUser = users.find(u => u.handle === handle);
+        
+        if (existingUser) {
+            showMessage('registerMessage', 'Handle already taken', 'error');
+            return;
+        }
+        
+        // Create user
+        const userData = {
+            handle: handle,
+            pin: pin,
+            id: handle,
+            created: new Date().toISOString()
+        };
+        
+        currentUser = userData;
+        await saveAuth('user_registry', userData);
+        
+        // Save session
+        
+            console.log('=== ToyBox OS Debug ===');
+            console.log('Saving to localStorage:', userData);
+            localStorage.setItem('toybox_user', JSON.stringify(userData));
+            console.log('Saved! Can read back:', localStorage.getItem('toybox_user'));
+        
+        showMessage('registerMessage', 'Account created!', 'success');
+        setTimeout(() => {
+            updateUIForUser();
+            broadcastAuthState();
+            closeAuth();
+        }, 1000);
+    }
+    
+    async function login() {
+        const handle = document.getElementById('loginHandle').value.trim();
+        const pin = document.getElementById('loginPin').value;
+        
+        // Load all users
+        const users = await loadAuth('user_registry');
+        const user = users.find(u => 
+            u.handle && u.handle.toLowerCase() === handle.toLowerCase() && 
+            u.pin === pin
+        );
+        
+        if (!user) {
+            showMessage('loginMessage', 'Invalid handle or PIN', 'error');
+            return;
+        }
+        
+        currentUser = user;
+        localStorage.setItem('toybox_user', JSON.stringify(user));
+        
+        showMessage('loginMessage', 'Welcome back!', 'success');
+        setTimeout(() => {
+            updateUIForUser();
+            broadcastAuthState();
+            closeAuth();
+        }, 1000);
+    }
+    
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('toybox_user');
+        updateUIForUser();
+        broadcastAuthState();
+        closeAuth();
+    }
+    
+    // Update UI based on auth state
+    function updateUIForUser() {
+        const profileEmoji = document.getElementById('profile-emoji');
+        const usernameDisplay = document.getElementById('username-display');
+        
+        if (currentUser) {
+            profileEmoji.textContent = '👤';
+            usernameDisplay.textContent = currentUser.handle;
+        } else {
+            profileEmoji.textContent = '👤';
+            usernameDisplay.textContent = '';
+        }
+    }
+    
+    // Broadcast auth state to all apps
+    function broadcastAuthState() {
+        const windows = document.querySelectorAll('.desktop-window iframe');
+        windows.forEach(iframe => {
+            try {
+                iframe.contentWindow.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            } catch (e) {
+                console.error('Could not send auth to iframe:', e);
+            }
+        });
+    }
+    
+    // Modify openWindowedApp to notify new windows
+    const originalOpenWindowedApp = openWindowedApp;
+    openWindowedApp = function(appId) {
+        originalOpenWindowedApp(appId);
+        // Wait a bit for the window to load, then send auth
+        setTimeout(() => {
+            broadcastAuthState();
+        }, 2000);
+    };
+    
+    // Initialize auth on load
+    window.addEventListener('DOMContentLoaded', () => {
+        initAuth();
+    });
+
+
+    function showWelcomeScreen() {
+        document.getElementById('welcomeScreen').style.display = 'block';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showLoginScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showRegisterScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'block';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showProfileScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'block';
+        if (currentToyBoxUser) {
+            document.getElementById('profileHandle').textContent = currentToyBoxUser.handle;
+        }
+    }
+    
+    async function doLogin() {
+        const handle = document.getElementById('loginHandle').value.trim();
+        const pin = document.getElementById('loginPin').value;
+        
+        if (!handle || !pin) {
+            document.getElementById('loginError').textContent = 'Please enter handle and PIN';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+            const users = await response.json();
+            
+            const user = users.find(u => 
+                u.content_data && 
+                u.content_data.handle === handle && 
+                u.content_data.pin === pin
+            );
+            
+            if (user) {
+                currentToyBoxUser = user.content_data;
+                currentUser = user.content_data; // SYNC: Keep both variables in sync
+                console.log('Saving existing user to localStorage:', currentToyBoxUser);
+            localStorage.setItem('toybox_user', JSON.stringify(currentToyBoxUser));
+            console.log('Saved! Can read back:', localStorage.getItem('toybox_user'));
+                updateProfileDisplay();
+                showProfileScreen();
+                broadcastAuth();
+            } else {
+                document.getElementById('loginError').textContent = 'Invalid handle or PIN';
+            }
+        } catch (error) {
+            document.getElementById('loginError').textContent = 'Login failed';
+        }
+    }
+    
+    async function doRegister() {
+        const handle = document.getElementById('regHandle').value.trim();
+        const pin = document.getElementById('regPin').value;
+        const confirmPin = document.getElementById('confirmPin').value;
+        
+        if (handle.length < 3 || handle.length > 15) {
+            document.getElementById('regError').textContent = 'Handle must be 3-15 characters';
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(pin)) {
+            document.getElementById('regError').textContent = 'PIN must be 4 digits';
+            return;
+        }
+        
+        if (pin !== confirmPin) {
+            document.getElementById('regError').textContent = 'PINs do not match';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+            const users = await response.json();
+            
+            const exists = users.find(u => 
+                u.content_data && u.content_data.handle === handle
+            );
+            
+            if (exists) {
+                document.getElementById('regError').textContent = 'Handle already taken';
+                return;
+            }
+            
+            const userData = {
+                handle: handle,
+                pin: pin,
+                id: handle,
+                created: new Date().toISOString()
+            };
+            
+            const saveResponse = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: 'toybox-os-users',
+                    data_type: 'user_registry',
+                    content_data: userData,
+                    participant_id: handle,
+                    action_type: 'user_registry'
+                })
+            });
+            
+            if (saveResponse.ok) {
+                currentToyBoxUser = userData;
+        currentUser = userData; // SYNC: Keep both variables in sync
+                localStorage.setItem('toybox_user', JSON.stringify(userData));
+                updateProfileDisplay();
+                showProfileScreen();
+                broadcastAuth();
+            } else {
+                document.getElementById('regError').textContent = 'Registration failed';
+            }
+        } catch (error) {
+            document.getElementById('regError').textContent = 'Registration failed';
+        }
+    }
+    
+    function doLogout() {
+        currentToyBoxUser = null;
+        currentUser = null; // SYNC: Keep both variables in sync
+        localStorage.removeItem('toybox_user');
+        updateProfileDisplay();
+        closeAuthModal();
+        broadcastAuth();
+    }
+    
+    function updateProfileDisplay() {
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = currentToyBoxUser ? currentToyBoxUser.handle : '';
+        }
+    }
+    
+    function broadcastAuth() {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                // Only broadcast if iframe is loaded and ready
+                if (iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                }
+            } catch (e) {
+                // Silently fail if iframe not ready
+            }
+        });
+    }
+
+    // Initialize auth on load
+    function initToyBoxAuth() {
+        const savedUser = localStorage.getItem('toybox_user');
+        if (savedUser) {
+            try {
+                currentToyBoxUser = JSON.parse(savedUser);
+                currentUser = currentToyBoxUser; // SYNC: Keep both variables in sync
+                updateProfileDisplay();
+            } catch (e) {
+                localStorage.removeItem('toybox_user');
+            }
+        }
+    }
+    
+    window.addEventListener('DOMContentLoaded', initToyBoxAuth);
+
+    // Handle auth requests from apps
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'REQUEST_AUTH') {
+            console.log('ToyBox OS received auth request, sending currentUser:', currentUser);
+            // Send current auth state back
+            if (event.source) {
+                event.source.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            }
+        }
+    });
 </script>
+
+    <!-- Auth Modal -->
+    <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #c0c0c0; border: 2px solid #000; padding: 0; width: 320px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            <div style="background: linear-gradient(90deg, #000080, #1084d0); color: white; padding: 4px 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>ToyBox OS Login</span>
+                <button onclick="closeAuthModal()" style="background: #c0c0c0; border: 1px solid #000; padding: 0 4px; cursor: pointer;">✕</button>
+            </div>
+            <div style="padding: 20px;">
+                <div id="authContent">
+                    <!-- Welcome Screen -->
+                    <div id="welcomeScreen" style="text-align: center;">
+                        <h3>Welcome to ToyBox OS</h3>
+                        <p style="font-size: 12px; margin: 16px 0;">Sign in to access personalized apps</p>
+                        <button onclick="showLoginScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign In</button>
+                        <button onclick="showRegisterScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Create Account</button>
+                    </div>
+                    
+                    <!-- Login Screen (hidden initially) -->
+                    <div id="loginScreen" style="display: none; text-align: center;">
+                        <h3>Sign In</h3>
+                        <input type="text" id="loginHandle" placeholder="Your Handle" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="loginPin" placeholder="4-digit PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <div id="loginError" style="color: red; font-size: 12px; margin: 8px 0;"></div>
+                        <button onclick="doLogin()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign In</button>
+                        <button onclick="showWelcomeScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Back</button>
+                    </div>
+                    
+                    <!-- Register Screen (hidden initially) -->
+                    <div id="registerScreen" style="display: none; text-align: center;">
+                        <h3>Create Account</h3>
+                        <input type="text" id="regHandle" placeholder="Choose Handle (3-15 chars)" maxlength="15" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="regPin" placeholder="Create 4-digit PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="confirmPin" placeholder="Confirm PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <div id="regError" style="color: red; font-size: 12px; margin: 8px 0;"></div>
+                        <button onclick="doRegister()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Create Account</button>
+                        <button onclick="showWelcomeScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Back</button>
+                    </div>
+                    
+                    <!-- Profile Screen (hidden initially) -->
+                    <div id="profileScreen" style="display: none; text-align: center;">
+                        <h3>Profile</h3>
+                        <p>Signed in as: <strong id="profileHandle"></strong></p>
+                        <button onclick="doLogout()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign Out</button>
+                        <button onclick="closeAuthModal()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- MacPAINT by bd -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 20px;"
+         onclick="openWindowedApp('MACPAINT-882258')"
+         title="MacPAINT">
+        <div class="icon">🎨</div>
+        <div class="label">MacPAINT</div>
+    </div>
+
+    <!-- MacPAINT by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 20px;"
+         onclick="openWindowedApp('MACPAINT-134526')"
+         title="MacPAINT">
+        <div class="icon">🎨</div>
+        <div class="label">MacPAINT</div>
+    </div>
+
+    <!-- Sudoku by bd -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 120px;"
+         onclick="openWindowedApp('SUDOKU-628634')"
+         title="Sudoku">
+        <div class="icon">🔢</div>
+        <div class="label">Sudoku</div>
+    </div>
+
+    <!-- Wrods by bd -->
+    <div class="desktop-icon" 
+         style="left: 420px; top: 120px;"
+         onclick="openWindowedApp('WRODS-050932')"
+         title="Wrods">
+        <div class="icon">📝</div>
+        <div class="label">Wrods</div>
+    </div>
+
+    <!-- test by bd -->
+    <div class="desktop-icon" 
+         style="left: 620px; top: 120px;"
+         onclick="openWindowedApp('TEST-836435')"
+         title="test">
+        <div class="icon">📝</div>
+        <div class="label">test</div>
+    </div>
+
+    <!-- Word by bd -->
+    <div class="desktop-icon" 
+         style="left: 720px; top: 120px;"
+         onclick="openWindowedApp('WORD-687615')"
+         title="Word">
+        <div class="icon">📝</div>
+        <div class="label">Word</div>
+    </div>
+
+    <!-- test by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 220px;"
+         onclick="openWindowedApp('TEST-066681')"
+         title="test">
+        <div class="icon">📝</div>
+        <div class="label">test</div>
+    </div>
+
+    <!-- Test by bd -->
+    <div class="desktop-icon" 
+         style="left: 220px; top: 220px;"
+         onclick="openWindowedApp('TEST-658202')"
+         title="Test">
+        <div class="icon">📝</div>
+        <div class="label">Test</div>
+    </div>
+
+    <!-- Test by bd -->
+    <div class="desktop-icon" 
+         style="left: 320px; top: 220px;"
+         onclick="openWindowedApp('TEST-720954')"
+         title="Test">
+        <div class="icon">📝</div>
+        <div class="label">Test</div>
+    </div>
+
+    <!-- toybox by bd -->
+    <div class="desktop-icon" 
+         style="left: 420px; top: 220px;"
+         onclick="openWindowedApp('TOYBOX-024271')"
+         title="toybox">
+        <div class="icon">📝</div>
+        <div class="label">toybox</div>
+    </div>
+
+    <!-- testy by bd -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 220px;"
+         onclick="openWindowedApp('TESTY-246380')"
+         title="testy">
+        <div class="icon">📝</div>
+        <div class="label">testy</div>
+    </div>
+    </div>
 </body>
 </html>
